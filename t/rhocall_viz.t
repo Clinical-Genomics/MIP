@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Rhocall} => [qw{ rhocall_aggregate }],
+        q{MIP::Program::Rhocall} => [qw{ rhocall_viz }],
         q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Rhocall qw{ rhocall_aggregate };
+use MIP::Program::Rhocall qw{ rhocall_viz };
 
-diag(   q{Test rhocall_aggregate from Rhocall.pm v}
+diag(   q{Test rhocall_viz from Rhocall.pm v}
       . $MIP::Program::Rhocall::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -60,7 +60,7 @@ diag(   q{Test rhocall_aggregate from Rhocall.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ rhocall aggregate };
+my @function_base_commands = qw{ rhocall viz };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -85,22 +85,37 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{ file_path_prefix_contig infile_suffix }),
-        expected_output => catfile(qw{ file_path_prefix_contig infile_suffix }),
+        input           => catfile(qw{ file path.vcf }),
+        expected_output => catfile(qw{ file path.vcf }),
     },
+    outdir_path => {
+        input           => catdir(qw{ a dir out }),
+        expected_output => q{--out_dir} . $SPACE . catdir(qw{ a dir out }),
+    },
+    rohfile_path => {
+        input           => catfile(qw{ file path.roh }),
+        expected_output => q{-r} . $SPACE . catfile(qw{ file path.roh }),
+    },
+
 );
 
 my %specific_argument = (
-    outfile_path => {
-        input           => catfile(qw{ outfile_path_prefix_contig infile_suffix }),
-        expected_output => q{--output}
-          . $SPACE
-          . catfile(qw{ outfile_path_prefix_contig infile_suffix }),
+    aftag => {
+        input           => q{AF},
+        expected_output => q{--aftag} . $SPACE . q{AF},
+    },
+    outdir_path => {
+        input           => catdir(qw{ a dir out }),
+        expected_output => q{--out_dir} . $SPACE . catdir(qw{ a dir out }),
+    },
+    wig => {
+        input           => 1,
+        expected_output => q{--wig},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&rhocall_aggregate;
+my $module_function_cref = \&rhocall_viz;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

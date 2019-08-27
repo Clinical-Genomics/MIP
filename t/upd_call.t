@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Rhocall} => [qw{ rhocall_aggregate }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Program::Upd}   => [qw{ upd_call }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Rhocall qw{ rhocall_aggregate };
+use MIP::Program::Upd qw{ upd_call };
 
-diag(   q{Test rhocall_aggregate from Rhocall.pm v}
-      . $MIP::Program::Rhocall::VERSION
+diag(   q{Test upd_call from Upd.pm v}
+      . $MIP::Program::Upd::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -60,7 +60,7 @@ diag(   q{Test rhocall_aggregate from Rhocall.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ rhocall aggregate };
+my @function_base_commands = qw{ upd };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -84,37 +84,73 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    call_type => {
+        input           => q{regions},
+        expected_output => q{regions},
+    },
+    father_id => {
+        input           => q{father_id},
+        expected_output => q{--father father_id},
+    },
     infile_path => {
-        input           => catfile(qw{ file_path_prefix_contig infile_suffix }),
-        expected_output => catfile(qw{ file_path_prefix_contig infile_suffix }),
+        input           => catfile(qw{ path to vcf }),
+        expected_output => q{--vcf} . $SPACE . catfile(qw{ path to vcf }),
+    },
+    mother_id => {
+        input           => q{mother_id},
+        expected_output => q{--mother mother_id},
+    },
+    proband_id => {
+        input           => q{proband_id},
+        expected_output => q{--proband proband_id},
     },
 );
 
 my %specific_argument = (
+    call_type => {
+        input           => q{regions},
+        expected_output => q{regions},
+    },
+    father_id => {
+        input           => q{father_id},
+        expected_output => q{--father father_id},
+    },
+    infile_path => {
+        input           => catfile(qw{ path to vcf }),
+        expected_output => q{--vcf} . $SPACE . catfile(qw{ path to vcf }),
+    },
+    mother_id => {
+        input           => q{mother_id},
+        expected_output => q{--mother mother_id},
+    },
     outfile_path => {
-        input           => catfile(qw{ outfile_path_prefix_contig infile_suffix }),
-        expected_output => q{--output}
-          . $SPACE
-          . catfile(qw{ outfile_path_prefix_contig infile_suffix }),
+        input           => catfile(qw{ path to out.bed }),
+        expected_output => q{--out} . $SPACE . catfile(qw{ path to out.bed }),
+    },
+    proband_id => {
+        input           => q{proband_id},
+        expected_output => q{--proband proband_id},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&rhocall_aggregate;
+my $module_function_cref = \&upd_call;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
+
 done_testing();

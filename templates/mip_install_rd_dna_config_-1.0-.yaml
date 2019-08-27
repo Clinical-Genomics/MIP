@@ -42,7 +42,7 @@ emip:
     plink2:
       version: 171013
     rhocall:
-      version: 0.4
+      version: 0.5.1
     sambamba:
       version: 0.6.1
     snpeff:
@@ -108,6 +108,7 @@ epy3:
     bcftools: 1.9=ha228f0b_4
     ldc: 1.11.0=hb2c9046_0
     pip:
+    python: 3.7
     sambamba: 0.6.8=h682856c_0
   pip:
     chanjo: 4.2.0
@@ -116,11 +117,15 @@ epy3:
     stranger: 0.5.4
     variant_integrity: 0.0.4
   shell:
+    chromograph:
+      version: gitRepo
     expansionhunter:
       conda_dependency:
       version: 3.0.0
     sambamba:
       version: 0.6.1
+    upd:
+      version: 0.1
 esvdb:
   conda:
     pip:

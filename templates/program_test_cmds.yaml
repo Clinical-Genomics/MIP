@@ -35,6 +35,9 @@
   chanjo:
     execution: 'chanjo'
     path: 'chanjo'
+  chromograph:
+    execution: 'chromograph'
+    path: 'chromograph'
   cnvnator:
     execution:
     path: 'cnvnator'
@@ -151,6 +154,9 @@
     path: 'TIDDIT.py'
   ucsc-wigtobigwig:
     path: 'wigToBigWig'
+  upd:
+    execution: 'upd'
+    path: 'upd'
   variant_integrity:
     execution: 'variant_integrity'
     path: 'variant_integrity'

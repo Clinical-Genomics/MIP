@@ -75,7 +75,9 @@ python3_programs:
   data_type: ARRAY
   default:
     - chanjo
+    - chromograph
     - genmod
     - variant_integrity
     - multiqc
+    - upd
   type: mip
