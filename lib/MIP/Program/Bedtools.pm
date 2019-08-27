@@ -81,8 +81,6 @@ sub bedtools_genomecov {
             strict_type => 1,
         },
         referencefile_path => {
-            defined     => 1,
-            required    => 1,
             store       => \$referencefile_path,
             strict_type => 1,
         },
