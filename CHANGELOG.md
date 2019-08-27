@@ -1,11 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
-## [7.1.1]
-- Fixed bug when skipping evaluation in QC_collect
 
 ## [7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
+
+## [7.1.1]
+- Fixed bug when skipping evaluation in QC_collect
 
 ## [7.1.0]
 - Updated TIDDIT to enable faster processing
