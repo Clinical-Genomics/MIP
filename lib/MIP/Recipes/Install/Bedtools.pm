@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_bedtools };
@@ -46,7 +46,6 @@ sub install_bedtools {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
 ##          : $program_parameters_href => Hash with bedtools specific parameters {REF}
@@ -57,7 +56,6 @@ sub install_bedtools {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $verbose;
 
@@ -76,10 +74,6 @@ sub install_bedtools {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -118,26 +112,20 @@ sub install_bedtools {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Bedtools};
+    $log->info(qq{Writing instructions for Bedtools installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    ## Check if installation exists and remove directory
     my $bedtools_dir = catdir( $conda_prefix_path, q{bedtools} . $bedtools_main_version );
-    my $install_check = check_existing_installation(
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $bedtools_dir,
             program_name           => q{Bedtools},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary bedtools install directory};

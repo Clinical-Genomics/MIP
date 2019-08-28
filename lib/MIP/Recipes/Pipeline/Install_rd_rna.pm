@@ -48,7 +48,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_rna };
@@ -204,7 +204,6 @@ sub pipeline_install_rd_rna {
                     conda_prefix_path =>
                       $active_parameter_href->{$installation}{conda_prefix_path},
                     FILEHANDLE => $FILEHANDLE,
-                    noupdate   => $active_parameter_href->{noupdate},
                     program_parameters_href =>
                       \%{ $active_parameter_href->{$installation}{shell}{$shell_program}
                       },

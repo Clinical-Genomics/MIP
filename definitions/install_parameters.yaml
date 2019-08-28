@@ -50,14 +50,6 @@ installations:
   element_separator: ,
   mandatory: no
   type: mip
-noupdate:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
-  type: mip
-  type: mip
 prefer_shell:
   associated_recipe:
    - mip

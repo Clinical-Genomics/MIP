@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_tiddit };
@@ -47,7 +47,6 @@ sub install_tiddit {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with TIDDIT specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -58,7 +57,6 @@ sub install_tiddit {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $tiddit_parameters_href;
     my $verbose;
@@ -68,7 +66,6 @@ sub install_tiddit {
             store       => \$conda_environment,
             strict_type => 1,
         },
-
         conda_prefix_path => {
             defined     => 1,
             required    => 1,
@@ -79,10 +76,6 @@ sub install_tiddit {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -120,39 +113,30 @@ sub install_tiddit {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install TIDDIT};
+    $log->info(qq{Writing instructions for TIDDIT installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $tiddit_dir    = catdir( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version );
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    my $tiddit_dir = catdir( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version );
+    check_existing_installation(
         {
             program_directory_path => $tiddit_dir,
             program_name           => q{TIDDIT},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            noupdate               => $noupdate,
             log                    => $log,
             FILEHANDLE             => $FILEHANDLE,
         }
     );
 
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Move to miniconda environment
     gnu_cd(
@@ -295,18 +279,13 @@ sub install_tiddit {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }
