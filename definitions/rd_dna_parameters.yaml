@@ -1701,10 +1701,10 @@ snpsift_annotation_files:
    - snpeff
   data_type: HASH
   default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: AF
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: AF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: AF
+     grch37_clinvar_reformated_-20190305-.vcf.gz: CLNSIG,CLNVID,CLNREVSTAT
+     grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
+     grch37_loqusdb_snv_indel_-2018-12-18-.vcf.gz: Obs,Hom
+     grch37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
   exists_check: file
   reference: reference_dir
   type: path
@@ -1713,10 +1713,7 @@ snpsift_annotation_outinfo_key:
    - snpeff
   data_type: HASH
   default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
+     grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
   exists_check: file
   reference: reference_dir
   type: path
