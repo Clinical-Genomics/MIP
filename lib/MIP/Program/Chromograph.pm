@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Rhocall;
+package MIP::Program::Chromograph;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,24 +25,23 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ rhocall_aggregate rhocall_annotate };
+    our @EXPORT_OK = qw{ chromograph_roh chromograph_upd };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
+sub chromograph_roh {
 
-sub rhocall_aggregate {
-
-## Function : Perl wrapper for writing rhocall aggregate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
+## Function : Perl wrapper for chromograph roh.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $infile_path            => Infile path to read from
-##          : $outfile_path           => Outfile path to write to
+##          : $infile_path            => Infile path
+##          : $normalize              => Normalize to mean
+##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
@@ -49,9 +49,11 @@ sub rhocall_aggregate {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-    my $outfile_path;
+    my $normalize;
+    my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdinfile_path;
     my $stdoutfile_path;
 
     my $tmpl = {
@@ -59,12 +61,21 @@ sub rhocall_aggregate {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            defined     => 1,
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
-        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        normalize => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$normalize,
+            strict_type => 1,
+        },
+        outdir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdir_path,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -73,6 +84,7 @@ sub rhocall_aggregate {
             store       => \$stderrfile_path_append,
             strict_type => 1,
         },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
             strict_type => 1,
@@ -82,22 +94,23 @@ sub rhocall_aggregate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ rhocall aggregate };
-
-    ## Options
-    if ($outfile_path) {
-
-        push @commands, q{--output} . $SPACE . $outfile_path;
-    }
+    my @commands = qw{ chromograph --roh };
 
     push @commands, $infile_path;
+
+    if ($normalize) {
+        push @commands, q{--normalize};
+    }
+
+    push @commands, q{--outd} . $SPACE . $outdir_path;
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -112,47 +125,43 @@ sub rhocall_aggregate {
     return @commands;
 }
 
-sub rhocall_annotate {
+sub chromograph_upd {
 
-## Function : Perl wrapper for writing rhocall annotate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
+## Function : Perl wrapper for chromograph upd.
 ## Returns  : @commands
-## Arguments: $bedfile_path           => BED file with AZ windows
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $infile_path            => Infile path to read from
-##          : $outfile_path           => Outfile path to write to
-##          : $rohfile_path           => Rho style bcftools file
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $v14                    => Bcftools v1.4 or newer roh file including RG calls
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bedfile_path;
     my $FILEHANDLE;
     my $infile_path;
-    my $outfile_path;
-    my $rohfile_path;
+    my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdinfile_path;
     my $stdoutfile_path;
-    my $v14;
 
     my $tmpl = {
-        bedfile_path => { store => \$bedfile_path, strict_type => 1, },
-        FILEHANDLE   => {
+        FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            defined     => 1,
-            required    => 1,
-            strict_type => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
-        outfile_path    => { store => \$outfile_path, strict_type => 1, },
-        rohfile_path    => { store => \$rohfile_path, strict_type => 1, },
+        outdir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdir_path,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -161,53 +170,29 @@ sub rhocall_annotate {
             store       => \$stderrfile_path_append,
             strict_type => 1,
         },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-        v14 => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$v14,
-            strict_type => 1,
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ rhocall annotate };
-
-    ## Options
-    if ($v14) {
-
-        push @commands, q{--v14} . $SPACE;
-    }
-
-    if ($rohfile_path) {
-
-        push @commands, q{-r} . $SPACE . $rohfile_path;
-    }
-
-    if ($bedfile_path) {
-
-        push @commands, q{-b} . $SPACE . $bedfile_path;
-    }
-
-    if ($outfile_path) {
-
-        push @commands, q{--output} . $SPACE . $outfile_path;
-    }
+    my @commands = qw{ chromograph --upd };
 
     push @commands, $infile_path;
+
+    push @commands, q{--outd} . $SPACE . $outdir_path;
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -221,5 +206,4 @@ sub rhocall_annotate {
     );
     return @commands;
 }
-
 1;

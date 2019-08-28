@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Develop
+
+**Tools**
+- upd: 0.1
+- rhocall: 0.4 -> 0.5.1
+- chromograph
+
 ##[7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
 
