@@ -621,12 +621,17 @@ sub read_infile_vcf {
         }
 
         ## Add until INFO field or end of line
-        if ( $vcf_record{select_transcripts} ) {
-
-            print {$SELECT_FH} join( $TAB, @line_elements[ 0 .. $last_index ] ),
-              $last_separator;
-        }
-        print {*STDOUT} join( $TAB, @line_elements[ 0 .. $last_index ] ), $last_separator;
+        write_line_elements(
+            {
+                FILEHANDLE        => *STDOUT,
+                last_index        => $last_index,
+                last_separator    => $last_separator,
+                line_elements_ref => \@line_elements,
+                SELECT_FH         => $SELECT_FH,
+                start_index       => 0,
+                vcf_record_href   => \%vcf_record,
+            }
+        );
 
         if ($parse_vep) {
 
@@ -673,13 +678,19 @@ sub read_infile_vcf {
             }
 
             ## After INFO to the final column
-            if ( $vcf_record{select_transcripts} ) {
+            write_line_elements(
+                {
+                    FILEHANDLE        => *STDOUT,
+                    first_separator   => $TAB,
+                    last_index        => $#line_elements,
+                    last_separator    => $NEWLINE,
+                    line_elements_ref => \@line_elements,
+                    SELECT_FH         => $SELECT_FH,
+                    start_index       => $FORMAT_COLUMN_INDEX,
+                    vcf_record_href   => \%vcf_record,
+                }
+            );
 
-                say {$SELECT_FH} $TAB, join $TAB,
-                  @line_elements[ $FORMAT_COLUMN_INDEX .. $#line_elements ];
-            }
-            say {*STDOUT} $TAB, join $TAB,
-              @line_elements[ $FORMAT_COLUMN_INDEX .. $#line_elements ];
         }
     }
     if ($select_feature_file) {

@@ -18,7 +18,7 @@ use Set::IntervalTree;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $COLON $COMMA $EQUALS $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
+  qw{ $AMPERSAND $COLON $COMMA $EMPTY_STR $EQUALS $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -47,6 +47,7 @@ BEGIN {
       set_most_severe_pli
       write_feature_file_csq
       write_info_field
+      write_line_elements
       write_meta_data
     };
 }
@@ -1391,6 +1392,87 @@ sub write_info_field {
         $info_field_counter++;
     }
     return $info_field_counter;
+}
+
+sub write_line_elements {
+
+## Function : Writes metadata to filehandle specified by order in meta_data_sections.
+## Returns  :
+## Arguments: $FILEHANDLE        => The filehandle to write to
+##          : $first_separator   => Separator to write before start index
+##          : $last_index        => Last element index to write of line array
+##          : $last_separator    => Separator to write after last index
+##          : $line_elements_ref => Vcf record line
+##          : $start_index       => Start element index to write of line array
+##          : $SELECT_FH         => The select filehandle to write to {Optional}
+##          : $vcf_record_href   => Hash for vcf data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $first_separator;
+    my $last_index;
+    my $last_separator;
+    my $line_elements_ref;
+    my $SELECT_FH;
+    my $start_index;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        first_separator => {
+            allow       => [ $EMPTY_STR, $TAB ],
+            default     => $EMPTY_STR,
+            store       => \$first_separator,
+            strict_type => 1,
+        },
+        last_index => {
+            allow       => qr{ \A \d+ \z }xsm,
+            store       => \$last_index,
+            strict_type => 1,
+        },
+        last_separator => {
+            allow       => [ $TAB, $NEWLINE ],
+            default     => $NEWLINE,
+            store       => \$last_separator,
+            strict_type => 1,
+        },
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        SELECT_FH   => { store => \$SELECT_FH, },
+        start_index => {
+            allow       => qr{ \A \d+ \z }xsm,
+            default     => 0,
+            store       => \$start_index,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    print {$FILEHANDLE} $first_separator,
+      join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ), $last_separator;
+
+    return if ( not $vcf_record_href->{select_transcripts} );
+
+    print {$SELECT_FH} $first_separator,
+      join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ),
+      $last_separator;
+
+    return;
 }
 
 sub write_meta_data {
