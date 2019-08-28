@@ -213,7 +213,7 @@ sub install_rhocall {
     pip_install(
         {
             FILEHANDLE   => $FILEHANDLE,
-            packages_ref => [qw{ numpy Cython matplotlib }],
+            packages_ref => [qw{ numpy Cython }],
             quiet        => $quiet,
         }
     );

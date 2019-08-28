@@ -42,6 +42,8 @@ emip:
     plink2:
       version: 171013
     rhocall:
+      conda_dependency: 
+        matplotlib:
       version: 0.5.1
     sambamba:
       version: 0.6.1
