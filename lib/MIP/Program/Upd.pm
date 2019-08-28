@@ -36,12 +36,12 @@ sub upd_call {
 ## Function : Perl wrapper for upd calls. Based on upd version 0.1
 ## Returns  : @commands
 ## Arguments: $call_type              => Output regions or sites
-##          : $father_id              => Sample ID in vcf
+##          : $father_id              => Father ID in vcf
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Path to infile vcf
-##          : $mother_id              => Sample ID in vcf
+##          : $mother_id              => Mother ID in vcf
 ##          : $outfile_path           => Path to outfile
-##          : $proband_id             => Sample ID in vcf
+##          : $proband_id             => Proband ID in vcf
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
