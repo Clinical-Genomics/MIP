@@ -428,6 +428,7 @@ sub read_infile_vcf {
       parse_vep_csq_schema
       write_feature_file_csq
       write_info_field
+      write_line_elements
       write_meta_data
     };
 
