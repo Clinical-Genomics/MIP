@@ -897,6 +897,9 @@ sub parse_vep_csq_transcripts {
             and $transcript_csq{hgnc_id} )
         {
 
+            ## VEP CSQ HGNC_ID format changed from grch37 "\d+" to grch38 "HGNC:\d+"
+            $transcript_csq{hgnc_id} =~ s/HGNC://sxmg;
+
             ## Set symbol to hgnc map
             $hgnc_map_href->{ $transcript_csq{hgnc_id} } = $transcript_csq{hgnc_symbol};
 
