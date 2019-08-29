@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_dbnsfp };
@@ -369,7 +369,8 @@ sub _reformat_for_grch37 {
     say {$FILEHANDLE} $NEWLINE;
 
     say {$FILEHANDLE} q{## Compress and index file};
-## Compress file
+
+    ## Compress file
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -379,7 +380,7 @@ sub _reformat_for_grch37 {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-## Index file using tabix
+    ## Index file using tabix
     htslib_tabix(
         {
             begin       => $GRCH37_REGION_POS,
@@ -444,11 +445,16 @@ sub _reformat_dbnsfp {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Program::Compression::Gzip qw{ gzip };
+
     ## Read files
-    gnu_cat(
+    gzip(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => [$infile_path],
+            decompress  => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $infile_path,
+            stdout      => 1,
         }
     );
     say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
@@ -466,7 +472,8 @@ sub _reformat_dbnsfp {
     say {$FILEHANDLE} $NEWLINE;
 
     say {$FILEHANDLE} q{## Compress and index file};
-## Compress file
+
+    ## Compress file
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -475,7 +482,7 @@ sub _reformat_dbnsfp {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-## Index file using tabix
+    ## Index file using tabix
     htslib_tabix(
         {
             begin       => $GRCH38_REGION_POS,
