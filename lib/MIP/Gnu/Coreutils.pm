@@ -19,7 +19,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $EMPTY_STR $SPACE };
+use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -1240,6 +1240,7 @@ sub gnu_sort {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $temporary_directory    => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -1251,6 +1252,7 @@ sub gnu_sort {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $temporary_directory;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -1283,6 +1285,10 @@ sub gnu_sort {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        temporary_directory => {
+            store       => \$temporary_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1295,6 +1301,10 @@ sub gnu_sort {
         push @commands, q{--key} . $SPACE . join $SPACE . q{--key} . $SPACE, @{$keys_ref};
     }
 
+    if ($temporary_directory) {
+
+        push @commands, q{--temporary-directory} . $EQUALS . $temporary_directory;
+    }
     ## Infile
     if ($infile_path) {
         push @commands, $infile_path;

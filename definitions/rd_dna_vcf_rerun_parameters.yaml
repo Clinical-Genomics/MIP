@@ -571,6 +571,14 @@ vep_plugins:
    - LoFtool
    - MaxEntScan
   type: recipe_argument
+vep_plugin_dbNSFP_file_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 vep_plugin_pli_value_file_path:
   associated_recipe:
     - varianteffectpredictor

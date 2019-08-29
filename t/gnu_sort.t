@@ -103,6 +103,10 @@ my %specific_argument = (
         input           => q{outfile.test},
         expected_output => q{> outfile.test},
     },
+    temporary_directory => {
+        input           => q{temp_dir},
+        expected_output => q{--temporary-directory=temp_dir},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
