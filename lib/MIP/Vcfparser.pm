@@ -47,6 +47,7 @@ BEGIN {
       set_most_severe_pli
       write_feature_file_csq
       write_info_field
+      write_info_addition_fields
       write_line_elements
       write_meta_data
     };
@@ -1326,6 +1327,60 @@ sub write_feature_file_csq {
     $info_field_counter++;
 
     return $info_field_counter;
+}
+
+sub write_info_addition_fields {
+
+## Function : Write info addition fields of vcf record to feature files
+## Returns  :
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        SELECT_FH       => { store   => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @info_addition_keys =
+      qw( INFO_addition INFO_addition_range_feature INFO_addition_select_feature );
+
+  INFO_ADDITION_KEY:
+    foreach my $info_addition_key (@info_addition_keys) {
+
+      INFO_KEY:
+        foreach my $key ( keys %{ $vcf_record_href->{$info_addition_key} } ) {
+
+            my $info_string =
+              $SEMICOLON . $key . $EQUALS . $vcf_record_href->{$info_addition_key}{$key};
+            print {$FILEHANDLE} $info_string;
+
+            ## Never to select file for this info addition key
+            next INFO_KEY if ( $info_addition_key eq q{INFO_addition_range_feature} );
+
+            ## Write to select file
+            next INFO_KEY if ( not $vcf_record_href->{select_transcripts} );
+
+            print {$SELECT_FH} $info_string;
+        }
+    }
+    return;
 }
 
 sub write_info_field {

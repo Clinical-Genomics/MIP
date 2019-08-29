@@ -427,6 +427,7 @@ sub read_infile_vcf {
       parse_vep_csq
       parse_vep_csq_schema
       write_feature_file_csq
+      write_info_addition_fields
       write_info_field
       write_line_elements
       write_meta_data
@@ -654,29 +655,13 @@ sub read_infile_vcf {
                 }
             );
 
-            foreach my $key ( keys %{ $vcf_record{INFO_addition} } ) {
-
-                if ( $vcf_record{select_transcripts} ) {
-
-                    print {$SELECT_FH} $SEMICOLON . $key . $EQUALS
-                      . $vcf_record{INFO_addition}{$key};
+            write_info_addition_fields(
+                {
+                    FILEHANDLE      => *STDOUT,
+                    SELECT_FH       => $SELECT_FH,
+                    vcf_record_href => \%vcf_record,
                 }
-                print {*STDOUT} $SEMICOLON . $key . $EQUALS
-                  . $vcf_record{INFO_addition}{$key};
-            }
-            if ( $vcf_record{select_transcripts} ) {
-
-                foreach my $key ( keys %{ $vcf_record{INFO_addition_select_feature} } ) {
-
-                    print {$SELECT_FH} $SEMICOLON . $key . $EQUALS
-                      . $vcf_record{INFO_addition_select_feature}{$key};
-                }
-            }
-            foreach my $key ( keys %{ $vcf_record{INFO_addition_range_feature} } ) {
-
-                print {*STDOUT} $SEMICOLON . $key . $EQUALS
-                  . $vcf_record{INFO_addition_range_feature}{$key};
-            }
+            );
 
             ## After INFO to the final column
             write_line_elements(
