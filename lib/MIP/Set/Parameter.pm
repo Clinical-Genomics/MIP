@@ -215,9 +215,11 @@ sub set_custom_default_to_active_parameter {
         select_programs                => \&_set_uninitialized_parameter,
         shell_install                  => \&_set_uninitialized_parameter,
         skip_programs                  => \&_set_uninitialized_parameter,
-        star_aln_reference_genome      => \&_set_human_genome,
         snpeff_path                    => \&_set_dynamic_path,
+        star_aln_reference_genome      => \&_set_human_genome,
+        sv_vcfparser_select_file       => \&_set_vcfparser_select_file,
         temp_directory                 => \&_set_temp_directory,
+        vcfparser_select_file          => \&_set_vcfparser_select_file,
         vep_directory_path             => \&_set_dynamic_path,
     );
 
@@ -1470,6 +1472,43 @@ sub _set_infile_dirs {
 
         $active_parameter_href->{$parameter_name}{$path} = $sample_id;
     }
+    return;
+}
+
+sub _set_vcfparser_select_file {
+
+## Function : Set default vcfparser select file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for vcfparser select file
+    my $path = catfile(
+        $active_parameter_href->{cluster_constant_path},
+        $active_parameter_href->{case_id},
+        q{gene_panel.bed}
+    );
+
+    $active_parameter_href->{$parameter_name} = $path;
     return;
 }
 

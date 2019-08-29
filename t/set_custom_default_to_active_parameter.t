@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,8 +110,16 @@ foreach my $definition_file (@definition_files) {
 }
 
 ## Given custom default parameters
-my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file temp_directory };
+my @custom_default_parameters = qw{ analysis_type
+  bwa_build_reference
+  exome_target_bed
+  infile_dirs
+  reference_dir
+  rtg_vcfeval_reference_genome
+  sample_info_file
+  sv_vcfparser_select_file
+  temp_directory
+  vcfparser_select_file };
 
 PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
@@ -125,28 +133,51 @@ foreach my $parameter_name (@custom_default_parameters) {
     );
 }
 
+my $vcfparser_select_file_path = catfile(
+    $active_parameter{cluster_constant_path},
+    $active_parameter{case_id},
+    q{gene_panel.bed}
+);
+
+my %expected_default = (
+    bwa_build_reference => {
+        default    => $active_parameter{human_genome_reference},
+        test_label => q{Set human_genome_reference default for bwa},
+    },
+    reference_dir => {
+        default    => cwd(),
+        test_label => q{Set reference_dir default },
+    },
+    rtg_vcfeval_reference_genome => {
+        default => $active_parameter{human_genome_reference},
+        test_label =>
+          q{Set human_genome_reference default for rtg vcfeval reference genome},
+    },
+    sv_vcfparser_select_file => {
+        default    => $vcfparser_select_file_path,
+        test_label => q{Set sv_vcfparser_select_file default },
+    },
+    temp_directory => {
+        default    => catfile( $active_parameter{outdata_dir}, q{$SLURM_JOB_ID} ),
+        test_label => q{Set temp_directory default },
+    },
+    vcfparser_select_file => {
+        default    => $vcfparser_select_file_path,
+        test_label => q{Set vcfparser_select_file default },
+    },
+);
+
 ## Then the defaults should be set for each parameter given
 is( $active_parameter{analysis_type}{sample_1}, q{wgs}, q{Set analysis_type default} );
 
-is(
-    $active_parameter{bwa_build_reference},
-    $active_parameter{human_genome_reference},
-    q{Set human_genome_reference default for bwa}
-);
+while ( my ( $parameter_name, $meta_data_href ) = each %expected_default ) {
 
-is(
-    $active_parameter{rtg_vcfeval_reference_genome},
-    $active_parameter{human_genome_reference},
-    q{Set human_genome_reference default for rtg vcfeval reference genome}
-);
-
-is( $active_parameter{reference_dir}, cwd(), q{Set reference_dir default } );
-
-is(
-    $active_parameter{temp_directory},
-    catfile( $active_parameter{outdata_dir}, q{$SLURM_JOB_ID} ),
-    q{Set temp_directory default }
-);
+    is(
+        $active_parameter{$parameter_name},
+        $meta_data_href->{default},
+        $meta_data_href->{test_label}
+    );
+}
 
 ## Given an download pipe
 $active_parameter{download_pipeline_type} = q{rd_dna};
