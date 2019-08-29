@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -179,8 +179,6 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
-    use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
-      qw{ analysis_picardtools_genotypeconcordance };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
@@ -257,7 +255,6 @@ sub pipeline_analyse_rd_dna {
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
-        evaluation                  => \&analysis_picardtools_genotypeconcordance,
         fastqc_ar                   => \&analysis_fastqc,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,

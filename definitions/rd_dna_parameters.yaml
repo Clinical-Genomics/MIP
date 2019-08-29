@@ -152,7 +152,6 @@ recipe_core_number:
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
-    evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
     frequency_filter: 13
@@ -248,7 +247,6 @@ recipe_time:
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    evaluation: 3
     expansionhunter: 2
     fastqc_ar: 10
     frequency_filter: 2
@@ -1804,22 +1802,9 @@ rtg_vcfeval_reference_genome:
   exists_check: directory
   reference: reference_dir
   type: path
-evaluation:
-  analysis_mode: sample
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _genotypeconc
-  outfile_suffix: ".vcf"
-  program_executables:
-   - gzip
-   - bcftools
-  type: recipe
 nist_call_set_vcf:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   default:
    2.19:
     NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
@@ -1832,7 +1817,6 @@ nist_call_set_vcf:
 nist_call_set_bed:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   default: 
    2.19: 
     NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
@@ -1845,13 +1829,11 @@ nist_call_set_bed:
 nist_id:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: HASH
   type: recipe_argument
 nist_versions:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: ARRAY
   default:
    - 2.19
