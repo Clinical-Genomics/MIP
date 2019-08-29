@@ -253,7 +253,7 @@ $ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-  Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers needs to be downloaded manually and the executable together with the path to the containers must be specified in the config. The flag `--with_singularity` needs to be added to the command line, which will tell MIP to favour singularity containers over conda environments. By default MIP will bind the all the standard directories neccessary for the analysis. Non-standard directories can be added to the key `extra_bind_paths`. 
+  Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers needs to be downloaded manually and the executable together with the path to the containers must be specified in the config. The flag `--with_singularity` needs to be added to the command line, which will tell MIP to favour singularity containers over conda environments. By default MIP will bind all the standard directories neccessary for the analysis. Non-standard directories can be added to the key `extra_bind_paths`. 
 
 In the example below the config has been modified to use a singularity container for running TIDDIT:
   ```Yml
