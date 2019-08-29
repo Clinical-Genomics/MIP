@@ -67,7 +67,7 @@ my $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda } );
 
 my %installation = load_yaml(
     {
-        yaml_file => catfile($Bin, qw{ .. templates mip_install_rd_dna_config_-1.0-.yaml }),
+        yaml_file => catfile(dirname($Bin), qw{ templates mip_install_rd_dna_config_-1.0-.yaml }),
     }
 );
 my $rhocall_version = $installation{emip}{shell}{rhocall}{version};
