@@ -21,6 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -61,8 +62,16 @@ diag(   q{Test check_pip_package from Pip.pm v}
 Readonly my $TRAVIS_TESTS => 4;
 
 my $conda_environment = q{mip_travis_svdb};
-my $version           = q{2.0.0};
 my $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda } );
+
+
+my %installation = load_yaml(
+    {
+        yaml_file => catfile(dirname($Bin), qw{ templates mip_install_rd_dna_config_-1.0-.yaml }),
+    }
+);
+my $rhocall_version = $installation{emip}{shell}{rhocall}{version};
+my $svdb_version = $installation{esvdb}{shell}{svdb}{version};
 
 ## Only run on travis
 SKIP: {
@@ -75,7 +84,7 @@ SKIP: {
             conda_environment => $conda_environment,
             conda_prefix_path => $conda_prefix_path,
             package           => q{svdb},
-            version           => $version,
+            version           => $svdb_version,
         }
     );
     ## Then return 1
@@ -87,7 +96,7 @@ SKIP: {
             conda_environment => $conda_environment,
             conda_prefix_path => $conda_prefix_path,
             package           => q{svdb},
-            version           => q{0.0.5},
+            version           => q{1.2.3.4},
         }
     );
     ## Then return undef
@@ -99,7 +108,7 @@ SKIP: {
             conda_environment => $conda_environment,
             conda_prefix_path => $conda_prefix_path,
             package           => q{testing_mip},
-            version           => $version,
+            version           => $rhocall_version,
         }
     );
     ## Then return undef
@@ -109,7 +118,7 @@ SKIP: {
     my $is_ok = check_pip_package(
         {
             package => q{rhocall},
-            version => q{0.1},
+            version => $rhocall_version,
         }
     );
     ## Then return true
@@ -122,7 +131,7 @@ my $not_a_conda_env = check_pip_package(
         conda_environment => q{testing_mip},
         conda_prefix_path => $conda_prefix_path,
         package           => q{svdb},
-        version           => $version,
+        version           => $svdb_version,
     }
 );
 
