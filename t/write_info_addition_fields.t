@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Vcfparser}      => [qw{ write_info_field }],
+        q{MIP::Vcfparser}      => [qw{ write_info_addition_fields }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Vcfparser qw{ write_info_field };
+use MIP::Vcfparser qw{ write_info_addition_fields };
 
-diag(   q{Test write_info_field from Vcfparser.pm v}
+diag(   q{Test write_info_addition_fields from Vcfparser.pm v}
       . $MIP::Vcfparser::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -86,21 +86,27 @@ my $range_csq  = join $PIPE,      qw{ a range_transcript };
 my $select_csq = join $PIPE,      qw{ a select_transcript };
 my $info       = join $SEMICOLON, qw{ AF=0.4 IMPRECISE most_severe_pli=1 };
 my %vcf_record = (
-    INFO_key_value => {
+    INFO_addition => {
         AF              => 1,
-        IMPRECISE       => undef,
+        most_severe_pli => 1,
+    },
+    INFO_addition_select_feature => {
+        SELECT_AF       => 1,
+        most_severe_pli => 1,
+    },
+    INFO_addition_range_feature => {
+        RANGE_AF        => 1,
         most_severe_pli => 1,
     },
     range_transcripts  => [$range_csq],
     select_transcripts => [$select_csq],
 );
 
-my $info_field_counter = write_info_field(
+write_info_addition_fields(
     {
-        FILEHANDLE         => $FILEHANDLE,
-        info_field_counter => 1,
-        SELECT_FH          => $SELECT_FH,
-        vcf_record_href    => \%vcf_record,
+        FILEHANDLE      => $FILEHANDLE,
+        SELECT_FH       => $SELECT_FH,
+        vcf_record_href => \%vcf_record,
     }
 );
 
@@ -108,55 +114,22 @@ my $info_field_counter = write_info_field(
 close $FILEHANDLE;
 close $SELECT_FH;
 
-## Then write info field with ";" first
-my ($ret_range_info) = $range_file_content =~ /\A [;] /msx;
-ok( $ret_range_info, q{Wrote range info fields starting with ";"} );
-my ($ret_select_info) = $select_file_content =~ /\A [;] /msx;
-ok( $ret_select_info, q{Wrote select info fields starting with ";"} );
+my $expected_info_add_content     = q{[;]AF=1};
+my $expected_info_add_sel_content = q{[;]SELECT_AF=1};
+my $expected_info_add_ran_content = q{[;]RANGE_AF=1};
 
-## Given a feature files and INFO field when INFO counter is greater than 0
-# Clear file from previous test
-$range_file_content  = undef;
-$select_file_content = undef;
+## Then write info addition field to feature files
+my ($ret_range_info) = $range_file_content =~ / $expected_info_add_content /msx;
+ok( $ret_range_info, q{Wrote range info addition field to range file} );
+my ($ret_select_info) = $select_file_content =~ / $expected_info_add_content /msx;
+ok( $ret_select_info, q{Wrote select info addition field to select file} );
 
-## Store range feature file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$range_file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $range_file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+## Then write info addition select field to feature file
+($ret_select_info) = $select_file_content =~ / $expected_info_add_sel_content /msx;
+ok( $ret_select_info, q{Wrote select info addition select field to select file} );
 
-## Store select file content in memory by using referenced variable
-open $SELECT_FH, q{>}, \$select_file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $select_file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
-
-$info_field_counter = write_info_field(
-    {
-        FILEHANDLE         => $FILEHANDLE,
-        info_field_counter => 0,
-        SELECT_FH          => $SELECT_FH,
-        vcf_record_href    => \%vcf_record,
-    }
-);
-
-## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
-
-## Then write info field with key first
-($ret_range_info) = $range_file_content !~ /\A [;] /msx;
-ok( $ret_range_info, q{Wrote range info fields starting with key} );
-($ret_select_info) = $select_file_content =~ / IMPRECISE /msx;
-ok( $ret_select_info, q{Wrote select info fields starting with key} );
-
-## Then increment info_field_counter
-ok( $info_field_counter, q{Incremented info field counter} );
+## Then write info addition range field to feature file
+($ret_range_info) = $range_file_content =~ / $expected_info_add_ran_content /msx;
+ok( $ret_range_info, q{Wrote range info addition range field to range file} );
 
 done_testing();
