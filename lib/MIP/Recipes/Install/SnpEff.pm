@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_snpeff check_mt_codon_table };
@@ -47,7 +47,6 @@ sub install_snpeff {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with SnpEff specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -58,7 +57,6 @@ sub install_snpeff {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $snpeff_parameters_href;
     my $verbose;
@@ -78,10 +76,6 @@ sub install_snpeff {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -120,6 +114,7 @@ sub install_snpeff {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install SnpEff};
+    $log->info(qq{Writing instructions for SnpEff installation via SHELL});
 
     my $snpeff_install_path =
       catfile( $conda_prefix_path, qw{ share snpEff }, $snpeff_version );
@@ -127,15 +122,6 @@ sub install_snpeff {
     # Check if snpEff.jar exists (assumes that snpSift also exists if true)
     if ( -f catfile( $snpeff_install_path, q{snpEff.jar} ) ) {
         $log->info(q{SnpEff is already installed in the specified conda environment.});
-
-        if ($noupdate) {
-            $log->info(q{Skipping writting installation instructions for SnpEffi});
-            say {$FILEHANDLE}
-              q{## Skipping writting installation instructions for SnpEff};
-            say {$FILEHANDLE} $NEWLINE;
-
-            return;
-        }
 
         $log->warn(q{This will overwrite the current SnpEff installation.});
 
@@ -162,8 +148,6 @@ sub install_snpeff {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-
-    $log->info(q{Writing instructions for SnpEff installation via SHELL});
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary SnpEff install directory};

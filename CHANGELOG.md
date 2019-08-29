@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
 
+**CLI**
+- Removes the noupdate option from the installation
+
 **Tools**
 - upd: 0.1
 - rhocall: 0.4 -> 0.5.1

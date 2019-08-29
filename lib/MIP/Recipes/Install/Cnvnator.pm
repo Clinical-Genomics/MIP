@@ -38,7 +38,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cnvnator };
@@ -51,7 +51,6 @@ sub install_cnvnator {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with CNVnator specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -63,7 +62,6 @@ sub install_cnvnator {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $verbose;
 
@@ -82,10 +80,6 @@ sub install_cnvnator {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            strict_type => 1,
-            store       => \$noupdate,
         },
         program_parameters_href => {
             default     => {},
@@ -124,69 +118,56 @@ sub install_cnvnator {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install CNVnator/ROOT};
+    $log->info(qq{Writing instructions for CNVnator/ROOT installation via SHELL});
 
-    ## Check if ROOT (CNVnator requirement) installation exists
-    ## and remove directory unless a noupdate flag is provided
-    my $root_bin_dir       = catdir( $conda_prefix_path, q{root} );
-    my $root_install_check = check_existing_installation(
+    ## Check if ROOT (CNVnator requirement) installation exists and remove directory
+    my $root_bin_dir = catdir( $conda_prefix_path, q{root} );
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $root_bin_dir,
             program_name           => q{ROOT (CNVnator prequisite)},
         }
     );
 
-    ## Install Root if the directory is missing
-    if ( not $root_install_check ) {
-        install_root(
-            {
-                conda_prefix_path => $conda_prefix_path,
-                FILEHANDLE        => $FILEHANDLE,
-                quiet             => $quiet,
-                root_binary       => $cnvnator_root_binary,
-                verbose           => $verbose,
-            }
-        );
-    }
+    ## Install Root
+    install_root(
+        {
+            conda_prefix_path => $conda_prefix_path,
+            FILEHANDLE        => $FILEHANDLE,
+            quiet             => $quiet,
+            root_binary       => $cnvnator_root_binary,
+            verbose           => $verbose,
+        }
+    );
 
     say {$FILEHANDLE} q{## Install CNVnator};
 
-    ## Check if CNVnator installation exists and remove directory unless a noupdate flag is provided
-    my $cnvnator_bin_dir       = catdir( $conda_prefix_path, q{CNVnator} );
-    my $cnvnator_install_check = check_existing_installation(
+    ## Check if CNVnator installation exists and remove directory
+    my $cnvnator_bin_dir = catdir( $conda_prefix_path, q{CNVnator} );
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $cnvnator_bin_dir,
             program_name           => q{CNVnator},
         }
     );
 
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($cnvnator_install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary CNVnator install directory};
@@ -341,17 +322,13 @@ sub install_cnvnator {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }

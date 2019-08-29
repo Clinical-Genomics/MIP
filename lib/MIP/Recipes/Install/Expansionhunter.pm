@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_expansionhunter };
@@ -42,7 +42,6 @@ sub install_expansionhunter {
 ## Arguments: $program_parameters_href => Hash with Expansion Hunter specific parameters {REF}
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $conda_environment       => Conda environment
-##          : $noupdate                => Do not update
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
 ##          : $FILEHANDLE              => Filehandle to write to
@@ -53,7 +52,6 @@ sub install_expansionhunter {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $expansionhunter_parameters_href;
     my $verbose;
@@ -73,10 +71,6 @@ sub install_expansionhunter {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -112,28 +106,22 @@ sub install_expansionhunter {
     );
 
     say {$FILEHANDLE} q{### Install Expansion Hunter};
+    $log->info(qq{Writing instructions for Expansion Hunter installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    ## Check if installation exists and remove directory
     my $expansionhunter_dir =
       catdir( $conda_prefix_path, q{share},
         q{ExpansionHunter-v} . $expansionhunter_version . q{-linux_x86_64} );
-    my $install_check = check_existing_installation(
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $expansionhunter_dir,
             program_name           => q{Expansion Hunter},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Download
     say {$FILEHANDLE} q{## Download Expansion Hunter};

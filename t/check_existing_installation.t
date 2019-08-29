@@ -25,7 +25,7 @@ use MIP::Constants qw{$COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,23 +71,6 @@ my $log               = test_log( {} );
 my $program_directory_path =
   catdir( $conda_prefix_path, qw{ envs test_env share snpeff } );
 
-## Given existing installation together with no update
-trap {
-    check_existing_installation(
-        {
-            conda_environment      => q{test_env},
-            conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
-            log                    => $log,
-            noupdate               => 1,
-            program_directory_path => $program_directory_path,
-            program_name           => q{Snpeff},
-        }
-    );
-};
-## Then don't write installation instructions
-like( $trap->stderr, qr/Skipping\swriting/xms, q{No update flag} );
-
 ## Given existing installation
 trap {
     check_existing_installation(
@@ -96,7 +79,6 @@ trap {
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => 0,
             program_directory_path => $program_directory_path,
             program_name           => q{Snpeff},
         }
@@ -104,6 +86,30 @@ trap {
 };
 close $FILEHANDLE;
 ## Then overwrite
-like( $trap->stderr, qr/Writing\sinstructions/xms, q{Log message} );
+like( $trap->stderr, qr/WARN/xms, q{Warn when installation exists} );
 like( $file_content, qr/Removing\sold\sSnpeff/xms, q{Write instructions to file} );
+
+## Store file content in memory by using referenced variable
+open $FILEHANDLE, q{>}, \$file_content
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
+
+$program_directory_path =
+  catdir( $conda_prefix_path, qw{ envs test_env share dummy_program } );
+
+## Given non-existing installation
+my $is_installed = check_existing_installation(
+    {
+        conda_environment      => q{test_env},
+        conda_prefix_path      => $conda_prefix_path,
+        FILEHANDLE             => $FILEHANDLE,
+        log                    => $log,
+        program_directory_path => $program_directory_path,
+        program_name           => q{dummy_program},
+    }
+);
+close $FILEHANDLE;
+
+## Then return 0
+is( $is_installed, 0, q{Return 0 when not installed} );
+
 done_testing();

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,13 +36,12 @@ BEGIN {
 sub check_existing_installation {
 
 ## Function : Checks if the program has already been installed and optionally removes the current installation.
-##          : Returns "1" if the program is found and a noupdate flag has been provided
+##          : Returns "1" if the program is found
 ## Returns  : $install_check
 ## Arguments: $conda_environment      => Conda environment
 ##          : $conda_prefix_path      => Path to conda environment
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $log                    => Log to write messages to
-##          : $noupdate               => Do not update
 ##          : $program_directory_path => Path to program directory
 ##          : $program_name           => Program name
 
@@ -53,7 +52,6 @@ sub check_existing_installation {
     my $conda_prefix_path;
     my $FILEHANDLE;
     my $log;
-    my $noupdate;
     my $program_directory_path;
     my $program_name;
 
@@ -80,11 +78,6 @@ sub check_existing_installation {
             store       => \$conda_environment,
             strict_type => 1,
         },
-        noupdate => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$noupdate,
-            strict_type => 1,
-        },
         FILEHANDLE => {
             defined  => 1,
             required => 1,
@@ -103,51 +96,39 @@ sub check_existing_installation {
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Gnu::Findutils qw{ gnu_find };
 
-    ## Check if installation directory exists
-    if ( -d $program_directory_path ) {
-        $log->info( $program_name
-              . $SPACE
-              . q{is already installed in conda environment: }
-              . $conda_environment );
+    ## Return if directory dosen't exist
+    return 0 if ( not -d $program_directory_path );
 
-        if ($noupdate) {
-            $log->info(
-                q{Skipping writing installation instructions for } . $program_name );
-            say {$FILEHANDLE} q{## Skipping writing installation instructions for }
-              . $program_name;
-            say {$FILEHANDLE} $NEWLINE;
+    ## Warn and write instructions to remove program
+    $log->info( $program_name
+          . $SPACE
+          . q{is already installed in conda environment: }
+          . $conda_environment );
+    $log->warn(qq{This will overwrite the current $program_name installation});
 
-            return 1;
+    say {$FILEHANDLE} qq{## Removing old $program_name directory};
+    gnu_rm(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $program_directory_path,
+            recursive   => 1,
         }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        $log->warn(qq{This will overwrite the current $program_name installation});
+    say {$FILEHANDLE} qq{## Removing old $program_name links};
+    gnu_find(
+        {
+            action        => q{-delete},
+            FILEHANDLE    => $FILEHANDLE,
+            search_path   => catdir( $conda_prefix_path, q{bin} ),
+            test_criteria => q{-xtype l},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        say {$FILEHANDLE} qq{## Removing old $program_name directory};
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => $program_directory_path,
-                recursive   => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        say {$FILEHANDLE} qq{## Removing old $program_name links};
-        gnu_find(
-            {
-                action        => q{-delete},
-                FILEHANDLE    => $FILEHANDLE,
-                search_path   => catdir( $conda_prefix_path, q{bin} ),
-                test_criteria => q{-xtype l},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    $log->info(qq{Writing instructions for $program_name installation via SHELL});
-
-    return 0;
+    return 1;
 }
 
 sub check_python_compability {

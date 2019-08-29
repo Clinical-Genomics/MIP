@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -42,7 +42,6 @@ sub install_mip_scripts {
 ##          : $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with mip_scripts specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -54,7 +53,6 @@ sub install_mip_scripts {
     my $conda_prefix_path;
     my $FILEHANDLE;
     my $mip_scripts_parameters_href;
-    my $noupdate;
     my $quiet;
     my $verbose;
 
@@ -73,10 +71,6 @@ sub install_mip_scripts {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -131,21 +125,15 @@ sub install_mip_scripts {
     my @mip_directories = qw{ lib t definitions };
 
     say {$FILEHANDLE} q{### Install MIP};
+    $log->info(q{Writing installation instructions for MIP});
 
     ## Check if installation exists and is executable
     # mip is proxy for all mip scripts
     if ( -x catfile( $conda_prefix_path, qw{ bin mip } ) ) {
         $log->info(q{MIP is already installed in the specified conda environment.});
 
-        if ($noupdate) {
-            say {$FILEHANDLE} q{## MIP is already installed, skippping installation};
-            say {$FILEHANDLE} $NEWLINE;
-            return;
-        }
         $log->warn(q{This will overwrite the current installation of MIP});
     }
-
-    $log->info(q{Writing installation instructions for MIP});
 
     ## Create directories
     say {$FILEHANDLE} q{## Create directories};

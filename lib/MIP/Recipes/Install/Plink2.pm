@@ -31,7 +31,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_plink2 };
@@ -40,11 +40,10 @@ BEGIN {
 sub install_plink2 {
 
 ## Function : Install Plink2
-## Returns  : ""
+## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with Plink2 specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -55,7 +54,6 @@ sub install_plink2 {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $plink2_parameters_href;
     my $quiet;
     my $verbose;
@@ -75,10 +73,6 @@ sub install_plink2 {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            strict_type => 1,
-            store       => \$noupdate,
         },
         program_parameters_href => {
             required    => 1,
@@ -116,26 +110,20 @@ sub install_plink2 {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Plink2};
+    $log->info(qq{Writing instructions for Plink2 installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $plink2_dir    = catdir( $conda_prefix_path, q{Plink2} );
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    my $plink2_dir = catdir( $conda_prefix_path, q{Plink2} );
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $plink2_dir,
             program_name           => q{Plink2},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary Plink2 install directory};

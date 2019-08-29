@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -101,17 +101,6 @@ sub _build_usage {
             is            => q{rw},
             isa           => Str,
         )
-    );
-
-    option(
-        q{noupdate} => (
-            cmd_aliases   => [qw{ nup }],
-            cmd_flag      => q{noupdate},
-            documentation => q{Do not update existing shell programs},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
     );
 
     option(

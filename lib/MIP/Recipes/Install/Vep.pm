@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -49,7 +49,6 @@ sub install_vep {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with vep specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -60,7 +59,6 @@ sub install_vep {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $vep_parameters_href;
     my $verbose;
@@ -80,10 +78,6 @@ sub install_vep {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -152,18 +146,18 @@ sub install_vep {
 
     ## Install VEP
     say {$FILEHANDLE} q{### Install varianteffectpredictor};
+    $log->info(qq{Writing instructions for VEP installation via SHELL});
 
     ## Vipe the api if a reinstallation has been requested
     my $install_check;
     if ( $auto =~ m/[al]/xms ) {
-        ## Check if installation exists and remove directory unless a noupdate flag is provided
-        $install_check = check_existing_installation(
+        ## Check if installation exists and remove directory
+        check_existing_installation(
             {
                 conda_environment      => $conda_environment,
                 conda_prefix_path      => $conda_prefix_path,
                 FILEHANDLE             => $FILEHANDLE,
                 log                    => $log,
-                noupdate               => $noupdate,
                 program_directory_path => $vep_dir_path,
                 program_name           => q{VEP-api},
             }
@@ -171,28 +165,15 @@ sub install_vep {
         print {$FILEHANDLE} $NEWLINE;
     }
 
-    # Return if all the directories is found and a noupdate flag has been provided
-    if ($install_check) {
-        ## Skip api installation but continue with rest
-        $auto =~ s/[al]//gxms;
-        if ( not $auto =~ m/[cfp]/xms ) {
-            say {$FILEHANDLE} $NEWLINE;
-            return;
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
         }
-    }
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
     if ( ( $auto =~ m/[cfp]/xms ) && ( not $auto =~ m/[al]/xms ) ) {
@@ -436,18 +417,14 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.tx
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE x 2;
-    }
     return;
 }
-
 1;

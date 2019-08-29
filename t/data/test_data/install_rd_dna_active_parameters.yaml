@@ -198,7 +198,6 @@ installations:
 max_cores_per_node: '36'
 mip: 1
 node_ram_memory: '128'
-noupdate: '0'
 pipeline: install_rd_dna
 prefer_shell: '0'
 process_time: 2-00:00:00

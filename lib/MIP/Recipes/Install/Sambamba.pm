@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_sambamba };
@@ -41,11 +41,10 @@ BEGIN {
 sub install_sambamba {
 
 ## Function : Install sambamba
-## Returns  : ""
+## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with sambamba specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -56,7 +55,6 @@ sub install_sambamba {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $sambamba_parameters_href;
     my $verbose;
@@ -76,10 +74,6 @@ sub install_sambamba {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -117,26 +111,20 @@ sub install_sambamba {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Sambamba};
+    $log->info(qq{Writing instructions for Sambamba installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $sambamba_dir  = catdir( $conda_prefix_path, q{Sambamba} );
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    my $sambamba_dir = catdir( $conda_prefix_path, q{Sambamba} );
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $sambamba_dir,
             program_name           => q{Sambamba},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary sambamba install directory};
