@@ -142,14 +142,15 @@ This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
-  * MIP's base environment (named MIP_rare in the example above)
-  * MIP_rare_ecnvnator
-  * MIP_rare_edelly
-  * MIP_rare_epeddy
-  * MIP_rare_eperl5
-  * MIP_rare_epy3
-  * MIP_rare_etiddit
-  * MIP_rare_evep
+  * mip7_rd-dna
+  * mip7_rd-dna_cnvnator
+  * mip7_rd-dna_delly
+  * mip7_rd-dna_peddy
+  * mip7_rd-dna_perl5
+  * mip7_rd-dna_py3
+  * mip7_rd-dna_svdb
+  * mip7_rd-dna_tiddit
+  * mip7_rd-dna_vep
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
@@ -176,35 +177,59 @@ $ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
-  In your config yaml file or on the command line you will have to supply the ``load_env`` parameter to activate the environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
+  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environments and the [COND_PATH] part needs to be updated to point to your conda installation directory. If you are using the default environment names the load_env part of the config should look like this:
 
   ```Yml
   load_env:
-    MIP_rare:
-     mip:
-     method: conda
-    MIP_rare_epy3:
-     chanjo_sexcheck:
-     genmod:
-     method: conda
-     multiqc_ar:
-     rankvariant:
-     sv_rankvariant:
-     variant_integrity_ar:
-    MIP_rare_ecnvnator:
-     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_rare_ecnvnator/root/bin/thisroot.sh;"
-     method: conda
-    MIP_rare_edelly:
-     delly_call:
-     delly_reformat:
-     method: conda
-    MIP_rare_epeddy:
-     peddy_ar:
-     method: conda
-    MIP_rare_evep:
-     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-     method: conda
+    mip7_rd-dna:
+      installation: emip
+      mip:
+      method: conda
+    mip7_rd-dna_cnvnator:
+      cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip7_rd-dna_cnvnator/root/bin/thisroot.sh;"
+      installation: ecnvnator
+      method: conda
+    mip7_rd-dna_delly:
+      delly_call:
+      delly_reformat:
+      installation: edelly
+      method: conda
+    mip7_rd-dna_peddy:
+      peddy_ar:
+      installation: epeddy
+      method: conda
+    mip7_rd-dna_perl5:
+      bwa_mem:
+      fastqc_ar:
+      installation: eperl5
+      method: conda
+    mip7_rd-dna_py3:
+      chanjo_sexcheck:
+      expansionhunter:
+      genmod:
+      installation: epy3
+      method: conda
+      multiqc_ar:
+      rankvariant:
+      sv_rankvariant:
+      variant_integrity_ar:
+    mip7_rd-dna_tiddit:
+      installation: etiddit
+      method: conda
+      tiddit:
+      TIDDIT.py:
+      tiddit_coverage:
+      vcf2cytosure_ar:
+    mip7_rd-dna_vep:
+      installation: etiddit
+      method: conda
+      sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip7_rd-dna_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+      varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip7_rd-dna_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+    mip7_rd-dna_svdb:
+      installation: esvdb
+      method: conda
+      sv_annotate:
+      svdb:
   ```
 
 ### Usage
@@ -226,6 +251,17 @@ $ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
+
+###### Running programs in singularity containers
+  Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers needs to be downloaded manually and the executable together with the path to the containers must be specified in the config. The flag `--with_singularity` needs to be added to the command line, which will tell MIP to favour singularity containers over conda environments. By default MIP will bind all the standard directories neccessary for the analysis. Non-standard directories can be added to the key `extra_bind_paths`. 
+
+In the example below the config has been modified to use a singularity container for running TIDDIT:
+  ```Yml
+  singularity_container:
+    TIDDIT.py:
+      container_path: <path to tiddit container>
+      extra_bind_paths:
+  ```
 
 #### Input
 
