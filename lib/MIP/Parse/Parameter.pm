@@ -302,8 +302,7 @@ sub parse_nist_parameters {
     use MIP::Set::Parameter qw{ set_nist_file_name_path };
 
     return
-      if (  not $active_parameter_href->{rtg_vcfeval}
-        and not $active_parameter_href->{evaluation} );
+      if ( not $active_parameter_href->{rtg_vcfeval} );
 
     # Unpack
     my %nist_id         = %{ $active_parameter_href->{nist_id} };
