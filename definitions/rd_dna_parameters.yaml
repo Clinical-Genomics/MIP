@@ -1730,12 +1730,6 @@ snpsift_dbnsfp_annotations:
    - snpeff
   element_separator: ,
   data_type: ARRAY
-  default:
-   - GERP++_RS
-   - GERP++_NR
-   - phyloP100way_vertebrate
-   - phastCons100way_vertebrate
-   - REVEL_rankscore
   type: path
 snpsift_dbnsfp_file:
   associated_recipe:
