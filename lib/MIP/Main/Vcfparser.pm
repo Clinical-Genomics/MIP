@@ -45,6 +45,8 @@ sub mip_vcfparser {
 ##          : $select_feature_annotation_columns_ref => Select feature columns {REF}
 ##          : $select_feature_file                   => Select feature file
 ##          : $select_outfile_path                   => Select file path
+##          : $select_feature_matching_column        => Select feature matching column
+##          : $VCF_IN_FH                             => VCF in filehandle
 ##          : $write_software_tag                    => Write software tag to vcf header switch
 
     my ($arg_href) = @_;
@@ -56,11 +58,13 @@ sub mip_vcfparser {
     my $range_feature_file;
     my $select_feature_annotation_columns_ref;
     my $select_outfile_path;
+    my $select_feature_matching_column;
 
     ## Default(s)
     my $padding;
     my $parse_vep;
     my $select_feature_file;
+    my $VCF_IN_FH;
     my $write_software_tag;
 
     my $tmpl = {
@@ -88,8 +92,6 @@ sub mip_vcfparser {
         },
         range_feature_annotation_columns_ref => {
             default     => [],
-            defined     => 1,
-            required    => 1,
             store       => \$range_feature_annotation_columns_ref,
             strict_type => 1,
         },
@@ -100,8 +102,6 @@ sub mip_vcfparser {
         },
         select_feature_annotation_columns_ref => {
             default     => [],
-            defined     => 1,
-            required    => 1,
             store       => \$select_feature_annotation_columns_ref,
             strict_type => 1,
         },
@@ -110,8 +110,13 @@ sub mip_vcfparser {
             store       => \$select_feature_file,
             strict_type => 1,
         },
+        select_feature_matching_column => {
+            store       => \$select_feature_matching_column,
+            strict_type => 1,
+        },
         select_outfile_path => { store => \$select_outfile_path, strict_type => 1, },
-        write_software_tag  => {
+        VCF_IN_FH          => { defined => 1, required => 1, store => \$VCF_IN_FH, },
+        write_software_tag => {
             allow       => [ 0, 1 ],
             default     => 1,
             store       => \$write_software_tag,
@@ -192,9 +197,10 @@ q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli sc
             select_feature_annotation_columns_ref =>
               $select_feature_annotation_columns_ref,
             select_feature_file => $select_feature_file,
-            select_outfile_path => $select_outfile,
+            select_outfile_path => $select_outfile_path,
             tree_href           => \%tree,
-            vcfparser_version   => $VERSION,
+            vcfparser_version   => $MIP::Main::Vcfparser::VERSION,
+            VCF_IN_FH           => $VCF_IN_FH,
             write_software_tag  => $write_software_tag,
         }
     );
@@ -224,6 +230,7 @@ sub read_infile_vcf {
 ##          : $tree_href                             => Interval tree hash {REF}
 ##          : $vcfparser_version                     => Vcfparser version
 ##          : $write_software_tag                    => Write software tag to vcf header switch
+##          : $VCF_IN_FH                             => The filehandle to read from to
 
     my ($arg_href) = @_;
 
@@ -239,6 +246,7 @@ sub read_infile_vcf {
     my $select_outfile_path;
     my $tree_href;
     my $vcfparser_version;
+    my $VCF_IN_FH;
 
     ## Default(s)
     my $select_feature_file;
@@ -326,6 +334,7 @@ sub read_infile_vcf {
             store       => \$vcfparser_version,
             strict_type => 1,
         },
+        VCF_IN_FH          => { defined => 1, required => 1, store => \$VCF_IN_FH, },
         write_software_tag => {
             allow       => [ 0, 1 ],
             default     => 1,
@@ -383,7 +392,7 @@ sub read_infile_vcf {
     }
 
   LINE:
-    while (<>) {
+    while (<$VCF_IN_FH>) {
 
         chomp;
 
