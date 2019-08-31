@@ -3,6 +3,7 @@
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename };
 use File::Path qw{ remove_tree };
@@ -42,15 +43,12 @@ my $mip_path = catfile( dirname($Bin),          q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $pli_template_path =
   catfile( $test_reference_path, q{gnomad_pli_per_gene_-_r2.1.1-.txt} );
-my $select_feature_file = catfile( dirname($Bin), qw{ template gene_panel.bed } );
+my $select_feature_file = catfile( dirname($Bin), qw{ templates gene_panel.bed } );
 my $select_outfile      = catfile( $cluster_constant_path,
     qw{ 643594-miptest test_data 643594-miptest vcfparser_select.vcf } );
-my $research_outfile = catfile( $cluster_constant_path,
-    qw{ 643594-miptest test_data 643594-miptest vcfparser.vcf } );
+
 ### User Options
 GetOptions(
-
-    q{c|config_file:s} => \$infile,
 
     ## Display help text
     q{h|help} => sub {
@@ -88,8 +86,7 @@ my $cmds_ref = [
     q{--parse_vep},                  q{--select_feature_file},
     $select_feature_file,            q{--select_feature_matching_column},
     $SELECT_FEATURE_MATCHING_COLUMN, q{--select_outfile},
-    $select_outfile,                 qw{ 1> },
-    $research_outfile,
+    $select_outfile,
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
@@ -97,12 +94,11 @@ my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
 ok( $success, q{Executed mip vcfparser} );
 
 ok( -f $select_outfile,   q{Checking for select file} );
-ok( -f $research_outfile, q{Checking for research file} );
 
 ## Clean-up
 unlink $select_outfile;
-unlink $research_outfile;
-
+unlink catfile(cwd(), q{vcfparser.log});
+ 
 done_testing();
 
 ######################
@@ -132,7 +128,6 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options]
-    -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_rd_dna_config.yaml")
     -vb/--verbose    Verbose
     -h/--help        Display this help message
     -v/--version     Display version
