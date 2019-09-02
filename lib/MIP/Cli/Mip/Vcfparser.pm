@@ -80,7 +80,7 @@ sub run {
     # Create anonymous filehandle
     my $VCF_IN_FH = IO::Handle->new();
 
-    ## Enables cmd "vcfparser.pl" to print usage help
+    ## Enables cmd "vcfparser" to print usage help
     if ( $infile eq $DASH ) {
 
         $VCF_IN_FH = *STDIN;
