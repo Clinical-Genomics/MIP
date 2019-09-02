@@ -76,7 +76,7 @@ recipe_memory:
     rhocall_ar: 2
     snpeff: 8
     sv_reformat: 24
-    sv_varianteffectpredictor: 7
+    sv_varianteffectpredictor: 9
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
   type: mip
