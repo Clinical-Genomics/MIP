@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 ## Constants
 Readonly my $PADDING => 50;
@@ -64,7 +64,7 @@ diag(   q{Test mip_vcfparser from Mip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ vcfparser };
+my @function_base_commands = qw{ mip vcfparser };
 
 my %base_argument = (
     FILEHANDLE => {
