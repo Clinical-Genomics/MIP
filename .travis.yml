@@ -56,6 +56,8 @@ script:
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
 ## Set-up test coverage for mip qccollect
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
+## Set-up test coverage for mip vcfparser
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
 ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
 ## Set-up test coverage for mip_analyse_rna.test
