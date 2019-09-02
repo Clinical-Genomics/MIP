@@ -1,23 +1,22 @@
 package MIP::Program::Base::Bcftools;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
-use Params::Check qw{ check allow last_error };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -25,19 +24,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bcftools_base };
 }
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 sub bcftools_base {
 
-## Function : Perl wrapper for picardtools base. Based on Picardtools v2.9.2-SNAPSHOT
+## Function : Perl wrapper for bcftools base. Based on Bcftools 1.9
 ## Returns  : @commands
 ## Arguments: $commands_ref      => List of commands added earlier
 ##          : $FILEHANDLE        => Filehandle to write to
@@ -46,6 +41,7 @@ sub bcftools_base {
 ##          : $regions_ref       => Regions to process {REF}
 ##          : $samples_file_path => File of samples to annotate
 ##          : $samples_ref       => Samples to include or exclude if prefixed with "^"
+##          : $threads           => Extra compression threds in addition to main thread
 
     my ($arg_href) = @_;
 
@@ -57,25 +53,44 @@ sub bcftools_base {
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
+    my $threads;
 
     my $tmpl = {
-        commands_ref =>
-          { default => [], strict_type => 1, store => \$commands_ref },
-        FILEHANDLE   => { store       => \$FILEHANDLE },
-        outfile_path => { strict_type => 1, store => \$outfile_path, },
+        commands_ref => {
+            default     => [],
+            store       => \$commands_ref,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
         output_type => {
             allow       => [ undef, qw{ b u z v} ],
-            strict_type => 1,
             store       => \$output_type,
+            strict_type => 1,
         },
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref, },
-        samples_file_path =>
-          { strict_type => 1, store => \$samples_file_path, },
+        regions_ref => {
+            default     => [],
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        samples_file_path => {
+            store       => \$samples_file_path,
+            strict_type => 1,
+        },
         samples_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$samples_ref,
+            strict_type => 1,
+        },
+        threads => {
+            allow       => qr/\A \d+ \z | undef /xms,
+            store       => \$threads,
+            strict_type => 1,
         },
     };
 
@@ -107,6 +122,11 @@ sub bcftools_base {
 
         #Specify output type
         push @commands, q{--output-type} . $SPACE . $output_type;
+    }
+
+    if ($threads) {
+
+        push @commands, q{--threads} . $SPACE . $threads;
     }
 
     unix_write_to_file(

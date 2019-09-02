@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter };
@@ -35,7 +35,7 @@ BEGIN {
 
 sub analysis_frequency_filter {
 
-## Function : Performs frequency annotation and filtering of variants
+## Function : Performs frequency filtering of variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -148,8 +148,6 @@ sub analysis_frequency_filter {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -236,7 +234,7 @@ sub analysis_frequency_filter {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Vcfannotate frequency and bcftools filter};
+    say {$FILEHANDLE} q{## Bcftools filter};
 
     my $xargs_file_path_prefix;
 
@@ -259,20 +257,10 @@ sub analysis_frequency_filter {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
-        vcfanno(
-            {
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $infile_path{$contig},
-                stderrfile_path      => $stderrfile_path,
-                toml_configfile_path => $active_parameter_href->{fqf_vcfanno_config},
-            }
-        );
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                vcfanno_file_toml => $active_parameter_href->{fqf_vcfanno_config},
+                vcfanno_file_toml => $active_parameter_href->{fqa_vcfanno_config},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }
@@ -281,7 +269,7 @@ sub analysis_frequency_filter {
         bcftools_view(
             {
                 FILEHANDLE             => $XARGSFILEHANDLE,
-                infile_path            => $DASH,
+                infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{v},
                 stderrfile_path_append => $stderrfile_path,

@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
+- Moves frequency annotation to seperate recipe
 
 **CLI**
 - Removes the noupdate option from the installation

@@ -29,7 +29,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -107,7 +107,7 @@ my $cmds_ref = [
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
     qw{ --dra --svv 0 --vb },
-    q{--fqf_vcfanno_config},
+    q{--fqa_vcfanno_config},
     $toml_config_path,
 ];
 

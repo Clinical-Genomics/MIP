@@ -17,12 +17,15 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $SPACE $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -31,12 +34,6 @@ BEGIN {
       check_parameter_metafiles
       check_references_for_vt };
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
 
 sub check_human_genome_file_endings {
 
@@ -499,7 +496,7 @@ sub check_references_for_vt {
     my %seen;
 
     ## TOML parameters
-    my %toml = ( fqf_vcfanno_config => 1, );
+    my %toml = ( fqa_vcfanno_config => 1, );
 
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {

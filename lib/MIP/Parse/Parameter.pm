@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -562,7 +562,7 @@ sub parse_toml_config_parameters {
     use MIP::Check::Path qw{ check_vcfanno_toml };
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-    my %toml_config_parameter = ( frequency_filter => q{fqf_vcfanno_config}, );
+    my %toml_config_parameter = ( frequency_filter => q{fqa_vcfanno_config}, );
   CONFIG_FILE:
     while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
 
