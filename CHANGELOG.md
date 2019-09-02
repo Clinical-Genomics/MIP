@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.2.3]
+## [7.1.3]
 - Increased sv_varianteffectpredictor memory parameter 8 -> 9 Gb
 
 ## [7.1.2]
