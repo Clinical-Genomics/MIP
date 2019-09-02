@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser };
@@ -268,7 +268,7 @@ sub mip_vcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ vcfparser };
+    my @commands = qw{ mip vcfparser };
 
     ## Infile
     push @commands, $infile_path;
