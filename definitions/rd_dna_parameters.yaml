@@ -1730,6 +1730,7 @@ snpsift_dbnsfp_annotations:
    - snpeff
   element_separator: ,
   data_type: ARRAY
+  mandatory: no
   type: path
 snpsift_dbnsfp_file:
   associated_recipe:
