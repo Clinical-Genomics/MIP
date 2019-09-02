@@ -219,7 +219,7 @@ recipe_memory:
     split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
-    sv_varianteffectpredictor: 8
+    sv_varianteffectpredictor: 9
     tiddit: 8
     vcf2cytosure_ar: 6
     varianteffectpredictor: 7
