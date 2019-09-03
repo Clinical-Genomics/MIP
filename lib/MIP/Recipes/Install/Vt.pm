@@ -31,7 +31,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vt };
@@ -44,7 +44,6 @@ sub install_vt {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with vt specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -55,7 +54,6 @@ sub install_vt {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $verbose;
     my $vt_parameters_href;
@@ -75,10 +73,6 @@ sub install_vt {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -116,26 +110,20 @@ sub install_vt {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install VT};
+    $log->info(qq{Writing instructions for VT installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vt_dir        = catdir( $conda_prefix_path, q{Vt} );
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    my $vt_dir = catdir( $conda_prefix_path, q{Vt} );
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $vt_dir,
             program_name           => q{VT},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary VT install directory};
@@ -217,9 +205,8 @@ sub install_vt {
             recursive   => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }
-
 1;

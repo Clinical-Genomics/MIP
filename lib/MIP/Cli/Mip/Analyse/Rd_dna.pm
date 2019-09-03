@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.27;
+our $VERSION = 1.29;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -196,6 +196,25 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Expected mean target coverage for analysis},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{frequency_annotation} => (
+            cmd_aliases   => [qw{ fqa }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate vcf with allele frequencies},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqavac }],
+            documentation => q{Frequency vcfanno toml config},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -1728,15 +1747,6 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{fqf_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqfcvac }],
-            documentation => q{Frequency vcfanno toml config},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{fqf_bcftools_filter_threshold} => (
             cmd_aliases   => [qw{ fqfgft }],
             cmd_flag      => q{freq_bcftools_fil_trh},
@@ -2175,16 +2185,6 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
             cmd_aliases   => [qw{ rte }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare concordance with benchmark data set},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{evaluation} => (
-            cmd_aliases   => [qw{ evl }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Compare concordance with NIST data set},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

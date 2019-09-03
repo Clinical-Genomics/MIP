@@ -1,14 +1,11 @@
 # Writing file to memory
 Write a file to memory instead of disc:
 ```Perl
-# Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
-
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open my $FILEHANDLE, q{>}, \$file_content
     or croak q{Cannot write to}
     . $SPACE
     . $file_content

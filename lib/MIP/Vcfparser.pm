@@ -18,7 +18,7 @@ use Set::IntervalTree;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $COLON $COMMA $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
+  qw{ $AMPERSAND $COLON $COMMA $EMPTY_STR $EQUALS $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -45,6 +45,10 @@ BEGIN {
       parse_vep_csq_transcripts
       set_most_severe_ann_to_vcf_record
       set_most_severe_pli
+      write_feature_file_csq
+      write_info_field
+      write_info_addition_fields
+      write_line_elements
       write_meta_data
     };
 }
@@ -1201,8 +1205,6 @@ sub parse_vep_csq_schema {
     my $parse_vep;
     my $vep_format_field_column_href;
 
-    ## Default(s)
-
     my $tmpl = {
         meta_data_href => {
             default     => {},
@@ -1267,6 +1269,268 @@ q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most seve
 
     }
     return 1;
+}
+
+sub write_feature_file_csq {
+
+## Function : Write vcf record to feature files
+## Returns  : $info_field_counter
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $info_field_counter => Count the number of key_value pairs written
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    ## Default(s)
+    my $info_field_counter;
+
+    my $tmpl = {
+        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        info_field_counter => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 0,
+            defined     => 1,
+            required    => 1,
+            store       => \$info_field_counter,
+            strict_type => 1,
+        },
+        SELECT_FH       => { store => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return
+      if (  not exists $vcf_record_href->{INFO_key_value}{CSQ}
+        and not $vcf_record_href->{INFO_key_value}{CSQ} );
+
+    if ( $vcf_record_href->{range_transcripts} ) {
+
+        print {$FILEHANDLE} q{CSQ} . $EQUALS . join $COMMA,
+          @{ $vcf_record_href->{range_transcripts} };
+    }
+    if ( $vcf_record_href->{select_transcripts} ) {
+
+        print {$SELECT_FH} q{CSQ} . $EQUALS . join $COMMA,
+          @{ $vcf_record_href->{select_transcripts} };
+    }
+    delete $vcf_record_href->{INFO_key_value}{CSQ};
+    $info_field_counter++;
+
+    return $info_field_counter;
+}
+
+sub write_info_addition_fields {
+
+## Function : Write info addition fields of vcf record to feature files
+## Returns  :
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        SELECT_FH       => { store   => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @info_addition_keys =
+      qw( INFO_addition INFO_addition_range_feature INFO_addition_select_feature );
+
+  INFO_ADDITION_KEY:
+    foreach my $info_addition_key (@info_addition_keys) {
+
+      INFO_KEY:
+        foreach my $key ( keys %{ $vcf_record_href->{$info_addition_key} } ) {
+
+            my $info_string =
+              $SEMICOLON . $key . $EQUALS . $vcf_record_href->{$info_addition_key}{$key};
+            print {$FILEHANDLE} $info_string;
+
+            ## Never to select file for this info addition key
+            next INFO_KEY if ( $info_addition_key eq q{INFO_addition_range_feature} );
+
+            ## Write to select file
+            next INFO_KEY if ( not $vcf_record_href->{select_transcripts} );
+
+            print {$SELECT_FH} $info_string;
+        }
+    }
+    return;
+}
+
+sub write_info_field {
+
+## Function : Write vcf record to feature files
+## Returns  : $info_field_counter
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $info_field_counter => Count the number of key_value pairs written
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    ## Default(s)
+    my $info_field_counter;
+
+    my $tmpl = {
+        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        info_field_counter => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 0,
+            defined     => 1,
+            required    => 1,
+            store       => \$info_field_counter,
+            strict_type => 1,
+        },
+        SELECT_FH       => { store => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{ $vcf_record_href->{INFO_key_value} } ) {
+
+        ## Build key value pair
+        my $info_string = $SEMICOLON . $key;
+        if ( not $info_field_counter ) {
+
+            $info_string = $key;
+        }
+
+        if ( defined $value ) {
+
+            $info_string .= $EQUALS . $value;
+        }
+
+        if ( $vcf_record_href->{select_transcripts} ) {
+
+            print {$SELECT_FH} $info_string;
+        }
+        print {$FILEHANDLE} $info_string;
+        $info_field_counter++;
+    }
+    return $info_field_counter;
+}
+
+sub write_line_elements {
+
+## Function : Writes metadata to filehandle specified by order in meta_data_sections.
+## Returns  :
+## Arguments: $FILEHANDLE        => The filehandle to write to
+##          : $first_separator   => Separator to write before start index
+##          : $last_index        => Last element index to write of line array
+##          : $last_separator    => Separator to write after last index
+##          : $line_elements_ref => Vcf record line
+##          : $start_index       => Start element index to write of line array
+##          : $SELECT_FH         => The select filehandle to write to {Optional}
+##          : $vcf_record_href   => Hash for vcf data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $first_separator;
+    my $last_index;
+    my $last_separator;
+    my $line_elements_ref;
+    my $SELECT_FH;
+    my $start_index;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        first_separator => {
+            allow       => [ $EMPTY_STR, $TAB ],
+            default     => $EMPTY_STR,
+            store       => \$first_separator,
+            strict_type => 1,
+        },
+        last_index => {
+            allow       => qr{ \A \d+ \z }xsm,
+            store       => \$last_index,
+            strict_type => 1,
+        },
+        last_separator => {
+            allow       => [ $TAB, $NEWLINE ],
+            default     => $NEWLINE,
+            store       => \$last_separator,
+            strict_type => 1,
+        },
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        SELECT_FH   => { store => \$SELECT_FH, },
+        start_index => {
+            allow       => qr{ \A \d+ \z }xsm,
+            default     => 0,
+            store       => \$start_index,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    print {$FILEHANDLE} $first_separator,
+      join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ), $last_separator;
+
+    return if ( not $vcf_record_href->{select_transcripts} );
+
+    print {$SELECT_FH} $first_separator,
+      join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ),
+      $last_separator;
+
+    return;
 }
 
 sub write_meta_data {

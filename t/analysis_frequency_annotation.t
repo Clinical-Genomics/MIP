@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,20 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Picardtools_genotypeconcordance} =>
-          [qw{ analysis_picardtools_genotypeconcordance }],
+        q{MIP::Recipes::Analysis::Frequency_annotation} =>
+          [qw{ analysis_frequency_annotation }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
-  qw{ analysis_picardtools_genotypeconcordance };
+use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
 
-diag(
-q{Test analysis_picardtools_genotypeconcordance from Picardtools_genotypeconcordance.pm v}
-      . $MIP::Recipes::Analysis::Picardtools_genotypeconcordance::VERSION
+diag(   q{Test analysis_frequency_annotation from Frequency_annotation.pm v}
+      . $MIP::Recipes::Analysis::Frequency_annotation::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,7 +63,7 @@ q{Test analysis_picardtools_genotypeconcordance from Picardtools_genotypeconcord
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{picardtools_genotypeconcordance};
+my $recipe_name    = q{frequency_annotation};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -77,15 +75,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id      = $active_parameter{case_id};
-my $sample_id    = $active_parameter{sample_ids}[2];
-my $nist_version = qw{ 3.3.2 };
-my $nist_id      = $sample_id;
-$active_parameter{nist_id}{$sample_id} = $nist_id;
-@{ $active_parameter{nist_versions} } = ( $nist_version, );
-$active_parameter{nist_call_set_vcf}{$nist_version}{$nist_id} = q{a_file.vcf};
-$active_parameter{nist_call_set_bed}{$nist_version}{$nist_id} = q{a_file.bed};
-$active_parameter{vt_uniq}                                    = 1;
+my $case_id = $active_parameter{case_id};
+$active_parameter{fqa_vcfanno_config} = catfile( $Bin,
+    qw{ data references grch37_frequency_vcfanno_annotation_config_-v1.0-.toml } );
 
 my %file_info = test_mip_hashes(
     {
@@ -98,7 +90,6 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -108,18 +99,20 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf.gz};
+
 my %sample_info;
 
-my $is_ok = analysis_picardtools_genotypeconcordance(
+my $is_ok = analysis_frequency_annotation(
     {
         active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );

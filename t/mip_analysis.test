@@ -25,6 +25,7 @@ use Readonly;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SEMICOLON $SPACE $TAB };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -51,17 +52,10 @@ BEGIN {
     );
 }
 
-## Constants
-Readonly my $COMMA     => q{,};
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $SEMICOLON => q{;};
-Readonly my $SPACE     => q{ };
-Readonly my $TAB       => qq{\t};
-
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.05;
+our $VERSION = 2.03;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -438,7 +432,7 @@ sub read_infile_vcf {
             _test_frequency_filter_in_vcf_header(
                 {
                     recipe_mode     => $active_parameter_href->{frequency_filter},
-                    toml_file_path  => $active_parameter_href->{fqf_vcfanno_config},
+                    toml_file_path  => $active_parameter_href->{fqa_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -722,7 +716,7 @@ sub read_sv_infile_vcf {
             _test_frequency_filter_in_vcf_header(
                 {
                     recipe_mode     => $active_parameter_href->{sv_annotate},
-                    toml_file_path  => $active_parameter_href->{fqf_vcfanno_config},
+                    toml_file_path  => $active_parameter_href->{fqa_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );

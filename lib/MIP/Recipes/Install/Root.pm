@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_root };
@@ -42,7 +42,6 @@ sub install_root {
 ## Arguments: $conda_environment => Conda environment
 ##          : $conda_prefix_path => Conda prefix path
 ##          : $FILEHANDLE        => Filehandle to write to
-##          : $noupdate          => Do not update
 ##          : $quiet             => Be quiet
 ##          : $root_binary       => Name of ROOT binary
 ##          : $verbose           => Set verbosity
@@ -53,7 +52,6 @@ sub install_root {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $root_binary;
     my $verbose;
@@ -73,10 +71,6 @@ sub install_root {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],

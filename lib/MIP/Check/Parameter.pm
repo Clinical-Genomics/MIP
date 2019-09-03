@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -72,7 +72,6 @@ sub check_active_installation_parameters {
 ##          : $conda_prefix_path      => Path to conda environment
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $log                    => Log to write messages to
-##          : $noupdate               => Do not update
 ##          : $program_directory_path => Path to program directory
 ##          : $program_name                => Program name
 

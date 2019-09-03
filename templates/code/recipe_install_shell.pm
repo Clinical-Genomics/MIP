@@ -59,7 +59,6 @@ sub install_PROGRAM {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -70,7 +69,6 @@ sub install_PROGRAM {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $PROGRAM_parameters_href;
     my $quiet;
     my $verbose;
@@ -90,10 +88,6 @@ sub install_PROGRAM {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -148,38 +142,29 @@ sub install_PROGRAM {
     );
 
     say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
+    $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $program_directory_path,
             program_name           => $program_name,
         }
     );
 
-    ## Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Download
     say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
@@ -275,18 +260,14 @@ sub install_PROGRAM {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-    print {$FILEHANDLE} $NEWLINE;
     return;
 }
 

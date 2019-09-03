@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -46,7 +46,6 @@ sub install_vcf2cytosure {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -57,7 +56,6 @@ sub install_vcf2cytosure {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $vcf2cytosure_parameters_href;
     my $verbose;
@@ -77,10 +75,6 @@ sub install_vcf2cytosure {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -123,6 +117,7 @@ sub install_vcf2cytosure {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Vcf2cytosure};
+    $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
     ## Check if vcf2cytosure has been installed via pip
     my $vcf2cytosure_status = check_pip_package(
@@ -140,33 +135,20 @@ sub install_vcf2cytosure {
     {
         $log->info( $program_name
               . q{ is already installed in the specified conda environment.} );
-
-        if ($noupdate) {
-
-            say {$FILEHANDLE} q{## }
-              . $program_name
-              . q{ is already installed, skippping reinstallation};
-            say {$FILEHANDLE} $NEWLINE;
-            return;
-        }
         $log->warn(
             q{This will overwrite the current } . $program_name . q{ installation.} );
 
     }
 
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Move to miniconda environment
     say {$FILEHANDLE} q{## Move to conda environment};
@@ -240,17 +222,14 @@ sub install_vcf2cytosure {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
     return;
 }
 

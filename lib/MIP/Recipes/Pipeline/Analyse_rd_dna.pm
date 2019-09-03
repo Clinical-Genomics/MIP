@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -158,6 +158,7 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
@@ -179,8 +180,6 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
-    use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
-      qw{ analysis_picardtools_genotypeconcordance };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
@@ -257,7 +256,6 @@ sub pipeline_analyse_rd_dna {
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
-        evaluation                  => \&analysis_picardtools_genotypeconcordance,
         fastqc_ar                   => \&analysis_fastqc,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
@@ -279,6 +277,7 @@ sub pipeline_analyse_rd_dna {
           \&analysis_picardtools_collectmultiplemetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
         plink                            => \&analysis_plink,
+        frequency_annotation             => \&analysis_frequency_annotation,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         qccollect_ar                     => \&analysis_mip_qccollect,
         rankvariant    => undef,                         # Depends on sample features

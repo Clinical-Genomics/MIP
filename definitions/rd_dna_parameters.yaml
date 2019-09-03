@@ -5,7 +5,7 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - fqf_vcfanno_config
+   - fqa_vcfanno_config
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_indel
@@ -152,7 +152,6 @@ recipe_core_number:
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
-    evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
     frequency_filter: 13
@@ -173,6 +172,7 @@ recipe_core_number:
     picardtools_collectmultiplemetrics: 1
     picardtools_mergesamfiles: 13
     plink: 1
+    frequency_annotation: 13
     qccollect_ar: 1
     rhocall_ar: 13
     rtg_vcfeval: 36
@@ -217,13 +217,14 @@ recipe_memory:
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
+    frequency_annotation: 7
     rhocall_ar: 2
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
-    sv_varianteffectpredictor: 8
+    sv_varianteffectpredictor: 9
     tiddit: 8
     vcf2cytosure_ar: 6
     varianteffectpredictor: 7
@@ -248,7 +249,6 @@ recipe_time:
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    evaluation: 3
     expansionhunter: 2
     fastqc_ar: 10
     frequency_filter: 2
@@ -269,6 +269,7 @@ recipe_time:
     picardtools_collectmultiplemetrics: 10
     picardtools_mergesamfiles: 20
     plink: 1
+    frequency_annotation: 1
     prepareforvariantannotationblock: 5
     qccollect_ar: 1
     rankvariant: 10
@@ -1390,8 +1391,9 @@ rhocall_ar:
 rhocall_frequency_file:
   associated_recipe:
    - rhocall_ar
+   - frequency_annotation
   data_type: SCALAR
-  default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz
+  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1434,6 +1436,26 @@ vt_uniq:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+frequency_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _af
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - vcfanno
+  type: recipe
+fqa_vcfanno_config:
+  associated_recipe:
+   - frequency_annotation
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -1444,16 +1466,7 @@ frequency_filter:
   outfile_suffix: ".vcf"
   program_executables:
    - bcftools
-   - vcfanno
   type: recipe
-fqf_vcfanno_config:
-  associated_recipe:
-   - frequency_filter
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
 fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter
@@ -1804,22 +1817,9 @@ rtg_vcfeval_reference_genome:
   exists_check: directory
   reference: reference_dir
   type: path
-evaluation:
-  analysis_mode: sample
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _genotypeconc
-  outfile_suffix: ".vcf"
-  program_executables:
-   - gzip
-   - bcftools
-  type: recipe
 nist_call_set_vcf:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   default:
    2.19:
     NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
@@ -1832,7 +1832,6 @@ nist_call_set_vcf:
 nist_call_set_bed:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   default: 
    2.19: 
     NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
@@ -1845,13 +1844,11 @@ nist_call_set_bed:
 nist_id:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: HASH
   type: recipe_argument
 nist_versions:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: ARRAY
   default:
    - 2.19

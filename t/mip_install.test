@@ -105,7 +105,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_path;
 my $verbose = 1;
-our $VERSION = q{1.3.1};
+our $VERSION = q{1.3.2};
 
 ###User Options
 GetOptions(
@@ -141,7 +141,7 @@ my %install_file = (
     rd_rna => q{Rd_rna.pm},
 );
 
-my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --noupdate --sbatch_mode} );
+my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode} );
 
 PIPELINE:
 foreach my $pipeline ( keys %install_file ) {

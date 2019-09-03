@@ -58,8 +58,6 @@ CHAIN_ALL:
          - variant_integrity_ar
       - CHAIN_RTEVAL:
          - rtg_vcfeval
-      - CHAIN_PTEVAL:
-         - evaluation
       - CHAIN_GATKEVALALL:
          - gatk_variantevalall
    - CHAIN_MAIN:

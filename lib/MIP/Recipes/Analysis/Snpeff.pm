@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_snpeff };
@@ -149,9 +149,9 @@ sub analysis_snpeff {
     use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
     use MIP::Program::Variantcalling::Snpsift qw{ snpsift_annotate snpsift_dbnsfp };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -456,8 +456,8 @@ sub analysis_snpeff {
         close $XARGSFILEHANDLE;
     }
 
-    ## Add INFO headers and FIX_INFO for annotations using vcfparser
-    say {$FILEHANDLE} q{## Add INFO headers and FIX_INFO for annotations using vcfparser};
+    ## Move contig files into final outfile
+    say {$FILEHANDLE} q{## Move contig files into final outfile};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -471,13 +471,13 @@ sub analysis_snpeff {
         }
     );
 
-    ## Decrement to make last output file as input to vcfparser
+    ## Decrement to make last output file as input to renaming
     my $annotation_infile_number = $xargs_file_counter - 1;
 
   CONTIG:
     foreach my $contig ( keys %infile_path ) {
 
-        mip_vcfparser(
+        gnu_mv(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $outfile_path{$contig} . $DOT . $annotation_infile_number,
@@ -486,7 +486,7 @@ sub analysis_snpeff {
                   . $contig
                   . $DOT
                   . q{stderr.txt},
-                stdoutfile_path => $outfile_path{$contig}
+                outfile_path => $outfile_path{$contig}
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;

@@ -1,0 +1,130 @@
+#!/usr/bin/env perl
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use Cwd;
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname basename };
+use File::Path qw{ remove_tree };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error};
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## Cpanm
+use IPC::Cmd qw{ can_run run};
+use Modern::Perl qw{ 2018 };
+use Readonly;
+use autodie qw{open close :all};
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Script::Utils qw{ help };
+
+our $USAGE = build_usage( {} );
+
+my $VERBOSE = 1;
+our $VERSION = 1.00;
+
+## Set paths
+my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
+my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
+my $mip_path      = catfile( dirname($Bin), q{mip} );
+my $log_file_path = catfile( cwd(),         q{qc_metrics_qccollect.log} );
+my $test_reference_path = catdir( $cluster_constant_path, q{references} );
+my $regexp_file_path    = catfile( $test_reference_path, q{qc_regexp_-v1.23-.yaml} );
+my $sample_info_file    = catfile( $cluster_constant_path,
+    qw{ test_data 643594-miptest_qc_sample_info_travis.yaml } );
+my $outfile = catfile( cwd(), q{qc_metrics.yaml} );
+
+### User Options
+GetOptions(
+
+    ## Display help text
+    q{h|help} => sub {
+        done_testing();
+        say {*STDOUT} $USAGE;
+        exit;
+    },
+
+    ## Display version number
+    q{v|version} => sub {
+        done_testing();
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        exit;
+    },
+    q{vb|verbose} => $VERBOSE,
+  )
+  or (
+    done_testing(),
+    help(
+        {
+            USAGE     => $USAGE,
+            exit_code => 1,
+        }
+    )
+  );
+
+ok( can_run(q{mip}), q{Checking can run mip} );
+
+## Test execution of mip
+# Create array ref for cmd
+my $cmds_ref = [
+    q{perl},           $mip_path,
+    qw{ qccollect},    q{--log_file},
+    $log_file_path,    q{--regexp_file},
+    $regexp_file_path, q{--sample_info_file},
+    $sample_info_file, q{--evaluate_plink_gender},
+    q{--outfile},      $outfile,
+];
+
+my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+  run( command => $cmds_ref, verbose => $VERBOSE );
+ok( $success, q{Executed mip qccollect} );
+
+ok( -f $outfile, q{Checking for outfile} );
+
+## Clean-up
+unlink $outfile;
+unlink $log_file_path;
+
+done_testing();
+
+######################
+####SubRoutines#######
+######################
+
+sub build_usage {
+
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options]
+    -vb/--verbose    Verbose
+    -h/--help        Display this help message
+    -v/--version     Display version
+END_USAGE
+}

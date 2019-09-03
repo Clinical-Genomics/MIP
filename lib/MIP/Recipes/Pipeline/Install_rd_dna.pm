@@ -30,6 +30,7 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 
 ## Recipes
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
+use MIP::Recipes::Install::Chromograph qw{ install_chromograph };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
@@ -43,6 +44,7 @@ use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
+use MIP::Recipes::Install::Upd qw{ install_upd };
 use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
 use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Vt qw{ install_vt };
@@ -53,7 +55,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -196,6 +198,7 @@ sub pipeline_install_rd_dna {
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
             bedtools        => \&install_bedtools,
+            chromograph     => \&install_chromograph,
             cnvnator        => \&install_cnvnator,
             expansionhunter => \&install_expansionhunter,
             mip_scripts     => \&install_mip_scripts,
@@ -206,6 +209,7 @@ sub pipeline_install_rd_dna {
             snpeff          => \&install_snpeff,
             svdb            => \&install_svdb,
             tiddit          => \&install_tiddit,
+            upd             => \&install_upd,
             vcf2cytosure    => \&install_vcf2cytosure,
             vep             => \&install_vep,
             vt              => \&install_vt,
@@ -223,7 +227,6 @@ sub pipeline_install_rd_dna {
                     conda_prefix_path =>
                       $active_parameter_href->{$installation}{conda_prefix_path},
                     FILEHANDLE => $FILEHANDLE,
-                    noupdate   => $active_parameter_href->{noupdate},
                     program_parameters_href =>
                       \%{ $active_parameter_href->{$installation}{shell}{$shell_program}
                       },

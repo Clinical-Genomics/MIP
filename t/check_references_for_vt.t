@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,8 +91,8 @@ my %active_parameter_test = (
 );
 
 my %parameter_test = (
-    fqf_vcfanno_config => {
-        associated_recipe => [qw{ frequency_filter }],
+    fqa_vcfanno_config => {
+        associated_recipe => [qw{ frequency_annotation }],
         data_type         => q{SCALAR},
     },
     gatk_baserecalibration_known_sites => {
@@ -108,7 +108,7 @@ my %parameter_test = (
 );
 
 my @vt_references_test =
-  qw{ fqf_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
+  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
 
 my @refs_to_process = check_references_for_vt(
     {

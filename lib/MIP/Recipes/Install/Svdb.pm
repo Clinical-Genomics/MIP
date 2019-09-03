@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_svdb };
@@ -45,7 +45,6 @@ sub install_svdb {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with SVDB specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -56,7 +55,6 @@ sub install_svdb {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $quiet;
     my $svdb_parameters_href;
     my $verbose;
@@ -76,10 +74,6 @@ sub install_svdb {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -118,6 +112,7 @@ sub install_svdb {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install SVDB};
+    $log->info(qq{Writing instructions for SVDB installation via SHELL});
 
     ## Check if svdb has been installed via pip
     my $svdb_status = check_pip_package(
@@ -132,29 +127,20 @@ sub install_svdb {
     # Check if installation exists and is executable
     if ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) || $svdb_status ) {
         $log->info(q{SVDB is already installed in the specified conda environment.});
-        if ($noupdate) {
-            say {$FILEHANDLE} q{## SVDB is already installed, skippping reinstallation};
-            say {$FILEHANDLE} $NEWLINE;
-            return;
-        }
         $log->warn(q{This will overwrite the current SVDB installation.});
-
     }
 
     $log->info(q{Writing instructions for SVDB installation via SHELL});
 
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$FILEHANDLE} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Move to miniconda environment
     say {$FILEHANDLE} q{## Move to conda environment};
@@ -238,18 +224,13 @@ sub install_svdb {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }

@@ -31,7 +31,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_picard };
@@ -44,7 +44,6 @@ sub install_picard {
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
 ##          : $program_parameters_href => Hash with Picard specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -55,7 +54,6 @@ sub install_picard {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
-    my $noupdate;
     my $picard_parameters_href;
     my $quiet;
     my $verbose;
@@ -75,10 +73,6 @@ sub install_picard {
             required => 1,
             store    => \$FILEHANDLE,
             defined  => 1,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
         },
         program_parameters_href => {
             default     => {},
@@ -116,27 +110,21 @@ sub install_picard {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Picard};
+    $log->info(qq{Writing instructions for Picard installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    ## Check if installation exists and remove directory
     my $picard_dir_path =
       catdir( $conda_prefix_path, q{share}, q{picard-tools-} . $picard_version );
-    my $install_check = check_existing_installation(
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $picard_dir_path,
             program_name           => q{Picard},
         }
     );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary picard install directory};
@@ -213,7 +201,7 @@ sub install_picard {
             recursive   => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }

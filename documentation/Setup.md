@@ -138,6 +138,10 @@ GATK needs more data in the variant calling for exomes than a single sample or t
 Corresponding MIP references:
  - grch37_gatk_merged_reference_samples.txt
 
+## Gene panel for the clinical test
+MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panel.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panel.bed`.  
+
+
 [Bcftools]: http://www.htslib.org/
 [BedTools]: http://bedtools.readthedocs.org/en/latest/
 [BWA]: https://github.com/lh3/bwa

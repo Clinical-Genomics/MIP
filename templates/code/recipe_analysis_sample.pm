@@ -138,7 +138,7 @@ sub analysis_RECIPE_NAME {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
-      qw{ add_recipe_metafile_to_sample_info set_recipe_outfile_in_sample_info };
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
