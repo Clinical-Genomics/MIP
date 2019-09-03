@@ -59,7 +59,7 @@ diag(   q{Test bcftools_base from Base::Bcftools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $THREADS => 12;
+Readonly my $NR_THREADS_TO_USE => 12;
 
 ## Base arguments
 my @function_base_commands = qw{ bcftools };
@@ -110,7 +110,7 @@ my %specific_argument = (
         expected_output => q{--samples ^sample_1,sample_2},
     },
     threads => {
-        input           => $THREADS,
+        input           => $NR_THREADS_TO_USE,
         expected_output => q{--threads} . $SPACE . $NR_THREADS_TO_USE,
     },
 );

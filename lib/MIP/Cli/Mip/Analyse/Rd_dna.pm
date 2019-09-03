@@ -203,7 +203,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{frequency_annotation} => (
             cmd_aliases   => [qw{ fqa }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Annotate vcf with allelle frequencies},
+            documentation => q{Annotate vcf with allele frequencies},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

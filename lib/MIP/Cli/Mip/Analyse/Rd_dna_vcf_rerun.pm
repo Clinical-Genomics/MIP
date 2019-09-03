@@ -595,7 +595,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
         q{frequency_annotation} => (
             cmd_aliases   => [qw{ fqa }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Annotate vcf with allelle frequencies},
+            documentation => q{Annotate vcf with allele frequencies},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
