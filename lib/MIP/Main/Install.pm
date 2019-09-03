@@ -45,7 +45,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.02;
+    our $VERSION = 2.03;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -99,7 +99,7 @@ sub mip_install {
     # Catches name of current script
     my $script = _this_sub();
 
-    ## Catches name of the calling module 
+    ## Catches name of the calling module
     my $process = _parent_module();
 
     ## Build pipeline name
@@ -205,7 +205,8 @@ sub mip_install {
     ## Installation specific checks of active_parameter hash
     check_active_installation_parameters(
         {
-            active_parameter_href => \%active_parameter,
+            project_id  => $active_parameter_href->{project_id},
+            sbatch_mode => $active_parameter_href->{sbatch_mode},
         }
     );
 
