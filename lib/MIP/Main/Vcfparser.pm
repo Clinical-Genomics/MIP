@@ -44,8 +44,8 @@ sub mip_vcfparser {
 ##          : $range_feature_file                    => Range feature file
 ##          : $select_feature_annotation_columns_ref => Select feature columns {REF}
 ##          : $select_feature_file                   => Select feature file
-##          : $select_outfile_path                   => Select file path
 ##          : $select_feature_matching_column        => Select feature matching column
+##          : $select_outfile_path                   => Select file path
 ##          : $VCF_IN_FH                             => VCF in filehandle
 ##          : $write_software_tag                    => Write software tag to vcf header switch
 
@@ -57,8 +57,8 @@ sub mip_vcfparser {
     my $range_feature_annotation_columns_ref;
     my $range_feature_file;
     my $select_feature_annotation_columns_ref;
-    my $select_outfile_path;
     my $select_feature_matching_column;
+    my $select_outfile_path;
 
     ## Default(s)
     my $padding;
