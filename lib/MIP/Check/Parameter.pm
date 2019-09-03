@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -67,25 +67,23 @@ BEGIN {
 sub check_active_installation_parameters {
 
 ## Function : Some active_parameter checks that are common to both installations. Returns "1" if all is OK
-## Returns  : $install_check
-## Arguments: $conda_environment      => Conda environment
-##          : $conda_prefix_path      => Path to conda environment
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $log                    => Log to write messages to
-##          : $program_directory_path => Path to program directory
-##          : $program_name                => Program name
+## Returns  : 1 or exit
+## Arguments: $project_id => Project id
+##          : sbatch_mode => Sbatch mode boolean
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $project_id;
+    my $sbatch_mode;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
+        project_id => {
+            store       => \$project_id,
+            strict_type => 1,
+        },
+        sbatch_mode => {
+            store       => \$sbatch_mode,
             strict_type => 1,
         },
     };
@@ -95,15 +93,14 @@ sub check_active_installation_parameters {
     my $log = Log::Log4perl->get_logger($LOG);
 
     ## Check that a project id has been set if SBATCH mode
-    if ( $active_parameter_href->{sbatch_mode}
-        and not $active_parameter_href->{project_id} )
+    if ( $sbatch_mode
+        and not $project_id )
     {
         $log->fatal(
 q{The parameter "project_id" must be set when a sbatch installation has been requested}
         );
         exit 1;
     }
-
     return 1;
 }
 
