@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $BACKWARD_SLASH $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $BACKWARD_SLASH $COMMA $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_dbnsfp };
@@ -200,11 +200,12 @@ sub download_dbnsfp {
 
     ## Build dbnsfp chr file name after unzip
     my $dbnsfp_chr_file_name =
-      q{dbNSFP} . $reference_version . $UNDERSCORE . q{variant.chr} . $ASTERISK;
+      q{dbNSFP} . $reference_version . $UNDERSCORE . q{variant.chr};
     my $dbnsfp_chr_file_path = catfile( $reference_dir, $dbnsfp_chr_file_name );
     my $reformated_outfile   = join $UNDERSCORE,
       (
-        $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.txt}
+        $genome_version, $recipe_name, q{reformated},
+        $DASH . $reference_version . q{-.txt}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
@@ -218,6 +219,7 @@ sub download_dbnsfp {
                 outfile_path      => $reformated_outfile_path,
                 reference_dir     => $reference_dir,
                 reference_version => $reference_version,
+                temp_directory    => $temp_directory,
             }
         );
     }
@@ -231,6 +233,7 @@ sub download_dbnsfp {
                 outfile_path      => $reformated_outfile_path,
                 reference_dir     => $reference_dir,
                 reference_version => $reference_version,
+                temp_directory    => $temp_directory,
             }
         );
     }
@@ -262,6 +265,7 @@ sub _reformat_for_grch37 {
 ##          : $outfile_path      => Outfile path
 ##          : $reference_dir     => Reference directory
 ##          : $reference_version => Reference version
+##          : $temp_directory    => Temporary directory for recipe
 
     my ($arg_href) = @_;
 
@@ -271,40 +275,45 @@ sub _reformat_for_grch37 {
     my $outfile_path;
     my $reference_dir;
     my $reference_version;
+    my $temp_directory;
 
     my $tmpl = {
         FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
         outfile_path => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
         reference_dir => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$reference_dir,
             strict_type => 1,
         },
         reference_version => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$reference_version,
+            strict_type => 1,
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $dbnsfp_chr1_file_name =
-      q{dbNSFP} . $reference_version . $UNDERSCORE . q{variant.chr1};
-    my $dbnsfp_chr1_file_path = catfile( $reference_dir, $dbnsfp_chr1_file_name );
+    my $dbnsfp_chr1_file_path = $infile_path . q{1};
 
     my $header_file_path = catfile( $reference_dir, q{dbnsfp_header.txt} );
 
@@ -323,7 +332,7 @@ sub _reformat_for_grch37 {
     gnu_cat(
         {
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => [$infile_path],
+            infile_paths_ref => [ $infile_path . $ASTERISK ],
         }
     );
     say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
@@ -348,12 +357,15 @@ sub _reformat_for_grch37 {
     );
     say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
-## Sort nummerical on column 8 and 9
+    ## Sort nummerical on column number for $GRCH37_CHR_POS and $GRCH37_REGION_POS
+    my $sort_chr_pos    = join $COMMA, ($GRCH37_CHR_POS) x 2;
+    my $sort_region_pos = join( $COMMA, ($GRCH37_REGION_POS) x 2 ) . q{n};
     gnu_sort(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $DASH,
-            keys_ref    => [ q{8,8}, q{9,9n} ],
+            FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $DASH,
+            keys_ref            => [ $sort_chr_pos, $sort_region_pos ],
+            temporary_directory => $temp_directory,
         }
     );
     say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
@@ -369,7 +381,8 @@ sub _reformat_for_grch37 {
     say {$FILEHANDLE} $NEWLINE;
 
     say {$FILEHANDLE} q{## Compress and index file};
-## Compress file
+
+    ## Compress file
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -379,7 +392,7 @@ sub _reformat_for_grch37 {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-## Index file using tabix
+    ## Index file using tabix
     htslib_tabix(
         {
             begin       => $GRCH37_REGION_POS,
@@ -404,6 +417,7 @@ sub _reformat_dbnsfp {
 ##          : $outfile_path      => Outfile path
 ##          : $reference_dir     => Reference directory
 ##          : $reference_version => Reference version
+##          : $temp_directory    => Temporary directory for recipe
 
     my ($arg_href) = @_;
 
@@ -413,42 +427,81 @@ sub _reformat_dbnsfp {
     my $outfile_path;
     my $reference_dir;
     my $reference_version;
+    my $temp_directory;
 
     my $tmpl = {
         FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
         outfile_path => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
         reference_dir => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$reference_dir,
             strict_type => 1,
         },
         reference_version => {
-            default     => 1,
+            defined     => 1,
             required    => 1,
             store       => \$reference_version,
+            strict_type => 1,
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Read files
-    gnu_cat(
+    use MIP::Program::Compression::Gzip qw{ gzip };
+
+    ## Any chr will do to generate header info
+    my $dbnsfp_chr1_file_path = $infile_path . q{1.gz};
+
+    ## Header file
+    my $header_file_path = catfile( $reference_dir, q{dbnsfp_header.txt} );
+
+    ## Read chr file
+    gzip(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => [$infile_path],
+            decompress  => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $dbnsfp_chr1_file_path,
+            stdout      => 1,
+        }
+    );
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    gnu_grep(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            pattern         => q{^#chr},
+            infile_path     => $DASH,
+            stdoutfile_path => $header_file_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Read files
+    gzip(
+        {
+            decompress  => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $infile_path . $ASTERISK,
+            stdout      => 1,
         }
     );
     say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
@@ -456,17 +509,39 @@ sub _reformat_dbnsfp {
     ## Skip header line starting with "#chr"
     gnu_grep(
         {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $DASH,
-            invert_match    => 1,
-            pattern         => q{^#chr},
-            stdoutfile_path => $outfile_path,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $DASH,
+            invert_match => 1,
+            pattern      => q{^#chr},
+        }
+    );
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+
+    my $sort_chr_pos    = join $COMMA, ($GRCH38_CHR_POS) x 2;
+    my $sort_region_pos = join( $COMMA, ($GRCH38_REGION_POS) x 2 ) . q{n};
+    gnu_sort(
+        {
+            FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $DASH,
+            keys_ref            => [ $sort_chr_pos, $sort_region_pos ],
+            temporary_directory => $temp_directory,
+        }
+    );
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+
+    ## Concatenate header and input stream (DASH)
+    gnu_cat(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => [ $header_file_path, $DASH ],
+            stdoutfile_path  => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     say {$FILEHANDLE} q{## Compress and index file};
-## Compress file
+
+    ## Compress file
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -475,7 +550,7 @@ sub _reformat_dbnsfp {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-## Index file using tabix
+    ## Index file using tabix
     htslib_tabix(
         {
             begin       => $GRCH38_REGION_POS,

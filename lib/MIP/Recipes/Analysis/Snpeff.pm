@@ -400,7 +400,9 @@ sub analysis_snpeff {
         close $XARGSFILEHANDLE;
     }
 
-    if ( @{ $active_parameter_href->{snpsift_dbnsfp_annotations} } ) {
+    if ( exists $active_parameter_href->{snpsift_dbnsfp_annotations}
+        and @{ $active_parameter_href->{snpsift_dbnsfp_annotations} } )
+    {
 
         ## SnpSiftDbNSFP Annotation
         say {$FILEHANDLE} q{## SnpSift DnNSFP Annotation};

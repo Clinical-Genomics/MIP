@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,41 +26,38 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gzip };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub gzip {
 
 ## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
 ## Returns  : @commands
-## Arguments: $infile_path            => Infile path
-##          : $stdout                 => Write on standard output, keep original files unchanged
-##          : $decompress             => Decompress
-##          : $force                  => Force overwrite of output file and compress links
-##          : $outfile_path           => Outfile path. Write documents to FILE
+## Arguments: $decompress             => Decompress##          :
 ##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
+##          : $force                  => Force overwrite of output file and compress links
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Outfile path. Write documents to FILE
 ##          : $stderrfile_path        => Stderrfile path (scalar )
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdout                 => Write on standard output, keep original files unchanged
 ##          : $quiet                  => Suppress all warnings
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
-    my $stdout;
     my $decompress;
-    my $force;
-    my $outfile_path;
     my $FILEHANDLE;
+    my $force;
+    my $infile_path;
+    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdout;
 
     ## Default(s)
     my $quiet;
@@ -68,32 +65,31 @@ sub gzip {
 
     my $tmpl = {
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        stdout => { strict_type => 1, store => \$stdout },
+        stdout => { store => \$stdout, strict_type => 1, },
         decompress =>
-          { allow => [ undef, 0, 1 ], strict_type => 1, store => \$decompress },
-        force =>
-          { allow => [ undef, 0, 1 ], strict_type => 1, store => \$force },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { allow => [ undef, 0, 1 ], store => \$decompress, strict_type => 1, },
+        force => { allow => [ undef, 0, 1 ], store => \$force, strict_type => 1, },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        FILEHANDLE      => { store => \$FILEHANDLE, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+          { store => \$stderrfile_path_append, strict_type => 1, },
         quiet => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
 
     };
@@ -101,7 +97,7 @@ sub gzip {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw(gzip);
+    my @commands = qw{ gzip };
 
     ## Options
     if ($quiet) {
@@ -136,7 +132,6 @@ sub gzip {
     ## Outfile
     if ($outfile_path) {
 
-        #Outfile
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
@@ -151,11 +146,10 @@ sub gzip {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 

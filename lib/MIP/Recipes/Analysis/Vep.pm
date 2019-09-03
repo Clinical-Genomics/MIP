@@ -342,8 +342,17 @@ sub analysis_vep {
         {
 
             my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
+              $COMMA . $active_parameter_href->{vep_plugin_pli_value_file_path};
             push @plugins, $plugin . $pli_file_path;
+        }
+        elsif ( $plugin eq q{dbNSFP}
+            and exists $active_parameter_href->{vep_plugin_dbNSFP_file_path} )
+        {
+
+            my $dbnsfp_file_path = $active_parameter_href->{vep_plugin_dbNSFP_file_path};
+            my $dbnsfp_fields    = join $COMMA,
+              qw{ GERP++_RS GERP++_NR phyloP100way_vertebrate phastCons100way_vertebrate REVEL_rankscore };
+            push @plugins, join $COMMA, ( $plugin, $dbnsfp_file_path, $dbnsfp_fields );
         }
         else {
 

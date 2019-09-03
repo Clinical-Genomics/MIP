@@ -3,7 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
+
 - Moves frequency annotation to separate recipe
+
+### Grch38
+- Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
 
 **CLI**
 - Removes the noupdate option from the installation
@@ -15,6 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ##[7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
+
 
 ## [7.1.0]
 - Updated TIDDIT to enable faster processing

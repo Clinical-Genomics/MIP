@@ -728,6 +728,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{vep_plugin_dbNSFP_file_path} => (
+            cmd_aliases   => [qw{ veppldbnsfp }],
+            documentation => q{VEP plugin dbnsfp file path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{vep_plugin_pli_value_file_path} => (
             cmd_aliases   => [qw{ vepplpli }],
             documentation => q{VEP plugin pli file path},

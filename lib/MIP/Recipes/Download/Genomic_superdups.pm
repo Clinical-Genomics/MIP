@@ -27,12 +27,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
 
 }
+
+## Constants
+Readonly my $GENOME_BUILD_VERSION_37 => q{grch37};
 
 sub download_genomic_superdups {
 
@@ -204,21 +207,26 @@ sub download_genomic_superdups {
         $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.bed}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-    ## Repeat inline replace due to three chr entries  in file and use if "$1"
-    say {$FILEHANDLE}
-      q{## Repeat inline replace due to three chr entries  in file and use if "$1"};
-    say   {$FILEHANDLE} q?for nr_chr_in_line in {1..3}?;
-    say   {$FILEHANDLE} q{do};
-    print {$FILEHANDLE} $TAB;
+
+    if ( $genome_version eq $GENOME_BUILD_VERSION_37 ) {
+
+        ## Repeat inline replace due to three chr entries  in file and use if "$1"
+        say {$FILEHANDLE}
+          q{## Repeat inline replace due to three chr entries  in file and use if "$1"};
+        say   {$FILEHANDLE} q?for nr_chr_in_line in {1..3}?;
+        say   {$FILEHANDLE} q{do};
+        print {$FILEHANDLE} $TAB;
 ## Remove chr prefix in file
-    _remove_chr_prefix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_no_suffix,
-        }
-    );
-    say {$FILEHANDLE} $SEMICOLON;
-    say {$FILEHANDLE} q{done} . $NEWLINE;
+        _remove_chr_prefix(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $outfile_path_no_suffix,
+            }
+        );
+        say {$FILEHANDLE} $SEMICOLON;
+        say {$FILEHANDLE} q{done} . $NEWLINE;
+
+    }
 
     ## Reformat to bed
     say {$FILEHANDLE} q{## Reformat to bed};
