@@ -23,6 +23,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Check::Vcfparser qw{ check_vcfparser_cli };
 use MIP::Constants qw{ %ANALYSIS $COLON $DASH $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Main::Vcfparser qw{ mip_vcfparser };
@@ -99,34 +100,15 @@ sub run {
     );
 
     ## Basic flag option check
-    if ( not @range_feature_annotation_columns and $range_feature_file ) {
-
-        $log->fatal(
-            q{Need to specify which feature column(s) to use with range feature file: }
-              . $range_feature_file
-              . q{ when annotating variants by using flag -rf_ac},
-            $NEWLINE
-        );
-        exit 1;
-    }
-    if ( not $select_feature_matching_column and $select_feature_file ) {
-
-        $log->fatal(
-            q{Need to specify which feature column to use with select feature file: }
-              . $select_feature_file
-              . q{ when selecting variants by using flag -sf_mc},
-            $NEWLINE
-        );
-        exit 1;
-    }
-    if ( not $select_outfile and $select_feature_file ) {
-
-        $log->fatal(
-q{Need to specify which a select outfile to use when selecting variants by using flag -sof},
-            $NEWLINE
-        );
-        exit 1;
-    }
+    check_vcfparser_cli(
+        {
+            range_feature_file              => $range_feature_file,
+            range_feature_annotation_column => $range_feature_annotation_columns[0],
+            select_feature_file             => $select_feature_file,
+            select_feature_matching_column  => $select_feature_matching_column,
+            select_outfile                  => $select_outfile,
+        }
+    );
 
     mip_vcfparser(
         {
