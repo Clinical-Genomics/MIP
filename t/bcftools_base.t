@@ -111,7 +111,7 @@ my %specific_argument = (
     },
     threads => {
         input           => $THREADS,
-        expected_output => q{--threads} . $SPACE . $THREADS,
+        expected_output => q{--threads} . $SPACE . $NR_THREADS_TO_USE,
     },
 );
 
