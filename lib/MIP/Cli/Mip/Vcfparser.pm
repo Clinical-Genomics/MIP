@@ -23,6 +23,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Check::Vcfparser qw{ check_vcfparser_cli };
 use MIP::Constants qw{ %ANALYSIS $COLON $DASH $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Main::Vcfparser qw{ mip_vcfparser };

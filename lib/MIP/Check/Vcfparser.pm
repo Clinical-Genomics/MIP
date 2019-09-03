@@ -36,7 +36,7 @@ sub check_vcfparser_cli {
 ## Arguments: $range_feature_annotation_column => Range feature file annotation columns
 ##          : $range_feature_file              => Range feature file
 ##          : $select_feature_file             => Select feature file
-##          : $select_outfile             => Select file path
+##          : $select_outfile                  => Select file path
 ##          : $select_feature_matching_column  => Select feature matching column
 
     my ($arg_href) = @_;
@@ -81,28 +81,24 @@ sub check_vcfparser_cli {
         range_feature_annotation_column => {
             dependens_on_value => $range_feature_file,
             msg =>
-              q{Need to specify which feature column(s) to use with range feature file: }
-              . $range_feature_file
-              . q{ when annotating variants by using flag -rf_ac}
+q{Need to specify which feature column(s) to use with range feature file when annotating variants by using flag -rf_ac}
               . $NEWLINE,
             value => $range_feature_annotation_column,
         },
         select_feature_matching_column => {
             dependens_on_value => $select_feature_file,
             msg =>
-              q{Need to specify which feature column to use with select feature file: }
-              . $select_feature_file
-              . q{ when selecting variants by using flag -sf_mc}
+q{Need to specify which feature column to use with select feature file when selecting variants by using flag -sf_mc}
               . $NEWLINE,
             value => $select_feature_matching_column,
         },
         select_outfile => {
             dependens_on_value => $select_feature_file,
             msg =>
-q{Need to specify which a select outfile to use when selecting variants by using flag -sof}
+q{Need to specify a select outfile to use when selecting variants by using flag -sof}
               . $NEWLINE,
             value => $select_outfile,
-        }
+        },
     );
 
   OPTION:
