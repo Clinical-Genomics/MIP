@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,10 +62,10 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 my %active_parameter_test = (
-    fqf_vcfanno_config => catfile(
+    fqa_vcfanno_config => catfile(
         $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
     ),
-    frequency_filter                   => 1,
+    frequency_annotation               => 1,
     gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
         catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf } ),
