@@ -153,74 +153,32 @@ q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli sc
 
     my %select_data = define_select_data_headers();
 
-    my %read_feature_file_map = (
+    ## Range feature file
+    read_feature_file(
         {
-            range_feature_file => sub {
-                read_feature_file(
-                    {
-                        feature_columns_ref => $range_feature_annotation_columns_ref,
-                        feature_data_href   => \%range_data,
-                        log                 => $log,
-                        feature_file_path   => $range_feature_file,
-                        padding             => $padding,
-                        feature_file_type   => q{range_feature},
-                        tree_href           => \%tree,
-                    }
-                );
-            },
-            select_feature_file => sub {
-                read_feature_file(
-                    {
-                        feature_columns_ref     => $select_feature_annotation_columns_ref,
-                        feature_data_href       => \%select_data,
-                        log                     => $log,
-                        feature_file_path       => $select_feature_file,
-                        padding                 => $padding,
-                        feature_file_type       => q{select_feature},
-                        feature_matching_column => $select_feature_matching_column,
-                        tree_href               => \%tree,
-                    }
-                );
-            },
+            feature_columns_ref => $range_feature_annotation_columns_ref,
+            feature_data_href   => \%range_data,
+            log                 => $log,
+            feature_file_path   => $range_feature_file,
+            padding             => $padding,
+            feature_file_type   => q{range_feature},
+            tree_href           => \%tree,
         }
     );
 
-  FEATURE_FILE:
-    foreach my $feature_file_type ( $range_feature_file, $select_feature_file ) {
-
-        $read_feature_file_map{$feature_file_type};
-    }
-
-    #    if ($range_feature_file) {
-
-    #        read_feature_file(
-    #            {
-    #                feature_columns_ref => $range_feature_annotation_columns_ref,
-    #                feature_data_href   => \%range_data,
-    #                log                 => $log,
-    #                feature_file_path   => $range_feature_file,
-    #                padding             => $padding,
-    #                feature_file_type   => q{range_feature},
-    #                tree_href           => \%tree,
-    #            }
-    #        );
-    #    }
-
-    #    if ($select_feature_file) {
-
-    #        read_feature_file(
-    #            {
-    #                feature_columns_ref     => $select_feature_annotation_columns_ref,
-    #                feature_data_href       => \%select_data,
-    #                log                     => $log,
-    #                feature_file_path       => $select_feature_file,
-    #                padding                 => $padding,
-    #                feature_file_type       => q{select_feature},
-    #                feature_matching_column => $select_feature_matching_column,
-    #                tree_href               => \%tree,
-    #            }
-    #        );
-    #    }
+    ## Select feature file
+    read_feature_file(
+        {
+            feature_columns_ref     => $select_feature_annotation_columns_ref,
+            feature_data_href       => \%select_data,
+            log                     => $log,
+            feature_file_path       => $select_feature_file,
+            padding                 => $padding,
+            feature_file_type       => q{select_feature},
+            feature_matching_column => $select_feature_matching_column,
+            tree_href               => \%tree,
+        }
+    );
 
     read_infile_vcf(
         {

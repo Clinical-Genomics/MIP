@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -254,7 +254,6 @@ sub read_feature_file {
             strict_type => 1,
         },
         feature_file_path => {
-            defined     => 1,
             required    => 1,
             store       => \$feature_file_path,
             strict_type => 1,
@@ -292,6 +291,8 @@ sub read_feature_file {
     use MIP::Vcfparser qw{ build_interval_tree };
     use MIP::File::Format::Feature_file
       qw{ parse_feature_file_data parse_feature_file_header };
+
+    return if ( not $feature_file_path );
 
     my $FILEHANDLE = IO::Handle->new();
 
