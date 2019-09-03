@@ -20,8 +20,12 @@ use Readonly;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
+
+my $VERBOSE = 1;
+our $VERSION = 1.04;
 
 our $USAGE = build_usage( {} );
 
@@ -71,7 +75,7 @@ BEGIN {
           or BAIL_OUT q{Cannot load } . $module;
     }
 
-    ##Modules
+    ## Modules
     @modules = qw{ Cwd Getopt::Long IO::Handle
       IPC::System::Simple Log::Log4perl
       Path::Iterator::Rule POSIX strict
@@ -85,14 +89,7 @@ BEGIN {
     }
 }
 
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
 my $config_file = catfile( dirname($Bin), qw(templates mip_rd_dna_config.yaml) );
-my $VERBOSE     = 1;
-our $VERSION = 1.03;
 
 ###User Options
 GetOptions(
@@ -179,8 +176,6 @@ END_USAGE
 }
 
 sub test_modules {
-
-##test_modules
 
 ##Function : Test perl modules and functions
 ##Returns  :
@@ -287,7 +282,7 @@ sub mip_scripts {
 ## Returns  :
 ## Arguments:
 
-    my @mip_scripts = qw{ vcfparser.pl };
+    my @mip_scripts = qw{ mip };
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
@@ -296,17 +291,46 @@ sub mip_scripts {
     }
 
     my %mip_sub_scripts = (
-        utility_scripts => [
-            qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl qccollect.pl }
-        ],
+        utility_scripts =>
+          [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
         definitions => [
-            qw{ analyse_parameters.yaml cpanfile download_rd_dna_parameters.yaml download_rd_rna_parameters.yaml install_rd_dna_parameters.yaml install_rd_rna_parameters.yaml mandatory_parameter_keys.yaml mip_parameters.yaml non_mandatory_parameter_keys.yaml rd_dna_initiation_map.yaml rd_dna_parameters.yaml rd_rna_parameters.yaml rd_rna_initiation_map.yaml rd_dna_vcf_rerun_initiation_map.yaml rd_dna_vcf_rerun_parameters.yaml }
+            qw{ analyse_parameters.yaml
+              cpanfile
+              download_rd_dna_parameters.yaml
+              download_rd_rna_parameters.yaml
+              install_rd_dna_parameters.yaml
+              install_rd_rna_parameters.yaml
+              mandatory_parameter_keys.yaml
+              mip_parameters.yaml
+              non_mandatory_parameter_keys.yaml
+              rd_dna_initiation_map.yaml
+              rd_dna_parameters.yaml
+              rd_rna_parameters.yaml
+              rd_rna_initiation_map.yaml
+              rd_dna_vcf_rerun_initiation_map.yaml
+              rd_dna_vcf_rerun_parameters.yaml
+              }
         ],
         t => [
-            qw{ mip_install.test mip_analyse_rd_dna.test mip_analyse_rd_rna.test mip_analyse_rd_dna_vcf_rerun.test mip_core.t mip_analysis.test }
+            qw{ mip_install.test
+              mip_analyse_rd_dna.test
+              mip_analyse_rd_rna.test
+              mip_analyse_rd_dna_vcf_rerun.test
+              mip_core.t
+              mip_analysis.test
+              }
         ],
         templates => [
-            qw{ 643594-miptest_pedigree.yaml gene_panel.bed mip_rd_dna_config.yaml mip_log.yaml mip_rd_rna_config.yaml mip_rd_dna_vcf_rerun_config.yaml qc_regexp_-v1.23-.yaml rank_model_cmms_-v1.21-.ini svrank_model_cmms_-v1.4-.ini }
+            qw{ 643594-miptest_pedigree.yaml
+              gene_panel.bed
+              mip_rd_dna_config.yaml
+              mip_log.yaml
+              mip_rd_rna_config.yaml
+              mip_rd_dna_vcf_rerun_config.yaml
+              qc_regexp_-v1.23-.yaml
+              rank_model_cmms_-v1.21-.ini
+              svrank_model_cmms_-v1.4-.ini
+              }
         ],
     );
 
