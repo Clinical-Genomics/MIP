@@ -1,23 +1,23 @@
 package MIP::Program::Variantcalling::Bcftools;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
 use MIP::Program::Base::Bcftools qw{ bcftools_base };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -48,13 +48,6 @@ BEGIN {
       bcftools_view_and_index_vcf
     };
 }
-
-## Constants
-Readonly my $COMMA        => q{,};
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $PIPE         => q{|};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SPACE        => q{ };
 
 sub bcftools_annotate {
 
@@ -365,6 +358,7 @@ sub bcftools_concat {
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $threads                => Extra compression threds in addition to main thread
 
     my ($arg_href) = @_;
 
@@ -378,6 +372,7 @@ sub bcftools_concat {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $threads;
 
     ## Default(s)
     my $allow_overlaps;
@@ -418,6 +413,12 @@ sub bcftools_concat {
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        threads         => {
+            allow       => qr/\A \d+ \z | undef /xms,
+            default     => 0,
+            store       => \$threads,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -434,6 +435,7 @@ sub bcftools_concat {
             regions_ref       => $regions_ref,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
+            threads           => $threads,
         }
     );
 
@@ -1185,12 +1187,12 @@ sub bcftools_reheader {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store   => \$FILEHANDLE, },
-        infile_path  => { store   => \$infile_path, strict_type => 1, },
-        outfile_path => { store   => \$outfile_path, strict_type => 1, },
-        regions_ref  => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
-        samples_ref       => {
+        FILEHANDLE        => { store   => \$FILEHANDLE, },
+        infile_path       => { store   => \$infile_path, strict_type => 1, },
+        outfile_path      => { store   => \$outfile_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
+        samples_ref => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,

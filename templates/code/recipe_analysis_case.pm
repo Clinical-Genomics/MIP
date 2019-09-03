@@ -248,7 +248,7 @@ sub analysis_RECIPE_NAME {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

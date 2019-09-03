@@ -5,7 +5,7 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - fqf_vcfanno_config
+   - fqa_vcfanno_config
    - snpsift_annotation_files
   element_separator: ,
   type: mip
@@ -398,7 +398,7 @@ rhocall_frequency_file:
   associated_recipe:
    - rhocall_ar
   data_type: SCALAR
-  default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz
+  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -441,6 +441,26 @@ vt_uniq:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+frequency_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _af
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - vcfanno
+  type: recipe
+fqa_vcfanno_config:
+  associated_recipe:
+   - frequency_annotation
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -453,14 +473,6 @@ frequency_filter:
    - bcftools
    - vcfanno
   type: recipe
-fqf_vcfanno_config:
-  associated_recipe:
-   - frequency_filter
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
 fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter

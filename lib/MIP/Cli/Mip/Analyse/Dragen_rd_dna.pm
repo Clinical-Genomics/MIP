@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -580,21 +580,31 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{frequency_filter} => (
-            cmd_aliases   => [qw{ fqf }],
+        q{frequency_annotation} => (
+            cmd_aliases   => [qw{ fqa }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Filter variants on frequency},
+            documentation => q{Annotate vcf with allele frequencies},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
-        q{fqf_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqfcvac }],
+        q{fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqacvac }],
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{frequency_filter} => (
+            cmd_aliases   => [qw{ fqf }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Filter variants on frequency},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

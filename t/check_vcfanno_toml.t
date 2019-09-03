@@ -22,10 +22,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -72,12 +69,12 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqf_vcfanno_config =
+my $fqa_vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqf_vcfanno_config = catfile( $test_reference_dir,
+my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
 
 my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
@@ -90,7 +87,7 @@ my $parse_path =
 
 ## Parse original file and create new config for test
 my $command_string = join $SPACE,
-  ( $parse_path, $fqf_vcfanno_config, q{>}, $test_fqf_vcfanno_config );
+  ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
 
 my %return = system_cmd_call( { command_string => $command_string, } );
 
@@ -98,8 +95,8 @@ my %return = system_cmd_call( { command_string => $command_string, } );
 my $is_ok = check_vcfanno_toml(
     {
         log               => $log,
-        parameter_name    => q{fqf_vcfanno_config},
-        vcfanno_file_toml => $test_fqf_vcfanno_config,
+        parameter_name    => q{fqa_vcfanno_config},
+        vcfanno_file_toml => $test_fqa_vcfanno_config,
     }
 );
 
@@ -107,18 +104,18 @@ my $is_ok = check_vcfanno_toml(
 ok( $is_ok, q{Passed check for toml file} );
 
 ## Clean-up
-rmtree($test_fqf_vcfanno_config);
+rmtree($test_fqa_vcfanno_config);
 
 ## Given a toml config file, when mandatory features are absent
-my $faulty_fqf_vcfanno_config_file = catfile( $Bin,
+my $faulty_fqa_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
 trap {
     check_vcfanno_toml(
         {
             log               => $log,
-            parameter_name    => q{fqf_vcfanno_config},
-            vcfanno_file_toml => $faulty_fqf_vcfanno_config_file,
+            parameter_name    => q{fqa_vcfanno_config},
+            vcfanno_file_toml => $faulty_fqa_vcfanno_config_file,
         }
     )
 };

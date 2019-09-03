@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Sv_annotate} => [qw{ analysis_sv_annotate }],
+        q{MIP::Recipes::Analysis::Frequency_annotation} =>
+          [qw{ analysis_frequency_annotation }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
+use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
 
-diag(   q{Test analysis_sv_annotate from Sv_annotate.pm v}
-      . $MIP::Recipes::Analysis::Sv_annotate::VERSION
+diag(   q{Test analysis_frequency_annotation from Frequency_annotation.pm v}
+      . $MIP::Recipes::Analysis::Frequency_annotation::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,13 +60,10 @@ diag(   q{Test analysis_sv_annotate from Sv_annotate.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $FREQ_CUTOFF => 0.40;
-
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{sv_annotate};
+my $recipe_name    = q{frequency_annotation};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -78,15 +76,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{sv_frequency_filter}           = 1;
-$active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
-$active_parameter{fqa_vcfanno_config}            = catfile( $Bin,
-    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
-$active_parameter{sv_svdb_query} = 1;
-$active_parameter{sv_svdb_query_db_files} =
-  { a_file =>
-q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1},
-  };
+$active_parameter{fqa_vcfanno_config} = catfile( $Bin,
+    qw{ data references grch37_frequency_vcfanno_annotation_config_-v1.0-.toml } );
 
 my %file_info = test_mip_hashes(
     {
@@ -94,7 +85,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
 %{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
@@ -109,11 +99,11 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf.gz};
 
 my %sample_info;
 
-my $is_ok = analysis_sv_annotate(
+my $is_ok = analysis_frequency_annotation(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
