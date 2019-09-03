@@ -7,6 +7,7 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
@@ -67,14 +68,11 @@ sub run {
     my $write_software_tag   = $arg_href->{write_software_tag};
     my $log_file             = $arg_href->{log_file};
 
-    ## STDIN
+    ## STDIN or file
     my $infile = $arg_href->{infile};
 
-    # Create anonymous filehandle
-    my $VCF_IN_FH = IO::Handle->new();
-
     ## Enables vcfparser to read infile from either STDIN or file
-    $VCF_IN_FH = _get_vcf_in_filehandle( { infile => $infile, } );
+    my $VCF_IN_FH = _get_vcf_in_filehandle( { infile => $infile, } );
 
     ## Creates log object
     my $log = initiate_logger(
@@ -124,7 +122,7 @@ sub _build_usage {
 
     parameter(
         q{infile} => (
-            documentation => q{Infile path},
+            documentation => q{Infile path or "-" for infile stream},
             is            => q{rw},
             isa           => Str,
             required      => 1,
@@ -304,7 +302,7 @@ sub _get_vcf_in_filehandle {
 
     return *STDIN if ( $infile eq $DASH );
 
-    open $VCF_IN_FH, q{<}, $infile
+    open my $VCF_IN_FH, q{<}, $infile
       or croak( q{Cannot open } . $infile . $COLON . $OS_ERROR, $NEWLINE );
     return $VCF_IN_FH;
 }
