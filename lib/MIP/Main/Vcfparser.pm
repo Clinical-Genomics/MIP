@@ -19,6 +19,7 @@ use Readonly;
 use MIP::Constants qw{ $COLON $LOG $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Vcfparser qw{ define_select_data_headers };
 
 BEGIN {
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.16};
+    our $VERSION = q{1.2.17};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vcfparser };
@@ -360,7 +361,6 @@ sub read_infile_vcf {
     };
 
     ## Constants
-    Readonly my $FILTER_COLUMN_INDEX => 6;
     Readonly my $FORMAT_COLUMN_INDEX => 8;
 
     ## Retrieve logger object now that log_file has been set
@@ -528,19 +528,17 @@ sub read_infile_vcf {
             );
         }
 
-        ## Writing vcf record to files
-        my $last_index     = $FILTER_COLUMN_INDEX;
-        my $last_separator = $TAB;
+        ### Writing vcf record to files
 
-        ## If we do not need to split the CSQ field we can print the entire vcf
-        ## record line
-        if ( not $parse_vep ) {
+        ## Get parameters to know how much of line to write
+        my ( $last_index, $last_separator ) = _get_line_parameters(
+            {
+                line_elements_ref => \@line_elements,
+                parse_vep         => $parse_vep,
+            }
+        );
 
-            $last_index     = $#line_elements;
-            $last_separator = $NEWLINE;
-        }
-
-        ## Add until INFO field or end of line
+        ## Write until INFO field or end of line
         write_line_elements(
             {
                 FILEHANDLE        => *STDOUT,
@@ -603,6 +601,56 @@ sub read_infile_vcf {
     }
     $log->info( q{Finished Processing VCF} . $NEWLINE );
     return;
+}
+
+sub _get_line_parameters {
+
+## Function : Get the last index and last seperator value depending on parse vep boolean
+## Returns  : $last_index, $last_separator
+## Arguments: $line_elements_ref => Line elements array {REF}
+##          : $parse_vep         => Scalar description
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $line_elements_ref;
+
+    ## Default(s)
+    my $parse_vep;
+
+    my $tmpl = {
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        parse_vep => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$parse_vep,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Constants
+    Readonly my $FILTER_COLUMN_INDEX => 6;
+
+    ## If we do not need to split the CSQ field we can print the entire vcf
+    ## record line
+    my $last_index     = $#{$line_elements_ref};
+    my $last_separator = $NEWLINE;
+
+    return ( $last_index, $last_separator ) if ( not $parse_vep );
+
+    ## Set parameters to write until INFO field if we need to split CSQ field
+    $last_index     = $FILTER_COLUMN_INDEX;
+    $last_separator = $TAB;
+
+    return $last_index, $last_separator;
 }
 
 sub _get_select_filehandle {
