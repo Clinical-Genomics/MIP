@@ -282,7 +282,7 @@ sub _get_vcf_in_filehandle {
 
 ## Function : Returns FILEHANDLE for infile
 ## Returns  : $VCF_IN_FH or *STDIN
-## Arguments: infile => Infile
+## Arguments: $infile => Infile
 
     my ($arg_href) = @_;
 
