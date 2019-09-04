@@ -60,6 +60,7 @@ recipe_core_number:
     human_reference: 1
     gencode_annotation: 1
     mills_and_1000g_indels: 1
+    runstatus: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -72,9 +73,17 @@ recipe_time:
     human_reference: 1
     gencode_annotation: 1
     mills_and_1000g_indels: 1
+    runstatus: 1
   type: mip
 reference_feature:
   associated_recipe:
    - mip
   data_type: HASH
   type: mip
+runstatus:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -125,6 +125,7 @@ sub analysis_analysisrunstatus {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_mip_process_files };
     use MIP::Get::File qw{ get_path_entries };
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -180,7 +181,7 @@ sub analysis_analysisrunstatus {
     );
 
     ### Test all file that are supposed to exists as they are present in the sample_info file
-    _check_mip_analysis_files(
+    check_mip_process_files(
         {
             FILEHANDLE => $FILEHANDLE,
             paths_ref  => \@paths
@@ -307,76 +308,6 @@ sub _eval_status_flag {
     say {$FILEHANDLE} q?else?;
     say {$FILEHANDLE} $TAB . q?exit 1?;
     say {$FILEHANDLE} q?fi?, $NEWLINE;
-
-    return;
-}
-
-sub _check_mip_analysis_files {
-
-## Function : Test all file that are supposed to exists as they are present in the sample_info file
-## Returns  :
-## Arguments: $FILEHANDLE => Filehandle to write to
-##          : $paths_ref  => Paths to files to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $paths_ref;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Create bash array
-    print {$FILEHANDLE} q?readonly FILES=(?;
-
-  PATH:
-    foreach my $path ( @{$paths_ref} ) {
-
-        ## First analysis and dry run will otherwise cause try to print uninitialized values
-        next PATH if ( not defined $path );
-
-        ## Add to array
-        print {$FILEHANDLE} q?"? . $path . q?" ?;
-    }
-
-    ## Close bash array
-    say {$FILEHANDLE} q?)?;
-
-    ## Loop over files
-    say {$FILEHANDLE} q?for file in "${FILES[@]}"?;
-
-    ## For each element in array do
-    say {$FILEHANDLE} q?do? . $SPACE;
-
-    ## File exists and is larger than zero
-    say {$FILEHANDLE} $TAB . q?if [ -s "$file" ]; then?;
-
-    ## Echo
-    say {$FILEHANDLE} $TAB x 2 . q?echo "Found file $file"?;
-    say {$FILEHANDLE} $TAB . q?else?;
-
-    ## Redirect to STDERR
-    say {$FILEHANDLE} $TAB x 2 . q?echo "Could not find $file" >&2?;
-
-    ## Set status flagg so that perl notFinished remains in sample_info_file
-    say {$FILEHANDLE} $TAB x 2 . q?STATUS="1"?;
-    say {$FILEHANDLE} $TAB . q?fi?;
-    say {$FILEHANDLE} q?done ?, $NEWLINE;
 
     return;
 }

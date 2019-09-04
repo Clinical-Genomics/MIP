@@ -112,6 +112,7 @@ sub pipeline_download_rd_dna {
       qw{ download_mills_and_1000g_indels };
     use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
     use MIP::Recipes::Download::Reduced_penetrance qw{ download_reduced_penetrance };
+    use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
     use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
     use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
@@ -195,6 +196,9 @@ sub pipeline_download_rd_dna {
                 ## Check if reference file already exists in reference directory
                 next GENOME_VERSION if ( -f $outfile_path );
 
+                ## Save paths for run status check downstream
+                push @{ $active_parameter_href->{runstatus_paths} }, $outfile_path;
+
                 $log->info( q{Cannot find reference file:} . $outfile_path );
                 $log->info(
                         q{Will try to download: }
@@ -218,6 +222,18 @@ sub pipeline_download_rd_dna {
             }
         }
     }
+
+    return if ( not @{ $active_parameter_href->{runstatus_paths} } );
+
+    ## Check downloaded file exists and has a file size greater than zero
+    download_runstatus(
+        {
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => \%job_id,
+            recipe_name           => q{runstatus},
+            temp_directory        => $temp_directory,
+        }
+    );
 
     return;
 }

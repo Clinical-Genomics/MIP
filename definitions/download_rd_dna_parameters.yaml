@@ -227,6 +227,7 @@ recipe_core_number:
     manta_call_regions: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
+    runstatus: 1
     rank_model: 1
     reduced_penetrance: 1
     scout_exons: 1
@@ -266,6 +267,7 @@ recipe_time:
     gatk_mitochondrial_ref: 1
     rank_model: 1
     reduced_penetrance: 1
+    runstatus: 1
     scout_exons: 1
     svrank_model: 1
     sv_vcfanno_config: 1
@@ -282,6 +284,13 @@ reference_feature:
    - mip
   data_type: HASH
   type: mip
+runstatus:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 scout_exons:
   analysis_mode: case
   associated_recipe:

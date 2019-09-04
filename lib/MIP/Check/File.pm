@@ -17,22 +17,171 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_interleaved check_file_md5sum };
+    our @EXPORT_OK = qw{ check_file_md5sum check_mip_process_files check_interleaved };
 }
 
 ## Constants
 Readonly my $THREE             => q{3};
 Readonly my $MAX_RANDOM_NUMBER => 10_000;
+
+sub check_file_md5sum {
+
+## Function : Check file integrity of file using md5sum
+## Returns  :
+## Arguments: $check_method  => Method to perform file check (undef or md5sum)
+##          : $FILEHANDLE    => Filehandle to write to
+##          : $md5_file_path => File to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $check_method;
+    my $FILEHANDLE;
+    my $md5_file_path;
+
+    my $tmpl = {
+        check_method => {
+            allow       => [ undef, qw{ md5sum } ],
+            store       => \$check_method,
+            strict_type => 1,
+        },
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        md5_file_path =>
+          { defined => 1, required => 1, store => \$md5_file_path, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
+    use MIP::Parse::File qw{ parse_file_suffix };
+
+    ## Skip file
+    return if ( not defined $check_method );
+
+    my $random_integer = int rand $MAX_RANDOM_NUMBER;
+    ## Parse file suffix in filename.suffix(.gz).
+    ## Removes suffix if matching else return undef
+    my $file_path = parse_file_suffix(
+        {
+            file_name   => $md5_file_path,
+            file_suffix => $DOT . q{md5},
+        }
+    );
+
+    #md5_file_path did not have a ".md5" suffix - skip
+    return if ( not defined $file_path );
+
+    my $md5sum_check_file = q{md5sum_check} . $UNDERSCORE . $random_integer . q{.txt};
+    _write_md5sum_check_file(
+        {
+            FILEHANDLE        => $FILEHANDLE,
+            file_path         => $file_path,
+            md5sum_check_file => $md5sum_check_file,
+            md5_file_path     => $md5_file_path,
+        }
+    );
+
+    ## Perform md5sum check
+    gnu_md5sum(
+        {
+            check       => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $md5sum_check_file,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Clean-up
+    gnu_rm(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $md5sum_check_file,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+    return 1;
+}
+
+sub check_mip_process_files {
+
+## Function : Test all file that are supposed to exists after process
+## Returns  :
+## Arguments: $FILEHANDLE => Filehandle to write to
+##          : $paths_ref  => Paths to files to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $paths_ref;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Create bash array
+    print {$FILEHANDLE} q?readonly FILES=(?;
+
+  PATH:
+    foreach my $path ( @{$paths_ref} ) {
+
+        ## First analysis and dry run will otherwise cause try to print uninitialized values
+        next PATH if ( not defined $path );
+
+        ## Add to array
+        print {$FILEHANDLE} q?"? . $path . q?" ?;
+    }
+
+    ## Close bash array
+    say {$FILEHANDLE} q?)?;
+
+    ## Loop over files
+    say {$FILEHANDLE} q?for file in "${FILES[@]}"?;
+
+    ## For each element in array do
+    say {$FILEHANDLE} q?do? . $SPACE;
+
+    ## File exists and is larger than zero
+    say {$FILEHANDLE} $TAB . q?if [ -s "$file" ]; then?;
+
+    ## Echo
+    say {$FILEHANDLE} $TAB x 2 . q?echo "Found file $file"?;
+    say {$FILEHANDLE} $TAB . q?else?;
+
+    ## Redirect to STDERR
+    say {$FILEHANDLE} $TAB x 2 . q?echo "Could not find $file" >&2?;
+
+    ## Set status flagg so that perl notFinished remains in sample_info_file
+    say {$FILEHANDLE} $TAB x 2 . q?STATUS="1"?;
+    say {$FILEHANDLE} $TAB . q?fi?;
+    say {$FILEHANDLE} q?done ?, $NEWLINE;
+
+    return 1;
+}
 
 sub check_interleaved {
 
@@ -119,85 +268,6 @@ sub check_interleaved {
         return 1;
     }
     return;
-}
-
-sub check_file_md5sum {
-
-## Function : Check file integrity of file using md5sum
-## Returns  :
-## Arguments: $check_method  => Method to perform file check (undef or md5sum)
-##          : $FILEHANDLE    => Filehandle to write to
-##          : $md5_file_path => File to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $check_method;
-    my $FILEHANDLE;
-    my $md5_file_path;
-
-    my $tmpl = {
-        check_method => {
-            allow       => [ undef, qw{ md5sum } ],
-            store       => \$check_method,
-            strict_type => 1,
-        },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        md5_file_path =>
-          { defined => 1, required => 1, store => \$md5_file_path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
-    use MIP::Parse::File qw{ parse_file_suffix };
-
-    ## Skip file
-    return if ( not defined $check_method );
-
-    my $random_integer = int rand $MAX_RANDOM_NUMBER;
-    ## Parse file suffix in filename.suffix(.gz).
-    ## Removes suffix if matching else return undef
-    my $file_path = parse_file_suffix(
-        {
-            file_name   => $md5_file_path,
-            file_suffix => $DOT . q{md5},
-        }
-    );
-
-    #md5_file_path did not have a ".md5" suffix - skip
-    return if ( not defined $file_path );
-
-    my $md5sum_check_file = q{md5sum_check} . $UNDERSCORE . $random_integer . q{.txt};
-    _write_md5sum_check_file(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            file_path         => $file_path,
-            md5sum_check_file => $md5sum_check_file,
-            md5_file_path     => $md5_file_path,
-        }
-    );
-
-    ## Perform md5sum check
-    gnu_md5sum(
-        {
-            check       => 1,
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $md5sum_check_file,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Clean-up
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $md5sum_check_file,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-    return 1;
 }
 
 sub _write_md5sum_check_file {

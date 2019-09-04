@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_rna };
@@ -88,6 +88,7 @@ sub pipeline_download_rd_rna {
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
+    use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -143,6 +144,9 @@ sub pipeline_download_rd_rna {
                 ## Check if reference already exists in reference directory
                 next GENOME_VERSION if ( -f $outfile_path );
 
+                ## Save paths for run status check downstream
+                push @{ $active_parameter_href->{runstatus_paths} }, $outfile_path;
+
                 $log->info( q{Cannot find reference file:} . $outfile_path );
                 $log->info(
                         q{Will try to download: }
@@ -166,6 +170,18 @@ sub pipeline_download_rd_rna {
             }
         }
     }
+
+    return if ( not @{ $active_parameter_href->{runstatus_paths} } );
+
+    ## Check downloaded file exists and has a file size greater than zero
+    download_runstatus(
+        {
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => \%job_id,
+            recipe_name           => q{runstatus},
+            temp_directory        => $temp_directory,
+        }
+    );
 
     return;
 }

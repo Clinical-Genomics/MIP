@@ -1887,6 +1887,7 @@ genmod_annotate_spidex_file:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 genmod_models_case_type:
