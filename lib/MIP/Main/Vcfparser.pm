@@ -16,9 +16,10 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
+use MIP::Constants qw{ $COLON $LOG $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Vcfparser qw{ define_select_data_headers };
 
 BEGIN {
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.16};
+    our $VERSION = q{1.2.17};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vcfparser };
@@ -153,36 +154,32 @@ q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli sc
 
     my %select_data = define_select_data_headers();
 
-    if ($range_feature_file) {
+    ## Range feature file
+    read_feature_file(
+        {
+            feature_columns_ref => $range_feature_annotation_columns_ref,
+            feature_data_href   => \%range_data,
+            log                 => $log,
+            feature_file_path   => $range_feature_file,
+            padding             => $padding,
+            feature_file_type   => q{range_feature},
+            tree_href           => \%tree,
+        }
+    );
 
-        read_feature_file(
-            {
-                feature_columns_ref => $range_feature_annotation_columns_ref,
-                feature_data_href   => \%range_data,
-                log                 => $log,
-                feature_file_path   => $range_feature_file,
-                padding             => $padding,
-                feature_file_type   => q{range_feature},
-                tree_href           => \%tree,
-            }
-        );
-    }
-
-    if ($select_feature_file) {
-
-        read_feature_file(
-            {
-                feature_columns_ref     => $select_feature_annotation_columns_ref,
-                feature_data_href       => \%select_data,
-                log                     => $log,
-                feature_file_path       => $select_feature_file,
-                padding                 => $padding,
-                feature_file_type       => q{select_feature},
-                feature_matching_column => $select_feature_matching_column,
-                tree_href               => \%tree,
-            }
-        );
-    }
+    ## Select feature file
+    read_feature_file(
+        {
+            feature_columns_ref     => $select_feature_annotation_columns_ref,
+            feature_data_href       => \%select_data,
+            log                     => $log,
+            feature_file_path       => $select_feature_file,
+            padding                 => $padding,
+            feature_file_type       => q{select_feature},
+            feature_matching_column => $select_feature_matching_column,
+            tree_href               => \%tree,
+        }
+    );
 
     read_infile_vcf(
         {
@@ -364,14 +361,10 @@ sub read_infile_vcf {
     };
 
     ## Constants
-    Readonly my $FILTER_COLUMN_INDEX => 6;
     Readonly my $FORMAT_COLUMN_INDEX => 8;
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
-
-    ## Create anonymous filehandle for select file
-    my $SELECT_FH = IO::Handle->new();
 
     ## Map the VEP CSQ format header line
     my %vep_format_field_column;
@@ -379,17 +372,12 @@ sub read_infile_vcf {
     ## Store vcf header "#CHROM" line
     my @vcf_format_columns;
 
-    if ($select_feature_file) {
-
-        open $SELECT_FH, q{>},
-          $select_outfile_path
-          or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
-            $NEWLINE );
-    }
-    else {
-        ## If we do not have a select file undef the filehandle
-        $SELECT_FH = undef;
-    }
+    my $SELECT_FH = _get_select_filehandle(
+        {
+            select_feature_file => $select_feature_file,
+            select_outfile_path => $select_outfile_path,
+        }
+    );
 
   LINE:
     while (<$VCF_IN_FH>) {
@@ -540,19 +528,17 @@ sub read_infile_vcf {
             );
         }
 
-        ## Writing vcf record to files
-        my $last_index     = $FILTER_COLUMN_INDEX;
-        my $last_separator = $TAB;
+        ### Writing vcf record to files
 
-        ## If we do not need to split the CSQ field we can print the entire vcf
-        ## record line
-        if ( not $parse_vep ) {
+        ## Get parameters to know how much of line to write
+        my ( $last_index, $last_separator ) = _get_line_parameters(
+            {
+                line_elements_ref => \@line_elements,
+                parse_vep         => $parse_vep,
+            }
+        );
 
-            $last_index     = $#line_elements;
-            $last_separator = $NEWLINE;
-        }
-
-        ## Add until INFO field or end of line
+        ## Write until INFO field or end of line
         write_line_elements(
             {
                 FILEHANDLE        => *STDOUT,
@@ -615,6 +601,98 @@ sub read_infile_vcf {
     }
     $log->info( q{Finished Processing VCF} . $NEWLINE );
     return;
+}
+
+sub _get_line_parameters {
+
+## Function : Get the last index and last seperator value depending on parse vep boolean
+## Returns  : $last_index, $last_separator
+## Arguments: $line_elements_ref => Line elements array {REF}
+##          : $parse_vep         => Scalar description
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $line_elements_ref;
+
+    ## Default(s)
+    my $parse_vep;
+
+    my $tmpl = {
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        parse_vep => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$parse_vep,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Constants
+    Readonly my $FILTER_COLUMN_INDEX => 6;
+
+    ## If we do not need to split the CSQ field we can print the entire vcf
+    ## record line
+    my $last_index     = $#{$line_elements_ref};
+    my $last_separator = $NEWLINE;
+
+    return ( $last_index, $last_separator ) if ( not $parse_vep );
+
+    ## Set parameters to write until INFO field if we need to split CSQ field
+    $last_index     = $FILTER_COLUMN_INDEX;
+    $last_separator = $TAB;
+
+    return $last_index, $last_separator;
+}
+
+sub _get_select_filehandle {
+
+## Function : Returns FILEHANDLE for select file
+## Returns  : $SELECT_FH or undef
+## Arguments: $select_feature_file => Select feature file
+##          : $select_outfile_path => Select outfile path (VCF)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $select_feature_file;
+    my $select_outfile_path;
+
+    my $tmpl = {
+        select_feature_file => {
+            required    => 1,
+            store       => \$select_feature_file,
+            strict_type => 1,
+        },
+        select_outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$select_outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## If we do not have a select file return undef
+    return if ( not $select_feature_file );
+
+    my $log = retrieve_log( { log_name => $LOG, } );
+
+    open my $SELECT_FH, q{>},
+      $select_outfile_path
+      or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
+        $NEWLINE );
+
+    return $SELECT_FH;
 }
 
 1;
