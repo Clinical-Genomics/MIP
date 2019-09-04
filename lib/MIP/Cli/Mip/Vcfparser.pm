@@ -255,7 +255,7 @@ sub _get_cli_array_option {
 
 ## Function : Returns array if option was supplied on cli
 ## Returns  : @array
-## Arguments: option_name => Name of array option
+## Arguments: $option_name => Name of array option
 
     my ($arg_href) = @_;
 
