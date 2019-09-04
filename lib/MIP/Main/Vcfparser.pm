@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
+use MIP::Constants qw{ $COLON $LOG $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Vcfparser qw{ define_select_data_headers };
@@ -366,26 +366,18 @@ sub read_infile_vcf {
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
 
-    ## Create anonymous filehandle for select file
-    my $SELECT_FH = IO::Handle->new();
-
     ## Map the VEP CSQ format header line
     my %vep_format_field_column;
 
     ## Store vcf header "#CHROM" line
     my @vcf_format_columns;
 
-    if ($select_feature_file) {
-
-        open $SELECT_FH, q{>},
-          $select_outfile_path
-          or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
-            $NEWLINE );
-    }
-    else {
-        ## If we do not have a select file undef the filehandle
-        $SELECT_FH = undef;
-    }
+    my $SELECT_FH = _get_select_filehandle(
+        {
+            select_feature_file => $select_feature_file,
+            select_outfile_path => $select_outfile_path,
+        }
+    );
 
   LINE:
     while (<$VCF_IN_FH>) {
@@ -611,6 +603,48 @@ sub read_infile_vcf {
     }
     $log->info( q{Finished Processing VCF} . $NEWLINE );
     return;
+}
+
+sub _get_select_filehandle {
+
+## Function : Returns FILEHANDLE for select file
+## Returns  : $SELECT_FH or undef
+## Arguments: $select_feature_file => Select feature file
+##          : $select_outfile_path => Select outfile path (VCF)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $select_feature_file;
+    my $select_outfile_path;
+
+    my $tmpl = {
+        select_feature_file => {
+            required    => 1,
+            store       => \$select_feature_file,
+            strict_type => 1,
+        },
+        select_outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$select_outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## If we do not have a select file return undef
+    return if ( not $select_feature_file );
+
+    my $log = retrieve_log( { log_name => $LOG, } );
+
+    open my $SELECT_FH, q{>},
+      $select_outfile_path
+      or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
+        $NEWLINE );
+
+    return $SELECT_FH;
 }
 
 1;
