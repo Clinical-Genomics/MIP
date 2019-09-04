@@ -7,6 +7,7 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
@@ -54,20 +55,12 @@ sub run {
     # Flatten argument(s)
     my $parse_vep          = $arg_href->{parse_vep};
     my $range_feature_file = $arg_href->{range_feature_file};
-    my @range_feature_annotation_columns;
-    if ( exists $arg_href->{range_feature_annotation_columns} ) {
-
-        @range_feature_annotation_columns =
-          @{ $arg_href->{range_feature_annotation_columns} };
-    }
+    my @range_feature_annotation_columns =
+      _get_cli_array_option( { option_name => q{range_feature_annotation_columns}, } );
     my $select_feature_file            = $arg_href->{select_feature_file};
     my $select_feature_matching_column = $arg_href->{select_feature_matching_column};
-    my @select_feature_annotation_columns;
-    if ( exists $arg_href->{select_feature_annotation_columns} ) {
-
-        @select_feature_annotation_columns =
-          @{ $arg_href->{select_feature_annotation_columns} };
-    }
+    my @select_feature_annotation_columns =
+      _get_cli_array_option( { option_name => q{select_feature_annotation_columns}, } );
     my $select_outfile       = $arg_href->{select_outfile};
     my $padding              = $arg_href->{padding};
     my $per_gene             = $arg_href->{per_gene};
@@ -75,21 +68,11 @@ sub run {
     my $write_software_tag   = $arg_href->{write_software_tag};
     my $log_file             = $arg_href->{log_file};
 
-    ## STDIN
+    ## STDIN or file
     my $infile = $arg_href->{infile};
 
-    # Create anonymous filehandle
-    my $VCF_IN_FH = IO::Handle->new();
-
-    ## Enables cmd "vcfparser" to print usage help
-    if ( $infile eq $DASH ) {
-
-        $VCF_IN_FH = *STDIN;
-    }
-    else {
-        open $VCF_IN_FH, q{<}, $infile
-          or croak( q{Cannot open } . $infile . $COLON . $OS_ERROR, $NEWLINE );
-    }
+    ## Enables vcfparser to read infile from either STDIN or file
+    my $VCF_IN_FH = _get_vcf_in_filehandle( { infile => $infile, } );
 
     ## Creates log object
     my $log = initiate_logger(
@@ -139,7 +122,7 @@ sub _build_usage {
 
     parameter(
         q{infile} => (
-            documentation => q{Infile path},
+            documentation => q{Infile path or "-" for infile stream},
             is            => q{rw},
             isa           => Str,
             required      => 1,
@@ -266,6 +249,62 @@ sub _build_usage {
     );
 
     return;
+}
+
+sub _get_cli_array_option {
+
+## Function : Returns array if option was supplied on cli
+## Returns  : @array
+## Arguments: $option_name => Name of array option
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $option_name;
+
+    my $tmpl = {
+        option_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$option_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $arg_href->{$option_name} );
+
+    return @{ $arg_href->{$option_name} };
+}
+
+sub _get_vcf_in_filehandle {
+
+## Function : Returns FILEHANDLE for infile
+## Returns  : $VCF_IN_FH or *STDIN
+## Arguments: $infile => Infile
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile;
+
+    my $tmpl = {
+        infile => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return *STDIN if ( $infile eq $DASH );
+
+    open my $VCF_IN_FH, q{<}, $infile
+      or croak( q{Cannot open } . $infile . $COLON . $OS_ERROR, $NEWLINE );
+    return $VCF_IN_FH;
 }
 
 1;
