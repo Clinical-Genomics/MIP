@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::RECIPE_NAME;
+package MIP::Recipes::Download::Runstatus;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -29,40 +29,30 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_RECIPE_NAME };
+    our @EXPORT_OK = qw{ download_runstatus };
 
 }
 
-sub download_RECIPE_NAME {
+sub download_runstatus {
 
-## Function : Download RECIPE_NAME
+## Function : Download run status
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
 ##          : $recipe_name           => Recipe name
-##          : $reference_href        => Reference hash {REF}
-##          : $reference_version     => Reference version
-##          : $quiet                 => Quiet (no output)
 ##          : $temp_directory        => Temporary directory for recipe
-##          : $verbose               => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $genome_version;
     my $job_id_href;
     my $recipe_name;
-    my $reference_href;
-    my $reference_version;
 
     ## Default(s)
     my $profile_base_command;
-    my $quiet;
     my $temp_directory;
-    my $verbose;
 
     my $tmpl = {
         active_parameter_href => {
@@ -70,10 +60,6 @@ sub download_RECIPE_NAME {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        genome_version => {
-            store       => \$genome_version,
             strict_type => 1,
         },
         job_id_href => {
@@ -94,25 +80,6 @@ sub download_RECIPE_NAME {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        reference_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_href,
-            strict_type => 1,
-        },
-        reference_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_version,
-            strict_type => 1,
-        },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
         temp_directory => {
             store       => \$temp_directory,
             strict_type => 1,
@@ -121,11 +88,10 @@ sub download_RECIPE_NAME {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_mip_process_files };
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
 
     ### PREPROCESSING:
 
@@ -152,19 +118,19 @@ sub download_RECIPE_NAME {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
-            job_id_href                => $job_id_href,
-            log                        => $log,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $reference_dir,
-            outscript_dir              => $reference_dir,
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => q{mip_download},
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe_resource{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
@@ -173,29 +139,35 @@ sub download_RECIPE_NAME {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    get_reference(
+    ## Set status flagg
+    say {$FILEHANDLE} q?STATUS="0"?;
+
+    check_mip_process_files(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            recipe_name    => $recipe_name,
-            reference_dir  => $reference_dir,
-            reference_href => $reference_href,
-            quiet          => $quiet,
-            verbose        => $verbose,
+            FILEHANDLE => $FILEHANDLE,
+            paths_ref  => $active_parameter_href->{runstatus_paths},
         }
     );
+
+    say {$FILEHANDLE} q?if [ "$STATUS" -eq 1 ]; then?;
+    say {$FILEHANDLE} $TAB . q?exit 1?;
+    say {$FILEHANDLE} q?fi?, $NEWLINE;
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
 
-        ## No upstream or downstream dependencies
-        slurm_submit_job_no_dependency_dead_end(
+        submit_recipe(
             {
-                base_command     => $profile_base_command,
-                job_id_href      => $job_id_href,
-                log              => $log,
-                sbatch_file_name => $recipe_file_path,
+                base_command        => $profile_base_command,
+                dependency_method   => q{add_to_all},
+                job_dependency_type => q{afterany},
+                job_id_chain        => q{PAN},
+                job_id_href         => $job_id_href,
+                log                 => $log,
+                recipe_file_path    => $recipe_file_path,
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }
