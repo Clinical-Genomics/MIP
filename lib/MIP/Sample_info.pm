@@ -27,10 +27,11 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_family_member_id
       get_read_group
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
@@ -46,6 +47,68 @@ BEGIN {
       set_in_sample_info
     };
 
+}
+
+sub get_family_member_id {
+
+## Function : Get the sample IDs of the family members
+## Returns  : %family_member_id
+## Arguments: $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    my %family_member_id = (
+        father   => 0,
+        mother   => 0,
+        children => [],
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my $mother = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{mother},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $father = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{father},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        next if ( not $father or not $mother );
+
+        ## Append child
+        push @{ $family_member_id{children} }, $sample_id;
+
+        $family_member_id{father} = $father;
+        $family_member_id{mother} = $mother;
+    }
+
+    return %family_member_id;
 }
 
 sub get_read_group {

@@ -67,8 +67,10 @@ recipe_core_number:
     analysisrunstatus: 1
     dragen_dna: 1
     endvariantannotationblock: 1
-    frequency_filter: 16
+    frequency_annotation: 13
+    frequency_filter: 13
     rhocall_ar: 15
+    rhocall_viz: 1
     sacct: 1
     snpeff: 13
     sv_annotate: 2
@@ -76,6 +78,7 @@ recipe_core_number:
     sv_reformat: 1
     sv_varianteffectpredictor: 0
     sv_vcfparser: 16
+    upd_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 15
   type: mip
@@ -87,10 +90,13 @@ recipe_memory:
     # Per process 
     cadd_ar: 3
     endvariantannotationblock: 8
+    frequency_annotation: 3
     rhocall_ar: 2
+    rhocall_viz: 2
     snpeff: 8
     sv_reformat: 24
     sv_varianteffectpredictor: 7
+    upd_ar: 3
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
   type: mip
@@ -103,10 +109,12 @@ recipe_time:
     cadd_ar: 10
     dragen_dna: 5
     endvariantannotationblock: 2
+    frequency_annotation: 1
     frequency_filter: 2
     prepareforvariantannotationblock: 5
     rankvariant: 10
     rhocall_ar: 1
+    rhocall_viz: 1
     sacct: 1
     snpeff: 10
     sv_annotate: 1
@@ -114,6 +122,7 @@ recipe_time:
     sv_reformat: 1
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
+    upd_ar: 1
     varianteffectpredictor: 10
     vcfparser_ar: 5
     vt_ar: 10
@@ -462,6 +471,29 @@ fqa_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
+rhocall_viz:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".roh"
+  program_executables:
+   - bcftools
+   - rhocall
+  type: recipe
+upd_ar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".bed"
+  program_executables:
+   - upd
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -472,7 +504,6 @@ frequency_filter:
   outfile_suffix: ".vcf"
   program_executables:
    - bcftools
-   - vcfanno
   type: recipe
 fqf_bcftools_filter_threshold:
   associated_recipe:

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -100,7 +100,7 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    aftag => {
+    af_tag => {
         input           => q{AF},
         expected_output => q{--aftag} . $SPACE . q{AF},
     },

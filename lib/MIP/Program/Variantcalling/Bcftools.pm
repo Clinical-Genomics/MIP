@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1424,6 +1424,7 @@ sub bcftools_roh {
 ## Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $af_file_path           => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
+##          : $af_tag                 => Use tag in info field as allelle frequency
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
@@ -1440,6 +1441,7 @@ sub bcftools_roh {
 
     ## Flatten argument(s)
     my $af_file_path;
+    my $af_tag;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -1456,8 +1458,12 @@ sub bcftools_roh {
 
     my $tmpl = {
         af_file_path => { store => \$af_file_path, strict_type => 1, },
-        FILEHANDLE   => { store => \$FILEHANDLE, },
-        infile_path  => {
+        af_tag       => {
+            store       => \$af_tag,
+            strict_type => 1,
+        },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
@@ -1515,6 +1521,11 @@ sub bcftools_roh {
     if ($af_file_path) {
 
         push @commands, q{--AF-file} . $SPACE . $af_file_path;
+    }
+
+    if ($af_tag) {
+
+        push @commands, q{--AF-tag} . $SPACE . $af_tag;
     }
 
     if ($skip_indels) {
@@ -1654,6 +1665,7 @@ sub bcftools_view {
 ##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
 ##          : $max_alleles            => Max alleles listed in REF and ALT columns
+##          : $min_ac                 => Min allele count for sites to be printed
 ##          : $min_alleles            => Min alleles listed in REF and ALT columns
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
@@ -1676,6 +1688,7 @@ sub bcftools_view {
     my $include;
     my $infile_path;
     my $max_alleles;
+    my $min_ac;
     my $min_alleles;
     my $outfile_path;
     my $regions_ref;
@@ -1705,6 +1718,10 @@ sub bcftools_view {
         max_alleles => {
             allow       => [ undef, qr/ ^\d+$ /xms ],
             store       => \$max_alleles,
+            strict_type => 1,
+        },
+        min_ac => {
+            store       => \$min_ac,
             strict_type => 1,
         },
         min_alleles => {
@@ -1781,6 +1798,11 @@ sub bcftools_view {
     if ($max_alleles) {
 
         push @commands, q{--max-alleles} . $SPACE . $max_alleles;
+    }
+
+    if ($min_ac) {
+
+        push @commands, q{--min-ac} . $SPACE . $min_ac;
     }
 
     if ($min_alleles) {

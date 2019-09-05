@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $SPACE $COMMA };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -66,6 +63,7 @@ diag(   q{Test bcftools_view from Bcftools.pm v}
 my @function_base_commands = qw{ bcftools view };
 
 Readonly my $MAX_ALLELES => 2;
+Readonly my $MIN_AC      => 1;
 Readonly my $MIN_ALLELES => 2;
 
 my %base_argument = (
@@ -115,6 +113,10 @@ my %specific_argument = (
     max_alleles => {
         input           => $MAX_ALLELES,
         expected_output => q{--max-alleles } . $MAX_ALLELES,
+    },
+    min_ac => {
+        input           => $MIN_AC,
+        expected_output => q{--min-ac } . $MIN_AC,
     },
     min_alleles => {
         input           => $MIN_ALLELES,

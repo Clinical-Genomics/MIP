@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -607,6 +607,26 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{upd_ar} => (
+            cmd_aliases   => [qw{ upd }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{ Create bed files needed for chromograph},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{rhocall_viz} => (
+            cmd_aliases   => [qw{ rhv }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{ Create roh files needed for chromograph},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
