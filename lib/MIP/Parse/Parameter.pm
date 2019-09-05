@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -211,12 +211,12 @@ sub parse_infiles {
             }
         );
 
-        if ( not defined $infile_directory ) {
-
-            $log->fatal( q{Could not detect any supplied '--infile_dirs' for sample: }
-                  . $sample_id );
-            exit 1;
-        }
+        _check_infile_directory(
+            {
+                infile_directory => $infile_directory,
+                sample_id        => $sample_id,
+            }
+        );
 
         ## Get the file(s) from filesystem
         my @infiles = get_files(
@@ -578,6 +578,45 @@ sub parse_toml_config_parameters {
         }
     }
     return 1;
+}
+
+sub _check_infile_directory {
+
+## Function :
+## Returns  :
+## Arguments: $infile_directory => Infile directory
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_directory;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_directory => {
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    my $log = retrieve_log( { log_name => $LOG, } );
+
+    return if ( defined $infile_directory );
+
+    $log->fatal(
+        q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
+    exit 1;
 }
 
 1;
