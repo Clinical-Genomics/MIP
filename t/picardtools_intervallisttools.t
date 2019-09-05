@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Interval::Picardtools});
+    my @modules = (q{MIP::Program::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
+use MIP::Program::Picardtools qw{ picardtools_intervallisttools };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test picardtools_intervallisttools from Interval::Picardtools.pm v}
-      . $MIP::Program::Interval::Picardtools::VERSION
+diag(   q{Test picardtools_intervallisttools from Picardtools.pm v}
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Picardtools});
+    my @modules = (q{MIP::Program::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
+use MIP::Program::Picardtools qw{ picardtools_sortvcf };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test picardtools_sortvcf from Variantcalling::Picardtools.pm v}
-      . $MIP::Program::Variantcalling::Picardtools::VERSION
+diag(   q{Test picardtools_sortvcf from Picardtools.pm v}
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

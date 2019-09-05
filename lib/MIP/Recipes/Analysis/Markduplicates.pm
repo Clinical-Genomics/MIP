@@ -160,7 +160,7 @@ sub analysis_markduplicates {
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Picardtools
+    use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };

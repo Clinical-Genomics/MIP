@@ -166,7 +166,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Picardtools
+    use MIP::Program::Picardtools
       qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };

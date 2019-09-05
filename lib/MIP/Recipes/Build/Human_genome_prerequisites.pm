@@ -162,7 +162,7 @@ sub build_human_genome_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Program::Alignment::Samtools qw{ samtools_faidx };
     use MIP::Program::Compression::Gzip qw{ gzip };
-    use MIP::Program::Fasta::Picardtools qw{ picardtools_createsequencedictionary };
+    use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Build::Capture_file_prerequisites
       qw{ build_capture_file_prerequisites };

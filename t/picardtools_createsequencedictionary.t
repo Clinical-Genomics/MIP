@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Fasta::Picardtools});
+    my @modules = (q{MIP::Program::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Fasta::Picardtools qw{ picardtools_createsequencedictionary };
+use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test picardtools_createsequencedictionary from Interval::Picardtools.pm v}
-      . $MIP::Program::Fasta::Picardtools::VERSION
+diag(   q{Test picardtools_createsequencedictionary from Picardtools.pm v}
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

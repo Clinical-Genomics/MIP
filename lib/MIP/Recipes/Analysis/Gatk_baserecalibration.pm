@@ -161,7 +161,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };

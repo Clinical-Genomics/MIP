@@ -156,7 +156,7 @@ sub analysis_delly_reformat {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Variantcalling::Delly qw{ delly_call delly_merge };
-    use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
+    use MIP::Program::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };

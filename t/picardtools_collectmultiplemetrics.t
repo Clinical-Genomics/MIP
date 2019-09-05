@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Alignment::Picardtools});
+    my @modules = (q{MIP::Program::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Picardtools qw{ picardtools_collectmultiplemetrics };
+use MIP::Program::Picardtools qw{ picardtools_collectmultiplemetrics };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test picardtools_collectmultiplemetrics from Picardtools.pm v}
-      . $MIP::Program::Alignment::Picardtools::VERSION
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

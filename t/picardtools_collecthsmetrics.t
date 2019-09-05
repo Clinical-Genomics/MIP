@@ -43,18 +43,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Picardtools} => [qw{ picardtools_collecthsmetrics }],
-        q{MIP::Test::Fixtures}                  => [qw{ test_standard_cli }],
+        q{MIP::Program::Picardtools} => [qw{ picardtools_collecthsmetrics }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Picardtools qw{ picardtools_collecthsmetrics };
+use MIP::Program::Picardtools qw{ picardtools_collecthsmetrics };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm v}
-      . $MIP::Program::Alignment::Picardtools::VERSION
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
