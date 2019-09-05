@@ -154,6 +154,8 @@ This will generate a bash script called "mip.sh" in your working directory.
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
+The default environment names can be modified with the using any or all of the CLI options ``--envionment_prefix <prefix>``, `ènvironment_suffix <suffix>`` and ``--environment_date``. MIP will then create conda environments with the pattern: <prefix>_mip7_rd-dna_<date>_<suffix>, <prefix>mip7_rd-dna_cnvnator_<date>_<suffix>, ...
+
   - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
   - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
 

@@ -1,4 +1,11 @@
 ---
+add_environment_date:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
 config_file:
   associated_recipe:
    - mip
