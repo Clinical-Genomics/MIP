@@ -582,7 +582,7 @@ sub parse_toml_config_parameters {
 
 sub _check_infile_directory {
 
-## Function :
+## Function : Check if infile directory exists per sample id
 ## Returns  :
 ## Arguments: $infile_directory => Infile directory
 ##          : $sample_id        => Sample id
