@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_mergesamfiles };
@@ -360,10 +360,11 @@ sub analysis_picardtools_mergesamfiles {
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                recipe_info_path     => $recipe_info_path,
-                temp_directory       => $temp_directory,
-                XARGSFILEHANDLE      => $XARGSFILEHANDLE,
-                xargs_file_counter   => $xargs_file_counter,
+                picard_use_barclay_parser => 1,
+                recipe_info_path          => $recipe_info_path,
+                temp_directory            => $temp_directory,
+                XARGSFILEHANDLE           => $XARGSFILEHANDLE,
+                xargs_file_counter        => $xargs_file_counter,
             }
         );
 

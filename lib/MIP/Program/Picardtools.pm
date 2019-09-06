@@ -164,10 +164,11 @@ sub picardtools_addorreplacereadgroups {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -373,10 +374,11 @@ sub picardtools_createsequencedictionary {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -503,10 +505,11 @@ sub picardtools_intervallisttools {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -647,10 +650,11 @@ sub picardtools_mergesamfiles {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -796,10 +800,11 @@ sub picardtools_markduplicates {
 
         @commands = java_core(
             {
-                java_use_large_pages => $java_use_large_pages,
-                java_jar             => $java_jar,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_use_large_pages      => $java_use_large_pages,
+                java_jar                  => $java_jar,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -931,10 +936,11 @@ sub picardtools_gatherbamfiles {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -1059,10 +1065,11 @@ sub picardtools_collectmultiplemetrics {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -1202,10 +1209,11 @@ sub picardtools_collecthsmetrics {
 
         @commands = java_core(
             {
-                java_use_large_pages => $java_use_large_pages,
-                java_jar             => $java_jar,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_use_large_pages      => $java_use_large_pages,
+                java_jar                  => $java_jar,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
@@ -1344,10 +1352,11 @@ sub picardtools_sortvcf {
 
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
             }
         );
     }
