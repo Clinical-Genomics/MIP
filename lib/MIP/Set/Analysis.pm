@@ -32,7 +32,7 @@ BEGIN {
 
 sub set_recipe_on_analysis_type {
 
-## Function : Set which recipe to use dependeing on consensus analysis type
+## Function : Set which recipe to use depending on consensus analysis type
 ## Returns  :
 ## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
 ##          : $consensus_analysis_type => Consensus analysis type
@@ -105,7 +105,7 @@ sub set_recipe_on_analysis_type {
 
 sub set_recipe_on_pedigree {
 
-## Function : Set which recipe to use dependeing on pedigree
+## Function : Set which recipe to use depending on pedigree
 ## Returns  :
 ## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
 ##          : $consensus_analysis_type => Consensus analysis type
