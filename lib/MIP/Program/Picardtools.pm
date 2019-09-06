@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -17,7 +18,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
-use MIP::Language::Java qw{java_core};
+use MIP::Language::Java qw{ java_core };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
