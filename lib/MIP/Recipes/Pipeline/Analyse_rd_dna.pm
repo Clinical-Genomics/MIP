@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -188,7 +188,8 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rhocall
+      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
@@ -208,7 +209,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
     use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna(
@@ -282,6 +283,7 @@ sub pipeline_analyse_rd_dna {
         qccollect_ar                     => \&analysis_mip_qccollect,
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
+        rhocall_viz    => \&analysis_rhocall_viz,
         rtg_vcfeval    => \&analysis_rtg_vcfeval,
         sacct          => \&analysis_sacct,
         sambamba_depth => \&analysis_sambamba_depth,
@@ -296,6 +298,7 @@ sub pipeline_analyse_rd_dna {
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
+        upd_ar                 => undef,                          # Depends on pedigree
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
         vcfparser_ar           => \&analysis_mip_vcfparser,
@@ -348,6 +351,14 @@ sub pipeline_analyse_rd_dna {
             log                  => $log,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
             use_cnnscorevariants => $active_parameter_href->{gatk_cnnscorevariants},
+        }
+    );
+
+    ## Set recipe depending on pedigree
+    set_recipe_on_pedigree(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            parameter_href       => $parameter_href,
         }
     );
 

@@ -73,6 +73,19 @@ sample: { #Hash of hashes
 ```
 
 ## Methods
+get_family_member_id:
+Return hash with family member ids
+```Perl
+my %family_member_id = get_family_member_id(
+    {
+        sample_info_href => $sample_info_href,
+    }
+);
+$family_member_id{children} = [<child1_id>, <child2_id>];
+$family_member_id{father} = <father_id>;
+$family_member_id{mother} = <mother_id>;
+```
+
 get_read_group:
 Return hash with read group headers.
 ```Perl

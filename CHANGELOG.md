@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Develop
 
 - Moves frequency annotation to separate recipe
+- Adds upd for trios
+- Adds rhocall viz
 
 ### Grch38
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 

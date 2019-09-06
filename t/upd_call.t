@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -107,6 +107,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    af_tag => {
+        input           => q{GNOMAD_AF},
+        expected_output => q{--af-tag} . $SPACE . q{GNOMAD_AF},
+    },
     call_type => {
         input           => q{regions},
         expected_output => q{regions},

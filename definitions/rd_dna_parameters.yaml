@@ -154,11 +154,12 @@ recipe_core_number:
     endvariantannotationblock: 1
     expansionhunter: 0
     fastqc_ar: 0
+    frequency_annotation: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 1
     gatk_gathervcfs: 1
+    gatk_genotypegvcfs: 1
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
@@ -172,9 +173,9 @@ recipe_core_number:
     picardtools_collectmultiplemetrics: 1
     picardtools_mergesamfiles: 13
     plink: 1
-    frequency_annotation: 13
     qccollect_ar: 1
     rhocall_ar: 13
+    rhocall_viz: 1
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
@@ -188,6 +189,7 @@ recipe_core_number:
     sv_varianteffectpredictor: 0
     sv_vcfparser: 13
     tiddit_coverage: 1
+    upd_ar: 1
     variant_integrity_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
@@ -209,16 +211,17 @@ recipe_memory:
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
+    frequency_annotation: 3
+    gatk_baserecalibration: 10
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
-    gatk_baserecalibration: 10
     gatk_variantrecalibration: 30
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
-    frequency_annotation: 7
     rhocall_ar: 2
+    rhocall_viz: 2
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
@@ -226,6 +229,7 @@ recipe_memory:
     sv_reformat: 24
     sv_varianteffectpredictor: 9
     tiddit: 8
+    upd_ar: 3
     vcf2cytosure_ar: 6
     varianteffectpredictor: 7
   type: mip
@@ -251,6 +255,7 @@ recipe_time:
     endvariantannotationblock: 2
     expansionhunter: 2
     fastqc_ar: 10
+    frequency_annotation: 1
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
@@ -269,11 +274,11 @@ recipe_time:
     picardtools_collectmultiplemetrics: 10
     picardtools_mergesamfiles: 20
     plink: 1
-    frequency_annotation: 1
     prepareforvariantannotationblock: 5
     qccollect_ar: 1
     rankvariant: 10
     rhocall_ar: 5
+    rhocall_viz: 1
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 10
@@ -288,6 +293,7 @@ recipe_time:
     sv_vcfparser: 2
     tiddit: 20
     tiddit_coverage: 5
+    upd_ar: 1
     varianteffectpredictor: 10
     variant_integrity_ar: 1
     vcfparser_ar: 5
@@ -1456,6 +1462,29 @@ fqa_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
+rhocall_viz:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".roh"
+  program_executables:
+   - bcftools
+   - rhocall
+  type: recipe
+upd_ar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".bed"
+  program_executables:
+   - upd
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:

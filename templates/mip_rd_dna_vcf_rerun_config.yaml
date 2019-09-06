@@ -22,6 +22,7 @@ load_env:
    method: conda
    rankvariant:
    sv_rankvariant:
+   upd_ar:
   mip_travis_svdb:
     method: conda
     svdb:

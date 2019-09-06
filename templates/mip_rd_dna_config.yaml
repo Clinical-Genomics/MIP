@@ -43,6 +43,7 @@ load_env:
     rankvariant:
     stranger:
     sv_rankvariant:
+    upd_ar:
     variant_integrity_ar:
   mip_travis_svdb:
     installation: esvdb

@@ -23,16 +23,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 }
 
 sub set_recipe_on_analysis_type {
 
-## Function : Set which recipe to use dependeing on consensus analysis type
+## Function : Set which recipe to use depending on consensus analysis type
 ## Returns  :
 ## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
 ##          : $consensus_analysis_type => Consensus analysis type
@@ -100,6 +100,49 @@ sub set_recipe_on_analysis_type {
         $analysis_recipe_href->{$recipe_name} =
           $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
     }
+    return;
+}
+
+sub set_recipe_on_pedigree {
+
+## Function : Set which recipe to use depending on pedigree
+## Returns  :
+## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $consensus_analysis_type => Consensus analysis type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
+
+    ## Only run upd analysis for trios
+    if ( $parameter_href->{cache}{trio} ) {
+
+        $analysis_recipe_href->{upd_ar} = \&analysis_upd;
+    }
+
     return;
 }
 

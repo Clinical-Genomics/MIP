@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rhocall_aggregate rhocall_annotate rhocall_viz };
@@ -223,7 +223,7 @@ sub rhocall_viz {
 
 ## Function : Perl wrapper for writing rhocall viz recipe to $FILEHANDLE or return commands array. Based on rhocall 0.5.1.
 ## Returns  : @commands
-## Arguments: $aftag                  => Allele frequency to use
+## Arguments: $af_tag                 => Allele frequency to use
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outdir_path            => Directory path to write to
@@ -236,7 +236,7 @@ sub rhocall_viz {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $aftag;
+    my $af_tag;
     my $FILEHANDLE;
     my $infile_path;
     my $outdir_path;
@@ -247,9 +247,9 @@ sub rhocall_viz {
     my $wig;
 
     my $tmpl = {
-        aftag => {
+        af_tag => {
             defined     => 1,
-            store       => \$aftag,
+            store       => \$af_tag,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -298,8 +298,8 @@ sub rhocall_viz {
     ## Stores commands depending on input parameters
     my @commands = qw{ rhocall viz };
 
-    if ($aftag) {
-        push @commands, q{--aftag} . $SPACE . $aftag;
+    if ($af_tag) {
+        push @commands, q{--aftag} . $SPACE . $af_tag;
     }
 
     push @commands, q{--out_dir} . $SPACE . $outdir_path;

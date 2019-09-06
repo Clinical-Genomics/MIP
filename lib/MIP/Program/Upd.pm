@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ upd_call };
@@ -35,7 +35,8 @@ sub upd_call {
 
 ## Function : Perl wrapper for upd calls. Based on upd version 0.1
 ## Returns  : @commands
-## Arguments: $call_type              => Output regions or sites
+## Arguments: $af_tag                 => Allele tag to use
+##          : $call_type              => Output regions or sites
 ##          : $father_id              => Father ID in vcf
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Path to infile vcf
@@ -50,6 +51,7 @@ sub upd_call {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $af_tag;
     my $call_type;
     my $father_id;
     my $FILEHANDLE;
@@ -65,6 +67,10 @@ sub upd_call {
     ## Default(s)
 
     my $tmpl = {
+        af_tag => {
+            store       => \$af_tag,
+            strict_type => 1,
+        },
         call_type => {
             allow       => [qw{ regions sites }],
             defined     => 1,
@@ -122,6 +128,10 @@ sub upd_call {
 
     ## Stores commands depending on input parameters
     my @commands = qw{ upd };
+
+    if ($af_tag) {
+        push @commands, q{--af-tag} . $SPACE . $af_tag;
+    }
 
     push @commands, q{--vcf} . $SPACE . $infile_path;
 
