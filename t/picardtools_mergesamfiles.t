@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -78,15 +75,16 @@ my %base_argument = (
 my %required_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+        expected_output => q{-INPUT infile_1 -INPUT infile_2},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
         input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{R=}
+        expected_output => q{-R}
+          . $SPACE
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
@@ -94,23 +92,25 @@ my %required_argument = (
 my %specific_argument = (
     create_index => {
         input           => q{true},
-        expected_output => q{CREATE_INDEX=true},
+        expected_output => q{-CREATE_INDEX true},
     },
     infile_paths_ref => {
         inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+        expected_output => q{-INPUT infile_1 -INPUT infile_2},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     regionsfile_path => {
         input           => catfile(qw{ reference_directory regionsfile }),
-        expected_output => q{INTERVALS=} . catfile(qw{ reference_directory regionsfile }),
+        expected_output => q{-INTERVALS}
+          . $SPACE
+          . catfile(qw{ reference_directory regionsfile }),
     },
     threading => {
         input           => q{true},
-        expected_output => q{USE_THREADING=true},
+        expected_output => q{-USE_THREADING true},
     },
 );
 

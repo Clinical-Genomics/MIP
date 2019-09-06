@@ -29,7 +29,8 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ picardtools_addorreplacereadgroups
+    our @EXPORT_OK = qw{
+      picardtools_addorreplacereadgroups
       picardtools_base
       picardtools_createsequencedictionary
       picardtools_collecthsmetrics
@@ -182,25 +183,25 @@ sub picardtools_addorreplacereadgroups {
     );
 
     ## Infile
-    push @commands, q{INPUT=} . $infile_path;
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     ## Readgroup id
-    push @commands, q{RGID=} . $readgroup_id;
+    push @commands, q{-RGID} . $SPACE . $readgroup_id;
 
     ## Readgroup library
-    push @commands, q{RGLB=} . $readgroup_library;
+    push @commands, q{-RGLB} . $SPACE . $readgroup_library;
 
     ## Readgroup platform
-    push @commands, q{RGPL=} . $readgroup_platform;
+    push @commands, q{-RGPL} . $SPACE . $readgroup_platform;
 
     ## Readgroup platform unit
-    push @commands, q{RGPU=} . $readgroup_platform_unit;
+    push @commands, q{-RGPU} . $SPACE . $readgroup_platform_unit;
 
     ## Readgroup sample
-    push @commands, q{RGSM=} . $readgroup_sample;
+    push @commands, q{-RGSM} . $SPACE . $readgroup_sample;
 
     push @commands,
       unix_standard_streams(
@@ -223,19 +224,19 @@ sub picardtools_addorreplacereadgroups {
 
 sub picardtools_base {
 
-## Function : Perl wrapper for picardtools base. Based on Picardtools v2.9.2-SNAPSHOT
+## Function : Perl wrapper for picardtools base. Based on Picardtools v2.20.7
 ## Returns  : @commands
-## Arguments: $commands_ref       => List of commands added earlier
+## Arguments: $create_index       => Create a BAM index when writing a coordinate-sorted BAM file
+##          : $commands_ref       => List of commands added earlier
 ##          : $FILEHANDLE         => Filehandle to write to
-##          : $create_index       => Create a BAM index when writing a coordinate-sorted BAM file
 ##          : $referencefile_path => Genome reference file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $commands_ref;
-    my $referencefile_path;
     my $FILEHANDLE;
+    my $referencefile_path;
 
     ## Default(s)
     my $create_index;
@@ -252,12 +253,12 @@ sub picardtools_base {
             store       => \$create_index,
             strict_type => 1,
         },
+        FILEHANDLE         => { store => \$FILEHANDLE, },
         referencefile_path => {
             defined     => 1,
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -267,11 +268,11 @@ sub picardtools_base {
 
     if ( $create_index ne q{false} ) {
 
-        push @commands, q{CREATE_INDEX=} . $create_index;
+        push @commands, q{-CREATE_INDEX} . $SPACE . $create_index;
     }
     if ($referencefile_path) {
 
-        push @commands, q{R=} . $referencefile_path;
+        push @commands, q{-R} . $SPACE . $referencefile_path;
     }
     unix_write_to_file(
         {
@@ -285,81 +286,80 @@ sub picardtools_base {
 
 sub picardtools_createsequencedictionary {
 
-## Function : Perl wrapper for writing picardtools createsequencedictionary recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+## Function : Perl wrapper for writing picardtools createsequencedictionary recipe to $FILEHANDLE. Based on picardtools 2.20.7.
 ## Returns  : @commands
-## Arguments: $referencefile_path     => Genome reference file
+## Arguments: $create_index           => Create index
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $java_jar               => Java jar
+##          : $java_use_large_pages   => Use java large pages
+##          : $memory_allocation      => Memory allocation for java
 ##          : $outfile_path           => Outfile path
-##          : $stdoutfile_path        => Stdoutfile path
+##          : $referencefile_path     => Genome reference file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $memory_allocation      => Memory allocation for java
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $temp_directory         => Redirect tmp files to java temp
-##          : $java_use_large_pages   => Use java large pages
-##          : $java_jar               => Java jar
-##          : $create_index           => Create index
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $referencefile_path;
+    my $FILEHANDLE;
+    my $java_jar;
+    my $memory_allocation;
     my $outfile_path;
-    my $stdoutfile_path;
+    my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
-    my $memory_allocation;
+    my $stdoutfile_path;
     my $temp_directory;
-    my $java_jar;
 
     ## Default(s)
-    my $java_use_large_pages;
     my $create_index;
+    my $java_use_large_pages;
 
     my $tmpl = {
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        stdoutfile_path => {
-            strict_type => 1,
-            store       => \$stdoutfile_path,
-        },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path,
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append,
-        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        memory_allocation    => { strict_type => 1, store => \$memory_allocation },
-        temp_directory       => { strict_type => 1, store => \$temp_directory },
-        java_jar             => { strict_type => 1, store => \$java_jar },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
         create_index => {
-            default     => q{false},
             allow       => [qw{ true false }],
+            default     => q{false},
+            store       => \$create_index,
             strict_type => 1,
-            store       => \$create_index
         },
-
+        java_jar             => { store => \$java_jar, strict_type => 1, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -372,10 +372,10 @@ sub picardtools_createsequencedictionary {
 
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
@@ -387,110 +387,109 @@ sub picardtools_createsequencedictionary {
     @commands = picardtools_base(
         {
             commands_ref       => \@commands,
-            referencefile_path => $referencefile_path,
             create_index       => $create_index,
+            referencefile_path => $referencefile_path,
         }
     );
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
 sub picardtools_intervallisttools {
 
-## Function : Perl wrapper for writing picardtools intervallisttools recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+## Function : Perl wrapper for writing picardtools intervallisttools recipe to $FILEHANDLE. Based on picardtools 2.20.7.
 ##Returns  : @commands
-## Arguments: $infile_paths_ref     => Infile paths {REF}
-##          : $outfile_path         => Outfile path
-##          : $referencefile_path   => Genome reference file
+## Arguments: $create_index         => Create index
 ##          : $FILEHANDLE           => Sbatch filehandle to write to
-##          : $stderrfile_path      => Stderrfile path
-##          : $memory_allocation    => Memory allocation for java
-##          : $temp_directory       => Redirect tmp files to java temp
-##          : $java_use_large_pages => Use java large pages
+##          : $infile_paths_ref     => Infile paths {REF}
 ##          : $java_jar             => Java jar
-##          : $create_index         => Create index
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation for java
+##          : $outfile_path         => Outfile path
 ##          : $padding              => The amount to pad each end of the intervals by before other operations are undertaken
+##          : $referencefile_path   => Genome reference file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_paths_ref;
+    my $java_jar;
+    my $memory_allocation;
     my $outfile_path;
     my $referencefile_path;
-    my $FILEHANDLE;
     my $stderrfile_path;
-    my $memory_allocation;
     my $temp_directory;
-    my $java_jar;
 
     ## Default(s)
-    my $java_use_large_pages;
     my $create_index;
+    my $java_use_large_pages;
     my $padding;
 
     my $tmpl = {
-        infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        FILEHANDLE        => { store       => \$FILEHANDLE },
-        stderrfile_path   => { strict_type => 1, store => \$stderrfile_path },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        temp_directory    => { strict_type => 1, store => \$temp_directory },
-        java_jar          => { strict_type => 1, store => \$java_jar },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
         create_index => {
-            default     => q{false},
             allow       => [qw{ true false }],
+            default     => q{false},
+            store       => \$create_index,
             strict_type => 1,
-            store       => \$create_index
+        },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        java_jar             => { store => \$java_jar, strict_type => 1, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
         },
         padding => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$padding,
             strict_type => 1,
-            store       => \$padding
         },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -503,10 +502,10 @@ sub picardtools_intervallisttools {
 
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
@@ -518,22 +517,23 @@ sub picardtools_intervallisttools {
     @commands = picardtools_base(
         {
             commands_ref       => \@commands,
-            referencefile_path => $referencefile_path,
             create_index       => $create_index,
+            referencefile_path => $referencefile_path,
         }
     );
 
     ##Options
     if ($padding) {
 
-        push @commands, q{PADDING=} . $padding;
+        push @commands, q{-PADDING} . $SPACE . $padding;
     }
 
     ## Infile
-    push @commands, q{INPUT=} . join $SPACE . q{INPUT=}, @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
+      @{$infile_paths_ref};
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -545,8 +545,8 @@ sub picardtools_intervallisttools {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -669,19 +669,20 @@ sub picardtools_mergesamfiles {
     if ($threading) {
 
         ## Create a background thread to encode, compress and write to disk the output file
-        push @commands, q{USE_THREADING=} . $threading;
+        push @commands, q{-USE_THREADING} . $SPACE . $threading;
     }
 
     ## Infile
-    push @commands, q{INPUT=} . join $SPACE . q{INPUT=}, @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
+      @{$infile_paths_ref};
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     # Limit output to regions
     if ($regionsfile_path) {
 
-        push @commands, q{INTERVALS=} . $regionsfile_path;
+        push @commands, q{-INTERVALS} . $SPACE . $regionsfile_path;
     }
 
     push @commands,
@@ -744,7 +745,7 @@ sub picardtools_markduplicates {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -817,14 +818,15 @@ sub picardtools_markduplicates {
     if ($metrics_file) {
 
         # File to write duplication metrics to
-        push @commands, q{METRICS_FILE=} . $metrics_file;
+        push @commands, q{-METRICS_FILE} . $SPACE . $metrics_file;
     }
 
     ## Infile
-    push @commands, q{INPUT=} . join $SPACE . q{INPUT=}, @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
+      @{$infile_paths_ref};
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -884,7 +886,7 @@ sub picardtools_gatherbamfiles {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -949,10 +951,11 @@ sub picardtools_gatherbamfiles {
     );
 
     ## Infile
-    push @commands, q{INPUT=} . join $SPACE . q{INPUT=}, @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
+      @{$infile_paths_ref};
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -1076,10 +1079,10 @@ sub picardtools_collectmultiplemetrics {
     );
 
     ## Infile
-    push @commands, q{INPUT=} . $infile_path;
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -1220,19 +1223,19 @@ sub picardtools_collecthsmetrics {
 
     ## Baits
     push @commands,
-      q{BAIT_INTERVALS=} . join $SPACE . q{BAIT_INTERVALS=},
+      q{-BAIT_INTERVALS} . $SPACE . join $SPACE . q{-BAIT_INTERVALS} . $SPACE,
       @{$bait_interval_file_paths_ref};
 
     ## Targets
     push @commands,
-      q{TARGET_INTERVALS=} . join $SPACE . q{TARGET_INTERVALS=},
+      q{-TARGET_INTERVALS} . $SPACE . join $SPACE . q{-TARGET_INTERVALS} . $SPACE,
       @{$target_interval_file_paths_ref};
 
     ## Infile
-    push @commands, q{INPUT=} . $infile_path;
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -1254,7 +1257,7 @@ sub picardtools_collecthsmetrics {
 
 sub picardtools_sortvcf {
 
-## Function : Perl wrapper for writing picardtools sortvcf recipe to $FILEHANDLE. Based on picardtools 2.14.1.
+## Function : Perl wrapper for writing picardtools sortvcf recipe to $FILEHANDLE. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index         => Create index
 ##          : $FILEHANDLE           => Sbatch filehandle to write to
@@ -1287,47 +1290,47 @@ sub picardtools_sortvcf {
 
     my $tmpl = {
         create_index => {
-            default     => q{false},
             allow       => [qw{ true false }],
+            default     => q{false},
+            store       => \$create_index,
             strict_type => 1,
-            store       => \$create_index
         },
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
         infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        java_jar             => { strict_type => 1, store => \$java_jar },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        outfile_path      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
-            store       => \$outfile_path
+        },
+        java_jar             => { store => \$java_jar, strict_type => 1, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
         sequence_dictionary => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sequence_dictionary,
             strict_type => 1,
-            store       => \$sequence_dictionary
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        temp_directory  => { strict_type => 1, store => \$temp_directory },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1340,10 +1343,10 @@ sub picardtools_sortvcf {
 
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
@@ -1355,18 +1358,19 @@ sub picardtools_sortvcf {
     @commands = picardtools_base(
         {
             commands_ref       => \@commands,
-            referencefile_path => $referencefile_path,
             create_index       => $create_index,
+            referencefile_path => $referencefile_path,
         }
     );
 
-    push @commands, q{SEQUENCE_DICTIONARY=} . $sequence_dictionary;
+    push @commands, q{-SEQUENCE_DICTIONARY} . $SPACE . $sequence_dictionary;
 
     ## Infile
-    push @commands, q{INPUT=} . join $SPACE . q{INPUT=}, @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
+      @{$infile_paths_ref};
 
     ## Output
-    push @commands, q{OUTPUT=} . $outfile_path;
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -1378,8 +1382,8 @@ sub picardtools_sortvcf {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -1406,31 +1410,31 @@ sub sort_vcf {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        FILEHANDLE       => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        infile_paths_ref => {
-            required    => 1,
             defined     => 1,
-            default     => [],
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$infile_paths_ref
+        },
+        FILEHANDLE       => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
+            strict_type => 1,
         },
         outfile => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfile,
+            strict_type => 1,
         },
         sequence_dict_file => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sequence_dict_file,
             strict_type => 1,
-            store       => \$sequence_dict_file
         },
     };
 

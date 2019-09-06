@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -77,25 +74,28 @@ my %base_argument = (
 my %required_argument = (
     bait_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
-        expected_output => q{BAIT_INTERVALS=}
+        expected_output => q{-BAIT_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },
     target_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_interval_list_1 }) ],
-        expected_output => q{TARGET_INTERVALS=}
+        expected_output => q{-TARGET_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_interval_list_1 }),
     },
     infile_path => {
         input           => catfile(qw{ indirectory infile_1 }),
-        expected_output => q{INPUT=} . catfile(qw{ indirectory infile_1 }),
+        expected_output => q{-INPUT} . $SPACE . catfile(qw{ indirectory infile_1 }),
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
         input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{R=}
+        expected_output => q{-R}
+          . $SPACE
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
@@ -103,25 +103,27 @@ my %required_argument = (
 my %specific_argument = (
     create_index => {
         input           => q{true},
-        expected_output => q{CREATE_INDEX=true},
+        expected_output => q{-CREATE_INDEX true},
     },
     bait_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
-        expected_output => q{BAIT_INTERVALS=}
+        expected_output => q{-BAIT_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },
     target_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_interval_list_1 }) ],
-        expected_output => q{TARGET_INTERVALS=}
+        expected_output => q{-TARGET_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_interval_list_1 }),
     },
     infile_path => {
         input           => q{infile_1},
-        expected_output => q{INPUT=infile_1},
+        expected_output => q{-INPUT infile_1},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
 );
 
@@ -136,10 +138,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
