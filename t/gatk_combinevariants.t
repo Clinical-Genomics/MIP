@@ -153,4 +153,29 @@ foreach my $argument_href (@arguments) {
     );
 }
 
+## Base arguments
+@function_base_commands = qw{ java };
+
+my %specific_java_argument = (
+    java_jar => {
+        input           => q{gatk.jar},
+        expected_output => q{-jar gatk.jar},
+    },
+);
+
+## Test both base and function specific arguments
+@arguments = ( \%specific_java_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
+        }
+    );
+}
 done_testing();
