@@ -273,9 +273,9 @@ sub _get_cli_array_option {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not exists $arg_href->{$option_name} );
+    return @{ $arg_href->{$option_name} } if ( exists $arg_href->{$option_name} );
 
-    return @{ $arg_href->{$option_name} };
+    return;
 }
 
 sub _get_vcf_in_filehandle {
