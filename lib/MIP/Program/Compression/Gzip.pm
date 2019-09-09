@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gzip };
@@ -36,7 +36,7 @@ sub gzip {
 
 ## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
 ## Returns  : @commands
-## Arguments: $decompress             => Decompress##          :
+## Arguments: $decompress             => Decompress
 ##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
 ##          : $force                  => Force overwrite of output file and compress links
 ##          : $infile_path            => Infile path

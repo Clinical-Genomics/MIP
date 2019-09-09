@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -146,9 +146,11 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
+    use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
     use MIP::Recipes::Analysis::Dragen_dna qw{ analysis_dragen_dna };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
@@ -156,7 +158,8 @@ sub pipeline_analyse_dragen_rd_dna {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rhocall
+      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
@@ -169,7 +172,9 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Dragen_rd_dna qw{build_dragen_rd_dna_meta_files};
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis
+      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
+
     ### Pipeline specific checks
     check_dragen_rd_dna(
         {
@@ -205,12 +210,15 @@ sub pipeline_analyse_dragen_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
         cadd_ar                          => \&analysis_cadd,
+        chromograph_ar                   => \&analysis_chromograph,
         dragen_dna                       => \&analysis_dragen_dna,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
+        frequency_annotation             => \&analysis_frequency_annotation,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
+        rhocall_viz    => \&analysis_rhocall_viz,
         sacct          => \&analysis_sacct,
         snpeff         => \&analysis_snpeff,
         sv_annotate    => \&analysis_sv_annotate,
@@ -219,6 +227,7 @@ sub pipeline_analyse_dragen_rd_dna {
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
         sv_varianteffectpredictor => undef,                    # Depends on analysis type,
         sv_vcfparser              => undef,                    # Depends on analysis type
+        upd_ar                    => undef,                    # Depends on pedigree
         varianteffectpredictor    => \&analysis_vep,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
@@ -240,6 +249,14 @@ sub pipeline_analyse_dragen_rd_dna {
         {
             analysis_recipe_href    => \%analysis_recipe,
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+        }
+    );
+
+    ## Set recipe depending on pedigree
+    set_recipe_on_pedigree(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            parameter_href       => $parameter_href,
         }
     );
 

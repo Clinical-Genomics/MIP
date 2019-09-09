@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -151,6 +151,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+    use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -252,12 +253,14 @@ sub pipeline_analyse_rd_dna {
         bwa_mem           => undef,                          # Depends on genome build
         cadd_ar => undef,    # Depends on human reference version
         chanjo_sexcheck             => \&analysis_chanjo_sex_check,
+        chromograph_ar              => \&analysis_chromograph,
         cnvnator_ar                 => \&analysis_cnvnator,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,
+        frequency_annotation        => \&analysis_frequency_annotation,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
         gatk_gathervcfs             => \&analysis_gatk_gathervcfs,
@@ -278,7 +281,6 @@ sub pipeline_analyse_rd_dna {
           \&analysis_picardtools_collectmultiplemetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
         plink                            => \&analysis_plink,
-        frequency_annotation             => \&analysis_frequency_annotation,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         qccollect_ar                     => \&analysis_mip_qccollect,
         rankvariant    => undef,                         # Depends on sample features

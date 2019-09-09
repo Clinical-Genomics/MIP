@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rhocall_aggregate rhocall_annotate rhocall_viz };
@@ -256,6 +256,7 @@ sub rhocall_viz {
             store => \$FILEHANDLE,
         },
         infile_path => {
+            allow       => qr/ vcf\z /xms,
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
@@ -304,7 +305,7 @@ sub rhocall_viz {
 
     push @commands, q{--out_dir} . $SPACE . $outdir_path;
 
-    push @commands, q{--roh} . $SPACE . $rohfile_path;
+    push @commands, q{--rho} . $SPACE . $rohfile_path;
 
     if ($wig) {
         push @commands, q{--wig};

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -430,9 +430,10 @@ sub analysis_rhocall_viz {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_index bcftools_roh bcftools_view };
-    use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
@@ -553,12 +554,23 @@ sub analysis_rhocall_viz {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    gzip(
+        {
+            decompress   => 1,
+            FILEHANDLE   => $FILEHANDLE,
+            force        => 1,
+            infile_path  => $sample_vcf,
+            outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     rhocall_viz(
         {
             af_tag       => q{GNOMADAF},
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $sample_vcf,
-            outdir_path  => catdir( $outdir_path, q{rhocall} ),
+            infile_path  => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            outdir_path  => $outdir_path,
             rohfile_path => $outfile_path,
             wig          => 1,
         }
@@ -581,12 +593,11 @@ sub analysis_rhocall_viz {
             }
         );
 
-        ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
         submit_recipe(
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_case_parallel},
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,

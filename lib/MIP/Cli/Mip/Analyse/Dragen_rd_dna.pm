@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -613,6 +613,16 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             cmd_aliases   => [qw{ upd }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{ Create bed files needed for chromograph},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{chromograph_ar} => (
+            cmd_aliases   => [qw{ chgp }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Chromograph},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

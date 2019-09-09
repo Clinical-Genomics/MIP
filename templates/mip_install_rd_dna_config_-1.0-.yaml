@@ -41,10 +41,6 @@ emip:
       version: 2.3.0
     plink2:
       version: 171013
-    rhocall:
-      conda_dependency: 
-        matplotlib:
-      version: 0.5.1
     sambamba:
       version: 0.6.1
     snpeff:
@@ -113,6 +109,7 @@ epy3:
     python: 3.7
     sambamba: 0.6.8=h682856c_0
   pip:
+    bcftools:
     chanjo: 4.2.0
     genmod: 3.7.3
     multiqc: 1.6
@@ -124,6 +121,10 @@ epy3:
     expansionhunter:
       conda_dependency:
       version: 3.0.0
+    rhocall:
+      conda_dependency: 
+        matplotlib:
+      version: 0.5.1
     sambamba:
       version: 0.6.1
     upd:
