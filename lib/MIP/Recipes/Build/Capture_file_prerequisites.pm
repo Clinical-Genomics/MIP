@@ -149,8 +149,8 @@ sub build_capture_file_prerequisites {
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Fasta::Picardtools qw{ picardtools_createsequencedictionary };
-    use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
+    use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
+    use MIP::Program::Picardtools qw{ picardtools_intervallisttools };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants

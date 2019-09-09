@@ -17,7 +17,7 @@ emip:
     ldc: 1.11.0=hb2c9046_0
     manta: 1.5.0=py27_0
     numpy:
-    picard: 2.18.14=0
+    picard: 2.20.7=0
     pip:
     plink2: 1.90b3.35
     python: 2.7
