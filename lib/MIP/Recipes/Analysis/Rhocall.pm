@@ -597,15 +597,14 @@ sub analysis_rhocall_viz {
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
+                dependency_method       => q{case_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
-                recipe_files_tracker => scalar @{ $active_parameter_href->{sample_ids} },
-                sample_id            => $sample_id,
-                submission_profile   => $active_parameter_href->{submission_profile},
+                sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
