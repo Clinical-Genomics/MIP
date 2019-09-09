@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - upd: 0.1
 - rhocall: 0.4 -> 0.5.1
 - chromograph
+- picard: 2.18.14-0 -> 2.20.7-0 
 
 ##[7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
