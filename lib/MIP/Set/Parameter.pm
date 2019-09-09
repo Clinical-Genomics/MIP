@@ -1662,7 +1662,7 @@ sub _set_uninitialized_parameter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not exists $active_parameter_href->{$parameter_name} );
+    return if ( exists $active_parameter_href->{$parameter_name} );
 
     $active_parameter_href->{$parameter_name} = [];
 
