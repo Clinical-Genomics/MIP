@@ -59,9 +59,10 @@ diag(   q{Test build_call from Commands.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given scalar input (input_value)
-my $argument          = q{jedi};
-my $input_value       = q{luke};
-my %required_argument = ( darth_vader => { input => q{sith_lord}, }, );
+my $argument    = q{jedi};
+my $input_value = q{luke};
+my %required_argument =
+  ( darth_vader => { input_value_href => { is_a => q{sith_lord}, }, }, );
 
 my @scalar_args = build_call(
     {
@@ -107,7 +108,23 @@ my @hash_args = build_call(
 
 my @expected_hash_args = ( qw{ darth_vader sith_lord jedi }, \%input_value_hash );
 
-## Then built call should be returned with array ref
+## Then built call should be returned with hash_ref
 is_deeply( \@hash_args, \@expected_hash_args, q{Built hash args} );
+
+## Given required hash input (input_value_href)
+%input_value_hash = ( darth_vader => { is_a => q{sith_lord}, }, );
+
+@hash_args = build_call(
+    {
+        argument               => q{darth_vader},
+        input_value_href       => \%input_value_hash,
+        required_argument_href => \%required_argument,
+    }
+);
+
+@expected_hash_args = ( qw{ darth_vader sith_lord darth_vader }, \%input_value_hash );
+
+## Then built call should be returned with hash ref
+is_deeply( \@hash_args, \@expected_hash_args, q{Built hash args for required hash} );
 
 done_testing();

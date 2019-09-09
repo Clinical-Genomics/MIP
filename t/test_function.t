@@ -112,6 +112,15 @@ like( $trap->stderr, qr/Command\sline\sdoes\snot/xms, q{Throw error message} );
         input           => undef,
         expected_output => \@function_base_commands,
     },
+    hash_arg_href => {
+        input_href => {
+            water => q{wet},
+            fire  => q{hot},
+        },
+
+        # Always sorted to an alphabetical order according to ASCII table
+        expected_output => q{--hash_arg fire=hot --hash_arg water=wet},
+    },
 );
 %specific_argument = (
     array_args_ref => {
@@ -147,6 +156,20 @@ foreach my $argument_href (@arguments) {
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,
+        }
+    );
+}
+
+## Given no FILEHANDLE and hash argument
+@arguments = ( \%specific_argument );
+
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }
