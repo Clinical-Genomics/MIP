@@ -147,7 +147,7 @@ sub analysis_picardtools_collectmultiplemetrics {
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_collectmultiplemetrics };
+    use MIP::Program::Picardtools qw{ picardtools_collectmultiplemetrics };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

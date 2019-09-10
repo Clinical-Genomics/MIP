@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,7 +64,7 @@ diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log( {} );
+my $log = test_log( { no_screen => 1 } );
 
 my %active_parameter = (
     cluster_constant_path  => catfile(qw{ constant path }),
@@ -83,8 +83,9 @@ my %active_parameter = (
             picard => undef,
         },
     },
-    outdata_dir => catfile(qw{ a outdata dir }),
-    sample_ids  => [qw{ sample_1 }],
+    outdata_dir     => catfile(qw{ a outdata dir }),
+    sample_ids      => [qw{ sample_1 }],
+    select_programs => undef,
 );
 
 ## Mip analyse rd_dna parameters
@@ -117,6 +118,7 @@ my @custom_default_parameters = qw{ analysis_type
   reference_dir
   rtg_vcfeval_reference_genome
   sample_info_file
+  select_programs
   sv_vcfparser_select_file
   temp_directory
   vcfparser_select_file };

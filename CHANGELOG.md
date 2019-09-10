@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - chromograph
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
+- picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
 - upd: 0.1
 
