@@ -65,6 +65,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    chromograph_ar: 1
     dragen_dna: 1
     endvariantannotationblock: 1
     frequency_annotation: 13
@@ -89,6 +90,7 @@ recipe_memory:
   default:
     # Per process 
     cadd_ar: 3
+    chromograph_ar: 2
     endvariantannotationblock: 8
     frequency_annotation: 3
     rhocall_ar: 2
@@ -107,6 +109,7 @@ recipe_time:
   default:
     analysisrunstatus: 1
     cadd_ar: 10
+    chromograph_ar: 1
     dragen_dna: 5
     endvariantannotationblock: 2
     frequency_annotation: 1
@@ -489,10 +492,21 @@ upd_ar:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
+  file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:
    - upd
+  type: recipe
+chromograph_ar:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".tar.gz"
+  program_executables:
+   - chromograph
   type: recipe
 frequency_filter:
   analysis_mode: case

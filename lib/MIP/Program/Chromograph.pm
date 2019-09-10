@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ chromograph_roh chromograph_upd };
@@ -43,6 +43,7 @@ sub chromograph_roh {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $step                   => Step
 
     my ($arg_href) = @_;
 
@@ -55,6 +56,7 @@ sub chromograph_roh {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $step;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -89,6 +91,11 @@ sub chromograph_roh {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        step => {
+            allow       => qr/\A \d+ \z/xms,
+            store       => \$step,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -103,6 +110,11 @@ sub chromograph_roh {
     }
 
     push @commands, q{--outd} . $SPACE . $outdir_path;
+
+    if ($step) {
+
+        push @commands, q{--step} . $SPACE . $step;
+    }
 
     push @commands,
       unix_standard_streams(

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -94,7 +94,7 @@ my %required_argument = (
     },
     rohfile_path => {
         input           => catfile(qw{ file path.roh }),
-        expected_output => q{-r} . $SPACE . catfile(qw{ file path.roh }),
+        expected_output => q{--rho} . $SPACE . catfile(qw{ file path.roh }),
     },
 
 );
@@ -104,6 +104,10 @@ my %specific_argument = (
         input           => q{AF},
         expected_output => q{--aftag} . $SPACE . q{AF},
     },
+    infile_path => {
+        input           => catfile(qw{ file path.vcf }),
+        expected_output => catfile(qw{ file path.vcf }),
+    },
     outdir_path => {
         input           => catdir(qw{ a dir out }),
         expected_output => q{--out_dir} . $SPACE . catdir(qw{ a dir out }),
@@ -111,6 +115,10 @@ my %specific_argument = (
     wig => {
         input           => 1,
         expected_output => q{--wig},
+    },
+    rohfile_path => {
+        input           => catfile(qw{ file path.roh }),
+        expected_output => q{--rho} . $SPACE . catfile(qw{ file path.roh }),
     },
 );
 

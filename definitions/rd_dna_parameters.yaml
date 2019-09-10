@@ -148,6 +148,7 @@ recipe_core_number:
     bcftools_mpileup: 16
     bwa_mem: 36
     chanjo_sexcheck: 1
+    chromograph_ar: 1
     cnvnator_ar: 13
     delly_call: 36
     delly_reformat: 13
@@ -208,6 +209,7 @@ recipe_memory:
   default:
     cadd_ar: 4
     chanjo_sexcheck: 2
+    chromograph_ar: 2
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
@@ -249,6 +251,7 @@ recipe_time:
     bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
+    chromograph_ar: 1
     cnvnator_ar: 5
     delly_call: 20
     delly_reformat: 7
@@ -1480,10 +1483,21 @@ upd_ar:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
+  file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:
    - upd
+  type: recipe
+chromograph_ar:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".tar.gz"
+  program_executables:
+   - chromograph
   type: recipe
 frequency_filter:
   analysis_mode: case
