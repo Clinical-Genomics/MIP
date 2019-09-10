@@ -109,7 +109,6 @@ epy3:
     python: 3.7
     sambamba: 0.6.8=h682856c_0
   pip:
-    bcftools:
     chanjo: 4.2.0
     genmod: 3.7.3
     multiqc: 1.6

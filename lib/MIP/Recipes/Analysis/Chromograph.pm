@@ -241,7 +241,7 @@ sub analysis_chromograph {
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href, } );
     my $proband = $family_member_id{children}[0];
-    
+
     if ( $parameter_href->{cache}{trio} and $proband eq $sample_id ) {
 
         say {$FILEHANDLE} q{## Run Chromograph on upd file};
@@ -303,8 +303,8 @@ sub analysis_chromograph {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
-                sample_id            => $sample_id,
-                submission_profile   => $active_parameter_href->{submission_profile},
+                sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
