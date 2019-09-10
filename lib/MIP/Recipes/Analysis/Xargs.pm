@@ -37,18 +37,19 @@ sub xargs_command {
 
 ##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : xargs_file_counter, $xargs_file_path
-##Arguments: $core_number          => Number of cores to use
-##         : $FILEHANDLE           => Sbatch filehandle to write to
-##         : $file_path            => File path
-##         : $first_command        => Inital command
-##         : $java_jar             => Java jar
-##         : $java_use_large_pages => Use java large pages {REF}
-##         : $memory_allocation    => Memory allocation for java
-##         : $null_character       => Input items are terminated by a null character instead of by whitespace
-##         : $recipe_info_path     => Program info path
-##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
-##         : $temp_directory       => Redirect tmp files to java temp {Optional}
-##         : $xargs_file_counter   => Xargs file counter
+##Arguments: $core_number               => Number of cores to use
+##         : $FILEHANDLE                => Sbatch filehandle to write to
+##         : $file_path                 => File path
+##         : $first_command             => Inital command
+##         : $java_jar                  => Java jar
+##         : $java_use_large_pages      => Use java large pages {REF}
+##         : $memory_allocation         => Memory allocation for java
+##         : $null_character            => Input items are terminated by a null character instead of by whitespace
+##         : $picard_use_barclay_parser => Use legacy CLI parser for picard
+##         : $recipe_info_path          => Program info path
+##         : $temp_directory            => Redirect tmp files to java temp {Optional}
+##         : $xargs_file_counter        => Xargs file counter
+##         : $XARGSFILEHANDLE           => XARGS filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -60,6 +61,7 @@ sub xargs_command {
     my $java_jar;
     my $java_use_large_pages;
     my $memory_allocation;
+    my $picard_use_barclay_parser;
     my $recipe_info_path;
     my $XARGSFILEHANDLE;
     my $temp_directory;
@@ -97,6 +99,8 @@ sub xargs_command {
             store       => \$null_character,
             strict_type => 1,
         },
+        picard_use_barclay_parser =>
+          { strict_type => 1, store => \$picard_use_barclay_parser },
         recipe_info_path => { strict_type => 1, store => \$recipe_info_path },
         temp_directory   => { strict_type => 1, store => \$temp_directory },
         XARGSFILEHANDLE    => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
@@ -150,10 +154,11 @@ sub xargs_command {
         ## Return java core commands
         @commands = java_core(
             {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                picard_use_barclay_parser => $picard_use_barclay_parser,
+                memory_allocation         => $memory_allocation,
+                temp_directory            => $temp_directory,
             }
         );
     }

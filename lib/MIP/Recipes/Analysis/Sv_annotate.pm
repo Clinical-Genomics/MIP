@@ -150,7 +150,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_annotate bcftools_filter bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
-    use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
+    use MIP::Program::Picardtools qw{ sort_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };

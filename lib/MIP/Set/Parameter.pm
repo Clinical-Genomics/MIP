@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1662,10 +1662,7 @@ sub _set_uninitialized_parameter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( exists $active_parameter_href->{$parameter_name} ) {
-
-        return;
-    }
+    return if ( exists $active_parameter_href->{$parameter_name} );
 
     $active_parameter_href->{$parameter_name} = [];
 

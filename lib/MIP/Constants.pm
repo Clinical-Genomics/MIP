@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
 
@@ -377,10 +377,10 @@ sub set_analysis_constants {
     if ( $active_parameter_href->{singularity_container} ) {
         Readonly our %SINGULARITY_CONTAINER =>
           clone( $active_parameter_href->{singularity_container} );
+        return;
     }
-    else {
-        Readonly our %SINGULARITY_CONTAINER => ();
-    }
+
+    Readonly our %SINGULARITY_CONTAINER => ();
 
     return;
 }
