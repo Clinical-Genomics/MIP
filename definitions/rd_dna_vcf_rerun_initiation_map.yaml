@@ -15,8 +15,8 @@ CHAIN_ALL:
       - vt_ar
       - frequency_annotation
       - CHAIN_CHROMOGRAPH:
-        - rhocall_viz
         - upd_ar
+        - rhocall_viz
         - chromograph_ar
       - frequency_filter
       - cadd_ar

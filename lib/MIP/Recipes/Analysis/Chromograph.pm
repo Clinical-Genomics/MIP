@@ -133,7 +133,7 @@ sub analysis_chromograph {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes  get_recipe_resources };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph_roh chromograph_upd };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -141,6 +141,11 @@ sub analysis_chromograph {
     use MIP::Sample_info
       qw{ get_family_member_id set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+
+    ## Constants:
+
+    ## Default window in wig file from rhocall viz
+    Readonly my $STEP => 10000;
 
     ### PREPROCESSING:
 
@@ -220,9 +225,6 @@ sub analysis_chromograph {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## Default window in rhocall viz
-    Readonly my $STEP => 10000;
-
     ## Process the wig file from rhocall viz
     chromograph_roh(
         {
@@ -239,6 +241,7 @@ sub analysis_chromograph {
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href, } );
     my $proband = $family_member_id{children}[0];
+    
     if ( $parameter_href->{cache}{trio} and $proband eq $sample_id ) {
 
         say {$FILEHANDLE} q{## Run Chromograph on upd file};
@@ -300,7 +303,6 @@ sub analysis_chromograph {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
-                recipe_files_tracker => scalar @{ $active_parameter_href->{sample_ids} },
                 sample_id            => $sample_id,
                 submission_profile   => $active_parameter_href->{submission_profile},
             }

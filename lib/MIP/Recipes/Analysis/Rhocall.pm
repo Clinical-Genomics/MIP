@@ -586,7 +586,7 @@ sub analysis_rhocall_viz {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_path,
-                path             => catdir( $outdir_path, q{rhocall} ),
+                path             => catfile( $outdir_path, qw{ rhocall output.bed } ),
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
