@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ unix_write_to_file };
@@ -48,17 +48,17 @@ sub unix_write_to_file {
 
     my $tmpl = {
         commands_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$commands_ref,
+            strict_type => 1,
         },
         FILEHANDLE => { store => \$FILEHANDLE, },
         separator  => {
             default     => q{ },
-            strict_type => 1,
             store       => \$separator,
+            strict_type => 1,
         },
     };
 
