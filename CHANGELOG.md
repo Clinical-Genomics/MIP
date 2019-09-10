@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - expansionhunter: 3.0.0 -> 3.1.2
 - picard: 2.18.14-0 -> 2.20.7-0 
 - rhocall: 0.4 -> 0.5.1
-- upd: 0.
+- upd: 0.1
 
 
 ##[7.1.2]
