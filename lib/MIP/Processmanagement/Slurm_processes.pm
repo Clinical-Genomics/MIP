@@ -30,6 +30,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       slurm_submission_info
+      slurm_submit_job_case_id_dependency_add_to_sample
       slurm_submit_chain_job_ids_dependency_add_to_path
       slurm_submit_job_no_dependency_dead_end
       slurm_submit_job_no_dependency_add_to_sample
@@ -51,6 +52,197 @@ Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $SPACE        => q{ };
 Readonly my $UNDERSCORE   => q{_};
+
+sub slurm_submit_job_case_id_dependency_add_to_sample {
+
+## Function : Submit jobs that has case_id dependencies and adds to sample dependencies using SLURM
+## Returns  :
+## Arguments: $base_command            => Sbatch
+##          : $case_id                 => Case id
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_dependency_type     => SLURM job dependency type
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $log                     => Log
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample id
+##          : $sbatch_file_name        => Sbatch file name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $case_id;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $log;
+    my $path;
+    my $sample_id;
+    my $sbatch_file_name;
+
+    ## Default(s)
+    my $base_command;
+    my $job_dependency_type;
+
+    my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
+        case_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_dependency_type => {
+            allow       => [qw{ afterany afterok }],
+            default     => q{afterok},
+            store       => \$job_dependency_type,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sbatch_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Processmanagement::Processes qw{
+      add_job_id_dependency_tree
+      add_pan_job_id_to_sample_id_dependency_tree
+      add_parallel_job_id_to_sample_id_dependency_tree
+      add_sample_job_id_to_sample_id_dependency_tree
+      add_to_job_id_dependency_string
+      create_job_id_string_for_case_id
+      limit_job_id_string
+    };
+
+    # Create string with all previous job_ids
+    my $job_ids_string;
+
+    # The job_id that is returned from submission
+    my $job_id_returned;
+
+    ## Set keys
+    my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
+    my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+    my $pan_chain_key       = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+
+    ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
+    add_pan_job_id_to_sample_id_dependency_tree(
+        {
+            case_id_chain_key   => $case_id_chain_key,
+            job_id_href         => $job_id_href,
+            sample_id_chain_key => $sample_id_chain_key,
+        }
+    );
+
+    ## Always check and add any parallel (i.e job_ids that are processed in parallel witin path) dependency jobs
+    add_parallel_job_id_to_sample_id_dependency_tree(
+        {
+            case_id_chain_key       => $case_id_chain_key,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            path                    => $path,
+            sample_id               => $sample_id,
+            sample_id_chain_key     => $sample_id_chain_key,
+        }
+    );
+
+    ## Create job id string from the job id chain and path associated with sample for
+    ## SLURM submission using dependencies
+    $job_ids_string = create_job_id_string_for_case_id(
+        {
+            case_id                 => $case_id,
+            case_id_chain_key       => $case_id_chain_key,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            path                    => $path,
+            sample_ids_ref          => [$sample_id],
+        }
+    );
+
+    ## Submit jobs to sbatch
+    $job_id_returned = submit_jobs_to_sbatch(
+        {
+            base_command        => $base_command,
+            job_dependency_type => $job_dependency_type,
+            job_ids_string      => $job_ids_string,
+            log                 => $log,
+            sbatch_file_name    => $sbatch_file_name,
+        }
+    );
+
+    add_sample_job_id_to_sample_id_dependency_tree(
+        {
+            case_id_chain_key   => $case_id_chain_key,
+            job_id_href         => $job_id_href,
+            job_id_returned     => $job_id_returned,
+            sample_id_chain_key => $sample_id_chain_key,
+        }
+    );
+
+    ## Limit number of job_ids in job_id chain
+    limit_job_id_string(
+        {
+            job_id_href => $job_id_href,
+        }
+    );
+
+    ## Add job_id to jobs dependent on all jobs
+    add_job_id_dependency_tree(
+        {
+            chain_key       => q{ALL},
+            job_id_href     => $job_id_href,
+            job_id_returned => $job_id_returned,
+        }
+    );
+
+    slurm_submission_info(
+        {
+            job_id_returned => $job_id_returned,
+            log             => $log,
+        }
+    );
+
+    ## Add PAN job_id_returned to hash for sacct processing downstream
+    add_job_id_dependency_tree(
+        {
+            chain_key       => q{PAN},
+            job_id_href     => $job_id_href,
+            job_id_returned => $job_id_returned,
+        }
+    );
+    return;
+}
 
 sub slurm_submit_job_no_dependency_dead_end {
 
@@ -1888,7 +2080,17 @@ sub submit_slurm_recipe {
         },
         dependency_method => {
             allow => [
-                qw{ add_to_all case_to_island island island_to_sample island_to_samples sample_to_case sample_to_case_parallel sample_to_island sample_to_sample sample_to_sample_parallel }
+                qw{ add_to_all
+                  case_to_island
+                  island
+                  island_to_sample
+                  island_to_samples
+                  case_to_sample
+                  sample_to_case
+                  sample_to_case_parallel
+                  sample_to_island
+                  sample_to_sample
+                  sample_to_sample_parallel }
             ],
             defined     => 1,
             required    => 1,
@@ -2022,6 +2224,22 @@ sub submit_slurm_recipe {
             }
         );
         return 1;
+    }
+    if ( $dependency_method eq q{case_to_sample} ) {
+
+        slurm_submit_job_case_id_dependency_add_to_sample(
+            {
+                base_command            => $base_command,
+                case_id                 => $case_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $recipe_file_path,
+            }
+        );
+
     }
     if ( $dependency_method eq q{sample_to_case} ) {
 

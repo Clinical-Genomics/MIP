@@ -67,9 +67,10 @@ CHAIN_ALL:
       - rhocall_ar
       - vt_ar
       - frequency_annotation
-      - CHAIN_CHROMOGRAP:
-        - rhocall_viz
+      - CHAIN_CHROMOGRAPH:
         - upd_ar
+        - rhocall_viz
+        - chromograph_ar
       - frequency_filter
       - cadd_ar
       - varianteffectpredictor

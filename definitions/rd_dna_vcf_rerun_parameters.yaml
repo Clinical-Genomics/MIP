@@ -50,6 +50,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    chromograph_ar: 1
     endvariantannotationblock: 1
     frequency_annotation: 13
     frequency_filter: 13
@@ -57,11 +58,12 @@ recipe_core_number:
     sacct: 1
     snpeff: 13
     sv_annotate: 2
-    sv_rankvariant: 16
+    sv_rankvariant: 13
     sv_reformat: 1
     sv_varianteffectpredictor: 0
     sv_vcf_rerun_reformat: 1
-    sv_vcfparser: 16
+    sv_vcfparser: 13
+    upd_ar: 1
     vcf2cytosure_ar: 0
     vcf_rerun_reformat: 1
     vt_ar: 15
@@ -73,12 +75,14 @@ recipe_memory:
   default:
     # Per process 
     cadd_ar: 3
+    chromograph_ar: 2
     endvariantannotationblock: 8
     frequency_annotation: 7
     rhocall_ar: 2
     snpeff: 8
     sv_reformat: 24
     sv_varianteffectpredictor: 9
+    upd_ar: 3
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
   type: mip
@@ -89,6 +93,7 @@ recipe_time:
   default:
     analysisrunstatus: 1
     cadd_ar: 10
+    chromograph_ar: 1
     endvariantannotationblock: 2
     frequency_annotation: 1
     frequency_filter: 2
@@ -103,6 +108,7 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcf_rerun_reformat: 1
     sv_vcfparser: 2
+    upd_ar: 1
     varianteffectpredictor: 10
     vcf_rerun_reformat: 1
     vcfparser_ar: 5
@@ -482,10 +488,21 @@ upd_ar:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
+  file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:
    - upd
+  type: recipe
+chromograph_ar:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".tar.gz"
+  program_executables:
+   - chromograph
   type: recipe
 frequency_filter:
   analysis_mode: case

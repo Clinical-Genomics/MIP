@@ -12,25 +12,26 @@ node_ram_memory: 192
 project_id: travis_test
 load_env:
   mip_travis:
-   cadd_ar:
-   gatk:
-   method: conda
-   mip:
-   picard:
-  mip_travis_py3:
-   genmod:
-   method: conda
-   rankvariant:
-   sv_rankvariant:
-   upd_ar:
-  mip_travis_svdb:
+    cadd_ar:
+    gatk:
     method: conda
-    svdb:
-    sv_annotate:
+    mip:
+    picard:
+  mip_travis_py3:
+    chromograph_ar:
+    genmod:
+    method: conda
+    rankvariant:
+    sv_rankvariant:
+    upd_ar:
+  mip_travis_svdb:
+     method: conda
+     svdb:
+     sv_annotate:
   mip_travis_vep:
-   method: conda
-   sv_varianteffectpredictor:
-   varianteffectpredictor:
+    method: conda
+    sv_varianteffectpredictor:
+    varianteffectpredictor:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
