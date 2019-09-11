@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -88,8 +88,9 @@ $active_parameter{vep_custom_annotation}{a_ref} = {
     annotation_type          => q{exact},
 };
 $active_parameter{vep_directory_cache}            = q{a_cache};
-$active_parameter{vep_plugins}                    = [qw{ LoF MaxEntScan ExACpLI }];
+$active_parameter{vep_plugins}                    = [qw{ dbNSFP ExACpLI LoF MaxEntScan }];
 $active_parameter{vep_plugin_pli_value_file_path} = q{a_file_path};
+$active_parameter{vep_plugin_dbNSFP_file_path}    = q{a_dbnsfp_file_path};
 $active_parameter{vep_features}                   = [qw{ refseq }];
 
 my %file_info = test_mip_hashes(
