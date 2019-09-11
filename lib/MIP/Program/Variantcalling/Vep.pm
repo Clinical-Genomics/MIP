@@ -46,7 +46,7 @@ sub variant_effect_predictor {
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $infile_format           => Input file format - one of "ensembl", "vcf", "hgvs", "id"
-    ##          : $max_sv_size           => Extend the maximum Structural Variant size VEP can process
+##          : $max_sv_size             => Extend the maximum Structural Variant size VEP can process
 ##          : $outfile_format          => Output file format
 ##          : $outfile_path            => Outfile path to write to
 ##          : $plugins_dir_path        => Path to plugins directory
