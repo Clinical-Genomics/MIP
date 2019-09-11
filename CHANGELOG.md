@@ -19,18 +19,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - chromograph
 - expansionhunter: 3.0.0 -> 3.1.2
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
+- manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
 - picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
+- rtg-tools: 3.9.1-1 -> 3.10.1-0
 - upd: 0.1
+- vcfanno: 0.3.1-0 -> 0.3.2-0
 - VEP: 95 -> 97
 
-##[7.1.4]
+## [7.1.4]
 - Fix bug in outfile_path when mitochondria contig is not part of gene panel
 
 ## [7.1.3]
 - Increased sv_varianteffectpredictor memory parameter 8 -> 9 Gb
 
-##[7.1.2]
+## [7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
 
 

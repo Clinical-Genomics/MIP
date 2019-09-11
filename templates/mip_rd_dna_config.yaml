@@ -42,6 +42,8 @@ load_env:
     method: conda
     multiqc_ar:
     rankvariant:
+    rhocall_ar:
+    rhocall_viz:
     stranger:
     sv_rankvariant:
     upd_ar:
