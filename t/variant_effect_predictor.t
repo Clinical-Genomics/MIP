@@ -142,6 +142,10 @@ my %specific_argument = (
           . $SPACE
           . catfile( q{test_dir}, q{infile.vcf} ),
     },
+    max_sv_size => {
+        input           => 1,
+        expected_output => q{--max_sv_size} . $SPACE . 1,
+    },
     outfile_format => {
         input           => q{vcf},
         expected_output => q{--} . q{vcf},

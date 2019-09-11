@@ -25,14 +25,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
 - upd: 0.1
 - vcfanno: 0.3.1-0 -> 0.3.2-0
+- VEP: 95 -> 97
 
-##[7.1.4]
+## [7.1.4]
 - Fix bug in outfile_path when mitochondria contig is not part of gene panel
 
 ## [7.1.3]
 - Increased sv_varianteffectpredictor memory parameter 8 -> 9 Gb
 
-##[7.1.2]
+## [7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
 
 

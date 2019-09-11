@@ -149,7 +149,6 @@ sub install_vep {
     $log->info(qq{Writing instructions for VEP installation via SHELL});
 
     ## Vipe the api if a reinstallation has been requested
-    my $install_check;
     if ( $auto =~ m/[al]/xms ) {
         ## Check if installation exists and remove directory
         check_existing_installation(
@@ -316,7 +315,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     outfile_path => $maxent_file_path,
                     quiet        => $quiet,
                     url =>
-                      q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
+q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     verbose => $verbose,
                 }
             );

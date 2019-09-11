@@ -31,6 +31,9 @@ BEGIN {
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
 }
 
+## Constants
+Readonly my $LENGTH_CHR_1 => 248_956_422;
+
 sub variant_effect_predictor {
 
 ## Function : Perl wrapper for writing variant_effect_predictor recipe to $FILEHANDLE or return commands array. Based on VEP 90.
@@ -43,6 +46,7 @@ sub variant_effect_predictor {
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $infile_format           => Input file format - one of "ensembl", "vcf", "hgvs", "id"
+##          : $max_sv_size             => Extend the maximum Structural Variant size VEP can process
 ##          : $outfile_format          => Output file format
 ##          : $outfile_path            => Outfile path to write to
 ##          : $plugins_dir_path        => Path to plugins directory
@@ -79,6 +83,7 @@ sub variant_effect_predictor {
     my $distance;
     my $fork;
     my $infile_format;
+    my $max_sv_size;
     my $outfile_format;
 
     my $tmpl = {
@@ -123,6 +128,12 @@ sub variant_effect_predictor {
         },
         infile_path => {
             store       => \$infile_path,
+            strict_type => 1,
+        },
+        max_sv_size => {
+            allow       => qr/\A \d+ \z/xsm,
+            default     => $LENGTH_CHR_1,
+            store       => \$max_sv_size,
             strict_type => 1,
         },
         outfile_format => {
@@ -210,6 +221,9 @@ sub variant_effect_predictor {
 
         push @commands, q{--format} . $SPACE . $infile_format;
     }
+
+    push @commands, q{--max_sv_size} . $SPACE . $max_sv_size;
+
     if ($outfile_format) {
 
         push @commands, q{--} . $outfile_format;
