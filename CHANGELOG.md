@@ -23,6 +23,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rhocall: 0.4 -> 0.5.1
 - upd: 0.1
 
+##[7.1.4]
+- Fix bug in outfile_path when mitochondria contig is not part of gene panel
+
+## [7.1.3]
+- Increased sv_varianteffectpredictor memory parameter 8 -> 9 Gb
 
 ##[7.1.2]
 - Update samtools_subsample_mt to fix bug in downsampling of MT bam
