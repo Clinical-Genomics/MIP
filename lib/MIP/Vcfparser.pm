@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -776,20 +776,6 @@ sub parse_vep_csq {
                 vcf_record_href          => $record_href,
             }
         );
-
-        ## Mainly for SV BNDs without consequence and within a hgnc_id
-        if (    not keys %{$consequence_href}
-            and not exists $record_href->{range_transcripts} )
-        {
-
-            ## Add all transcripts to range transcripts
-            add_transcript_to_feature_file(
-                {
-                    transcripts_ref => \@transcripts,
-                    vcf_record_href => $record_href,
-                }
-            );
-        }
     }
 
     set_most_severe_ann_to_vcf_record(

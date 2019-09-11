@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves frequency annotation to separate recipe
 - Adds upd for trios
 - Adds rhocall viz
+- Adds chromograph for chromosome visualization
 
 ### Grch38
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
@@ -17,8 +18,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - chromograph
 - expansionhunter: 3.0.0 -> 3.1.2
+- GATK: 4.1.2.0-1 -> 4.1.3.0-0 
 - manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
-- picard: 2.18.14-0 -> 2.20.7-0 
+- picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
 - upd: 0.1
 
