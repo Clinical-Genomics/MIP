@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ singularity_exec };
@@ -37,10 +37,6 @@ sub singularity_exec {
 ##          : $FILEHANDLE                     => Filehandle to write to
 ##          : $singularity_container          => Singularity container name
 ##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
-##          : $stderrfile_path                => Stderrfile path
-##          : $stderrfile_path_append         => Append stderr info to file path
-##          : $stdinfile_path                 => Stdinfile path
-##          : $stdoutfile_path                => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -49,10 +45,6 @@ sub singularity_exec {
     my $FILEHANDLE;
     my $singularity_container;
     my $singularity_container_cmds_ref;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-    my $stdinfile_path;
-    my $stdoutfile_path;
 
     ## Default(s)
 
@@ -74,19 +66,6 @@ sub singularity_exec {
         singularity_container_cmds_ref => {
             default     => [],
             store       => \$singularity_container_cmds_ref,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path_append => {
-            store       => \$stderrfile_path_append,
-            strict_type => 1,
-        },
-        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
-        stdoutfile_path => {
-            store       => \$stdoutfile_path,
             strict_type => 1,
         },
     };
