@@ -88,6 +88,7 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -98,6 +99,7 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{cache}{consensus_analysis_type} = q{wes};
 
 my %sample_info;
 
