@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -320,10 +320,8 @@ sub analysis_expansionhunter {
         );
 
         ## Special case for unknown sex
-        if ( $sample_id_sex eq q{unknown} ) {
+        $sample_id_sex = _update_sample_id_sex( { sample_id_sex => $sample_id_sex, } );
 
-            $sample_id_sex = undef;
-        }
         my $sample_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . $sample_id;
         expansionhunter(
             {
@@ -466,6 +464,33 @@ sub analysis_expansionhunter {
         );
     }
     return 1;
+}
+
+sub _update_sample_id_sex {
+
+    ## Function : If sample sex is unknown return undef otherwise return $sample_id_sex
+    ## Returns  : $sample_id_sex or undef
+    ## Arguments: $sample_id_sex => Sex of sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id_sex;
+
+    my $tmpl = {
+        sample_id_sex => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_sex,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $sample_id_sex eq q{unknown} );
+
+    return $sample_id_sex;
 }
 
 1;
