@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1224,7 +1224,6 @@ sub _add_all_mt_var_from_research_to_clinical {
             strict_type => 1,
         },
         outfile_path => {
-            defined     => 1,
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
@@ -1232,6 +1231,8 @@ sub _add_all_mt_var_from_research_to_clinical {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $outfile_path );
 
     if ( $add_all_mt_var and $contig =~ / MT | M /sxm ) {
 
