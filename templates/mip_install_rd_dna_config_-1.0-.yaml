@@ -187,7 +187,7 @@ evep:
         - MaxEntScan
       vep_species:
         - homo_sapiens_merged
-      version: 95
+      version: 97
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
