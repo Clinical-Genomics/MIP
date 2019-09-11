@@ -22,6 +22,8 @@ load_env:
     genmod:
     method: conda
     rankvariant:
+    rhocall_ar:
+    rhocall_viz:
     sv_rankvariant:
     upd_ar:
   mip_travis_svdb:
