@@ -41,6 +41,7 @@ use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
+use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
@@ -191,6 +192,20 @@ sub pipeline_install_rd_dna {
                 FILEHANDLE => $FILEHANDLE,
                 pip_packages_href => $active_parameter_href->{$installation}{pip},
                 quiet             => $active_parameter_href->{quiet},
+            }
+        );
+
+        ## Pull and link containers
+        install_singularity_containers(
+            {
+                conda_env => $active_parameter_href->{environment_name}{$installation},
+                conda_env_path =>
+                  $active_parameter_href->{$installation}{conda_prefix_path},
+                container_dir_path => $active_parameter_href->{container_dir_path},
+                container_href => $active_parameter_href->{$installation}{singularity},
+                FILEHANDLE     => $FILEHANDLE,
+                quiet          => $active_parameter_href->{quiet},
+                verbose        => $active_parameter_href->{verbose},
             }
         );
 
