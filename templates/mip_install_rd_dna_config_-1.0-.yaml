@@ -27,7 +27,7 @@ emip:
     samtools: 1.9=h8571acd_11
     snpeff: 4.3.1t=1
     snpsift: 4.3.1t=1
-    vcfanno: 0.3.1=0
+    vcfanno: 0.3.2=0
     vt: 2015.11.10
   pip:
   shell:

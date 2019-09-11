@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
 - upd: 0.1
+- vcfanno: 0.3.1-0 -> 0.3.2-0
 
 ##[7.1.4]
 - Fix bug in outfile_path when mitochondria contig is not part of gene panel
