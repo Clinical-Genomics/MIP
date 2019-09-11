@@ -75,13 +75,14 @@ my %active_parameter = test_mip_hashes(
 );
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{gatk_variantrecalibration}        = 1;
+$active_parameter{bcftools_mpielup}                 = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ gatk_variantrecalibration};
+my @variant_callers = qw{ gatk_variantrecalibration bcftools_mpielup };
 
 my %file_info = test_mip_hashes(
     {
