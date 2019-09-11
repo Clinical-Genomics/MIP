@@ -111,7 +111,7 @@ epy3:
   pip:
     chanjo: 4.2.0
     genmod: 3.7.3
-    multiqc: 1.6
+    multiqc: 1.7
     stranger: 0.5.4
     variant_integrity: 0.0.4
   shell:
