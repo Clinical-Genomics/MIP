@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -182,7 +182,18 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter dependency_tree_dna dependency_tree_rna download_active_parameter file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
+                qw{ active_parameter
+                  define_parameter
+                  dependency_tree_dna
+                  dependency_tree_rna
+                  download_active_parameter
+                  file_info
+                  install_parameter
+                  io
+                  job_id
+                  pedigree
+                  recipe_parameter
+                  qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
