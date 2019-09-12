@@ -51,7 +51,11 @@ emip:
     vt:
       version: gitRepo
   singularity:
-    cnvnator: shub://jemten/MIP:cnvnator-0.4.1
+    cnvnator: 
+        uri: shub://jemten/MIP:cnvnator-0.4.1
+        executables:
+          - cnvnator
+          - cnvnator2VCF
 # CNVnator environment spec
 ecnvnator:
   conda:
