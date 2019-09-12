@@ -18,14 +18,14 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
+use MIP::Constants qw{ $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,12 +46,6 @@ BEGIN {
     };
 
 }
-
-## Constants
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $UNDERSCORE   => q{_};
 
 sub slurm_submit_job_case_id_dependency_add_to_sample {
 
