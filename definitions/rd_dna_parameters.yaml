@@ -1648,6 +1648,12 @@ vep_features:
    - tsl
    - uniprot
   type: recipe_argument
+vep_plugin:
+  associated_recipe:
+   - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
+  type: recipe_argument
 vep_plugins:
   associated_recipe:
    - varianteffectpredictor

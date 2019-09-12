@@ -1865,8 +1865,17 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vep_plugins} => (
+        q{vep_plugin} => (
             cmd_aliases   => [qw{ veppl }],
+            documentation => q{VEP plugins },
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{vep_plugins} => (
+            cmd_aliases   => [qw{ veppls }],
             cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
             documentation => q{VEP plugins},
             is            => q{rw},
