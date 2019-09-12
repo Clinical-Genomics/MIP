@@ -18,7 +18,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $LOG $NEWLINE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir };
+use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Package_manager::Singularity qw{ singularity_pull };
 
@@ -101,14 +101,17 @@ sub install_singularity_containers {
         }
     );
 
-    ## Set default path
+    ## Return if no containers
+    return if not keys %{$container_href};
+
+    ## Set default path for containers
     if ( not $container_dir_path ) {
         $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
     }
 
     if ( not -d $container_dir_path ) {
 
-        say {$FILEHANDLE} q{## Creating container directory in conda environemnt};
+        say {$FILEHANDLE} q{## Creating container directory};
         gnu_mkdir(
             {
                 FILEHANDLE       => $FILEHANDLE,
@@ -121,6 +124,7 @@ sub install_singularity_containers {
 
     say {$FILEHANDLE} q{## Pull containers};
 
+  CONTAINER:
     foreach my $container ( keys %{$container_href} ) {
 
         $log->info( q{Writing instructions for pulling container}
@@ -133,26 +137,14 @@ sub install_singularity_containers {
         my $container_path = catfile( $container_dir_path, $container . q{.sif} );
         singularity_pull(
             {
-                container_uri => $container_href->{$container},
+                container_uri => $container_href->{$container}{uri},
                 FILEHANDLE    => $FILEHANDLE,
                 force         => 1,
                 outfile_path  => $container_path,
             }
         );
-        print $FILEHANDLE $NEWLINE;
-
-        gnu_ln(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                link_path   => catdir( $conda_env_path, q{bin} ),
-                symbolic    => 1,
-                target_path => $container_path,
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
-
     return 1;
 }
 

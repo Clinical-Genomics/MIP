@@ -252,7 +252,7 @@ recipe_time:
     cadd_ar: 10
     chanjo_sexcheck: 2
     chromograph_ar: 1
-    cnvnator_ar: 5
+    cnvnator_ar: 1
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
@@ -661,6 +661,7 @@ cnvnator_ar:
   program_executables:
    - bcftools
    - cnvnator
+   - cnvnator2VCF.pl
    - samtools
   recipe_type: structural_variant_callers
   type: recipe
