@@ -360,6 +360,17 @@ sub analysis_vep {
         }
     }
 
+    my %vep_plugins = (
+        dbNSFP => {
+            path       => $active_parameter_href->{vep_plugin_dbNSFP_file_path},
+            parameters => [
+                qw{ GERP++_RS GERP++_NR phyloP100way_vertebrate phastCons100way_vertebrate REVEL_rankscore }
+            ],
+        }
+    );
+
+    push @plugins, _get_plugin_cmds( { vep_plugins_href => \%vep_plugins, } );
+
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
 
@@ -1604,6 +1615,42 @@ sub _get_assembly_name {
         }
     }
     return $assembly_version;
+}
+
+sub _get_plugin_cmds {
+
+## Function : Build plugin command per plugin
+## Returns  : @plugins
+## Arguments: $vep_plugins_href => Plugin info {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_plugins_href;
+
+    my $tmpl = {
+        vep_plugins_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugins_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @plugins;
+    my @order_plugin_options = qw{ path parameters };
+
+  PLUGIN:
+    while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugins_href} ) {
+
+        my $cmd = $plugin_name . $COMMA . $plugin_href->{path};
+        $cmd .= join $COMMA, @{ $plugin_href->{parameters} };
+        push @plugins, $cmd;
+    }
+    return @plugins;
 }
 
 sub _reformat_sv_with_no_length {
