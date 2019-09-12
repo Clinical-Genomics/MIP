@@ -52,10 +52,10 @@ emip:
       version: gitRepo
   singularity:
     cnvnator: 
-        uri: shub://jemten/MIP:cnvnator-0.4.1
-        executables:
-          - cnvnator
-          - cnvnator2VCF
+      uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+      executables:
+        - cnvnator
+        - cnvnator2VCF.pl
 # CNVnator environment spec
 ecnvnator:
   conda:

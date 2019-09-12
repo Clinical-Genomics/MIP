@@ -322,6 +322,7 @@ sub analysis_cnvnator {
                 infile_paths_ref => [ $infile_path{$contig} ],
                 outfile_path     => $root_file,
                 regions_ref      => [$contig],
+                unique           => 1,
                 stdoutfile_path  => $stdbasefile_path_prefix . $DOT . q{stdout.txt},
                 stderrfile_path  => $stdbasefile_path_prefix . $DOT . q{stderr.txt},
                 FILEHANDLE       => $XARGSFILEHANDLE,
