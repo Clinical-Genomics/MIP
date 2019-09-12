@@ -17,6 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Check::Path qw{ check_future_filesystem_for_directory };
 use MIP::Constants qw{ $COLON $LOG $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -104,25 +105,21 @@ sub install_singularity_containers {
     ## Return if no containers
     return if not keys %{$container_href};
 
+    say {$FILEHANDLE} q{## Pull containers with Singularity};
+    
     ## Set default path for containers
     if ( not $container_dir_path ) {
         $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
     }
 
-    if ( not -d $container_dir_path ) {
-
-        say {$FILEHANDLE} q{## Creating container directory};
-        gnu_mkdir(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $container_dir_path,
-                verbose          => $verbose,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    say {$FILEHANDLE} q{## Pull containers};
+    ## Write check command to FILEHANDLE
+    say {$FILEHANDLE} q{##Check for container path};
+    my $dir_check = check_future_filesystem_for_directory(
+        {
+            directory_path => $container_dir_path
+        }
+    );
+    say {$FILEHANDLE} $dir_check . $NEWLINE;
 
   CONTAINER:
     foreach my $container ( keys %{$container_href} ) {
