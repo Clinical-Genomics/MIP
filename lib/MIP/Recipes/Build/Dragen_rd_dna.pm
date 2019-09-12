@@ -26,11 +26,6 @@ BEGIN {
     our @EXPORT_OK = qw{ build_dragen_rd_dna_meta_files };
 }
 
-## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $EMPTY_STR => q{};
-Readonly my $TAB       => qq{\t};
-
 sub build_dragen_rd_dna_meta_files {
 
 ## Function : Build pipeline recipe for Dragen rare disease DNA data analysis.
