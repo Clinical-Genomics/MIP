@@ -20,6 +20,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - expansionhunter: 3.0.0 -> 3.1.2
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
 - manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
+- multiqc: 1.6 -> 1.7
 - picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
