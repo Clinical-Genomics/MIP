@@ -23,7 +23,7 @@ use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
+use MIP::Package_manager::Pip qw{ pip_install };
 use MIP::Program::Compression::Zip qw{ unzip };
 use MIP::Program::Download::Wget qw{ wget };
 
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -119,25 +119,12 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{### Install Vcf2cytosure};
     $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
-    ## Check if vcf2cytosure has been installed via pip
-    my $vcf2cytosure_status = check_pip_package(
-        {
-            conda_environment => $conda_environment,
-            conda_prefix_path => $conda_prefix_path,
-            package           => $program_name,
-            version           => $program_version,
-        }
-    );
-
     ## Check if installation exists and is executable
-    if ( -x catfile( $conda_prefix_path, qw{ bin }, $program_name )
-        || $vcf2cytosure_status )
-    {
+    if ( -x catfile( $conda_prefix_path, qw{ bin }, $program_name ) ) {
         $log->info( $program_name
               . q{ is already installed in the specified conda environment.} );
         $log->warn(
             q{This will overwrite the current } . $program_name . q{ installation.} );
-
     }
 
     ## Activate conda environment

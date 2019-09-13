@@ -11,9 +11,9 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 use Readonly;
-use IPC::Cmd qw{ run };
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Language::Python qw{ python_core };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -26,89 +26,7 @@ BEGIN {
     our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_pip_package pip_install };
-}
-
-## Constants
-Readonly my $SPACE => q{ };
-
-sub check_pip_package {
-
-## Function : Check if the package has been installed via pip
-## Returns  : $status
-## Arguments: $conda_environment => Name of conda environment
-##          : $conda_prefix_path => Path to conda environment
-##          : $package           => Pip package to check
-##          : $version           => Optional version check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $conda_environment;
-    my $conda_prefix_path;
-    my $package;
-    my $version;
-
-    my $tmpl = {
-        conda_environment => {
-            store       => \$conda_environment,
-            strict_type => 1,
-        },
-        conda_prefix_path => {
-            store       => \$conda_prefix_path,
-            strict_type => 1,
-        },
-        package => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package,
-            strict_type => 1,
-        },
-        version => {
-            store       => \$version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $check_pip_package_regexp = _build_package_check_regexp(
-        {
-            package => $package,
-            version => $version,
-        }
-    );
-
-    # Variable for storing pip package status
-    my $status;
-
-    # Shell command to launch
-    my $command;
-
-    # Check if the program is to be installed into a conda env
-    if ($conda_environment) {
-
-        # Check if the environemnt already exists
-        if ( $conda_prefix_path and -d $conda_prefix_path ) {
-
-            # Test if the program already exists in that environment
-            $command =
-qq{conda list -n $conda_environment 2> /dev/null | grep '<pip>' | $check_pip_package_regexp};
-            run(
-                command => $command,
-                buffer  => \$status
-            );
-        }
-        return $status;
-    }
-
-    # Test if the program is already installed in the active env
-    $command = qq{pip list --format columns 2> /dev/null | $check_pip_package_regexp};
-    run(
-        command => $command,
-        buffer  => \$status
-    );
-    return $status;
+    our @EXPORT_OK = qw{ pip_install };
 }
 
 sub pip_install {
@@ -250,67 +168,6 @@ sub pip_install {
     );
 
     return @commands;
-}
-
-sub _build_package_check_regexp {
-
-## Function : Build regexp for package check
-## Returns  : $check_pip_package_regexp
-## Arguments: $package => Pip package to check
-##          : $version => Optional version check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $package;
-    my $version;
-
-    my $tmpl = {
-        package => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package,
-            strict_type => 1,
-        },
-        version => {
-            store       => \$version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $check_pip_package_regexp;
-
-    if ($version) {
-
-        $check_pip_package_regexp =
-
-          # Execute perl, loop over input and split on whitespace
-          q?perl -nae? . $SPACE
-
-          # Check for a matching package
-          . q?'if( ($_=~/? . $package . q?/) && ($_=~/? . $version . q?/) )?
-
-          # Print 1 in case of match
-          . q?{print 1}' ?;
-    }
-    else {
-
-        $check_pip_package_regexp =
-
-          # Execute perl, loop over input and split on whitespace
-          q?perl -nae? . $SPACE
-
-          # Check for a matching package
-          . q?'if($_=~/? . $package . q?/)?
-
-          # Print 1 in case of match
-          . q?{print 1}' ?;
-    }
-
-    return $check_pip_package_regexp;
-
 }
 
 1;
