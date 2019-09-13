@@ -35,13 +35,13 @@ sub singularity_pull {
 
 ## Function : Perl wrapper for writing singularity pull command. Based on singularity v3.1.
 ## Returns  : @commands
-## Arguments: $container_uri                  => Container URI
-##          : $FILEHANDLE                     => Filehandle to write to
-##          : $force                          => Force pull
-##          : $outfile_path                   => Save container to file
-##          : $stderrfile_path                => Stderrfile path
-##          : $stderrfile_path_append         => Append stderr info to file path
-##          : $stdoutfile_path                => Stdoutfile path
+## Arguments: $container_uri          => Container URI
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $force                  => Force pull
+##          : $outfile_path           => Save container to file
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 

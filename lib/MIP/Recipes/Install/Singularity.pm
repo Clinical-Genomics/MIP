@@ -43,8 +43,8 @@ sub install_singularity_containers {
 ##          : $container_dir_path => Pull containers to this path
 ##          : $container_href     => Hash with container {REF}
 ##          : $FILEHANDLE         => Filehandle
-    #           : $quiet              => Optionally turn on quiet output
-    #           : $verbose            => Log debug messages
+##          : $quiet              => Optionally turn on quiet output
+##          : $verbose            => Log debug messages
 
     my ($arg_href) = @_;
 
@@ -106,17 +106,17 @@ sub install_singularity_containers {
     return if not keys %{$container_href};
 
     say {$FILEHANDLE} q{## Pull containers with Singularity};
-    
+
     ## Set default path for containers
     if ( not $container_dir_path ) {
         $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
     }
 
     ## Write check command to FILEHANDLE
-    say {$FILEHANDLE} q{##Check for container path};
+    say {$FILEHANDLE} q{## Check for container path};
     my $dir_check = check_future_filesystem_for_directory(
         {
-            directory_path => $container_dir_path
+            directory_path => $container_dir_path,
         }
     );
     say {$FILEHANDLE} $dir_check . $NEWLINE;
