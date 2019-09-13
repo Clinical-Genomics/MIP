@@ -300,15 +300,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_vep_plugin} => (
-            cmd_aliases   => [qw{ svvepl }],
-            documentation => q{VEP plugin(s) },
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
         q{sv_vcfparser} => (
             cmd_aliases   => [qw{ svvcp }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -734,15 +725,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{VEP features},
             is            => q{rw},
             isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
-        q{vep_plugin} => (
-            cmd_aliases   => [qw{ veppl }],
-            documentation => q{VEP plugin(s) },
-            is            => q{rw},
-            isa           => HashRef,
         )
     );
 
