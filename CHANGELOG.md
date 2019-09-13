@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.6]
+- Use correct recipe name for qccollect path when adding to qc_sample_info.yaml
+
 ## [7.1.5]
 - Increased sv_varianteffectpredictor memory parameter 9 -> 18 Gb
 
