@@ -2006,7 +2006,7 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
 sub check_vep_plugin {
 
 ## Function : Check VEP plugin options
-## Returns  :
+## Returns  : 0 or 1 
 ## Arguments: $log             => Log object
 ##          : $parameter_name  => Parameter name
 ##          : $vep_plugin_href => VEP plugin annotation {REF}
