@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph };
@@ -145,7 +145,7 @@ sub analysis_chromograph {
     ## Constants:
 
     ## Default window in wig file from rhocall viz
-    Readonly my $STEP => 10000;
+    Readonly my $STEP => 10_000;
 
     ### PREPROCESSING:
 
@@ -230,7 +230,6 @@ sub analysis_chromograph {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile( $indir_path, q{output.wig} ),
-            normalize   => 1,
             outdir_path => $outdir_path,
             step        => $STEP,
         }

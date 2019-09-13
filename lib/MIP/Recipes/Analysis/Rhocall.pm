@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -452,12 +452,12 @@ sub analysis_rhocall_viz {
             id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
+            recipe_name    => q{frequency_annotation},
+            stream         => q{out},
         }
     );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_name_prefix = $io{out}{file_name_prefix};
+    my $infile_path_prefix = $io{out}{file_path_prefix};
     my $infile_path        = $infile_path_prefix . q{.vcf.gz};
 
     my $job_id_chain = get_recipe_attributes(
@@ -490,7 +490,6 @@ sub analysis_rhocall_viz {
             }
         )
     );
-
     my $outdir_path         = $io{out}{dir_path};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -586,7 +585,7 @@ sub analysis_rhocall_viz {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_path,
-                path             => catfile( $outdir_path, qw{ rhocall output.bed } ),
+                path             => catfile( $outdir_path, q{output.bed} ),
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
