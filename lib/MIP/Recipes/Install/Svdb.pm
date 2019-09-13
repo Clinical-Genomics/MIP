@@ -23,7 +23,7 @@ use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
+use MIP::Package_manager::Pip qw{ pip_install };
 use MIP::Program::Download::Wget qw{ wget };
 use MIP::Program::Compression::Zip qw{ unzip };
 
@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_svdb };
@@ -112,20 +112,10 @@ sub install_svdb {
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install SVDB};
-    $log->info(qq{Writing instructions for SVDB installation via SHELL});
-
-    ## Check if svdb has been installed via pip
-    my $svdb_status = check_pip_package(
-        {
-            conda_environment => $conda_environment,
-            conda_prefix_path => $conda_prefix_path,
-            package           => q{svdb},
-            version           => $svdb_version,
-        }
-    );
+    $log->info(q{Writing instructions for SVDB installation via SHELL});
 
     # Check if installation exists and is executable
-    if ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) || $svdb_status ) {
+    if ( -x catfile( $conda_prefix_path, qw{ bin svdb } ) ) {
         $log->info(q{SVDB is already installed in the specified conda environment.});
         $log->warn(q{This will overwrite the current SVDB installation.});
     }
