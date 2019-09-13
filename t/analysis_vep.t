@@ -92,10 +92,7 @@ $active_parameter{vep_plugin}{dbNSFP} = {
     path       => q{a_path},
     parameters => [qw{ param_1 param_2 }],
 };
-$active_parameter{vep_plugins}                    = [qw{ dbNSFP ExACpLI LoF MaxEntScan }];
-$active_parameter{vep_plugin_pli_value_file_path} = q{a_file_path};
-$active_parameter{vep_plugin_dbNSFP_file_path}    = q{a_dbnsfp_file_path};
-$active_parameter{vep_features}                   = [qw{ refseq }];
+$active_parameter{vep_features} = [qw{ refseq }];
 
 my %file_info = test_mip_hashes(
     {

@@ -144,6 +144,13 @@ sv_svdb_query: 1
 sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
 sv_vt_decompose: 1
+sv_vep_plugin:
+  LoF:
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   parameters:
+    - filter_position:0.05
+  ExACpLI:
+   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 sv_vcfparser_vep_transcripts: 1
 sv_vt_decompose: 1
 vcfparser_vep_transcripts: 1
@@ -158,7 +165,26 @@ vep_custom_annotation:
 vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/
 vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins
-vep_plugin_pli_value_file_path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+vep_plugin:
+  dbNSFP:
+   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
+   parameters:
+    - GERP++_RS
+    - GERP++_NR
+    - phyloP100way_vertebrate
+    - phastCons100way_vertebrate
+    - REVEL_rankscore
+  ExACpLI:
+   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoF:
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   parameters:
+    - filter_position:0.05
+  MaxEntScan:
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
+   parameters:
+    - SWA
+    - NCSS
 vt_decompose: 1
 vt_normalize: 1
 vt_uniq: 1

@@ -388,6 +388,7 @@ sub check_rd_dna {
       check_select_file_contigs
       check_snpsift_keys
       check_vep_custom_annotation
+      check_vep_plugin
       check_vep_directories };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
@@ -485,6 +486,13 @@ sub check_rd_dna {
         {
             log                 => $log,
             vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    check_vep_plugin(
+        {
+            log             => $log,
+            vep_plugin_href => \%{ $active_parameter_href->{vep_plugin} },
         }
     );
 

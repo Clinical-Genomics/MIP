@@ -317,7 +317,7 @@ sub analysis_vep {
 
     # VEP plugins
     my @plugins =
-      _get_plugin_cmds( { vep_plugins_href => $active_parameter_href->{vep_plugin}, } );
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{vep_plugin}, } );
 
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
@@ -689,33 +689,8 @@ sub analysis_vep_sv_wes {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## VEP features
     my @vep_features_ref;
@@ -1061,33 +1036,8 @@ sub analysis_vep_sv_wgs {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -1569,19 +1519,19 @@ sub _get_plugin_cmds {
 
 ## Function : Build plugin command per plugin
 ## Returns  : @plugins
-## Arguments: $vep_plugins_href => Plugin info {REF}
+## Arguments: $vep_plugin_href => Plugin info {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $vep_plugins_href;
+    my $vep_plugin_href;
 
     my $tmpl = {
-        vep_plugins_href => {
+        vep_plugin_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$vep_plugins_href,
+            store       => \$vep_plugin_href,
             strict_type => 1,
         },
     };
@@ -1591,7 +1541,7 @@ sub _get_plugin_cmds {
     my @plugins;
 
   PLUGIN:
-    while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugins_href} ) {
+    while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugin_href} ) {
 
         my $cmd = $plugin_name . $COMMA . $plugin_href->{path};
 

@@ -309,12 +309,11 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_vep_plugins} => (
+        q{sv_vep_plugin} => (
             cmd_aliases   => [qw{ svvepl }],
-            cmd_tags      => [q{Default: UpDownDistance, LoFtool}],
-            documentation => q{VEP plugins},
+            documentation => q{VEP plugin(s) },
             is            => q{rw},
-            isa           => ArrayRef [Str],
+            isa           => HashRef,
         )
     );
 
@@ -727,12 +726,11 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vep_plugins} => (
+        q{vep_plugin} => (
             cmd_aliases   => [qw{ veppl }],
-            cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
-            documentation => q{VEP plugins},
+            documentation => q{VEP plugin(s) },
             is            => q{rw},
-            isa           => ArrayRef [Str],
+            isa           => HashRef,
         )
     );
 
@@ -740,15 +738,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{vep_plugins_dir_path} => (
             cmd_aliases   => [qw{ veppldp }],
             documentation => q{Path to directory with VEP plugins},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_plugin_pli_value_file_path} => (
-            cmd_aliases   => [qw{ vepplpli }],
-            documentation => q{VEP plugin pli file path},
             is            => q{rw},
             isa           => Str,
         )

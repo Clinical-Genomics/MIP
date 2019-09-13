@@ -61,6 +61,7 @@ BEGIN {
       check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
+      check_vep_plugin
     };
 }
 
@@ -1998,6 +1999,63 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
               . $SPACE
               . $vep_directory_cache );
         exit 1;
+    }
+    return 1;
+}
+
+sub check_vep_plugin {
+
+## Function : Check VEP plugin options
+## Returns  :
+## Arguments: $log             => Log object
+##          : $vep_plugin_href => VEP plugin annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $vep_plugin_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        vep_plugin_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+
+    ## Nothing to check
+    return 0 if ( not keys %{$vep_plugin_href} );
+
+    my %plugin_path_type = ();
+  PLUGIN:
+    while ( my ( $plugin, $value_href ) = each %{$vep_plugin_href} ) {
+
+        my $err_msg = $plugin . q{ Is not a hash ref for vep_custom_annotation};
+        croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                log            => $log,
+                object_name    => $plugin,
+                object_type    => q{directory},
+                parameter_href => {},
+                parameter_name => q{vep_plugin},
+                path           => $value_href->{path},
+            }
+        );
     }
     return 1;
 }
