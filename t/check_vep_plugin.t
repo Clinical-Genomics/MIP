@@ -91,7 +91,7 @@ my $is_ok = check_vep_plugin(
     }
 );
 
-## Then
+## Then return true
 ok( $is_ok, q{Checked vep plugin hash} );
 
 ## Given a not valid hash ref
