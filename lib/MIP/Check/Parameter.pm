@@ -2008,12 +2008,14 @@ sub check_vep_plugin {
 ## Function : Check VEP plugin options
 ## Returns  :
 ## Arguments: $log             => Log object
+##          : $parameter_name  => Parameter name
 ##          : $vep_plugin_href => VEP plugin annotation {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $log;
+    my $parameter_name;
     my $vep_plugin_href;
 
     my $tmpl = {
@@ -2021,6 +2023,11 @@ sub check_vep_plugin {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        parameter_name => {
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_name,
         },
         vep_plugin_href => {
             default     => {},
@@ -2038,21 +2045,24 @@ sub check_vep_plugin {
     ## Nothing to check
     return 0 if ( not keys %{$vep_plugin_href} );
 
-    my %plugin_path_type = ();
   PLUGIN:
     while ( my ( $plugin, $value_href ) = each %{$vep_plugin_href} ) {
 
-        my $err_msg = $plugin . q{ Is not a hash ref for vep_custom_annotation};
+        my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
         croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        next PLUGIN if ( not exists $value_href->{path} );
+
+        next PLUGIN if ( not exists $value_href->{exists_check} );
 
         ## Check path object exists
         check_filesystem_objects_and_index_existance(
             {
                 log            => $log,
                 object_name    => $plugin,
-                object_type    => q{directory},
+                object_type    => $value_href->{exists_check},
                 parameter_href => {},
-                parameter_name => q{vep_plugin},
+                parameter_name => $parameter_name,
                 path           => $value_href->{path},
             }
         );
