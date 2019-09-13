@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -217,7 +217,7 @@ sub analysis_mip_qccollect {
         set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                recipe_name      => q{qccollect},
+                recipe_name      => $recipe_name,
                 path             => $outfile_path,
             }
         );
