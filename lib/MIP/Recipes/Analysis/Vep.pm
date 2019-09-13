@@ -316,33 +316,6 @@ sub analysis_vep {
     }
 
     # VEP plugins
-    $$active_parameter_href{vep_plugins} = {
-        dbNSFP => {
-            path       => $active_parameter_href->{vep_plugin_dbNSFP_file_path},
-            parameters => [
-                qw{ GERP++_RS GERP++_NR phyloP100way_vertebrate phastCons100way_vertebrate REVEL_rankscore }
-            ],
-        },
-        ExACpLI => {
-            path => $active_parameter_href->{vep_plugin_pli_value_file_path},
-        },
-        LoF => {
-            path => q{human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache}, q{Plugins},
-                q{human_ancestor.fa}
-              ),
-            parameters => [qw{ filter_position:0.05 }],
-        },
-        MaxEntScan => {
-            path => catfile(
-                $active_parameter_href->{vep_directory_cache},
-                qw{ Plugins fordownload }
-            ),
-            parameters => [qw{ SWA NCSS }],
-        },
-    };
-
     my @plugins =
       _get_plugin_cmds( { vep_plugins_href => $active_parameter_href->{vep_plugin}, } );
 

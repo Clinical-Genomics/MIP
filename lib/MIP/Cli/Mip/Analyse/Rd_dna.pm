@@ -1867,7 +1867,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     option(
         q{vep_plugin} => (
             cmd_aliases   => [qw{ veppl }],
-            documentation => q{VEP plugins },
+            documentation => q{VEP plugin(s) },
             is            => q{rw},
             isa           => HashRef,
         )
