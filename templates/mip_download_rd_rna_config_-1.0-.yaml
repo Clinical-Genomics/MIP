@@ -37,7 +37,7 @@ reference_feature:
         outfile_check: grch37_ctat_lib_plug-n-play_-feb092018-.tar.gz.md5
         outfile_decompress: tar
         outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.3/
   human_reference:
     grch37:
       decoy_5:

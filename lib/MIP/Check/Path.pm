@@ -17,7 +17,7 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants qw{ $DOT $NEWLINE $TAB };
+use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $DOT $NEWLINE $OPEN_BRACKET $SPACE $TAB };
 
 BEGIN {
 
@@ -33,6 +33,7 @@ BEGIN {
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_file_version_exist
+      check_future_filesystem_for_directory
       check_gatk_sample_map_paths
       check_parameter_files
       check_target_bed_file_suffix
@@ -336,6 +337,43 @@ sub check_file_version_exist {
         $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
     }
     return ( $file_path, $file_name_version );
+}
+
+sub check_future_filesystem_for_directory {
+
+## Function : Build bash script to check if a directory exists and otherwise create it
+## Returns  : 
+## Arguments: $directory_path => Path to check / create
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $directory_path;
+
+    my $tmpl = {
+        directory_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$directory_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw{gnu_mkdir};
+
+    my $dir_check_command = $OPEN_BRACKET . $SPACE . q{! -d} . $SPACE . $directory_path . $SPACE . $CLOSE_BRACKET . $SPACE . $AMPERSAND . $AMPERSAND . $SPACE;
+    my @mkdir_commands = gnu_mkdir(
+        {
+            indirectory_path => $directory_path,
+            parents => 1,
+        }
+    );
+
+    $dir_check_command .= join $SPACE, @mkdir_commands;
+    
+    return $dir_check_command;
 }
 
 sub check_gatk_sample_map_paths {

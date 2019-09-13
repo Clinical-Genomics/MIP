@@ -13,6 +13,13 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+container_dir_path:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 core_number:
   associated_recipe:
    - mip
@@ -58,6 +65,13 @@ installations:
   mandatory: no
   type: mip
 prefer_shell:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+prefer_singularity:
   associated_recipe:
    - mip
   data_type: SCALAR
