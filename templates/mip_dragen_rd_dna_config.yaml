@@ -100,9 +100,9 @@ sv_vcfparser_vep_transcripts: 1
 sv_vep_plugin:
   LoF:
    exists_check: file
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
    parameters:
     - filter_position:0.05
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
   ExACpLI:
    exists_check: file
    path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
@@ -114,27 +114,27 @@ vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ens
 vep_plugin:
   dbNSFP:
    exists_check: file
-   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
    parameters:
     - GERP++_RS
     - GERP++_NR
     - phyloP100way_vertebrate
     - phastCons100way_vertebrate
     - REVEL_rankscore
+   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
   ExACpLI:
    exists_check: file
    path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
   LoF:
    exists_check: file
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
    parameters:
     - filter_position:0.05
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
   MaxEntScan:
    exists_check: directory
-   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
    parameters:
     - SWA
     - NCSS
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
 vt_decompose: 1
 vt_normalize: 1
 vt_uniq: 1
