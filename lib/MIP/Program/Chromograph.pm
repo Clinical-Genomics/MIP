@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ chromograph_roh chromograph_upd };
@@ -37,7 +37,6 @@ sub chromograph_roh {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
-##          : $normalize              => Normalize to mean
 ##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -50,7 +49,6 @@ sub chromograph_roh {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-    my $normalize;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -65,11 +63,6 @@ sub chromograph_roh {
         infile_path => {
             required    => 1,
             store       => \$infile_path,
-            strict_type => 1,
-        },
-        normalize => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$normalize,
             strict_type => 1,
         },
         outdir_path => {
@@ -104,10 +97,6 @@ sub chromograph_roh {
     my @commands = qw{ chromograph --roh };
 
     push @commands, $infile_path;
-
-    if ($normalize) {
-        push @commands, q{--normalize};
-    }
 
     push @commands, q{--outd} . $SPACE . $outdir_path;
 

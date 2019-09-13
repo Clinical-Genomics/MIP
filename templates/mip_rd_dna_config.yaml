@@ -114,7 +114,7 @@ qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_pat
 ### Analysis
 ### Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: gatk
+gatk_combinevariants_prioritize_caller: gatk,bcftools
 gatk_haplotypecaller_no_soft_clipped_bases: 1
 gatk_variantrecalibration_dp_annotation: 1
 gatk_variantrecalibration_indel_max_gaussians: 1

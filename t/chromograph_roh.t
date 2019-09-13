@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,7 +60,7 @@ diag(   q{Test chromograph_roh from Chromograph.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $STEP => 10000;
+Readonly my $STEP => 10_000;
 
 ## Base arguments
 my @function_base_commands = qw{ chromograph --roh };
@@ -101,10 +101,6 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ path to wig }),
         expected_output => catfile(qw{ path to wig }),
-    },
-    normalize => {
-        input           => 1,
-        expected_output => q{--normalize},
     },
     outdir_path => {
         input           => catdir(qw{ path to out_dir }),
