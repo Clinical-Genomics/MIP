@@ -300,16 +300,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_vep_plugins} => (
-            cmd_aliases   => [qw{ svvepl }],
-            cmd_tags      => [q{Default: UpDownDistance, LoFtool}],
-            documentation => q{VEP plugins},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{sv_vcfparser} => (
             cmd_aliases   => [qw{ svvcp }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -739,37 +729,9 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vep_plugins} => (
-            cmd_aliases   => [qw{ veppl }],
-            cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
-            documentation => q{VEP plugins},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{vep_plugins_dir_path} => (
             cmd_aliases   => [qw{ veppldp }],
             documentation => q{Path to directory with VEP plugins},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_plugin_dbNSFP_file_path} => (
-            cmd_aliases   => [qw{ veppldbnsfp }],
-            documentation => q{VEP plugin dbnsfp file path},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_plugin_pli_value_file_path} => (
-            cmd_aliases   => [qw{ vepplpli }],
-            documentation => q{VEP plugin pli file path},
             is            => q{rw},
             isa           => Str,
         )

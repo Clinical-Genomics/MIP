@@ -122,8 +122,12 @@ sub check_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_select_file_contigs check_snpsift_keys check_vep_directories };
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
+      check_select_file_contigs
+      check_snpsift_keys
+      check_vep_custom_annotation
+      check_vep_directories
+      check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -196,6 +200,19 @@ sub check_dragen_rd_dna {
             vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
         }
     );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
 
     check_snpsift_keys(
         {
@@ -388,7 +405,9 @@ sub check_rd_dna {
       check_select_file_contigs
       check_snpsift_keys
       check_vep_custom_annotation
-      check_vep_directories };
+      check_vep_directories
+      check_vep_plugin
+    };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -487,6 +506,19 @@ sub check_rd_dna {
             vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
         }
     );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -738,8 +770,12 @@ sub check_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_select_file_contigs check_snpsift_keys check_vep_directories };
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
+      check_select_file_contigs
+      check_snpsift_keys
+      check_vep_custom_annotation
+      check_vep_directories
+      check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -809,6 +845,19 @@ sub check_rd_dna_vcf_rerun {
             vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
         }
     );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
 
     check_snpsift_keys(
         {
@@ -974,8 +1023,10 @@ sub check_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter
-      qw{ check_salmon_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
+    use MIP::Check::Parameter qw{ check_salmon_compatibility
+      check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
+      check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Parse::Parameter qw{ parse_infiles };

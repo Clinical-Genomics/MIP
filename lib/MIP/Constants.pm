@@ -42,7 +42,8 @@ BEGIN {
       $EQUALS
       $ESCAPE
       $FORWARD_SLASH
-      %SINGULARITY_CONTAINER
+      $GENOME_VERSION
+      $GENOME_SOURCE
       $LOG
       $MIP_VERSION
       $MOOSEX_APP_SCEEN_WIDTH
@@ -53,6 +54,7 @@ BEGIN {
       %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
+      %SINGULARITY_CONTAINER
       @SINGULARITY_BIND_PATHS
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
@@ -60,6 +62,7 @@ BEGIN {
       $UNDERSCORE
       $WITH_SINGULARITY
       set_analysis_constants
+      set_genome_build_constants
       set_log_name_constant
     };
 }
@@ -381,6 +384,43 @@ sub set_analysis_constants {
     }
 
     Readonly our %SINGULARITY_CONTAINER => ();
+
+    return;
+}
+
+sub set_genome_build_constants {
+
+## Function : Set human build constants for analysis run
+## Returns  :
+## Arguments: $genome_source  => Source of genome (grch or hg)
+##          : $genome_version => Genome build version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $genome_source;
+    my $genome_version;
+
+    my $tmpl = {
+        genome_source => {
+            defined     => 1,
+            required    => 1,
+            store       => \$genome_source,
+            strict_type => 1,
+        },
+        genome_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$genome_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set global genome version and source
+    Readonly our $GENOME_VERSION => $genome_version;
+    Readonly our $GENOME_SOURCE  => $genome_source;
 
     return;
 }

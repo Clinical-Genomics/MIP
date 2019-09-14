@@ -16,7 +16,7 @@ load_env:
     mip:
     picard:
   mip_travis_cnvnator:
-    cnvnator_ar: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [YOUR_CONDA_PATH]/envs/mip_travis_cnvnator/root/bin/thisroot.sh;" 
+    cnvnator_ar: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [YOUR_CONDA_PATH]/envs/mip_travis_cnvnator/root/bin/thisroot.sh;"
     installation: ecnvnator
     method: conda
   mip_travis_delly:
@@ -33,7 +33,7 @@ load_env:
     installation: epeddy
     method: conda
     peddy_ar:
-  mip_travis_py3:  
+  mip_travis_py3:
     chanjo_sexcheck:
     chromograph_ar:
     expansionhunter:
@@ -68,9 +68,9 @@ max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
 singularity_container:
-  TIDDIT.py: 
+  TIDDIT.py:
     container_path: #Path to container
-    extra_bind_paths: #[ARRAY] 
+    extra_bind_paths: #[ARRAY]
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
@@ -144,6 +144,15 @@ sv_svdb_query: 1
 sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
 sv_vt_decompose: 1
+sv_vep_plugin:
+  LoF:
+   exists_check: file
+   parameters:
+    - filter_position:0.05
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+  ExACpLI:
+   exists_check: file
+   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 sv_vcfparser_vep_transcripts: 1
 sv_vt_decompose: 1
 vcfparser_vep_transcripts: 1
@@ -158,7 +167,30 @@ vep_custom_annotation:
 vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/
 vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins
-vep_plugin_pli_value_file_path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+vep_plugin:
+  dbNSFP:
+   exists_check: file
+   parameters:
+    - GERP++_RS
+    - GERP++_NR
+    - phyloP100way_vertebrate
+    - phastCons100way_vertebrate
+    - REVEL_rankscore
+   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
+  ExACpLI:
+   exists_check: file
+   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoF:
+   exists_check: file
+   parameters:
+    - filter_position:0.05
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+  MaxEntScan:
+   exists_check: directory
+   parameters:
+    - SWA
+    - NCSS
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
 vt_decompose: 1
 vt_normalize: 1
 vt_uniq: 1

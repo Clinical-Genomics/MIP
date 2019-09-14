@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $CLOSE_BRACE $LOG $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $CLOSE_BRACE $GENOME_VERSION $LOG $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -539,6 +539,7 @@ sub set_human_genome_reference_features {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_gzipped };
+    use MIP::Constants qw{ set_genome_build_constants };
 
     ## Different regexes for the two sources.
     ## i.e. Don't allow subversion of Refseq genome
@@ -558,6 +559,16 @@ sub set_human_genome_reference_features {
 
             $file_info_href->{human_genome_reference_version} = $genome_version;
             $file_info_href->{human_genome_reference_source}  = $genome_prefix;
+
+            ## Only set global constant once
+            last GENOME_PREFIX if ($GENOME_VERSION);
+
+            set_genome_build_constants(
+                {
+                    genome_version => $genome_version,
+                    genome_source  => $genome_prefix,
+                }
+            );
             last;
         }
     }

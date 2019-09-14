@@ -316,49 +316,8 @@ sub analysis_vep {
     }
 
     # VEP plugins
-    my @plugins;
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile( $active_parameter_href->{vep_directory_cache},
-                q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{MaxEntScan} ) {
-
-            my $max_ent_scan_dir_path =
-              catfile( $active_parameter_href->{vep_directory_cache},
-                qw{ Plugins fordownload } );
-            my @max_ent_scan_de_novos = qw{ SWA NCSS };
-
-            push @plugins, join $COMMA,
-              ( $plugin, $max_ent_scan_dir_path, @max_ent_scan_de_novos );
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              $COMMA . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        elsif ( $plugin eq q{dbNSFP}
-            and exists $active_parameter_href->{vep_plugin_dbNSFP_file_path} )
-        {
-
-            my $dbnsfp_file_path = $active_parameter_href->{vep_plugin_dbNSFP_file_path};
-            my $dbnsfp_fields    = join $COMMA,
-              qw{ GERP++_RS GERP++_NR phyloP100way_vertebrate phastCons100way_vertebrate REVEL_rankscore };
-            push @plugins, join $COMMA, ( $plugin, $dbnsfp_file_path, $dbnsfp_fields );
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{vep_plugin}, } );
 
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
@@ -730,33 +689,8 @@ sub analysis_vep_sv_wes {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## VEP features
     my @vep_features_ref;
@@ -1102,33 +1036,8 @@ sub analysis_vep_sv_wgs {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -1604,6 +1513,45 @@ sub _get_assembly_name {
         }
     }
     return $assembly_version;
+}
+
+sub _get_plugin_cmds {
+
+## Function : Build plugin command per plugin
+## Returns  : @plugins
+## Arguments: $vep_plugin_href => Plugin info {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_plugin_href;
+
+    my $tmpl = {
+        vep_plugin_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @plugins;
+
+  PLUGIN:
+    while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugin_href} ) {
+
+        my $cmd = $plugin_name . $COMMA . $plugin_href->{path};
+
+        if ( exists $plugin_href->{parameters} ) {
+
+            $cmd .= $COMMA . join $COMMA, @{ $plugin_href->{parameters} };
+        }
+        push @plugins, $cmd;
+    }
+    return @plugins;
 }
 
 sub _reformat_sv_with_no_length {

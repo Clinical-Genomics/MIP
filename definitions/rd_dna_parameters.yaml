@@ -940,14 +940,11 @@ sv_vep_features:
    - tsl
    - uniprot
   type: recipe_argument
-sv_vep_plugins:
+sv_vep_plugin:
   associated_recipe:
-   - sv_varianteffectpredictor
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ExACpLI
-   - LoFtool
+   - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
   type: recipe_argument
 sv_vcfparser:
   analysis_mode: case
@@ -1649,34 +1646,15 @@ vep_features:
    - tsl
    - uniprot
   type: recipe_argument
-vep_plugins:
+vep_plugin:
   associated_recipe:
    - varianteffectpredictor
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ExACpLI
-   - LoFtool
-   - MaxEntScan
+  data_type: HASH
+  mandatory: no
   type: recipe_argument
-vep_plugin_dbNSFP_file_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: file
-  mandatory: no
-  reference: reference_dir
-  type: path
-vep_plugin_pli_value_file_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: file
-  mandatory: no
-  reference: reference_dir
-  type: path
 vep_plugins_dir_path:
   associated_recipe:
+    - sv_varianteffectpredictor
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
