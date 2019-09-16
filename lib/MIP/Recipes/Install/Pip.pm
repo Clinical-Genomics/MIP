@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
 use MIP::Package_manager::Pip qw{ pip_install };
@@ -88,7 +88,7 @@ sub install_pip_packages {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -685,7 +685,7 @@ sub _get_select_filehandle {
     ## If we do not have a select file return undef
     return if ( not $select_feature_file );
 
-    my $log = retrieve_log( { log_name => $LOG, } );
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     open my $SELECT_FH, q{>},
       $select_outfile_path

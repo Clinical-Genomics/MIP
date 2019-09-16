@@ -18,7 +18,7 @@ use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $LOG $NEWLINE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Compression::Tar qw{ tar };
@@ -99,7 +99,7 @@ sub install_expansionhunter {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

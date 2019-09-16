@@ -19,7 +19,7 @@ use MIP::Constants qw{
   $CLOSE_BRACKET
   $COLON
   $DOT
-  $LOG
+  $LOG_NAME
   $NEWLINE
   $OPEN_BRACKET
   $SINGLE_QUOTE
@@ -95,7 +95,7 @@ sub pipeline_install_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Installation instruction file
     my $file_name_path = catfile( cwd(), q{mip.sh} );

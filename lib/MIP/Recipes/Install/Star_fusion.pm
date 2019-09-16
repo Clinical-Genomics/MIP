@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $ASTERISK $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
 use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
 use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
@@ -101,7 +101,7 @@ sub install_star_fusion {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

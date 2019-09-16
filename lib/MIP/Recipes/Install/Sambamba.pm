@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv  gnu_ln gnu_chmod};
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Compression::Bzip2 qw{ bzip2 };
@@ -101,7 +101,7 @@ sub install_sambamba {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

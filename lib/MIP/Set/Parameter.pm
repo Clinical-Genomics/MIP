@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $CLOSE_BRACE $GENOME_VERSION $LOG $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $CLOSE_BRACE $GENOME_VERSION $LOG_NAME $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -198,7 +198,7 @@ sub set_custom_default_to_active_parameter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
@@ -361,7 +361,7 @@ sub set_default_to_active_parameter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 

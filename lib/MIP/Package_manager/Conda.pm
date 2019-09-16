@@ -19,7 +19,7 @@ use IPC::Cmd qw{ run };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -101,7 +101,7 @@ sub conda_check_env_status {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ### Require deactivate any activate env prior to installation
 

@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 # MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $LOG $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -156,7 +156,7 @@ sub analysis_rhocall_annotate {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -443,7 +443,7 @@ sub analysis_rhocall_viz {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
