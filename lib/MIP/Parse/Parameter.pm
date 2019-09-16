@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -610,7 +610,7 @@ sub _check_infile_directory {
 
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-    my $log = retrieve_log( { log_name => $LOG, } );
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     return if ( defined $infile_directory );
 

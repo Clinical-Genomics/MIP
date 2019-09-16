@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
 use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
@@ -108,7 +108,7 @@ sub install_cnvnator {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

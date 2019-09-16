@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -136,7 +136,7 @@ sub analysis_upd {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -232,7 +232,7 @@ sub analysis_upd {
                 proband_id   => $family_member_id{children}[0]
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Close FILEHANDLES

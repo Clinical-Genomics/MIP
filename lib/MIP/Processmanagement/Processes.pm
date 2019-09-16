@@ -18,7 +18,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $COLON $LOG $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $COLON $LOG_NAME $NEWLINE $UNDERSCORE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -1886,7 +1886,7 @@ sub write_job_ids_to_file {
     ## Write job_ids file
     return if ( not keys %{$job_id_href} );
 
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my $log_dir      = dirname( $active_parameter_href->{log_file} );
     my $job_ids_file = catfile( $log_dir,

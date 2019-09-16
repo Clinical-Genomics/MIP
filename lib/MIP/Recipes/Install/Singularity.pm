@@ -18,7 +18,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Path qw{ check_future_filesystem_for_directory };
-use MIP::Constants qw{ $COLON $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Package_manager::Singularity qw{ singularity_pull };
@@ -96,7 +96,7 @@ sub install_singularity_containers {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

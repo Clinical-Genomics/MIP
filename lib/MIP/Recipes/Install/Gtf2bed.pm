@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
 use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
@@ -112,7 +112,7 @@ sub install_gtf2bed {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

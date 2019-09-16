@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -75,7 +75,7 @@ sub check_vcfparser_cli {
 
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-    my $log = retrieve_log( { log_name => $LOG, } );
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     my %cli = (
         range_feature_annotation_column => {

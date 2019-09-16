@@ -17,7 +17,7 @@ use warnings;
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
     require Exporter;

@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -107,7 +107,7 @@ sub install_bootstrapann {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

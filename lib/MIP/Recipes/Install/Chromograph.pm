@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
+use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -111,7 +111,7 @@ sub install_chromograph {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }

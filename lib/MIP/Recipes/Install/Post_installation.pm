@@ -23,7 +23,8 @@ use List::MoreUtils qw{ natatime };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOUBLE_QUOTE $NEWLINE $LOG $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Constants
+  qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
@@ -162,7 +163,7 @@ sub check_program_installations {
     Readonly my $HASH_SIGN    => q{#};
 
     ## Retrieve logger object
-    my $log = retrieve_log( { log_name => $LOG, } );
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     $log->info(qq{Writing tests for programs installed in environment: $env_name});
 
@@ -388,7 +389,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
         my $date_regex = qr{
 			(?:\d\d\d?\d?\d?\d?) # match YYYY | YY | YYMMDD
 			-?                   # optionally match -
-			(?:\d?\d?)           # optionally match MM 
+			(?:\d?\d?)           # optionally match MM
 			.*                   # match any remaining part
 		}xms;
 

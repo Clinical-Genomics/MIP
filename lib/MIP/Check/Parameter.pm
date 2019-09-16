@@ -20,7 +20,7 @@ use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $LOG $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -91,7 +91,7 @@ sub check_active_installation_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Check that a project id has been set if SBATCH mode
     if ( $sbatch_mode
@@ -2006,7 +2006,7 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
 sub check_vep_plugin {
 
 ## Function : Check VEP plugin options
-## Returns  : 0 or 1 
+## Returns  : 0 or 1
 ## Arguments: $log             => Log object
 ##          : $parameter_name  => Parameter name
 ##          : $vep_plugin_href => VEP plugin annotation {REF}

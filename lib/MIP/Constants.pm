@@ -44,7 +44,7 @@ BEGIN {
       $FORWARD_SLASH
       $GENOME_VERSION
       $GENOME_SOURCE
-      $LOG
+      $LOG_NAME
       $MIP_VERSION
       $MOOSEX_APP_SCEEN_WIDTH
       $NEWLINE
@@ -447,8 +447,8 @@ sub set_log_name_constant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Log
-    Readonly our $LOG => $log_name;
+    ## Log name
+    Readonly our $LOG_NAME => $log_name;
 
     return;
 }

@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
-use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -108,7 +108,7 @@ sub install_rhocall {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => $LOG,
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }
