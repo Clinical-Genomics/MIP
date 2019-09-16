@@ -31,7 +31,7 @@ In `lib/MIP/Cli/Mip/Install/<pipeline>`:
 
 2. Add the new program to the option `skip_programs` under the `isa` key
 
-## Add to program to integration test
+## Add program to integration test
 
   1. Add the executable of your program to the test envs:
 
