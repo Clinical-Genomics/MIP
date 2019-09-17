@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
 
@@ -54,13 +54,12 @@ BEGIN {
       %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
-      %SINGULARITY_CONTAINER
       @SINGULARITY_BIND_PATHS
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
       $TAB
-      $UNDERSCORE
       $WITH_SINGULARITY
+      $UNDERSCORE
       set_analysis_constants
       set_genome_build_constants
       set_log_name_constant
@@ -365,26 +364,27 @@ sub set_analysis_constants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Clone qw{ clone };
     use File::Basename;
+    use MIP::Parse::Singularity;
 
-    ## For singularity
-    Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
-    Readonly our @SINGULARITY_BIND_PATHS => (
-        $active_parameter_href->{reference_dir},
-        $active_parameter_href->{outdata_ir},
+    my @singularity_bind_paths = (
+        $active_parameter_href->{reference_dir}, 
+        $active_parameter_href->{outdata_dir},
         keys %{ $active_parameter_href->{infile_dirs} },
         $active_parameter_href->{temp_directory},
         dirname( $active_parameter_href->{pedigree_file} ),
     );
-    if ( $active_parameter_href->{singularity_container} ) {
-        Readonly our %SINGULARITY_CONTAINER =>
-          clone( $active_parameter_href->{singularity_container} );
-        return;
-    }
 
-    Readonly our %SINGULARITY_CONTAINER => ();
+    ## Remove potential overlaps
+    @singularity_bind_paths = parse_sing_bind_paths(
+        {
+            dir_paths_ref => \@singularity_bind_paths,
+        }
+    );
 
+    Readonly our @SINGULARITY_BIND_PATHS => @singularity_bind_paths;
+    Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
+    
     return;
 }
 

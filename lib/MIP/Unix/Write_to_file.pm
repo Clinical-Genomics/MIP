@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $WITH_SINGULARITY };
+use MIP::Constants qw{ $NEWLINE $SPACE };
 
 BEGIN {
 
@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ unix_write_to_file };
@@ -63,13 +63,6 @@ sub unix_write_to_file {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Parse::Singularity qw{ parse_commands_for_singularity };
-
-    # Check if command is to be executed inside a singularity container
-    if ($WITH_SINGULARITY) {
-        parse_commands_for_singularity( { commands_ref => $commands_ref, } );
-    }
 
     ### Write to file helper module
     if ( $FILEHANDLE && @{$commands_ref} ) {

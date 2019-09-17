@@ -62,6 +62,25 @@ diag(   q{Test singularity_exec from Singularity.pm v}
 ## Base arguments
 my @function_base_commands = qw{ singularity exec };
 
+my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
+)
+;
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
@@ -90,7 +109,7 @@ my %specific_argument = (
 my $module_function_cref = \&singularity_exec;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%specific_argument );
+my @arguments = ( \$base_argument \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
