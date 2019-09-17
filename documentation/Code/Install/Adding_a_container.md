@@ -28,4 +28,4 @@ Add code that should execute when the container is invoked using either `singula
 
 #### %post
 
-Code that is executed during the build process.Basic system programs can be installed by adding them to the list of programs to be installed via apt-get install. The template will download and set up conda so that you can install the programs needed via conda. You can also install via pip or build from source by adding to this section.
+Code that is executed during the build process. Basic system programs can be installed by adding them to the list of programs to be installed via apt-get install. The template will download and set up conda so that you can install the programs needed via conda. You can also install via pip or build from source by adding to this section.
