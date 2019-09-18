@@ -28,7 +28,9 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ dragen_dna_analysis dragen_build_hash_table };
+    our @EXPORT_OK = qw{ dragen_dna_analysis
+      dragen_build_hash_table
+      dragen_load_hash_table };
 }
 
 sub dragen_dna_analysis {
@@ -41,13 +43,15 @@ sub dragen_dna_analysis {
 ##          : $cnv_enable_self_normalization => Enable cnv normalization on the fly
 ##          : $combine_samples_by_name       => Read multiple fastq files by the sample name given in the file name
 ##          : $dbsnp_file_path               => Dbsnp file path [.vcf|.vcf.gz]
-##          : $dragen_hash_ref_dir_path      => Dragen feference genome dir path
+##          : $disable_vcf_compression       => Disable vcf compression (.gz)
+##          : $dragen_hash_ref_dir_path      => Dragen reference genome dir path
 ##          : $enable_bam_indexing           => Enable indexing of BAM file
 ##          : $enable_cnv                    => Enable cnv hash table creation
 ##          : $enable_duplicate_marking      => Enable duplication marking in BAM
 ##          : $enable_combinegvcfs           => Enable generation of a single gVCF file that represents all the input gVCFfiles
 ##          : $enable_joint_genotyping       => Enable joint genotyping
 ##          : $enable_map_align              => Enable mapping and alignment
+##          : $enable_map_align_output       => Enable map align output
 ##          : $enable_multi_sample_gvcf      => Enable multi sample gVCF generation
 ##          : $enable_sampling               => Enable automatic sampling of the insert-length distribution
 ##          : $enable_sort                   => Enable sorting of alignment file
@@ -69,6 +73,7 @@ sub dragen_dna_analysis {
 ##          : $stderrfile_path_append        => Append stderr info to file path
 ##          : $stdinfile_path                => Stdinfile path
 ##          : $stdoutfile_path               => Stdoutfile path
+##          : $vc_emit_ref_confidence        => Enable gVCF generation
 ##          : $vc_enable_gatk_acceleration   => Run in GATK mode
 ##          : $vc_target_bed_file_path       => Restricts processing to regions specified in the BED file
 
@@ -100,18 +105,21 @@ sub dragen_dna_analysis {
     my $alt_aware;
     my $cnv_enable_self_normalization;
     my $combine_samples_by_name;
+    my $disable_vcf_compression;
     my $enable_bam_indexing;
     my $enable_cnv;
     my $enable_duplicate_marking;
     my $enable_combinegvcfs;
     my $enable_joint_genotyping;
     my $enable_map_align;
+    my $enable_map_align_output;
     my $enable_multi_sample_gvcf;
     my $enable_sampling;
     my $enable_sort;
     my $enable_variant_caller;
     my $fastq_list_all_samples;
     my $force;
+    my $vc_emit_ref_confidence;
     my $vc_enable_gatk_acceleration;
 
     my $tmpl = {
@@ -145,6 +153,12 @@ sub dragen_dna_analysis {
         },
         dbsnp_file_path => {
             store       => \$dbsnp_file_path,
+            strict_type => 1,
+        },
+        disable_vcf_compression => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$disable_vcf_compression,
             strict_type => 1,
         },
         dragen_hash_ref_dir_path => {
@@ -189,6 +203,12 @@ sub dragen_dna_analysis {
             store       => \$enable_map_align,
             strict_type => 1,
         },
+        enable_map_align_output => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$enable_map_align_output,
+            strict_type => 1,
+        },
         enable_multi_sample_gvcf => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -203,7 +223,7 @@ sub dragen_dna_analysis {
         },
         enable_sort => {
             allow       => [ undef, 0, 1 ],
-            default     => 1,
+            default     => 0,
             store       => \$enable_sort,
             strict_type => 1,
         },
@@ -288,6 +308,12 @@ sub dragen_dna_analysis {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        vc_emit_ref_confidence => {
+            allow       => [ undef, 0, q{GVCF} ],
+            default     => 0,
+            store       => \$vc_emit_ref_confidence,
+            strict_type => 1,
+        },
         vc_enable_gatk_acceleration => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -357,6 +383,10 @@ sub dragen_dna_analysis {
 
         push @commands, q{--enable-map-align} . $SPACE . q{true};
     }
+    if ($enable_map_align_output) {
+
+        push @commands, q{--enable-map-align-output} . $SPACE . q{true};
+    }
     if ($enable_bam_indexing) {
 
         push @commands, q{--enable-bam-indexing} . $SPACE . q{true};
@@ -404,13 +434,17 @@ sub dragen_dna_analysis {
 
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_file_path;
     }
+    if ($vc_emit_ref_confidence) {
+
+        push @commands, q{--vc-emit-ref-confidence} . $SPACE . q{GVCF};
+    }
     if ($enable_combinegvcfs) {
 
         push @commands, q{--enable-combinegvcfs} . $SPACE . q{true};
     }
     if ( @{$sample_gvcf_file_paths_ref} ) {
 
-        push @commands, q{-variant} . $SPACE . join $SPACE . q{-variant} . $SPACE,
+        push @commands, q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
           @{$sample_gvcf_file_paths_ref};
     }
 
@@ -424,9 +458,13 @@ sub dragen_dna_analysis {
         push @commands, q{--enable-multi-sample-gvcf} . $SPACE . q{true};
     }
 
+    if ($disable_vcf_compression) {
+
+        push @commands, q{--enable-vcf-compression} . $SPACE . q{false};
+    }
     if ($pedigree_file_path) {
 
-        push @commands, q{--pedigree-file} . $SPACE . $pedigree_file_path;
+        push @commands, q{--vc-pedigree} . $SPACE . $pedigree_file_path;
     }
     ## CNV calling
     if ($enable_cnv) {
@@ -591,6 +629,95 @@ sub dragen_build_hash_table {
     }
     push @commands, q{--output-directory} . $SPACE . $outdirectory_path;
 
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub dragen_load_hash_table {
+
+## Function : Perl wrapper for generic commands module.
+## Returns  : @commands
+## Arguments: $dragen_hash_ref_dir_path => Dragen reference genome dir path
+##          : $FILEHANDLE               => Filehandle to write to
+##          : $force_load_reference     => Force load dragen reference
+
+##          : $stderrfile_path          => Stderrfile path
+##          : $stderrfile_path_append   => Append stderr info to file path
+##          : $stdinfile_path           => Stdinfile path
+##          : $stdoutfile_path          => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $dragen_hash_ref_dir_path;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdinfile_path;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $force_load_reference;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        force_load_reference => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$force_load_reference,
+            strict_type => 1,
+        },
+        dragen_hash_ref_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$dragen_hash_ref_dir_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ dragen };
+
+    if ($force_load_reference) {
+
+        push @commands, q{--force-load-reference};
+    }
+
+    push @commands, $dragen_hash_ref_dir_path;
     push @commands,
       unix_standard_streams(
         {
