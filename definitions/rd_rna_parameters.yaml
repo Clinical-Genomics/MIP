@@ -38,7 +38,7 @@ transcript_annotation:
     - stringtie_ar
     - gffcompare_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v30-.gtf
+  default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file
   reference: reference_dir
   type: path
@@ -141,7 +141,7 @@ recipe_memory:
     star_aln: 3
     star_fusion: 3
     stringtie_ar: 2
-    trim_galore: 8
+    trim_galore_ar: 8
     varianteffectpredictor: 8
   type: mip
 recipe_core_number:
@@ -539,7 +539,7 @@ rseqc_transcripts_file:
     - genebody_coverage
     - rseqc
   data_type: SCALAR
-  default: grch37_gencode_-v28-.bed
+  default: grch37_gencode_annotation_reformated_-v31-.bed
   exists_check: file
   reference: reference_dir
   type: path
