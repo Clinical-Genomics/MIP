@@ -252,7 +252,7 @@ sub setup_star_fusion {
         $_ => catfile( $star_fusion_dir_path, qw {ctat-genome-lib-builder util }, $_ )
     } @util_executables;
 
-    ## The addition of prep_genome_lib.pl to bin via conda seems to be broken in STAR-Fusion versin 1.7.0-1.
+    ## The addition of prep_genome_lib.pl to bin via conda seems to be broken in STAR-Fusion version 1.7.0-1.
     $executable{q{prep_genome_lib.pl}} =
       catfile( $star_fusion_dir_path, qw{ ctat-genome-lib-builder prep_genome_lib.pl } );
 

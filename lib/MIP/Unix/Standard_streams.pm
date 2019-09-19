@@ -84,7 +84,7 @@ sub unix_standard_streams {
     }
     if ($stdoutfile_path_append) {
 
-        # Redirect iand append stdout to program specific stdout file
+        # Redirect and append stdout to program specific stdout file
         push @commands, q{1>>} . $SPACE . $stdoutfile_path_append;
     }
     if ($stderrfile_path) {
