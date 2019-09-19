@@ -21,7 +21,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Check::Installation qw{ check_existing_installation };
 use MIP::Constants
-  qw{ $ASTERISK $AT $DOLLAR_SIGN $DOUBLE_QUOTE $DOT $EMPTY_STR $LOG $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $AT $DOLLAR_SIGN $DOUBLE_QUOTE $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_echo gnu_rm };
 use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
 use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
