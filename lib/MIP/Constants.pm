@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
 
@@ -369,6 +369,7 @@ sub set_analysis_constants {
     use File::Basename;
     use MIP::Parse::Singularity qw{ reduce_dir_paths };
 
+    ## Gather default bind paths for singularity
     my @singularity_bind_paths = (
         $active_parameter_href->{reference_dir},
         $active_parameter_href->{outdata_dir},
