@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
 
@@ -28,6 +28,7 @@ BEGIN {
       $AMPERSAND
       %ANALYSIS
       $ASTERISK
+      $AT
       $BACKTICK
       $BACKWARD_SLASH
       $CLOSE_BRACE
@@ -318,6 +319,7 @@ Readonly our %PRIMARY_CONTIG => (
 ## Symbols
 Readonly our $AMPERSAND      => q{&};
 Readonly our $ASTERISK       => q{*};
+Readonly our $AT             => q{@};
 Readonly our $BACKTICK       => q{`};
 Readonly our $BACKWARD_SLASH => q{\\};
 Readonly our $CLOSE_BRACE    => q{\}};

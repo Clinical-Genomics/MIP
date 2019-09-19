@@ -19,7 +19,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SPACE };
+use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SINGLE_QUOTE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -429,7 +429,9 @@ sub gnu_echo {
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
+##          : $stdoutfile_path_append => Append to stdout to file
 ##          : $strings_ref            => Strings to echo {REF}
+##          : $string_wrapper         => Wrap string with this character
 
     my ($arg_href) = @_;
 
@@ -440,7 +442,9 @@ sub gnu_echo {
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path_append;
     my $strings_ref;
+    my $string_wrapper;
 
     my $tmpl = {
         enable_interpretation => {
@@ -470,6 +474,10 @@ sub gnu_echo {
             store       => \$stderrfile_path_append,
             strict_type => 1,
         },
+        stdoutfile_path_append => {
+            store       => \$stdoutfile_path_append,
+            strict_type => 1,
+        },
         strings_ref => {
             default     => [],
             defined     => 1,
@@ -477,6 +485,14 @@ sub gnu_echo {
             store       => \$strings_ref,
             strict_type => 1,
         },
+        string_wrapper => {
+            allow       => [ $DOUBLE_QUOTE, $SINGLE_QUOTE ],
+            default     => $DOUBLE_QUOTE,
+            defined     => 1,
+            store       => \$string_wrapper,
+            strict_type => 1,
+        }
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -494,7 +510,8 @@ sub gnu_echo {
     }
 
     ## Strings
-    push @commands, $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
+    push @commands,
+      $string_wrapper . join( $EMPTY_STR, @{$strings_ref} ) . $string_wrapper;
 
     ## Outfile
     if ($outfile_path) {
@@ -506,6 +523,7 @@ sub gnu_echo {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path_append => $stdoutfile_path_append,
         }
       );
 

@@ -149,7 +149,7 @@ sv_vep_plugin:
    exists_check: file
    parameters:
     - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   path: human_ancestor.fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   ExACpLI:
    exists_check: file
    path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
@@ -184,13 +184,13 @@ vep_plugin:
    exists_check: file
    parameters:
     - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   path: human_ancestor.fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   MaxEntScan:
    exists_check: directory
    parameters:
     - SWA
     - NCSS
-   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/fordownload
 vt_decompose: 1
 vt_normalize: 1
 vt_uniq: 1

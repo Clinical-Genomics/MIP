@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
 BEGIN {
@@ -23,14 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ unix_standard_streams };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 # Do not convert to lower case - required to pass $FILEHANDLE
 $Params::Check::PRESERVE_CASE = 1;
@@ -44,6 +42,7 @@ sub unix_standard_streams {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $stdoutfile_path_append => Append stdout info to file path
 
     my ($arg_href) = @_;
 
@@ -53,6 +52,7 @@ sub unix_standard_streams {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $stdoutfile_path_append;
 
     my $tmpl = {
         FILEHANDLE      => { store => \$FILEHANDLE, },
@@ -61,6 +61,8 @@ sub unix_standard_streams {
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdinfile_path  => { store => \$stdinfile_path,  strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stdoutfile_path_append =>
+          { store => \$stdoutfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -79,6 +81,11 @@ sub unix_standard_streams {
 
         # Redirect stdout to program specific stdout file
         push @commands, q{1>} . $SPACE . $stdoutfile_path;
+    }
+    if ($stdoutfile_path_append) {
+
+        # Redirect and append stdout to program specific stdout file
+        push @commands, q{1>>} . $SPACE . $stdoutfile_path_append;
     }
     if ($stderrfile_path) {
 

@@ -59,19 +59,16 @@ epy3:
 ## STAR environment spec
 eperl5:
   conda:
-    blast: 2.7.1=h4422958_6
+    blast: 2.9.0
     fastqc: 0.11.8=1
-    fusion-filter: 0.5.0
-    perl-common-sense:
-    perl-json-xs:
-    perl-db-file:
-    star-fusion: 1.5.0=0
-    star: 2.6.1d=0
-    trim-galore: 0.5.0
+    hmmer:
+    star-fusion: 1.7.0=1
+    star: 2.7.2b=0
+    trim-galore: 0.6.4=0
   pip:
   shell:
     star-fusion:
-      version: 1.5.0
+      version: 1.7.0
       conda_dependency:
         star:
         samtools:
