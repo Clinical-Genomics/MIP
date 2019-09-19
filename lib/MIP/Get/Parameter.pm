@@ -17,7 +17,8 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
+use MIP::Constants
+  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
 
 BEGIN {
     require Exporter;
@@ -612,6 +613,8 @@ sub get_package_source_env_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
+
     ## Initilize variable
     my @source_environment_cmds;
 
@@ -641,11 +644,14 @@ sub get_package_source_env_cmds {
         push @source_environment_cmds, $prior_to_load_cmd;
     }
 
-    ## Set Singularity variable for bind paths if applicable
-    my $singularity_bind_var;
-    if ($WITH_SINGULARITY) {
-        $singularity_bind_var = q{export SINCULARITY_BIND} . $EQUALS . $DOUBLE_QUOTE . join $COMMA, @SINGULARITY_BIND_PATHS . $DOUBLE_QUOTE . $SEMICOLON;
-        push @source_environment_cmds, $singularity_bind_var;
+    ## Append singularity bind variable to source_environment_cmds_ref if applicable
+    parse_sing_bind_paths(
+        {
+            active_parameter_href       => $active_parameter_href,
+            package_name                => $package_name,
+            source_environment_cmds_ref => \@source_environment_cmds,
+        }
+    );
 
     ## Get env load command
     my @env_method_cmds = get_env_method_cmds(

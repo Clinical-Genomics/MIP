@@ -75,16 +75,8 @@ sub check_binary_in_path {
         }
     );
 
-    ## Check if the binary has a singularity image
-    if (    $active_parameter_href->{with_singularity}
-        and $active_parameter_href->{singularity_container}{$binary} )
-    {
-
-        $binary =
-          $active_parameter_href->{singularity_container}{$binary}{container_path};
-    }
     ## Search for binary in conda envs path
-    elsif ( -e catfile( $env_binary_path, $binary ) ) {
+    if ( -e catfile( $env_binary_path, $binary ) ) {
 
         $binary = catfile( $env_binary_path, $binary );
     }

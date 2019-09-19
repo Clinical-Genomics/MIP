@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -95,21 +95,4 @@ trap {
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if binary cannot be found} );
 
-## Given singularity program
-$active_parameter{with_singularity} = 1;
-$active_parameter{singularity_container}{tiddit}{container_path} =
-  catfile( $active_parameter{conda_path}, qw{ envs test_env container tiddit.sif } );
-
-trap {
-    check_binary_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            binary                => q{tiddit},
-            program_name          => q{tiddit},
-        }
-    )
-};
-
-## Then return true
-ok( $trap->return, q{Singularity container is found} );
 done_testing();

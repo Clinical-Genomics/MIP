@@ -365,18 +365,16 @@ sub set_analysis_constants {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Basename;
-    use MIP::Parse::Singularity;
+    use MIP::Parse::Singularity qw{ reduce_dir_paths };
 
     my @singularity_bind_paths = (
-        $active_parameter_href->{reference_dir}, 
+        $active_parameter_href->{reference_dir},
         $active_parameter_href->{outdata_dir},
-        keys %{ $active_parameter_href->{infile_dirs} },
         $active_parameter_href->{temp_directory},
-        dirname( $active_parameter_href->{pedigree_file} ),
     );
 
     ## Remove potential overlaps
-    @singularity_bind_paths = parse_sing_bind_paths(
+    @singularity_bind_paths = reduce_dir_paths(
         {
             dir_paths_ref => \@singularity_bind_paths,
         }
@@ -384,7 +382,7 @@ sub set_analysis_constants {
 
     Readonly our @SINGULARITY_BIND_PATHS => @singularity_bind_paths;
     Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
-    
+
     return;
 }
 
