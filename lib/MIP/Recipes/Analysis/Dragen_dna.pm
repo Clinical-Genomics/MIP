@@ -33,9 +33,12 @@ BEGIN {
 
 }
 
+## Constants
+Readonly my $INDENT_DEPTH_3 => 3;
+
 sub analysis_dragen_dna_align_vc {
 
-## Function : Rapid dragen align and single sample variant calling dna analysis
+## Function : Dragen dna align and single sample variant calling analysis
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -136,12 +139,15 @@ sub analysis_dragen_dna_align_vc {
     use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
+    use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ get_read_group
+      get_sequence_run_type
+      get_sequence_run_type_is_interleaved
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -160,9 +166,7 @@ sub analysis_dragen_dna_align_vc {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix = $io{in}{dir_path_prefix};
-    my @infile_paths      = @{ $io{in}{file_paths} };
-    my $infile_suffix     = $io{in}{file_suffix};
+    my @infile_paths = @{ $io{in}{file_paths} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -178,7 +182,6 @@ sub analysis_dragen_dna_align_vc {
             recipe_name           => $recipe_name,
         }
     );
-    my $temp_dir = $active_parameter_href->{temp_directory};
 
     %io = (
         %io,
@@ -228,7 +231,6 @@ sub analysis_dragen_dna_align_vc {
 
     ## Get all sample fastq info for dragen as csv file
     my @dragen_fastq_list_lines;
-    my %sync_map;
 
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
@@ -273,16 +275,8 @@ sub analysis_dragen_dna_align_vc {
 
         ## Infile(s)
         my $fastq_file_path = $infile_paths[$paired_end_tracker];
-        my $dragen_fastq_file_path =
-          catfile( $active_parameter_href->{dragen_analysis_dir},
-            $sample_id, basename($fastq_file_path) );
-
-        ## Add files for syncing downstream
-        push @{ $sync_map{$sample_id}{in} },  $fastq_file_path;
-        push @{ $sync_map{$sample_id}{out} }, $dragen_fastq_file_path;
 
         ## Add file paths to line
-        #        $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_fastq_file_path;
         $dragen_fastq_list_lines[-1] .= $COMMA . $fastq_file_path;
 
         # If second read direction is present
@@ -291,16 +285,8 @@ sub analysis_dragen_dna_align_vc {
             # Increment to collect correct read 2
             $paired_end_tracker = $paired_end_tracker + 1;
             my $second_fastq_file_path = $infile_paths[$paired_end_tracker];
-            my $dragen_second_fastq_file_path =
-              catfile( $active_parameter_href->{dragen_analysis_dir},
-                $sample_id, basename($second_fastq_file_path) );
-
-            ## Add files for syncing downstream
-            push @{ $sync_map{$sample_id}{in} },  $second_fastq_file_path;
-            push @{ $sync_map{$sample_id}{out} }, $dragen_second_fastq_file_path;
 
             ## Add file paths to line
-     #            $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_second_fastq_file_path;
             $dragen_fastq_list_lines[-1] .= $COMMA . $second_fastq_file_path;
         }
         ## Increment paired end tracker
@@ -311,49 +297,11 @@ sub analysis_dragen_dna_align_vc {
       catfile( $outdir_path, $sample_id . $UNDERSCORE . q{fastq_list.csv} );
     create_dragen_fastq_list_sample_id(
         {
-            fastq_list_lines_ref => \@dragen_fastq_list_lines,
             fastq_list_file_path => $fastq_list_file_path,
+            fastq_list_lines_ref => \@dragen_fastq_list_lines,
             log                  => $log,
         }
     );
-
-  INFILE:
-    while ( my ( $infile_index, $infile ) = each @{ $sync_map{$sample_id}{in} } ) {
-        ## Dragen cluster destination
-        my $outfile = $sync_map{$sample_id}{out}[$infile_index];
-
-        if ( not $infile_index ) {
-
-            ssh(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    user_at_hostname => $active_parameter_href->{dragen_user_at_hostname},
-                }
-            );
-            print {$FILEHANDLE} $SPACE;
-            gnu_mkdir(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    indirectory_path => dirname($outfile),
-                    parents          => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-
-        #        rsync(
-        #            {
-        #                archive     => 1,
-        #                compress    => 1,
-        #                copy_links  => 1,
-        #                destination => q{ cg-dragen.scilifelab.se:} . $outfile,
-        #                FILEHANDLE  => $FILEHANDLE,
-        #                source      => $infile,
-        #	     temporary_dir => $temp_dir,
-        #           }
-        #       );
-        #        say {$FILEHANDLE} $NEWLINE;
-    }
 
     my @ssh_cmd = ssh(
         {
@@ -429,7 +377,7 @@ sub analysis_dragen_dna_align_vc {
 
 sub analysis_dragen_dna_joint_calling {
 
-## Function : Rapid dragen dna joint calling analysis
+## Function : Dragen dna joint calling analysis
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -522,10 +470,8 @@ sub analysis_dragen_dna_joint_calling {
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
-    use MIP::Program::Rsync qw{ rsync };
     use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -594,7 +540,7 @@ sub analysis_dragen_dna_joint_calling {
         }
     );
 
-    ## Collect infiles for all sample_ids to enable migration to temporary directory
+    ## Collect infiles for all sample_ids
     my @dragen_infile_paths;
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
@@ -619,7 +565,6 @@ sub analysis_dragen_dna_joint_calling {
     }
 
     ### SHELL:
-
     say {$FILEHANDLE} q{## } . $recipe_name;
 
     my $case_file_path;
@@ -639,42 +584,6 @@ sub analysis_dragen_dna_joint_calling {
                 sample_info_href      => $sample_info_href,
             }
         );
-    }
-
-  INFILE:
-    while ( my ( $infile_index, $infile ) = each @dragen_infile_paths ) {
-
-        my $dragen_outdir =
-          catdir( $active_parameter_href->{dragen_analysis_dir}, $case_id );
-        if ( not $infile_index ) {
-
-            ssh(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    user_at_hostname => $active_parameter_href->{dragen_user_at_hostname},
-                }
-            );
-            print {$FILEHANDLE} $SPACE;
-            gnu_mkdir(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    indirectory_path => $dragen_outdir,
-                    parents          => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-
-        #        rsync(
-        #            {
-        #                archive     => 1,
-        #                FILEHANDLE  => $FILEHANDLE,
-        #                destination => q{ cg-dragen.scilifelab.se:} . $dragen_outdir,
-        #                source      => $infile,
-        #	     temporary_dir => $temp_dir,
-        #            }
-        #        );
-        #       say {$FILEHANDLE} $NEWLINE;
     }
 
     ## DRAGEN combine gvcfs
@@ -744,7 +653,7 @@ sub analysis_dragen_dna_joint_calling {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-## Close FILEHANDLES
+    ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
@@ -839,8 +748,8 @@ sub _dragen_wait_loop {
     say {$FILEHANDLE} $TAB x 2, q{status=$?};
     say {$FILEHANDLE} $TAB x 2, q{if [ $status -eq 0 ]};
     say {$FILEHANDLE} $TAB x 2 . q{then};
-    say {$FILEHANDLE} $TAB x 3, q{echo "$cmd command was successful"};
-    say {$FILEHANDLE} $TAB x 3, q{break};
+    say {$FILEHANDLE} $TAB x $INDENT_DEPTH_3, q{echo "$cmd command was successful"};
+    say {$FILEHANDLE} $TAB x $INDENT_DEPTH_3, q{break};
     say {$FILEHANDLE} $TAB x 2, q{fi};
     say {$FILEHANDLE} $TAB, q{done};
     say {$FILEHANDLE} q{fi};
