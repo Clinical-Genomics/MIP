@@ -79,8 +79,7 @@ my %base_argument = (
         input           => q{stdoutfile.test},
         expected_output => q{1> stdoutfile.test},
     },
-)
-;
+);
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
@@ -109,7 +108,7 @@ my %specific_argument = (
 my $module_function_cref = \&singularity_exec;
 
 ## Test both base and function specific arguments
-my @arguments = ( \$base_argument \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
