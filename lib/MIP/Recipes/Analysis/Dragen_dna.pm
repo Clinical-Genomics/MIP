@@ -178,6 +178,7 @@ sub analysis_dragen_dna_align_vc {
             recipe_name           => $recipe_name,
         }
     );
+    my $temp_dir = $active_parameter_href->{temp_directory};
 
     %io = (
         %io,
@@ -281,7 +282,8 @@ sub analysis_dragen_dna_align_vc {
         push @{ $sync_map{$sample_id}{out} }, $dragen_fastq_file_path;
 
         ## Add file paths to line
-        $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_fastq_file_path;
+        #        $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_fastq_file_path;
+        $dragen_fastq_list_lines[-1] .= $COMMA . $fastq_file_path;
 
         # If second read direction is present
         if ( $sequence_run_type eq q{paired-end} ) {
@@ -298,7 +300,8 @@ sub analysis_dragen_dna_align_vc {
             push @{ $sync_map{$sample_id}{out} }, $dragen_second_fastq_file_path;
 
             ## Add file paths to line
-            $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_second_fastq_file_path;
+     #            $dragen_fastq_list_lines[-1] .= $COMMA . $dragen_second_fastq_file_path;
+            $dragen_fastq_list_lines[-1] .= $COMMA . $second_fastq_file_path;
         }
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -337,17 +340,19 @@ sub analysis_dragen_dna_align_vc {
             );
             say {$FILEHANDLE} $NEWLINE;
         }
-        rsync(
-            {
-                archive     => 1,
-                compress    => 1,
-                copy_links  => 1,
-                FILEHANDLE  => $FILEHANDLE,
-                source      => $infile,
-                destination => q{ cg-dragen.scilifelab.se:} . $outfile,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
+
+        #        rsync(
+        #            {
+        #                archive     => 1,
+        #                compress    => 1,
+        #                copy_links  => 1,
+        #                destination => q{ cg-dragen.scilifelab.se:} . $outfile,
+        #                FILEHANDLE  => $FILEHANDLE,
+        #                source      => $infile,
+        #	     temporary_dir => $temp_dir,
+        #           }
+        #       );
+        #        say {$FILEHANDLE} $NEWLINE;
     }
 
     my @ssh_cmd = ssh(
@@ -545,6 +550,7 @@ sub analysis_dragen_dna_joint_calling {
             recipe_name           => $recipe_name,
         }
     );
+    my $temp_dir = $active_parameter_href->{temp_directory};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -658,15 +664,17 @@ sub analysis_dragen_dna_joint_calling {
             );
             say {$FILEHANDLE} $NEWLINE;
         }
-        rsync(
-            {
-                archive     => 1,
-                FILEHANDLE  => $FILEHANDLE,
-                source      => $infile,
-                destination => q{ cg-dragen.scilifelab.se:} . $dragen_outdir,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
+
+        #        rsync(
+        #            {
+        #                archive     => 1,
+        #                FILEHANDLE  => $FILEHANDLE,
+        #                destination => q{ cg-dragen.scilifelab.se:} . $dragen_outdir,
+        #                source      => $infile,
+        #	     temporary_dir => $temp_dir,
+        #            }
+        #        );
+        #       say {$FILEHANDLE} $NEWLINE;
     }
 
     ## DRAGEN combine gvcfs
@@ -800,13 +808,13 @@ sub _dragen_wait_loop {
         },
         max_retries => {
             allow       => qr{ \A\d+\z }sxm,
-            default     => 6,
+            default     => 60,
             store       => \$max_retries,
             strict_type => 1,
         },
         time_to_sleep => {
             allow       => qr{ \A\d+\z }sxm,
-            default     => 600,
+            default     => 60,
             store       => \$time_to_sleep,
             strict_type => 1,
         },

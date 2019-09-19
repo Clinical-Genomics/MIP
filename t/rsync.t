@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
@@ -114,6 +114,10 @@ my %specific_argument = (
     source => {
         input           => q{a_source},
         expected_output => q{a_source},
+    },
+    temporary_dir => {
+        input           => q{a_temp_dir},
+        expected_output => q{--temp-dir} . $EQUALS . q{a_temp_dir},
     },
 );
 

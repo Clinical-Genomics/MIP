@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -45,6 +45,7 @@ sub rsync {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $temporary_dir          => Temporary dir
 
     my ($arg_href) = @_;
 
@@ -56,6 +57,7 @@ sub rsync {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $temporary_dir;
 
     ## Default(s)
     my $archive;
@@ -109,6 +111,10 @@ sub rsync {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        temporary_dir => {
+            store       => \$temporary_dir,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -128,6 +134,11 @@ sub rsync {
 
     if ($copy_links) {
         push @commands, q{--copy-links};
+    }
+
+    if ($temporary_dir) {
+
+        push @commands, q{--temp-dir} . $EQUALS . $temporary_dir;
     }
 
     push @commands, $source;
