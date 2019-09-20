@@ -246,6 +246,7 @@ sub mip_analyse {
             update_dynamic_config_parameters(
                 {
                     active_parameter_href => \%active_parameter,
+dynamic_parameter_href => \%dynamic_parameter,
                     parameter_name        => $parameter_name,
                 }
             );

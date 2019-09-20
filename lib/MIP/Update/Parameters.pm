@@ -81,6 +81,8 @@ sub update_dynamic_config_parameters {
             {
 
                 ## Replace dynamic config parameters with actual value that is now set from cmd or config
+	      next KEY if(not $active_parameter_href->{$parameter_name}{$key});
+
                 $active_parameter_href->{$parameter_name}{$key} =~
                   s/$dynamic_parameter_value!/$dynamic_parameter_value/smgi;
             }
