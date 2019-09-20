@@ -53,7 +53,6 @@ sub ssh {
     my $user_at_hostname;
 
     ## Default(s)
-
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
