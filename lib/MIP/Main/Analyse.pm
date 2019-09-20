@@ -245,9 +245,9 @@ sub mip_analyse {
             ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
             update_dynamic_config_parameters(
                 {
-                    active_parameter_href => \%active_parameter,
-dynamic_parameter_href => \%dynamic_parameter,
-                    parameter_name        => $parameter_name,
+                    active_parameter_href  => \%active_parameter,
+                    dynamic_parameter_href => \%dynamic_parameter,
+                    parameter_name         => $parameter_name,
                 }
             );
         }
