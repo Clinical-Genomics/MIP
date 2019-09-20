@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.7]
+- Use MQ annotation when running GATK VariantRecalibration for SNV
+
 ## [7.1.6]
 - Use correct recipe name for qccollect path when adding to qc_sample_info.yaml
 

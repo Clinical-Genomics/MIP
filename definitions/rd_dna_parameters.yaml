@@ -1245,6 +1245,7 @@ gatk_variantrecalibration_annotations:
   data_type: ARRAY
   default:
    - QD
+   - MQ
    - MQRankSum
    - ReadPosRankSum
    - FS
