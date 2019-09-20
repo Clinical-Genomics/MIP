@@ -30,7 +30,6 @@ use Path::Iterator::Rule;
 use Readonly;
 
 ## MIPs lib/
-# Add MIPs internal lib
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
@@ -56,10 +55,18 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path set_recipe_resource };
-use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
+use MIP::Set::Parameter qw{ set_config_to_active_parameters
+  set_custom_default_to_active_parameter
+  set_default_config_dynamic_parameters
+  set_default_to_active_parameter
+  set_cache
+  set_human_genome_reference_features
+  set_no_dry_run_parameters
+  set_parameter_reference_dir_path
+  set_recipe_resource };
+use MIP::Update::Parameters qw{ update_dynamic_config_parameters
+  update_reference_parameters
+  update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
@@ -76,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -222,6 +229,13 @@ sub mip_analyse {
                 parameter_href        => \%parameter,
                 parameter_names_ref   => \@config_dynamic_parameters,
             }
+        );
+
+        ## Map of dynamic parameters to update
+        my %dynamic_parameter = (
+            cluster_constant_path  => $active_parameter{cluster_constant_path},
+            analysis_constant_path => $active_parameter{analysis_constant_path},
+            case_id                => $active_parameter{case_id},
         );
 
         ## Loop through all parameters and update info
