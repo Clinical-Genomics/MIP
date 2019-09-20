@@ -138,7 +138,7 @@ sub analysis_dragen_dna_align_vc {
 
     use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
