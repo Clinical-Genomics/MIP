@@ -52,7 +52,6 @@ infile_dirs:
   update_path: absolute_path
 picardtools_path:
   associated_recipe:
-#   - dragen_dna_align_vc
    - prepareforvariantannotationblock
   data_type: SCALAR
   exists_check: directory
