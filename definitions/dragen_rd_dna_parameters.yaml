@@ -52,7 +52,6 @@ infile_dirs:
   update_path: absolute_path
 picardtools_path:
   associated_recipe:
-#   - dragen_dna_align_vc
    - prepareforvariantannotationblock
   data_type: SCALAR
   exists_check: directory
@@ -181,11 +180,6 @@ dragen_dna_joint_calling:
   file_tag: _drgjc
   outfile_suffix: ".vcf"
   type: recipe
-#fastq_list_file_path:
-#  associated_recipe:
-#   - dragen_dna_align_vc
-#  data_type: SCALAR
-#  type: path
 sv_annotate:
   analysis_mode: case
   associated_recipe:
