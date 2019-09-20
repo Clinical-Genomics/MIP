@@ -35,8 +35,9 @@ sub parse_sing_bind_paths {
 
 ## Function : Parse singularity bind paths and add export command to array
 ## Returns  : $singularity_bind
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $package_name          => Package name
+## Arguments: $active_parameter_href       => The active parameters for this analysis hash {REF}
+##          : $package_name                => Package name
+##          : $source_environment_cmds_ref => Array with source environment commands {REF}
 
     my ($arg_href) = @_;
 
@@ -126,6 +127,7 @@ sub reduce_dir_paths {
     my @dir_paths;
 
     ## Split to dir path to array
+    DIR_PATH:
     foreach my $dir_path ( @{$dir_paths_ref} ) {
 
         push @dir_paths, [ splitdir($dir_path) ];
