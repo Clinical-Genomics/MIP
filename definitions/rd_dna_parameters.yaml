@@ -676,7 +676,7 @@ delly_call:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellycall
   program_executables:
    - delly
@@ -687,7 +687,7 @@ delly_reformat:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellyreformat
   program_executables:
    - delly
@@ -807,7 +807,7 @@ sv_svdb_merge_prioritize:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  mandatory: no
+  default: tiddit,cnvnator,manta
   type: recipe_argument
 sv_vt_decompose:
   associated_recipe:
@@ -935,7 +935,6 @@ sv_vep_features:
    - offline
    - per_gene
    - protein
-   - regulatory
    - symbol
    - tsl
    - uniprot

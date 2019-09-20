@@ -135,7 +135,6 @@ sv_combinevariantcallsets_bcf_file: 1
 sv_genmod_annotate_regions: 1
 sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
-sv_svdb_merge_prioritize: tiddit,cnvnator,manta,delly
 sv_svdb_query: 1
 sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
