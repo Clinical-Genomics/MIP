@@ -60,7 +60,7 @@ BEGIN {
 ## Constants
 ## Set MIP version
 ## Constants
-Readonly our $MIP_VERSION => q{v7.1.6};
+Readonly our $MIP_VERSION => q{v7.1.7};
 
 ## Cli
 Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
