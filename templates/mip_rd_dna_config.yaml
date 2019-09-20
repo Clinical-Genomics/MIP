@@ -67,10 +67,6 @@ load_env:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
-singularity_container:
-  TIDDIT.py:
-    container_path: #Path to container
-    extra_bind_paths: #[ARRAY]
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml

@@ -17,13 +17,15 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ singularity_exec };
@@ -36,7 +38,10 @@ sub singularity_exec {
 ## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
 ##          : $FILEHANDLE                     => Filehandle to write to
 ##          : $singularity_container          => Singularity container name
-##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
+##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF} 
+##          : $stderrfile_path                => Stderrfile path
+##          : $stderrfile_path_append         => Append stderr info to file path
+##          : $stdoutfile_path                => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -45,8 +50,9 @@ sub singularity_exec {
     my $FILEHANDLE;
     my $singularity_container;
     my $singularity_container_cmds_ref;
-
-    ## Default(s)
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     my $tmpl = {
         bind_paths_ref => {
@@ -68,6 +74,18 @@ sub singularity_exec {
             store       => \$singularity_container_cmds_ref,
             strict_type => 1,
         },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -87,6 +105,24 @@ sub singularity_exec {
     if ( @{$singularity_container_cmds_ref} ) {
         push @commands, @{$singularity_container_cmds_ref};
     }
+    
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
 
     return @commands;
 }

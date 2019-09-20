@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitdir };
+use File::Spec::Functions qw{ catdir splitdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -17,92 +17,94 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE @SINGULARITY_BIND_PATHS %SINGULARITY_CONTAINER };
+use MIP::Constants
+  qw{ $COLON $COMMA $DOUBLE_QUOTE $EQUALS $SEMICOLON @SINGULARITY_BIND_PATHS $WITH_SINGULARITY };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_commands_for_singularity parse_sing_bind_paths };
+    our @EXPORT_OK = qw{ parse_sing_bind_paths reduce_dir_paths };
 }
 
-sub parse_commands_for_singularity {
+sub parse_sing_bind_paths {
 
-## Function : Parse command array from unix_write_to_file
-## Returns  :
-## Arguments: $commands_ref => Commands to write to file
+## Function : Parse singularity bind paths and add export command to array
+## Returns  : $singularity_bind
+## Arguments: $active_parameter_href       => The active parameters for this analysis hash {REF}
+##          : $package_name                => Package name
+##          : $source_environment_cmds_ref => Array with source environment commands {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $commands_ref;
+    my $active_parameter_href;
+    my $package_name;
+    my $source_environment_cmds_ref;
 
     my $tmpl = {
-        commands_ref => {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+        source_environment_cmds_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$commands_ref,
+            store       => \$source_environment_cmds_ref,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Singularity qw{ singularity_exec };
+    return if not $WITH_SINGULARITY;
 
-    # Return if empty command array
-    return if ( not @{$commands_ref} );
+    my @export_bind_paths = @SINGULARITY_BIND_PATHS;
 
-    # Get possible executable to test
-    my $program_executable = $commands_ref->[0];
+    ## Look for extra bind paths
+    if ( $active_parameter_href->{singularity_recipe_bind_path}{$package_name} ) {
 
-    ## Check if executable has a singularity container
-    my $singularity_container;
+        ## Add extra paths
+        push @export_bind_paths,
+          @{ $active_parameter_href->{singularity_recipe_bind_path}{$package_name} };
 
-    if ( defined $SINGULARITY_CONTAINER{$program_executable} ) {
-
-        $singularity_container =
-          $SINGULARITY_CONTAINER{$program_executable}{container_path};
+        ## Check for redundant paths
+        @export_bind_paths = reduce_dir_paths( { dir_paths_ref => \@export_bind_paths } );
     }
 
-    # Return if no singularity image was found
-    return if ( not $singularity_container );
+    my $singularity_bind = join $COMMA, @export_bind_paths;
 
-    ## Get bind paths
-    my @bind_paths = @SINGULARITY_BIND_PATHS;
-    if ( $SINGULARITY_CONTAINER{$program_executable}{extra_bind_paths} ) {
+    my $singularity_bind_var =
+        q{export SINGULARITY_BIND}
+      . $EQUALS
+      . $DOUBLE_QUOTE
+      . $singularity_bind
+      . $DOUBLE_QUOTE
+      . $SEMICOLON;
 
-        push @bind_paths,
-          @{ $SINGULARITY_CONTAINER{$program_executable}{extra_bind_paths} };
-    }
+    push @{$source_environment_cmds_ref}, $singularity_bind_var;
 
-    ## Remove potential undef values
-    @bind_paths = grep { defined } @bind_paths;
-
-    ## Remove overlapping paths
-    @bind_paths = parse_sing_bind_paths( { dir_paths_ref => \@bind_paths, } );
-
-    # Build complete command
-    @{$commands_ref} = singularity_exec(
-        {
-            bind_paths_ref                 => \@bind_paths,
-            singularity_container          => $singularity_container,
-            singularity_container_cmds_ref => $commands_ref,
-        }
-    );
-
-    return @{$commands_ref};
+    return;
 }
 
-sub parse_sing_bind_paths {
+sub reduce_dir_paths {
 
-## Function : Parse singularity bind paths and reduces them to a non-overlapping array
-## Returns  : @reduced_bind_paths
+## Function : Parses directory paths and reduces them to a non-overlapping array. No check for existing files or directories
+## Returns  : @reduced_dir_paths
 ## Arguments: $dir_paths_ref => Directory paths to parse {REF}
 
     my ($arg_href) = @_;
@@ -122,45 +124,46 @@ sub parse_sing_bind_paths {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @bind_paths;
+    my @dir_paths;
 
     ## Split to dir path to array
+    DIR_PATH:
     foreach my $dir_path ( @{$dir_paths_ref} ) {
 
-        push @bind_paths, [ splitdir($dir_path) ];
+        push @dir_paths, [ splitdir($dir_path) ];
     }
 
     ## Sort according to size
-    @bind_paths = sort { @{$a} <=> @{$b} } @bind_paths;
+    @dir_paths = sort { @{$a} <=> @{$b} } @dir_paths;
 
     ## Reformat to strings
-    @bind_paths = map { catdir( @{$_} ) } @bind_paths;
+    @dir_paths = map { catdir( @{$_} ) } @dir_paths;
 
-    my @reduced_bind_paths;
+    my @reduced_dir_paths;
 
   BIND_PATH:
-    while (@bind_paths) {
+    while (@dir_paths) {
 
         ## Shift array
-        my $bind_path = shift @bind_paths;
+        my $dir_path = shift @dir_paths;
 
         ## Save path
-        push @reduced_bind_paths, $bind_path;
+        push @reduced_dir_paths, $dir_path;
 
         ## Get indexes of all the paths in the array that have an identical beginning to one we are testing
         ## The \Q and \E in the regex turns of interpolation
         my @match_idxs =
-          grep { $bind_paths[$_] =~ / ^\Q$bind_path\E.* /xms } 0 .. $#bind_paths;
+          grep { $dir_paths[$_] =~ / ^\Q$dir_path\E.* /xms } 0 .. $#dir_paths;
 
       MATCH_IDX:
         foreach my $match_idx ( reverse @match_idxs ) {
 
             ## Remove those paths with matching starts
-            splice @bind_paths, $match_idx, 1;
+            splice @dir_paths, $match_idx, 1;
         }
     }
 
-    return @reduced_bind_paths;
+    return @reduced_dir_paths;
 }
 
 1;
