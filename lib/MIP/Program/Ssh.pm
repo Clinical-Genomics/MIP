@@ -52,7 +52,6 @@ sub ssh {
     my $stdoutfile_path;
     my $user_at_hostname;
 
-    ## Default(s)
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
