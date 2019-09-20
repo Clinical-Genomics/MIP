@@ -73,6 +73,7 @@ sv_svdb_query_db_files:
 ### Analysis
 ## Programs
 ## Parameters
+dragen_analysis_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 dragen_fastq_list_file_path: cluster_constant_path!/case_id!/analysis_constant_path!/fastq_list.csv
 dragen_hash_ref_dir_path: grch37_homo_sapiens_-d5-.fasta_dragen
 genmod_annotate_regions: 1

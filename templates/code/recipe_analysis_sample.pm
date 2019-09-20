@@ -134,9 +134,9 @@ sub analysis_RECIPE_NAME {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Program::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

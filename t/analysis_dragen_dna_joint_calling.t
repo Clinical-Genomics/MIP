@@ -5,7 +5,6 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Path qw{ remove_tree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -42,16 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Dragen_dna} => [qw{ analysis_dragen_dna }],
+        q{MIP::Recipes::Analysis::Dragen_dna} =>
+          [qw{ analysis_dragen_dna_joint_calling }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Dragen_dna qw{ analysis_dragen_dna };
+use MIP::Recipes::Analysis::Dragen_dna qw{ analysis_dragen_dna_joint_calling };
 
-diag(   q{Test analysis_dragen_dna from Dragen_dna.pm v}
+diag(   q{Test analysis_dragen_dna_joint_calling from Dragen_dna.pm v}
       . $MIP::Recipes::Analysis::Dragen_dna::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -63,7 +63,7 @@ diag(   q{Test analysis_dragen_dna from Dragen_dna.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{analysis_dragen_dna};
+my $recipe_name    = q{dragen_dna_joint_calling};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,11 +75,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id   = $active_parameter{case_id};
-my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{dragen_hash_ref_dir_path}    = q{a_hash_dir};
-$active_parameter{platform}                    = q{ILLUMINA};
-$active_parameter{dragen_fastq_list_file_path} = q{an_dragen_fastq_file_path};
+my $case_id = $active_parameter{case_id};
+$active_parameter{dragen_hash_ref_dir_path} = q{a_hash_dir};
+$active_parameter{dragen_user_at_hostname}  = q{dragen@hostname};
 
 my %file_info = test_mip_hashes(
     {
@@ -87,20 +85,12 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
 %{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
-
-my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
-my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
-
+my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -110,34 +100,11 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{cache}{trio} = 1;
 
-my %sample_info = (
-    sample => {
-        $sample_id => {
-            file => {
-                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
-                    sequence_run_type   => q{paired-end},
-                    read_direction_file => {
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
-                            flowcell       => q{TestFilev2},
-                            lane           => q{1},
-                            sample_barcode => q{GAGATTC},
-                            platform       => q{ILLUMINA},
-                        },
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_2 => {
-                            flowcell       => q{TestFilev2},
-                            lane           => q{1},
-                            sample_barcode => q{GAGATTC},
-                            platform       => q{ILLUMINA},
-                        },
-                    },
-                },
-            },
-        },
-    },
-);
+my %sample_info;
 
-my $is_ok = analysis_dragen_dna(
+my $is_ok = analysis_dragen_dna_joint_calling(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
@@ -153,8 +120,5 @@ my $is_ok = analysis_dragen_dna(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
-
-## Clean-up
-remove_tree( $active_parameter{dragen_fastq_list_file_path} );
 
 done_testing();

@@ -130,6 +130,10 @@ my %specific_argument = (
         input           => catfile(qw{ a dbsnp_file_path.vcf.gz }),
         expected_output => q{--dbsnp} . $SPACE . catfile(qw{ a dbsnp_file_path.vcf.gz }),
     },
+    disable_vcf_compression => {
+        input           => 1,
+        expected_output => q{--enable-vcf-compression} . $SPACE . q{false},
+    },
     dragen_hash_ref_dir_path => {
         input           => catdir(qw{a dragen_ref_hash_table_dir}),
         expected_output => q{--ref-dir}
@@ -159,6 +163,10 @@ my %specific_argument = (
     enable_map_align => {
         input           => 1,
         expected_output => q{--enable-map-align} . $SPACE . q{true},
+    },
+    enable_map_align_output => {
+        input           => 1,
+        expected_output => q{--enable-map-align-output} . $SPACE . q{true},
     },
     enable_multi_sample_gvcf => {
         input           => 1,
@@ -212,11 +220,11 @@ my %specific_argument = (
     },
     pedigree_file_path => {
         input           => catfile(qw{ a family.ped }),
-        expected_output => q{--pedigree-file} . $SPACE . catfile(qw{ a family.ped }),
+        expected_output => q{--vc-pedigree} . $SPACE . catfile(qw{ a family.ped }),
     },
     sample_gvcf_file_paths_ref => {
         inputs_ref      => [qw{ sample-1.gvcf sample-2.gvcf }],
-        expected_output => q{-variant sample-1.gvcf -variant sample-2.gvcf},
+        expected_output => q{--variant sample-1.gvcf --variant sample-2.gvcf},
     },
     sample_id => {
         input           => q{sample-1},
@@ -225,6 +233,10 @@ my %specific_argument = (
     second_fastq_infile_path => {
         input           => catfile(qw{ a read_2.fastq.gz }),
         expected_output => q{-2} . $SPACE . catfile(qw{ a read_2.fastq.gz }),
+    },
+    vc_emit_ref_confidence => {
+        input           => q{GVCF},
+        expected_output => q{--vc-emit-ref-confidence} . $SPACE . q{GVCF},
     },
     vc_enable_gatk_acceleration => {
         input           => 1,

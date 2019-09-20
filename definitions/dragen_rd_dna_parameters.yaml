@@ -52,7 +52,6 @@ infile_dirs:
   update_path: absolute_path
 picardtools_path:
   associated_recipe:
-#   - dragen_dna
    - prepareforvariantannotationblock
   data_type: SCALAR
   exists_check: directory
@@ -66,7 +65,8 @@ recipe_core_number:
   default:
     analysisrunstatus: 1
     chromograph_ar: 1
-    dragen_dna: 1
+    dragen_dna_align_vc: 1
+    dragen_dna_joint_calling: 1
     endvariantannotationblock: 1
     frequency_annotation: 13
     frequency_filter: 13
@@ -110,7 +110,8 @@ recipe_time:
     analysisrunstatus: 1
     cadd_ar: 10
     chromograph_ar: 1
-    dragen_dna: 5
+    dragen_dna_align_vc: 5
+    dragen_dna_joint_calling: 5
     endvariantannotationblock: 2
     frequency_annotation: 1
     frequency_filter: 2
@@ -138,30 +139,47 @@ picardtools_path:
   type: path
   update_path: absolute_path
 ###Programs
-dragen_dna:
+dragen_dna_align_vc:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _drgav
+  outfile_suffix: ".gvcf"
+  type: recipe
+dragen_analysis_dir:
+  associated_recipe:
+   - dragen_dna_align_vc
+   - dragen_dna_joint_calling
+  data_type: SCALAR
+  type: path
+dragen_fastq_list_file_path:
+  associated_recipe:
+   - dragen_dna_align_vc
+  data_type: SCALAR
+  type: path
+dragen_hash_ref_dir_path:
+  associated_recipe:
+   - dragen_dna_align_vc
+   - dragen_dna_joint_calling
+  data_type: SCALAR
+  type: path
+dragen_user_at_hostname:
+  associated_recipe:
+   - dragen_dna_align_vc
+   - dragen_dna_joint_calling
+  data_type: SCALAR
+  type: recipe_argument
+dragen_dna_joint_calling:
   analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _drg
+  file_tag: _drgjc
   outfile_suffix: ".vcf"
-#  program_executables:
- #  - dragen
   type: recipe
-dragen_fastq_list_file_path:
-  associated_recipe:
-   - dragen_dna
-  data_type: SCALAR
-  type: path
-dragen_hash_ref_dir_path:
-  associated_recipe:
-   - dragen_dna
-#  build_file: 1
-  data_type: SCALAR
-  exists_check: directory
-  reference: reference_dir
-  type: path
 sv_annotate:
   analysis_mode: case
   associated_recipe:

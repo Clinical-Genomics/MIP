@@ -228,12 +228,22 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{dragen_dna} => (
-            cmd_aliases   => [qw{ drgd }],
+        q{dragen_dna_align_vc} => (
+            cmd_aliases   => [qw{ drgdav }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Dragen end-to-end recipe},
+            documentation => q{Dragen align and variant call recipe},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{dragen_analysis_dir} => (
+            cmd_aliases   => [qw{ drgad }],
+            cmd_flag      => q{dragen_analysis_dir},
+            documentation => q{Dragen analysis dir},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -245,6 +255,35 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Dragen fastq list sample id file},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{dragen_hash_ref_dir_path} => (
+            cmd_aliases   => [qw{ drghrdp }],
+            cmd_flag      => q{dragen_hash_ref_dir_path},
+            documentation => q{Dragen hash reference dir path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{dragen_user_at_hostname} => (
+            cmd_aliases   => [qw{ drguah }],
+            cmd_flag      => q{dragen_user_at_hostname},
+            documentation => q{Dragen user at hostname},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+    option(
+        q{dragen_joint_calling} => (
+            cmd_aliases   => [qw{ drgdjc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Dragen joint call recipe},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

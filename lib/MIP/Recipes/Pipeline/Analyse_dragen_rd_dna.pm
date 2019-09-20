@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -147,7 +147,8 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
-    use MIP::Recipes::Analysis::Dragen_dna qw{ analysis_dragen_dna };
+    use MIP::Recipes::Analysis::Dragen_dna
+      qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
@@ -211,7 +212,8 @@ sub pipeline_analyse_dragen_rd_dna {
         analysisrunstatus                => \&analysis_analysisrunstatus,
         cadd_ar                          => \&analysis_cadd,
         chromograph_ar                   => \&analysis_chromograph,
-        dragen_dna                       => \&analysis_dragen_dna,
+        dragen_dna_align_vc              => \&analysis_dragen_dna_align_vc,
+        dragen_dna_joint_calling         => \&analysis_dragen_dna_joint_calling,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_annotation             => \&analysis_frequency_annotation,
         frequency_filter                 => \&analysis_frequency_filter,
@@ -277,7 +279,29 @@ sub pipeline_analyse_dragen_rd_dna {
             }
         );
 
-        if ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
+        ## Sample mode
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
+
+          SAMPLE_ID:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+                $analysis_recipe{$recipe}->(
+                    {
+                        active_parameter_href   => $active_parameter_href,
+                        file_info_href          => $file_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        parameter_href          => $parameter_href,
+                        recipe_name             => $recipe,
+                        sample_id               => $sample_id,
+                        sample_info_href        => $sample_info_href,
+                    }
+                );
+            }
+        }
+
+        ## Family mode
+        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
             $analysis_recipe{$recipe}->(
                 {
