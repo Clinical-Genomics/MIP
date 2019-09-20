@@ -657,7 +657,6 @@ sub dragen_load_hash_table {
 ## Arguments: $dragen_hash_ref_dir_path => Dragen reference genome dir path
 ##          : $FILEHANDLE               => Filehandle to write to
 ##          : $force_load_reference     => Force load dragen reference
-
 ##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Append stderr info to file path
 ##          : $stdinfile_path           => Stdinfile path
