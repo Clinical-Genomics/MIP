@@ -140,10 +140,6 @@ sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
 sv_vt_decompose: 1
 sv_vep_plugin:
-  LoF:
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor.fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   ExACpLI:
    exists_check: file
    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
@@ -170,14 +166,13 @@ vep_plugin:
     - phyloP100way_vertebrate
     - phastCons100way_vertebrate
     - REVEL_rankscore
-   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
+   path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
   ExACpLI:
    exists_check: file
-   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoF:
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor.fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
+   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+   exists_check: file
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
    exists_check: directory
    parameters:
