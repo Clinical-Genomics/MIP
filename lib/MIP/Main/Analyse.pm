@@ -52,7 +52,7 @@ use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Parse::Parameter qw{ parse_start_with_recipe };
+use MIP::Parse::Parameter qw{ parse_dynamic_config_parameters parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{ set_config_to_active_parameters
@@ -64,8 +64,7 @@ use MIP::Set::Parameter qw{ set_config_to_active_parameters
   set_no_dry_run_parameters
   set_parameter_reference_dir_path
   set_recipe_resource };
-use MIP::Update::Parameters qw{ update_dynamic_config_parameters
-  update_reference_parameters
+use MIP::Update::Parameters qw{ update_reference_parameters
   update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
@@ -83,7 +82,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -220,7 +219,8 @@ sub mip_analyse {
             }
         );
 
-        my @config_dynamic_parameters = qw{ analysis_constant_path };
+        my @config_dynamic_parameters =
+          qw{ cluster_constant_path analysis_constant_path };
 
         ## Replace config parameter with cmd info for config dynamic parameter
         set_default_config_dynamic_parameters(
@@ -231,26 +231,16 @@ sub mip_analyse {
             }
         );
 
-        ## Map of dynamic parameters to update
-        my %dynamic_parameter = (
-            cluster_constant_path  => $active_parameter{cluster_constant_path},
-            analysis_constant_path => $active_parameter{analysis_constant_path},
-            case_id                => $active_parameter{case_id},
+        ## Updates first the dynamic config parameters and then all other
+        ## parameters to particular user/cluster following specifications
+        parse_dynamic_config_parameters(
+            {
+                active_parameter_href         => \%active_parameter,
+                config_dynamic_parameters_ref => \@config_dynamic_parameters,
+                parameter_href                => \%parameter,
+            }
         );
 
-        ## Loop through all parameters and update info
-      PARAMETER:
-        foreach my $parameter_name ( keys %parameter ) {
-
-            ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-            update_dynamic_config_parameters(
-                {
-                    active_parameter_href  => \%active_parameter,
-                    dynamic_parameter_href => \%dynamic_parameter,
-                    parameter_name         => $parameter_name,
-                }
-            );
-        }
     }
 
 ## Set the default Log4perl file using supplied dynamic parameters.
