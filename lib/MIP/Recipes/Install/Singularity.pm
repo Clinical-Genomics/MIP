@@ -149,7 +149,7 @@ sub install_singularity_containers {
         );
         print {$FILEHANDLE} $NEWLINE;
 
-        ## Make avialable as exeutable in bin
+        ## Make available as exeutable in bin
         setup_singularity_executable(
             {
                 conda_env_path  => $conda_env_path,
@@ -169,7 +169,7 @@ sub setup_singularity_executable {
 ## Returns  :
 ## Arguments: $conda_env_path  => Path to conda environment
 ##          : $container_path  => Path to container
-##          : $executable_href => Hash with executables and their path in the container (if not in PATH){REF}
+##          : $executable_href => Hash with executables and their path in the container (if not in PATH) {REF}
 ##          : $FILEHANDLE      => Filehandle
 
     my ($arg_href) = @_;
@@ -229,12 +229,12 @@ sub setup_singularity_executable {
         );
         push @singularity_cmds, $bash_command;
 
-        my $mock_executable_path = catfile( $conda_env_path, q{bin}, $executable );
+        my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
 
         gnu_echo(
             {
                 FILEHANDLE     => $FILEHANDLE,
-                outfile_path   => $mock_executable_path,
+                outfile_path   => $proxy_executable_path,
                 string_wrapper => $SINGLE_QUOTE,
                 strings_ref    => \@shebang,
             }
@@ -244,7 +244,7 @@ sub setup_singularity_executable {
             {
                 FILEHANDLE             => $FILEHANDLE,
                 no_trailing_newline    => 1,
-                stdoutfile_path_append => $mock_executable_path,
+                stdoutfile_path_append => $proxy_executable_path,
                 string_wrapper         => $SINGLE_QUOTE,
                 strings_ref            => [ join $SPACE, @singularity_cmds ],
             }
@@ -252,7 +252,7 @@ sub setup_singularity_executable {
         print {$FILEHANDLE} $NEWLINE;
         gnu_chmod(
             {
-                file_path  => $mock_executable_path,
+                file_path  => $proxy_executable_path,
                 FILEHANDLE => $FILEHANDLE,
                 permission => q{a+x},
             }

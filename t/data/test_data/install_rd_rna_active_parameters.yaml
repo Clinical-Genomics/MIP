@@ -3,8 +3,6 @@ add_environment_date: '0'
 bash_set_errexit: '0'
 bash_set_nounset: '0'
 bash_set_pipefail: '0'
-conda_path: /home/proj/bin/conda
-config_file: /home/anders.jemt/MIP/templates/mip_install_rd_rna_config_-1.0-.yaml
 container_dir_path: '0'
 core_number: '1'
 core_ram_memory: '5'
@@ -32,7 +30,7 @@ emip:
     samtools: 1.9=h8571acd_11
     scipy: ~
     stringtie: 1.3.4=py27_0
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-rna
+  conda_prefix_path: t/data/modules/miniconda/envs/mip7_rd-rna
   shell:
     blobfish:
       conda_dependency:
@@ -70,73 +68,8 @@ emip:
 environment_base_name: mip7_rd-rna
 environment_name:
   emip: mip7_rd-rna
-  eperl5: mip7_rd-rna_perl5
-  epy3: mip7_rd-rna_py3
-  evep: mip7_rd-rna_vep
-eperl5:
-  conda:
-    blast: 2.9.0
-    fastqc: 0.11.8=1
-    hmmer: ~
-    star: 2.7.2b=0
-    star-fusion: 1.7.0=1
-    trim-galore: 0.6.4=0
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-rna_perl5
-  pip: ~
-  shell:
-    star-fusion:
-      conda_dependency:
-        perl-carp-assert: ~
-        perl-db-file: ~
-        perl-io-gzip: ~
-        perl-json-xs: ~
-        perl-set-intervaltree: ~
-        perl-uri: ~
-        samtools: ~
-        star: ~
-      version: 1.7.0
-epy3:
-  conda:
-    bedops: 2.4.35=h2d50403_1
-    pip: ~
-    python: '3.6'
-    ucsc-wigtobigwig: 366=hdd26221_0
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-rna_py3
-  pip:
-    multiqc: '1.6'
-    rseqc: 3.0.0
-  shell: ~
-evep:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    htslib: 1.9=hc238db4_4
-    pip: ~
-    python: '2.7'
-    tabix: 0.2.6
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-rna_vep
-  pip: ~
-  shell:
-    vep:
-      conda_dependency:
-        bcftools: ~
-        htslib: ~
-        tabix: ~
-      vep_assemblies:
-        - GRCh37
-        - GRCh38
-      vep_auto_flag: acf
-      vep_cache_dir: ~
-      vep_plugins:
-        - ~
-      vep_species:
-        - homo_sapiens_merged
-      version: '95'
 installations:
   - emip
-  - epy3
-  - eperl5
-  - evep
-log_file: /home/anders.jemt/MIP/mip_log/2019-09-23/mip_install_2019-09-23T09:27:43.log
 max_cores_per_node: '36'
 mip: 1
 node_ram_memory: '128'
@@ -145,7 +78,6 @@ prefer_shell: '0'
 prefer_singularity: '0'
 process: rd_rna
 process_time: 2-00:00:00
-program_test_file: /home/anders.jemt/MIP/templates/program_test_cmds.yaml
 python3_programs:
   - multiqc
   - rseqc

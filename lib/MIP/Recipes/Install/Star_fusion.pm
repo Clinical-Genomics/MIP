@@ -261,18 +261,18 @@ sub setup_star_fusion {
         $executable{q{STAR-Fusion}} = catfile( $star_fusion_dir_path, q{STAR-Fusion} );
     }
 
-    say {$FILEHANDLE} q{## Creating mock executables};
+    say {$FILEHANDLE} q{## Creating proxy executables};
   MOCK_EXECUTABLE:
-    foreach my $mock_executable ( keys %executable ) {
+    foreach my $proxy_executable ( keys %executable ) {
 
         my $file_content =
-            $executable{$mock_executable}
+            $executable{$proxy_executable}
           . $SPACE
           . $DOUBLE_QUOTE
           . $DOLLAR_SIGN
           . $AT
           . $DOUBLE_QUOTE;
-        my $outfile_path = catfile( $conda_prefix_path, q{bin}, $mock_executable );
+        my $outfile_path = catfile( $conda_prefix_path, q{bin}, $proxy_executable );
         gnu_echo(
             {
                 FILEHANDLE     => $FILEHANDLE,

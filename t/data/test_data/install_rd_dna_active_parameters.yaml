@@ -3,38 +3,10 @@ add_environment_date: '0'
 bash_set_errexit: '0'
 bash_set_nounset: '0'
 bash_set_pipefail: '0'
-conda_path: /home/proj/bin/conda
-config_file: /home/anders.jemt/MIP/templates/mip_install_rd_dna_config_-1.0-.yaml
 container_dir_path: '0'
 core_number: '1'
 core_ram_memory: '5'
 disable_env_check: 1
-ecnvnator:
-  conda:
-    bcftools: 1.6=1
-    gcc: 4.8.5
-    openssl: 1.0.2p
-    pip: ~
-    python: '2.7'
-    samtools: 1.6=h4da6232_1
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_cnvnator
-  pip: ~
-  shell:
-    cnvnator:
-      cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
-      conda_dependency:
-        gcc: ~
-      version: 0.3.3
-edelly:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    delly: 0.8.1=h4037b6b_0
-    picard: 2.18.14=0
-    pip: ~
-    python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_delly
-  pip: ~
-  shell: ~
 email_types:
   - FAIL
 emip:
@@ -66,7 +38,7 @@ emip:
     snpsift: 4.3.1t=1
     vcfanno: 0.3.2=0
     vt: 2015.11.10
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna
+  conda_prefix_path: t/data/modules/miniconda/envs/mip_travis
   pip: ~
   shell:
     bedtools:
@@ -94,141 +66,11 @@ emip:
         cnvnator: ~
         cnvnator2VCF.pl: ~
       uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
-environment_base_name: mip7_rd-dna
+environment_base_name: mip_travis
 environment_name:
-  ecnvnator: mip7_rd-dna_cnvnator
-  edelly: mip7_rd-dna_delly
-  emip: mip7_rd-dna
-  epeddy: mip7_rd-dna_peddy
-  eperl5: mip7_rd-dna_perl5
-  epy3: mip7_rd-dna_py3
-  esvdb: mip7_rd-dna_svdb
-  etiddit: mip7_rd-dna_tiddit
-  evep: mip7_rd-dna_vep
-epeddy:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    peddy: 0.4.3=py_0
-    pip: ~
-    python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_peddy
-  pip: ~
-  shell: ~
-eperl5:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    bwa: 0.7.17=ha92aebf_3
-    bwakit: 0.7.15=1
-    fastqc: 0.11.8=0
-    gatk4: 4.1.3.0=0
-    ldc: 1.11.0=hb2c9046_0
-    pip: ~
-    python: '2.7'
-    sambamba: 0.6.8=h682856c_0
-    samtools: 1.9=h8571acd_11
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_perl5
-  pip: ~
-  shell: ~
-epy3:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    ldc: 1.11.0=hb2c9046_0
-    pip: ~
-    python: '3.7'
-    sambamba: 0.6.8=h682856c_0
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_py3
-  pip:
-    chanjo: 4.2.0
-    genmod: 3.7.3
-    multiqc: '1.7'
-    stranger: 0.5.4
-    variant_integrity: 0.0.4
-  shell:
-    chromograph:
-      version: gitRepo
-    expansionhunter:
-      conda_dependency: ~
-      version: 3.1.2
-    rhocall:
-      conda_dependency:
-        matplotlib: ~
-      version: 0.5.1
-    sambamba:
-      version: 0.6.1
-    upd:
-      version: '0.1'
-esvdb:
-  conda:
-    pip: ~
-    python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_svdb
-  pip: ~
-  shell:
-    svdb:
-      conda_dependency:
-        pip: ~
-        python: '2.7'
-      version: 2.0.0
-etiddit:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    cmake: 3.13.2=h011004d_0
-    cython: 0.29.1=py27hfc679d8_0
-    cyvcf2: 0.10.0=py27h355e19c_0
-    gcc: ~
-    numpy: 1.15.4=py27_blas_openblashb06ca3d_0
-    pip: ~
-    python: '2.7'
-    scipy: 1.2.0=py27_blas_openblashb06ca3d_200
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_tiddit
-  pip: ~
-  shell:
-    tiddit:
-      conda_dependency:
-        cmake: 3.13.2=h011004d_0
-        gcc: ~
-        numpy: 1.15.4=py27_blas_openblashb06ca3d_0
-        python: '2.7'
-      version: 2.7.1
-    vcf2cytosure:
-      version: 0.4.3
-evep:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    htslib: 1.9=hc238db4_4
-    pip: ~
-    python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_vep
-  pip: ~
-  shell:
-    vep:
-      conda_dependency:
-        bcftools: ~
-        htslib: ~
-      vep_assemblies:
-        - GRCh37
-        - GRCh38
-      vep_auto_flag: acfp
-      vep_cache_dir: ~
-      vep_plugins:
-        - dbNSFP
-        - ExACpLI
-        - LoFtool
-        - MaxEntScan
-      vep_species:
-        - homo_sapiens_merged
-      version: '97'
+  emip: mip_travis
 installations:
-  - ecnvnator
-  - edelly
   - emip
-  - epeddy
-  - eperl5
-  - epy3
-  - evep
-  - esvdb
-  - etiddit
-log_file: /home/anders.jemt/MIP/mip_log/2019-09-23/mip_install_2019-09-23T09:23:51.log
 max_cores_per_node: '36'
 mip: 1
 node_ram_memory: '128'
@@ -237,14 +79,6 @@ prefer_shell: '0'
 prefer_singularity: '0'
 process: rd_dna
 process_time: 2-00:00:00
-program_test_file: /home/anders.jemt/MIP/templates/program_test_cmds.yaml
-python3_programs:
-  - chanjo
-  - chromograph
-  - genmod
-  - variant_integrity
-  - multiqc
-  - upd
 sbatch_mode: '0'
 script: mip_install
 select_programs: []
