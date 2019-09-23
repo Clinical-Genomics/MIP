@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -191,6 +191,67 @@ sub _build_usage {
             documentation => q{Path to existing config},
             is            => q{rw},
             isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_assemblies} => (
+            cmd_aliases   => [qw{ vea }],
+            cmd_tags      => [q{Default: GRCh37, GRCh38}],
+            cmd_flag      => q{vep_assemblies},
+            documentation => q{VEP assemblies to download},
+            is            => q{rw},
+            isa           => ArrayRef,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_auto_flag} => (
+            cmd_aliases   => [qw{ veaf }],
+            cmd_flag      => q{vep_auto_flag},
+            cmd_tags      => [q{Default: c f}],
+            documentation => q{VEP's --AUTO flags},
+            is            => q{rw},
+            isa           => ArrayRef,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_cache_dir} => (
+            cmd_aliases => [qw{ vecd }],
+            cmd_flag    => q{vep_cache_dir},
+            cmd_tags    => [
+q{Default: <path_to_MIP's_conda_env>/ensembl-tools-release-<version>/cache}
+            ],
+            documentation => q{VEP's cache directory},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_plugins} => (
+            cmd_aliases   => [qw{ vepl }],
+            cmd_flag      => q{vep_plugins},
+            documentation => q{VEP plugins to install},
+            is            => q{rw},
+            isa           => ArrayRef,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_species} => (
+            cmd_aliases   => [qw{ ves }],
+            cmd_tags      => [q{Default: homo_sapiens_merged}],
+            cmd_flag      => q{vep_species},
+            documentation => q{VEP species},
+            is            => q{rw},
+            isa           => ArrayRef,
             required      => 0,
         ),
     );

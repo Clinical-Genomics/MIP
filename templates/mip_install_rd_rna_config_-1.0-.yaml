@@ -55,6 +55,10 @@ emip:
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+    vep:
+      executables:
+        vep:
+      uri: shub://jemten/MIP:vep-97.4
 ## Python 3 environment spec
 epy3:
   conda:
@@ -88,31 +92,6 @@ eperl5:
         perl-carp-assert:
         perl-json-xs:
         perl-io-gzip:
-# VEP environment spec
-evep:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    htslib: 1.9=hc238db4_4
-    pip:
-    python: 2.7
-    tabix: 0.2.6
-  pip:
-  shell:
-    vep:
-      conda_dependency:
-        bcftools:
-        htslib:
-        tabix:
-      vep_assemblies:
-        - GRCh37
-        - GRCh38
-      vep_auto_flag: acf
-      vep_cache_dir: ~
-      vep_plugins:
-        -
-      vep_species:
-        - homo_sapiens_merged
-      version: 95
 ## Default base name
 environment_base_name: mip7_rd-rna
 # Specify environment names
@@ -120,4 +99,3 @@ environment_name:
   emip: mip7_rd-rna
   epy3: mip7_rd-rna_py3
   eperl5: mip7_rd-rna_perl5
-  evep: mip7_rd-rna_vep

@@ -59,11 +59,6 @@ load_env:
     tiddit:
     tiddit_coverage:
     vcf2cytosure_ar:
-  mip_travis_vep:
-    installation: evep
-    method: conda
-    sv_varianteffectpredictor: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/envs/mip_travis_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-    varianteffectpredictor: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/envs/mip_travis_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
