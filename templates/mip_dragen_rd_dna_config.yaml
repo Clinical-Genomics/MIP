@@ -76,6 +76,7 @@ sv_svdb_query_db_files:
 dragen_analysis_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 dragen_fastq_list_file_path: cluster_constant_path!/case_id!/analysis_constant_path!/fastq_list.csv
 dragen_hash_ref_dir_path: grch37_homo_sapiens_-d5-.fasta_dragen
+dragen_user_at_hostname: dragen@hostname
 genmod_annotate_regions: 1
 genmod_models_whole_gene: 1
 rankvariant_binary_file: 1
@@ -100,13 +101,12 @@ sv_vcfparser_select_file_matching_column: 3
 sv_vcfparser_vep_transcripts: 1
 sv_vep_plugin:
   LoF:
-   exists_check: file
    parameters:
     - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   ExACpLI:
    exists_check: file
-   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 vcfparser_vep_transcripts: 1
 vcfparser_select_file_matching_column: 3
 vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
@@ -121,21 +121,20 @@ vep_plugin:
     - phyloP100way_vertebrate
     - phastCons100way_vertebrate
     - REVEL_rankscore
-   path: t/data/references/grch37_dbnsfp_-v3.5a-.txt.gz
+   path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
   ExACpLI:
    exists_check: file
-   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
   LoF:
-   exists_check: file
    parameters:
     - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   MaxEntScan:
    exists_check: directory
    parameters:
     - SWA
     - NCSS
-   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/fordownload
 vt_decompose: 1
 vt_normalize: 1
 vt_uniq: 1
