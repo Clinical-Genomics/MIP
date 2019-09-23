@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -819,6 +819,14 @@ sub analysis_gatk_variantrecalibration_wgs {
 
             @resources =
               _build_gatk_resource_command( { resources_href => $resource_indel_href, } );
+
+            ## MQ annotation not part of GATK BP for INDEL
+            @annotations = delete_contig_elements(
+                {
+                    elements_ref       => \@annotations,
+                    remove_contigs_ref => [qw{ MQ }],
+                }
+            );
         }
 
         my $recal_file_path = $outfile_path_prefix . $DOT . q{intervals};
