@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,7 +63,8 @@ diag(   q{Test get_install_parameter_attribute from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given parameters with scalar, array and hashes
-my %parameter = test_mip_hashes( { mip_hash_name => q{install_parameter}, } );
+my %parameter =
+  test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
 
 ## Hash attribute
 my %environment_name = get_install_parameter_attribute(

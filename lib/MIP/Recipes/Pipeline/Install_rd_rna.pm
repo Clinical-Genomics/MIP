@@ -38,6 +38,7 @@ use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
+use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Star_fusion qw{ install_star_fusion };
 use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Vt qw{ install_vt };
@@ -48,7 +49,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_rna };
@@ -176,6 +177,20 @@ sub pipeline_install_rd_rna {
                 FILEHANDLE => $FILEHANDLE,
                 pip_packages_href => $active_parameter_href->{$installation}{pip},
                 quiet             => $active_parameter_href->{quiet},
+            }
+        );
+
+        ## Pull and link containers
+        install_singularity_containers(
+            {
+                conda_env => $active_parameter_href->{environment_name}{$installation},
+                conda_env_path =>
+                  $active_parameter_href->{$installation}{conda_prefix_path},
+                container_dir_path => $active_parameter_href->{container_dir_path},
+                container_href => $active_parameter_href->{$installation}{singularity},
+                FILEHANDLE     => $FILEHANDLE,
+                quiet          => $active_parameter_href->{quiet},
+                verbose        => $active_parameter_href->{verbose},
             }
         );
 
