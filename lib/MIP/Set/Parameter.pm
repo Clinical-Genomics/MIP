@@ -1256,7 +1256,7 @@ sub _parse_parameter_to_broadcast {
                         value => $value->{$key},
                     }
                 );
-                $info .= $SPACE;
+                $info .= $COMMA . $SPACE;
                 next KEY;
             }
             if ( ref $value->{$key} eq q{ARRAY} ) {

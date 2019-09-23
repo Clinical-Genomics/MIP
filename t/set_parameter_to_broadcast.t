@@ -111,7 +111,7 @@ is( $broadcasts[1], q?Set Manuel to: {line => Que, }?,              q{Set hash} 
 is( $broadcasts[2], q{Set Sybil to: Ooohh, I knoooow},              q{Set scalar} );
 is(
     $broadcasts[$HASH_OF_HASH_INDEX],
-    q?Set Fawlty to: {Towers => {genre => sitcom, } }?,
+    q?Set Fawlty to: {Towers => {genre => sitcom, }, }?,
     q{Set hash of hash}
 );
 
@@ -122,7 +122,7 @@ is(
 );
 is(
     $broadcasts[$ARRAY_OF_HASH_INDEX],
-    q?Set employe to: [receptionist, cleaner, {servant => {from => Barcelona, } }, ] ?,
+    q?Set employe to: [receptionist, cleaner, {servant => {from => Barcelona, }, }, ] ?,
     q{Set array of hash}
 );
 
