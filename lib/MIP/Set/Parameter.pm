@@ -21,14 +21,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $CLOSE_BRACE $GENOME_VERSION $LOG_NAME $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $CLOSE_BRACE $CLOSE_BRACKET $GENOME_VERSION $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -866,58 +866,24 @@ sub set_parameter_to_broadcast {
 
         if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
-            ## Alias
-            my $element_separator = $parameter_href->{$parameter_name}{element_separator};
-
-            $info .= join $element_separator,
-              @{ $active_parameter_href->{$parameter_name} };
+            $info = _parse_parameter_to_broadcast(
+                {
+                    info  => $info,
+                    value => $active_parameter_href->{$parameter_name},
+                }
+            );
 
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;
         }
         elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
 
-          PARAMETER_KEY:
-            while ( my ( $key, $value ) =
-                each %{ $active_parameter_href->{$parameter_name} } )
-            {
-
-                ## Hash of hash
-                if ( ref $value eq q{HASH} ) {
-
-                    $info .= $OPEN_BRACE . $key . q{ => };
-
-                  HASH:
-                    foreach my $sec_key ( keys %{$value} ) {
-
-                        $info .= $sec_key . q{=};
-                        if ( $value->{$sec_key} ) {
-
-                            $info .= $value->{$sec_key};
-                        }
-                        $info .= $COMMA;
-                    }
-                    $info .= $CLOSE_BRACE . $SPACE;
+            $info = _parse_parameter_to_broadcast(
+                {
+                    info  => $info,
+                    value => $active_parameter_href->{$parameter_name},
                 }
-                ## Hash of array
-                elsif ( ref $value eq q{ARRAY} ) {
-
-                    $info .= join $COMMA, map {
-                        qq{$_=} . join $SPACE,
-                          @{ $active_parameter_href->{$parameter_name}{$_} }
-                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
-
-                    last PARAMETER_KEY;
-                }
-                else {
-
-                    $info .= join $COMMA,
-                      map { qq{$_=$active_parameter_href->{$parameter_name}{$_}} }
-                      ( keys %{ $active_parameter_href->{$parameter_name} } );
-
-                    last PARAMETER_KEY;
-                }
-            }
+            );
 
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;
@@ -1239,6 +1205,134 @@ sub set_recipe_resource {
         }
     }
     return;
+}
+
+sub _parse_parameter_to_broadcast {
+
+## Function : Parse parameter to broadcast
+## Returns  : $info
+## Arguments: $info  => String to broadcast
+##          : $value => Value to parse
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $info;
+    my $value;
+
+    my $tmpl = {
+        info => {
+            defined     => 1,
+            required    => 1,
+            store       => \$info,
+            strict_type => 1,
+        },
+        value => {
+            defined  => 1,
+            required => 1,
+            store    => \$value,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## HASH
+    if ( ref $value eq q{HASH} ) {
+
+        ## Start of hash
+        $info .= $OPEN_BRACE;
+
+      KEY:
+        foreach my $key ( keys %{$value} ) {
+
+            ## Key-value pairs
+            $info .= $key . q{ => };
+
+            if ( ref $value->{$key} eq q{HASH} ) {
+
+                $info = _parse_parameter_to_broadcast(
+                    {
+                        info  => $info,
+                        value => $value->{$key},
+                    }
+                );
+                $info .= $SPACE;
+                next KEY;
+            }
+            if ( ref $value->{$key} eq q{ARRAY} ) {
+
+                $info .= $OPEN_BRACKET;
+
+              ELEMENT:
+                foreach my $element ( @{ $value->{$key} } ) {
+
+                    $info = _parse_parameter_to_broadcast(
+                        {
+                            info  => $info,
+                            value => $element,
+                        }
+                    );
+                }
+                ## Close array
+                $info .= $CLOSE_BRACKET . $COMMA . $SPACE;
+                next KEY;
+            }
+            if ( $value->{$key} ) {
+
+                ## Scalar
+                $info .= $value->{$key} . $COMMA . $SPACE;
+            }
+        }
+        ## Close hash
+        $info .= $CLOSE_BRACE;
+        return $info;
+    }
+    ## ARRAY
+    if ( ref $value eq q{ARRAY} ) {
+
+        ## Open array
+        $info .= $OPEN_BRACKET;
+
+      ELEMENT:
+        foreach my $element ( @{$value} ) {
+
+            if ( ref $element eq q{HASH} ) {
+
+                $info = _parse_parameter_to_broadcast(
+                    {
+                        info  => $info,
+                        value => $element,
+                    }
+                );
+                $info .= $COMMA . $SPACE;
+                next ELEMENT;
+            }
+            if ( ref $element eq q{ARRAY} ) {
+
+                foreach my $elements_ref ( @{$element} ) {
+
+                    $info = _parse_parameter_to_broadcast(
+                        {
+                            info  => $info,
+                            value => $elements_ref->[0],
+                        }
+                    );
+                }
+                next ELEMENT;
+            }
+            if ($element) {
+
+                ## Scalar
+                $info .= $element . $COMMA . $SPACE;
+            }
+        }
+        $info .= $CLOSE_BRACKET . $SPACE;
+        return $info;
+    }
+
+    ## Scalar
+    $info .= $value . $COMMA . $SPACE;
+    return $info;
 }
 
 sub _set_analysis_type {
