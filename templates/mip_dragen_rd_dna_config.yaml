@@ -100,10 +100,6 @@ sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
 sv_vcfparser_vep_transcripts: 1
 sv_vep_plugin:
-  LoF:
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
   ExACpLI:
    exists_check: file
    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
@@ -125,10 +121,9 @@ vep_plugin:
   ExACpLI:
    exists_check: file
    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoF:
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/human_ancestor.fa
+  LoFtool:
+   exists_check: file
+   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
    exists_check: directory
    parameters:
