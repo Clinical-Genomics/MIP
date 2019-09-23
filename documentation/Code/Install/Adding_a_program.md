@@ -21,7 +21,7 @@ e<env_name>:
   singularity:
     uri: <uri_to_program>
     executables:
-      - <executable>
+      <executable>: <path to executable in container> | <blank if executable in container path>
 ```
 
 ## Add the program to the CLI

@@ -45,6 +45,16 @@ emip:
     gtf2bed:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
+  singularity:
+    star-fusion: 
+      executable:
+        gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
+        make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
+        prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl
+        remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
+        restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
+        STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
+      uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
 ## Python 3 environment spec
 epy3:
   conda:

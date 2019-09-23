@@ -4,7 +4,8 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -18,17 +19,19 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Check::Path qw{ check_future_filesystem_for_directory };
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+use MIP::Constants
+  qw{ $AT $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_mkdir gnu_echo };
+use MIP::Language::Shell qw{ build_shebang };
+use MIP::Program::Singularity qw{ singularity_exec singularity_pull };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
-use MIP::Package_manager::Singularity qw{ singularity_pull };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_singularity_containers };
@@ -59,19 +62,23 @@ sub install_singularity_containers {
 
     my $tmpl = {
         conda_env => {
+            required    => 1,
             store       => \$conda_env,
             strict_type => 1,
         },
         conda_env_path => {
+            required    => 1,
             store       => \$conda_env_path,
             strict_type => 1,
         },
         container_dir_path => {
+            required    => 1,
             store       => \$container_dir_path,
             strict_type => 1,
         },
         container_href => {
             default     => {},
+            required    => 1,
             store       => \$container_href,
             strict_type => 1,
         },
@@ -140,7 +147,117 @@ sub install_singularity_containers {
                 outfile_path  => $container_path,
             }
         );
+        print {$FILEHANDLE} $NEWLINE;
+
+        ## Make available as exeutable in bin
+        setup_singularity_executable(
+            {
+                conda_env_path  => $conda_env_path,
+                container_path  => $container_path,
+                executable_href => $container_href->{$container}{executable},
+                FILEHANDLE      => $FILEHANDLE,
+            }
+        );
         say {$FILEHANDLE} $NEWLINE;
+    }
+    return 1;
+}
+
+sub setup_singularity_executable {
+
+## Function : Make singularity program executable available in conda bin
+## Returns  :
+## Arguments: $conda_env_path  => Path to conda environment
+##          : $container_path  => Path to container
+##          : $executable_href => Hash with executables and their path in the container (if not in PATH) {REF}
+##          : $FILEHANDLE      => Filehandle
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_env_path;
+    my $container_path;
+    my $executable_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        conda_env_path => {
+            required    => 1,
+            store       => \$conda_env_path,
+            strict_type => 1,
+        },
+        container_path => {
+            required    => 1,
+            store       => \$container_path,
+            strict_type => 1,
+        },
+        executable_href => {
+            default     => {},
+            required    => 1,
+            store       => \$executable_href,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @shebang = build_shebang(
+        {
+            bash_bin_path => catfile( dirname( dirname( devnull() ) ), qw{ bin bash } ),
+        }
+    );
+
+    my $bash_command = $DOUBLE_QUOTE . $DOLLAR_SIGN . $AT . $DOUBLE_QUOTE;
+
+  EXECUTABLE:
+    foreach my $executable ( keys %{$executable_href} ) {
+
+        my $container_executable = $executable;
+        if ( $executable_href->{$executable} ) {
+            $container_executable = $executable_href->{$executable};
+        }
+
+        my @singularity_cmds = singularity_exec(
+            {
+                singularity_container          => $container_path,
+                singularity_container_cmds_ref => [$container_executable],
+            }
+        );
+        push @singularity_cmds, $bash_command;
+
+        my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
+
+        gnu_echo(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                outfile_path   => $proxy_executable_path,
+                string_wrapper => $SINGLE_QUOTE,
+                strings_ref    => \@shebang,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+        gnu_echo(
+            {
+                FILEHANDLE             => $FILEHANDLE,
+                no_trailing_newline    => 1,
+                stdoutfile_path_append => $proxy_executable_path,
+                string_wrapper         => $SINGLE_QUOTE,
+                strings_ref            => [ join $SPACE, @singularity_cmds ],
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+        gnu_chmod(
+            {
+                file_path  => $proxy_executable_path,
+                FILEHANDLE => $FILEHANDLE,
+                permission => q{a+x},
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
     }
     return 1;
 }

@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -89,6 +89,7 @@ sub check_mip_installation {
             keys %{ $active_parameter_href->{$installation}{conda} },
             keys %{ $active_parameter_href->{$installation}{pip} },
             keys %{ $active_parameter_href->{$installation}{shell} },
+            keys %{ $active_parameter_href->{$installation}{singularity} },
         );
 
         check_program_installations(

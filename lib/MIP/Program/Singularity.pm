@@ -28,7 +28,7 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ singularity_exec };
+    our @EXPORT_OK = qw{ singularity_exec singularity_pull };
 }
 
 sub singularity_exec {
@@ -38,7 +38,7 @@ sub singularity_exec {
 ## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
 ##          : $FILEHANDLE                     => Filehandle to write to
 ##          : $singularity_container          => Singularity container name
-##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF} 
+##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
 ##          : $stderrfile_path_append         => Append stderr info to file path
 ##          : $stdoutfile_path                => Stdoutfile path
@@ -105,7 +105,7 @@ sub singularity_exec {
     if ( @{$singularity_container_cmds_ref} ) {
         push @commands, @{$singularity_container_cmds_ref};
     }
-    
+
     push @commands,
       unix_standard_streams(
         {
@@ -127,4 +127,94 @@ sub singularity_exec {
     return @commands;
 }
 
+sub singularity_pull {
+
+## Function : Perl wrapper for writing singularity pull command. Based on singularity v3.1.
+## Returns  : @commands
+## Arguments: $container_uri          => Container URI
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $force                  => Force pull
+##          : $outfile_path           => Save container to file
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_uri;
+    my $FILEHANDLE;
+    my $force;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        container_uri => {
+            defined     => 1,
+            required    => 1,
+            store       => \$container_uri,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        force => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$force,
+            strict_type => 1,
+        },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ singularity pull };
+
+    if ($force) {
+        push @commands, q{--force};
+    }
+
+    if ($outfile_path) {
+        push @commands, $outfile_path;
+    }
+
+    ## Add container uri
+    push @commands, $container_uri;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
 1;

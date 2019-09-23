@@ -1,0 +1,93 @@
+---
+add_environment_date: '0'
+bash_set_errexit: '0'
+bash_set_nounset: '0'
+bash_set_pipefail: '0'
+container_dir_path: '0'
+core_number: '1'
+core_ram_memory: '5'
+disable_env_check: 1
+email_types:
+  - FAIL
+emip:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    bioconductor-deseq2: 1.22.1=r351hf484d3e_0
+    bioconductor-tximport: ~
+    gatk4: 4.1.0.0=0
+    gffcompare: 0.10.6=h2d50403_0
+    htslib: 1.9=hc238db4_4
+    numpy: ~
+    picard: 2.18.23=0
+    pigz: ~
+    pip: ~
+    preseq: 2.0.3=gsl2.2_1
+    python: '2.7'
+    r-optparse: ~
+    r-readr: ~
+    salmon: 0.12.0=h86b0361_1
+    sambamba: 0.6.8=h682856c_1
+    samtools: 1.9=h8571acd_11
+    scipy: ~
+    stringtie: 1.3.4=py27_0
+  conda_prefix_path: t/data/modules/miniconda/envs/mip7_rd-rna
+  shell:
+    blobfish:
+      conda_dependency:
+        bioconductor-deseq2: ~
+        bioconductor-tximport: ~
+        python: '2.7'
+        r-optparse: ~
+        r-readr: ~
+      url: https://github.com/J35P312/BlobFish.git
+      version: git
+    bootstrapann:
+      conda_dependency:
+        numpy: ~
+        pip: ~
+        scipy: ~
+      url: https://github.com/J35P312/BootstrapAnn.git
+      version: git
+    gtf2bed:
+      url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
+      version: 1.04.807
+    mip_scripts:
+      version: Your current MIP version
+    picard:
+      version: 2.17.11
+  singularity:
+    star-fusion:
+      executable:
+        STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
+        gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
+        make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
+        prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl
+        remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
+        restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
+      uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+environment_base_name: mip7_rd-rna
+environment_name:
+  emip: mip7_rd-rna
+installations:
+  - emip
+max_cores_per_node: '36'
+mip: 1
+node_ram_memory: '128'
+pipeline: install_rd_rna
+prefer_shell: '0'
+prefer_singularity: '0'
+process: rd_rna
+process_time: 2-00:00:00
+python3_programs:
+  - multiqc
+  - rseqc
+sbatch_mode: '0'
+script: mip_install
+select_programs: []
+shell_install: []
+skip_programs: []
+slurm_quality_of_service: low
+update_config: '0'
+verbose: '0'
+write_config: '0'
+
