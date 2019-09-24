@@ -167,7 +167,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star_fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie vep }
                     ]
                 ),
             ],
@@ -196,7 +196,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star_fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie vep }
                     ]
                 ),
             ],
