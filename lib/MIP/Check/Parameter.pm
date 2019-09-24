@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2563,6 +2563,8 @@ sub _check_vep_custom_annotation_options {
         next OPTION if ( $option eq q{key} );
 
         next OPTION if ( $option eq q{path} );
+
+        next OPTION if ( $option eq q{vcf_fields} );
 
         next OPTION
           if (

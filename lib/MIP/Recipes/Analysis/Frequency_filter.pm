@@ -260,9 +260,10 @@ sub analysis_frequency_filter {
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                vcfanno_file_toml => $active_parameter_href->{fqa_vcfanno_config},
+                fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
+                vcfanno_file_toml => $active_parameter_href->{fqa_vcfanno_config},
             }
         );
 
@@ -315,16 +316,25 @@ sub _build_bcftools_filter {
 
 ## Function : Build the exclude filter command
 ## Returns  :
-## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+## Arguments: $fqf_annotations_ref           => Frequency annotation to use in filtering
+##          : $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
 ##          : $vcfanno_file_toml             => Toml config file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $fqf_annotations_ref;
     my $fqf_bcftools_filter_threshold;
     my $vcfanno_file_toml;
 
     my $tmpl = {
+        fqf_annotations_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_annotations_ref,
+            strict_type => 1,
+        },
         fqf_bcftools_filter_threshold => {
             defined     => 1,
             required    => 1,
@@ -341,25 +351,39 @@ sub _build_bcftools_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
     use MIP::File::Format::Toml qw{ load_toml };
+
+    ## Skip if there are no frequncy annotations to use in filtering
+    return if ( not @{$fqf_annotations_ref} );
 
     my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
 
-    my $exclude_filter;
-    my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
+    my $exclude_filter = $BACKWARD_SLASH . $DOUBLE_QUOTE;
+    my $threshold      = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
 
   ANNOTATION:
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+    while ( my ( $annotation_index, $annotation_href ) =
+        each @{ $vcfanno_config{annotation} } )
+    {
 
-        $exclude_filter =
-            $BACKWARD_SLASH
-          . $DOUBLE_QUOTE
-          . q{INFO/}
-          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
-          . $threshold
-          . $BACKWARD_SLASH
-          . $DOUBLE_QUOTE;
+        ## Limit to requested frequency annotations
+        my @frequency_annotations =
+          intersect( @{$fqf_annotations_ref}, @{ $annotation_href->{names} } );
+
+        next ANNOTATION if ( not @frequency_annotations );
+
+        ## Add "|" for next annotation
+        if ($annotation_index) {
+
+            $exclude_filter .= $SPACE . $PIPE . $SPACE;
+        }
+        $exclude_filter .=
+            q{INFO/}
+          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @frequency_annotations )
+          . $threshold;
     }
+    $exclude_filter .= $BACKWARD_SLASH . $DOUBLE_QUOTE;
     return $exclude_filter;
 }
 
