@@ -6,6 +6,7 @@ decompose_normalize_references:
   data_type: ARRAY
   default:
    - fqa_vcfanno_config
+   - sv_fqa_vcfanno_config
   element_separator: ,
   type: mip
 gatk_logging_level:
@@ -148,6 +149,13 @@ sv_annotate:
    - bcftools
    - svdb
   type: recipe
+sv_fqa_vcfanno_config:
+  associated_recipe:
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
 sv_bcftools_view_filter:
   associated_recipe:
    - sv_annotate
@@ -458,7 +466,6 @@ frequency_annotation:
 fqa_vcfanno_config:
   associated_recipe:
    - frequency_annotation
-   - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -508,6 +515,16 @@ frequency_filter:
   program_executables:
    - bcftools
   type: recipe
+fqf_annotations:
+  associated_recipe:
+   - frequency_filter
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GNOMADAF
+   - GNOMADAF_POPMAX
+   - SWEGENAF
+  type: recipe_argument
 fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -405,7 +405,7 @@ sub analysis_sv_annotate {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 stderrfile_path_append => $stderrfile_path,
-                toml_configfile_path   => $active_parameter_href->{fqa_vcfanno_config},
+                toml_configfile_path   => $active_parameter_href->{sv_fqa_vcfanno_config},
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;
@@ -414,7 +414,7 @@ sub analysis_sv_annotate {
         $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
         my %vcfanno_config = load_toml(
-            { toml_file_path => $active_parameter_href->{fqa_vcfanno_config}, } );
+            { toml_file_path => $active_parameter_href->{sv_fqa_vcfanno_config}, } );
 ## Store vcf anno annotations
         my @vcf_anno_annotations;
 

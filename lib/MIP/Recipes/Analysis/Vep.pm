@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1459,7 +1459,7 @@ sub _get_custom_annotation_cmds {
 
     my @custom_annotations;
     my @order_custom_options =
-      qw{ path key file_type annotation_type force_report_coordinates };
+      qw{ path key file_type annotation_type force_report_coordinates vcf_fields};
 
   ANNOTATION:
     foreach my $annotation_href ( values %{$vep_custom_annotation_href} ) {
