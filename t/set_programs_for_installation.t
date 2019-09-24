@@ -74,9 +74,8 @@ my $active_parameter_href = {
         conda => {
             bio_prog_1   => 1,
             dependency_1 => 1,
+            picard       => 1,
             python       => 2.7,
-            snpeff       => 1,
-            snpsift      => 1,
         },
         pip => {
             py_prog_1 => 1,
@@ -94,10 +93,6 @@ my $active_parameter_href = {
                     dependency_1 => 1,
                 },
                 version => 2,
-            },
-            snpeff => {
-                snpeff_genome_versions => [qw{ GRCh37 }],
-                version                => 2,
             },
         },
     },
@@ -160,20 +155,19 @@ trap {
     )
 };
 
-##Then warn for no python and solve the installation as such
+## Then warn for no python and solve the installation as such
 my $installation_href = clone($active_parameter_copy_href);
-$installation_href->{test_env}{snpeff_genome_versions} = [qw{ GRCh37 }];
 delete $installation_href->{test_env}{conda}{qw{ bio_prog_1 python }};
 delete $installation_href->{test_env}{pip}{py_prog_1};
-delete $installation_href->{test_env}{shell}{qw{ bio_prog_1 snpeff }};
+delete $installation_href->{test_env}{shell}{qw{ bio_prog_1 }};
 
 like( $trap->stderr, qr/WARN/xms, q{Warn for no python} );
 is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
 
 ## Given a selective installation
 $active_parameter_copy_href                    = clone($active_parameter_href);
-$active_parameter_copy_href->{select_programs} = [qw{ python snpeff bio_prog_2 }];
-$active_parameter_copy_href->{shell_install}   = [qw{ snpeff }];
+$active_parameter_copy_href->{select_programs} = [qw{ python picard bio_prog_2 }];
+$active_parameter_copy_href->{shell_install}   = [qw{ picard }];
 
 ## When subroutine is executed
 set_programs_for_installation(
@@ -186,8 +180,7 @@ set_programs_for_installation(
 
 ## Then solve the installation as such
 $installation_href = clone($active_parameter_copy_href);
-$installation_href->{test_env}{snpeff_genome_versions} = [qw{ GRCh37 }];
-delete $installation_href->{test_env}{conda}{qw{ bio_prog_1 snpeff snpsift }};
+delete $installation_href->{test_env}{conda}{qw{ bio_prog_1 picard }};
 delete $installation_href->{test_env}{pip}{qw{ py_prog_1 py_prog_2 }};
 delete $installation_href->{test_env}{shell}{bio_prog_1};
 

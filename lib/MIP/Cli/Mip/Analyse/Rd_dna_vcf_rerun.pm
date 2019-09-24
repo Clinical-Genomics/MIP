@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -161,7 +161,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -816,92 +816,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Parse VEP transcript specific entries},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{snpeff} => (
-            cmd_aliases   => [qw{ sne }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant annotation using snpEff},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{snpeff_ann} => (
-            cmd_aliases   => [qw{ sneann }],
-            documentation => q{Annotate variants using snpeff},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_files} => (
-            cmd_aliases => [qw{ snesaf }],
-            cmd_tags    => [
-q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, grch37_exac_reheader_-r0.3.1-.vcf.gz=AF, grch37_anon-swegen_snp_-1000samples-.vcf.gz=AF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
-            ],
-            documentation => q{Annotation files to use with snpsift},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_outinfo_key} => (
-            cmd_aliases => [qw{ snesaoi }],
-            cmd_flag    => q{snpsift_ann_oik},
-            cmd_tags    => [
-q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, grch37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, grch37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
-            ],
-            documentation => q{Snpsift output INFO key},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_annotations} => (
-            cmd_aliases => [qw{ snesdbnsfpa }],
-            cmd_flag    => q{snpsift_dbnsfp_ann},
-            cmd_tags    => [
-q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP++_RS, phastCons100way_vertebrate}
-            ],
-            documentation => q{DbNSFP annotations to use with snpsift},
-            is            => q{rw},
-            isa           => ArrayRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_file} => (
-            cmd_aliases   => [qw{ snesdbnsfp }],
-            cmd_tags      => [q{Default: grch37_dbnsfp_-v2.9-.txt.gz}],
-            documentation => q{DbNSFP File},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_genome_build_version} => (
-            cmd_aliases   => [qw{ snegbv }],
-            cmd_tags      => [q{Default: GRCh37.75}],
-            documentation => q{Snpeff genome build version},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_path} => (
-            cmd_aliases   => [qw{ snep }],
-            documentation => q{Path to snpEff},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

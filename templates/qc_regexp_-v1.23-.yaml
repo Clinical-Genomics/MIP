@@ -59,8 +59,6 @@ relation_check:
   sample_relation_check: "perl -nae 'print $_;' "
 samtools:
   version: "perl -nae 'if($_=~/samtoolsVersion=(\\S+)/) {print $1;last;}' "
-snpeff:
-  version: "perl -nae 'if($_=~/##SnpSiftVersion=\\\"(.+),/) {my $ret=$1; $ret=~s/\\s/_/g;print $ret;last;}' "
 sv_combinevariantcallsets:
   vcfanno: "perl -nae 'if($_=~/vcfanno\\sversion\\s(\\S+)/) {print $1;last;}' "
 sv_genmod:

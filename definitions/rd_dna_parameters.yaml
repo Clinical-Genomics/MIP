@@ -11,7 +11,6 @@ decompose_normalize_references:
    - gatk_variantrecalibration_resource_indel
    - gatk_varianteval_gold
    - gatk_varianteval_dbsnp
-   - snpsift_annotation_files
   element_separator: ,
   type: mip
 exome_target_bed:
@@ -181,7 +180,6 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
-    snpeff: 13
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -287,7 +285,6 @@ recipe_time:
     sambamba_depth: 10
     samtools_subsample_mt: 1
     split_fastq_file: 10
-    snpeff: 10
     sv_annotate: 2
     sv_combinevariantcallsets: 2
     sv_rankvariant: 10
@@ -1723,71 +1720,6 @@ vcfparser_vep_transcripts:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-## SnpEFF
-snpeff:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _snpeff
-  outfile_suffix: ".vcf"
-  type: recipe
-snpeff_ann:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-snpsift_annotation_files:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_clinvar_reformated_-20190305-.vcf.gz: CLNSIG,CLNVID,CLNREVSTAT
-     grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
-     grch37_loqusdb_snv_indel_-2018-12-18-.vcf.gz: Obs,Hom
-     grch37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_annotation_outinfo_key:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_dbnsfp_annotations:
-  associated_recipe:
-   - snpeff
-  element_separator: ,
-  data_type: ARRAY
-  mandatory: no
-  type: path
-snpsift_dbnsfp_file:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: grch37_dbnsfp_-v3.5a-.txt.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpeff_genome_build_version:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: GRCh37.75
-  type: recipe_argument
-snpeff_path:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 ## Case_check
 peddy_ar:
   analysis_mode: case

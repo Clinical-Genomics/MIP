@@ -58,7 +58,6 @@ BEGIN {
       check_sample_id_in_hash_parameter_path
       check_sample_id_in_parameter_value
       check_select_file_contigs
-      check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
       check_vep_plugin
@@ -1777,63 +1776,6 @@ sub check_select_file_contigs {
         $log->fatal(
             q{Is not a subset of the human genome reference contigs: } . join $SPACE,
             @{$contigs_ref} );
-        exit 1;
-    }
-    return 1;
-}
-
-sub check_snpsift_keys {
-
-## Function : Check that the supplied snpsift outinfo keys match annotation files
-## Returns  :
-## Arguments: $log                                 => Log object
-##          : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
-##          : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        snpsift_annotation_files_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_files_href,
-            strict_type => 1,
-        },
-        snpsift_annotation_outinfo_key_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_outinfo_key_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  FILE:
-    foreach my $file ( keys %{$snpsift_annotation_outinfo_key_href} ) {
-
-        ## Matching files
-        next FILE if ( exists $snpsift_annotation_files_href->{$file} );
-
-        ## Else croak and exist
-        $log->fatal( q{The supplied snpsift_annotation_outinfo_key file: }
-              . $file
-              . q{ does not match any file in '--snpsift_annotation_files'} );
-        $log->fatal(
-            q{Supplied snpsift_annotation_files files:} . $NEWLINE . join $NEWLINE,
-            keys %{$snpsift_annotation_files_href} );
         exit 1;
     }
     return 1;

@@ -124,7 +124,6 @@ sub check_dragen_rd_dna {
 
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
-      check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
       check_vep_plugin };
@@ -213,16 +212,6 @@ sub check_dragen_rd_dna {
             }
         );
     }
-
-    check_snpsift_keys(
-        {
-            log => $log,
-            snpsift_annotation_files_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_files} },
-            snpsift_annotation_outinfo_key_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-        }
-    );
 
     if ( $active_parameter_href->{verbose} ) {
 
@@ -403,7 +392,6 @@ sub check_rd_dna {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
-      check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
       check_vep_plugin
@@ -554,16 +542,6 @@ sub check_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-        }
-    );
-
-    check_snpsift_keys(
-        {
-            log => $log,
-            snpsift_annotation_files_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_files} },
-            snpsift_annotation_outinfo_key_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
         }
     );
 
@@ -772,7 +750,6 @@ sub check_rd_dna_vcf_rerun {
 
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
-      check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
       check_vep_plugin };
@@ -858,16 +835,6 @@ sub check_rd_dna_vcf_rerun {
             }
         );
     }
-
-    check_snpsift_keys(
-        {
-            log => $log,
-            snpsift_annotation_files_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_files} },
-            snpsift_annotation_outinfo_key_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-        }
-    );
 
     if ( $active_parameter_href->{verbose} ) {
 

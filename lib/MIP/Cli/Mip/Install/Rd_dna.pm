@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.02;
+our $VERSION = 2.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -183,7 +183,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
@@ -197,8 +197,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ), ],
+            isa      => ArrayRef [ enum( [qw{ bedtools picard plink2 sambamba vt }] ), ],
             required => 0,
         ),
     );
@@ -217,7 +216,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),

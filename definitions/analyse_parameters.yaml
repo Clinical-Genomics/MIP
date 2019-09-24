@@ -52,7 +52,6 @@ case_id:
 java_use_large_pages:
   associated_recipe:
    - varianteffectpredictor
-   - snpeff
   data_type: SCALAR
   default: 0
   type: recipe_argument

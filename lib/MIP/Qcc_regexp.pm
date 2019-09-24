@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -356,10 +356,6 @@ q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;
     # Return Genmod version
     $regexp{genmod}{version} =
 q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return SnpEff version
-    $regexp{snpeff}{version} =
-q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?;
 
     # Return varianteffectpredictor version
     $regexp{varianteffectpredictor}{version} =

@@ -34,8 +34,6 @@ emip:
     rtg-tools: 3.10.1=0
     sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8571acd_11
-    snpeff: 4.3.1t=1
-    snpsift: 4.3.1t=1
     vcfanno: 0.3.2=0
     vt: 2015.11.10
   conda_prefix_path: t/data/modules/miniconda/envs/mip_travis
@@ -53,11 +51,6 @@ emip:
       version: '171013'
     sambamba:
       version: 0.6.1
-    snpeff:
-      snpeff_genome_versions:
-        - GRCh37.75
-        - GRCh38.86
-      version: v4_3t
     vt:
       version: gitRepo
   singularity:

@@ -6,7 +6,6 @@ decompose_normalize_references:
   data_type: ARRAY
   default:
    - fqa_vcfanno_config
-   - snpsift_annotation_files
   element_separator: ,
   type: mip
 gatk_logging_level:
@@ -56,7 +55,6 @@ recipe_core_number:
     frequency_filter: 13
     rhocall_ar: 15
     sacct: 1
-    snpeff: 13
     sv_annotate: 2
     sv_rankvariant: 13
     sv_reformat: 1
@@ -79,7 +77,6 @@ recipe_memory:
     endvariantannotationblock: 8
     frequency_annotation: 7
     rhocall_ar: 2
-    snpeff: 8
     sv_reformat: 24
     sv_varianteffectpredictor: 9
     upd_ar: 3
@@ -101,7 +98,6 @@ recipe_time:
     rankvariant: 10
     rhocall_ar: 1
     sacct: 1
-    snpeff: 10
     sv_annotate: 1
     sv_rankvariant: 3
     sv_reformat: 1
@@ -688,79 +684,6 @@ vcfparser_vep_transcripts:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-## SnpEFF
-snpeff:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _snpeff
-  outfile_suffix: ".vcf"
-  type: recipe
-snpeff_ann:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-snpsift_annotation_files:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: AF
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: AF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: AF
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_annotation_outinfo_key:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_dbnsfp_annotations:
-  associated_recipe:
-   - snpeff
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - GERP++_RS
-   - GERP++_NR
-   - phyloP100way_vertebrate
-   - phastCons100way_vertebrate
-   - REVEL_rankscore
-  type: path
-snpsift_dbnsfp_file:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: grch37_dbnsfp_-v3.5a-.txt.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpeff_genome_build_version:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: GRCh37.75
-  type: recipe_argument
-snpeff_path:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 ## RankVariant
 rankvariant:
   analysis_mode: case

@@ -68,7 +68,6 @@ CHAIN_ALL:
       - cadd_ar
       - varianteffectpredictor
       - vcfparser_ar
-      - snpeff
       - rankvariant
       - endvariantannotationblock
       - CHAIN_GATKEVALEXO:

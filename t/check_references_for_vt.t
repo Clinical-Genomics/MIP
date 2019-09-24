@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,17 +77,8 @@ my %active_parameter_test = (
     gatk_variantevalall => 1,
     gatk_varianteval_dbsnp =>
       catfile( $Bin, qw{ data references grch37_dbsnp_-138_esa_129-.vcf } ),
-    gatk_variantevalexome    => 1,
-    snpeff                   => 1,
-    snpsift_annotation_files => {
-        catfile(
-            $Bin, qw{ data references grch37_anon-swegen_snp_-1000samples-.vcf.gz }
-        ) => q{SWEREF},
-        catfile( $Bin, qw{ data references grch37_exac_reheader_-r0.3.1-.vcf.gz } ) =>
-          q{EXAC},
-        catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } ) =>
-          q{GNOMAD},
-    },
+    gatk_variantevalexome     => 1,
+    gatk_variantrecalibration => 1,
 );
 
 my %parameter_test = (
@@ -103,12 +94,12 @@ my %parameter_test = (
         associated_recipe => [qw{ gatk_variantevalall gatk_variantevalexome }],
         data_type         => q{SCALAR},
     },
-    snpsift_annotation_files =>
-      { associated_recipe => [qw{ snpeff }], data_type => q{HASH}, },
+    gatk_variantrecalibration_resource_indel =>
+      { associated_recipe => [qw{ gatk_variantrecalibration }], data_type => q{HASH}, },
 );
 
 my @vt_references_test =
-  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
+  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel };
 
 my @refs_to_process = check_references_for_vt(
     {

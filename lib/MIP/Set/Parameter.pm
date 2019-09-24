@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -215,7 +215,6 @@ sub set_custom_default_to_active_parameter {
         select_programs                => \&_set_uninitialized_parameter,
         shell_install                  => \&_set_uninitialized_parameter,
         skip_programs                  => \&_set_uninitialized_parameter,
-        snpeff_path                    => \&_set_dynamic_path,
         star_aln_reference_genome      => \&_set_human_genome,
         sv_vcfparser_select_file       => \&_set_vcfparser_select_file,
         temp_directory                 => \&_set_temp_directory,
@@ -1034,17 +1033,6 @@ q{Please select a single installation environment when using the option --select
     delete @{ $active_parameter_href->{$installation}{conda} }
       {@shell_programs_to_install};
 
-    ## Special case for snpsift since it is installed together with SnpEff
-    ## if shell installation of SnpEff has been requested.
-    if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
-        delete $active_parameter_href->{$installation}{conda}{snpsift};
-    }
-    ## Store variable outside of shell hash and use Data::Diver module to avoid autovivification of variable
-    $active_parameter_href->{$installation}{snpeff_genome_versions} = Dive(
-        $active_parameter_href->{$installation},
-        qw{ shell snpeff snpeff_genome_versions }
-    );
-
     ## Delete shell programs that are to be installed via conda instead of shell
     my @shell_programs_to_delete =
       keys %{ $active_parameter_href->{$installation}{shell} };
@@ -1471,10 +1459,6 @@ sub _set_dynamic_path {
         picardtools_path => {
             bin_file        => q{picard.jar},
             environment_key => q{picard},
-        },
-        snpeff_path => {
-            bin_file        => q{snpEff.jar},
-            environment_key => q{snpeff},
         },
         vep_directory_path => {
             bin_file        => q{vep},
