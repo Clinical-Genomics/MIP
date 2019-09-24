@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -199,7 +199,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
-    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
@@ -290,7 +289,6 @@ sub pipeline_analyse_rd_dna {
         sacct          => \&analysis_sacct,
         sambamba_depth => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
-        snpeff                    => \&analysis_snpeff,
         split_fastq_file          => \&analysis_split_fastq_file,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,

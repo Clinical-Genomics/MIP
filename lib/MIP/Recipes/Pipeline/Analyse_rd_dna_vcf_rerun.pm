@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -160,7 +160,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Analysis::Rhocall
       qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
-    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
@@ -216,7 +215,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
         sacct          => \&analysis_sacct,
-        snpeff         => \&analysis_snpeff,
         sv_annotate    => \&analysis_sv_annotate,
         sv_rankvariant => undef,                         # Depends on sample features
         sv_reformat    => \&analysis_reformat_sv,

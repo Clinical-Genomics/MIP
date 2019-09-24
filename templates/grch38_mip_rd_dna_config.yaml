@@ -113,12 +113,6 @@ nist_call_set_bed:
 rank_model_file: grch38_rank_model_cmms_-v1.0-.ini
 rhocall_frequency_file: grch38_swegen_freq_fixploidy_-20190204-.tab.gz
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-snpeff_genome_build_version: GRCh38.86
-snpsift_annotation_files:
-  grch38_clinvar_reformated_-20190731-.vcf.gz: CLNSIG,CLNVID,CLNREVSTAT
-  grch38_swegen_freq_fixploidy_-20190204-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
-#  grch37_loqusdb_snv_indel_-2018-12-18-.vcf.gz: Obs,Hom
-  grch38_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
 sv_genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
 sv_svdb_query_db_files:
@@ -144,9 +138,6 @@ genmod_annotate_regions: 1
 genmod_models_whole_gene: 1
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 rankvariant_binary_file: 1
-snpeff_path: [YOUR_CONDA_PATH]/envs/mip_travis/bin/
-snpsift_annotation_outinfo_key:
-  grch38_swegen_freq_fixploidy_-20190204-.vcf.gz: SWEGEN
 sv_bcftools_view_filter: 1
 sv_combinevariantcallsets_bcf_file: 1
 sv_genmod_annotate_regions: 1

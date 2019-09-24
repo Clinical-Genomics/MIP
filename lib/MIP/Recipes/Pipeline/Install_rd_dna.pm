@@ -42,7 +42,6 @@ use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_co
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
-use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
 use MIP::Recipes::Install::Upd qw{ install_upd };
@@ -56,7 +55,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -178,10 +177,8 @@ sub pipeline_install_rd_dna {
                 conda_no_update_dep => $active_parameter_href->{conda_no_update_dep},
                 conda_packages_href => $active_parameter_href->{$installation}{conda},
                 FILEHANDLE          => $FILEHANDLE,
-                snpeff_genome_versions_ref =>
-                  $active_parameter_href->{$installation}{snpeff_genome_versions},
-                quiet   => $active_parameter_href->{quiet},
-                verbose => $active_parameter_href->{verbose},
+                quiet               => $active_parameter_href->{quiet},
+                verbose             => $active_parameter_href->{verbose},
             }
         );
 
@@ -221,7 +218,6 @@ sub pipeline_install_rd_dna {
             plink2          => \&install_plink2,
             rhocall         => \&install_rhocall,
             sambamba        => \&install_sambamba,
-            snpeff          => \&install_snpeff,
             svdb            => \&install_svdb,
             tiddit          => \&install_tiddit,
             upd             => \&install_upd,

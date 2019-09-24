@@ -25,7 +25,7 @@ use MIP::Constants qw{$COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,7 +69,7 @@ open my $FILEHANDLE, q{>}, \$file_content
 my $conda_prefix_path = catdir( $Bin, qw{ data modules miniconda } );
 my $log               = test_log( {} );
 my $program_directory_path =
-  catdir( $conda_prefix_path, qw{ envs test_env share snpeff } );
+  catdir( $conda_prefix_path, qw{ envs test_env share picard } );
 
 ## Given existing installation
 trap {
@@ -80,14 +80,14 @@ trap {
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
             program_directory_path => $program_directory_path,
-            program_name           => q{Snpeff},
+            program_name           => q{Picard},
         }
     );
 };
 close $FILEHANDLE;
 ## Then overwrite
 like( $trap->stderr, qr/WARN/xms, q{Warn when installation exists} );
-like( $file_content, qr/Removing\sold\sSnpeff/xms, q{Write instructions to file} );
+like( $file_content, qr/Removing\sold\sPicard/xms, q{Write instructions to file} );
 
 ## Store file content in memory by using referenced variable
 open $FILEHANDLE, q{>}, \$file_content

@@ -128,12 +128,6 @@
   scipy:
     execution: 'python -c "import scipy"'
     path:
-  snpeff:
-    execution: 'snpEff -version'
-    path: 'snpEff'
-  snpsift:
-    execution:
-    path: 'SnpSift'
   star:
     execution: 'STAR'
     path: 'STAR'

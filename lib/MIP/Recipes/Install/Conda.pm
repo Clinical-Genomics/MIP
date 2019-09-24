@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -44,14 +44,13 @@ sub install_conda_packages {
 
 ## Function  : Install conda packages into a new or existing conda environment.
 ## Returns   :
-## Arguments : $conda_env                  => Name of conda environment
-##           : $conda_env_path             => Path to conda environment (default: conda root)
-##           : $conda_no_update_dep        => Do not update dependencies
-##           : $conda_packages_href        => Hash holding conda packages and their version numbers {REF}
-##           : $FILEHANDLE                 => Filehandle to write to
-##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
-##           : $quiet                      => Log only warnings and above
-##           : $verbose                    => Log debug messages
+## Arguments : $conda_env           => Name of conda environment
+##           : $conda_env_path      => Path to conda environment (default: conda root)
+##           : $conda_no_update_dep => Do not update dependencies
+##           : $conda_packages_href => Hash holding conda packages and their version numbers {REF}
+##           : $FILEHANDLE          => Filehandle to write to
+##           : $quiet               => Log only warnings and above
+##           : $verbose             => Log debug messages
 
     my ($arg_href) = @_;
 
@@ -61,7 +60,6 @@ sub install_conda_packages {
     my $conda_packages_href;
     my $FILEHANDLE;
     my $quiet;
-    my $snpeff_genome_versions_ref;
     my $verbose;
 
     ## Defaults
@@ -97,11 +95,6 @@ sub install_conda_packages {
         quiet => {
             allow => [ undef, 0, 1 ],
             store => \$quiet,
-        },
-        snpeff_genome_versions_ref => {
-            default  => [],
-            required => 1,
-            store    => \$snpeff_genome_versions_ref,
         },
         verbose => {
             allow => [ undef, 0, 1 ],
@@ -193,8 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions =
-      qw{ bwakit | gatk | manta | picard | snpeff | snpsift star-fusion };
+    my @custom_solutions = qw{ bwakit | gatk | manta | picard | star-fusion };
 
     ## Link conda packages
     # Creating target-link paths
@@ -225,19 +217,18 @@ sub install_conda_packages {
         print {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Custom solutions for BWA, SnpEff, Manta and GATK
+    ## Custom solutions for BWA,  Manta and GATK
     ## Copying files, downloading necessary databases and make files executable
     finish_conda_package_install(
         {
-            conda_env                  => $conda_env,
-            conda_env_path             => $conda_env_path,
-            conda_packages_href        => $conda_packages_href,
-            custom_solutions_ref       => \@custom_solutions,
-            FILEHANDLE                 => $FILEHANDLE,
-            log                        => $log,
-            quiet                      => $quiet,
-            snpeff_genome_versions_ref => $snpeff_genome_versions_ref,
-            verbose                    => $verbose,
+            conda_env            => $conda_env,
+            conda_env_path       => $conda_env_path,
+            conda_packages_href  => $conda_packages_href,
+            custom_solutions_ref => \@custom_solutions,
+            FILEHANDLE           => $FILEHANDLE,
+            log                  => $log,
+            quiet                => $quiet,
+            verbose              => $verbose,
         }
     );
 
@@ -246,11 +237,9 @@ sub install_conda_packages {
     if ( intersect( @custom_solutions, @conda_packages ) ) {
         say {$FILEHANDLE} q{## Unset variables};
         my %program_path_aliases = (
-            bwakit  => q{BWAKIT_PATH},
-            manta   => q{MANTA_PATH},
-            picard  => q{PICARD_PATH},
-            snpeff  => q{SNPEFF_PATH},
-            snpsift => q{SNPSIFT_PATH},
+            bwakit => q{BWAKIT_PATH},
+            manta  => q{MANTA_PATH},
+            picard => q{PICARD_PATH},
         );
 
       PROGRAM:
@@ -276,7 +265,7 @@ sub install_conda_packages {
 
 sub finish_conda_package_install {
 
-## Function  : Custom solutions to finish the install of BWA, SnpEff, Manta and GATK
+## Function  : Custom solutions to finish the install of BWA, Manta and GATK
 ## Returns   :
 ## Arguments : $conda_env                  => Name of conda env
 ##           : $conda_env_path             => Path to conda environment
@@ -285,7 +274,6 @@ sub finish_conda_package_install {
 ##           : $FILEHANDLE                 => Filehandle to write to
 ##           : $log                        => Log
 ##           : $quiet                      => Log only warnings and above
-##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $verbose                    => Log debug messages
 
     my ($arg_href) = @_;
@@ -298,7 +286,6 @@ sub finish_conda_package_install {
     my $FILEHANDLE;
     my $log;
     my $quiet;
-    my $snpeff_genome_versions_ref;
     my $verbose;
 
     my $tmpl = {
@@ -340,11 +327,6 @@ sub finish_conda_package_install {
             allow => [ undef, 0, 1 ],
             store => \$quiet,
         },
-        snpeff_genome_versions_ref => {
-            default  => [],
-            required => 1,
-            store    => \$snpeff_genome_versions_ref,
-        },
         verbose => {
             allow => [ undef, 0, 1 ],
             store => \$verbose,
@@ -358,9 +340,7 @@ sub finish_conda_package_install {
     use IPC::Cmd qw{ run };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
-    use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
     use MIP::Recipes::Install::Star_fusion qw{ setup_star_fusion };
 
     my @conda_packages = keys %{$conda_packages_href};
@@ -402,55 +382,6 @@ sub finish_conda_package_install {
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Custom SnpEff
-    ## Check if snpeff has been set to be installed via shell or excluded from installation
-    if ( $conda_packages_href->{snpeff} ) {
-
-        ## Custom snpeff - Download necessary databases
-        ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
-        say {$FILEHANDLE} q{## Custom SnpEff solutions};
-
-        ## Get the full version, including patch
-        my $version = $conda_packages_href->{snpeff} =~ tr/=/-/r;
-
-      SNPEFF_GENOME_VERSION:
-        foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
-
-            my $share_dir = catdir( $conda_env_path, q{share}, q{snpeff-} . $version );
-
-            check_mt_codon_table(
-                {
-                    config_file    => q{snpEff.config},
-                    FILEHANDLE     => $FILEHANDLE,
-                    genome_version => $genome_version,
-                    quiet          => $quiet,
-                    share_dir      => $share_dir,
-                    verbose        => $verbose,
-                }
-            );
-
-            my $snpeff_genome_dir = catdir( $share_dir, q{data}, $genome_version );
-            next SNPEFF_GENOME_VERSION if ( -d $snpeff_genome_dir );
-
-            ## Write instructions to download snpeff database.
-            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
-            say {$FILEHANDLE} q{## Downloading snpeff database};
-            my $jar_path         = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-            my $config_file_path = catfile( $conda_env_path, qw{bin snpEff.config} );
-
-            snpeff_download(
-                {
-                    config_file_path        => $config_file_path,
-                    FILEHANDLE              => $FILEHANDLE,
-                    genome_version_database => $genome_version,
-                    jar_path                => $jar_path,
-                    temp_directory          => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
     }
 
     ## Custom manta
@@ -603,7 +534,7 @@ sub _create_package_array {
 sub _create_target_link_paths {
 
 ## Function  : Creates paths to conda target binaries and links.
-##           : Custom solutions for bwakit picard snpeff snpsift manta.
+##           : Custom solutions for bwakit picard manta.
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
 ## Arguments : $conda_packages_href  => Hash with conda packages {REF}
@@ -669,19 +600,15 @@ sub _create_target_link_paths {
               typeHLA-selctg.js typeHLA.js
               }
         ],
-        manta   => [qw{ configManta.py configManta.py.ini }],
-        picard  => [qw{ picard.jar }],
-        snpeff  => [qw{ snpEff.jar snpEff.config }],
-        snpsift => [qw{ SnpSift.jar }],
+        manta  => [qw{ configManta.py configManta.py.ini }],
+        picard => [qw{ picard.jar }],
     );
 
     ## Variables to store the full path in
     my %program_path_aliases = (
-        bwakit  => q{BWAKIT_PATH},
-        manta   => q{MANTA_PATH},
-        picard  => q{PICARD_PATH},
-        snpeff  => q{SNPEFF_PATH},
-        snpsift => q{SNPSIFT_PATH},
+        bwakit => q{BWAKIT_PATH},
+        manta  => q{MANTA_PATH},
+        picard => q{PICARD_PATH},
     );
 
     say {$FILEHANDLE} q{## Find exact path to program and store it for linking};

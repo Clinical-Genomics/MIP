@@ -55,7 +55,7 @@ BEGIN {
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.03;
+our $VERSION = 2.04;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -443,20 +443,6 @@ sub read_infile_vcf {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
                     vcfparser_mode      => $active_parameter_href->{vcfparser_ar},
-                }
-            );
-
-            ## Test snpeff
-            _test_snpeff_in_vcf_header(
-                {
-                    snpeff_mode => $active_parameter_href->{snpeff},
-                    snpsift_annotation_files_href =>
-                      \%{ $active_parameter_href->{snpsift_annotation_files} },
-                    snpsift_annotation_outinfo_key_href =>
-                      \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-                    snpsift_dbnsfp_annotations_ref =>
-                      \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
-                    vcf_header_href => \%vcf_header,
                 }
             );
 
@@ -1388,123 +1374,6 @@ sub _test_vcfparser_in_vcf_header {
             ok(
                 defined $vcf_header_href->{INFO}{$dynamic_key},
                 q{Vcfparser dynamic keys: } . $dynamic_key
-            );
-        }
-    }
-    return;
-}
-
-sub _test_snpeff_in_vcf_header {
-
-## Function : Test if snpeff info keys are present in vcf header
-## Returns  :
-## Arguments: $snpeff_mode                         => Snpeff_Mode description
-##          : $snpsift_dbnsfp_annotations_ref      => SnpSift dbnsfp annotations {REF}
-##          : $snpsift_annotation_outinfo_key_href => Snp sift annotation keys {REF}
-##          : $vcf_header_href                     => Vcf header info {REF}
-##          : $snpsift_annotation_files_href       => Snp sift annotation files {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-    my $snpsift_dbnsfp_annotations_ref;
-    my $vcf_header_href;
-
-    ## Default(s)
-    my $snpeff_mode;
-
-    my $tmpl = {
-        snpeff_mode => {
-            allow       => qr{ \A\d+\z }sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$snpeff_mode,
-            strict_type => 1,
-        },
-        snpsift_annotation_files_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_files_href,
-            strict_type => 1,
-        },
-        snpsift_annotation_outinfo_key_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_outinfo_key_href,
-            strict_type => 1,
-        },
-        snpsift_dbnsfp_annotations_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_dbnsfp_annotations_ref,
-            strict_type => 1,
-        },
-        vcf_header_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$vcf_header_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Snpeff
-    if ($snpeff_mode) {
-
-        my @reformated_keys;
-
-      ANNOTATION_FILE:
-        for my $annotation_file ( keys %{$snpsift_annotation_files_href} ) {
-
-            ## Alias
-            my $annotation_file_info_key_string =
-              $snpsift_annotation_files_href->{$annotation_file};
-            if ( exists $snpsift_annotation_outinfo_key_href->{$annotation_file} ) {
-
-                ## Alias
-                my $annotation_outinfo_key_string =
-                  $snpsift_annotation_outinfo_key_href->{$annotation_file};
-
-                @reformated_keys = split $COMMA, $annotation_outinfo_key_string;
-
-                my @original_vcf_keys = split $COMMA, $annotation_file_info_key_string;
-
-                ## Modify list elements in place to produce -names flag from SnpEff
-              ELEMENT:
-                foreach my $elements (@reformated_keys) {
-
-                    $elements .= shift @original_vcf_keys;
-                }
-            }
-            else {
-
-                @reformated_keys = split $COMMA, $annotation_file_info_key_string;
-            }
-          SNPSIFT_KEY:
-            foreach my $snpsift_key (@reformated_keys) {
-
-                ok(
-                    defined $vcf_header_href->{INFO}{$snpsift_key},
-                    q{Snpsift annotation key: } . $snpsift_key
-                );
-            }
-        }
-      DBNSFP_KEY:
-        for my $dbnsfp_key ( @{$snpsift_dbnsfp_annotations_ref} ) {
-
-            ## Special case due to the fact that snpEff v4.2 transforms + to _ for some reason
-            $dbnsfp_key =~ s/[+]/_/gsxm;
-            $dbnsfp_key = q{dbNSFP_} . $dbnsfp_key;
-            ok(
-                defined $vcf_header_href->{INFO}{$dbnsfp_key},
-                q{Snpsift dbNSFP_key: } . $dbnsfp_key
             );
         }
     }
