@@ -23,15 +23,16 @@ use MIP::Constants
   qw{ $AT $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_mkdir gnu_echo };
 use MIP::Language::Shell qw{ build_shebang };
-use MIP::Program::Singularity qw{ singularity_exec singularity_pull };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Program::Singularity qw{ singularity_exec singularity_pull };
+use MIP::Recipes::Install::Vep qw{ install_vep };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_singularity_containers };
@@ -41,17 +42,19 @@ sub install_singularity_containers {
 
 ## Function : Pull container from singularity hub or docker hub
 ## Returns  :
-## Arguments: $conda_env          => Conda environemnt name
-##          : $conda_env_path     => Path to conda environment
-##          : $container_dir_path => Pull containers to this path
-##          : $container_href     => Hash with container {REF}
-##          : $FILEHANDLE         => Filehandle
-##          : $quiet              => Optionally turn on quiet output
-##          : $verbose            => Log debug messages
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $conda_env             => Conda environemnt name
+##          : $conda_env_path        => Path to conda environment
+##          : $container_dir_path    => Pull containers to this path
+##          : $container_href        => Hash with container {REF}
+##          : $FILEHANDLE            => Filehandle
+##          : $quiet                 => Optionally turn on quiet output
+##          : $verbose               => Log debug messages
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $conda_env;
     my $conda_env_path;
     my $container_dir_path;
@@ -61,6 +64,11 @@ sub install_singularity_containers {
     my $verbose;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         conda_env => {
             required    => 1,
             store       => \$conda_env,
@@ -119,6 +127,9 @@ sub install_singularity_containers {
         $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
     }
 
+    ## Containers requiring something extra
+    my %finish_container_installation = ( vep => \&install_vep, );
+
     ## Write check command to FILEHANDLE
     say {$FILEHANDLE} q{## Check for container path};
     my $dir_check = check_future_filesystem_for_directory(
@@ -158,7 +169,22 @@ sub install_singularity_containers {
                 FILEHANDLE      => $FILEHANDLE,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        print {$FILEHANDLE} $NEWLINE;
+
+        ## Not everythin needs finishing up
+        next CONTAINER if ( not $finish_container_installation{$container} );
+
+        ## Finishing touches for certain containers
+        $finish_container_installation{$container}->(
+            {
+                active_parameter_href => $active_parameter_href,
+                conda_env             => $conda_env,
+                conda_env_path        => $conda_env_path,
+                container_path        => $container_path,
+                FILEHANDLE            => $FILEHANDLE,
+            }
+        );
+
     }
     return 1;
 }

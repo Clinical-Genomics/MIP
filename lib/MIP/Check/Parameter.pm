@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1850,9 +1850,9 @@ sub check_vep_directories {
 
 ## Function : Compare VEP directory and VEP chache versions. Exit if non-match
 ## Returns  :
-## Arguments: $log                 => Log object
-##          : $vep_directory_path  => VEP directory path {REF}
-##          : $vep_directory_cache => VEP cache directory path {REF}
+## Arguments: $log                   => Log object
+##          : $vep_directory_path    => VEP directory path {REF}
+##          : $vep_directory_cache   => VEP cache directory path {REF}
 
     my ($arg_href) = @_;
 
@@ -1884,16 +1884,13 @@ sub check_vep_directories {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Find::Rule;
-    use Cwd qw{ abs_path };
+    use MIP::Get::Parameter qw{ get_vep_version };
 
-    ## Get VEP version from file
-    my $vep_version_file = catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
-    open my $vep_version_fh, q{<}, $vep_version_file;
-    my $vep_version_line = <$vep_version_fh>;
-    close $vep_version_fh;
-
-    ## Capture version number
-    my ($vep_version) = $vep_version_line =~ /( \d+ )/xms;
+    my $vep_version = get_vep_version(
+        {
+            vep_bin_path => catfile( $vep_directory_path, q{vep} ),
+        }
+    );
 
     ## Check that a version number was picked up
     if ( not $vep_version ) {
@@ -1933,9 +1930,10 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
 
     ## Check if the VEP api version and cache versions matches
     if ( any { not /$vep_version/xms } @vep_cache_version_folders ) {
-        $log->fatal( q{Differing versions between '--vep_directory_path':}
+
+        $log->fatal( q{Differing versions between 'VEP API':}
               . $SPACE
-              . $vep_directory_path
+              . $vep_version
               . $SPACE
               . q{and '--vep_directory_cache':}
               . $SPACE
@@ -2550,6 +2548,8 @@ sub _get_vep_cache_species_dir_path {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
 
     my @vep_species_cache = qw{ homo_sapiens homo_sapiens_merged };
     my $vep_cache_species_dir_path;

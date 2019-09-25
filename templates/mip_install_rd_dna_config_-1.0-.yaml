@@ -50,8 +50,8 @@ emip:
         cnvnator:
         cnvnator2VCF.pl:
     vep:
-      executables:
-          vep:
+      executable:
+        vep:
       uri: shub://jemten/MIP:vep-97.4
 # CNVnator environment spec
 ecnvnator:
@@ -182,7 +182,4 @@ vep_plugins:
   - ExACpLI
   - LoFtool
   - MaxEntScan
-vep_auto_flag:
-  - c
-  - f
-  - p
+vep_auto_flag: cfp

@@ -163,23 +163,23 @@ vep_assemblies:
 vep_auto_flag:
   associated_recipe:
     - mip
-  data_type: ARRAY
-  default:
-    - c
-    - f
+  data_type: SCALAR
+  default: cf
   type: mip
 vep_cache_dir: 
   associated_recipe:
    - mip
   data_type: SCALAR
-  mandatory: 0
+  mandatory: no
   type: path
   update_path: absolute_path
 vep_plugins:
   associated_recipe:
     - mip
   data_type: ARRAY
-  mandatory: 0
+  default:
+    -
+  mandatory: no
   type: mip
 vep_species:
   associated_recipe:

@@ -211,10 +211,10 @@ sub _build_usage {
         q{vep_auto_flag} => (
             cmd_aliases   => [qw{ veaf }],
             cmd_flag      => q{vep_auto_flag},
-            cmd_tags      => [q{Default: c f}],
-            documentation => q{VEP's --AUTO flags},
+            cmd_tags      => [q{Default: cf}],
+            documentation => q{VEP's --AUTO flag},
             is            => q{rw},
-            isa           => ArrayRef,
+            isa           => Str,
             required      => 0,
         ),
     );

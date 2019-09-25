@@ -56,7 +56,7 @@ emip:
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
     vep:
-      executables:
+      executable:
         vep:
       uri: shub://jemten/MIP:vep-97.4
 ## Python 3 environment spec

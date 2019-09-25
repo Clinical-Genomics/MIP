@@ -43,5 +43,4 @@ human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 ## Programs
 ## Parameters
 picardtools_path: cluster_constant_path!
-vep_directory_path: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-vep/
-vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-91/cache/
+vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/

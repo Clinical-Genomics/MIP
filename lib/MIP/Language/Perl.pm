@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -169,6 +169,7 @@ sub perl_nae_oneliners {
           q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
         synonyms_grch38_to_grch37 =>
           q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?,
+        get_vep_version => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?,
     );
 
     ## Stores commands depending on input parameters

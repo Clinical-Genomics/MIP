@@ -13,7 +13,6 @@ use File::Copy qw{ copy };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use IPC::Cmd qw{ can_run run};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use POSIX;
