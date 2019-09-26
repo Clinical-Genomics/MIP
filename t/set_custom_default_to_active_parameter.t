@@ -255,7 +255,7 @@ my %test_hash = (
         $active_parameter{conda_path}, qw{ envs test_env_1 share picard-2.14.1-0 }
     ),
     vep_directory_path =>
-      catdir( $active_parameter{conda_path}, qw{ envs test_env ensembl-vep } ),
+      catdir( $active_parameter{conda_path}, qw{ envs test_env bin } ),
 );
 
 TEST_PATH:

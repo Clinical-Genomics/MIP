@@ -152,6 +152,42 @@ update_config:
   default: 0
   mandatory: no
   type: mip
+vep_assemblies:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - GRCh37
+    - GRCh38
+  type: mip
+vep_auto_flag:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: cf
+  type: mip
+vep_cache_dir: 
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+  update_path: absolute_path
+vep_plugins:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    -
+  mandatory: no
+  type: mip
+vep_species:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - homo_sapiens_merged
+  type: mip
 write_config: 
   associated_recipe:
    - mip

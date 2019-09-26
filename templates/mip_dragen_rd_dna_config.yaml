@@ -30,10 +30,6 @@ load_env:
     method: conda
     svdb:
     sv_annotate:
-  mip_travis_vep:
-    method: conda
-    sv_varianteffectpredictor:
-    varianteffectpredictor:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml

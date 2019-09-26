@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.02;
+our $VERSION = 2.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -128,17 +128,15 @@ sub _build_usage {
 
     option(
         q{environment_name} => (
-            cmd_aliases => [qw{ envn }],
-            cmd_flag    => q{environment_name},
-            cmd_tags =>
-              [q{Default: mip7_rd-rna mip7_rd-rna_py3 mip7_rd-rna_perl5 mip7_rd-rna_vep}],
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: mip7_rd-rna mip7_rd-rna_py3 mip7_rd-rna_perl5}],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
                 emip   => Optional [Str],
                 epy3   => Optional [Str],
                 eperl5 => Optional [Str],
-                evep   => Optional [Str],
             ],
             required => 0,
         ),
@@ -148,10 +146,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip epy3 eperl5 evep}],
+            cmd_tags      => [q{Default: emip epy3 eperl5}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5 evep }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5 }] ), ],
             required      => 0,
         ),
     );

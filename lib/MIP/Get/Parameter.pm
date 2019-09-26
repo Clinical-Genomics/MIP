@@ -18,14 +18,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
+  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -45,6 +45,7 @@ BEGIN {
       get_recipe_resources
       get_recipe_attributes
       get_user_supplied_info
+      get_vep_version
     };
 }
 
@@ -1057,6 +1058,48 @@ sub get_user_supplied_info {
         }
     }
     return %user_supply_switch;
+}
+
+sub get_vep_version {
+
+## Function : Get version of VEP API in use
+## Returns  : $vep_version
+## Arguments: $vep_bin_path => Path to vep binary
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_bin_path;
+
+    my $tmpl = {
+        vep_bin_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_bin_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    my @perl_commands = perl_nae_oneliners(
+        {
+            oneliner_name => q{get_vep_version},
+        }
+    );
+    my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
+
+    my %vep_cmd_output = system_cmd_call(
+        {
+            command_string => join $SPACE,
+            @get_vep_version_cmds,
+        }
+    );
+
+    return $vep_cmd_output{output}[0];
 }
 
 1;

@@ -133,7 +133,7 @@ sub _build_usage {
             cmd_aliases => [qw{ envn }],
             cmd_flag    => q{environment_name},
             cmd_tags    => [
-q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_svdb mip7_rd-dna_tiddit mip7_rd-dna_vep}
+q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_svdb mip7_rd-dna_tiddit}
             ],
             documentation => q{Set environment names},
             is            => q{rw},
@@ -146,7 +146,6 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
                 epy3      => Optional [Str],
                 esvdb     => Optional [Str],
                 etiddit   => Optional [Str],
-                evep      => Optional [Str],
             ],
             required => 0,
         ),
@@ -157,13 +156,11 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
             cmd_aliases => [qw{ install }],
             cmd_flag    => q{installations},
             cmd_tags =>
-              [q{Default: emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit evep}],
+              [q{Default: emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit}],
             documentation => q{Environments to install},
             is            => q{rw},
             isa           => ArrayRef [
-                enum(
-                    [qw{ emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit evep }]
-                ),
+                enum( [qw{ emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit }] ),
             ],
             required => 0,
         ),

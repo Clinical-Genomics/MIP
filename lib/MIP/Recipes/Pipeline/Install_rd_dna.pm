@@ -46,7 +46,6 @@ use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
 use MIP::Recipes::Install::Upd qw{ install_upd };
 use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
-use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
 BEGIN {
@@ -195,6 +194,7 @@ sub pipeline_install_rd_dna {
         ## Pull and link containers
         install_singularity_containers(
             {
+                active_parameter_href => $active_parameter_href,
                 conda_env => $active_parameter_href->{environment_name}{$installation},
                 conda_env_path =>
                   $active_parameter_href->{$installation}{conda_prefix_path},
@@ -222,7 +222,6 @@ sub pipeline_install_rd_dna {
             tiddit          => \&install_tiddit,
             upd             => \&install_upd,
             vcf2cytosure    => \&install_vcf2cytosure,
-            vep             => \&install_vep,
             vt              => \&install_vt,
         );
 
