@@ -67,7 +67,8 @@ my %sample_info = (
     sample => {
         $sample_id => {
             recipe => {
-                $recipe_name => { $infile => { $attribute => q{regexp_file}, }, },
+                $recipe_name        => { $infile => { $attribute => q{regexp_file}, }, },
+                q{recipe_no_infile} => { path    => q{a_path}, },
             },
         },
     },
@@ -96,11 +97,11 @@ my %got_attribute = get_sample_info_sample_recipe_attributes(
     }
 );
 
-## Then return attribute hash for recipes
+## Then return attribute hash for recipes for infile
 is_deeply(
     \%got_attribute,
     \%{ $sample_info{sample}{$sample_id}{recipe}{$recipe_name}{$infile} },
-    q{Got recipe attribute hash}
+    q{Got recipe attribute hash for infile}
 );
 
 # Given a recipe when sample_info attribute is undef
@@ -118,4 +119,23 @@ my $is_undef = get_sample_info_sample_recipe_attributes(
 
 ## Then return attribute for recipe
 is( $is_undef, undef, q{Return undef for missing attribute} );
+
+## Given a recipe with no infile
+
+%got_attribute = get_sample_info_sample_recipe_attributes(
+    {
+        infile           => q{path},
+        recipe_name      => q{recipe_no_infile},
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
+    }
+);
+
+## Then return attribute hash for recipes
+is_deeply(
+    \%got_attribute,
+    \%{ $sample_info{sample}{$sample_id}{recipe}{recipe_no_infile} },
+    q{Got recipe attribute hash for recipe}
+);
+
 done_testing();
