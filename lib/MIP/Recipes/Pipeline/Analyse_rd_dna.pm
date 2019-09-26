@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -174,7 +174,9 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
+    use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -186,7 +188,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
-    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
     use MIP::Recipes::Analysis::Rhocall
@@ -301,6 +302,7 @@ sub pipeline_analyse_rd_dna {
         upd_ar                 => undef,                          # Depends on pedigree
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
+        version_collect_ar     => \&analysis_mip_vercollect,
         vcfparser_ar           => \&analysis_mip_vcfparser,
         vcf2cytosure_ar        => \&analysis_vcf2cytosure,
         vt_ar                  => \&analysis_vt,

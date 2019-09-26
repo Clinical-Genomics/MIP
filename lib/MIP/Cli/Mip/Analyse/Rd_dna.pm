@@ -2197,6 +2197,16 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
+        q{version_collect} => (
+            cmd_aliases   => [qw{ verc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collects executable versions across the analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{multiqc_ar} => (
             cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],

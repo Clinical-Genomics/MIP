@@ -75,10 +75,19 @@ sub check_binary_in_path {
         }
     );
 
-    ## Search for binary in conda envs path
-    if ( -e catfile( $env_binary_path, $binary ) ) {
+    ## Add binary for use downstream
+    $active_parameter_href->{binary_path}{$binary} = $binary;
 
-        $binary = catfile( $env_binary_path, $binary );
+    ## Potential full path to binary
+    my $binary_path = catfile( $env_binary_path, $binary );
+
+    ## Search for binary in conda envs path
+    if ( -e $binary_path ) {
+
+        ## Update binary to full binary_path
+        $active_parameter_href->{binary_path}{$binary} = $binary_path;
+
+        $binary = $binary_path;
     }
 
     ## Test binary
