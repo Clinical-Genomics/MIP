@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -83,15 +83,13 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    oneliner_name => {
-        input => q{synonyms_grch37_to_grch38},
-        expected_output =>
-          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
-    },
-);
+my %required_argument = ();
 
 my %specific_argument = (
+    oneliner_cmd => {
+        input           => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?,
+        expected_output => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?,
+    },
     oneliner_name => {
         input => q{synonyms_grch37_to_grch38},
         expected_output =>
