@@ -140,7 +140,7 @@ sub install_vep {
 
     ## Don't install plugins unless specified in the auto flag
     if ( not $auto_flag =~ m/p/xms ) {
-        @plugins = qw{};
+        undef @plugins;
     }
 
     my @vep_install_cmds = variant_effect_predictor_install(
@@ -259,7 +259,7 @@ sub _get_vep_version_cmd {
 
     my $vep_version_cmd = q{vep} . $SPACE . $PIPE . $SPACE;
 
-    ## get perl onleiner to capture version number from output
+    ## get perl oneliner to capture version number from output
     my @perl_commands = perl_nae_oneliners(
         {
             oneliner_name => q{get_vep_version},

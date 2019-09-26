@@ -171,7 +171,7 @@ sub install_singularity_containers {
         );
         print {$FILEHANDLE} $NEWLINE;
 
-        ## Not everythin needs finishing up
+        ## Not everything needs finishing up
         next CONTAINER if ( not $finish_container_installation{$container} );
 
         ## Finishing touches for certain containers
