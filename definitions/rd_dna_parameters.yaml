@@ -191,7 +191,7 @@ recipe_core_number:
     tiddit_coverage: 1
     upd_ar: 1
     variant_integrity_ar: 1
-    version_collect: 1
+    version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
   type: mip
@@ -298,7 +298,7 @@ recipe_time:
     upd_ar: 1
     varianteffectpredictor: 10
     variant_integrity_ar: 1
-    version_collect: 1
+    version_collect_ar: 1
     vcfparser_ar: 5
     vt_ar: 10
     vcf2cytosure_ar: 20
@@ -1954,8 +1954,8 @@ version_collect_ar:
   data_type: SCALAR
   default: 1
   file_tag: _vcol
-  program_executables:
-   - vercollect
+#  program_executables:
+#   - vercollect
   type: recipe
 ## MultiQC
 multiqc_ar:

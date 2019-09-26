@@ -363,7 +363,6 @@ sub mip_vercollect {
 ##          : $infile_path            => Infile path
 ##          : $log_file_path          => Log file path
 ##          : $outfile_path           => Outfile path
-##          : $regexp_file_path       => Regular expression file
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -375,7 +374,6 @@ sub mip_vercollect {
     my $infile_path;
     my $log_file_path;
     my $outfile_path;
-    my $regexp_file_path;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -397,12 +395,6 @@ sub mip_vercollect {
             defined     => 1,
             required    => 1,
             store       => \$outfile_path,
-            strict_type => 1,
-        },
-        regexp_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_file_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -428,11 +420,6 @@ sub mip_vercollect {
     if ($log_file_path) {
 
         push @commands, q{--log_file} . $SPACE . $log_file_path;
-    }
-
-    if ($regexp_file_path) {
-
-        push @commands, q{--regexp_file} . $SPACE . $regexp_file_path;
     }
 
     ## Infile

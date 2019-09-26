@@ -213,11 +213,10 @@ sub analysis_mip_vercollect {
 
     mip_vercollect(
         {
-            infile_path      => $binary_path_file_path,
-            outfile_path     => $outfile_path,
-            log_file_path    => $log_file_path,
-            regexp_file_path => $active_parameter_href->{vercollect_regexp_file},
-            FILEHANDLE       => $FILEHANDLE,
+            infile_path   => $binary_path_file_path,
+            outfile_path  => $outfile_path,
+            log_file_path => $log_file_path,
+            FILEHANDLE    => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

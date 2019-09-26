@@ -41,7 +41,6 @@ sub mip_vercollect {
 ## Returns  :
 ## Arguments: $log         => Log object
 ##          : $outfile     => Data metric output file
-##          : $regexp_file => Regular expression file
 ##          : $infile_path => Executables (binary) info file
 
     my ($arg_href) = @_;
@@ -49,7 +48,6 @@ sub mip_vercollect {
     ## Flatten argument(s)
     my $log;
     my $outfile;
-    my $regexp_file;
     my $infile_path;
 
     my $tmpl = {
@@ -64,12 +62,6 @@ sub mip_vercollect {
             store       => \$outfile,
             strict_type => 1,
         },
-        regexp_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_file,
-            strict_type => 1,
-        },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -80,6 +72,8 @@ sub mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Executable qw{ get_executable };
+
     ## Save final output data
     my %binary_version;
 
@@ -88,14 +82,16 @@ sub mip_vercollect {
     my %binary_info = load_yaml( { yaml_file => $infile_path, } );
     $log->info( q{Loaded: } . $infile_path );
 
-    ## Loads a reg exp file into an arbitrary hash
-    #    $log->info( q{Loading: } . $regexp_file );
-    #    my %regexp = load_yaml( { yaml_file => $regexp_file, } );
-    #    $log->info( q{Loaded: } . $regexp_file );
+    my %executable = get_executable( {} );
 
     while ( my ( $binary, $binary_path ) = each %binary_info ) {
 
         say STDERR $binary . " " . $binary_path;
+
+        if ( exists $executable{$binary} ) {
+
+            say STDERR $executable{$binary}{version_regexp};
+        }
     }
 
     ## Writes a qc data hash to file

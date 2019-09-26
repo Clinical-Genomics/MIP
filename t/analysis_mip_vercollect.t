@@ -76,7 +76,6 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{vercollect_regexp_file}     = q{qc_regexp_file.txt};
 $active_parameter{vercollect_sampleinfo_file} = q{sample_info.yaml};
 $active_parameter{binary_path}                = { bwa => q{path_to_binary}, };
 

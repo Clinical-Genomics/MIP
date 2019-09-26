@@ -97,10 +97,6 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
     },
-    regexp_file_path => {
-        input           => q{qc_regexp_-v1.13-.yaml},
-        expected_output => q{--regexp_file qc_regexp_-v1.13-.yaml},
-    },
 );
 
 my %specific_argument = (
