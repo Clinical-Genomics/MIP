@@ -62,7 +62,9 @@ diag(   q{Test get_executable from Executable.pm v}
 my %got_executable = get_executable( { executable_name => q{vep}, } );
 
 my $expected_executable_href =
-  { version_regexp => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?, };
+  { version_regexp =>
+q?'my ($version) = /ensembl-vep\s+:\s(\d+)/xms; if($version) {print $version;last;}'?,
+  };
 
 ## Then return hash ref for only executable
 is_deeply( \%got_executable, $expected_executable_href, q{Got executable specific hash} );
@@ -71,13 +73,18 @@ is_deeply( \%got_executable, $expected_executable_href, q{Got executable specifi
 my %got_all_executable = get_executable( {} );
 
 my %expected_all_executable = (
-    vep => {
-        version_regexp => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?,
+    mip => {
+        version_cmd => q{version},
+        version_regexp =>
+q?'my ($version) = /mip\s+version\s+(\S+)/xms; if($version) {print $version;last;}'?,
     },
 );
 
 ## Then return hash ref for entire executable
-is_deeply( \%got_all_executable, \%expected_all_executable,
-    q{Got entire executable hash} );
+is_deeply(
+    $got_all_executable{mip},
+    $expected_all_executable{mip},
+    q{Got entire executable hash}
+);
 
 done_testing();

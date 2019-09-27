@@ -1,0 +1,3 @@
+#!/bin/bash
+CWD=`dirname "$0"`
+cat ${CWD}/mip_version_output.txt

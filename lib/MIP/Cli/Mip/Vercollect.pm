@@ -25,8 +25,7 @@ command_short_description(q{MIP vercollect command});
 
 command_long_description(q{Entry point for collecting MIP execuatable versions});
 
-command_usage(
-    q{vercollect <options> -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]});
+command_usage(q{vercollect <options> -i [infile_path.yaml] -o [outfile_path.yaml]});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -87,7 +86,7 @@ sub _build_usage {
         q{outfile} => (
             cmd_aliases   => [qw{ o }],
             cmd_tags      => [q{YAML}],
-            default       => q{qcmetrics.yaml},
+            default       => q{vermetrics.yaml},
             documentation => q{Data file output},
             is            => q{rw},
             isa           => Str,
