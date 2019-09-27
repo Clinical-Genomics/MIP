@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.03;
+our $VERSION = 2.04;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -178,7 +178,7 @@ sub _build_usage {
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard star-fusion }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
             required      => 0,
         ),
     );

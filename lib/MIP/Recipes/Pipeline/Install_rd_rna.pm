@@ -39,7 +39,6 @@ use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
-use MIP::Recipes::Install::Star_fusion qw{ install_star_fusion };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
 BEGIN {
@@ -48,7 +47,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_rna };
@@ -195,13 +194,12 @@ sub pipeline_install_rd_rna {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
-            blobfish       => \&install_blobfish,
-            bootstrapann   => \&install_bootstrapann,
-            gtf2bed        => \&install_gtf2bed,
-            mip_scripts    => \&install_mip_scripts,
-            picard         => \&install_picard,
-            sambamba       => \&install_sambamba,
-            q{star-fusion} => \&install_star_fusion,
+            blobfish     => \&install_blobfish,
+            bootstrapann => \&install_bootstrapann,
+            gtf2bed      => \&install_gtf2bed,
+            mip_scripts  => \&install_mip_scripts,
+            picard       => \&install_picard,
+            sambamba     => \&install_sambamba,
         );
 
         ## Launch shell installation subroutines

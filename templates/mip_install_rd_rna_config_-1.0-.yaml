@@ -76,22 +76,10 @@ eperl5:
     blast: 2.9.0
     fastqc: 0.11.8=1
     hmmer:
-    star-fusion: 1.7.0=1
     star: 2.7.2b=0
     trim-galore: 0.6.4=0
   pip:
   shell:
-    star-fusion:
-      version: 1.7.0
-      conda_dependency:
-        star:
-        samtools:
-        perl-db-file:
-        perl-uri:
-        perl-set-intervaltree:
-        perl-carp-assert:
-        perl-json-xs:
-        perl-io-gzip:
 ## Default base name
 environment_base_name: mip7_rd-rna
 # Specify environment names

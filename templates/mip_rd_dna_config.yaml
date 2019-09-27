@@ -15,10 +15,6 @@ load_env:
     method: conda
     mip:
     picard:
-  mip_travis_cnvnator:
-    cnvnator_ar: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [YOUR_CONDA_PATH]/envs/mip_travis_cnvnator/root/bin/thisroot.sh;"
-    installation: ecnvnator
-    method: conda
   mip_travis_delly:
     delly_call:
     delly_reformat:

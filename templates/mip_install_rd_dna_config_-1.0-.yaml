@@ -53,22 +53,6 @@ emip:
       executable:
         vep:
       uri: shub://jemten/MIP:vep-97.4
-# CNVnator environment spec
-ecnvnator:
-  conda:
-    bcftools: 1.6=1
-    gcc: 4.8.5
-    openssl: 1.0.2p
-    pip:
-    python: 2.7
-    samtools: 1.6=h4da6232_1
-  pip:
-  shell:
-    cnvnator:
-      cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
-      conda_dependency:
-        gcc:
-      version: 0.3.3
 # Delly environment spec
 edelly:
   conda:
@@ -170,7 +154,6 @@ environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
-  ecnvnator: mip7_rd-dna_cnvnator
   edelly: mip7_rd-dna_delly
   epeddy: mip7_rd-dna_peddy
   eperl5: mip7_rd-dna_perl5
