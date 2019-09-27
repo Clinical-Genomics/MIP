@@ -315,6 +315,16 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
+        q{version_collect} => (
+            cmd_aliases   => [qw{ verc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collects executable versions across the analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{with_singularity} => (
             cmd_aliases => [qw{ wsi }],
             documentation =>

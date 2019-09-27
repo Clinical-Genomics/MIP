@@ -65,6 +65,7 @@ recipe_core_number:
     upd_ar: 1
     vcf2cytosure_ar: 0
     vcf_rerun_reformat: 1
+    version_collect_ar: 1
     vt_ar: 15
   type: mip
 recipe_memory:
@@ -109,6 +110,7 @@ recipe_time:
     varianteffectpredictor: 10
     vcf_rerun_reformat: 1
     vcfparser_ar: 5
+    version_collect_ar: 1
     vt_ar: 10
   type: mip
 picardtools_path:

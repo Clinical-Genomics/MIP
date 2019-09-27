@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Mip}   => [qw{ mip_qccollect }],
+        q{MIP::Program::Mip}   => [qw{ mip_vercollect }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Mip qw{ mip_qccollect };
+use MIP::Program::Mip qw{ mip_vercollect };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test mip_qccollect from Mip.pm v}
+diag(   q{Test mip_vercollect from Mip.pm v}
       . $MIP::Program::Mip::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -61,7 +61,7 @@ diag(   q{Test mip_qccollect from Mip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ mip qccollect };
+my @function_base_commands = qw{ mip vercollect };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -87,7 +87,7 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-        expected_output => q{--sample_info_file}
+        expected_output => q{--infile}
           . $SPACE
           . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
     },
@@ -96,25 +96,21 @@ my %required_argument = (
         expected_output => q{--outfile}
           . $SPACE
           . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
-    },
-    regexp_file_path => {
-        input           => q{qc_regexp_-v1.13-.yaml},
-        expected_output => q{--regexp_file qc_regexp_-v1.13-.yaml},
     },
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-        expected_output => q{--sample_info_file}
-          . $SPACE
-          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-    },
     log_file_path => {
-        input           => catfile(qw{ outcase_directory case_id _qccollect.log }),
+        input           => catfile(qw{ outcase_directory case_id _vercollect.log }),
         expected_output => q{--log_file}
           . $SPACE
-          . catfile(qw{ outcase_directory case_id _qccollect.log }),
+          . catfile(qw{ outcase_directory case_id _vercollect.log }),
+    },
+    infile_path => {
+        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
+        expected_output => q{--infile}
+          . $SPACE
+          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
     },
     outfile_path => {
         input           => catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
@@ -122,18 +118,10 @@ my %specific_argument = (
           . $SPACE
           . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
     },
-    regexp_file_path => {
-        input           => q{qc_regexp_-v1.13-.yaml},
-        expected_output => q{--regexp_file qc_regexp_-v1.13-.yaml},
-    },
-    skip_evaluation => {
-        input           => 1,
-        expected_output => q{--skip_evaluation},
-    },
 );
 
 # Coderef - enables generalized use of generate call
-my $module_function_cref = \&mip_qccollect;
+my $module_function_cref = \&mip_vercollect;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

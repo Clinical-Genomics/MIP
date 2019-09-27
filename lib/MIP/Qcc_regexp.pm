@@ -111,9 +111,6 @@ sub regexp_to_yaml {
     my %regexp;
 
     ## Add to %regexp to enable print in YAML
-    # Return FastQC version
-    $regexp{fastqc_ar}{version} =
-      q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?;
 
     # Return Encoding
     $regexp{fastqc_ar}{encoding} =
@@ -353,10 +350,6 @@ q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 
-    # Return Genmod version
-    $regexp{genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?;
-
     # Return varianteffectpredictor version
     $regexp{varianteffectpredictor}{version} =
       q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?;
@@ -396,50 +389,6 @@ q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {prin
     # Return vcfparser version
     $regexp{vcfparser_ar}{version} =
       q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return Bwa version
-    $regexp{bwa_mem}{version} =
-      q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?;
-
-    # Return Chanjo version
-    $regexp{chanjo_sexcheck}{version} =
-      q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return vt version
-    $regexp{vt_ar}{version} =
-      q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?;
-
-    # Return Samtools version
-    $regexp{samtools}{version} =
-      q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?;
-
-    # Return Bcftools version
-    $regexp{bcftools_mpileup}{version} =
-      q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?;
-
-    # Return Delly version
-    $regexp{delly_reformat}{version} =
-      q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?;
-
-    # Return GATK version
-    $regexp{gatk}{version} =
-q!perl -nae 'if ($_=~/\A##GATKCommandLine(?:.+)Version="(.+)\",Date/) {print $1; last;}' !;
-
-    # Return Manta version
-    $regexp{manta}{version} =
-      q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?;
-
-    # Return Picard version
-    $regexp{picard}{version} =
-      q?perl -nae 'if($_=~/Picard\sversion:\s(\d+\.\d+\.\d+)/) {print $1;last;}'?;
-
-    # Return Sambamba version
-    $regexp{sambamba}{version} =
-      q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}' ?;
-
-    # Return SVVCFAnno version
-    $regexp{sv_combinevariantcallsets}{vcfanno} =
-      q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?;
 
     # Return sv_varianteffectpredictor version
     $regexp{sv_varianteffectpredictor}{version} =
@@ -481,14 +430,6 @@ q!perl -nae 'if ($_=~/\A##GATKCommandLine(?:.+)Version="(.+)\",Date/) {print $1;
     $regexp{sv_vcfparser}{version} =
 q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?;
 
-    # Return SVGenmod version
-    $regexp{sv_genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?;
-
-    # Return Plink2 version
-    $regexp{plink2}{version} =
-q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?;
-
     # Return variant_integrity mendel fraction errors
     $regexp{variant_integrity_ar_mendel}{fraction_of_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
@@ -504,18 +445,6 @@ q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\
     # Return variant_integrity father common_variants
     $regexp{variant_integrity_ar_father}{common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
-
-    # Return tiddit version
-    $regexp{tiddit}{version} =
-q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
-
-    # Return svdb version
-    $regexp{sv_combinevariantcallsets}{version} =
-q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
-
-    # Return vcf2cytosure version
-    $regexp{vcf2cytosure_version}{version} =
-      q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
 
     ## Writes a YAML hash to file
     write_yaml(

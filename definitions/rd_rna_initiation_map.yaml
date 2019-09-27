@@ -33,6 +33,7 @@ CHAIN_ALL:
     - bootstrapann
     - bcftools_merge
     - varianteffectpredictor
+  - version_collect_ar
   - multiqc_ar
   - analysisrunstatus
   - sacct

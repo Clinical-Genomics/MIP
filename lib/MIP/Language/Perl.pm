@@ -97,6 +97,7 @@ sub perl_nae_oneliners {
 ##          : $command_line           => Enter one line of program
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $n                      => Iterate over filename arguments
+##          : $oneliner_cmd           => Command to execute
 ##          : $oneliner_name          => Perl oneliner name
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -107,6 +108,7 @@ sub perl_nae_oneliners {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $oneliner_cmd;
     my $oneliner_name;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -140,9 +142,11 @@ sub perl_nae_oneliners {
             store       => \$n,
             strict_type => 1,
         },
+        oneliner_cmd => {
+            store       => \$oneliner_cmd,
+            strict_type => 1,
+        },
         oneliner_name => {
-            defined     => 1,
-            required    => 1,
             store       => \$oneliner_name,
             strict_type => 1,
         },
@@ -181,9 +185,13 @@ sub perl_nae_oneliners {
         }
     );
 
-    if ( exists $oneliner{$oneliner_name} ) {
+    if ( defined $oneliner_name and exists $oneliner{$oneliner_name} ) {
 
         push @commands, $oneliner{$oneliner_name};
+    }
+    elsif ($oneliner_cmd) {
+
+        push @commands, $oneliner_cmd;
     }
 
     push @commands,

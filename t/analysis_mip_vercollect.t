@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Mip_qccollect} => [qw{ analysis_mip_qccollect }],
+        q{MIP::Recipes::Analysis::Mip_vercollect} => [qw{ analysis_mip_vercollect }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
+use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
 
-diag(   q{Test analysis_mip_qccollect from Mip_qccollect.pm v}
-      . $MIP::Recipes::Analysis::Mip_qccollect::VERSION
+diag(   q{Test analysis_mip_vercollect from Mip_vercollect.pm v}
+      . $MIP::Recipes::Analysis::Mip_vercollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_mip_qccollect from Mip_qccollect.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{qccollect};
+my $recipe_name    = q{vercollect};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -71,13 +71,13 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{qccollect_regexp_file}     = q{qc_regexp_file.txt};
-$active_parameter{qccollect_sampleinfo_file} = q{sample_info.yaml};
-$active_parameter{qccollect_skip_evaluation} = 1;
+$active_parameter{vercollect_sampleinfo_file} = q{sample_info.yaml};
+$active_parameter{binary_path}                = { bwa => q{path_to_binary}, };
 
 my %file_info = test_mip_hashes(
     {
@@ -90,6 +90,12 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+
+my $outfile_path_prefix =
+  $file_info{io}{TEST}{$case_id}{$recipe_name}{out}{file_path_prefix};
+my $test_binary_path = catfile( $active_parameter{temp_directory},
+    qw{ test_data_dir 643594-miptest vercollect 643594-miptest_binary_paths.yaml} );
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -103,7 +109,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_mip_qccollect(
+my $is_ok = analysis_mip_vercollect(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
