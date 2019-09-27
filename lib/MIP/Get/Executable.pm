@@ -98,8 +98,8 @@ sub get_binary_version {
 
 sub get_executable {
 
-## Function :
-## Returns  :
+## Function : Define the executable features and return them
+## Returns  : %{ $executable{$executable_name} } or %executable
 ## Arguments: $executable_name => Executable name
 
     my ($arg_href) = @_;
