@@ -143,7 +143,6 @@ This will generate a bash script called "mip.sh" in your working directory.
 ###### *Note:*
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
   * mip7_rd-dna
-  * mip7_rd-dna_cnvnator
   * mip7_rd-dna_delly
   * mip7_rd-dna_peddy
   * mip7_rd-dna_perl5
@@ -151,7 +150,7 @@ This will generate a bash script called "mip.sh" in your working directory.
   * mip7_rd-dna_svdb
   * mip7_rd-dna_tiddit
 
-It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
+It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip --environment_name emip=MIP``.   
 
 The default environment names can be modified with the using any or all of the CLI options ``--envionment_prefix <prefix>``, ``--environment_suffix <suffix>`` and ``--environment_date``. MIP will then create conda environments with the pattern: \<prefix>\_mip7_rd-dna_\<date>\_\<suffix>
 

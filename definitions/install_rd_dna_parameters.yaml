@@ -5,12 +5,6 @@ emip:
   data_type: HASH
   mandatory: no
   type: mip
-ecnvnator:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 edelly:
   associated_recipe:
    - mip
@@ -52,7 +46,6 @@ installations:
     - mip
   data_type: ARRAY
   default:
-    - ecnvnator
     - edelly
     - emip
     - epeddy
