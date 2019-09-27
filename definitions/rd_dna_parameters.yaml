@@ -1946,17 +1946,6 @@ qccollect_skip_evaluation:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-## Version collecting
-version_collect_ar:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _vcol
-#  program_executables:
-#   - vercollect
-  type: recipe
 ## MultiQC
 multiqc_ar:
   analysis_mode: case

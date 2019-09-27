@@ -215,3 +215,13 @@ temp_directory:
    - mip
   data_type: SCALAR
   type: path
+## Version collecting
+version_collect_ar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vcol
+  type: recipe
+

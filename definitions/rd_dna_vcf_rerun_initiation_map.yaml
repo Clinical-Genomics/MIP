@@ -24,5 +24,6 @@ CHAIN_ALL:
       - vcfparser_ar
       - rankvariant
       - endvariantannotationblock
+   - version_collect_ar
    - analysisrunstatus
    - sacct 

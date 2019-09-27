@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -155,6 +155,7 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
+    use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
@@ -231,6 +232,7 @@ sub pipeline_analyse_dragen_rd_dna {
         varianteffectpredictor    => \&analysis_vep,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
+        version_collect_ar => \&analysis_mip_vercollect,
         vt_ar              => \&analysis_vt,
     );
 

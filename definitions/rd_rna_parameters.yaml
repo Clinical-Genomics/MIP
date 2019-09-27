@@ -123,6 +123,7 @@ recipe_time:
     stringtie_ar: 2
     trim_galore_ar: 8
     varianteffectpredictor: 2
+    version_collect_ar: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -174,6 +175,7 @@ recipe_core_number:
     stringtie_ar: 36
     trim_galore_ar: 1
     varianteffectpredictor: 1
+    version_collect_ar: 1
   type: mip
 picardtools_path:
   associated_recipe:
