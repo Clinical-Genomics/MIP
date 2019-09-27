@@ -4,17 +4,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
 
+- Add new recipe to get executable version dynamically and in separate file
+- Remove Snpeff and snpsift from MIP
+- Add clinvar annotation as vep custom file: CLINVAR_CLNSIG,CLINVAR_CLNVID,CLINVAR_CLNREVSTAT now in CSQ field
+- Move frequency annotations from Snpsift to frequency_annotation recipe
 - Moves frequency annotation to separate recipe
 - Adds upd for trios
 - Adds rhocall viz
 - Adds chromograph for chromosome visualization
 - Moves VEP to singularity container
-
-### Grch38
+- Moves CNVnator to singularity container
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
 
 **CLI**
 - Removes the noupdate option from the installation
+
+**New references**
+- grch37_frequency_vcfanno_filter_config_-v1.2-.toml
 
 **Tools**
 - chromograph
