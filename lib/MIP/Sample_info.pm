@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -291,9 +291,19 @@ sub get_sample_info_sample_recipe_attributes {
         return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
           {$infile}{$attribute};
     }
+    if (
+        ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq
+        q{HASH} )
+    {
 
-    ## Get recipe attribute hash
-    return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} };
+## Get recipe attribute for infile hash
+        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}
+        };
+    }
+
+    ## No infile level
+    ## Get recipe attribute for recipe hash
+    return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name} };
 }
 
 sub get_sequence_run_type {

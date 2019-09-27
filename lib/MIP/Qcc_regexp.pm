@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -113,62 +113,62 @@ sub regexp_to_yaml {
     ## Add to %regexp to enable print in YAML
 
     # Return Encoding
-    $regexp{fastqc}{encoding} =
+    $regexp{fastqc_ar}{encoding} =
 q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?;
 
     # Return Sequence length
-    $regexp{fastqc}{sequence_length} =
+    $regexp{fastqc_ar}{sequence_length} =
       q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?;
 
     # Return Total sequences
-    $regexp{fastqc}{total_number_of_reads} =
+    $regexp{fastqc_ar}{total_number_of_reads} =
       q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?;
 
     # Return GC content
-    $regexp{fastqc}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;
+    $regexp{fastqc_ar}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;
 
     # Return Sequence duplication level
-    $regexp{fastqc}{sequence_duplication} =
+    $regexp{fastqc_ar}{sequence_duplication} =
       q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?;
 
     # Return Basic Statistics
-    $regexp{fastqc}{basic_statistics} =
+    $regexp{fastqc_ar}{basic_statistics} =
       q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base sequence quality
-    $regexp{fastqc}{per_base_sequence_quality} =
+    $regexp{fastqc_ar}{per_base_sequence_quality} =
       q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per sequence quality scores
-    $regexp{fastqc}{per_sequence_quality_scores} =
+    $regexp{fastqc_ar}{per_sequence_quality_scores} =
       q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base sequence content
-    $regexp{fastqc}{per_base_sequence_content} =
+    $regexp{fastqc_ar}{per_base_sequence_content} =
       q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base GC content
-    $regexp{fastqc}{per_base_gc_content} =
+    $regexp{fastqc_ar}{per_base_gc_content} =
       q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per sequence GC content
-    $regexp{fastqc}{per_sequence_gc_content} =
+    $regexp{fastqc_ar}{per_sequence_gc_content} =
       q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base N content
-    $regexp{fastqc}{per_base_n_content} =
+    $regexp{fastqc_ar}{per_base_n_content} =
       q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Sequence Duplication Levels
-    $regexp{fastqc}{sequence_duplication_levels} =
+    $regexp{fastqc_ar}{sequence_duplication_levels} =
       q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Overrepresented sequences
-    $regexp{fastqc}{overrepresented_sequences} =
+    $regexp{fastqc_ar}{overrepresented_sequences} =
       q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Kmer Content
-    $regexp{fastqc}{kmer_content} =
+    $regexp{fastqc_ar}{kmer_content} =
       q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return % mapped reads from BAM alignment
@@ -387,7 +387,7 @@ q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;
       q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?;
 
     # Return vcfparser version
-    $regexp{vcfparser}{version} =
+    $regexp{vcfparser_ar}{version} =
       q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?;
 
     # Return sv_varianteffectpredictor version

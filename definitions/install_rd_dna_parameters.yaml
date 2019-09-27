@@ -47,12 +47,6 @@ etiddit:
   data_type: HASH
   mandatory: no
   type: mip
-evep:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 installations:
   associated_recipe:
     - mip
@@ -64,7 +58,6 @@ installations:
     - epeddy
     - eperl5
     - epy3
-    - evep
     - esvdb
     - etiddit
   mandatory: no

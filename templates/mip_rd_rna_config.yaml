@@ -28,10 +28,6 @@ load_env:
     star_aln:
     star_fusion:
     trim_galore_ar:
-  MIP_rd_rna_vep:
-    method: conda
-    installation: evep
-    varianteffectpredictor:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
@@ -47,5 +43,4 @@ human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 ## Programs
 ## Parameters
 picardtools_path: cluster_constant_path!
-vep_directory_path: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna_vep/ensembl-vep/
-vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna_vep/ensembl-tools-91/cache/
+vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/

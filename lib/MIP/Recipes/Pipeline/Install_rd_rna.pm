@@ -40,7 +40,6 @@ use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_co
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Star_fusion qw{ install_star_fusion };
-use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
 BEGIN {
@@ -181,6 +180,7 @@ sub pipeline_install_rd_rna {
         ## Pull and link containers
         install_singularity_containers(
             {
+                active_parameter_href => $active_parameter_href,
                 conda_env => $active_parameter_href->{environment_name}{$installation},
                 conda_env_path =>
                   $active_parameter_href->{$installation}{conda_prefix_path},
@@ -202,7 +202,6 @@ sub pipeline_install_rd_rna {
             picard         => \&install_picard,
             sambamba       => \&install_sambamba,
             q{star-fusion} => \&install_star_fusion,
-            vep            => \&install_vep,
         );
 
         ## Launch shell installation subroutines

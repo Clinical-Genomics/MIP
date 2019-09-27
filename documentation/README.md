@@ -150,7 +150,6 @@ This will generate a bash script called "mip.sh" in your working directory.
   * mip7_rd-dna_py3
   * mip7_rd-dna_svdb
   * mip7_rd-dna_tiddit
-  * mip7_rd-dna_vep
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
@@ -222,11 +221,6 @@ $ perl t/mip_analyse_rd_dna.test
       TIDDIT.py:
       tiddit_coverage:
       vcf2cytosure_ar:
-    mip7_rd-dna_vep:
-      installation: etiddit
-      method: conda
-      sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip7_rd-dna_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-      varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip7_rd-dna_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
     mip7_rd-dna_svdb:
       installation: esvdb
       method: conda

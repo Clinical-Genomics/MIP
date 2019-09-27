@@ -49,6 +49,10 @@ emip:
       executable:
         cnvnator:
         cnvnator2VCF.pl:
+    vep:
+      executable:
+        vep:
+      uri: shub://jemten/MIP:vep-97.4
 # CNVnator environment spec
 ecnvnator:
   conda:
@@ -161,32 +165,6 @@ etiddit:
       version: 2.7.1
     vcf2cytosure:
       version: 0.4.3
-# VEP environment spec
-evep:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    htslib: 1.9=hc238db4_4
-    pip:
-    python: 2.7
-  pip:
-  shell:
-    vep:
-      conda_dependency:
-        bcftools:
-        htslib:
-      vep_assemblies:
-        - GRCh37
-        - GRCh38
-      vep_auto_flag: acfp
-      vep_cache_dir: ~
-      vep_plugins:
-        - dbNSFP
-        - ExACpLI
-        - LoFtool
-        - MaxEntScan
-      vep_species:
-        - homo_sapiens_merged
-      version: 97
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
@@ -199,4 +177,9 @@ environment_name:
   epy3: mip7_rd-dna_py3
   esvdb: mip7_rd-dna_svdb
   etiddit: mip7_rd-dna_tiddit
-  evep: mip7_rd-dna_vep
+vep_plugins:
+  - dbNSFP
+  - ExACpLI
+  - LoFtool
+  - MaxEntScan
+vep_auto_flag: cfp

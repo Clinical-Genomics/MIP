@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
@@ -351,7 +351,7 @@ sub variant_effect_predictor_install {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = qw{ perl INSTALL.pl };
+    my @commands = qw{ INSTALL.pl };
 
     if ($auto) {
 
