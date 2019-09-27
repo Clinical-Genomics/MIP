@@ -223,5 +223,6 @@ version_collect_ar:
   data_type: SCALAR
   default: 1
   file_tag: _vcol
+  outfile_suffix: ".yaml"
   type: recipe
 
