@@ -18,6 +18,10 @@ file_tag:
   key_data_type: SCALAR
 infile_suffix:
   key_data_type: SCALAR
+is_reference:
+  key_data_type: SCALAR
+  values:
+    - 1
 analysis_mode:
   key_data_type: SCALAR
   values:
