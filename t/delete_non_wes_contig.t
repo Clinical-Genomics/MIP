@@ -87,6 +87,21 @@ is_deeply( \@no_wes_contigs, \@expected_no_wes_contigs, q{Removed non wes contig
 ## Given contigs, when a non consensus type of run
 $active_parameter{analysis_type}{sample_2} = q{wgs};
 
+@no_wes_contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%{ $active_parameter{analysis_type} },
+        contigs_ref        => \@contigs,
+        log                => $log,
+    }
+);
+
+## Then remove the non wes contigs
+is_deeply( \@no_wes_contigs, \@expected_no_wes_contigs,
+    q{Remove non wes contigs for mixed analysis run} );
+
+## Given contigs, when a non consensus type of run
+$active_parameter{analysis_type}{sample_1} = q{wgs};
+
 my @has_wes_contigs = delete_non_wes_contig(
     {
         analysis_type_href => \%{ $active_parameter{analysis_type} },

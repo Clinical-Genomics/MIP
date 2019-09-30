@@ -227,7 +227,7 @@ sub delete_non_wes_contig {
     my @contigs = @{$contigs_ref};
 
     ## Removes contigM|chrMT from contigs
-    if ( $consensus_analysis_type eq q{wes} ) {
+    if ( $consensus_analysis_type eq q{wes} or $consensus_analysis_type eq q{mixed} ) {
 
         @contigs = delete_contig_elements(
             {
