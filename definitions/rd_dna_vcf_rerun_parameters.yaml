@@ -160,7 +160,7 @@ sv_fqa_vcfanno_config:
   type: path
 sv_fqa_annotations:
   associated_recipe:
-   - sv_annotat
+   - sv_annotate
   element_separator: ,
   data_type: ARRAY
   default:

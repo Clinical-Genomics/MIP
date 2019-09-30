@@ -193,7 +193,7 @@ sv_annotate:
   type: recipe
 sv_fqa_annotations:
   associated_recipe:
-   - sv_annotat
+   - sv_annotate
   element_separator: ,
   data_type: ARRAY
   default:
