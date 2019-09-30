@@ -52,6 +52,8 @@ reference:
     - 20150915
   expansionhunter:
     - 3.0.0
+  fqa_vcfanno_config:
+    - v1.2
   gatk_mitochondrial_ref:
     - v0_m_amb
     - v0_m_ann
@@ -379,6 +381,15 @@ reference_feature:
         file: variant_catalog_grch37.json
         outfile: grch37_expansionhunter_variant_catalog_-3.0.0-.json
         url_prefix: https://github.com/Clinical-Genomics/reference-files/blob/master/ExpansionHunter-v3.0.0/
+  fqa_vcfanno_config:
+    grch37:
+      v1.2:
+        file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   gatk_mitochondrial_ref:
     grch37: {}
     grch38:

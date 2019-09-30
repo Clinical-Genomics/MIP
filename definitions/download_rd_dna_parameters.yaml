@@ -119,6 +119,13 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   type: recipe
+fqa_vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 genbank_haplogroup:
   analysis_mode: case
   associated_recipe:
@@ -217,6 +224,7 @@ recipe_core_number:
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
+    fqa_vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
@@ -255,6 +263,7 @@ recipe_time:
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
+    fqa_vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1

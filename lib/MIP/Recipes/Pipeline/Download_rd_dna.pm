@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -97,6 +97,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
+    use MIP::Recipes::Download::Fqa_vcfanno_config qw{ download_fqa_vcfanno_config };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
     use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
@@ -139,6 +140,7 @@ sub pipeline_download_rd_dna {
         dbsnp                    => \&download_dbsnp,
         delly_exclude            => \&download_delly_exclude,
         expansionhunter          => \&download_expansionhunter,
+        fqa_vcfanno_config       => \&download_fqa_vcfanno_config,
         gatk_mitochondrial_ref   => \&download_gatk_mitochondrial_ref,
         genbank_haplogroup       => \&download_genbank_haplogroup,
         genomic_superdups        => \&download_genomic_superdups,
