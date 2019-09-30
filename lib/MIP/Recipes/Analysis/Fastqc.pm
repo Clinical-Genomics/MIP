@@ -17,22 +17,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{:all};
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_fastqc {
 
@@ -154,7 +153,7 @@ sub analysis_fastqc {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -285,6 +284,7 @@ sub analysis_fastqc {
 
     my $process_batches_count = 1;
 
+  INFILE:
     while ( my ( $index, $infile_path ) = each @infile_paths ) {
 
         $process_batches_count = print_wait(

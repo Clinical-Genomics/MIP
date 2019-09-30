@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $AMPERSAND $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -145,7 +145,7 @@ sub analysis_trim_galore {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id

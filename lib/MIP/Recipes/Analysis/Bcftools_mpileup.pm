@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DASH $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -158,7 +158,7 @@ sub analysis_bcftools_mpileup {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -239,6 +239,7 @@ sub analysis_bcftools_mpileup {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my %mpileup_infile_path;
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -432,11 +433,10 @@ sub analysis_bcftools_mpileup {
 
     if ( $recipe_mode == 1 ) {
 
-        ## Locating bcftools_mpileup file
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{bcftools_mpileup},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -447,9 +447,9 @@ sub analysis_bcftools_mpileup {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

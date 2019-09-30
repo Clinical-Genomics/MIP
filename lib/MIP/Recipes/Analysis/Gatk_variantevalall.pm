@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalall };
@@ -151,7 +151,7 @@ sub analysis_gatk_variantevalall {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -293,9 +293,9 @@ sub analysis_gatk_variantevalall {
                 case_id                 => $case_id,
                 dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

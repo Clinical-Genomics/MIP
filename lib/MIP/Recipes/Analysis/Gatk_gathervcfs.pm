@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_gathervcfs };
@@ -142,7 +142,7 @@ sub analysis_gatk_gathervcfs {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(

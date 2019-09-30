@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -132,7 +132,7 @@ sub analysis_analysisrunstatus {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set recipe mode
     my $recipe_mode = $active_parameter_href->{$recipe_name};
@@ -253,9 +253,9 @@ sub analysis_analysisrunstatus {
                 base_command        => $profile_base_command,
                 dependency_method   => q{add_to_all},
                 job_dependency_type => q{afterok},
+                job_id_chain        => $job_id_chain,
                 job_id_href         => $job_id_href,
                 log                 => $log,
-                job_id_chain        => $job_id_chain,
                 recipe_file_path    => $recipe_file_path,
                 submission_profile  => $active_parameter_href->{submission_profile},
             }

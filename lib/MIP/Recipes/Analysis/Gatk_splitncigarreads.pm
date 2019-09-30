@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -170,7 +170,7 @@ sub analysis_gatk_splitncigarreads {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -336,9 +336,9 @@ sub analysis_gatk_splitncigarreads {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

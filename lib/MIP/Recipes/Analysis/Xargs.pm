@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs_command };
@@ -119,7 +119,7 @@ sub xargs_command {
     use MIP::Language::Java qw{ java_core };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## File
     my $xargs_file_number = $DOT . $xargs_file_counter;

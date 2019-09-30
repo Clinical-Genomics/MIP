@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 use Readonly;
 
 BEGIN {
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -157,7 +157,7 @@ sub analysis_expansionhunter {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
@@ -241,7 +241,6 @@ sub analysis_expansionhunter {
     ### SHELL:
 
     my %exphun_sample_file_info;
-    my $process_batches_count = 1;
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
@@ -289,8 +288,8 @@ sub analysis_expansionhunter {
     ## Run Expansion Hunter
     say {$FILEHANDLE} q{## Run ExpansionHunter};
 
-    # Restart counter
-    $process_batches_count = 1;
+    # Counter
+    my $process_batches_count = 1;
 
     ## Expansion hunter calling per sample id
     # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
@@ -443,7 +442,7 @@ sub analysis_expansionhunter {
         set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                recipe_name      => q{expansionhunter},
+                recipe_name      => $recipe_name,
                 path             => $outfile_path . $DOT . q{gz},
             }
         );

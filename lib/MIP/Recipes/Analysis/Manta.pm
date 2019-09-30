@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -151,7 +151,7 @@ sub analysis_manta {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
@@ -212,6 +212,7 @@ sub analysis_manta {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my @manta_infile_paths;
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -304,7 +305,7 @@ sub analysis_manta {
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{manta},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

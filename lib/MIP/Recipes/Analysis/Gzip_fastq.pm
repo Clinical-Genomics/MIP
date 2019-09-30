@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -144,7 +144,7 @@ sub analysis_gzip_fastq {
     return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -289,9 +289,9 @@ sub analysis_gzip_fastq {
                 base_command       => $profile_base_command,
                 case_id            => $case_id,
                 dependency_method  => q{island_to_sample},
+                job_id_chain       => $job_id_chain,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
                 recipe_file_path   => $recipe_file_path,
                 sample_id          => $sample_id,
                 submission_profile => $active_parameter_href->{submission_profile},

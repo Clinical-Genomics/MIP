@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DASH $DOT $EMPTY_STR $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $DASH $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt };
@@ -157,10 +157,10 @@ sub analysis_vt {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,

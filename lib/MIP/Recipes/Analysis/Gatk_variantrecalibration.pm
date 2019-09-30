@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $AMPERSAND $COLON $DASH $DOT $NEWLINE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $AMPERSAND $COLON $DASH $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -153,7 +153,7 @@ sub analysis_gatk_variantrecalibration_wes {
     Readonly my $MAX_GAUSSIAN_LEVEL     => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -637,7 +637,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     Readonly my $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -993,9 +993,9 @@ sub analysis_gatk_variantrecalibration_wgs {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

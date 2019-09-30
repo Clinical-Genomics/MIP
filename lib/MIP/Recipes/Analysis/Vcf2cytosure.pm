@@ -17,7 +17,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $ASTERISK $DOT $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $AMPERSAND $ASTERISK $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -153,7 +153,7 @@ sub analysis_vcf2cytosure {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -281,22 +281,6 @@ sub analysis_vcf2cytosure {
 
     ### SHELL:
 
-    ## Excute vcf2cytosure just to get an error message for version
-    say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters} . $NEWLINE;
-    my $stderrfile_path = $recipe_info_path . $DOT . q{stderr.txt};
-    vcf2cytosure_convert(
-        {
-            coverage_file   => q{Na},
-            FILEHANDLE      => $FILEHANDLE,
-            sex             => q{male},
-            stderrfile_path => $stderrfile_path,
-            vcf_infile_path => q{Na},
-            version         => 1,
-        }
-    );
-
-    say {$FILEHANDLE} $NEWLINE;
-
     say {$FILEHANDLE} q{## Creating coverage file with tiddit -cov for samples};
 
   SAMPLE_ID:
@@ -398,17 +382,6 @@ sub analysis_vcf2cytosure {
                     infile           => $outfile_name{$sample_id},
                     path             => $outfile_path{$sample_id},
                     recipe_name      => q{vcf2cytosure},
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            ## For logging version - until present in cgh file
-            set_recipe_outfile_in_sample_info(
-                {
-                    infile           => $outfile_name{$sample_id},
-                    path             => $stderrfile_path,
-                    recipe_name      => q{vcf2cytosure_version},
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }

@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $AMPERSAND $ASTERISK $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
@@ -150,7 +150,7 @@ sub analysis_tiddit {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -326,7 +326,7 @@ sub analysis_tiddit {
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{tiddit},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

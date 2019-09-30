@@ -18,7 +18,7 @@ use List::MoreUtils qw{ first_value };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKTICK $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $BACKTICK $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -150,7 +150,7 @@ sub analysis_samtools_subsample_mt {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -319,7 +319,7 @@ sub analysis_samtools_subsample_mt {
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
-                recipe_name      => q{samtools_subsample_mt},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -331,9 +331,9 @@ sub analysis_samtools_subsample_mt {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 sample_id               => $sample_id,
                 recipe_file_path        => $recipe_file_path,
                 submission_profile      => $active_parameter_href->{submission_profile},

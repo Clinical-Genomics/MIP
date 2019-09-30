@@ -18,7 +18,7 @@ use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -151,7 +151,7 @@ sub analysis_salmon_quant {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -308,9 +308,9 @@ sub analysis_salmon_quant {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

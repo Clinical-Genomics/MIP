@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $ASTERISK $DASH $DOT $EMPTY_STR $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $AMPERSAND $ASTERISK $DASH $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -161,7 +161,7 @@ sub analysis_rankvariant {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -583,7 +583,7 @@ sub analysis_rankvariant_unaffected {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -920,7 +920,7 @@ sub analysis_rankvariant_sv {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1195,7 +1195,7 @@ sub analysis_rankvariant_sv {
 
 sub analysis_rankvariant_sv_unaffected {
 
-## Function : Annotate variants using genmod annotate only.
+## Function : Annotate variants using genmod annotate only
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -1312,7 +1312,7 @@ sub analysis_rankvariant_sv_unaffected {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
