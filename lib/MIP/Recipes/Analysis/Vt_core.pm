@@ -17,14 +17,14 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -216,7 +216,7 @@ sub analysis_vt_core {
     Readonly my $PROCESS_TIME      => 20;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set MIP recipe name
     my $job_id_chain = get_recipe_attributes(
@@ -586,7 +586,7 @@ sub analysis_vt_core_rio {
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};

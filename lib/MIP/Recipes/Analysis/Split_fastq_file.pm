@@ -17,7 +17,8 @@ use autodie qw{:all};
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $EMPTY_STR $NEWLINE $PIPE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants
+  qw{ $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_split_fastq_file };
@@ -153,7 +154,7 @@ sub analysis_split_fastq_file {
     Readonly my $SUFFIX_LENGTH              => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -344,9 +345,9 @@ sub analysis_split_fastq_file {
                     case_id                 => $case_id,
                     dependency_method       => q{sample_to_island},
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    job_id_chain            => $job_id_chain,
                     recipe_file_path        => $recipe_file_path,
                     sample_id               => $sample_id,
                     submission_profile => $active_parameter_href->{submission_profile},

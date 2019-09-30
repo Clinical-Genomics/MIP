@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -144,7 +144,7 @@ sub analysis_peddy {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -230,10 +230,6 @@ sub analysis_peddy {
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
 
-    # To enable submission to &sample_info_qc later
-    my $stderr_file_path =
-      catfile( $directory, $recipe_info_file . $DOT . q{stderr.txt} );
-
     ### SHELL:
 
     my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
@@ -295,16 +291,6 @@ sub analysis_peddy {
                 }
             );
         }
-
-        ## Collect QC metadata info for later use
-        set_recipe_metafile_in_sample_info(
-            {
-                metafile_tag     => q{stderr},
-                path             => $stderr_file_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         submit_recipe(
             {

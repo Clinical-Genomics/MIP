@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
@@ -150,7 +150,7 @@ sub analysis_sambamba_depth {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -206,7 +206,7 @@ sub analysis_sambamba_depth {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $recipe_file_path, $recipe_info_path, $recipe_name_version ) = setup_script(
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
@@ -278,26 +278,15 @@ sub analysis_sambamba_depth {
             }
         );
 
-        ## Save STDERR to get sambamba version
-        my $stderrfile_path =
-          $recipe_info_path . $recipe_name_version . $DOT . q{stderr.txt};
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $stderrfile_path,
-                recipe_name      => q{sambamba},
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         submit_recipe(
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

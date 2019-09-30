@@ -18,7 +18,8 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $AMPERSAND $COLON $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $ASTERISK $AMPERSAND $COLON $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_blobfish };
@@ -143,11 +144,12 @@ sub analysis_blobfish {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Collect infiles for all sample_ids
     my @sample_indir_paths;
     my @sample_phenotypes;
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
@@ -252,9 +254,9 @@ sub analysis_blobfish {
                 dependency_method       => q{case_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

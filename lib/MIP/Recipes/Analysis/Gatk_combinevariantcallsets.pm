@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -145,6 +145,9 @@ sub analysis_gatk_combinevariantcallsets {
 
     ### PREPROCESSING:
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     ## Stores callers that have been executed
     my @variant_callers;
 
@@ -159,9 +162,6 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my $gatk_jar =

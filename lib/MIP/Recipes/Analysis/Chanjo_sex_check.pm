@@ -17,23 +17,21 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_chanjo_sex_check {
 
@@ -147,7 +145,7 @@ sub analysis_chanjo_sex_check {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -257,7 +255,7 @@ sub analysis_chanjo_sex_check {
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
-                recipe_name      => q{chanjo_sexcheck},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -267,7 +265,7 @@ sub analysis_chanjo_sex_check {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{log},
                 path             => $log_file_path,
-                recipe_name      => q{chanjo_sexcheck},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -279,9 +277,9 @@ sub analysis_chanjo_sex_check {
                 dependency_method       => q{sample_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -171,7 +171,7 @@ sub analysis_gatk_haplotypecaller {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -412,15 +412,6 @@ sub analysis_gatk_haplotypecaller {
                 path             => $concat_vcf_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        ## Collect gatk version in qccollect
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $concat_vcf_path,
-                recipe_name      => q{gatk},
                 sample_info_href => $sample_info_href,
             }
         );

@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -165,7 +165,7 @@ sub analysis_delly_reformat {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -234,6 +234,7 @@ sub analysis_delly_reformat {
 
     my %delly_sample_file_info;
     my $process_batches_count = 1;
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -432,8 +433,8 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
         set_recipe_outfile_in_sample_info(
             {
-                recipe_name      => q{delly},
                 path             => $outfile_path,
+                recipe_name      => q{delly},
                 sample_info_href => $sample_info_href,
             }
         );

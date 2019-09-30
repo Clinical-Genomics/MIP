@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -155,7 +155,7 @@ sub analysis_bwa_mem {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};
@@ -467,18 +467,9 @@ sub analysis_bwa_mem {
             set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name_prefix,
-                    path             => catfile( $directory, $stderr_file ),
+                    path             => $outfile_path,
                     recipe_name      => $recipe_name,
                     sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            ## Store STDERR file for sambamba version
-            set_recipe_outfile_in_sample_info(
-                {
-                    path             => catfile( $directory, $stderr_file ),
-                    recipe_name      => q{sambamba},
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -624,7 +615,7 @@ sub analysis_run_bwa_mem {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};
@@ -912,22 +903,12 @@ sub analysis_run_bwa_mem {
                 );
             }
 
-            my $qc_bwa_log = $outfile_path_prefix . $DOT . q{log.bwamem};
             set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name_prefix,
-                    path             => $qc_bwa_log,
+                    path             => $outfile_path,
                     recipe_name      => $recipe_name,
                     sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            ## Store STDERR file for sambamba version
-            set_recipe_outfile_in_sample_info(
-                {
-                    path             => catfile( $directory, $stderr_file ),
-                    recipe_name      => q{sambamba},
                     sample_info_href => $sample_info_href,
                 }
             );

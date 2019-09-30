@@ -17,27 +17,25 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
 
 }
 
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_tiddit_coverage {
 
-## Function : Generate coverage data from BAM files.
+## Function : Generate coverage data from BAM files
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -146,7 +144,7 @@ sub analysis_tiddit_coverage {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -159,7 +157,6 @@ sub analysis_tiddit_coverage {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
@@ -256,9 +253,9 @@ sub analysis_tiddit_coverage {
                 dependency_method       => q{sample_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

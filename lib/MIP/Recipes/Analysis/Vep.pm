@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
 BEGIN {
@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -168,7 +168,7 @@ sub analysis_vep {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -544,7 +544,7 @@ sub analysis_vep_sv_wes {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -883,7 +883,7 @@ sub analysis_vep_sv_wgs {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -1279,7 +1279,7 @@ sub analysis_vep_rna {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id

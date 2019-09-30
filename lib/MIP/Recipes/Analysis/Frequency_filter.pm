@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE };
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter };
@@ -155,10 +156,10 @@ sub analysis_frequency_filter {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -300,9 +301,9 @@ sub analysis_frequency_filter {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

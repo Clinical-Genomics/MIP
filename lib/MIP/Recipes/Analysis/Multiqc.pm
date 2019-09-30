@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -134,7 +134,7 @@ sub analysis_multiqc {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -243,9 +243,9 @@ sub analysis_multiqc {
                 base_command        => $profile_base_command,
                 dependency_method   => q{add_to_all},
                 job_dependency_type => q{afterok},
+                job_id_chain        => $job_id_chain,
                 job_id_href         => $job_id_href,
                 log                 => $log,
-                job_id_chain        => $job_id_chain,
                 recipe_file_path    => $recipe_file_path,
                 submission_profile  => $active_parameter_href->{submission_profile},
             }
