@@ -834,6 +834,15 @@ sv_fqa_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
+sv_fqa_annotations:
+  associated_recipe:
+   - sv_annotat
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GNOMADAF
+   - GNOMADAF_POPMAX
+  type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:
    - sv_annotate

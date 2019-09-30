@@ -191,6 +191,15 @@ sv_annotate:
    - bcftools
    - svdb
   type: recipe
+sv_fqa_annotations:
+  associated_recipe:
+   - sv_annotat
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GNOMADAF
+   - GNOMADAF_POPMAX
+  type: recipe_argument
 sv_fqa_vcfanno_config:
   associated_recipe:
    - sv_annotate
