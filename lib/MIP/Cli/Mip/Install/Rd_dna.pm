@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.04;
+our $VERSION = 2.05;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -119,6 +119,74 @@ sub _build_usage {
 ## Returns  :
 ## Arguments:
 
+    option(
+        q{cadd_annotation_dir} => (
+            cmd_aliases => [qw{ cad }],
+            cmd_flag    => q{cadd_annotation_dir},
+            cmd_tags    => [q{Default: <conda_env_path>/CADD-scripts/}],
+            documentation => q{Download CADD annotations to this directory},
+            is            => q{rw},
+            isa           => Str
+            required => 0,
+        ),
+    );
+
+    option(
+        q{cadd_download_annotations} => (
+            cmd_aliases => [qw{ cda }],
+            cmd_flag    => q{cadd_download_annotations},
+            documentation => q{Download CADD annotations},
+            is            => q{rw},
+            isa           => Bool
+            required => 0,
+        ),
+    );
+    
+    option(
+        q{cadd_download_prescored_indel} => (
+            cmd_aliases => [qw{ cdpi }],
+            cmd_flag    => q{cadd_download_prescored_indel},
+            documentation => q{Download prescored CADD indels},
+            is            => q{rw},
+            isa           => Bool
+            required => 0,
+        ),
+    );
+
+    option(
+        q{cadd_download_prescored_snv} => (
+            cmd_aliases => [qw{ cdps }],
+            cmd_flag    => q{cadd_download_prescored_snv},
+            documentation => q{Download prescored CADD SNVs},
+            is            => q{rw},
+            isa           => Bool
+            required => 0,
+        ),
+    );
+
+    option(
+        q{cadd_download_prescored_with_annotations} => (
+            cmd_aliases => [qw{ cdpa }],
+            cmd_flag    => q{cadd_download_prescored_with_annotations},
+            documentation => q{Download prescored CADD variants with annotations},
+            is            => q{rw},
+            isa           => Bool
+            required => 0,
+        ),
+    );
+
+    option(
+        q{cadd_versions} => (
+            cmd_aliases => [qw{ cv }],
+            cmd_flag    => q{cadd_versions},
+            cmd_tags    => [q{Default: GRCh37 GRCh38v15}],
+            documentation => q{CADD annotation versions},
+            is            => q{rw},
+            isa => ArrayRef [ enum( [qw{ GRCh37 GRCh38 GRCh38v15 }] ), ],
+            required => 0,
+        ),
+    );
+    
     option(
         q{config_file} => (
             cmd_aliases   => [qw{ config c }],

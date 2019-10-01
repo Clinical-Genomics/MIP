@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -47,6 +47,7 @@ sub install_vep {
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $conda_env             => Conda environment
 ##          : $conda_env_path        => Conda environment path
+##          : $container_href        => Container hash {REF}
 ##          : $container_path        => Path to VEP container
 ##          : $FILEHANDLE            => Filehandle to write to
 
@@ -56,6 +57,7 @@ sub install_vep {
     my $active_parameter_href;
     my $conda_env;
     my $conda_env_path;
+    my $container_href;
     my $container_path;
     my $FILEHANDLE;
 
@@ -74,6 +76,12 @@ sub install_vep {
             defined     => 1,
             required    => 1,
             store       => \$conda_env_path,
+            strict_type => 1,
+        },
+        container_href => {
+            default     => {},
+            required    => 1,
+            store       => \$container_href,
             strict_type => 1,
         },
         container_path => {
@@ -121,9 +129,13 @@ sub install_vep {
     say {$FILEHANDLE} q{VEP_VERSION} . $EQUALS . $vep_version_cmd;
 
     if ( not $cache_dir_path ) {
-        $cache_dir_path =
-          catdir( $conda_env_path, q{ensembl-tools-release-} . $vep_version, q{cache} );
+        $cache_dir_path = catdir( $conda_env_path, qw{ ensembl-tools-data cache } );
     }
+    ## Store cache for later
+    if ( not $container_href->{program_bind_paths} ) {
+        $container_href->{program_bind_paths} = ();
+    }
+    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {
