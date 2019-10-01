@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.8]
+- Remove MT contig also for analysis run with analysis_type "mixed"
+
 ## [7.1.7]
 - Use MQ annotation when running GATK VariantRecalibration for SNV
 
