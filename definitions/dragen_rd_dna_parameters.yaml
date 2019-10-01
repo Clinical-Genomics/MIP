@@ -32,6 +32,7 @@ human_genome_reference:
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
@@ -163,6 +164,7 @@ dragen_hash_ref_dir_path:
    - dragen_dna_align_vc
    - dragen_dna_joint_calling
   data_type: SCALAR
+  is_reference: 1
   type: path
 dragen_user_at_hostname:
   associated_recipe:
@@ -205,6 +207,7 @@ sv_fqa_vcfanno_config:
    - sv_annotate
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 sv_bcftools_view_filter:
@@ -230,6 +233,7 @@ sv_svdb_query_db_files:
    - sv_annotate
   data_type: HASH
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 sv_varianteffectpredictor:
@@ -266,7 +270,6 @@ sv_vep_features:
    - offline
    - per_gene
    - protein
-   - regulatory
    - symbol
    - tsl
    - uniprot
@@ -275,6 +278,7 @@ sv_vep_plugin:
   associated_recipe:
    - varianteffectpredictor
   data_type: HASH
+  is_reference: 1
   mandatory: no
   type: recipe_argument
 sv_vcfparser:
@@ -304,6 +308,7 @@ sv_vcfparser_range_feature_file:
    - sv_vcfparser
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -373,6 +378,7 @@ sv_genmod_models_reduced_penetrance_file:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 sv_genmod_models_whole_gene:
@@ -386,6 +392,7 @@ sv_rank_model_file:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##Sv_reformat
@@ -412,6 +419,7 @@ sv_reformat_remove_genes_file:
    - sv_reformat
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -443,6 +451,7 @@ rhocall_frequency_file:
   data_type: SCALAR
   default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##VT
@@ -501,6 +510,7 @@ fqa_vcfanno_config:
    - frequency_annotation
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 rhocall_viz:
@@ -595,6 +605,7 @@ cadd_vcf_header_file:
   data_type: SCALAR
   default: grch37_cadd_to_vcf_header_-1.0-.txt
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ## VEP
@@ -620,6 +631,7 @@ vep_directory_cache:
    - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 vep_directory_path:
@@ -662,6 +674,7 @@ vep_plugin:
   associated_recipe:
    - varianteffectpredictor
   data_type: HASH
+  is_reference: 1
   mandatory: no
   type: recipe_argument
 vep_plugins_dir_path:
@@ -669,6 +682,7 @@ vep_plugins_dir_path:
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 ## VCFParser
@@ -706,6 +720,7 @@ vcfparser_range_feature_file:
    - vcfparser_ar
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -752,6 +767,7 @@ genmod_annotate_cadd_files:
   data_type: ARRAY
   element_separator: ,
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -766,6 +782,7 @@ genmod_annotate_spidex_file:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 genmod_models_case_type:
@@ -779,6 +796,7 @@ genmod_models_reduced_penetrance_file:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 genmod_models_whole_gene:
@@ -792,6 +810,7 @@ rank_model_file:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##Endvariantannotationblock
@@ -818,6 +837,7 @@ endvariantannotationblock_remove_genes_file:
    - endvariantannotationblock
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path

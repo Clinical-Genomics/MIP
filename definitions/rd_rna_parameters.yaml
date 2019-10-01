@@ -13,6 +13,7 @@ human_genome_reference:
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
@@ -40,6 +41,7 @@ transcript_annotation:
   data_type: SCALAR
   default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 library_type:
@@ -253,6 +255,7 @@ salmon_quant_reference_genome:
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -329,6 +332,7 @@ star_aln_reference_genome:
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -360,6 +364,7 @@ star_fusion_genome_lib_dir:
   data_type: SCALAR
   default: grch37_v19_CTAT_lib_Feb092018
   exists_check: directory
+  is_reference: 1
   reference: reference_dir
   type: path
 fusion_filter_reference_genome:
@@ -368,6 +373,7 @@ fusion_filter_reference_genome:
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -496,6 +502,7 @@ gatk_baserecalibration_known_sites:
     - grch37_dbsnp_-138-.vcf
     - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_baserecalibration_read_filters:
@@ -543,6 +550,7 @@ rseqc_transcripts_file:
   data_type: SCALAR
   default: grch37_gencode_annotation_reformated_-v31-.bed
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 genebody_coverage:
@@ -633,6 +641,7 @@ gatk_haplotypecaller_snp_known_set:
   data_type: SCALAR
   default: grch37_dbsnp_-138-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ## GATK ASE
@@ -719,6 +728,7 @@ vep_custom_annotation:
   associated_recipe:
     - varianteffectpredictor
   data_type: HASH
+  is_reference: 1
   mandatory: no
   type: path
 vep_directory_cache:
@@ -726,6 +736,7 @@ vep_directory_cache:
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 vep_directory_path:

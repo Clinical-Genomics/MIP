@@ -129,6 +129,7 @@ sub check_dragen_rd_dna {
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -230,6 +231,16 @@ sub check_dragen_rd_dna {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path =>
+              catfile( $active_parameter_href->{outdata_dir}, q{reference_version.yaml} ),
+            parameter_href => $parameter_href,
+        }
+    );
 
     ## Write config file for case
     write_mip_config(
@@ -399,6 +410,7 @@ sub check_rd_dna {
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
@@ -569,6 +581,16 @@ sub check_rd_dna {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path =>
+              catfile( $active_parameter_href->{outdata_dir}, q{reference_version.yaml} ),
+            parameter_href => $parameter_href,
+        }
+    );
 
     ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
     parse_prioritize_variant_callers(
@@ -755,6 +777,7 @@ sub check_rd_dna_vcf_rerun {
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -853,6 +876,16 @@ sub check_rd_dna_vcf_rerun {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path =>
+              catfile( $active_parameter_href->{outdata_dir}, q{reference_version.yaml} ),
+            parameter_href => $parameter_href,
+        }
+    );
 
     ## Write config file for case
     write_mip_config(
@@ -996,6 +1029,7 @@ sub check_rd_rna {
       check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Sample_info qw{ set_in_sample_info };
@@ -1060,6 +1094,16 @@ sub check_rd_rna {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path =>
+              catfile( $active_parameter_href->{outdata_dir}, q{reference_version.yaml} ),
+            parameter_href => $parameter_href,
+        }
+    );
 
     ## Write config file for case
     write_mip_config(
