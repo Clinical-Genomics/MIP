@@ -58,8 +58,8 @@ From: ubuntu:xenial
 #    MANTA_PATH=`find opt/conda/share/manta-1.6.0-0* -type d -prune | tail --lines=1 `
 
     ## Creating symbolic links for conda packages
-    ln --symbolic --force opt/conda/share/manta-1.6.0-0/bin/configManta.py.ini /opt/conda/bin/configManta.py.ini
-    ln --symbolic --force opt/conda/share/manta-1.6.0-0/bin/configManta.py /opt/conda/bin/configManta.py
+    ln --symbolic --force /opt/conda/share/manta-1.6.0-0/bin/configManta.py.ini /opt/conda/bin/configManta.py.ini
+    ln --symbolic --force /opt/conda/share/manta-1.6.0-0/bin/configManta.py /opt/conda/bin/configManta.py
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
