@@ -52,7 +52,7 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    # conda install --yes manta=1.6.0=py27_0
+    conda install --yes manta=1.6.0=py27_0
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
