@@ -20,15 +20,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ delete_contig_elements  delete_male_contig delete_non_wes_contig };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub delete_contig_elements {
 
@@ -227,7 +224,7 @@ sub delete_non_wes_contig {
     my @contigs = @{$contigs_ref};
 
     ## Removes contigM|chrMT from contigs
-    if ( $consensus_analysis_type eq q{wes} ) {
+    if ( $consensus_analysis_type eq q{wes} or $consensus_analysis_type eq q{mixed} ) {
 
         @contigs = delete_contig_elements(
             {
