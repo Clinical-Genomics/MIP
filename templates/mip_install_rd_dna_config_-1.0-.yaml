@@ -45,10 +45,14 @@ emip:
       version: gitRepo
   singularity:
     cnvnator: 
-      uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
       executable:
         cnvnator:
         cnvnator2VCF.pl:
+      uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+    tiddit:
+      executable:
+        TIDDIT.py:
+      uri: shub://J35P312/TIDDIT:2.7.1
     vep:
       executable:
         vep:
