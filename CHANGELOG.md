@@ -16,9 +16,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves Manta to singularity container
 - Moves VEP to singularity container
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
+- Install CADD via MIPs installer
 
 **CLI**
 - Removes the noupdate option from the installation
+- Options for CADD installations
 
 **New references**
 - grch37_frequency_vcfanno_filter_config_-v1.2-.toml

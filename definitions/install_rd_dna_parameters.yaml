@@ -1,4 +1,43 @@
 ---
+cadd_annotation_dir:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+  update_path: absolute_path
+cadd_download_annotations:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+cadd_download_prescored_indel:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+cadd_download_prescored_snv:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+cadd_download_prescored_with_annotations:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+cadd_versions:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - GRCh37
+    - GRCh38v15
+  type: mip
 emip:
   associated_recipe:
    - mip

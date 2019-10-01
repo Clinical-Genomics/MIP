@@ -298,6 +298,7 @@ sub analysis_cadd {
                 infile_path            => $view_outfile_path,
                 outfile_path           => $cadd_outfile_path,
                 stderrfile_path_append => $stderrfile_path,
+                temp_dir_path          => $active_parameter_href->{temp_directory},
                 version                => $cadd_version,
             }
         );
@@ -675,6 +676,7 @@ sub analysis_cadd_gb_38 {
                 infile_path            => $synonyms_outfile_path,
                 outfile_path           => $cadd_outfile_path,
                 stderrfile_path_append => $stderrfile_path,
+                temp_dir_path          => $active_parameter_href->{temp_directory},
                 version                => $cadd_version,
             }
         );

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Cadd}  => [qw{ cadd }],
+        q{MIP::Program::Cadd}  => [qw{ cadd_install }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Cadd qw{ cadd };
+use MIP::Program::Cadd qw{ cadd_install };
 
-diag(   q{Test cadd from Cadd.pm v}
+diag(   q{Test cadd_install from Cadd.pm v}
       . $MIP::Program::Cadd::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -60,7 +60,7 @@ diag(   q{Test cadd from Cadd.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ CADD.sh };
+my @function_base_commands = qw{ bash install.sh };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -84,45 +84,45 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => q{infile.vcf},
-        expected_output => q{infile.vcf},
+    annotation_dir_path => {
+        input           => catdir(qw{ a dir path }),
+        expected_output => q{-r} . $SPACE . catdir(qw{ a dir path }),
     },
-    outfile_path => {
-        input           => q{outfile.tsv.gz},
-        expected_output => q{outfile.tsv.gz},
-    },
-    temp_dir_path => {
-        input           => q{temp_dir},
-        expected_output => q{-t} . $SPACE . q{temp_dir},
-    },
-    version => {
-        input           => q{v1.5},
-        expected_output => q{-v} . $SPACE . q{v1.5},
+    versions_ref => {
+        inputs_ref      => [qw{ GRCh37 GRCh38v15 }],
+        expected_output => q{-v GRCh37 -v GRCh38v15},
     },
 );
 
 my %specific_argument = (
-    genome_build => {
-        input           => q{GRCh37},
-        expected_output => q{-g GRCh37},
+    annotation_dir_path => {
+        input           => catdir(qw{ a dir path }),
+        expected_output => q{-r} . $SPACE . catdir(qw{ a dir path }),
     },
-    infile_path => {
-        input           => q{infile.vcf},
-        expected_output => q{infile.vcf},
+    download_annotations => {
+        input           => 1,
+        expected_output => q{-a},
     },
-    outfile_path => {
-        input           => q{outfile.tsv.gz},
-        expected_output => q{-o outfile.tsv.gz},
+    download_prescored_indel => {
+        input           => 1,
+        expected_output => q{-i},
     },
-    version => {
-        input           => q{v1.5},
-        expected_output => q{-v} . $SPACE . q{v1.5},
+    download_prescored_snv => {
+        input           => 1,
+        expected_output => q{-n},
+    },
+    download_prescored_with_annotations => {
+        input           => 1,
+        expected_output => q{-p},
+    },
+    versions_ref => {
+        inputs_ref      => [qw{ GRCh37 GRCh38v15 }],
+        expected_output => q{-v GRCh37 -v GRCh38v15},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&cadd;
+my $module_function_cref = \&cadd_install;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
