@@ -52,6 +52,7 @@ emip:
     manta:
       executable:
         configManta.py:
+        runWorkflow.py: "no_executable_in_image"
       uri: shub://Clinical-Genomics/MIP:manta-1.6.0
     vep:
       executable:
