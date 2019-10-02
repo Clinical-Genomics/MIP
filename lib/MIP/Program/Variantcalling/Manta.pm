@@ -189,7 +189,9 @@ sub manta_workflow {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Manta
-    my @commands = ( catfile( $outdirectory_path, q{runWorkflow.py} ), );
+    my @commands = qw{ runWorkflow.py };
+
+    push @commands, catfile( $outdirectory_path, q{runWorkflow.py} );
 
     ## Options
     if ($mode) {

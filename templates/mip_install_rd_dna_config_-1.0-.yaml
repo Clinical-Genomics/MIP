@@ -15,7 +15,6 @@ emip:
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
     ldc: 1.11.0=hb2c9046_0
-    manta: 1.6.0=py27_0
     numpy:
     picard: 2.20.7=0
     pip:
@@ -53,6 +52,11 @@ emip:
       executable:
         TIDDIT.py:
       uri: shub://J35P312/TIDDIT:2.8.0
+    manta:
+      executable:
+        configManta.py:
+        runWorkflow.py: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:manta-1.6.0
     vep:
       executable:
         vep:

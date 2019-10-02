@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -87,6 +84,21 @@ is_deeply( \@no_wes_contigs, \@expected_no_wes_contigs, q{Removed non wes contig
 ## Given contigs, when a non consensus type of run
 $active_parameter{analysis_type}{sample_2} = q{wgs};
 
+@no_wes_contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%{ $active_parameter{analysis_type} },
+        contigs_ref        => \@contigs,
+        log                => $log,
+    }
+);
+
+## Then remove the non wes contigs
+is_deeply( \@no_wes_contigs, \@expected_no_wes_contigs,
+    q{Remove non wes contigs for mixed analysis run} );
+
+## Given contigs, when a wgs consensus type of run
+$active_parameter{analysis_type}{sample_1} = q{wgs};
+
 my @has_wes_contigs = delete_non_wes_contig(
     {
         analysis_type_href => \%{ $active_parameter{analysis_type} },
@@ -98,7 +110,7 @@ my @has_wes_contigs = delete_non_wes_contig(
 ## Define expected outcome
 my @expected_wes_contigs = qw{ 1 2 3 4 MT };
 
-## Then remove the non wes contigs
-is_deeply( \@has_wes_contigs, \@expected_wes_contigs, q{Did not remove non wes contigs} );
+## Then keep the non wes contigs
+is_deeply( \@has_wes_contigs, \@expected_wes_contigs, q{Keept non wes contigs} );
 
 done_testing();

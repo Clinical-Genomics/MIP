@@ -12,8 +12,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Adds upd for trios
 - Adds rhocall viz
 - Adds chromograph for chromosome visualization
-- Moves VEP to singularity container
 - Moves CNVnator to singularity container
+- Moves Manta to singularity container
+- Moves VEP to singularity container
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
 
 **CLI**

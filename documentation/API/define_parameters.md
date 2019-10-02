@@ -1,4 +1,4 @@
-Define parameters data format
+# Define parameters data format
 
 **Version: 1.0.0**
 
@@ -32,6 +32,7 @@ recipe_argument: {
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type
   default: "SCALAR | ARRAY | HASH",
   element_separator: string, # Delimiter for input/output on cli
+  is_reference: integer, value="1" # Defines this parameter as a reference to log
   mandatory: string, value="yes" # Do not supply to make optional
   type: string, value="mip(=global) | recipe_argument(=argument to a recipe)"
 }
@@ -43,6 +44,7 @@ path_parameter: { # Path hash
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type
   element_separator: string, # Delimiter for input/output on cli
   exists_check: integer, value="file | directory"  # Do not supply key to remove check
+  is_reference: integer, value="1" # Defines this parameter as a reference to log
   mandatory: string, value="yes" # Do not supply to make optional
   reference: string, value="reference_dir", # Supply if parameter file object is expected in mip reference dir
   type: string, value="path(=file object)"

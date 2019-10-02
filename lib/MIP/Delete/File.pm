@@ -16,6 +16,7 @@ use utf8;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $AMPERSAND $DOT $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 
 BEGIN {
@@ -28,14 +29,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delete_contig_files delete_files };
 }
-
-## Constants
-Readonly my $AMPERSAND  => q{&};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub delete_contig_files {
 
@@ -130,7 +123,7 @@ sub delete_contig_files {
 
 sub delete_files {
 
-## Function : Delete files.
+## Function : Delete files
 ## Returns  :
 ## Arguments: $core_number => Number of cores that can be used
 ##          : $FILEHANDLE  => Filehandle to write to
