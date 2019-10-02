@@ -43,20 +43,25 @@ emip:
     vt:
       version: gitRepo
   singularity:
-    cnvnator: 
+    cnvnator:
       executable:
         cnvnator:
         cnvnator2VCF.pl:
       uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
-    tiddit:
-      executable:
-        TIDDIT.py:
-      uri: shub://J35P312/TIDDIT:2.8.0
     manta:
       executable:
         configManta.py:
         runWorkflow.py: "no_executable_in_image"
       uri: shub://Clinical-Genomics/MIP:manta-1.6.0
+    peddy:
+      executable:
+        peddy:
+      uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+
+    tiddit:
+      executable:
+        TIDDIT.py:
+      uri: shub://J35P312/TIDDIT:2.8.0
     vep:
       executable:
         vep:
@@ -116,7 +121,7 @@ epy3:
       conda_dependency:
       version: 3.1.2
     rhocall:
-      conda_dependency: 
+      conda_dependency:
         matplotlib:
       version: 0.5.1
     sambamba:
