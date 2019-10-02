@@ -55,9 +55,8 @@ emip:
       uri: shub://Clinical-Genomics/MIP:manta-1.6.0
     peddy:
       executable:
-        peddy:
+        peddy: "python -m peddy "
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
-
     tiddit:
       executable:
         TIDDIT.py:
