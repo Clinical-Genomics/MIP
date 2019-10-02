@@ -25,10 +25,6 @@ load_env:
     fastqc_ar:
     installation: eperl5
     method: conda
-  mip_travis_peddy:
-    installation: epeddy
-    method: conda
-    peddy_ar:
   mip_travis_py3:
     chanjo_sexcheck:
     expansionhunter:

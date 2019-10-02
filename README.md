@@ -145,7 +145,6 @@ This will generate a bash script called "mip.sh" in your working directory.
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
   * mip7_rd-dna
   * mip7_rd-dna_delly
-  * mip7_rd-dna_peddy
   * mip7_rd-dna_perl5
   * mip7_rd-dna_py3
   * mip7_rd-dna_svdb
@@ -190,10 +189,6 @@ $ perl t/mip_analyse_rd_dna.test
       delly_call:
       delly_reformat:
       installation: edelly
-      method: conda
-    mip7_rd-dna_peddy:
-      peddy_ar:
-      installation: epeddy
       method: conda
     mip7_rd-dna_perl5:
       bwa_mem:

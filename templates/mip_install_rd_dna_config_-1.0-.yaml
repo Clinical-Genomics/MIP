@@ -90,15 +90,6 @@ eperl5:
     python: 2.7
   pip:
   shell:
-# Peddy environment spec
-epeddy:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    peddy: 0.4.3=py_0
-    pip:
-    python: 2.7
-  pip:
-  shell:
 # Python 3 environment spec
 epy3:
   conda:
@@ -160,7 +151,6 @@ environment_base_name: mip7_rd-dna
 environment_name:
   emip: mip7_rd-dna
   edelly: mip7_rd-dna_delly
-  epeddy: mip7_rd-dna_peddy
   eperl5: mip7_rd-dna_perl5
   epy3: mip7_rd-dna_py3
   esvdb: mip7_rd-dna_svdb
