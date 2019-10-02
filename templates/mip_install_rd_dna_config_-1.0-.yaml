@@ -52,7 +52,7 @@ emip:
     tiddit:
       executable:
         TIDDIT.py:
-      uri: shub://J35P312/TIDDIT:2.7.1
+      uri: shub://J35P312/TIDDIT:2.8.0
     vep:
       executable:
         vep:
@@ -144,13 +144,6 @@ etiddit:
     scipy: 1.2.0=py27_blas_openblashb06ca3d_200
   pip:
   shell:
-    tiddit:
-      conda_dependency:
-        cmake: 3.13.2=h011004d_0
-        gcc:
-        numpy: 1.15.4=py27_blas_openblashb06ca3d_0
-        python: 2.7
-      version: 2.7.1
     vcf2cytosure:
       version: 0.4.3
 ## Default base name
