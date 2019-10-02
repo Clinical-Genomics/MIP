@@ -127,7 +127,7 @@ sub _build_usage {
             documentation => q{Download CADD annotations to this directory},
             is            => q{rw},
             isa           => Str,
-            required => 0,
+            required      => 0,
         ),
     );
 
@@ -138,7 +138,7 @@ sub _build_usage {
             documentation => q{Download CADD annotations},
             is            => q{rw},
             isa           => Bool,
-            required => 0,
+            required      => 0,
         ),
     );
 
@@ -149,7 +149,7 @@ sub _build_usage {
             documentation => q{Download prescored CADD indels},
             is            => q{rw},
             isa           => Bool,
-            required => 0,
+            required      => 0,
         ),
     );
 
@@ -160,7 +160,7 @@ sub _build_usage {
             documentation => q{Download prescored CADD SNVs},
             is            => q{rw},
             isa           => Bool,
-            required => 0,
+            required      => 0,
         ),
     );
 
@@ -171,7 +171,7 @@ sub _build_usage {
             documentation => q{Download prescored CADD variants with annotations},
             is            => q{rw},
             isa           => Bool,
-            required => 0,
+            required      => 0,
         ),
     );
 
