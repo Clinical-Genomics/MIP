@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_baserecalibration };
@@ -157,6 +157,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter
       qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk
@@ -427,6 +428,20 @@ sub analysis_gatk_baserecalibration {
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
             referencefile_path   => $referencefile_path,
             temp_directory       => $temp_directory,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Rename the bam file index file so that Expansion Hunter can find it
+    say {$FILEHANDLE}
+      q{## Copy index file to ".bam.bai" so that Expansionhunter can find it downstream};
+
+    gnu_cp(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            force        => 1,
+            infile_path  => $outfile_path_prefix . q{.bai},
+            outfile_path => $outfile_path_prefix . $outfile_suffix . q{.bai},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
