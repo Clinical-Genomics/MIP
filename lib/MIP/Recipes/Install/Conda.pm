@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -186,7 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ bwakit | gatk | manta | picard | star-fusion };
+    my @custom_solutions = qw{ bwakit | gatk | picard | star-fusion };
 
     ## Link conda packages
     # Creating target-link paths
@@ -238,7 +238,6 @@ sub install_conda_packages {
         say {$FILEHANDLE} q{## Unset variables};
         my %program_path_aliases = (
             bwakit => q{BWAKIT_PATH},
-            manta  => q{MANTA_PATH},
             picard => q{PICARD_PATH},
         );
 
@@ -384,23 +383,6 @@ sub finish_conda_package_install {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Custom manta
-    ## Check if manta has been removed from conda installation hash
-    if ( $conda_packages_href->{manta} ) {
-
-        # Make file executable
-        say {$FILEHANDLE} q{## Changing mode of configManta.py to executable};
-        my $file_path = catfile( $conda_env_path, qw{bin configManta.py} );
-        gnu_chmod(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                file_path  => $file_path,
-                permission => q{a+x},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
     ## Custom GATK
     ## Check if GATK has been removed from conda installation hash
     if ( $conda_packages_href->{gatk} ) {
@@ -534,7 +516,7 @@ sub _create_package_array {
 sub _create_target_link_paths {
 
 ## Function  : Creates paths to conda target binaries and links.
-##           : Custom solutions for bwakit picard manta.
+##           : Custom solutions for bwakit picard.
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
 ## Arguments : $conda_packages_href  => Hash with conda packages {REF}
@@ -600,14 +582,12 @@ sub _create_target_link_paths {
               typeHLA-selctg.js typeHLA.js
               }
         ],
-        manta  => [qw{ configManta.py configManta.py.ini }],
         picard => [qw{ picard.jar }],
     );
 
     ## Variables to store the full path in
     my %program_path_aliases = (
         bwakit => q{BWAKIT_PATH},
-        manta  => q{MANTA_PATH},
         picard => q{PICARD_PATH},
     );
 
@@ -627,12 +607,6 @@ sub _create_target_link_paths {
         ## Exchange for conda internal format when using full conda version
         ## i.e. version=subpatch
         $conda_version =~ tr/=/-/;
-
-        ## Special case for Manta
-        if ( $program eq q{manta} ) {
-
-            $conda_version =~ s/py27_//g;
-        }
 
         print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
         my $search_path =
@@ -662,15 +636,11 @@ sub _create_target_link_paths {
         foreach my $binary ( @{ $binaries{$program} } ) {
 
             ## Construct target path
-            my $target_path;
-            if ( $program eq q{manta} ) {
-                $target_path = catfile( $program_dir_path, q{bin}, $binary );
-            }
-            else {
-                $target_path = catfile( $program_dir_path, $binary );
-            }
+            my $target_path = catfile( $program_dir_path, $binary );
+
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );
+
             ## Add paths to hash
             $target_link_paths{$target_path} = $link_path;
         }

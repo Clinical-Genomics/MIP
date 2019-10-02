@@ -15,6 +15,7 @@
       * [Download References](documentation/API/Download_references.md)
       * [Identifiers](documentation/API/Identifiers.md)
       * [Initiation File](documentation/API/Initiation_file.md)
+      * [Install](documentation/API/Install.md)
       * [IO](documentation/API/IO.md)
       * [Modules](documentation/API/Modules.md)
       * [Path](documentation/API/Path.md)
