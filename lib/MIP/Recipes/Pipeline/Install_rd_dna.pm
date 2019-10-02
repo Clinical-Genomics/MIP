@@ -42,7 +42,6 @@ use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
-use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
 use MIP::Recipes::Install::Upd qw{ install_upd };
 use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
 use MIP::Recipes::Install::Vt qw{ install_vt };
@@ -209,7 +208,6 @@ sub pipeline_install_rd_dna {
             rhocall         => \&install_rhocall,
             sambamba        => \&install_sambamba,
             svdb            => \&install_svdb,
-            tiddit          => \&install_tiddit,
             upd             => \&install_upd,
             vcf2cytosure    => \&install_vcf2cytosure,
             vt              => \&install_vt,

@@ -52,8 +52,6 @@ load_env:
   mip_travis_tiddit:
     installation: etiddit
     method: conda
-    tiddit:
-    tiddit_coverage:
     vcf2cytosure_ar:
 max_cores_per_node: 36
 node_ram_memory: 192
