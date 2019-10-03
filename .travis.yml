@@ -31,7 +31,7 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis epeddy=mip_travis_peddy eperl5=mip_travis_perl5 epy3=mip_travis_py3 esvdb=mip_travis_svdb etiddit=mip_travis_tiddit --skip gatk --skip cnvnator --skip manta --skip tiddit --skip vep
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis epeddy=mip_travis_peddy eperl5=mip_travis_perl5 epy3=mip_travis_py3 esvdb=mip_travis_svdb etiddit=mip_travis_tiddit --skip gatk --skip cnvnator --skip manta --skip multiqc --skip tiddit --skip vep
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script

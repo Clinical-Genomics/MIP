@@ -57,6 +57,10 @@ emip:
         configManta.py:
         runWorkflow.py: "no_executable_in_image"
       uri: shub://Clinical-Genomics/MIP:manta-1.6.0
+    multiqc:
+      executable:
+        multiqc:
+      uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
     vep:
       executable:
         vep:
@@ -106,7 +110,6 @@ epy3:
   pip:
     chanjo: 4.2.0
     genmod: 3.7.3
-    multiqc: 1.7
     stranger: 0.5.4
     variant_integrity: 0.0.4
   shell:
