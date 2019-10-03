@@ -184,7 +184,6 @@ sub pipeline_install_rd_dna {
         install_singularity_containers(
             {
                 active_parameter_href => $active_parameter_href,
-                conda_env => $active_parameter_href->{environment_name}{$installation},
                 conda_env_path =>
                   $active_parameter_href->{$installation}{conda_prefix_path},
                 container_dir_path => $active_parameter_href->{container_dir_path},

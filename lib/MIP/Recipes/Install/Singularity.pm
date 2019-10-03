@@ -44,7 +44,6 @@ sub install_singularity_containers {
 ## Function : Pull container from singularity hub or docker hub
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $conda_env             => Conda environemnt name
 ##          : $conda_env_path        => Path to conda environment
 ##          : $container_dir_path    => Pull containers to this path
 ##          : $container_href        => Hash with container {REF}
@@ -56,7 +55,6 @@ sub install_singularity_containers {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $conda_env;
     my $conda_env_path;
     my $container_dir_path;
     my $container_href;
@@ -68,11 +66,6 @@ sub install_singularity_containers {
         active_parameter_href => {
             default     => {},
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        conda_env => {
-            required    => 1,
-            store       => \$conda_env,
             strict_type => 1,
         },
         conda_env_path => {
@@ -173,8 +166,6 @@ sub install_singularity_containers {
             $finish_container_installation{$container}->(
                 {
                     active_parameter_href => $active_parameter_href,
-                    conda_env             => $conda_env,
-                    conda_env_path        => $conda_env_path,
                     container_href        => $container_href,
                     container_path        => $container_path,
                     FILEHANDLE            => $FILEHANDLE,

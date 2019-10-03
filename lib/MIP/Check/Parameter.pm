@@ -1929,7 +1929,7 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
     }
 
     ## Check if the VEP api version and cache versions matches
-    if ( any { not /$vep_version/xms } @vep_cache_version_folders ) {
+    if ( not any { /$vep_version/xms } @vep_cache_version_folders ) {
 
         $log->fatal( q{Differing versions between 'VEP API':}
               . $SPACE

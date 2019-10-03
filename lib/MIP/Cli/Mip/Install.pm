@@ -166,6 +166,16 @@ sub _build_usage {
     );
 
     option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{sbatch_mode} => (
             documentation => q{Write install script for sbatch submisson},
             is            => q{rw},
@@ -213,20 +223,6 @@ sub _build_usage {
             cmd_flag      => q{vep_auto_flag},
             cmd_tags      => [q{Default: cf}],
             documentation => q{VEP's --AUTO flag},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{vep_cache_dir} => (
-            cmd_aliases => [qw{ vecd }],
-            cmd_flag    => q{vep_cache_dir},
-            cmd_tags    => [
-q{Default: <path_to_MIP's_conda_env>/ensembl-tools-release-<version>/cache}
-            ],
-            documentation => q{VEP's cache directory},
             is            => q{rw},
             isa           => Str,
             required      => 0,
