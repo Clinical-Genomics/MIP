@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +34,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA               => q{,};
-Readonly my $SPACE               => q{ };
-Readonly my $HASH_OF_HASH_INDEX  => q{3};
-Readonly my $HASH_OF_ARRAY_INDEX => q{4};
-Readonly my $ARRAY_OF_HASH_INDEX => q{5};
+Readonly my $HASH_OF_HASH_INDEX   => 3;
+Readonly my $HASH_OF_ARRAY_INDEX  => 4;
+Readonly my $ARRAY_OF_HASH_INDEX  => 5;
+Readonly my $ARRAY_OF_ARRAY_INDEX => 6;
 
 BEGIN {
 
@@ -77,6 +77,7 @@ my %active_parameter = (
         }
     ],
     Fawlty => { Towers => { genre => q{sitcom}, }, },
+    rooms  => [ q{ground_floor}, [ qw{ room_101 room_102}, ], ],
     Manuel => {
         line => q{Que},
     },
@@ -84,14 +85,7 @@ my %active_parameter = (
 );
 
 # Add a order to the broadcast
-my @order_parameters = qw{ Basil Manuel Sybil Fawlty cast employe };
-
-# How to seperate elements in arrays
-my %parameter = (
-    Basil => {
-        element_separator => $SPACE,
-    }
-);
+my @order_parameters = qw{ Basil Manuel Sybil Fawlty cast employe rooms };
 
 ## Store Broadcast message
 my @broadcasts;
@@ -101,7 +95,6 @@ set_parameter_to_broadcast(
         active_parameter_href => \%active_parameter,
         broadcasts_ref        => \@broadcasts,
         order_parameters_ref  => \@order_parameters,
-        parameter_href        => \%parameter,
     }
 );
 
@@ -124,6 +117,12 @@ is(
     $broadcasts[$ARRAY_OF_HASH_INDEX],
     q?Set employe to: [receptionist, cleaner, {servant => {from => Barcelona, }, }, ] ?,
     q{Set array of hash}
+);
+
+is(
+    $broadcasts[$ARRAY_OF_ARRAY_INDEX],
+    q?Set rooms to: [ground_floor, [room_101, room_102, ], ] ?,
+    q{Set array of array}
 );
 
 done_testing();
