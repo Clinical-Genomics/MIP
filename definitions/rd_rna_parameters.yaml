@@ -355,17 +355,14 @@ star_fusion:
     - gtf_file_to_feature_seqs.pl
     - prep_genome_lib.pl
     - samtools
-    - STAR
     - STAR-Fusion
   type: recipe
 star_fusion_genome_lib_dir:
   associated_recipe:
     - star_fusion
   data_type: SCALAR
-  default: grch37_v19_CTAT_lib_Feb092018
   exists_check: directory
   is_reference: 1
-  reference: reference_dir
   type: path
 fusion_filter_reference_genome:
   associated_recipe:

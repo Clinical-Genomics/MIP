@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
 
@@ -366,7 +366,6 @@ sub set_analysis_constants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use File::Basename;
     use MIP::Parse::Singularity qw{ reduce_dir_paths };
 
     ## Gather default bind paths for singularity
