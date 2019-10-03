@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1464,7 +1464,9 @@ sub _get_custom_annotation_cmds {
   ANNOTATION:
     foreach my $annotation_href ( values %{$vep_custom_annotation_href} ) {
 
-        my $cmd = join $COMMA, @{$annotation_href}{@order_custom_options};
+        ## Remove all undef elements and then join
+        my $cmd = join $COMMA,
+          grep { defined } @{$annotation_href}{@order_custom_options};
         push @custom_annotations, $cmd;
     }
     return @custom_annotations;
