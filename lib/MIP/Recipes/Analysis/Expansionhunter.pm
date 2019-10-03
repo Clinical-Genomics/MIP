@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -141,7 +141,6 @@ sub analysis_expansionhunter {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
       qw{ get_package_source_env_cmds get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
@@ -269,22 +268,6 @@ sub analysis_expansionhunter {
 
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Rename the bam file index file so that Expansion Hunter can find it
-    say {$FILEHANDLE} q{## Rename index file};
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        gnu_cp(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                force        => 1,
-                infile_path  => $exphun_sample_file_info{$sample_id}{out} . q{.bai},
-                outfile_path => $exphun_sample_file_info{$sample_id}{in} . q{.bai},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
 
     ## Run Expansion Hunter
     say {$FILEHANDLE} q{## Run ExpansionHunter};
