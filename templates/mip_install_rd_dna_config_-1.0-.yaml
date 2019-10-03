@@ -48,6 +48,11 @@ emip:
         cnvnator:
         cnvnator2VCF.pl:
       uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+    chanjo:
+      executable:
+        chanjo:
+        sambamba:
+      uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
     manta:
       executable:
         configManta.py:
@@ -103,7 +108,6 @@ epy3:
     python: 3.7
     sambamba: 0.6.8=h682856c_0
   pip:
-    chanjo: 4.2.0
     genmod: 3.7.3
     stranger: 0.5.4
     variant_integrity: 0.0.4
