@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -221,7 +221,6 @@ sub check_dragen_rd_dna {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }
@@ -571,7 +570,6 @@ sub check_rd_dna {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }
@@ -866,7 +864,6 @@ sub check_rd_dna_vcf_rerun {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }
@@ -1084,7 +1081,6 @@ sub check_rd_rna {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }

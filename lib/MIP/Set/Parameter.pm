@@ -811,7 +811,6 @@ sub set_parameter_to_broadcast {
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
 ##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
-##          : $parameter_href        => Holds all parameters
 
     my ($arg_href) = @_;
 
@@ -819,7 +818,6 @@ sub set_parameter_to_broadcast {
     my $active_parameter_href;
     my $broadcasts_ref;
     my $order_parameters_ref;
-    my $parameter_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -841,13 +839,6 @@ sub set_parameter_to_broadcast {
             defined     => 1,
             required    => 1,
             store       => \$order_parameters_ref,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
             strict_type => 1,
         },
     };
@@ -1297,15 +1288,19 @@ sub _parse_parameter_to_broadcast {
             }
             if ( ref $element eq q{ARRAY} ) {
 
+                $info .= $OPEN_BRACKET;
+
                 foreach my $elements_ref ( @{$element} ) {
 
                     $info = _parse_parameter_to_broadcast(
                         {
                             info  => $info,
-                            value => $elements_ref->[0],
+                            value => $elements_ref,
                         }
                     );
                 }
+                ## Close array
+                $info .= $CLOSE_BRACKET . $COMMA . $SPACE;
                 next ELEMENT;
             }
             if ($element) {
