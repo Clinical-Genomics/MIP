@@ -2,10 +2,9 @@ Bootstrap: docker
 From: ubuntu:xenial
 
 %help
-    This is a template container
+    This is a container for installing peddy version 0.4.3
 
 %labels
-    ## Fill in metadata here
     Maintainer Clinical-Genomics/MIP
     Version 0.1
 
@@ -41,9 +40,9 @@ From: ubuntu:xenial
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
     ## Set up conda
-    wget https://repo.anaconda.com/miniconda/Miniconda3-4.7.10-Linux-x86_64.sh && \
-    /bin/bash ./Miniconda3-4.7.10-Linux-x86_64.sh -b -p /opt/conda/ && \
-    rm Miniconda3-4.7.10-Linux-x86_64.sh && \
+    wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh && \
+    /bin/bash ./Miniconda2-latest-Linux-x86_64.sh -b -p /opt/conda/ && \
+    rm Miniconda2-latest-Linux-x86_64.sh && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 
     export PATH=/opt/conda/bin:${PATH}
@@ -52,10 +51,7 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    # conda install --yes ...
+    conda install --yes peddy=0.4.3=py_0
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
-
-    ## Add more programs as needed
-    # pip install ...

@@ -17,12 +17,6 @@ eperl5:
   data_type: HASH
   mandatory: no
   type: mip
-epeddy:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 epy3:
   associated_recipe:
    - mip
@@ -48,7 +42,6 @@ installations:
   default:
     - edelly
     - emip
-    - epeddy
     - eperl5
     - epy3
     - esvdb

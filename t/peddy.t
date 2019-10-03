@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,7 +64,7 @@ diag(   q{Test peddy from Peddy.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ python -m peddy };
+my @function_base_commands = qw{ peddy };
 
 my %base_argument = (
     FILEHANDLE => {
