@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -122,6 +122,7 @@ sub download_cadd_offline_annotations {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_touch };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -173,14 +174,50 @@ sub download_cadd_offline_annotations {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
+    ## Construct outdir path
+    my $outdir_path = catdir( $reference_dir, qw{ CADD-scripts data annotations } );
+
+    if ( not -d $outdir_path ) {
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $outdir_path,
+                parents          => 1,
+            }
+        );
+        say $FILEHANDLE $NEWLINE;
+    }
+
     get_reference(
         {
             FILEHANDLE     => $FILEHANDLE,
+            outdir_path    => $outdir_path,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
+        }
+    );
+
+    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
+
+        gnu_mv(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                force        => 1,
+                infile_path  => catdir( $outdir_path, q{GRCh37} ),
+                outfile_path => catdir( $outdir_path, q{GRCh37_v1.4} ),
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Remove big tar file
+    gnu_rm_and_touch(
+        {
+            FILEHANDLE     => $FILEHANDLE,
+            file_paths_ref => [ catfile( $reference_dir, $reference_href->{outfile} ) ],
         }
     );
 

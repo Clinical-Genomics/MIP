@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile catdir};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -122,6 +122,7 @@ sub download_cadd_whole_genome_snvs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_touch };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -173,16 +174,55 @@ sub download_cadd_whole_genome_snvs {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
+    ## Construct outdir path
+    my $outdir_path =
+      catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh38_v1.5 no_anno } );
+    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
+
+        $outdir_path =
+          catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh37_v1.4 no_anno } );
+    }
+
+    if ( not -d $outdir_path ) {
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $outdir_path,
+                parents          => 1,
+            }
+        );
+        say $FILEHANDLE $NEWLINE;
+    }
+
     get_reference(
         {
             FILEHANDLE     => $FILEHANDLE,
             recipe_name    => $recipe_name,
-            reference_dir  => $reference_dir,
+            reference_dir  => $outdir_path,
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
         }
     );
+
+    ## Create some mock files for the later download processes to recognizeAD
+    my @files = (
+        catfile( $reference_dir, $reference_href->{outfile} ),
+        catfile( $reference_dir, $reference_href->{outfile_check} ),
+        catfile( $reference_dir, $reference_href->{outfile_index} ),
+        catfile( $reference_dir, $reference_href->{outfile_index_check} ),
+    );
+
+  FILE:
+    foreach my $file (@files) {
+        gnu_touch(
+            {
+                file       => $file,
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

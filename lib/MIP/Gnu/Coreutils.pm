@@ -19,7 +19,8 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SINGLE_QUOTE $SPACE };
+use MIP::Constants
+  qw{ $AMPERSAND $COMMA $DOUBLE_QUOTE $EMPTY_STR $EQUALS $NEWLINE $SINGLE_QUOTE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -28,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -43,6 +44,7 @@ BEGIN {
       gnu_mv
       gnu_printf
       gnu_rm
+      gnu_rm_and_touch
       gnu_sleep
       gnu_sort
       gnu_split
@@ -1696,6 +1698,103 @@ sub gnu_uniq {
         }
     );
     return @commands;
+}
+
+sub gnu_rm_and_touch {
+
+## Function : Perl wrapper for writing rm and touch command to already open $FILEHANDLE;
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : file_paths_ref          => File paths {REF}
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append to stderrinfo to file
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $file_paths_ref;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $force;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        file_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        force => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$force,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  FILE_PATH:
+    foreach my $file_path ( @{$file_paths_ref} ) {
+
+        my @commands = gnu_rm(
+            {
+                infile_path => $file_path,
+                force       => $force,
+            }
+        );
+
+        push @commands, $AMPERSAND . $AMPERSAND;
+
+        push @commands,
+          gnu_touch(
+            {
+                file => $file_path,
+            }
+          );
+
+        push @commands,
+          unix_standard_streams(
+            {
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path_append,
+                stdoutfile_path        => $stdoutfile_path,
+            }
+          );
+
+        unix_write_to_file(
+            {
+                commands_ref => \@commands,
+                FILEHANDLE   => $FILEHANDLE,
+                separator    => $SPACE,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+    }
+
+    return 1;
 }
 
 1;

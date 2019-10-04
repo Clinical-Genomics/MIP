@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -56,11 +56,17 @@ sub get_reference {
     my $reference_href;
 
     ## Default(s)
+    my $outdir_path;
     my $quiet;
     my $verbose;
 
     my $tmpl = {
         FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        outdir_path => {
+            default     => $arg_href->{reference_dir},
+            store       => \$outdir_path,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -142,7 +148,7 @@ sub get_reference {
         decompress_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                outdir_path  => $reference_dir,
+                outdir_path  => $outdir_path,
                 outfile_path => $outfile_path,
                 decompress_program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
