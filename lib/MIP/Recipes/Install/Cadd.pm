@@ -42,7 +42,7 @@ sub install_cadd {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $contaienr_href        => Container hah {REF}
-##          : $container_path        => Path to VEP container
+##          : $container_path        => Path to container
 ##          : $FILEHANDLE            => Filehandle to write to
 
     my ($arg_href) = @_;
