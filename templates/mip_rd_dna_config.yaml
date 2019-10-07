@@ -8,7 +8,6 @@ core_ram_memory: 5
 java_use_large_pages: 1
 load_env:
   mip_travis:
-    cadd_ar:
     endvariantannotationblock:
     gatk:
     installation: emip

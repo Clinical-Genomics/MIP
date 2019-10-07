@@ -122,7 +122,7 @@ sub download_cadd_offline_annotations {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_touch };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -214,10 +214,13 @@ sub download_cadd_offline_annotations {
     }
 
     ## Remove big tar file
-    gnu_rm_and_touch(
+    my $echo_message = q{Files downloaded and moved to} . $SPACE . $outdir_path;
+    my %file =
+      ( catfile( $reference_dir, $reference_href->{outfile} ) => $echo_message, );
+    gnu_rm_and_echo(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            file_paths_ref => [ catfile( $reference_dir, $reference_href->{outfile} ) ],
+            FILEHANDLE => $FILEHANDLE,
+            file_href  => \%file,
         }
     );
 

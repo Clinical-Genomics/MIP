@@ -170,7 +170,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit chanjo chromograph cmake
+                        qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
                           cnvnator cramtools cutadapt delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
@@ -203,7 +203,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit chanjo chromograph cmake
+                        qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
                           cnvnator cramtools cutadapt delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip

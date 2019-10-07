@@ -230,6 +230,19 @@ sub _build_usage {
     );
 
     option(
+        q{vep_cache_dir} => (
+            cmd_aliases => [qw{ vecd }],
+            cmd_flag    => q{vep_cache_dir},
+            cmd_tags =>
+              [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
+            documentation => q{VEP's cache directory},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
         q{vep_plugins} => (
             cmd_aliases   => [qw{ vepl }],
             cmd_flag      => q{vep_plugins},

@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Coreutils} => [qw{ gnu_rm_and_touch }],
+        q{MIP::Gnu::Coreutils} => [qw{ gnu_rm_and_echo }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Coreutils qw{ gnu_rm_and_touch };
+use MIP::Gnu::Coreutils qw{ gnu_rm_and_echo };
 
-diag(   q{Test gnu_rm_and_touch from Coreutils.pm v}
+diag(   q{Test gnu_rm_and_echo from Coreutils.pm v}
       . $MIP::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -65,19 +65,20 @@ my $file_content;
 open my $FILEHANDLE, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## Given a list of files
-my @file_paths = ( catfile(qw{ file_1 }), catfile(qw{ file_2 }), );
+## Given a hash with files and new content
+my $file_string = q{Test};
+my %file = map { $_ => $file_string } ( catfile(qw{ file_1 }), catfile(qw{ file_2 }), );
 
-## Then write rm and touch
-my $write_command = gnu_rm_and_touch(
+## Then write rm and echo
+my $write_command = gnu_rm_and_echo(
     {
-        file_paths_ref => \@file_paths,
-        FILEHANDLE     => $FILEHANDLE,
-        force          => 1,
+        file_href  => \%file,
+        FILEHANDLE => $FILEHANDLE,
+        force      => 1,
     }
 );
 close $FILEHANDLE;
 
-ok( $write_command, q{Write rm and touch} );
+ok( $write_command, q{Write rm and echo} );
 
 done_testing();

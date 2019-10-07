@@ -44,7 +44,7 @@ BEGIN {
       gnu_mv
       gnu_printf
       gnu_rm
-      gnu_rm_and_touch
+      gnu_rm_and_echo
       gnu_sleep
       gnu_sort
       gnu_split
@@ -1700,12 +1700,12 @@ sub gnu_uniq {
     return @commands;
 }
 
-sub gnu_rm_and_touch {
+sub gnu_rm_and_echo {
 
-## Function : Perl wrapper for writing rm and touch command to already open $FILEHANDLE;
+## Function : Perl wrapper for writing rm and echo command to already open $FILEHANDLE;
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : file_paths_ref          => File paths {REF}
+##          : file_href               => Hash with file paths and new content {REF}
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -1714,7 +1714,7 @@ sub gnu_rm_and_touch {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $file_paths_ref;
+    my $file_href;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -1727,11 +1727,11 @@ sub gnu_rm_and_touch {
             required => 1,
             store    => \$FILEHANDLE,
         },
-        file_paths_ref => {
-            default     => [],
+        file_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$file_paths_ref,
+            store       => \$file_href,
             strict_type => 1,
         },
         force => {
@@ -1757,7 +1757,7 @@ sub gnu_rm_and_touch {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   FILE_PATH:
-    foreach my $file_path ( @{$file_paths_ref} ) {
+    foreach my $file_path ( keys %{$file_href} ) {
 
         my @commands = gnu_rm(
             {
@@ -1769,9 +1769,10 @@ sub gnu_rm_and_touch {
         push @commands, $AMPERSAND . $AMPERSAND;
 
         push @commands,
-          gnu_touch(
+          gnu_echo(
             {
-                file => $file_path,
+                outfile_path => $file_path,
+                strings_ref  => [ $file_href->{$file_path} ],
             }
           );
 

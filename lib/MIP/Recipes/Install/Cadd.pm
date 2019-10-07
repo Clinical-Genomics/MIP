@@ -3,7 +3,7 @@ package MIP::Recipes::Install::Cadd;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
-use Cwd;
+use Cwd q{abs_path};
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
@@ -87,7 +87,7 @@ sub install_cadd {
     my $reference_dir_path = $active_parameter_href->{reference_dir};
 
     if ( not $reference_dir_path ) {
-        $log->fatal(q{Pease supply a reference directory when installing CADD});
+        $log->fatal(q{Please supply a reference directory when installing CADD});
         exit 1;
     }
 
@@ -96,7 +96,7 @@ sub install_cadd {
 
     ## Bind annotation dir path to pathh in container
     my $cadd_bind_path =
-      $annotation_dir_path . $COLON . catdir(qw{ opt CADD-scripts data annotations });
+      $annotation_dir_path . $COLON . catdir(qw{ / opt CADD-scripts data annotations });
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {
