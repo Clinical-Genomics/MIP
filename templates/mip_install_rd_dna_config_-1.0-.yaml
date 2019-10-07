@@ -14,7 +14,6 @@ emip:
     gcc: 4.8.5
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
-#    ldc: 1.11.0=hb2c9046_0
     numpy:
     picard: 2.20.7=0
     pip:
@@ -22,7 +21,6 @@ emip:
     python: 2.7
     R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.10.1=0
-#    sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8571acd_11
     vcfanno: 0.3.2=0
     vt: 2015.11.10
@@ -38,8 +36,6 @@ emip:
       version: 2.3.0
     plink2:
       version: 171013
-    sambamba:
-      version: 0.6.1
     vt:
       version: gitRepo
   singularity:
@@ -95,8 +91,6 @@ eperl5:
     bwakit: 0.7.15=1
     fastqc: 0.11.8=0
     gatk4: 4.1.3.0=0
-    ldc: 1.11.0=hb2c9046_0
-    sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8571acd_11
     pip:
     python: 2.7
@@ -106,10 +100,8 @@ eperl5:
 epy3:
   conda:
     bcftools: 1.9=ha228f0b_4
-    ldc: 1.11.0=hb2c9046_0
     pip:
     python: 3.7
-    sambamba: 0.6.8=h682856c_0
   pip:
     genmod: 3.7.3
     stranger: 0.5.4
@@ -124,8 +116,6 @@ epy3:
       conda_dependency:
         matplotlib:
       version: 0.5.1
-    sambamba:
-      version: 0.6.1
     upd:
       version: 0.1
 esvdb:

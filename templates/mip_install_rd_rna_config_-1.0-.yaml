@@ -17,7 +17,6 @@ emip:
     r-optparse:
     r-readr:
     salmon: 0.12.0=h86b0361_1
-    sambamba: 0.6.8=h682856c_1
     samtools: 1.9=h8571acd_11
     scipy:
     stringtie: 1.3.4=py27_0
@@ -46,6 +45,10 @@ emip:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
   singularity:
+    sambamba:
+      executable:
+        sambamba:
+      uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
     star-fusion: 
       executable:
         gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
