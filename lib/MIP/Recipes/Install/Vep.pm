@@ -70,6 +70,12 @@ sub install_vep {
             store       => \$container_href,
             strict_type => 1,
         },
+        container_href => {
+            default     => {},
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
         container_path => {
             defined     => 1,
             required    => 1,
@@ -130,6 +136,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         $cache_dir_path = catdir( $reference_dir_path,
             q{ensembl-tools-release-} . $vep_version . q{cache} );
     }
+    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {

@@ -3,7 +3,11 @@ package MIP::Recipes::Install::Cadd;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+<<<<<<< HEAD
 use Cwd q{abs_path};
+=======
+use Cwd;
+>>>>>>> 8df9b31a6054466f33ecd0bf0b2be83564dfb34c
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
@@ -105,7 +109,6 @@ sub install_cadd {
     else {
         $container_href->{program_bind_paths} = [$cadd_bind_path];
     }
-
     return;
 }
 
