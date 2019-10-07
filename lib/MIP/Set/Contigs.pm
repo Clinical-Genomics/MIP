@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ set_contigs };
@@ -71,11 +71,22 @@ sub set_contigs {
 
     ## Contigs sets to set for primary assembly
     my @primary_contig_sets = qw{ contigs contigs_size_ordered };
+    my %bam_contig_set      = (
+        bam_contigs              => q{contigs},
+        bam_contigs_size_ordered => q{contigs_size_ordered},
+    );
 
     ## Set primary contig sets
     @{$file_info_href}{@primary_contig_sets} =
       @{ $primary_contig_clone{$version} }{@primary_contig_sets};
 
+    ## Set BAM level contigs
+  BAM_CONTIG_SET:
+    while ( my ( $bam_contig_set, $contig_set ) = each %bam_contig_set ) {
+
+        @{ $file_info_href->{$bam_contig_set} } =
+          @{ $primary_contig_clone{$version}->{$contig_set} };
+    }
     return;
 }
 

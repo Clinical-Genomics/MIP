@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
 
+- Added BAM contigs set to allow for single ladies to get a proper check sex (no pun intended:). Actually it is for all female only analyses.
 - Add new recipe to get executable version dynamically and in separate file
 - Remove Snpeff and snpsift from MIP
 - Add clinvar annotation as vep custom file: CLINVAR_CLNSIG,CLINVAR_CLNVID,CLINVAR_CLNREVSTAT now in CSQ field
