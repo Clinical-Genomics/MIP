@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.05;
+our $VERSION = 2.06;
 
 extends(qw{ MIP::Cli::Mip::Install });
 

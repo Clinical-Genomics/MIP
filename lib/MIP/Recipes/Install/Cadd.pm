@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-  use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Cadd qw{ cadd_install };
 use MIP::Program::Singularity qw{ singularity_exec };

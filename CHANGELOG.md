@@ -20,7 +20,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 **CLI**
 - Removes the noupdate option from the installation
-- Options for CADD installations
 
 **New references**
 - grch37_frequency_vcfanno_filter_config_-v1.2-.toml

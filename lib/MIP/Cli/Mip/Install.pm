@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip });
 
