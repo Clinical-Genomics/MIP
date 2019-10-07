@@ -56,4 +56,4 @@ From: ubuntu:xenial
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
 
-    pip install chanjo==4.2.0
+    pip install --no-cache-dir chanjo==4.2.0
