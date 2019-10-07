@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,8 +77,14 @@ my %active_parameter_test = (
     gatk_variantevalall => 1,
     gatk_varianteval_dbsnp =>
       catfile( $Bin, qw{ data references grch37_dbsnp_-138_esa_129-.vcf } ),
-    gatk_variantevalexome     => 1,
-    gatk_variantrecalibration => 1,
+    gatk_variantevalexome                    => 1,
+    gatk_variantrecalibration                => 1,
+    gatk_variantrecalibration_resource_indel => {
+        q{grch37_dbsnp_-138-.vcf} =>
+          q{dbsnp,known=true,training=false,truth=false,prior=2.0},
+        q{grch37_mills_and_1000g_-gold_standard_indels-.vcf} =>
+          q{mills,known=false,training=true,truth=true,prior=12.0},
+    },
 );
 
 my %parameter_test = (
