@@ -3,11 +3,7 @@ package MIP::Recipes::Install::Cadd;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
-<<<<<<< HEAD
 use Cwd q{abs_path};
-=======
-use Cwd;
->>>>>>> 8df9b31a6054466f33ecd0bf0b2be83564dfb34c
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
@@ -24,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
+  use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Cadd qw{ cadd_install };
 use MIP::Program::Singularity qw{ singularity_exec };
