@@ -189,8 +189,8 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa      => ArrayRef [ enum( [qw{ bedtools picard plink2 sambamba vt }] ), ],
-            required => 0,
+            isa           => ArrayRef [ enum( [qw{ bedtools picard plink2 vt }] ), ],
+            required      => 0,
         ),
     );
 

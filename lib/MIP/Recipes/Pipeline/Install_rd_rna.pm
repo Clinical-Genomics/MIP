@@ -37,7 +37,6 @@ use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
-use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
@@ -199,7 +198,6 @@ sub pipeline_install_rd_rna {
             gtf2bed      => \&install_gtf2bed,
             mip_scripts  => \&install_mip_scripts,
             picard       => \&install_picard,
-            sambamba     => \&install_sambamba,
         );
 
         ## Launch shell installation subroutines
