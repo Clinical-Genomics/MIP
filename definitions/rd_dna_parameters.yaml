@@ -212,7 +212,7 @@ recipe_memory:
   default:
     cadd_ar: 4
     chanjo_sexcheck: 2
-    chromograph_ar: 2
+    chromograph_ar: 5
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
@@ -1503,7 +1503,7 @@ rhocall_viz:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ""
   outfile_suffix: ".roh"
   program_executables:
@@ -1527,7 +1527,7 @@ chromograph_ar:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
+  file_tag: "_chromograph"
   outfile_suffix: ".tar.gz"
   program_executables:
    - chromograph
