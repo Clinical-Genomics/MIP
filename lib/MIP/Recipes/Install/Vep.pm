@@ -95,10 +95,10 @@ sub install_vep {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $cache_dir_path     = $active_parameter_href->{vep_cache_dir};
-    my @assemblies         = @{ $active_parameter_href->{vep_assemblies} };
     my $auto_flag          = $active_parameter_href->{vep_auto_flag};
+    my $cache_dir_path     = $active_parameter_href->{vep_cache_dir};
     my $reference_dir_path = $active_parameter_href->{reference_dir};
+    my @assemblies         = @{ $active_parameter_href->{vep_assemblies} };
     my @plugins            = @{ $active_parameter_href->{vep_plugins} };
     my @species            = @{ $active_parameter_href->{vep_species} };
 
@@ -110,7 +110,7 @@ sub install_vep {
 
     if ( not $cache_dir_path and not $reference_dir_path ) {
         $log->fatal(
-            q{Pease supply a reference directory or a cache directory when installing VEP}
+q{Please supply a reference directory or a cache directory when installing VEP}
         );
         $log->fatal(
 q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl-tools-release-<version>/cache}

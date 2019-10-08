@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -185,7 +185,7 @@ sub download_cadd_offline_annotations {
                 parents          => 1,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     get_reference(
@@ -213,7 +213,7 @@ sub download_cadd_offline_annotations {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Remove big tar file
+    ## Replace big tar file with almost empty content to avoid large storage footprint
     my $echo_message = q{Files downloaded and moved to} . $SPACE . $outdir_path;
     my %file =
       ( catfile( $reference_dir, $reference_href->{outfile} ) => $echo_message, );

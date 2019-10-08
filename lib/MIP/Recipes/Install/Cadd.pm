@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $FORWARD_SLASH $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Cadd qw{ cadd_install };
 use MIP::Program::Singularity qw{ singularity_exec };
@@ -96,7 +96,9 @@ sub install_cadd {
 
     ## Bind annotation dir path to pathh in container
     my $cadd_bind_path =
-      $annotation_dir_path . $COLON . catdir(qw{ / opt CADD-scripts data annotations });
+        $annotation_dir_path
+      . $COLON
+      . catdir(qw{ $FORWARD_SLASH opt CADD-scripts data annotations });
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {

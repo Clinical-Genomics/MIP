@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile catdir};
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -122,7 +122,7 @@ sub download_cadd_whole_genome_snvs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_echo };
+    use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -191,7 +191,7 @@ sub download_cadd_whole_genome_snvs {
                 parents          => 1,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     get_reference(
@@ -205,26 +205,16 @@ sub download_cadd_whole_genome_snvs {
         }
     );
 
-    ## Create some mock files for the later download processes to recognize
-    my @file_paths = (
-        catfile( $reference_dir, $reference_href->{outfile} ),
-        catfile( $reference_dir, $reference_href->{outfile_check} ),
-        catfile( $reference_dir, $reference_href->{outfile_index} ),
-        catfile( $reference_dir, $reference_href->{outfile_index_check} ),
-    );
+    ## Create a mock file for the later download processes to recognize
+    my $file_path    = catfile( $reference_dir, $reference_href->{outfile} );
     my $echo_message = q{File downloaded to} . $SPACE . $outdir_path;
-
-  FILE_PATH:
-    foreach my $file_path (@file_paths) {
-        gnu_echo(
-            {
-                outfile_path => $file_path,
-                FILEHANDLE   => $FILEHANDLE,
-                strings_ref  => [$echo_message],
-            }
-        );
-        print {$FILEHANDLE} $NEWLINE;
-    }
+    gnu_echo(
+        {
+            outfile_path => $file_path,
+            FILEHANDLE   => $FILEHANDLE,
+            strings_ref  => [$echo_message],
+        }
+    );
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

@@ -88,7 +88,7 @@ trap {
             vep_directory_cache => $vep_directory_cache,
             vep_directory_path  => $vep_directory_path,
         }
-    );
+    )
 };
 
 ## Then exit and print fatal error message

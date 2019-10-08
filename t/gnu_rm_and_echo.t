@@ -67,7 +67,10 @@ open my $FILEHANDLE, q{>}, \$file_content
 
 ## Given a hash with files and new content
 my $file_string = q{Test};
-my %file = map { $_ => $file_string } ( catfile(qw{ file_1 }), catfile(qw{ file_2 }), );
+my %file        = (
+    file_1 => q{Test},
+    file_2 => q{Test},
+);
 
 ## Then write rm and echo
 my $write_command = gnu_rm_and_echo(
