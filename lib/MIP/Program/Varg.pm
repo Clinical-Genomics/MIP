@@ -71,7 +71,7 @@ sub varg_compare {
             required    => 1,
             store       => \$infile_path_vcf,
             strict_type => 1,
-        }
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -115,5 +115,4 @@ sub varg_compare {
     );
     return @commands;
 }
-
 1;
