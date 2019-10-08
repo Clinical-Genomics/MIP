@@ -43,7 +43,7 @@ script:
 ## Test MIP rd_dna
   - conda activate mip_travis
 ## Set-up test coverage for test directory "t"
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -j 9 t
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 9 t
 ### Download
 ## Set-up test coverage for mip_download_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
