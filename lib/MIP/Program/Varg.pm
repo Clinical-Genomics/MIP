@@ -1,4 +1,4 @@
-package MIP::Program::Vcf_compare;
+package MIP::Program::Varg;
 
 use 5.026;
 use Carp;
@@ -28,50 +28,37 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ vcf_compare };
+    our @EXPORT_OK = qw{ varg_compare };
 }
 
-sub vcf_compare {
+sub varg_compare {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path_truth      => Truth infile vcf
+##          : $infile_path_vcf        => vcf-file to compare with truth set
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $infile_path_truth      => Truth infile vcf
-##          : $infile_path_vcf        => vcf-file to compare with truth set
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $infile_path_truth;
+    my $infile_path_vcf;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-    my $infile_path_truth;
-    my $infile_path_vcf;
 
     ## Default(s)
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path_append => {
-            store       => \$stderrfile_path_append,
-            strict_type => 1,
-        },
-        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
-        stdoutfile_path => {
-            store       => \$stdoutfile_path,
-            strict_type => 1,
         },
         infile_path_truth => {
             defined     => 1,
@@ -85,21 +72,28 @@ sub vcf_compare {
             store       => \$infile_path_vcf,
             strict_type => 1,
         }
-
-
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ vcf_compare };
+    my @commands = qw{ varg compare };
 
-    push @commands, $infile_path_truth;
-    push @commands, $infile_path_vcf;
-
-    ############################################
-    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
-    ############################################
+    push @commands, q{--truth-set} . $SPACE . $infile_path_truth;
+    push @commands, q{--variants} . $SPACE . $infile_path_vcf;
 
     push @commands,
       unix_standard_streams(
