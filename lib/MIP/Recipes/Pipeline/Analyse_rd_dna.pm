@@ -145,6 +145,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Check::Pipeline qw{ check_rd_dna };
     use MIP::Constants qw{ set_analysis_constants };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Parse::Reference qw{ parse_reference_for_vt };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -239,6 +240,19 @@ sub pipeline_analyse_rd_dna {
             log                     => $log,
             parameter_href          => $parameter_href,
             sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Check if vt has processed references
+    ## If not try to reprocesses them before launching recipes
+    $log->info(q{[Reference check - Reference processed by VT]});
+    parse_reference_for_vt(
+        {
+            active_parameter_href   => $active_parameter_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            parameter_href          => $parameter_href,
         }
     );
 

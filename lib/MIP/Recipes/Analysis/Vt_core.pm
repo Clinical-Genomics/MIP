@@ -160,8 +160,7 @@ sub analysis_vt_core {
             store       => \$instream
         },
         job_id_href => { default => {}, strict_type => 1, store => \$job_id_href },
-        ## Use same path as infile path unless parameter is supplied
-        normalize => {
+        normalize   => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
@@ -179,9 +178,10 @@ sub analysis_vt_core {
             strict_type => 1,
         },
         recipe_directory =>
-          { default => q{vt}, strict_type => 1, store => \$recipe_directory },
-        recipe_name => { default => q{vt_ar}, strict_type => 1, store => \$recipe_name },
-        tabix       => {
+          { default => q{vt_core}, strict_type => 1, store => \$recipe_directory },
+        recipe_name =>
+          { default => q{vt_core}, strict_type => 1, store => \$recipe_name },
+        tabix => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
@@ -201,8 +201,7 @@ sub analysis_vt_core {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view bcftools_index };
@@ -213,7 +212,6 @@ sub analysis_vt_core {
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
-    Readonly my $PROCESS_TIME      => 20;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -241,7 +239,7 @@ sub analysis_vt_core {
     $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $file_path, $recipe_info_path ) = setup_script(
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
@@ -250,7 +248,7 @@ sub analysis_vt_core {
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
-            process_time                    => $PROCESS_TIME,
+            process_time                    => $recipe_resource{time},
             recipe_name                     => $recipe_name,
             recipe_directory                => $recipe_directory,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
@@ -411,15 +409,17 @@ sub analysis_vt_core {
 
     if ( $recipe_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_samples(
+        submit_recipe(
             {
-                base_command     => $profile_base_command,
-                case_id          => $case_id,
-                job_id_href      => $job_id_href,
-                log              => $log,
-                path             => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                base_command       => $profile_base_command,
+                dependency_method  => q{island_to_samples},
+                case_id            => $case_id,
+                job_id_href        => $job_id_href,
+                log                => $log,
+                job_id_chain       => q{MAIN},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -591,7 +591,6 @@ sub analysis_vt_core_rio {
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};
 
-    my $file_path;
     my $recipe_info_path;
 
     ## Generate a random integer between 0-10,000.
