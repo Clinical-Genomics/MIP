@@ -32,6 +32,9 @@
   bwakit:
     execution:
     path: 'run-bwamem'
+  cadd:
+    execution: 'CADD.sh -h'
+    path: 'CADD.sh'
   chanjo:
     execution: 'chanjo'
     path: 'chanjo'

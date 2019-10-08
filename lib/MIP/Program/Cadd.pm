@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ cadd };
@@ -43,6 +43,7 @@ sub cadd {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $temp_dir_path          => Path to temp directory
 ##          : $version                => Version of CADD script
 
     my ($arg_href) = @_;
@@ -56,9 +57,8 @@ sub cadd {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $temp_dir_path;
     my $version;
-
-    ## Default(s)
 
     my $tmpl = {
         FILEHANDLE => {
@@ -94,6 +94,12 @@ sub cadd {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        temp_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_dir_path,
+            strict_type => 1,
+        },
         version => {
             allow       => [qw{ v1.4 v1.5}],
             defined     => 1,
@@ -122,6 +128,8 @@ sub cadd {
 
         push @commands, q{-g} . $SPACE . $genome_build;
     }
+
+    push @commands, q{-t} . $SPACE . $temp_dir_path;
 
     push @commands, $infile_path;
 

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,6 +91,10 @@ my %required_argument = (
     outfile_path => {
         input           => q{outfile.tsv.gz},
         expected_output => q{outfile.tsv.gz},
+    },
+    temp_dir_path => {
+        input           => q{temp_dir},
+        expected_output => q{-t} . $SPACE . q{temp_dir},
     },
     version => {
         input           => q{v1.5},

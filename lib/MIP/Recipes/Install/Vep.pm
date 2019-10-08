@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -45,8 +45,7 @@ sub install_vep {
 ## Function : Install plugins, download references and cache
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $conda_env             => Conda environment
-##          : $conda_env_path        => Conda environment path
+##          : $container_href        => Container hash {REF}
 ##          : $container_path        => Path to VEP container
 ##          : $FILEHANDLE            => Filehandle to write to
 
@@ -54,8 +53,7 @@ sub install_vep {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $conda_env;
-    my $conda_env_path;
+    my $container_href;
     my $container_path;
     my $FILEHANDLE;
 
@@ -66,14 +64,16 @@ sub install_vep {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        conda_env => {
-            store       => \$conda_env,
+        container_href => {
+            default     => {},
+            required    => 1,
+            store       => \$container_href,
             strict_type => 1,
         },
-        conda_env_path => {
-            defined     => 1,
+        container_href => {
+            default     => {},
             required    => 1,
-            store       => \$conda_env_path,
+            store       => \$container_href,
             strict_type => 1,
         },
         container_path => {
@@ -95,17 +95,28 @@ sub install_vep {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $auto_flag      = $active_parameter_href->{vep_auto_flag};
-    my $cache_dir_path = $active_parameter_href->{vep_cache_dir};
-    my @assemblies     = @{ $active_parameter_href->{vep_assemblies} };
-    my @plugins        = @{ $active_parameter_href->{vep_plugins} };
-    my @species        = @{ $active_parameter_href->{vep_species} };
+    my $auto_flag          = $active_parameter_href->{vep_auto_flag};
+    my $cache_dir_path     = $active_parameter_href->{vep_cache_dir};
+    my $reference_dir_path = $active_parameter_href->{reference_dir};
+    my @assemblies         = @{ $active_parameter_href->{vep_assemblies} };
+    my @plugins            = @{ $active_parameter_href->{vep_plugins} };
+    my @species            = @{ $active_parameter_href->{vep_species} };
 
     ## Remove potential 'a' from auto flag since the API comes installed in the container
     $auto_flag =~ tr/a//d;
 
     ## Return if only API installation
     return if ( not $auto_flag );
+
+    if ( not $cache_dir_path and not $reference_dir_path ) {
+        $log->fatal(
+q{Please supply a reference directory or a cache directory when installing VEP}
+        );
+        $log->fatal(
+q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl-tools-release-<version>/cache}
+        );
+        exit 1;
+    }
 
     ## Install VEP
     say {$FILEHANDLE} q{## Install VEP plugins and cache};
@@ -120,10 +131,12 @@ sub install_vep {
     );
     say {$FILEHANDLE} q{VEP_VERSION} . $EQUALS . $vep_version_cmd;
 
+    ## Setup cache_dir_path
     if ( not $cache_dir_path ) {
-        $cache_dir_path =
-          catdir( $conda_env_path, q{ensembl-tools-release-} . $vep_version, q{cache} );
+        $cache_dir_path = catdir( $reference_dir_path,
+            q{ensembl-tools-release-} . $vep_version . q{cache} );
     }
+    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {

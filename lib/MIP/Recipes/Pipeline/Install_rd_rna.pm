@@ -46,7 +46,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_rna };
@@ -179,7 +179,6 @@ sub pipeline_install_rd_rna {
         install_singularity_containers(
             {
                 active_parameter_href => $active_parameter_href,
-                conda_env => $active_parameter_href->{environment_name}{$installation},
                 conda_env_path =>
                   $active_parameter_href->{$installation}{conda_prefix_path},
                 container_dir_path => $active_parameter_href->{container_dir_path},

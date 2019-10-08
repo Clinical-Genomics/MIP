@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -166,6 +166,16 @@ sub _build_usage {
     );
 
     option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{sbatch_mode} => (
             documentation => q{Write install script for sbatch submisson},
             is            => q{rw},
@@ -223,9 +233,8 @@ sub _build_usage {
         q{vep_cache_dir} => (
             cmd_aliases => [qw{ vecd }],
             cmd_flag    => q{vep_cache_dir},
-            cmd_tags    => [
-q{Default: <path_to_MIP's_conda_env>/ensembl-tools-release-<version>/cache}
-            ],
+            cmd_tags =>
+              [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
             documentation => q{VEP's cache directory},
             is            => q{rw},
             isa           => Str,

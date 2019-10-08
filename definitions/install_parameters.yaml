@@ -104,6 +104,14 @@ quiet:
   exists_check: directory
   mandatory: no
   type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: path
+  update_path: absolute_path
 sbatch_mode:
   associated_recipe:
    - mip

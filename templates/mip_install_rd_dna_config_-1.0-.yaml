@@ -39,7 +39,11 @@ emip:
     vt:
       version: gitRepo
   singularity:
-    cnvnator:
+    cadd:
+      executable:
+        CADD.sh:
+      uri: shub://jemten/MIP:cadd-1.5
+    cnvnator: 
       executable:
         cnvnator:
         cnvnator2VCF.pl:

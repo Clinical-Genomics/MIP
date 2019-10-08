@@ -240,7 +240,7 @@ $ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. Just supply the flag `--with_singularity` to the command line or add it to the config. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config. 
+Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config. 
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml

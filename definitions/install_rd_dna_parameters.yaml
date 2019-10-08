@@ -57,6 +57,5 @@ python3_programs:
     - chromograph
     - genmod
     - variant_integrity
-    - multiqc
     - upd
   type: mip

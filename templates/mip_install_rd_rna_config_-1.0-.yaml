@@ -5,7 +5,7 @@ emip:
     bcftools: 1.9=ha228f0b_4
     bioconductor-deseq2: 1.22.1=r351hf484d3e_0
     bioconductor-tximport:
-    gatk4: 4.1.0.0=0
+    gatk4: 4.1.3.0=0
     gffcompare: 0.10.6=h2d50403_0
     htslib: 1.9=hc238db4_4
     numpy:
