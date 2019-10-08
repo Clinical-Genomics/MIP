@@ -94,11 +94,22 @@ my %required_argument = (
     }
 );
 
+my %specific_argument = (
+    infile_path_truth => {
+        input           => q{test_infile_truth.vcf},
+        expected_output => q{--truth-set} . $SPACE . q{test_infile_truth.vcf}
+    },
+    infile_path_vcf => {
+        input           => q{test_infile_vcf.vcf},
+        expected_output => q{--variants} . $SPACE . q{test_infile_vcf.vcf}
+    }
+);
+
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&varg_compare;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
