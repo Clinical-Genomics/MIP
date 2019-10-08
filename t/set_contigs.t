@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -100,6 +100,13 @@ is_deeply(
     \@{ $file_info{contigs_size_ordered} },
     \@grch37_contigs_size_ordered,
     q{Set grch37 reference size ordered contigs}
+);
+is_deeply( \@{ $file_info{bam_contigs} },
+    \@grch37_contigs, q{Set grch37 reference bam contigs} );
+is_deeply(
+    \@{ $file_info{bam_contigs_size_ordered} },
+    \@grch37_contigs_size_ordered,
+    q{Set grch37 reference size ordered bam contigs}
 );
 
 # Given a human genome reference source when 38 and alternative loci

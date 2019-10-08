@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates };
@@ -225,7 +225,7 @@ sub analysis_markduplicates {
       map {
         catdir( $outsample_directory,
             $merged_infile_prefix . $outfile_tag . $DOT . $_ . $outfile_suffix )
-      } @{ $file_info_href->{contigs_size_ordered} };
+      } @{ $file_info_href->{bam_contigs_size_ordered} };
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -325,7 +325,7 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -377,7 +377,7 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -438,7 +438,7 @@ sub analysis_markduplicates {
 
     ## Gather bam files in contig order
     my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{contigs} };
+      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},

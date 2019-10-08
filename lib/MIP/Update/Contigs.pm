@@ -210,8 +210,10 @@ sub update_contigs_for_run {
       qw{ delete_contig_elements delete_non_wes_contig delete_male_contig };
 
     my @exclude_contig_arrays = (
-        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{bam_contigs} },
+        \@{ $file_info_href->{bam_contigs_size_ordered} },
         \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{contigs_size_ordered} },
         \@{ $file_info_href->{select_file_contigs} },
     );
 
@@ -228,8 +230,10 @@ sub update_contigs_for_run {
     }
 
     my @wes_contig_arrays = (
-        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{bam_contigs} },
+        \@{ $file_info_href->{bam_contigs_size_ordered} },
         \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{contigs_size_ordered} },
         \@{ $file_info_href->{select_file_contigs} },
     );
 
@@ -247,8 +251,8 @@ sub update_contigs_for_run {
     }
 
     my @male_contig_arrays = (
-        \@{ $file_info_href->{contigs_size_ordered} },
         \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{contigs_size_ordered} },
         \@{ $file_info_href->{select_file_contigs} },
     );
 

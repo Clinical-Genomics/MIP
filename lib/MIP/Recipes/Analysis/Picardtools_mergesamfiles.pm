@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_mergesamfiles };
@@ -237,7 +237,7 @@ sub analysis_picardtools_mergesamfiles {
               . $DOT
               . $_
               . $outfile_suffix )
-      } @{ $file_info_href->{contigs_size_ordered} };
+      } @{ $file_info_href->{bam_contigs_size_ordered} };
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -328,7 +328,7 @@ sub analysis_picardtools_mergesamfiles {
         say {$FILEHANDLE} q{## Split alignment files per contig};
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
-                contigs_ref         => \@{ $file_info_href->{contigs_size_ordered} },
+                contigs_ref         => \@{ $file_info_href->{bam_contigs_size_ordered} },
                 core_number         => $core_number,
                 FILEHANDLE          => $FILEHANDLE,
                 file_path           => $recipe_file_path,
@@ -369,7 +369,7 @@ sub analysis_picardtools_mergesamfiles {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
             ## Get parameters
             # Assemble infile paths by adding directory and file suffixes
@@ -413,7 +413,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
           INFILES:
             foreach my $infile_name_prefix (@infile_name_prefixes) {
@@ -451,7 +451,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{contigs} };
+      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
 
     picardtools_gatherbamfiles(
         {
