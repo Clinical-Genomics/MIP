@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $BACKTICK $COLON $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $BACKTICK $COLON $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 use MIP::Gnu::Bash qw{ gnu_unset };
 use MIP::Gnu::Coreutils qw{ gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -123,7 +123,7 @@ sub install_conda_packages {
     my @packages = _create_package_array(
         {
             package_href              => $conda_packages_href,
-            package_version_separator => q{=},
+            package_version_separator => $EQUALS,
         }
     );
 
@@ -390,7 +390,7 @@ sub finish_conda_package_install {
 
         ## Strip build number from version string
         my $gatk_version = substr( $conda_packages_href->{gatk},
-            0, index( $conda_packages_href->{gatk}, q{=} ) );
+            0, index( $conda_packages_href->{gatk}, $EQUALS ) );
 
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
@@ -608,7 +608,7 @@ sub _create_target_link_paths {
         ## i.e. version=subpatch
         $conda_version =~ tr/=/-/;
 
-        print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
+        print {$FILEHANDLE} $program_path_aliases{$program} . $EQUALS . $BACKTICK;
         my $search_path =
           catdir( $conda_env_path, q{share}, $program . q{-} . $conda_version . q{*} );
         gnu_find(
