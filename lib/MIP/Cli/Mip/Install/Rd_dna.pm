@@ -175,7 +175,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
@@ -208,7 +208,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),

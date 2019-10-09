@@ -43,7 +43,7 @@ emip:
       executable:
         CADD.sh:
       uri: shub://jemten/MIP:cadd-1.5
-    cnvnator: 
+    cnvnator:
       executable:
         cnvnator:
         cnvnator2VCF.pl:
@@ -73,6 +73,10 @@ emip:
       executable:
         TIDDIT.py:
       uri: shub://J35P312/TIDDIT:2.8.0
+    varg:
+      executable:
+        varg:
+      uri: shub://Clinical-Genomics/MIP:varg-1.0.0
     vep:
       executable:
         vep:
