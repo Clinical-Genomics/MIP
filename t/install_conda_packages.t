@@ -131,7 +131,7 @@ trap {
     )
 };
 
-## Then broadcast installing in conda root message
+## Then broadcast installing in existing conda environment
 like(
     $trap->stderr,
     qr/install\s+packages\s+into\s+existing\s+environment/xms,
