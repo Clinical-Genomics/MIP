@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -93,6 +93,8 @@ sub install_mip_scripts {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Installation qw{ check_mip_executable };
+
     ## Unpack parameters
     my $mip_scripts_version = $mip_scripts_parameters_href->{version};
 
@@ -126,13 +128,14 @@ sub install_mip_scripts {
     say {$FILEHANDLE} q{### Install MIP};
     $log->info(q{Writing installation instructions for MIP});
 
-    ## Check if installation exists and is executable
+    ## Check if mip installation exists and is executable
     # mip is proxy for all mip scripts
-    if ( -x catfile( $conda_prefix_path, qw{ bin mip } ) ) {
-        $log->info(q{MIP is already installed in the specified conda environment.});
-
-        $log->warn(q{This will overwrite the current installation of MIP});
-    }
+    check_mip_executable(
+        {
+            conda_prefix_path => $conda_prefix_path,
+            log               => $log,
+        }
+    );
 
     ## Create directories
     say {$FILEHANDLE} q{## Create directories};
