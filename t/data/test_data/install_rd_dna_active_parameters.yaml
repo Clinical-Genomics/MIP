@@ -60,7 +60,7 @@ emip:
     vep:
       executable:
         vep: ~
-      uri: shub://jemten/MIP:vep-97.4
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
 environment_base_name: mip_travis
 environment_name:
   emip: mip_travis

@@ -75,8 +75,8 @@ $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_path        => catfile(q{vep.sif}),
         container_href        => $active_parameter{emip}{singularity}{vep},
+        container_path        => catfile(q{vep.sif}),
         FILEHANDLE            => $FILEHANDLE,
     }
 );
@@ -89,8 +89,8 @@ $active_parameter{vep_auto_flag} = q{acf};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_path        => catfile(q{vep.sif}),
         container_href        => $active_parameter{emip}{singularity}{vep},
+        container_path        => catfile(q{vep.sif}),
         FILEHANDLE            => $FILEHANDLE,
     }
 );
@@ -104,8 +104,8 @@ trap {
     install_vep(
         {
             active_parameter_href => \%active_parameter,
-            container_path        => catfile(q{vep.sif}),
             container_href        => $active_parameter{emip}{singularity}{vep},
+            container_path        => catfile(q{vep.sif}),
             FILEHANDLE            => $FILEHANDLE,
         }
     )
@@ -119,8 +119,8 @@ $active_parameter{vep_auto_flag} = q{a};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_path        => catfile(q{vep.sif}),
         container_href        => $active_parameter{emip}{singularity}{vep},
+        container_path        => catfile(q{vep.sif}),
         FILEHANDLE            => $FILEHANDLE,
     }
 );

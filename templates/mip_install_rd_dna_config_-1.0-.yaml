@@ -75,7 +75,7 @@ emip:
     vep:
       executable:
         vep:
-      uri: shub://jemten/MIP:vep-97.4
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
 # Delly environment spec
 edelly:
   conda:
