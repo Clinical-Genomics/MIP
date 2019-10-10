@@ -14,7 +14,6 @@ emip:
     R: 3.3.1
     bcftools: 1.9=ha228f0b_4
     bedtools: 2.27.1=he941832_2
-    cmake: 3.3.1
     cramtools: 3.0.b127=2
     cutadapt: 1.18=py27_0
     cython: 0.29.1=py27hfc679d8_0
@@ -58,6 +57,10 @@ emip:
         cnvnator: ~
         cnvnator2VCF.pl: ~
       uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+    vep:
+      executable:
+        vep: ~
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
 environment_base_name: mip_travis
 environment_name:
   emip: mip_travis
@@ -78,6 +81,16 @@ shell_install: []
 skip_programs: []
 slurm_quality_of_service: low
 update_config: '0'
+vep_assemblies:
+  - GRCh37
+  - GRCh38
+vep_auto_flag: cfp
+vep_plugins:
+  - dbNSFP
+  - ExACpLI
+  - LoFtool
+  - MaxEntScan
+vep_species:
+  - homo_sapiens_merged
 verbose: '0'
 write_config: '0'
-
