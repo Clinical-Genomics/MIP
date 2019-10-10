@@ -504,17 +504,6 @@ fqa_vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-chromograph_ar:
-  analysis_mode: sample
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: ""
-  outfile_suffix: ".tar.gz"
-  program_executables:
-   - chromograph
-  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:

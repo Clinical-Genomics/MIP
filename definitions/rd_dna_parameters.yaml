@@ -1511,7 +1511,7 @@ rhocall_viz:
    - rhocall
   type: recipe
 upd_ar:
-  analysis_mode: case
+  analysis_mode: sample
   associated_recipe:
    - mip
   data_type: SCALAR

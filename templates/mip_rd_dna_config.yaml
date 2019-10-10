@@ -25,7 +25,7 @@ load_env:
     installation: eperl5
     method: conda
   mip_travis_py3:
-    chanjo_sexcheck:
+      #chanjo_sexcheck:
     chromograph_ar:
     expansionhunter:
     genmod:

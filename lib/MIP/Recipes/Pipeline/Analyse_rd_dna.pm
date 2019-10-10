@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -360,7 +360,7 @@ sub pipeline_analyse_rd_dna {
     set_recipe_on_pedigree(
         {
             analysis_recipe_href => \%analysis_recipe,
-            parameter_href       => $parameter_href,
+            sample_info_href     => $sample_info_href,
         }
     );
 

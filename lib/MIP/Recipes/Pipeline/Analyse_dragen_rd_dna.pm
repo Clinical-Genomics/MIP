@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -258,6 +258,7 @@ sub pipeline_analyse_dragen_rd_dna {
         {
             analysis_recipe_href => \%analysis_recipe,
             parameter_href       => $parameter_href,
+            sample_info_href     => $sample_info_href,
         }
     );
 

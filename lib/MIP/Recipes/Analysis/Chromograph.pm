@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph };
@@ -132,17 +132,15 @@ sub analysis_chromograph {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes  get_recipe_resources };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_family_member_id set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-
-    ## Constants:
 
     ### PREPROCESSING:
 
@@ -233,15 +231,18 @@ sub analysis_chromograph {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Process potential upd files, only applicaple for proband
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href, } );
-    my $proband = $family_member_id{children}[0];
+    my $is_sample_proband_in_trio = is_sample_proband_in_trio(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
 
-    if ( $parameter_href->{cache}{trio} and $proband eq $sample_id ) {
+    if ($is_sample_proband_in_trio) {
 
         %io = get_io_files(
             {
-                id             => $case_id,
+                id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
