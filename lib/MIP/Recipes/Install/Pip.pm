@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -112,7 +112,7 @@ sub install_pip_packages {
         say {$FILEHANDLE} $NEWLINE;
     }
     else {
-        say {$FILEHANDLE} q{### Install PIP packages in conda main environment};
+        say {$FILEHANDLE} q{## Install PIP packages in conda main environment};
     }
 
     ## Create an array for pip packages that are to be installed from provided hash
@@ -135,6 +135,7 @@ sub install_pip_packages {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_env) {
+
         say {$FILEHANDLE} q{## Deactivate conda environment};
         conda_deactivate(
             {
@@ -165,17 +166,17 @@ sub _create_package_array {
 
     my $tmpl = {
         package_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$package_href,
             strict_type => 1,
-            store       => \$package_href
         },
         package_version_separator => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$package_version_separator,
             strict_type => 1,
-            store       => \$package_version_separator
         },
     };
 
@@ -185,6 +186,7 @@ sub _create_package_array {
 
   PACKAGE:
     while ( my ( $package, $package_version ) = each %{$package_href} ) {
+
         if ( defined $package_version ) {
 
             # Check that the version number matches pattern
@@ -198,6 +200,7 @@ sub _create_package_array {
             push @packages, $package . $package_version_separator . $package_version;
         }
         else {
+
             push @packages, $package;
         }
     }
