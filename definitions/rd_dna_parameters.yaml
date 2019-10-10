@@ -197,6 +197,7 @@ recipe_core_number:
     version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
+    vt_core: 1 
   type: mip
 set_recipe_core_number:
   associated_recipe:
@@ -304,6 +305,7 @@ recipe_time:
     version_collect_ar: 1
     vcfparser_ar: 5
     vt_ar: 10
+    vt_core: 10
     vcf2cytosure_ar: 20
   type: mip
 set_recipe_time:
@@ -1457,14 +1459,16 @@ vt_ar:
 vt_decompose:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_normalize:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_missing_alt_allele:
   associated_recipe:
@@ -1475,9 +1479,23 @@ vt_missing_alt_allele:
 vt_uniq:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
   default: 0
   type: recipe_argument
+vt_core:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vt
+  program_executables:
+   - vt
+   - sed
+   - bgzip
+   - tabix
+  type: recipe
 frequency_annotation:
   analysis_mode: case
   associated_recipe:

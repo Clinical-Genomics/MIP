@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -496,7 +496,10 @@ sub check_references_for_vt {
     my %seen;
 
     ## TOML parameters
-    my %toml = ( fqa_vcfanno_config => 1, );
+    my %toml = (
+        fqa_vcfanno_config    => 1,
+        sv_fqa_vcfanno_config => 1,
+    );
 
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {

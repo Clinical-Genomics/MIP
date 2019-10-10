@@ -25,6 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
+
     our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
@@ -142,6 +143,9 @@ sub pipeline_analyse_dragen_rd_dna {
 
     use MIP::Check::Pipeline qw{ check_dragen_rd_dna };
     use MIP::Constants qw{ set_analysis_constants };
+    use MIP::Parse::Reference qw{ parse_reference_for_vt };
+    use MIP::Set::Analysis
+      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -172,8 +176,6 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Dragen_rd_dna qw{build_dragen_rd_dna_meta_files};
-    use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_dragen_rd_dna(
@@ -202,6 +204,19 @@ sub pipeline_analyse_dragen_rd_dna {
             log                     => $log,
             parameter_href          => $parameter_href,
             sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Check if vt has processed references
+    ## If not try to reprocesses them before launching recipes
+    $log->info(q{[Reference check - Reference processed by VT]});
+    parse_reference_for_vt(
+        {
+            active_parameter_href   => $active_parameter_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            parameter_href          => $parameter_href,
         }
     );
 
