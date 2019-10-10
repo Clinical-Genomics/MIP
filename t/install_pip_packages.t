@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,8 +68,7 @@ open my $FILEHANDLE, q{>}, \$file_content
 
 my $log = test_log( { no_screen => 1, } );
 
-## Given no existing conda env
-my $conda_env;
+my $conda_env    = catdir( $Bin, qw{ data modules miniconda envs mip_travis } );
 my %pip_packages = (
     genmod         => q{1.2.3},
     random_package => undef,
@@ -86,33 +85,8 @@ install_pip_packages(
 ## Close the filehandle
 close $FILEHANDLE;
 
-## Then install in conda main
-my ($returned_command) =
-  $file_content =~ /^(##\s+Install\s+PIP\s+packages\s+in\s+conda\s+main)/ms;
-
-ok( $returned_command, q{Installed pip packages in conda main} );
-
-## Given existing conda env
-
-$conda_env = catdir( $Bin, qw{ data modules miniconda envs mip_travis } );
-
-## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
-
-install_pip_packages(
-    {
-        conda_env         => $conda_env,
-        FILEHANDLE        => $FILEHANDLE,
-        pip_packages_href => \%pip_packages,
-    }
-);
-
-## Close the filehandle
-close $FILEHANDLE;
-
 # Then install in conda environment
-($returned_command) =
+my ($returned_command) =
   $file_content =~ /^(##\s+Install\s+PIP\s+packages\s+in\s+conda\s+environment)/ms;
 
 ok( $returned_command, q{Installed pip packages in conda environment} );
