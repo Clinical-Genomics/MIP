@@ -1479,6 +1479,7 @@ vt_missing_alt_allele:
 vt_uniq:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
   default: 0
   type: recipe_argument
