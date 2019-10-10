@@ -91,109 +91,110 @@ sub analysis_vt_core {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         bcftools_output_type => {
-            default     => q{v},
             allow       => [qw{ b u z v }],
-            strict_type => 1,
+            default     => q{v},
             store       => \$bcftools_output_type,
+            strict_type => 1,
         },
         bgzip => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$bgzip,
             strict_type => 1,
-            store       => \$bgzip
         },
-        cmd_break => { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        cmd_break => { default => $NEWLINE x 2, store => \$cmd_break, strict_type => 1, },
         core_number => {
-            default     => 1,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$core_number
         },
-        contig    => { strict_type => 1, store => \$contig },
+        contig    => { store => \$contig, strict_type => 1, },
         decompose => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$decompose,
             strict_type => 1,
-            store       => \$decompose
         },
         case_id => {
             default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
-            store       => \$case_id
         },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        FILEHANDLE => { store => \$FILEHANDLE, },
         gnu_sed    => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$gnu_sed,
             strict_type => 1,
-            store       => \$gnu_sed
         },
         human_genome_reference => {
             default     => $arg_href->{active_parameter_href}{human_genome_reference},
+            store       => \$human_genome_reference,
             strict_type => 1,
-            store       => \$human_genome_reference
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         instream => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$instream,
             strict_type => 1,
-            store       => \$instream
         },
-        job_id_href => { default => {}, strict_type => 1, store => \$job_id_href },
+        job_id_href => { default => {}, store => \$job_id_href, strict_type => 1, },
         normalize   => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$normalize,
             strict_type => 1,
-            store       => \$normalize
         },
         outfile_path => {
             default     => $arg_href->{infile_path},
-            strict_type => 1,
             store       => \$outfile_path,
+            strict_type => 1,
         },
-        parameter_href => { default => {}, strict_type => 1, store => \$parameter_href },
+        parameter_href => { default => {}, strict_type => 1, store => \$parameter_href, },
         profile_base_command => {
             default     => q{sbatch},
             store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_directory =>
-          { default => q{vt_core}, strict_type => 1, store => \$recipe_directory },
+          { default => q{vt_core}, store => \$recipe_directory, strict_type => 1, },
         recipe_name =>
-          { default => q{vt_core}, strict_type => 1, store => \$recipe_name },
+          { default => q{vt_core}, store => \$recipe_name, strict_type => 1, },
         tabix => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$tabix,
             strict_type => 1,
-            store       => \$tabix
         },
         uniq => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$uniq,
             strict_type => 1,
-            store       => \$uniq
         },
-        xargs_file_path_prefix => { strict_type => 1, store => \$xargs_file_path_prefix },
+        xargs_file_path_prefix =>
+          { store => \$xargs_file_path_prefix, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
