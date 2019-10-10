@@ -20,7 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -33,10 +34,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA                => q{,};
 Readonly my $GENOME_BUILD_VERSION => 37;
-Readonly my $NEWLINE              => qq{\n};
-Readonly my $SPACE                => q{ };
 
 BEGIN {
 
@@ -46,7 +44,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ set_in_sample_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -64,17 +62,26 @@ diag(   q{Test set_in_sample_info from Sample_info.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given parameter paths
-my %active_parameter = (
-    human_genome_reference => catfile(qw{ a test path genome build}),
-    log_file               => catfile(qw{ a test dir and log_path}),
-    pedigree_file          => catfile(qw{ a test pedigree path }),
+my %active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter},
+    }
 );
+
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+    }
+);
+
+$active_parameter{human_genome_reference} = catfile(qw{ a test path genome build});
+$active_parameter{log_file}               = catfile(qw{ a test dir and log_path});
+$active_parameter{pedigree_file}          = catfile(qw{ a test pedigree path });
 
 my %file_info = (
     human_genome_reference_source  => q{grch},
     human_genome_reference_version => $GENOME_BUILD_VERSION,
 );
-my %sample_info;
 
 set_in_sample_info(
     {
@@ -115,5 +122,7 @@ is(
     $active_parameter{log_file},
     q{Added log file path}
 );
+
+ok( $sample_info{has_trio}, q{Added has_trio} );
 
 done_testing();

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -75,9 +75,11 @@ sub get_family_member_id {
     use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     my %family_member_id = (
-        father   => 0,
-        mother   => 0,
-        children => [],
+        father            => 0,
+        mother            => 0,
+        children          => [],
+        affected          => [],
+        unknown_phenotype => [],
     );
 
   SAMPLE_ID:
@@ -98,6 +100,23 @@ sub get_family_member_id {
                 sample_info_href => $sample_info_href,
             }
         );
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( $phenotype eq q{affected} ) {
+
+            push @{ $family_member_id{affected} }, $sample_id;
+        }
+        elsif ( $phenotype eq q{unknown} ) {
+
+            push @{ $family_member_id{unknown_phenotype} }, $sample_id;
+        }
 
         next if ( not $father or not $mother );
 
@@ -1276,6 +1295,8 @@ sub set_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ has_trio };
+
     ## Add parameter key to sample info
     my @add_keys = qw{ analysis_type expected_coverage };
 
@@ -1316,6 +1337,14 @@ sub set_in_sample_info {
         $sample_info_href->{log_file_dir}       = $path;
         $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
     }
+    ## Check for trio and set
+    $sample_info_href->{has_trio} = has_trio(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
     return;
 }
 

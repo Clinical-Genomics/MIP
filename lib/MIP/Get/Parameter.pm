@@ -420,7 +420,7 @@ sub get_gatk_intervals {
             strict_type => 1,
         },
         exome_target_bed_href => {
-            store       => \$exome_target_bed_href,
+            store => \$exome_target_bed_href,
         },
         file_ending => {
             store       => \$file_ending,

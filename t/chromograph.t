@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Chromograph} => [qw{ chromograph_roh }],
+        q{MIP::Program::Chromograph} => [qw{ chromograph }],
         q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Chromograph qw{ chromograph_roh };
+use MIP::Program::Chromograph qw{ chromograph };
 
-diag(   q{Test chromograph_roh from Chromograph.pm v}
+diag(   q{Test chromograph from Chromograph.pm v}
       . $MIP::Program::Chromograph::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -63,7 +63,7 @@ diag(   q{Test chromograph_roh from Chromograph.pm v}
 Readonly my $STEP => 10_000;
 
 ## Base arguments
-my @function_base_commands = qw{ chromograph --roh };
+my @function_base_commands = qw{ chromograph };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -87,10 +87,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ path to wig }),
-        expected_output => catfile(qw{ path to wig }),
-    },
     outdir_path => {
         input           => catdir(qw{ path to out_dir }),
         expected_output => q{--outd} . $SPACE . catdir(qw{ path to out_dir }),
@@ -98,9 +94,9 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    infile_path => {
+    coverage_file_path => {
         input           => catfile(qw{ path to wig }),
-        expected_output => catfile(qw{ path to wig }),
+        expected_output => q{--coverage} . $SPACE . catfile(qw{ path to wig }),
     },
     outdir_path => {
         input           => catdir(qw{ path to out_dir }),
@@ -110,10 +106,18 @@ my %specific_argument = (
         input           => $STEP,
         expected_output => q{--step} . $SPACE . $STEP,
     },
+    upd_regions_file_path => {
+        input           => catfile(qw{ path to bed }),
+        expected_output => q{--regions} . $SPACE . catfile(qw{ path to bed }),
+    },
+    upd_sites_file_path => {
+        input           => catfile(qw{ path to bed }),
+        expected_output => q{--upd} . $SPACE . catfile(qw{ path to bed }),
+    },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&chromograph_roh;
+my $module_function_cref = \&chromograph;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
