@@ -374,7 +374,7 @@ sub pipeline_analyse_rd_dna {
     set_recipe_on_pedigree(
         {
             analysis_recipe_href => \%analysis_recipe,
-            parameter_href       => $parameter_href,
+            sample_info_href     => $sample_info_href,
         }
     );
 

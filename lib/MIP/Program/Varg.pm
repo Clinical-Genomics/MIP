@@ -1,4 +1,4 @@
-package MIP::Program::Chromograph;
+package MIP::Program::Varg;
 
 use 5.026;
 use Carp;
@@ -25,53 +25,51 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ chromograph };
+    our @EXPORT_OK = qw{ varg_compare };
 }
 
-sub chromograph {
+sub varg_compare {
 
-## Function : Perl wrapper for chromograph.
+## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-## Arguments: $coverage_file_path     => Coverage data infile
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $outdir_path            => Outdir path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path_truth      => Truth infile vcf
+##          : $infile_path_vcf        => vcf-file to compare with truth set
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $step                   => Bin size for wig file
-##          : $upd_regions_file_path  => UPD regions data file
-##          : $upd_sites_file_path    => UPD sites data file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $coverage_file_path;
     my $FILEHANDLE;
-    my $outdir_path;
+    my $infile_path_truth;
+    my $infile_path_vcf;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-    my $step;
-    my $upd_regions_file_path;
-    my $upd_sites_file_path;
+
+    ## Default(s)
 
     my $tmpl = {
-        coverage_file_path => {
-            store       => \$coverage_file_path,
-            strict_type => 1,
-        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        outdir_path => {
+        infile_path_truth => {
             defined     => 1,
             required    => 1,
-            store       => \$outdir_path,
+            store       => \$infile_path_truth,
+            strict_type => 1,
+        },
+        infile_path_vcf => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path_vcf,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -86,48 +84,16 @@ sub chromograph {
         stdoutfile_path => {
             store       => \$stdoutfile_path,
             strict_type => 1,
-        },
-        step => {
-            allow       => qr/\A \d+ \z/xms,
-            store       => \$step,
-            strict_type => 1,
-        },
-        upd_regions_file_path => {
-            store       => \$upd_regions_file_path,
-            strict_type => 1,
-        },
-        upd_sites_file_path => {
-            store       => \$upd_sites_file_path,
-            strict_type => 1,
-        },
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ chromograph };
+    my @commands = qw{ varg compare };
 
-    if ($coverage_file_path) {
-
-        push @commands, q{--coverage} . $SPACE . $coverage_file_path;
-    }
-
-    push @commands, q{--outd} . $SPACE . $outdir_path;
-
-    if ($step) {
-
-        push @commands, q{--step} . $SPACE . $step;
-    }
-
-    if ($upd_regions_file_path) {
-
-        push @commands, q{--regions} . $SPACE . $upd_regions_file_path;
-    }
-
-    if ($upd_sites_file_path) {
-
-        push @commands, q{--upd} . $SPACE . $upd_sites_file_path;
-    }
+    push @commands, q{--truth-set} . $SPACE . $infile_path_truth;
+    push @commands, q{--variants} . $SPACE . $infile_path_vcf;
 
     push @commands,
       unix_standard_streams(
@@ -149,5 +115,4 @@ sub chromograph {
     );
     return @commands;
 }
-
 1;

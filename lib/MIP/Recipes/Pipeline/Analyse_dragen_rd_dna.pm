@@ -25,7 +25,8 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -150,7 +151,6 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
-    use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
     use MIP::Recipes::Analysis::Dragen_dna
       qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
     use MIP::Recipes::Analysis::Endvariantannotationblock
@@ -164,8 +164,7 @@ sub pipeline_analyse_dragen_rd_dna {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall
-      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
+    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
@@ -229,7 +228,6 @@ sub pipeline_analyse_dragen_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
         cadd_ar                          => \&analysis_cadd,
-        chromograph_ar                   => \&analysis_chromograph,
         dragen_dna_align_vc              => \&analysis_dragen_dna_align_vc,
         dragen_dna_joint_calling         => \&analysis_dragen_dna_joint_calling,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
@@ -238,7 +236,6 @@ sub pipeline_analyse_dragen_rd_dna {
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
-        rhocall_viz    => \&analysis_rhocall_viz,
         sacct          => \&analysis_sacct,
         sv_annotate    => \&analysis_sv_annotate,
         sv_rankvariant => undef,                         # Depends on sample features
@@ -246,7 +243,6 @@ sub pipeline_analyse_dragen_rd_dna {
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
         sv_varianteffectpredictor => undef,                    # Depends on analysis type,
         sv_vcfparser              => undef,                    # Depends on analysis type
-        upd_ar                    => undef,                    # Depends on pedigree
         varianteffectpredictor    => \&analysis_vep,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
@@ -277,6 +273,7 @@ sub pipeline_analyse_dragen_rd_dna {
         {
             analysis_recipe_href => \%analysis_recipe,
             parameter_href       => $parameter_href,
+            sample_info_href     => $sample_info_href,
         }
     );
 

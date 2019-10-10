@@ -6,6 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Path qw{ make_path };
+use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error};
 use strict;
@@ -27,15 +28,74 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
+      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag has_trio is_sample_proband_in_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 }
 
 ## Constants
 Readonly my $TRIO_MEMBERS_COUNT => 3;
+
+sub is_sample_proband_in_trio {
+
+## Function : Check if sample id has an affected or unknown phenotype and is child in trio
+## Returns  : 0 | 1
+## Arguments: $sample_id        => Sample id
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Sample_info qw{ get_family_member_id };
+
+    ## There has to be a trio
+    return 0 if ( not $sample_info_href->{has_trio} );
+
+    ## Get phenotype
+    my $phenotype = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{phenotype},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    ## Sample_id needs to be affected
+    return 0 if ( $phenotype eq q{unaffected} );
+
+    ## Get family hash
+    my %family_member_id =
+      get_family_member_id( { sample_info_href => $sample_info_href } );
+
+    ## Check if the sample is an affected child
+    return 0 if ( none { $_ eq $sample_id } @{ $family_member_id{children} } );
+
+    return 1;
+}
 
 sub create_fam_file {
 
@@ -418,6 +478,78 @@ sub detect_trio {
         }
     }
     return;
+}
+
+sub has_trio {
+
+## Function  : Check if case has trio
+## Returns   : 0 | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    ## At least three samples
+    return 0
+      if ( scalar @{ $active_parameter_href->{sample_ids} } < $TRIO_MEMBERS_COUNT );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $mother = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{mother},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        my $father = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{father},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Find a child
+        next SAMPLE_ID if ( not $father or not $mother );
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        return 1 if ( $phenotype eq q{affected} );
+    }
+    return 0;
 }
 
 sub gatk_pedigree_flag {

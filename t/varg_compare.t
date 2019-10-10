@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Chromograph} => [qw{ chromograph_roh }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+        q{MIP::Program::Varg} => [qw{ varg_compare }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Chromograph qw{ chromograph_roh };
+use MIP::Program::Varg qw{ varg_compare };
 
-diag(   q{Test chromograph_roh from Chromograph.pm v}
-      . $MIP::Program::Chromograph::VERSION
+diag(   q{Test varg_compare from Varg.pm v}
+      . $MIP::Program::Varg::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,11 +59,8 @@ diag(   q{Test chromograph_roh from Chromograph.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $STEP => 10_000;
-
 ## Base arguments
-my @function_base_commands = qw{ chromograph --roh };
+my @function_base_commands = qw{ varg compare };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -87,33 +84,29 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ path to wig }),
-        expected_output => catfile(qw{ path to wig }),
+    infile_path_truth => {
+        input           => q{test_infile_truth.vcf},
+        expected_output => q{--truth-set} . $SPACE . q{test_infile_truth.vcf}
     },
-    outdir_path => {
-        input           => catdir(qw{ path to out_dir }),
-        expected_output => q{--outd} . $SPACE . catdir(qw{ path to out_dir }),
-    },
+    infile_path_vcf => {
+        input           => q{test_infile_vcf.vcf},
+        expected_output => q{--variants} . $SPACE . q{test_infile_vcf.vcf}
+    }
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => catfile(qw{ path to wig }),
-        expected_output => catfile(qw{ path to wig }),
+    infile_path_truth => {
+        input           => q{test_infile_truth.vcf},
+        expected_output => q{--truth-set} . $SPACE . q{test_infile_truth.vcf}
     },
-    outdir_path => {
-        input           => catdir(qw{ path to out_dir }),
-        expected_output => q{--outd} . $SPACE . catdir(qw{ path to out_dir }),
-    },
-    step => {
-        input           => $STEP,
-        expected_output => q{--step} . $SPACE . $STEP,
-    },
+    infile_path_vcf => {
+        input           => q{test_infile_vcf.vcf},
+        expected_output => q{--variants} . $SPACE . q{test_infile_vcf.vcf}
+    }
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&chromograph_roh;
+my $module_function_cref = \&varg_compare;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

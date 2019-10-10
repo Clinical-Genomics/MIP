@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -107,14 +107,14 @@ sub set_recipe_on_pedigree {
 
 ## Function : Set which recipe to use depending on pedigree
 ## Returns  :
-## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $consensus_analysis_type => Consensus analysis type
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_info_href     => Sample info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_recipe_href;
-    my $parameter_href;
+    my $sample_info_href;
 
     my $tmpl = {
         analysis_recipe_href => {
@@ -124,11 +124,11 @@ sub set_recipe_on_pedigree {
             store       => \$analysis_recipe_href,
             strict_type => 1,
         },
-        parameter_href => {
+        sample_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$parameter_href,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
@@ -138,7 +138,7 @@ sub set_recipe_on_pedigree {
     use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
 
     ## Only run upd analysis for trios
-    if ( $parameter_href->{cache}{trio} ) {
+    if ( $sample_info_href->{has_trio} ) {
 
         $analysis_recipe_href->{upd_ar} = \&analysis_upd;
     }
