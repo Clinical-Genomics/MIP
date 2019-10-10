@@ -17,14 +17,11 @@ load_env:
     mip:
     picard:
   mip_travis_py3:
-    chromograph_ar:
     genmod:
     method: conda
     rankvariant:
     rhocall_ar:
-    rhocall_viz:
     sv_rankvariant:
-    upd_ar:
   mip_travis_svdb:
      method: conda
      svdb:

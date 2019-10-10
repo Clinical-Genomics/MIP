@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_upd };
@@ -45,6 +45,7 @@ sub analysis_upd {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
+##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -56,6 +57,7 @@ sub analysis_upd {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
+    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -114,6 +116,12 @@ sub analysis_upd {
             store       => \$recipe_name,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -125,6 +133,7 @@ sub analysis_upd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -137,6 +146,16 @@ sub analysis_upd {
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $is_sample_proband_in_trio = is_sample_proband_in_trio(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    ## Only run on proband in trio
+    return if ( not $is_sample_proband_in_trio );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -169,13 +188,12 @@ sub analysis_upd {
     );
 
     my @call_types = qw{ sites regions };
-    ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $case_id,
+                id               => $sample_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@call_types,
@@ -199,7 +217,7 @@ sub analysis_upd {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
+            directory_id                    => $sample_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -215,6 +233,7 @@ sub analysis_upd {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
+    ## Get family hash
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href } );
 
@@ -229,7 +248,7 @@ sub analysis_upd {
                 infile_path  => $infile_path,
                 mother_id    => $family_member_id{mother},
                 outfile_path => $outfile_path{$call_type},
-                proband_id   => $family_member_id{children}[0]
+                proband_id   => $sample_id,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -245,6 +264,7 @@ sub analysis_upd {
             {
                 path             => $outfile_path{sites},
                 recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -253,13 +273,13 @@ sub analysis_upd {
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
+                dependency_method       => q{case_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );

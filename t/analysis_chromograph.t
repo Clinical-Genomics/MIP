@@ -59,6 +59,8 @@ diag(   q{Test analysis_chromograph from Chromograph.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $TIDDIT_BIN_SIZE => 500;
+
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
@@ -74,6 +76,7 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{tiddit_coverage_bin_size}         = $TIDDIT_BIN_SIZE;
 my $sample_id = $active_parameter{sample_ids}[0];
 
 my %file_info = test_mip_hashes(
@@ -96,6 +99,7 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$parameter{$recipe_name}{chain} = q{MAIN};
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 

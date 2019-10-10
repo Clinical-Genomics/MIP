@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -153,8 +153,8 @@ sub analysis_tiddit_coverage {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
+            recipe_name    => q{gatk_baserecalibration},
+            stream         => q{out},
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -250,7 +250,7 @@ sub analysis_tiddit_coverage {
         submit_recipe(
             {
                 base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_island},
+                dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,

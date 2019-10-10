@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -74,7 +74,8 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id = $active_parameter{case_id};
+my $case_id   = $active_parameter{case_id};
+my $sample_id = $active_parameter{sample_ids}[0];
 
 my %file_info = test_mip_hashes(
     {
@@ -96,24 +97,26 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{$recipe_name}{chain}          = q{TEST};
+$parameter{$recipe_name}{outfile_suffix} = q{.bed};
 
 my %sample_info = test_mip_hashes(
     {
         mip_hash_name => q{qc_sample_info},
     }
 );
+$sample_info{has_trio} = 1;
 
 my $is_ok = analysis_upd(
     {
         active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
