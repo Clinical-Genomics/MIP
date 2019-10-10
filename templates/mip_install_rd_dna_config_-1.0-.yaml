@@ -69,11 +69,11 @@ emip:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
-   svdb:
+    svdb:
       executable:
         svdb:
       uri: shub://J35P312/SVDB:2.2.0 
-   tiddit:
+    tiddit:
       executable:
         TIDDIT.py:
       uri: shub://J35P312/TIDDIT:2.8.0
