@@ -74,9 +74,11 @@ my @exclude_contigs = qw{ 1 2 3 4};
 my %active_parameter = ( analysis_type => { sample_1 => q{wes}, }, );
 
 my %file_info = (
-    contigs_size_ordered => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
-    contigs              => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
-    select_file_contigs  => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    bam_contigs              => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    bam_contigs_size_ordered => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    contigs                  => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    contigs_size_ordered     => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    select_file_contigs      => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
 );
 
 update_contigs_for_run(
@@ -91,11 +93,13 @@ update_contigs_for_run(
 
 ## Define expected outcome
 my %expected_result = (
-    contigs_size_ordered => [qw{ 5 6}],
-    contigs              => [qw{ 5 6}],
-    select_file_contigs  => [qw{ 5 6 }],
+    bam_contigs              => [qw{ 5 6 Y }],
+    bam_contigs_size_ordered => [qw{ 5 6 Y }],
+    contigs                  => [qw{ 5 6}],
+    contigs_size_ordered     => [qw{ 5 6}],
+    select_file_contigs      => [qw{ 5 6 }],
 );
-## Then only keep contig 5 and 6
+## Then only keep contig 5 and 6  for all except bam contigs
 is_deeply( \%file_info, \%expected_result, q{Updated contigs} );
 
 done_testing();

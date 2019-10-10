@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -116,6 +112,15 @@ my @ensembl_contigs = qw{
   11 12 13 14 15 16 17 18 19 20
   21 22 X Y MT };
 
+my @grch37_contigs = qw{
+  1 2 3 4 5 6 7 8 9 10
+  11 12 13 14 15 16 17 18 19 20
+  21 22 X Y MT };
+my @grch37_contigs_size_ordered = qw{
+  1 2 3 4 5 6 7 X 8 9
+  10 11 12 13 14 15 16 17 18 19
+  20 21 22 Y MT };
+
 ## Tests
 
 # grch
@@ -130,6 +135,14 @@ is( $file_info{contigs}[-1], q{MT}, q{Set grch reference contigs} );
 
 is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
     q{X}, q{Set grch reference size ordered contigs} );
+
+is_deeply( \@{ $file_info{bam_contigs} },
+    \@grch37_contigs, q{Set grch37 reference bam contigs} );
+is_deeply(
+    \@{ $file_info{bam_contigs_size_ordered} },
+    \@grch37_contigs_size_ordered,
+    q{Set grch37 reference size ordered bam contigs}
+);
 
 # Hg38
 set_contigs(
