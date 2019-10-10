@@ -230,7 +230,7 @@ sub analysis_chromograph {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Process potential upd files, only applicaple for proband
+    ## Process potential upd files, only applicable for proband
     my $is_sample_proband_in_trio = is_sample_proband_in_trio(
         {
             sample_id        => $sample_id,

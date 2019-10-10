@@ -107,8 +107,8 @@ sub set_recipe_on_pedigree {
 
 ## Function : Set which recipe to use depending on pedigree
 ## Returns  :
-## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $sample_info_href        => Sample info hash {REF}
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_info_href     => Sample info hash {REF}
 
     my ($arg_href) = @_;
 

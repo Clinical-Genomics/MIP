@@ -43,8 +43,8 @@ sub chromograph {
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $step                   => Bin size for wig file
-##          : upd_regions_file_path   => UPD regions data file
-##          : upd_sites_file_path     => UPD sites data file
+##          : $upd_regions_file_path  => UPD regions data file
+##          : $upd_sites_file_path    => UPD sites data file
 
     my ($arg_href) = @_;
 
