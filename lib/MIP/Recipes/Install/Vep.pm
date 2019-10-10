@@ -245,7 +245,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    return;
+    return 1;
 }
 
 sub _get_vep_version_cmd {

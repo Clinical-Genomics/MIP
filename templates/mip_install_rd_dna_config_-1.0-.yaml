@@ -4,7 +4,6 @@ emip:
   conda:
     bcftools: 1.9=ha228f0b_4
     bedtools: 2.27.1=he941832_2
-    cmake: 3.3.1
     cramtools: 3.0.b127=2
     cutadapt: 1.18=py27_0
     cython: 0.29.1=py27hfc679d8_0
