@@ -51,6 +51,10 @@ emip:
       executable:
         chanjo:
       uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
+    delly:
+      executable:
+        delly:
+      uri: shub://Clinical-Genomics/MIP:delly-0.8.1
     manta:
       executable:
         configManta.py:

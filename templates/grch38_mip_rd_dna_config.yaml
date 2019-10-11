@@ -15,11 +15,6 @@ load_env:
     method: conda
     mip:
     picard:
-  mip_travis_delly:
-    delly_call:
-    delly_reformat:
-    installation: edelly
-    method: conda
   mip_travis_eperl5:
     bwa_mem:
     fastqc_ar:
