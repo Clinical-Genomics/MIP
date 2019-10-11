@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -291,7 +291,7 @@ sub check_program_installations {
     say   {$FILEHANDLE} join $SPACE, @env_method_unload_cmds;
     print {$FILEHANDLE} $NEWLINE;
 
-    return;
+    return 1;
 }
 
 sub update_config {
