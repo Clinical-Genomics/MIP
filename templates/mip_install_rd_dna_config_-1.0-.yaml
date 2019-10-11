@@ -41,7 +41,7 @@ emip:
     cadd:
       executable:
         CADD.sh:
-      uri: shub://jemten/MIP:cadd-1.5
+      uri: shub://Clinical-Genomics/MIP:cadd-1.5
     cnvnator: 
       executable:
         cnvnator:
