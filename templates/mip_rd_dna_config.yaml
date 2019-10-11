@@ -37,11 +37,6 @@ load_env:
     sv_rankvariant:
     upd_ar:
     variant_integrity_ar:
-  mip_travis_svdb:
-    installation: esvdb
-    method: conda
-    sv_annotate:
-    svdb:
   mip_travis_tiddit:
     installation: etiddit
     method: conda

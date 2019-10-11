@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -142,8 +142,7 @@ sub analysis_sv_annotate {
 
     use MIP::File::Format::Toml qw{ load_toml };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -154,7 +153,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -331,20 +330,6 @@ sub analysis_sv_annotate {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{picard},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
 
     ## Alternative file tag
     my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};
