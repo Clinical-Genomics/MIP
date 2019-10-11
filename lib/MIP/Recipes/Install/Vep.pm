@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -218,7 +218,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
 
         my %finish_plugin_installation = (
             MaxEntScan => \&_install_maxentscan_plugin,
-            LofTool    => \&_install_loftool_plugin,
+            LoFtool    => \&_install_loftool_plugin,
             ExACpLI    => \&_install_exacpli_plugin,
         );
 
