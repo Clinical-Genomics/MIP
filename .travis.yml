@@ -31,11 +31,11 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip eperl5 epy3 etiddit --envn emip=mip_travis eperl5=mip_travis_perl5 epy3=mip_travis_py3 etiddit=mip_travis_tiddit --skip cadd --skip chanjo --skip cnvnator --skip delly --skip gatk --skip manta --skip multiqc --skip peddy --skip sambamba --skip svdb --skip tiddit --skip vep
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip eperl5 epy3 etiddit --envn emip=mip_travis eperl5=mip_travis_perl5 epy3=mip_travis_py3 etiddit=mip_travis_tiddit --skip cadd --skip chanjo --skip cnvnator --skip delly --skip fastqc --skip gatk --skip manta --skip multiqc --skip peddy --skip sambamba --skip svdb --skip tiddit --skip vep
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip eperl5 --skip sambamba --skip star-fusion --skip vep --skip multiqc 
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip eperl5 --skip fastqc --skip sambamba --skip star-fusion --skip vep --skip multiqc 
 ## Install MIP rna
   - bash mip.sh
 

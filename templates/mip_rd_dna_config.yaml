@@ -16,7 +16,6 @@ load_env:
     picard:
   mip_travis_eperl5:
     bwa_mem:
-    fastqc_ar:
     installation: eperl5
     method: conda
   mip_travis_py3:

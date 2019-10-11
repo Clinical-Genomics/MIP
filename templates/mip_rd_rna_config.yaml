@@ -15,7 +15,6 @@ load_env:
     method: conda
     mip:
   MIP_rd_rna_star:
-    fastqc_ar:
     genebody_coverage:
     gtf_file_to_feature_seqs.pl:
     installation: eperl5
