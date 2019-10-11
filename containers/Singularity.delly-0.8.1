@@ -2,10 +2,9 @@ Bootstrap: docker
 From: ubuntu:xenial
 
 %help
-    This is a template container
+    This is a container for installing delly version 0.8.1-h4037b6b_0
 
 %labels
-    ## Fill in metadata here
     Maintainer Clinical-Genomics/MIP
     Version 0.1
 
@@ -52,10 +51,7 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    conda install --yes [CONDA_PACKAGES]
+    conda install --yes delly=0.8.1=h4037b6b_0 pip python=3.7
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
-
-    ## Add more programs as needed
-    pip install --no-cache-dir [PIP_PACKAGES]
