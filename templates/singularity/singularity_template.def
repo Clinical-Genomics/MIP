@@ -52,10 +52,10 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    # conda install --yes [CONDA_PACKAGES]
+    conda install --yes [CONDA_PACKAGES]
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
 
     ## Add more programs as needed
-    # pip install --no-cache-dir [PIP_PACKAGES]
+    pip install --no-cache-dir [PIP_PACKAGES]
