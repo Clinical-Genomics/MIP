@@ -105,7 +105,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_path;
 my $verbose = 1;
-our $VERSION = q{1.3.3};
+our $VERSION = q{1.3.4};
 
 ###User Options
 GetOptions(
@@ -141,7 +141,8 @@ my %install_file = (
     rd_rna => q{Rd_rna.pm},
 );
 
-my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode} );
+my @installation_modes =
+  ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode --write_config --update_config} );
 
 PIPELINE:
 foreach my $pipeline ( keys %install_file ) {
@@ -152,11 +153,8 @@ foreach my $pipeline ( keys %install_file ) {
     );
 
     ## Test execution of install script
-    my $cmds_ref = [
-        q{perl},    catfile( dirname($Bin), q{mip} ),
-        q{install}, $pipeline,
-        qw{ --dec --write_config}
-    ];
+    my $cmds_ref =
+      [ q{perl}, catfile( dirname($Bin), q{mip} ), q{install}, $pipeline, q{--dec} ];
     if ($conda_path) {
 
         push @{$cmds_ref}, q{--conda_path}, $conda_path;
@@ -166,14 +164,22 @@ foreach my $pipeline ( keys %install_file ) {
     push @{$cmds_ref}, q{--reference_dir}, cwd();
 
     foreach my $installation_mode (@installation_modes) {
-        if ( $installation_mode eq q{--prefer_shell} ) {
-            push @{$cmds_ref}, qw{ --project_id development };
+        my @mode_cmds = @{$cmds_ref};
+
+        if ( $installation_mode eq q{--sbatch_mode} ) {
+
+            push @mode_cmds, qw{ --project_id development };
         }
 
-        push @{$cmds_ref}, $installation_mode;
+        push @mode_cmds, $installation_mode;
+        if ( $installation_mode eq q{--update_config} ) {
+
+            push @mode_cmds,
+              catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
+        }
 
         my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-            command => $cmds_ref,
+            command => \@mode_cmds,
             verbose => $verbose
         );
 

@@ -138,4 +138,29 @@ like(
     q{Install in existing conda env }
 );
 
+## Given a package when not following semantic versioning
+$conda_packages{picard} = q{not_semantic_version};
+
+trap {
+    install_conda_packages(
+        {
+            conda_env           => $conda_env,
+            conda_env_path      => $conda_env_path,
+            conda_packages_href => \%conda_packages,
+            FILEHANDLE          => $FILEHANDLE,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if version is defined and not semantic version} );
+like(
+    $trap->die,
+    qr/The\s+version\s+number\s+does\s+not\s+match/xms,
+    q{Throw error if version is defined and not semantic version}
+);
+
+## Close the filehandle
+close $FILEHANDLE;
+
 done_testing();

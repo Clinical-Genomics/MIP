@@ -10,20 +10,16 @@ core_ram_memory: 5
 node_ram_memory: 180
 project_id: test
 load_env:
-  MIP_rd_rna_py3:
-    genebody_coverage:
-    installation: epy3
-    method: conda
-    multiqc_ar:
-    rseqc:
   MIP_rd_rna:
     installation: emip
     method: conda
     mip:
   MIP_rd_rna_star:
+    genebody_coverage:
     gtf_file_to_feature_seqs.pl:
     installation: eperl5
     method: conda
+    rseqc:
     star_aln:
     star_fusion:
     trim_galore_ar:

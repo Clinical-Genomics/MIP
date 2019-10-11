@@ -11,18 +11,11 @@ eperl5:
   data_type: HASH
   mandatory: no
   type: mip
-epy3:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 python3_programs:
   associated_recipe:
     - mip
   data_type: ARRAY
   default:
-    - multiqc
     - rseqc
   type: mip
 installations:
@@ -31,7 +24,6 @@ installations:
   data_type: ARRAY
   default:
     - emip
-    - epy3
     - eperl5
   mandatory: no
   type: mip

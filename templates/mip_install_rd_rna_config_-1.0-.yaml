@@ -49,6 +49,10 @@ emip:
       executable:
         fastqc:
       uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
+    multiqc:
+      executable:
+        multiqc:
+      uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
     sambamba:
       executable:
         sambamba:
@@ -65,31 +69,23 @@ emip:
     vep:
       executable:
         vep:
-      uri: shub://jemten/MIP:vep-97.4
-## Python 3 environment spec
-epy3:
-  conda:
-    bedops: 2.4.35=h2d50403_1
-    pip:
-    python: 3.6
-    ucsc-wigtobigwig: 366=hdd26221_0
-  pip:
-    multiqc: 1.6
-    rseqc: 3.0.0
-  shell:
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
 ## STAR environment spec
 eperl5:
   conda:
     blast: 2.9.0
     hmmer:
-    star: 2.7.2b=0
+    pigz:
+    python: 3.6
+    star: 2.7.2c=0
     trim-galore: 0.6.4=0
+    ucsc-wigtobigwig: 366=hdd26221_0
   pip:
+    rseqc: 3.0.1
   shell:
 ## Default base name
 environment_base_name: mip7_rd-rna
 # Specify environment names
 environment_name:
   emip: mip7_rd-rna
-  epy3: mip7_rd-rna_py3
   eperl5: mip7_rd-rna_perl5
