@@ -17,7 +17,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ set_contigs };
@@ -62,7 +62,7 @@ sub set_contigs {
     if ( $human_genome_reference =~ / hg\d+ /sxm ) {
 
         # Contigs for filtering of bam file
-        @{ $file_info_href->{contigs} } = qw{
+        @{ $file_info_href->{bam_contigs} } = qw{
           chr1 chr2 chr3 chr4 chr5 chr6
           chr7 chr8 chr9 chr10 chr11 chr12
           chr13 chr14 chr15 chr16 chr17 chr18
@@ -70,6 +70,22 @@ sub set_contigs {
           chrM };
 
         # Contigs for filtering of bam file
+        @{ $file_info_href->{bam_contigs_size_ordered} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chrX chr8 chr9 chr10 chr11
+          chr12 chr13 chr14 chr15 chr16 chr17
+          chr18 chr19 chr20 chr21 chr22 chrY
+          chrM };
+
+        # Contigs for filtering of vcf file
+        @{ $file_info_href->{contigs} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chr8 chr9 chr10 chr11 chr12
+          chr13 chr14 chr15 chr16 chr17 chr18
+          chr19 chr20 chr21 chr22 chrX chrY
+          chrM };
+
+        # Contigs for filtering of vcf file
         @{ $file_info_href->{contigs_size_ordered} } = qw{
           chr1 chr2 chr3 chr4 chr5 chr6
           chr7 chrX chr8 chr9 chr10 chr11
@@ -81,16 +97,29 @@ sub set_contigs {
         ## Ensembl - no prefix and MT
 
         # Contigs for filtering of bam file
-        @{ $file_info_href->{contigs} } = qw{
+        @{ $file_info_href->{bam_contigs} } = qw{
           1 2 3 4 5 6 7 8 9 10
           11 12 13 14 15 16 17 18 19 20
           21 22 X Y MT };
 
         # Contigs for filtering of bam file
+        @{ $file_info_href->{bam_contigs_size_ordered} } = qw{
+          1 2 3 4 5 6 7 X 8 9
+          10 11 12 13 14 15 16 17 18 19
+          20 21 22 Y MT };
+
+        # Contigs for filtering of vcf file
+        @{ $file_info_href->{contigs} } = qw{
+          1 2 3 4 5 6 7 8 9 10
+          11 12 13 14 15 16 17 18 19 20
+          21 22 X Y MT };
+
+        # Contigs for filtering of vcf file
         @{ $file_info_href->{contigs_size_ordered} } = qw{
           1 2 3 4 5 6 7 X 8 9
           10 11 12 13 14 15 16 17 18 19
           20 21 22 Y MT };
+
     }
     return;
 }
