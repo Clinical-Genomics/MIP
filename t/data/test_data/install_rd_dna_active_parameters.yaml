@@ -52,6 +52,10 @@ emip:
     vt:
       version: gitRepo
   singularity:
+    cadd:
+      executable:
+        CADD.sh:
+      uri: shub://Clinical-Genomics/MIP:cadd-1.5
     cnvnator:
       executable:
         cnvnator: ~
