@@ -84,16 +84,6 @@ emip:
       executable:
         vep:
       uri: shub://Clinical-Genomics/MIP:vep-97.4
-# Delly environment spec
-edelly:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    delly: 0.8.1=h4037b6b_0
-    picard: 2.18.14=0
-    pip:
-    python: 2.7
-  pip:
-  shell:
 # Perl environment spec
 eperl5:
   conda:
@@ -150,7 +140,6 @@ environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
-  edelly: mip7_rd-dna_delly
   eperl5: mip7_rd-dna_perl5
   epy3: mip7_rd-dna_py3
   etiddit: mip7_rd-dna_tiddit
