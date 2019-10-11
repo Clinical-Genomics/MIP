@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -186,7 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ bwakit | gatk | picard | star-fusion };
+    my @custom_solutions = qw{ bwakit | gatk | picard };
 
     ## Link conda packages
     # Creating target-link paths
@@ -340,7 +340,6 @@ sub finish_conda_package_install {
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
-    use MIP::Recipes::Install::Star_fusion qw{ setup_star_fusion };
 
     my @conda_packages = keys %{$conda_packages_href};
 
@@ -424,18 +423,6 @@ sub finish_conda_package_install {
                 force       => 1,
                 infile_path => catdir( $tmpdir, q{gatk} ),
                 recursive   => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    if ( $conda_packages_href->{q{star-fusion}} ) {
-        say {$FILEHANDLE} q{## Custom stuff for STAR-FUSION};
-        setup_star_fusion(
-            {
-                conda_prefix_path    => $conda_env_path,
-                FILEHANDLE           => $FILEHANDLE,
-                star_fusion_dir_path => catdir( $conda_env_path, qw{ lib STAR-Fusion } ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;

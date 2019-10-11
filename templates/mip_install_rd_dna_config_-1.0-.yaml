@@ -41,7 +41,7 @@ emip:
     cadd:
       executable:
         CADD.sh:
-      uri: shub://jemten/MIP:cadd-1.5
+      uri: shub://Clinical-Genomics/MIP:cadd-1.5
     cnvnator: 
       executable:
         cnvnator:
@@ -68,6 +68,10 @@ emip:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    svdb:
+      executable:
+        svdb:
+      uri: shub://J35P312/SVDB:2.2.0 
     tiddit:
       executable:
         TIDDIT.py:
@@ -121,17 +125,6 @@ epy3:
       version: 0.5.1
     upd:
       version: 0.1
-esvdb:
-  conda:
-    pip:
-    python: 2.7
-  pip:
-  shell:
-    svdb:
-      conda_dependency:
-        pip:
-        python: 2.7
-      version: 2.0.0
 ## Tiddit env spec
 etiddit:
   conda:
@@ -156,7 +149,6 @@ environment_name:
   edelly: mip7_rd-dna_delly
   eperl5: mip7_rd-dna_perl5
   epy3: mip7_rd-dna_py3
-  esvdb: mip7_rd-dna_svdb
   etiddit: mip7_rd-dna_tiddit
 vep_plugins:
   - dbNSFP
