@@ -45,11 +45,15 @@ emip:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
   singularity:
+    fastqc:
+      executable:
+        fastqc:
+      uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
     sambamba:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
-    star-fusion: 
+    star-fusion:
       executable:
         gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
         make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
@@ -77,7 +81,6 @@ epy3:
 eperl5:
   conda:
     blast: 2.9.0
-    fastqc: 0.11.8=1
     hmmer:
     star: 2.7.2b=0
     trim-galore: 0.6.4=0

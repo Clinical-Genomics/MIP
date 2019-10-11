@@ -22,7 +22,6 @@ load_env:
     mip:
   MIP_rd_rna_star:
     gtf_file_to_feature_seqs.pl:
-    fastqc_ar:
     installation: eperl5
     method: conda
     star_aln:
