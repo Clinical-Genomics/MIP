@@ -55,6 +55,7 @@ From: ubuntu:xenial
 
     tar --extract --file=ExpansionHunter-v3.1.2-linux_x86_64.tar.gz --directory=/opt/conda/share/
 
+    chmod a+x ExpansionHunter
     ln --symbolic --force /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64/bin/ExpansionHunter /opt/conda/bin/
 
     rm --recursive ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
