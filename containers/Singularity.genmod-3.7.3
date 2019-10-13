@@ -2,9 +2,10 @@ Bootstrap: docker
 From: ubuntu:xenial
 
 %help
-    This is a container for installing PACKAGE version VERSION
+    This is a container for installing genmod version 3.7.3
 
 %labels
+    ## Fill in metadata here
     Maintainer Clinical-Genomics/MIP
     Version 0.1
 
@@ -51,10 +52,10 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    conda install --yes PACKAGE=VERSION
+    conda install --yes pip python=3.7
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
 
     ## Add more programs as needed
-    pip install --no-cache-dir PACKAGE==VERSION
+    pip install --no-cache-dir genmod==3.7.3
