@@ -20,12 +20,9 @@ load_env:
     installation: eperl5
     method: conda
   mip_travis_py3:
-    chanjo_sexcheck:
-    expansionhunter:
     genmod:
     installation: epy3
     method: conda
-    multiqc_ar:
     rankvariant:
     stranger:
     sv_rankvariant:

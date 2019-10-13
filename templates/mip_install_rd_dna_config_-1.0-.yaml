@@ -51,6 +51,10 @@ emip:
       executable:
         chanjo:
       uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
+    expansionhunter:
+      executable:
+        expansionhunter:
+      uri: shub://Clinical-Genomics/MIP:expansionhunter-3.1.2
     fastqc:
       executable:
         fastqc:
@@ -113,9 +117,6 @@ epy3:
   shell:
     chromograph:
       version: gitRepo
-    expansionhunter:
-      conda_dependency:
-      version: 3.1.2
     rhocall:
       conda_dependency:
         matplotlib:
