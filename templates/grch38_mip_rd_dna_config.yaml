@@ -27,7 +27,6 @@ load_env:
     method: conda
     multiqc_ar:
     rankvariant:
-    stranger:
     sv_rankvariant:
     variant_integrity_ar:
   mip_travis_tiddit:
