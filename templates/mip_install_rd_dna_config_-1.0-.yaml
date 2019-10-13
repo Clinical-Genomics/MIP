@@ -53,7 +53,7 @@ emip:
       uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
     expansionhunter:
       executable:
-        expansionhunter:
+        ExpansionHunter:
       uri: shub://Clinical-Genomics/MIP:expansionhunter-3.1.2
     fastqc:
       executable:
