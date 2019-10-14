@@ -20,7 +20,6 @@ load_env:
     installation: eperl5
     method: conda
     rseqc:
-    star_aln:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
