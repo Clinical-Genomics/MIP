@@ -17,12 +17,6 @@ epy3:
   data_type: HASH
   mandatory: no
   type: mip
-etiddit:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 installations:
   associated_recipe:
     - mip
@@ -31,7 +25,6 @@ installations:
     - emip
     - eperl5
     - epy3
-    - etiddit
   mandatory: no
   type: mip
 python3_programs:

@@ -19,7 +19,6 @@ load_env:
   mip_travis_py3:
     method: conda
     rankvariant:
-    rhocall_ar:
     sv_rankvariant:
 slurm_quality_of_service: low
 ## Input
