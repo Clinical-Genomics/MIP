@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -140,7 +140,7 @@ sub analysis_expansionhunter {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
+      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
@@ -150,8 +150,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_environment write_source_environment_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -331,20 +330,6 @@ sub analysis_expansionhunter {
     my $svdb_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $outfile_suffix;
 
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{svdb},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
-
     svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
@@ -354,14 +339,6 @@ sub analysis_expansionhunter {
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    write_return_to_environment(
-        {
-            active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
-        }
-    );
-    print {$FILEHANDLE} $NEWLINE;
 
     ## Split multiallelic variants
     say {$FILEHANDLE} q{## Split multiallelic variants};
@@ -377,19 +354,6 @@ sub analysis_expansionhunter {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{stranger},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
     say {$FILEHANDLE} q{## Stranger annotation};
 
     my $stranger_outfile_path =

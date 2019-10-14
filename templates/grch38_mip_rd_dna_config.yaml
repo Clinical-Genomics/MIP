@@ -20,11 +20,9 @@ load_env:
     installation: eperl5
     method: conda
   mip_travis_py3:
-    genmod:
     installation: epy3
     method: conda
     rankvariant:
-    stranger:
     sv_rankvariant:
     variant_integrity_ar:
   mip_travis_tiddit:

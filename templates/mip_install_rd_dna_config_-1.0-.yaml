@@ -63,6 +63,10 @@ emip:
       executable:
         delly:
       uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    genmod:
+      executable:
+        genmod:
+      uri: shub://Clinical-Genomics/MIP:genmod-3.7.3
     manta:
       executable:
         configManta.py:
@@ -80,6 +84,10 @@ emip:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    stranger:
+      executable:
+        stranger:
+      uri: shub://Clinical-Genomics/MIP:stranger-0.5.4
     svdb:
       executable:
         svdb:
@@ -111,8 +119,6 @@ epy3:
     pip:
     python: 3.7
   pip:
-    genmod: 3.7.3
-    stranger: 0.5.4
     variant_integrity: 0.0.4
   shell:
     chromograph:

@@ -20,14 +20,11 @@ load_env:
     method: conda
   mip_travis_py3:
     chromograph_ar:
-    genmod:
     installation: epy3
     method: conda
     rankvariant:
     rhocall_ar:
     rhocall_viz:
-    stranger:
-    sv_rankvariant:
     upd_ar:
     variant_integrity_ar:
   mip_travis_tiddit:

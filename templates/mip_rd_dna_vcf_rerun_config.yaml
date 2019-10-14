@@ -17,7 +17,6 @@ load_env:
     mip:
     picard:
   mip_travis_py3:
-    genmod:
     method: conda
     rankvariant:
     rhocall_ar:
