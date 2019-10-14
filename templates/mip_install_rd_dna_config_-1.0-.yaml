@@ -104,6 +104,10 @@ emip:
       executable:
         TIDDIT.py:
       uri: shub://J35P312/TIDDIT:2.8.0
+    variant_integrity:
+      executable:
+        variant_integrity:
+      uri: shub://Clinical-Genomics/MIP:variant_integrity-0.0.4
     vep:
       executable:
         vep:
@@ -130,7 +134,6 @@ epy3:
     pip:
     python: 3.7
   pip:
-    variant_integrity: 0.0.4
   shell:
     chromograph:
       version: gitRepo
