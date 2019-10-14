@@ -59,6 +59,10 @@ emip:
       executable:
         delly:
       uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    genmod:
+      executable:
+        genmod:
+      uri: shub://Clinical-Genomics/MIP:genmod-3.7.3
     manta:
       executable:
         configManta.py:
@@ -111,7 +115,6 @@ epy3:
     pip:
     python: 3.7
   pip:
-    genmod: 3.7.3
     variant_integrity: 0.0.4
   shell:
     chromograph:

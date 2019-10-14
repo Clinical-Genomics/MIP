@@ -21,7 +21,6 @@ load_env:
   mip_travis_py3:
     chromograph_ar:
     expansionhunter:
-    genmod:
     installation: epy3
     method: conda
     rankvariant:

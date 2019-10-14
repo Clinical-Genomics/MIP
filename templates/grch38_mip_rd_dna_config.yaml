@@ -22,7 +22,6 @@ load_env:
   mip_travis_py3:
     chanjo_sexcheck:
     expansionhunter:
-    genmod:
     installation: epy3
     method: conda
     multiqc_ar:
