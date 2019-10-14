@@ -37,7 +37,6 @@ use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
-use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Upd qw{ install_upd };
 use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
@@ -49,7 +48,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -200,7 +199,6 @@ sub pipeline_install_rd_dna {
             mip_scripts  => \&install_mip_scripts,
             picard       => \&install_picard,
             plink2       => \&install_plink2,
-            rhocall      => \&install_rhocall,
             upd          => \&install_upd,
             vcf2cytosure => \&install_vcf2cytosure,
             vt           => \&install_vt,
