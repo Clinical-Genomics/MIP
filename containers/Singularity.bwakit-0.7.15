@@ -57,15 +57,15 @@ From: ubuntu:xenial
     /opt/conda/bin/conda clean -tipsy
 
     ## Creating symbolic links for bwakit in condas bin
-    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/run-HLA /opt/conda/bin/run-HLA
-    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA.js /opt/conda/bin/typeHLA.js
+    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/bwa-postalt.js /opt/conda/bin/bwa-postalt.js
+    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/fermi2 /opt/conda/bin/fermi2
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/fermi2.pl /opt/conda/bin/fermi2.pl
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/k8 /opt/conda/bin/k8
-    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/bwa-postalt.js /opt/conda/bin/bwa-postalt.js
-    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA.sh /opt/conda/bin/typeHLA.sh
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/ropebwt2 /opt/conda/bin/ropebwt2
-    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/fermi2 /opt/conda/bin/fermi2
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/seqtk /opt/conda/bin/seqtk
+    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/run-HLA /opt/conda/bin/run-HLA
+    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA.js /opt/conda/bin/typeHLA.js
+    ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA.sh /opt/conda/bin/typeHLA.sh
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA-selctg.js /opt/conda/bin/typeHLA-selctg.js
 
     ## Copy bwa-kit required resource

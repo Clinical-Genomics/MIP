@@ -44,7 +44,17 @@ emip:
       uri: shub://Clinical-Genomics/MIP:bwa-0.7.17
     bwakit:
       executable:
-        bwa:
+        bwa-postalt.js:
+        fermi2:
+        fermi2.pl:
+        k8:
+        ropebwt2:
+        run-bwamem:
+        run-HLA:
+        typeHLA.js:
+        typeHLA.sh:
+        typeHLA-selctg.js:
+        seqtk:
       uri: shub://Clinical-Genomics/MIP:bwakit-0.7.15
     cadd:
       executable:
