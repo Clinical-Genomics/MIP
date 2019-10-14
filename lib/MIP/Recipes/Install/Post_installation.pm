@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -298,13 +298,13 @@ sub update_config {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $env_name_href      => Program environment name hash {REF}
-##          : $FILEHANDLE         => open filehandle
-##          : $installations_ref  => Array with installations {REF}
-##          : $log                => Log
-##          : $pipeline           => Pipeline
-##          : $update_config      => Path to config to update
-##          : $write_config       => Create new config from template
+## Arguments: $env_name_href     => Program environment name hash {REF}
+##          : $FILEHANDLE        => open filehandle
+##          : $installations_ref => Array with installations {REF}
+##          : $log               => Log
+##          : $pipeline          => Pipeline
+##          : $update_config     => Path to config to update
+##          : $write_config      => Create new config from template
 
     my ($arg_href) = @_;
 
@@ -362,7 +362,7 @@ sub update_config {
     ## Return if no config options
     return if ( not $update_config ) and ( not $write_config );
 
-    ## map installation to bash paramter
+    ## Map installation to bash paramter
     my %installation_outcome = map { $_ => q{$} . uc $_ } @{$installations_ref};
 
     ## Set config paths
@@ -370,9 +370,10 @@ sub update_config {
     my $save_config_path;
     my $date_time  = localtime;
     my $time_stamp = $date_time->datetime;
+
     if ($update_config) {
 
-        ## get absolute path
+        ## Get absolute path
         $update_config = abs_path($update_config);
 
         ## Check that file exists
