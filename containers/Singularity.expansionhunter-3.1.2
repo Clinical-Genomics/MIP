@@ -51,12 +51,10 @@ From: ubuntu:xenial
     conda config --add channels conda-forge
     conda config --add channels bioconda
 
-    wget --no-verbose https://github.com/Illumina/ExpansionHunter/releases/download/v3.1.2/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz -O ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
+    wget --no-verbose https://github.com/Illumina/ExpansionHunter/releases/download/v3.1.2/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz -O /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
 
-    tar --extract --file=ExpansionHunter-v3.1.2-linux_x86_64.tar.gz --directory=/opt/conda/share/
+    tar --extract --file=/opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz --directory=/opt/conda/share/
 
-    chmod -R 755 /opt
-    chmod a+x /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64/bin/ExpansionHunter
     ln --symbolic --force /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64/bin/ExpansionHunter /opt/conda/bin/
 
-    rm --recursive ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
+    rm --recursive /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
