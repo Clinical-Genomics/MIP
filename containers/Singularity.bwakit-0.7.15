@@ -69,4 +69,4 @@ From: ubuntu:xenial
     ln --symbolic --force /opt/conda/share/bwakit-0.7.15-1/typeHLA-selctg.js /opt/conda/bin/typeHLA-selctg.js
 
     ## Copy bwa-kit required resource
-    cp --recursive --force /opt/conda/share/resource-human-HLA /opt/conda/bin
+    cp --recursive --force /opt/conda/share/bwakit-0.7.15-1/resource-human-HLA /opt/conda/bin
