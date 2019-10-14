@@ -2,12 +2,12 @@
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9=ha228f0b_4
+    bcftools: 1.9
     bioconductor-deseq2: 1.22.1=r351hf484d3e_0
     bioconductor-tximport:
     gatk4: 4.1.3.0=0
     gffcompare: 0.10.6=h2d50403_0
-    htslib: 1.9=hc238db4_4
+    htslib: 1.9
     numpy:
     picard: 2.18.23=0
     pigz:
@@ -17,7 +17,7 @@ emip:
     r-optparse:
     r-readr:
     salmon: 0.12.0=h86b0361_1
-    samtools: 1.9=h8571acd_11
+    samtools: 1.9
     scipy:
     stringtie: 1.3.4=py27_0
   shell:
@@ -66,6 +66,10 @@ emip:
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+    trim-galore:
+      executable:
+        trim_galore:
+      uri: library://jemten/mip_containers/trim-galore:0.6.4
     vep:
       executable:
         vep:
@@ -73,12 +77,7 @@ emip:
 ## STAR environment spec
 eperl5:
   conda:
-    blast: 2.9.0
-    hmmer:
-    pigz:
     python: 3.6
-    star: 2.7.2c=0
-    trim-galore: 0.6.4=0
     ucsc-wigtobigwig: 366=hdd26221_0
   pip:
     rseqc: 3.0.1

@@ -134,7 +134,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     ## Setup cache_dir_path
     if ( not $cache_dir_path ) {
         $cache_dir_path = catdir( $reference_dir_path,
-            q{ensembl-tools-release-} . $vep_version . q{cache} );
+            q{ensembl-tools-release-} . $vep_version, q{cache} );
     }
     push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 

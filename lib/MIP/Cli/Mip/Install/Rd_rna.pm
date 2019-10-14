@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.05;
+our $VERSION = 2.06;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -164,7 +164,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],
@@ -193,7 +193,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],

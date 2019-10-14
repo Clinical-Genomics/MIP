@@ -35,7 +35,7 @@ install:
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip eperl5 --skip fastqc --skip sambamba --skip star-fusion --skip vep --skip multiqc 
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip eperl5 --skip fastqc --skip sambamba --skip star-fusion --skip vep --skip multiqc --skip trim-galore 
 ## Install MIP rna
   - bash mip.sh
 
