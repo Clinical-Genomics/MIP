@@ -26,7 +26,6 @@ load_env:
     rhocall_ar:
     rhocall_viz:
     upd_ar:
-    variant_integrity_ar:
   mip_travis_tiddit:
     installation: etiddit
     method: conda

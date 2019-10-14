@@ -24,7 +24,6 @@ load_env:
     method: conda
     rankvariant:
     sv_rankvariant:
-    variant_integrity_ar:
   mip_travis_tiddit:
     installation: etiddit
     method: conda
