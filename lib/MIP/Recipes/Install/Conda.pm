@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -186,7 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ bwakit | gatk | picard };
+    my @custom_solutions = qw{ gatk | picard };
 
     ## Link conda packages
     # Creating target-link paths
@@ -236,10 +236,7 @@ sub install_conda_packages {
 
     if ( intersect( @custom_solutions, @conda_packages ) ) {
         say {$FILEHANDLE} q{## Unset variables};
-        my %program_path_aliases = (
-            bwakit => q{BWAKIT_PATH},
-            picard => q{PICARD_PATH},
-        );
+        my %program_path_aliases = ( picard => q{PICARD_PATH}, );
 
       PROGRAM:
         foreach my $program ( keys %program_path_aliases ) {
@@ -355,28 +352,6 @@ sub finish_conda_package_install {
             {
                 env_name   => $conda_env,
                 FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Custom BWA
-    ## Check if bwakit has been removed from conda installation hash
-    if ( $conda_packages_href->{bwakit} ) {
-
-        say {$FILEHANDLE} q{## Custom BWA solutions};
-
-        ## Double quote to avoid expansion of shell variable
-        my $infile_path  = catdir( q/"${BWAKIT_PATH}"/, q{resource-human-HLA} );
-        my $outfile_path = catdir( $conda_env_path,     q{bin} );
-
-        gnu_cp(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                force        => 1,
-                infile_path  => $infile_path,
-                outfile_path => $outfile_path,
-                recursive    => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -503,7 +478,7 @@ sub _create_package_array {
 sub _create_target_link_paths {
 
 ## Function  : Creates paths to conda target binaries and links.
-##           : Custom solutions for bwakit picard.
+##           : Custom solutions for picard.
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
 ## Arguments : $conda_packages_href  => Hash with conda packages {REF}
@@ -559,24 +534,10 @@ sub _create_target_link_paths {
 
     my %target_link_paths;
 
-    my %binaries = (
-        bwakit => [
-            qw{
-              k8                seqtk
-              bwa-postalt.js    run-HLA
-              typeHLA.sh        fermi2
-              fermi2.pl         ropebwt2
-              typeHLA-selctg.js typeHLA.js
-              }
-        ],
-        picard => [qw{ picard.jar }],
-    );
+    my %binaries = ( picard => [qw{ picard.jar }], );
 
     ## Variables to store the full path in
-    my %program_path_aliases = (
-        bwakit => q{BWAKIT_PATH},
-        picard => q{PICARD_PATH},
-    );
+    my %program_path_aliases = ( picard => q{PICARD_PATH}, );
 
     say {$FILEHANDLE} q{## Find exact path to program and store it for linking};
 
