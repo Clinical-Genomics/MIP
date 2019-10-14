@@ -80,6 +80,10 @@ emip:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    stranger:
+      executable:
+        stranger:
+      uri: shub://Clinical-Genomics/MIP:stranger-0.5.4
     svdb:
       executable:
         svdb:
@@ -111,7 +115,6 @@ epy3:
     pip:
     python: 3.7
   pip:
-    stranger: 0.5.4
     variant_integrity: 0.0.4
   shell:
     chromograph:
