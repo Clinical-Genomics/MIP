@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -135,7 +135,6 @@ sub analysis_trim_galore {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Program::Trimming::Trim_galore qw{ trim_galore };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -249,17 +248,6 @@ sub analysis_trim_galore {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    my $pwd = cwd();
-
-    ## Move to outsample directory
-    gnu_cd(
-        {
-            directory_path => $outsample_directory,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     # Keep track of paired end files
     my $paired_end_tracker = 0;
 
@@ -296,6 +284,7 @@ sub analysis_trim_galore {
             {
                 FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => \@infile_paths,
+                outdir_path      => $outsample_directory,
                 paired_reads     => $paired_reads,
             }
         );
@@ -304,17 +293,6 @@ sub analysis_trim_galore {
         ## Increment paired end tracker
         $paired_end_tracker++;
     }
-
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-    ## Move back to original directory
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

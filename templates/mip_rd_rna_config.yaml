@@ -21,8 +21,6 @@ load_env:
     method: conda
     rseqc:
     star_aln:
-    star_fusion:
-    trim_galore_ar:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml

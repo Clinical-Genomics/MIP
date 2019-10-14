@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ trim_galore };
@@ -33,12 +33,14 @@ BEGIN {
 
 sub trim_galore {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for Trim Galore. Based on version 0.6.4
 ## Returns  : @commands
-## Arguments: fastqc                  => Run fastqc after trimming
+## Arguments: $cores                  => Cores to be used by each process
+##          : $fastqc                 => Run fastqc after trimming
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $gzip_output            => Gzip output fastq file
 ##          : $infile_paths_ref       => Infile paths {REF}
+##          : $outdir_path            => Outdirectory path
 ##          : $paired_reads           => Do paired end trimming
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -48,8 +50,10 @@ sub trim_galore {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $cores;
     my $FILEHANDLE;
     my $infile_paths_ref;
+    my $outdir_path;
     my $paired_reads;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -61,6 +65,11 @@ sub trim_galore {
     my $gzip_output;
 
     my $tmpl = {
+        cores => {
+            allow       => [ undef, qr/\A \d+ \z/xms ],
+            store       => \$cores,
+            strict_type => 1,
+        },
         fastqc => {
             allow       => [ undef, 0, 1 ],
             default     => 1,
@@ -80,6 +89,10 @@ sub trim_galore {
             default     => [],
             required    => 1,
             store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        outdir_path => {
+            store       => \$outdir_path,
             strict_type => 1,
         },
         paired_reads => {
@@ -107,12 +120,20 @@ sub trim_galore {
     ## Stores commands depending on input parameters
     my @commands = qw{ trim_galore };
 
+    if ($cores) {
+        push @commands, q{--cores} . $SPACE . $cores;
+    }
+
     if ($fastqc) {
         push @commands, q{--fastqc};
     }
 
     if ($gzip_output) {
         push @commands, q{--gzip};
+    }
+
+    if ($outdir_path) {
+        push @commands, q{--output_dir} . $SPACE . $outdir_path;
     }
 
     if ($paired_reads) {
