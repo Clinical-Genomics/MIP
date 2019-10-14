@@ -32,7 +32,6 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Chromograph qw{ install_chromograph };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
-use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
@@ -196,16 +195,15 @@ sub pipeline_install_rd_dna {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
-            bedtools        => \&install_bedtools,
-            chromograph     => \&install_chromograph,
-            expansionhunter => \&install_expansionhunter,
-            mip_scripts     => \&install_mip_scripts,
-            picard          => \&install_picard,
-            plink2          => \&install_plink2,
-            rhocall         => \&install_rhocall,
-            upd             => \&install_upd,
-            vcf2cytosure    => \&install_vcf2cytosure,
-            vt              => \&install_vt,
+            bedtools     => \&install_bedtools,
+            chromograph  => \&install_chromograph,
+            mip_scripts  => \&install_mip_scripts,
+            picard       => \&install_picard,
+            plink2       => \&install_plink2,
+            rhocall      => \&install_rhocall,
+            upd          => \&install_upd,
+            vcf2cytosure => \&install_vcf2cytosure,
+            vt           => \&install_vt,
         );
 
         ## Launch shell installation subroutines
