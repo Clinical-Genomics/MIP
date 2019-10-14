@@ -23,8 +23,6 @@ load_env:
     installation: epy3
     method: conda
     rankvariant:
-    rhocall_ar:
-    rhocall_viz:
     upd_ar:
     variant_integrity_ar:
 max_cores_per_node: 36

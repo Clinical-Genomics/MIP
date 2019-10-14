@@ -37,7 +37,6 @@ use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
-use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Upd qw{ install_upd };
 use MIP::Recipes::Install::Vt qw{ install_vt };
@@ -199,7 +198,6 @@ sub pipeline_install_rd_dna {
             mip_scripts => \&install_mip_scripts,
             picard      => \&install_picard,
             plink2      => \&install_plink2,
-            rhocall     => \&install_rhocall,
             upd         => \&install_upd,
             vt          => \&install_vt,
         );

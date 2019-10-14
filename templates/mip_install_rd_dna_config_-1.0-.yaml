@@ -80,6 +80,10 @@ emip:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    rhocall:
+      executable:
+        rhocall:
+      uri: shub://Clinical-Genomics/MIP:rhocall-0.5.1
     sambamba:
       executable:
         sambamba:
@@ -127,10 +131,6 @@ epy3:
   shell:
     chromograph:
       version: gitRepo
-    rhocall:
-      conda_dependency:
-        matplotlib:
-      version: 0.5.1
     upd:
       version: 0.1
 ## Default base name
