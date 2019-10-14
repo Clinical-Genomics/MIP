@@ -27,11 +27,6 @@ load_env:
     rhocall_viz:
     upd_ar:
     variant_integrity_ar:
-  mip_travis_tiddit:
-    installation: etiddit
-    method: conda
-    tiddit:
-    vcf2cytosure_ar:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test

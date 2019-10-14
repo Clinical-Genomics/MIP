@@ -198,13 +198,6 @@ $ perl t/mip_analyse_rd_dna.test
       rankvariant:
       sv_rankvariant:
       variant_integrity_ar:
-    mip7_rd-dna_tiddit:
-      installation: etiddit
-      method: conda
-      tiddit:
-      TIDDIT.py:
-      tiddit_coverage:
-      vcf2cytosure_ar:
   ```
 
 ### Usage

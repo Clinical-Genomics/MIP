@@ -100,6 +100,10 @@ emip:
       executable:
         vep:
       uri: shub://Clinical-Genomics/MIP:vep-97.4
+    vcf2cytosure:
+      executable:
+        vcf2cytosure:
+      uri: shub://J35P312/vcf2cytosure:0.4.3
 # Perl environment spec
 eperl5:
   conda:
@@ -129,22 +133,6 @@ epy3:
       version: 0.5.1
     upd:
       version: 0.1
-## Tiddit env spec
-etiddit:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    cmake: 3.13.2=h011004d_0
-    cython: 0.29.1=py27hfc679d8_0
-    cyvcf2: 0.10.0=py27h355e19c_0
-    gcc:
-    numpy: 1.15.4=py27_blas_openblashb06ca3d_0
-    pip:
-    python: 2.7
-    scipy: 1.2.0=py27_blas_openblashb06ca3d_200
-  pip:
-  shell:
-    vcf2cytosure:
-      version: 0.4.3
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
@@ -152,7 +140,6 @@ environment_name:
   emip: mip7_rd-dna
   eperl5: mip7_rd-dna_perl5
   epy3: mip7_rd-dna_py3
-  etiddit: mip7_rd-dna_tiddit
 vep_plugins:
   - dbNSFP
   - ExACpLI
