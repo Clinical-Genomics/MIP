@@ -39,7 +39,6 @@ use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 use MIP::Recipes::Install::Upd qw{ install_upd };
-use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
 BEGIN {
@@ -194,14 +193,13 @@ sub pipeline_install_rd_dna {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
-            bedtools     => \&install_bedtools,
-            chromograph  => \&install_chromograph,
-            mip_scripts  => \&install_mip_scripts,
-            picard       => \&install_picard,
-            plink2       => \&install_plink2,
-            upd          => \&install_upd,
-            vcf2cytosure => \&install_vcf2cytosure,
-            vt           => \&install_vt,
+            bedtools    => \&install_bedtools,
+            chromograph => \&install_chromograph,
+            mip_scripts => \&install_mip_scripts,
+            picard      => \&install_picard,
+            plink2      => \&install_plink2,
+            upd         => \&install_upd,
+            vt          => \&install_vt,
         );
 
         ## Launch shell installation subroutines
