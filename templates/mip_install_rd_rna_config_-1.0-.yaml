@@ -57,6 +57,10 @@ emip:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    star:
+      executable:
+        STAR:
+      uri: library://jemten/mip_containers/star:2.7.3a
     star-fusion:
       executable:
         gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
@@ -74,7 +78,6 @@ emip:
       executable:
         vep:
       uri: shub://Clinical-Genomics/MIP:vep-97.4
-## STAR environment spec
 eperl5:
   conda:
     python: 3.6
