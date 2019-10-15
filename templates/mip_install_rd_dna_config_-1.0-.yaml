@@ -124,7 +124,7 @@ emip:
       uri: shub://J35P312/TIDDIT:2.8.0
     upd:
       executable:
-        stranger:
+        upd:
       uri: shub://Clinical-Genomics/MIP:upd-0.1
     variant_integrity:
       executable:
