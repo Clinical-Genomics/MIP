@@ -1,0 +1,8 @@
+---
+load_env:
+  mip_travis:
+    endvariantannotationblock:
+    gatk:
+    method: conda
+    mip:
+    picard:
