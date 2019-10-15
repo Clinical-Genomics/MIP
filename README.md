@@ -188,16 +188,6 @@ $ perl t/mip_analyse_rd_dna.test
       fastqc_ar:
       installation: eperl5
       method: conda
-    mip7_rd-dna_py3:
-      chanjo_sexcheck:
-      expansionhunter:
-      genmod:
-      installation: epy3
-      method: conda
-      multiqc_ar:
-      rankvariant:
-      sv_rankvariant:
-      variant_integrity_ar:
   ```
 
 ### Usage

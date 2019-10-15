@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.09;
+our $VERSION = 2.10;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -140,7 +140,6 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
             isa           => Dict [
                 emip   => Optional [Str],
                 eperl5 => Optional [Str],
-                epy3   => Optional [Str],
             ],
             required => 0,
         ),
@@ -150,10 +149,10 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip eperl5 epy3}],
+            cmd_tags      => [q{Default: emip eperl5}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip eperl5 epy3 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip eperl5 }] ), ],
             required      => 0,
         ),
     );

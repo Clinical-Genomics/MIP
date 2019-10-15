@@ -17,10 +17,6 @@ load_env:
     method: conda
     mip:
     picard:
-  mip_travis_py3:
-    method: conda
-    rankvariant:
-    sv_rankvariant:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
