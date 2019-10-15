@@ -6,7 +6,7 @@ emip:
     bioconductor-deseq2: 1.22.1=r351hf484d3e_0
     bioconductor-tximport:
     gatk4: 4.1.3.0=0
-    gffcompare: 0.10.6=h2d50403_0
+    gffcompare: 0.11.2
     htslib: 1.9
     numpy:
     picard: 2.18.23=0
@@ -19,7 +19,6 @@ emip:
     salmon: 0.12.0=h86b0361_1
     samtools: 1.9
     scipy:
-    stringtie: 1.3.4=py27_0
   shell:
     blobfish:
       conda_dependency:
@@ -83,6 +82,10 @@ emip:
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+    stringtie:
+      executable:
+        stringtie:
+      uri: library://jemten/mip_containers/stringtie:2.0.3
     trim-galore:
       executable:
         trim_galore:

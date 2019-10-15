@@ -25,6 +25,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves RSeQC to singularity container
 - Moves Trim Galore to singularity container
 - Removes the py3 and perl5 conda environment for the RNA pipeline
+- Moves stringtie to singularity container
+
 
 **CLI**
 - Removes the noupdate option from the installation
@@ -36,6 +38,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - chromograph
 - expansionhunter: 3.0.0 -> 3.1.2
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
+- gffcompare: 0.10.6 -> 0.11.2
 - manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
 - multiqc: 1.6 -> 1.7
 - picard: 2.18.14-0 -> 2.20.7-0
@@ -44,6 +47,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
 - star: 2.6.1d -> 2.7.3a
 - star-fusion: 1.5.0 -> 1.7.0
+- stringtie: 1.3.4 -> 2.0.3
 - svdb: 2.0.0 -> 2.2.0
 - trim-galore: 0.5.0 -> 0.6.4
 - upd: 0.1
