@@ -69,6 +69,10 @@ emip:
       executable:
         chanjo:
       uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
+    chromograph:
+      executable:
+        chromograph:
+      uri: shub://Clinical-Genomics/MIP:chromograph-0.1
     expansionhunter:
       executable:
         ExpansionHunter:
@@ -152,8 +156,6 @@ epy3:
     python: 3.7
   pip:
   shell:
-    chromograph:
-      version: gitRepo
     upd:
       version: 0.1
 ## Default base name

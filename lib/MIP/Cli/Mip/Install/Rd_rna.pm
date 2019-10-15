@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.06;
+our $VERSION = 2.07;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -145,10 +145,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip eperl5}],
+            cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip eperl5 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip }] ), ],
             required      => 0,
         ),
     );

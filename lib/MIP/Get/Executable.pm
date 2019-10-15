@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -117,6 +117,16 @@ sub get_executable {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %executable = (
+        q{bam2wig.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /bam2wig.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{bam_stat.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /bam_stat.py.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         bcftools => {
             version_cmd => q{2>&1 >/dev/null},
             version_regexp =>
@@ -161,6 +171,11 @@ q?'my ($version) = /Hunter\s+(v\d+.\d+.\d+)/xms; if($version) {print $version;la
             version_regexp =>
 q?'my ($version) = /\(GATK\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        q{geneBody_coverage2.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /geneBody_coverage2.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         genmod => {
             version_cmd => q{--version},
             version_regexp =>
@@ -175,6 +190,26 @@ q?'my ($version) = /\(GNU\s+grep\)\s+(\S+)/xms; if($version) {print $version;las
             version_cmd => q{--version},
             version_regexp =>
               q?'my ($version) = /gzip\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{infer_exeperiment.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /infer_exeperiment.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{inner_distance.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /inner_distance.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{junction_annotation.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /junction_annotation.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{junction_saturation.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /junction_saturation.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         mip => {
             version_cmd => q{version},
@@ -196,10 +231,25 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
             version_regexp =>
 q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        pigz => {
+            version_cmd => q{--version 2>&1 >/dev/null},
+            version_regexp =>
+              q?'my ($version) = /pigz\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         plink2 => {
             version_cmd => q{--version},
             version_regexp =>
 q?'my ($version) = /PLINK\s+(.*)/xms; if($version) {chomp $version;print $version;last;}'?,
+        },
+        q{read_distribution.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /read_distribution.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{read_duplication.py} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /read_duplication.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         rhocall => {
             version_cmd => q{--version},
@@ -278,6 +328,11 @@ q?'my ($version) = /ensembl-vep\s+:\s(\d+)/xms; if($version) {print $version;las
             version_cmd => q{normalize 2>&1 >/dev/null},
             version_regexp =>
 q?'my ($version) = /normalize\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{wigToBigWig} => {
+            version_cmd => q{2>&1 >/dev/null},
+            version_regexp =>
+q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         just_to_enable_testing => {
             version_cmd    => q{bwa 2>&1 >/dev/null},

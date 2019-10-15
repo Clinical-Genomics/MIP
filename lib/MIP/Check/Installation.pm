@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -280,11 +280,9 @@ sub check_python_compability {
             store    => \$log,
         },
         python3_programs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$python3_programs_ref,
-            strict_type => 1,
+            default  => [],
+            required => 1,
+            store    => \$python3_programs_ref,
         },
         python_version => {
             required => 1,
@@ -301,12 +299,15 @@ sub check_python_compability {
 
     use Array::Utils qw{ intersect unique };
 
+    ## Return if no python 3 programs are set
+    return 1 if ( not $python3_programs_ref );
+
     ## Display warning if python isn't part of the installation
     if ( not $python_version ) {
         $log->warn(
             q{Python is not part of the installation. Skipping python compability check.}
         );
-        return;
+        return 1;
     }
 
     ## Check format of python version
@@ -346,7 +347,7 @@ sub check_python_compability {
             @conflicts );
         exit 1;
     }
-    return;
+    return 1;
 }
 
 1;
