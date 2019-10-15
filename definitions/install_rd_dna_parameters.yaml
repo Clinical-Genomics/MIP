@@ -11,12 +11,6 @@ eperl5:
   data_type: HASH
   mandatory: no
   type: mip
-epy3:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 installations:
   associated_recipe:
     - mip
@@ -24,7 +18,6 @@ installations:
   default:
     - emip
     - eperl5
-    - epy3
   mandatory: no
   type: mip
 python3_programs:

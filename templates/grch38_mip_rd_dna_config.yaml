@@ -18,11 +18,6 @@ load_env:
   mip_travis_eperl5:
     installation: eperl5
     method: conda
-  mip_travis_py3:
-    installation: epy3
-    method: conda
-    rankvariant:
-    sv_rankvariant:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test

@@ -122,6 +122,10 @@ emip:
       executable:
         TIDDIT.py:
       uri: shub://J35P312/TIDDIT:2.8.0
+    upd:
+      executable:
+        stranger:
+      uri: shub://Clinical-Genomics/MIP:upd-0.1
     variant_integrity:
       executable:
         variant_integrity:
@@ -144,23 +148,12 @@ eperl5:
     python: 2.7
   pip:
   shell:
-# Python 3 environment spec
-epy3:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    pip:
-    python: 3.7
-  pip:
-  shell:
-    upd:
-      version: 0.1
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
   eperl5: mip7_rd-dna_perl5
-  epy3: mip7_rd-dna_py3
 vep_plugins:
   - dbNSFP
   - ExACpLI
