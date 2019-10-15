@@ -53,6 +53,19 @@ emip:
       executable:
         multiqc:
       uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+    rseqc:
+      executable:
+        bam2wig.py:
+        bam_stat.py:
+        geneBody_coverage2.py:
+        infer_experiment.py:
+        inner_distance.py:
+        junction_annotation.py:
+        junction_saturation.py:
+        read_distribution.py:
+        read_duplication.py:
+        wigToBigWig:
+      uri: library://jemten/mip_containers/rseqc:3.0.1
     sambamba:
       executable:
         sambamba:

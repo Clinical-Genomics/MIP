@@ -16,7 +16,7 @@ python3_programs:
     - mip
   data_type: ARRAY
   default:
-    - rseqc
+    - 
   type: mip
 installations:
   associated_recipe:
