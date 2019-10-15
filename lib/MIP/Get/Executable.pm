@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -181,6 +181,11 @@ q?'my ($version) = /geneBody_coverage2.py\s+(\S+)/xms; if($version) {print $vers
             version_regexp =>
 q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        gffcompare => {
+            version_cmd => q{--version 2>&1 >/dev/null},
+            version_regexp =>
+q?my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         q{grep} => {
             version_cmd => q{--version},
             version_regexp =>
@@ -275,6 +280,11 @@ q?'my ($version) = /\(GNU\s+sed\)\s+(\S+)/xms; if($version) {print $version;last
             version_cmd => q{--version},
             version_regexp =>
               q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        stringtie => {
+            version_cmd => q{--version},
+            version_regexp =>
+              q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?
         },
         svdb => {
             version_cmd => q{--version},
