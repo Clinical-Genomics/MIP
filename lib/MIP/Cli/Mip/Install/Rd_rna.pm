@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.04;
+our $VERSION = 2.06;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -130,12 +130,11 @@ sub _build_usage {
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
-            cmd_tags      => [q{Default: mip7_rd-rna mip7_rd-rna_py3 mip7_rd-rna_perl5}],
+            cmd_tags      => [q{Default: mip7_rd-rna mip7_rd-rna_perl5}],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
                 emip   => Optional [Str],
-                epy3   => Optional [Str],
                 eperl5 => Optional [Str],
             ],
             required => 0,
@@ -146,10 +145,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip epy3 eperl5}],
+            cmd_tags      => [q{Default: emip eperl5}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip eperl5 }] ), ],
             required      => 0,
         ),
     );
@@ -165,7 +164,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],
@@ -194,7 +193,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie vep }
+                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],

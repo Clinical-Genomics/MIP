@@ -14,40 +14,15 @@ load_env:
     method: conda
     mip:
     picard:
-  mip_travis_delly:
-    delly_call:
-    delly_reformat:
-    installation: edelly
-    method: conda
   mip_travis_eperl5:
-    bwa_mem:
-    fastqc_ar:
     installation: eperl5
     method: conda
   mip_travis_py3:
-    chanjo_sexcheck:
     chromograph_ar:
-    expansionhunter:
-    genmod:
     installation: epy3
     method: conda
     rankvariant:
-    rhocall_ar:
-    rhocall_viz:
-    stranger:
-    sv_rankvariant:
     upd_ar:
-    variant_integrity_ar:
-  mip_travis_svdb:
-    installation: esvdb
-    method: conda
-    sv_annotate:
-    svdb:
-  mip_travis_tiddit:
-    installation: etiddit
-    method: conda
-    tiddit:
-    vcf2cytosure_ar:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test

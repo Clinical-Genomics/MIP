@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.06;
+our $VERSION = 2.09;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -133,17 +133,14 @@ sub _build_usage {
             cmd_aliases => [qw{ envn }],
             cmd_flag    => q{environment_name},
             cmd_tags    => [
-q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_svdb mip7_rd-dna_tiddit}
+q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
             ],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip    => Optional [Str],
-                edelly  => Optional [Str],
-                eperl5  => Optional [Str],
-                epy3    => Optional [Str],
-                esvdb   => Optional [Str],
-                etiddit => Optional [Str],
+                emip   => Optional [Str],
+                eperl5 => Optional [Str],
+                epy3   => Optional [Str],
             ],
             required => 0,
         ),
@@ -153,11 +150,11 @@ q{Default: mip7_rd-dna mip7_rd-dna_delly mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip edelly eperl5 epy3 esvdb etiddit}],
+            cmd_tags      => [q{Default: emip eperl5 epy3}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa => ArrayRef [ enum( [qw{ emip edelly eperl5 epy3 esvdb etiddit }] ), ],
-            required => 0,
+            isa           => ArrayRef [ enum( [qw{ emip eperl5 epy3 }] ), ],
+            required      => 0,
         ),
     );
 

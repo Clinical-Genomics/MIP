@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph };
@@ -132,20 +132,15 @@ sub analysis_chromograph {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes  get_recipe_resources };
     use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Chromograph qw{ chromograph_roh chromograph_upd };
+    use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_family_member_id set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-
-    ## Constants:
-
-    ## Default window in wig file from rhocall viz
-    Readonly my $STEP => 10_000;
 
     ### PREPROCESSING:
 
@@ -159,13 +154,12 @@ sub analysis_chromograph {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
+            recipe_name    => q{tiddit_coverage},
+            stream         => q{out},
         }
     );
-    my $indir_path         = $io{in}{dir_path};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path        = $io{in}{file_path};
+    my $infile_name_prefix = $io{out}{file_name_prefix};
+    my $infile_path        = $io{out}{file_path};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -197,8 +191,8 @@ sub analysis_chromograph {
         )
     );
 
-    my $outdir_path  = catdir( $io{out}{dir_path}, q{chromograph_out} );
-    my $outfile_path = catfile( $io{out}{dir_path}, q{chromograph_out.tar.gz} );
+    my $outdir_path  = $io{out}{file_path_prefix};
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -225,42 +219,54 @@ sub analysis_chromograph {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## Process the wig file from rhocall viz
-    chromograph_roh(
+    ## Process the wig file from tiddit_coverage
+    chromograph(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile( $indir_path, q{output.wig} ),
-            outdir_path => $outdir_path,
-            step        => $STEP,
+            coverage_file_path => $infile_path,
+            FILEHANDLE         => $FILEHANDLE,
+            outdir_path        => $outdir_path,
+            step               => $active_parameter_href->{tiddit_coverage_bin_size},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Process upd bed for the proband
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href, } );
-    my $proband = $family_member_id{children}[0];
+    ## Process potential upd files, only applicable for proband
+    my $is_sample_proband_in_trio = is_sample_proband_in_trio(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
 
-    if ( $parameter_href->{cache}{trio} and $proband eq $sample_id ) {
-
-        say {$FILEHANDLE} q{## Run Chromograph on upd file};
+    if ($is_sample_proband_in_trio) {
 
         %io = get_io_files(
             {
-                id             => $case_id,
+                id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
                 stream         => q{in},
             }
         );
-        my %infile_path = %{ $io{in}{file_path_href} };
+        my %upd_infile_path = %{ $io{in}{file_path_href} };
 
-        chromograph_upd(
+        ## Process regions file
+        chromograph(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $infile_path{sites},
-                outdir_path => $outdir_path,
+                FILEHANDLE            => $FILEHANDLE,
+                outdir_path           => $outdir_path,
+                upd_regions_file_path => $upd_infile_path{regions},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## Process sites file
+        chromograph(
+            {
+                FILEHANDLE          => $FILEHANDLE,
+                outdir_path         => $outdir_path,
+                upd_sites_file_path => $upd_infile_path{sites},
             }
         );
         say {$FILEHANDLE} $NEWLINE;

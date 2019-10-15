@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -240,6 +240,11 @@ q?'my ($version) = /\(htslib\)\s+(\S+)/xms; if($version) {print $version;last;}'
             version_cmd => q{--version},
             version_regexp =>
               q?'my ($version) = /TIDDIT-(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        trim_galore => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         upd => {
             version_cmd => q{--version},

@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves CNVnator to singularity container
 - Moves Manta to singularity container
 - Moves VEP to singularity container
+- Moves Svdb to singularity container and update version to 2.2.0
+- Moves delly to singularity container
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
 - Install CADD via MIPs installer
 
@@ -34,6 +36,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picard: 2.18.14-0 -> 2.20.7-0
 - rhocall: 0.4 -> 0.5.1
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
+- svdb: 2.0.0 -> 2.2.0
 - upd: 0.1
 - vcfanno: 0.3.1-0 -> 0.3.2-0
 - VEP: 95 -> 97

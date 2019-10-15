@@ -2,12 +2,12 @@
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9=ha228f0b_4
+    bcftools: 1.9
     bioconductor-deseq2: 1.22.1=r351hf484d3e_0
     bioconductor-tximport:
     gatk4: 4.1.3.0=0
     gffcompare: 0.10.6=h2d50403_0
-    htslib: 1.9=hc238db4_4
+    htslib: 1.9
     numpy:
     picard: 2.18.23=0
     pigz:
@@ -17,7 +17,7 @@ emip:
     r-optparse:
     r-readr:
     salmon: 0.12.0=h86b0361_1
-    samtools: 1.9=h8571acd_11
+    samtools: 1.9
     scipy:
     stringtie: 1.3.4=py27_0
   shell:
@@ -45,11 +45,23 @@ emip:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
   singularity:
+    fastqc:
+      executable:
+        fastqc:
+      uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
+    multiqc:
+      executable:
+        multiqc:
+      uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
     sambamba:
       executable:
         sambamba:
       uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
-    star-fusion: 
+    star:
+      executable:
+        STAR:
+      uri: library://jemten/mip_containers/star:2.7.3a
+    star-fusion:
       executable:
         gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
         make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
@@ -58,35 +70,24 @@ emip:
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+    trim-galore:
+      executable:
+        trim_galore:
+      uri: library://jemten/mip_containers/trim-galore:0.6.4
     vep:
       executable:
         vep:
-      uri: shub://jemten/MIP:vep-97.4
-## Python 3 environment spec
-epy3:
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
+eperl5:
   conda:
-    bedops: 2.4.35=h2d50403_1
-    pip:
     python: 3.6
     ucsc-wigtobigwig: 366=hdd26221_0
   pip:
-    multiqc: 1.6
-    rseqc: 3.0.0
-  shell:
-## STAR environment spec
-eperl5:
-  conda:
-    blast: 2.9.0
-    fastqc: 0.11.8=1
-    hmmer:
-    star: 2.7.2b=0
-    trim-galore: 0.6.4=0
-  pip:
+    rseqc: 3.0.1
   shell:
 ## Default base name
 environment_base_name: mip7_rd-rna
 # Specify environment names
 environment_name:
   emip: mip7_rd-rna
-  epy3: mip7_rd-rna_py3
   eperl5: mip7_rd-rna_perl5

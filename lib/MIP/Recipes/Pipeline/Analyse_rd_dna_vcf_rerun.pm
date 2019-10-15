@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -141,12 +141,14 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
+    use MIP::Parse::Reference qw{ parse_reference_for_vt };
+    use MIP::Set::Analysis
+      qw{ set_recipe_cadd set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
-    use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
@@ -158,8 +160,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall
-      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
+    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
@@ -171,8 +172,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
-    use MIP::Set::Analysis
-      qw{ set_recipe_cadd set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna_vcf_rerun(
@@ -203,12 +202,24 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         }
     );
 
+    ## Check if vt has processed references
+    ## If not try to reprocesses them before launching recipes
+    $log->info(q{[Reference check - Reference processed by VT]});
+    parse_reference_for_vt(
+        {
+            active_parameter_href   => $active_parameter_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            parameter_href          => $parameter_href,
+        }
+    );
+
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus => \&analysis_analysisrunstatus,
-        cadd_ar        => undef,                    # Depends on human reference version
-        chromograph_ar => \&analysis_chromograph,
+        cadd_ar => undef,    # Depends on human reference version
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_annotation             => \&analysis_frequency_annotation,
         frequency_filter                 => \&analysis_frequency_filter,
@@ -222,7 +233,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
         sv_varianteffectpredictor => undef,                    # Depends on analysis type,
         sv_vcfparser              => undef,                    # Depends on analysis type
-        upd_ar                    => undef,                    # Depends on pedigree
         varianteffectpredictor    => \&analysis_vep,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
@@ -262,6 +272,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         {
             analysis_recipe_href => \%analysis_recipe,
             parameter_href       => $parameter_href,
+            sample_info_href     => $sample_info_href,
         }
     );
 

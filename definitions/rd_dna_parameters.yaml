@@ -197,6 +197,7 @@ recipe_core_number:
     version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
+    vt_core: 1 
   type: mip
 set_recipe_core_number:
   associated_recipe:
@@ -212,7 +213,7 @@ recipe_memory:
   default:
     cadd_ar: 4
     chanjo_sexcheck: 2
-    chromograph_ar: 2
+    chromograph_ar: 5
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
@@ -304,6 +305,7 @@ recipe_time:
     version_collect_ar: 1
     vcfparser_ar: 5
     vt_ar: 10
+    vt_core: 10
     vcf2cytosure_ar: 20
   type: mip
 set_recipe_time:
@@ -1457,14 +1459,16 @@ vt_ar:
 vt_decompose:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_normalize:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_missing_alt_allele:
   associated_recipe:
@@ -1475,9 +1479,23 @@ vt_missing_alt_allele:
 vt_uniq:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
   default: 0
   type: recipe_argument
+vt_core:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vt
+  program_executables:
+   - vt
+   - sed
+   - bgzip
+   - tabix
+  type: recipe
 frequency_annotation:
   analysis_mode: case
   associated_recipe:
@@ -1503,7 +1521,7 @@ rhocall_viz:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ""
   outfile_suffix: ".roh"
   program_executables:
@@ -1511,7 +1529,7 @@ rhocall_viz:
    - rhocall
   type: recipe
 upd_ar:
-  analysis_mode: case
+  analysis_mode: sample
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1527,7 +1545,7 @@ chromograph_ar:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
+  file_tag: "_chromograph"
   outfile_suffix: ".tar.gz"
   program_executables:
    - chromograph

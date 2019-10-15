@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $BACKTICK $COLON $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $BACKTICK $COLON $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 use MIP::Gnu::Bash qw{ gnu_unset };
 use MIP::Gnu::Coreutils qw{ gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -123,7 +123,7 @@ sub install_conda_packages {
     my @packages = _create_package_array(
         {
             package_href              => $conda_packages_href,
-            package_version_separator => q{=},
+            package_version_separator => $EQUALS,
         }
     );
 
@@ -186,7 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ bwakit | gatk | picard | star-fusion };
+    my @custom_solutions = qw{ gatk | picard };
 
     ## Link conda packages
     # Creating target-link paths
@@ -236,10 +236,7 @@ sub install_conda_packages {
 
     if ( intersect( @custom_solutions, @conda_packages ) ) {
         say {$FILEHANDLE} q{## Unset variables};
-        my %program_path_aliases = (
-            bwakit => q{BWAKIT_PATH},
-            picard => q{PICARD_PATH},
-        );
+        my %program_path_aliases = ( picard => q{PICARD_PATH}, );
 
       PROGRAM:
         foreach my $program ( keys %program_path_aliases ) {
@@ -340,7 +337,6 @@ sub finish_conda_package_install {
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
-    use MIP::Recipes::Install::Star_fusion qw{ setup_star_fusion };
 
     my @conda_packages = keys %{$conda_packages_href};
 
@@ -361,28 +357,6 @@ sub finish_conda_package_install {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Custom BWA
-    ## Check if bwakit has been removed from conda installation hash
-    if ( $conda_packages_href->{bwakit} ) {
-
-        say {$FILEHANDLE} q{## Custom BWA solutions};
-
-        ## Double quote to avoid expansion of shell variable
-        my $infile_path  = catdir( q/"${BWAKIT_PATH}"/, q{resource-human-HLA} );
-        my $outfile_path = catdir( $conda_env_path,     q{bin} );
-
-        gnu_cp(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                force        => 1,
-                infile_path  => $infile_path,
-                outfile_path => $outfile_path,
-                recursive    => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
     ## Custom GATK
     ## Check if GATK has been removed from conda installation hash
     if ( $conda_packages_href->{gatk} ) {
@@ -390,7 +364,7 @@ sub finish_conda_package_install {
 
         ## Strip build number from version string
         my $gatk_version = substr( $conda_packages_href->{gatk},
-            0, index( $conda_packages_href->{gatk}, q{=} ) );
+            0, index( $conda_packages_href->{gatk}, $EQUALS ) );
 
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
@@ -424,18 +398,6 @@ sub finish_conda_package_install {
                 force       => 1,
                 infile_path => catdir( $tmpdir, q{gatk} ),
                 recursive   => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    if ( $conda_packages_href->{q{star-fusion}} ) {
-        say {$FILEHANDLE} q{## Custom stuff for STAR-FUSION};
-        setup_star_fusion(
-            {
-                conda_prefix_path    => $conda_env_path,
-                FILEHANDLE           => $FILEHANDLE,
-                star_fusion_dir_path => catdir( $conda_env_path, qw{ lib STAR-Fusion } ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -516,7 +478,7 @@ sub _create_package_array {
 sub _create_target_link_paths {
 
 ## Function  : Creates paths to conda target binaries and links.
-##           : Custom solutions for bwakit picard.
+##           : Custom solutions for picard.
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
 ## Arguments : $conda_packages_href  => Hash with conda packages {REF}
@@ -572,24 +534,10 @@ sub _create_target_link_paths {
 
     my %target_link_paths;
 
-    my %binaries = (
-        bwakit => [
-            qw{
-              k8                seqtk
-              bwa-postalt.js    run-HLA
-              typeHLA.sh        fermi2
-              fermi2.pl         ropebwt2
-              typeHLA-selctg.js typeHLA.js
-              }
-        ],
-        picard => [qw{ picard.jar }],
-    );
+    my %binaries = ( picard => [qw{ picard.jar }], );
 
     ## Variables to store the full path in
-    my %program_path_aliases = (
-        bwakit => q{BWAKIT_PATH},
-        picard => q{PICARD_PATH},
-    );
+    my %program_path_aliases = ( picard => q{PICARD_PATH}, );
 
     say {$FILEHANDLE} q{## Find exact path to program and store it for linking};
 
@@ -608,7 +556,7 @@ sub _create_target_link_paths {
         ## i.e. version=subpatch
         $conda_version =~ tr/=/-/;
 
-        print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
+        print {$FILEHANDLE} $program_path_aliases{$program} . $EQUALS . $BACKTICK;
         my $search_path =
           catdir( $conda_env_path, q{share}, $program . q{-} . $conda_version . q{*} );
         gnu_find(

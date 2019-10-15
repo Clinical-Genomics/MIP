@@ -2,10 +2,9 @@ Bootstrap: docker
 From: ubuntu:xenial
 
 %help
-    This is a template container
+    This is a container for installing PACKAGE version VERSION
 
 %labels
-    ## Fill in metadata here
     Maintainer Clinical-Genomics/MIP
     Version 0.1
 
@@ -52,10 +51,10 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    # conda install --yes ...
+    conda install --yes PACKAGE=VERSION
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
 
     ## Add more programs as needed
-    # pip install ...
+    pip install --no-cache-dir PACKAGE==VERSION

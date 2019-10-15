@@ -5,9 +5,6 @@
   bcftools:
     execution: 'bcftools --version'
     path: 'bcftools'
-  bedops:
-    execution: 'bedops --version'
-    path: 'bedops'
   bedtools:
     execution: 'bedtools'
     path: 'bedtools'
@@ -98,6 +95,9 @@
   picard:
     execution:
     path: 'picard'
+  pigz:
+    execution: 'pigz'
+    path: 'pigz'
   plink2:
     execution: 'plink2 --version'
     path: 'plink2'
@@ -149,6 +149,9 @@
   tiddit:
     execution: 'TIDDIT.py'
     path: 'TIDDIT.py'
+  trim-galore:
+    execution: 'trim_galore --version'
+    path: 'trim_galore'
   ucsc-wigtobigwig:
     path: 'wigToBigWig'
   upd:

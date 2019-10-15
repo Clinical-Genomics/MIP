@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,6 +59,8 @@ diag(   q{Test trim_galore from Trim_galore.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $CORES => 12;
+
 ## Base arguments
 my @function_base_commands = qw{ trim_galore };
 
@@ -91,6 +93,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    cores => {
+        input           => $CORES,
+        expected_output => q{--cores} . $SPACE . $CORES,
+    },
     fastqc => {
         input           => 1,
         expected_output => q{--fastqc},
@@ -102,6 +108,10 @@ my %specific_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ file_1.fastq file_2.fastq }],
         expected_output => q{file_1.fastq} . $SPACE . q{file_2.fastq},
+    },
+    outdir_path => {
+        input           => catdir(qw{ output dir }),
+        expected_output => q{--output_dir} . $SPACE . catdir(qw{ output dir }),
     },
     paired_reads => {
         input           => 1,

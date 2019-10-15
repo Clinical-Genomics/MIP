@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -106,7 +106,7 @@ sub install_cadd {
     else {
         $container_href->{program_bind_paths} = [$cadd_bind_path];
     }
-    return;
+    return 1;
 }
 
 1;

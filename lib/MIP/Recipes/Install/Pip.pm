@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -38,13 +38,13 @@ BEGIN {
 
 sub install_pip_packages {
 
-## Function  : Recipe for install pip package(s).
-## Returns   :
-## Arguments : $conda_env         => Name of conda environment
-##           : $FILEHANDLE        => Filehandle to write to
-##           : $pip_packages_href => Hash with pip packages and their version numbers {REF}
-##           : $quiet             => Optionally turn on quiet output
-##           : $verbose           => Log debug messages
+## Function : Recipe for install pip package(s).
+## Returns  :
+## Arguments: $conda_env         => Name of conda environment
+##          : $FILEHANDLE        => Filehandle to write to
+##          : $pip_packages_href => Hash with pip packages and their version numbers {REF}
+##          : $quiet             => Optionally turn on quiet output
+##          : $verbose           => Log debug messages
 
     my ($arg_href) = @_;
 
@@ -57,6 +57,8 @@ sub install_pip_packages {
 
     my $tmpl = {
         conda_env => {
+            defined     => 1,
+            required    => 1,
             store       => \$conda_env,
             strict_type => 1,
         },
@@ -98,22 +100,17 @@ sub install_pip_packages {
     say {$FILEHANDLE} q{### Install PIP packages};
 
     ## Install PIP packages in conda environment
-    if ($conda_env) {
-        say {$FILEHANDLE} q{## Install PIP packages in conda environment:} . $SPACE
-          . $conda_env;
+    say {$FILEHANDLE} q{## Install PIP packages in conda environment:} . $SPACE
+      . $conda_env;
 
-        ## Activate conda environment
-        conda_activate(
-            {
-                env_name   => $conda_env,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    else {
-        say {$FILEHANDLE} q{### Install PIP packages in conda main environment};
-    }
+    ## Activate conda environment
+    conda_activate(
+        {
+            env_name   => $conda_env,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Create an array for pip packages that are to be installed from provided hash
     my @packages = _create_package_array(
@@ -133,29 +130,25 @@ sub install_pip_packages {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_env) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    print {$FILEHANDLE} $NEWLINE;
-    return;
+    say {$FILEHANDLE} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
+    return;
 }
 
 sub _create_package_array {
 
-##Function  : Takes a reference to hash of packages and creates an array with
-##          : package and version joined with a supplied separator if value is defined.
-##          : Also checks that the version number makes sense
-##Returns   : "@packages"
-##Arguments : $package_href              => Hash with packages {REF}
-##          : $package_version_separator => Scalar separating the package and the version
+##Function : Takes a reference to hash of packages and creates an array with
+##         : package and version joined with a supplied separator if value is defined.
+##         : Also checks that the version number makes sense
+##Returns  : "@packages"
+##Arguments: $package_href              => Hash with packages {REF}
+##         : $package_version_separator => Scalar separating the package and the version
 
     my ($arg_href) = @_;
 
@@ -165,17 +158,17 @@ sub _create_package_array {
 
     my $tmpl = {
         package_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$package_href,
             strict_type => 1,
-            store       => \$package_href
         },
         package_version_separator => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$package_version_separator,
             strict_type => 1,
-            store       => \$package_version_separator
         },
     };
 
@@ -185,6 +178,7 @@ sub _create_package_array {
 
   PACKAGE:
     while ( my ( $package, $package_version ) = each %{$package_href} ) {
+
         if ( defined $package_version ) {
 
             # Check that the version number matches pattern
@@ -198,6 +192,7 @@ sub _create_package_array {
             push @packages, $package . $package_version_separator . $package_version;
         }
         else {
+
             push @packages, $package;
         }
     }

@@ -17,18 +17,9 @@ load_env:
     mip:
     picard:
   mip_travis_py3:
-    chromograph_ar:
-    genmod:
     method: conda
     rankvariant:
-    rhocall_ar:
-    rhocall_viz:
     sv_rankvariant:
-    upd_ar:
-  mip_travis_svdb:
-     method: conda
-     svdb:
-     sv_annotate:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
