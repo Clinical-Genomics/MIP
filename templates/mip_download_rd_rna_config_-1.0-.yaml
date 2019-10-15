@@ -1,5 +1,5 @@
 load_env:
-  MIP_rd_rna:
+MIP_rd_rna:
     method: conda
     mip:
 project_id: development
