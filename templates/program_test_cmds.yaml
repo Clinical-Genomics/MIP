@@ -157,6 +157,9 @@
   upd:
     execution: 'upd'
     path: 'upd'
+  varg:
+    execution: 'varg --version'
+    path: 'varg'
   variant_integrity:
     execution: 'variant_integrity'
     path: 'variant_integrity'

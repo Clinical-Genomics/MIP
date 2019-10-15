@@ -168,7 +168,7 @@ sub _build_usage {
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
@@ -201,7 +201,7 @@ sub _build_usage {
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn stranger svdb tiddit upd
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
