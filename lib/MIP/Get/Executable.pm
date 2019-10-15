@@ -326,6 +326,10 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
             version_regexp =>
 q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        varg => {
+          version_cmd => q{--version},
+          version_regexp => q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
+        },
         vep => {
             version_regexp =>
 q?'my ($version) = /ensembl-vep\s+:\s(\d+)/xms; if($version) {print $version;last;}'?,
