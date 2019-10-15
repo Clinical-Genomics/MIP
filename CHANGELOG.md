@@ -35,7 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - grch37_frequency_vcfanno_filter_config_-v1.2-.toml
 
 **Tools**
-- chromograph
+- bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
+- chromograph:
 - expansionhunter: 3.0.0 -> 3.1.2
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
 - gffcompare: 0.10.6 -> 0.11.2

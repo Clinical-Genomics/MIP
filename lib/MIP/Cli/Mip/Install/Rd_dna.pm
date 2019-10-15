@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.10;
+our $VERSION = 2.11;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -185,7 +185,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ bedtools picard plink2 vt }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard plink2 vt }] ), ],
             required      => 0,
         ),
     );
