@@ -9,7 +9,6 @@ emip:
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
     gatk: 3.8=5
-    gatk4: 4.1.3.0=0
     gcc: 4.8.5
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
@@ -85,6 +84,10 @@ emip:
       executable:
         delly:
       uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    gatk4:
+      executable:
+        gatk:
+      uri: shub://Clinical-Genomics/MIP:gatk-4.1.3.0
     genmod:
       executable:
         genmod:
@@ -138,22 +141,11 @@ emip:
       executable:
         vcf2cytosure:
       uri: shub://J35P312/vcf2cytosure:0.4.3
-# Perl environment spec
-eperl5:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    gatk4: 4.1.3.0=0
-    samtools: 1.9=h8571acd_11
-    pip:
-    python: 2.7
-  pip:
-  shell:
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
-  eperl5: mip7_rd-dna_perl5
 vep_plugins:
   - dbNSFP
   - ExACpLI

@@ -142,11 +142,8 @@ $ perl mip install rd_dna
 This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
-  The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
+  The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. MIP will install the following environments by default:
   * mip7_rd-dna
-  * mip7_rd-dna_perl5
-  * mip7_rd-dna_py3
-  * mip7_rd-dna_tiddit
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip --environment_name emip=MIP``.   
 
@@ -182,11 +179,6 @@ $ perl t/mip_analyse_rd_dna.test
     mip7_rd-dna:
       installation: emip
       mip:
-      method: conda
-    mip7_rd-dna_perl5:
-      bwa_mem:
-      fastqc_ar:
-      installation: eperl5
       method: conda
   ```
 
