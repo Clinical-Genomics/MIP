@@ -91,16 +91,8 @@ emip:
       executable:
         vep:
       uri: shub://Clinical-Genomics/MIP:vep-97.4
-eperl5:
-  conda:
-    python: 3.6
-    ucsc-wigtobigwig: 366=hdd26221_0
-  pip:
-    rseqc: 3.0.1
-  shell:
 ## Default base name
 environment_base_name: mip7_rd-rna
 # Specify environment names
 environment_name:
   emip: mip7_rd-rna
-  eperl5: mip7_rd-rna_perl5

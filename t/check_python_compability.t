@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -148,11 +148,27 @@ trap {
             python_version        => $active_parameter{python_env}{conda}{python},
             select_programs_ref   => $active_parameter{select_programs},
         }
-    );
+    )
 };
 
 ## Then print a fatal message to the log and exit
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal message for python incompability} );
 ok( $trap->exit, q{Exit when python version is incompatible with programs} );
+
+## Given no python 3 programs
+$active_parameter{python3_programs} = undef;
+
+my $is_ok = check_python_compability(
+    {
+        installation_set_href => $active_parameter{python_env},
+        log                   => $log,
+        python3_programs_ref  => $active_parameter{python3_programs},
+        python_version        => $active_parameter{python_env}{conda}{python},
+        select_programs_ref   => $active_parameter{select_programs},
+    }
+);
+
+## Then return
+ok( $is_ok, q{Return on no python 3 programs} );
 
 done_testing();

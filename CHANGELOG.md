@@ -20,6 +20,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves delly to singularity container
 - Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
 - Install CADD via MIPs installer
+- Moves STAR to singularity container
+- Moves STAR-Fusion to singularity container
+- Moves RSeQC to singularity container
+- Moves Trim Galore to singularity container
+- Removes the py3 and perl5 conda environment for the RNA pipeline
 
 **CLI**
 - Removes the noupdate option from the installation
@@ -34,9 +39,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
 - multiqc: 1.6 -> 1.7
 - picard: 2.18.14-0 -> 2.20.7-0
+- rseqc: 3.0.0 -> 3.0.1
 - rhocall: 0.4 -> 0.5.1
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
+- star: 2.6.1d -> 2.7.3a
+- star-fusion: 1.5.0 -> 1.7.0
 - svdb: 2.0.0 -> 2.2.0
+- trim-galore: 0.5.0 -> 0.6.4
 - upd: 0.1
 - vcfanno: 0.3.1-0 -> 0.3.2-0
 - VEP: 95 -> 97
