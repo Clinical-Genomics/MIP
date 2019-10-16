@@ -5,19 +5,12 @@ emip:
   data_type: HASH
   mandatory: no
   type: mip
-eperl5:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 installations:
   associated_recipe:
     - mip
   data_type: ARRAY
   default:
     - emip
-    - eperl5
   mandatory: no
   type: mip
 python3_programs:

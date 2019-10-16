@@ -25,15 +25,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ bedtools_genomecov bedtools_intersectbed bedtools_makewindows };
+    our @EXPORT_OK = qw{ bedtools_genomecov bedtools_intersect bedtools_makewindows };
 }
 
 sub bedtools_genomecov {
 
-## Function : Perl wrapper for writing Bedtools genomecov recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.26.0.
+## Function : Perl wrapper for writing Bedtools genomecov recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.29.0.
 ## Returns  : @commands
 ## Arguments: $bam_infile_path        => BAM infile path
 ##          : $depth_each_position    => Report the depth at each genome position (with zero-based coordinates)
@@ -148,9 +148,9 @@ sub bedtools_genomecov {
     return @commands;
 }
 
-sub bedtools_intersectbed {
+sub bedtools_intersect {
 
-## Function : Perl wrapper for writing Bedtools intersectbed recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.26.0.
+## Function : Perl wrapper for writing Bedtools intersect recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.29.0.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
@@ -207,7 +207,7 @@ sub bedtools_intersectbed {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ intersectBed };
+    my @commands = qw{ bedtools intersect };
 
     ## Options
     if ($with_header) {
@@ -248,7 +248,7 @@ sub bedtools_intersectbed {
 
 sub bedtools_makewindows {
 
-## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.26.0.
+## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.29.0.
 ## Returns  : "@commands"
 ## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_bed_path        => Input BED file (with chrom,start,end fields).
