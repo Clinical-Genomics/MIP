@@ -14,10 +14,6 @@ load_env:
     installation: emip
     method: conda
     mip:
-  MIP_rd_rna_star:
-    gtf_file_to_feature_seqs.pl:
-    installation: eperl5
-    method: conda
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
