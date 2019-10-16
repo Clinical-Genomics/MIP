@@ -30,7 +30,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1387,7 +1387,7 @@ sub gatk_combinevariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    my @commands = qw{ gatk3 };
 
     if ($java_jar) {    # Write java core commands to filehandle.
         @commands = java_core(
