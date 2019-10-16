@@ -136,6 +136,10 @@ emip:
       executable:
         variant_integrity:
       uri: shub://Clinical-Genomics/MIP:variant_integrity-0.0.4
+    vcfanno:
+      executable:
+        vcfanno:
+      uri: shub://Clinical-Genomics/MIP:vcfanno-0.3.2
     vep:
       executable:
         vep:
