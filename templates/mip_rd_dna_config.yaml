@@ -9,7 +9,6 @@ java_use_large_pages: 1
 load_env:
   mip_travis:
     endvariantannotationblock:
-    gatk:
     installation: emip
     method: conda
     mip:

@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -186,7 +186,7 @@ sub install_conda_packages {
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ gatk | picard };
+    my @custom_solutions = qw{ picard };
 
     ## Link conda packages
     # Creating target-link paths
@@ -217,21 +217,6 @@ sub install_conda_packages {
         print {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Custom solutions for BWA,  Manta and GATK
-    ## Copying files, downloading necessary databases and make files executable
-    finish_conda_package_install(
-        {
-            conda_env            => $conda_env,
-            conda_env_path       => $conda_env_path,
-            conda_packages_href  => $conda_packages_href,
-            custom_solutions_ref => \@custom_solutions,
-            FILEHANDLE           => $FILEHANDLE,
-            log                  => $log,
-            quiet                => $quiet,
-            verbose              => $verbose,
-        }
-    );
-
     ## Unset variables
 
     if ( intersect( @custom_solutions, @conda_packages ) ) {
@@ -256,164 +241,6 @@ sub install_conda_packages {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    return;
-}
-
-sub finish_conda_package_install {
-
-## Function  : Custom solutions to finish the install of BWA, Manta and GATK
-## Returns   :
-## Arguments : $conda_env                  => Name of conda env
-##           : $conda_env_path             => Path to conda environment
-##           : $conda_packages_href        => Hash with conda packages {REF}
-##           : $custom_solutions_ref       => Regex with programs that requires some fiddling
-##           : $FILEHANDLE                 => Filehandle to write to
-##           : $log                        => Log
-##           : $quiet                      => Log only warnings and above
-##           : $verbose                    => Log debug messages
-
-    my ($arg_href) = @_;
-
-    ## Flatten arguments
-    my $conda_env;
-    my $conda_env_path;
-    my $conda_packages_href;
-    my $custom_solutions_ref;
-    my $FILEHANDLE;
-    my $log;
-    my $quiet;
-    my $verbose;
-
-    my $tmpl = {
-        conda_env => {
-            required => 1,
-            store    => \$conda_env,
-        },
-        conda_env_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$conda_env_path,
-            strict_type => 1,
-        },
-        conda_packages_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$conda_packages_href,
-            strict_type => 1,
-        },
-        custom_solutions_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$custom_solutions_ref,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        quiet => {
-            allow => [ undef, 0, 1 ],
-            store => \$quiet,
-        },
-        verbose => {
-            allow => [ undef, 0, 1 ],
-            store => \$verbose,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Array::Utils qw{ intersect };
-    use File::Spec::Functions qw{ catdir catfile };
-    use IPC::Cmd qw{ run };
-    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Recipes::Install::Gatk qw{ gatk_download };
-
-    my @conda_packages = keys %{$conda_packages_href};
-
-    ## Return if no custom solutions are required
-    return if not intersect( @{$custom_solutions_ref}, @conda_packages );
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_env) {
-
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_env,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Custom GATK
-    ## Check if GATK has been removed from conda installation hash
-    if ( $conda_packages_href->{gatk} ) {
-        say {$FILEHANDLE} q{## Custom GATK solutions};
-
-        ## Strip build number from version string
-        my $gatk_version = substr( $conda_packages_href->{gatk},
-            0, index( $conda_packages_href->{gatk}, $EQUALS ) );
-
-        ## Download gatk .tar.bz2
-        my $gatk_tar_path = gatk_download(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                gatk_version => $gatk_version,
-                quiet        => $quiet,
-                verbose      => $verbose,
-            }
-        );
-
-        ## Hard coding here since GATK 4.0 will be open source.
-        ## Then this step will be unnecessary
-        say {$FILEHANDLE} q{gatk3-register} . $SPACE . $gatk_tar_path . $NEWLINE;
-
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => dirname($gatk_tar_path),
-                recursive   => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Remove of /tmp/gatk from gatk 3.8 installation
-        my $tmpdir = File::Spec->tmpdir();
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => catdir( $tmpdir, q{gatk} ),
-                recursive   => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_env) {
-
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
     return;
 }
 

@@ -10,7 +10,6 @@ load_env:
   mip_travis:
     cadd_ar:
     endvariantannotationblock:
-    gatk:
     installation: emip
     method: conda
     mip:
