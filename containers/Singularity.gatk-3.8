@@ -51,10 +51,10 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    conda install --yes gatk=3.8=5 R=3.3.1
+    conda install --yes python=3.7.3 gatk=3.8=5 R=3.3.1
 
     ## Clean up after conda
-    conda clean -tipsy
+    /opt/conda/bin/conda clean -tipsy
 
     ## Custom GATK solutions
     ## Create temporary GATK install directory
