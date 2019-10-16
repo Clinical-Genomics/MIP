@@ -153,7 +153,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ gatk3 java };
 
 my %specific_java_argument = (
     java_jar => {
