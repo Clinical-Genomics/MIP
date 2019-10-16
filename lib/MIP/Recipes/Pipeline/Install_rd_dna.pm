@@ -29,7 +29,6 @@ use MIP::Script::Setup_script qw{ setup_install_script };
 use MIP::Set::Parameter qw{ set_programs_for_installation };
 
 ## Recipes
-use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
@@ -45,7 +44,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -191,7 +190,6 @@ sub pipeline_install_rd_dna {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
-            bedtools    => \&install_bedtools,
             mip_scripts => \&install_mip_scripts,
             picard      => \&install_picard,
             plink2      => \&install_plink2,

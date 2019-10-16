@@ -3,7 +3,6 @@
 emip:
   conda:
     bcftools: 1.9=ha228f0b_4
-    bedtools: 2.27.1=he941832_2
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
     gatk: 3.8=5
@@ -22,8 +21,6 @@ emip:
     vt: 2015.11.10
   pip:
   shell:
-    bedtools:
-      version: 2.25.0
     mip_scripts:
       version: Your current MIP version
     picard:
@@ -53,6 +50,10 @@ emip:
         typeHLA-selctg.js:
         seqtk:
       uri: shub://Clinical-Genomics/MIP:bwakit-0.7.15
+    bedtools:
+      executable:
+        bedtools:
+      uri: shub://Clinical-Genomics/MIP:bedtools-2.29.0
     cadd:
       executable:
         CADD.sh:
