@@ -130,16 +130,13 @@ sub _build_usage {
 
     option(
         q{environment_name} => (
-            cmd_aliases => [qw{ envn }],
-            cmd_flag    => q{environment_name},
-            cmd_tags    => [
-q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
-            ],
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: mip7_rd-dna}],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip   => Optional [Str],
-                eperl5 => Optional [Str],
+                emip => Optional [Str],
             ],
             required => 0,
         ),
@@ -149,10 +146,10 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip eperl5}],
+            cmd_tags      => [q{Default: emip }],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip eperl5 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip }] ), ],
             required      => 0,
         ),
     );
