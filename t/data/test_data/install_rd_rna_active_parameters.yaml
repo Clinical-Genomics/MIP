@@ -65,6 +65,10 @@ emip:
         remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+    vep:
+      executable:
+        vep:
+      uri: shub://Clinical-Genomics/MIP:vep-97.4
 environment_base_name: mip7_rd-rna
 environment_name:
   emip: mip7_rd-rna
@@ -88,6 +92,14 @@ shell_install: []
 skip_programs: []
 slurm_quality_of_service: low
 update_config: '0'
+vep_assemblies:
+  - GRCh37
+  - GRCh38
+vep_auto_flag: cfp
+vep_plugins:
+  - dbNSFP
+vep_species:
+  - homo_sapiens_merged
 verbose: '0'
 write_config: '0'
 

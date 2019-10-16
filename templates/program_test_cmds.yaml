@@ -41,9 +41,6 @@
   cnvnator:
     execution:
     path: 'cnvnator'
-  cutadapt:
-    execution: 'cutadapt --version'
-    path: 'cutadapt'
   cython:
     execution: 'python -c "import cython"'
     path:

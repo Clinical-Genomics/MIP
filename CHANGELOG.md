@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removes the py3 and perl5 conda environment for the RNA pipeline
 - Moves stringtie to singularity container
 - Removed cramtools
+- Removes cutadapt 
 
 **CLI**
 - Removes the noupdate option from the installation

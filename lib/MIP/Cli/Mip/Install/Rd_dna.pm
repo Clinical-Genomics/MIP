@@ -167,7 +167,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
-                          cnvnator cutadapt delly expansionhunter fastqc
+                          cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
@@ -200,7 +200,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
-                          cnvnator cutadapt delly expansionhunter fastqc
+                          cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools

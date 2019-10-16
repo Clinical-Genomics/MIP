@@ -20,8 +20,9 @@ use Readonly;
 ## MIPs lib/
 use MIP::Check::Path qw{ check_future_filesystem_for_directory };
 use MIP::Constants
-  qw{ $AT $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_mkdir gnu_echo };
+  qw{ $AT $BACKWARD_SLASH $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_unset };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_echo gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Singularity qw{ singularity_exec singularity_pull };
@@ -33,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_singularity_containers };
@@ -173,7 +174,7 @@ sub install_singularity_containers {
             );
         }
 
-        ## Make available as exeutable in bin
+        ## Make available as exeuctable in bin
         setup_singularity_executable(
             {
                 conda_env_path         => $conda_env_path,
@@ -244,7 +245,14 @@ sub setup_singularity_executable {
         }
     );
 
-    my $bash_command = $DOUBLE_QUOTE . $DOLLAR_SIGN . $AT . $DOUBLE_QUOTE;
+    my $bash_command =
+        $BACKWARD_SLASH
+      . $DOUBLE_QUOTE
+      . $BACKWARD_SLASH
+      . $DOLLAR_SIGN
+      . $AT
+      . $BACKWARD_SLASH
+      . $DOUBLE_QUOTE;
 
   EXECUTABLE:
     foreach my $executable ( keys %{$executable_href} ) {
@@ -284,7 +292,6 @@ sub setup_singularity_executable {
                 FILEHANDLE             => $FILEHANDLE,
                 no_trailing_newline    => 1,
                 stdoutfile_path_append => $proxy_executable_path,
-                string_wrapper         => $SINGLE_QUOTE,
                 strings_ref            => [ join $SPACE, @singularity_cmds ],
             }
         );
@@ -297,6 +304,18 @@ sub setup_singularity_executable {
             }
         );
         print {$FILEHANDLE} $NEWLINE;
+
+        ## Unset VEP_VERSION
+        if ( $executable eq q{vep} ) {
+
+            gnu_unset(
+                {
+                    bash_variable => q{VEP_VERSION},
+                    FILEHANDLE    => $FILEHANDLE,
+                }
+            );
+            print {$FILEHANDLE} $NEWLINE;
+        }
     }
     return 1;
 }
