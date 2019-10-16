@@ -143,7 +143,6 @@ This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
 By default the batch script will attempt to install the MIP dependencies in a conda environment called mip7_rd-dna
-  * mip7_rd-dna
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip --environment_name emip=MIP``.   
 
