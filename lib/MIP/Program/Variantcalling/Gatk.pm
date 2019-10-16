@@ -1387,7 +1387,7 @@ sub gatk_combinevariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk3 };
+    my @commands;
 
     if ($java_jar) {    # Write java core commands to filehandle.
         @commands = java_core(
@@ -1415,6 +1415,9 @@ sub gatk_combinevariants {
               $gatk_disable_auto_index_and_file_lock,
         }
     );
+
+    ## Add binary to beginning
+    unshift @commands, q{gatk3};
 
     ## Tool-specific options
     if ($exclude_nonvariants) {
