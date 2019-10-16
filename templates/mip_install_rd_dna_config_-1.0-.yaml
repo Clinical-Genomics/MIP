@@ -8,17 +8,16 @@ emip:
     cutadapt: 1.18=py27_0
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
-#    gatk: 3.8=5
     gatk4: 4.1.3.0=0
     gcc: 4.8.5
     htslib: 1.9=hc238db4_4
+    libgcc: 7.2.0=h69d50b8_2
     libstdcxx-ng: 8.2
     numpy:
     picard: 2.20.7=0
     pip:
     plink2: 1.90b3.35
     python: 2.7
-#    R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.10.1=0
     samtools: 1.9=h8571acd_11
     vcfanno: 0.3.2=0
