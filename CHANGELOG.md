@@ -26,6 +26,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves Trim Galore to singularity container
 - Removes the py3 and perl5 conda environment for the RNA pipeline
 - Moves stringtie to singularity container
+- Removed cramtools
 - Removes cutadapt 
 
 **CLI**

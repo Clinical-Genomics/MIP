@@ -41,9 +41,6 @@
   cnvnator:
     execution:
     path: 'cnvnator'
-  cramtools:
-    execution: 'cramtools'
-    path: 'cramtools'
   cython:
     execution: 'python -c "import cython"'
     path:
