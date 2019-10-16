@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Bedtools} => [qw{ bedtools_intersectbed }],
+        q{MIP::Program::Bedtools} => [qw{ bedtools_intersect }],
         q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Bedtools qw{ bedtools_intersectbed };
+use MIP::Program::Bedtools qw{ bedtools_intersect };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bedtools_intersectbed from Bedtools.pm v}
+diag(   q{Test bedtools_intersect from Bedtools.pm v}
       . $MIP::Program::Bedtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -61,7 +61,7 @@ diag(   q{Test bedtools_intersectbed from Bedtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ intersectBed };
+my @function_base_commands = qw{ bedtools intersect };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -103,7 +103,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bedtools_intersectbed;
+my $module_function_cref = \&bedtools_intersect;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

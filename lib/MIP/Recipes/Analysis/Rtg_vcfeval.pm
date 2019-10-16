@@ -144,7 +144,7 @@ sub analysis_rtg_vcfeval {
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bedtools qw{ bedtools_intersectbed };
+    use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
@@ -283,7 +283,7 @@ sub analysis_rtg_vcfeval {
 
             my $bedtools_outfile_path =
               catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.bed} );
-            bedtools_intersectbed(
+            bedtools_intersect(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     infile_path        => $nist_bed_file_path,

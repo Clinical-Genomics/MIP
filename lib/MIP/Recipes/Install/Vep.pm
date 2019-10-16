@@ -21,7 +21,6 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $BACKTICK $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE };
-use MIP::Gnu::Bash qw{ gnu_unset };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
 use MIP::Program::Compression::Tar qw{ tar };
@@ -34,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -120,7 +119,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
 
     ## Install VEP
     say {$FILEHANDLE} q{## Install VEP plugins and cache};
-    $log->info(qq{Writing instructions for VEP installation});
+    $log->info(q{Writing instructions for VEP installation});
 
     ## Get VEP version
     my $vep_version     = q?${VEP_VERSION}?;
@@ -235,16 +234,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
             );
         }
     }
-
-    ## Unset the VEP_VERSION variable just to be sure
-    gnu_unset(
-        {
-            bash_variable => q{VEP_VERSION},
-            FILEHANDLE    => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     return 1;
 }
 

@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.10;
+our $VERSION = 2.11;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -130,16 +130,13 @@ sub _build_usage {
 
     option(
         q{environment_name} => (
-            cmd_aliases => [qw{ envn }],
-            cmd_flag    => q{environment_name},
-            cmd_tags    => [
-q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
-            ],
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: mip7_rd-dna}],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip   => Optional [Str],
-                eperl5 => Optional [Str],
+                emip => Optional [Str],
             ],
             required => 0,
         ),
@@ -149,10 +146,10 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip eperl5}],
+            cmd_tags      => [q{Default: emip }],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip eperl5 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip }] ), ],
             required      => 0,
         ),
     );
@@ -167,7 +164,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
-                          cnvnator cramtools cutadapt delly expansionhunter fastqc
+                          cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
@@ -185,7 +182,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ bedtools picard plink2 vt }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard plink2 vt }] ), ],
             required      => 0,
         ),
     );
@@ -200,7 +197,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_tiddit}
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
-                          cnvnator cramtools cutadapt delly expansionhunter fastqc
+                          cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools

@@ -3,12 +3,8 @@
 emip:
   conda:
     bcftools: 1.9=ha228f0b_4
-    bedtools: 2.27.1=he941832_2
-    cramtools: 3.0.b127=2
-    cutadapt: 1.18=py27_0
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
-    gatk4: 4.1.3.0=0
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
     numpy:
@@ -22,8 +18,6 @@ emip:
     vt: 2015.11.10
   pip:
   shell:
-    bedtools:
-      version: 2.25.0
     mip_scripts:
       version: Your current MIP version
     picard:
@@ -53,6 +47,10 @@ emip:
         typeHLA-selctg.js:
         seqtk:
       uri: shub://Clinical-Genomics/MIP:bwakit-0.7.15
+    bedtools:
+      executable:
+        bedtools:
+      uri: shub://Clinical-Genomics/MIP:bedtools-2.29.0
     cadd:
       executable:
         CADD.sh:
@@ -86,6 +84,10 @@ emip:
       executable:
         gatk3: "no_executable_in_image"
       uri: shub://Clinical-Genomics/MIP:gatk-3.8
+    gatk4:
+      executable:
+        gatk:
+      uri: shub://Clinical-Genomics/MIP:gatk-4.1.3.0
     genmod:
       executable:
         genmod:
@@ -143,22 +145,11 @@ emip:
       executable:
         vcf2cytosure:
       uri: shub://J35P312/vcf2cytosure:0.4.3
-# Perl environment spec
-eperl5:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    gatk4: 4.1.3.0=0
-    samtools: 1.9=h8571acd_11
-    pip:
-    python: 2.7
-  pip:
-  shell:
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
-  eperl5: mip7_rd-dna_perl5
 vep_plugins:
   - dbNSFP
   - ExACpLI
