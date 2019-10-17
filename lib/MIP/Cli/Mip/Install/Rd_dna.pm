@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.12;
+our $VERSION = 2.13;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -174,16 +174,6 @@ sub _build_usage {
                 ),
             ],
             required => 0,
-        ),
-    );
-    option(
-        q{shell_install} => (
-            cmd_aliases   => [qw{ si }],
-            cmd_flag      => q{shell_install},
-            documentation => q{Install supplied programs via shell instead of via conda},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
-            required      => 0,
         ),
     );
 
