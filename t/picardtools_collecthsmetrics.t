@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,7 +60,7 @@ diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ CollectHsMetrics };
+my @function_base_commands = qw{ picard CollectHsMetrics };
 
 my %base_argument = (
     FILEHANDLE => {

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,7 +65,7 @@ Readonly my $MIN_GQ    => 20;
 Readonly my $MIN_DEPTH => 10;
 
 ## Base arguments
-my @function_base_commands = qw{ SortVcf };
+my @function_base_commands = qw{ picard SortVcf };
 
 my %base_argument = (
     stderrfile_path => {

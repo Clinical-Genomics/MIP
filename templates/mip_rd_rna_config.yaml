@@ -29,5 +29,5 @@ star_fusion_genome_lib_dir: cluster_constant_path!/references/grch37_v19_CTAT_li
 ### Analysis
 ## Programs
 ## Parameters
-picardtools_path: cluster_constant_path!
+picardtools_path: /usr/picard
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/

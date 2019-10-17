@@ -185,9 +185,7 @@ picardtools_path:
     - picardtools_mergesamfiles
     - star_aln
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 is_from_sample:
   associated_recipe:
     - mip

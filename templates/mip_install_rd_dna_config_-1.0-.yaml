@@ -92,7 +92,7 @@ emip:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
-   picard:
+    picard:
       executable:
         picard: "no_executable_in_image"
       uri: shub://Clinical-Genomics/MIP:picard-2.20.7
