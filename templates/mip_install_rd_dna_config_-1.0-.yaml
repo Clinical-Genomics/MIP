@@ -12,7 +12,6 @@ emip:
     pip:
     plink2: 1.90b3.35
     python: 2.7
-    rtg-tools: 3.10.1=0
     samtools: 1.9=h8571acd_11
     vt: 2015.11.10
   pip:
@@ -108,6 +107,10 @@ emip:
       executable:
         rhocall:
       uri: shub://Clinical-Genomics/MIP:rhocall-0.5.1
+    rtg-tools:
+      executable:
+        rtg:
+      uri: shub://Clinical-Genomics/MIP:rtg-tools-3.10.1
     sambamba:
       executable:
         sambamba:

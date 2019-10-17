@@ -55,7 +55,7 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [Peddy] (version: 0.4.2)
 - [PicardTools] (version: 2.18.14)
 - [PLINK2] (version: 1.90b3x35)
-- [rtg-tools] (version: 3.9.1)
+- [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.9)
 - [Stranger] (version: 0.5.4)
