@@ -35,7 +35,7 @@ install:
 ## Install MIP rare disease
   - bash mip.sh
 ## Special case: Install bcftools since it is required by some unit tests
-conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+  - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 ## Generate rna installation script
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip fastqc --skip gatk4 --skip multiqc --skip rseqc --skip sambamba --skip star --skip star-fusion --skip stringtie --skip trim-galore --skip vep
 ## Install MIP rna
