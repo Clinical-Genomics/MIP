@@ -103,8 +103,8 @@ emip:
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
     plink:
       executable:
-        plink:
-      uri: shub://Clinical-Genomics/MIP:plink2-1.90b3.35
+        plink2:
+      uri: shub://Clinical-Genomics/MIP:plink-1.90b3.35
     rhocall:
       executable:
         rhocall:
