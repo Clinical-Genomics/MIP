@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA    => q{,};
 Readonly my $COVERAGE => 90;
-Readonly my $SPACE    => q{ };
 
 BEGIN {
 
@@ -65,7 +64,7 @@ diag(   q{Test gatk_combinevariants from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ --analysis_type CombineVariants };
+my @function_base_commands = qw{ gatk3 };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -154,7 +153,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ gatk3 java };
 
 my %specific_java_argument = (
     java_jar => {

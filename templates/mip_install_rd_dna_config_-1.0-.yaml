@@ -5,8 +5,6 @@ emip:
     bcftools: 1.9=ha228f0b_4
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
-    gatk: 3.8=5
-    gcc: 4.8.5
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
     numpy:
@@ -14,7 +12,6 @@ emip:
     pip:
     plink2: 1.90b3.35
     python: 2.7
-    R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.10.1=0
     samtools: 1.9=h8571acd_11
     vcfanno: 0.3.2=0
@@ -83,6 +80,10 @@ emip:
       executable:
         delly:
       uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    gatk:
+      executable:
+        gatk3: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:gatk-3.8
     gatk4:
       executable:
         gatk:

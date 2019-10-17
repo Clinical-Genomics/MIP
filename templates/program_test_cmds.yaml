@@ -60,7 +60,7 @@
     execution: 'gatk'
     path: 'gatk'
   gatk:
-    execution: 'gatk3 --version'
+    execution: 'gatk3 java -jar /opt/conda/opt/gatk-3.8/GenomeAnalysisTK.jar --version'
     path: 'gatk3'
   genmod:
     execution: 'genmod'

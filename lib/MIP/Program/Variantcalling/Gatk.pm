@@ -30,7 +30,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1415,6 +1415,9 @@ sub gatk_combinevariants {
               $gatk_disable_auto_index_and_file_lock,
         }
     );
+
+    ## Add binary to beginning
+    unshift @commands, q{gatk3};
 
     ## Tool-specific options
     if ($exclude_nonvariants) {
