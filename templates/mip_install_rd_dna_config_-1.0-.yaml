@@ -10,7 +10,6 @@ emip:
     numpy:
     picard: 2.20.7=0
     pip:
-    plink2: 1.90b3.35
     python: 2.7
     samtools: 1.9=h8571acd_11
     vt: 2015.11.10
@@ -22,8 +21,6 @@ emip:
       conda_dependency:
         java-jdk:
       version: 2.3.0
-    plink2:
-      version: 171013
     vt:
       version: gitRepo
   singularity:
@@ -103,6 +100,10 @@ emip:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    plink:
+      executable:
+        plink2:
+      uri: shub://Clinical-Genomics/MIP:plink-1.90b3.35
     rhocall:
       executable:
         rhocall:
