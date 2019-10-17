@@ -92,7 +92,7 @@
   pigz:
     execution: 'pigz'
     path: 'pigz'
-  plink2:
+  plink:
     execution: 'plink2 --version'
     path: 'plink2'
   preseq:

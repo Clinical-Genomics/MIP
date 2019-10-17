@@ -25,7 +25,6 @@ emip:
     numpy: ~
     picard: 2.20.7=0
     pip: ~
-    plink2: 1.90b3.35
     python: '2.7'
     rtg-tools: 3.10.1=0
     sambamba: 0.6.8=h682856c_0
@@ -43,8 +42,6 @@ emip:
       conda_dependency:
         java-jdk: ~
       version: 2.3.0
-    plink2:
-      version: '171013'
     sambamba:
       version: 0.6.1
     vt:
