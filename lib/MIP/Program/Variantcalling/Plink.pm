@@ -431,14 +431,14 @@ sub plink_create_mibs {
     my $matrix;
 
     my $tmpl = {
-        ped_file_path => { required => 1, store => \$ped_file_path, strict_type => 1, },
-        map_file_path => { required => 1, store => \$map_file_path, strict_type => 1, },
-        cluster       => {
+        cluster => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$cluster,
             strict_type => 1,
         },
+        FILEHANDLE    => { store    => \$FILEHANDLE, },
+        map_file_path => { required => 1, store => \$map_file_path, strict_type => 1, },
         matrix => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -446,7 +446,7 @@ sub plink_create_mibs {
             strict_type => 1,
         },
         outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
-        FILEHANDLE     => { store    => \$FILEHANDLE, },
+        ped_file_path  => { required => 1, store => \$ped_file_path,  strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
 
