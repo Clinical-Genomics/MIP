@@ -17,7 +17,6 @@ emip:
     R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.10.1=0
     samtools: 1.9=h8571acd_11
-    vcfanno: 0.3.2=0
     vt: 2015.11.10
   pip:
   shell:
