@@ -15,21 +15,19 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIP lib
+use MIP::Constants qw{ $EMPTY_STR $SPACE $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_rna_meta_files };
 }
-
-## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $EMPTY_STR => q{};
-Readonly my $TAB       => qq{\t};
 
 sub build_rd_rna_meta_files {
 
@@ -106,8 +104,8 @@ sub build_rd_rna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Build::Fusion_filter_prerequisites
-      qw{ build_fusion_filter_prerequisites };
+    use MIP::Recipes::Build::Star_fusion_prerequisites
+      qw{ build_star_fusion_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Salmon_quant_prerequisites
@@ -115,7 +113,7 @@ sub build_rd_rna_meta_files {
     use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
 
     my %build_recipe = (
-        fusion_filter_reference_genome      => \&build_fusion_filter_prerequisites,
+        fusion_filter_reference_genome      => \&build_star_fusion_prerequisites,
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         salmon_quant_reference_genome       => \&build_salmon_quant_prerequisites,
         star_aln_reference_genome           => \&build_star_prerequisites,

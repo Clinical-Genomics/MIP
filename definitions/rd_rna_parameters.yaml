@@ -364,7 +364,7 @@ star_fusion_genome_lib_dir:
   exists_check: directory
   is_reference: 1
   type: path
-fusion_filter_reference_genome:
+star_fusion_reference_genome:
   associated_recipe:
     - star_fusion
   build_file: 1
