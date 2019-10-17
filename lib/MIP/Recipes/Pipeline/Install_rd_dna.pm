@@ -33,7 +33,6 @@ use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
-use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 
@@ -191,7 +190,6 @@ sub pipeline_install_rd_dna {
         my %shell_subs = (
             mip_scripts => \&install_mip_scripts,
             picard      => \&install_picard,
-            plink2      => \&install_plink2,
         );
 
         ## Launch shell installation subroutines

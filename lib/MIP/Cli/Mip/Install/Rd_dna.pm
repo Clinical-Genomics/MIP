@@ -182,7 +182,7 @@ sub _build_usage {
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard plink2 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
             required      => 0,
         ),
     );
