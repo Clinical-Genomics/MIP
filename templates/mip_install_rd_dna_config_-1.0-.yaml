@@ -12,7 +12,6 @@ emip:
     pip:
     python: 2.7
     samtools: 1.9=h8571acd_11
-    vt: 2015.11.10
   pip:
   shell:
     mip_scripts:
@@ -21,8 +20,6 @@ emip:
       conda_dependency:
         java-jdk:
       version: 2.3.0
-    vt:
-      version: gitRepo
   singularity:
     bwa:
       executable:
@@ -152,6 +149,10 @@ emip:
       executable:
         vcf2cytosure:
       uri: shub://J35P312/vcf2cytosure:0.4.3
+    vt:
+      executable:
+        vt:
+      uri: shub://Clinical-Genomics/MIP:vt-2015.11.10
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
