@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.11;
+our $VERSION = 2.12;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -182,7 +182,7 @@ sub _build_usage {
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard plink2 vt }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard plink2 }] ), ],
             required      => 0,
         ),
     );
