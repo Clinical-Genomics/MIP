@@ -14,7 +14,6 @@ emip:
     python: 2.7
     rtg-tools: 3.10.1=0
     samtools: 1.9=h8571acd_11
-    vcfanno: 0.3.2=0
     vt: 2015.11.10
   pip:
   shell:
@@ -137,6 +136,10 @@ emip:
       executable:
         variant_integrity:
       uri: shub://Clinical-Genomics/MIP:variant_integrity-0.0.4
+    vcfanno:
+      executable:
+        vcfanno:
+      uri: shub://Clinical-Genomics/MIP:vcfanno-0.3.2
     vep:
       executable:
         vep:
