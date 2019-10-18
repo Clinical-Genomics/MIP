@@ -34,7 +34,7 @@ conda create --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64
 
 conda install --name "$ENV_NAME" --yes -c conda-forge perl=5.26 perl-app-cpanminus
 
-conda install --name "$ENV_NAME" --yes -c bioconda perl-log-log4perl perl-moosex-app bcftools=1.9
+conda install --name "$ENV_NAME" --yes -c bioconda perl-log-log4perl perl-moosex-app
 
 ## Source conda
 source "$CONDA_PATH"/etc/profile.d/conda.sh
