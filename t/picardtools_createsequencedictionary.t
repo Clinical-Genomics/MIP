@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,7 +61,7 @@ diag(   q{Test picardtools_createsequencedictionary from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ CreateSequenceDictionary };
+my @function_base_commands = qw{ picard CreateSequenceDictionary };
 
 my %base_argument = (
     stdoutfile_path => {

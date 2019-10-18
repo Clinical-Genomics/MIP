@@ -7,10 +7,6 @@ emip:
   shell:
     mip_scripts:
       version: Your current MIP version
-    picard:
-      conda_dependency:
-        java-jdk:
-      version: 2.3.0
   singularity:
     bwa:
       executable:
@@ -95,6 +91,10 @@ emip:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    picard:
+      executable:
+        picard: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:picard-2.20.7
     plink:
       executable:
         plink2:

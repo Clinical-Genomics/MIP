@@ -34,7 +34,6 @@ use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Gtf2bed qw{ install_gtf2bed };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
-use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
@@ -195,7 +194,6 @@ sub pipeline_install_rd_rna {
             bootstrapann => \&install_bootstrapann,
             gtf2bed      => \&install_gtf2bed,
             mip_scripts  => \&install_mip_scripts,
-            picard       => \&install_picard,
         );
 
         ## Launch shell installation subroutines

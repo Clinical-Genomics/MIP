@@ -31,11 +31,11 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip --envn emip=mip_travis --skip bcftools --skip bwa --skip bwakit --skip bedtools --skip cadd --skip chanjo --skip chromograph --skip cnvnator --skip delly --skip expansionhunter --skip fastqc --skip gatk --skip gatk4 --skip genmod --skip htslib --skip manta --skip multiqc --skip peddy --skip plink --skip rhocall --skip rtg-tools --skip sambamba --skip samtools --skip stranger --skip svdb --skip tiddit --skip upd --skip variant_integrity --skip varg --skip vcfanno --skip vep --skip vcf2cytosure --skip vt
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip --envn emip=mip_travis --skip bwa --skip bwakit --skip bedtools --skip cadd --skip chanjo --skip chromograph --skip cnvnator --skip delly --skip expansionhunter --skip fastqc --skip gatk --skip gatk4 --skip genmod --skip htslib --skip manta --skip multiqc --skip peddy --skip picard --skip plink --skip rhocall --skip rtg-tools --skip sambamba --skip stranger --skip svdb --skip tiddit --skip upd --skip variant_integrity --skip varg --skip vcfanno --skip vep --skip vcf2cytosure --skip vt
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip bcftools --skip fastqc --skip gatk4 --skip htslib --skip multiqc --skip rseqc --skip sambamba --skip samtools --skip star --skip star-fusion --skip stringtie --skip trim-galore --skip vep
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip fastqc --skip gatk4 --skip htslib --skip multiqc --skip picard --skip rseqc --skip sambamba --skip star --skip star-fusion --skip stringtie --skip trim-galore --skip vep
 ## Install MIP rna
   - bash mip.sh
 ## Special case: Install bcftools since it is required by some tests
