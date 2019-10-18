@@ -61,12 +61,14 @@ fqf_annotations:
   - SWEGENAF
 gatk_combinevariants_prioritize_caller: gatk,bcftools
 gatk_haplotypecaller_no_soft_clipped_bases: 1
+gatk_path: /opt/conda/opt/gatk-3.8
 gatk_variantrecalibration_dp_annotation: 1
 gatk_variantrecalibration_indel_max_gaussians: 1
 gatk_variantrecalibration_snv_max_gaussians: 0
 gatk_combinevariantcallsets_bcf_file: 1
 genmod_annotate_regions: 1
 genmod_models_whole_gene: 1
+picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 rankvariant_binary_file: 1
 sv_bcftools_view_filter: 1

@@ -329,9 +329,7 @@ picardtools_path:
    - picardtools_mergesamfiles
    - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 replace_iupac:
   associated_recipe:
    - mip

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -267,6 +267,8 @@ sub picardtools_base {
 
     # Stores commands depending on input parameters
     my @commands = @{$commands_ref};
+
+    unshift @commands, q{picard};
 
     if ( $create_index ne q{false} ) {
 

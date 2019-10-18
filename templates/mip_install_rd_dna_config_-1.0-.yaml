@@ -6,17 +6,12 @@ emip:
     cyvcf2: 0.10.0=py27h355e19c_0
     libstdcxx-ng: 8.2
     numpy:
-    picard: 2.20.7=0
     pip:
     python: 2.7
   pip:
   shell:
     mip_scripts:
       version: Your current MIP version
-    picard:
-      conda_dependency:
-        java-jdk:
-      version: 2.3.0
   singularity:
     bwa:
       executable:
@@ -101,6 +96,10 @@ emip:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    picard:
+      executable:
+        picard: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:picard-2.20.7
     plink:
       executable:
         plink2:
