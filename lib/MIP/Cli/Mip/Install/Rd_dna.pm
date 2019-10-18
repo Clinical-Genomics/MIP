@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.12;
+our $VERSION = 2.13;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -163,11 +163,11 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
+                        qw{ bedtools bwa bwakit cadd chanjo chromograph
                           cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
-                          plink python rhocall rtg-tools sambamba samtools
+                          plink python rhocall rtg-tools sambamba
                           scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
@@ -196,11 +196,11 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cadd chanjo chromograph
+                        qw{ bedtools bwa bwakit cadd chanjo chromograph
                           cnvnator delly expansionhunter fastqc
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
-                          plink python rhocall rtg-tools sambamba samtools
+                          plink python rhocall rtg-tools sambamba
                           scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
