@@ -2,13 +2,7 @@
 # MIP main environment spec
 emip:
   conda:
-    cython: 0.29.1=py27hfc679d8_0
-    cyvcf2: 0.10.0=py27h355e19c_0
-    libstdcxx-ng: 8.2
-    numpy:
     picard: 2.20.7=0
-    pip:
-    python: 2.7
   pip:
   shell:
     mip_scripts:
