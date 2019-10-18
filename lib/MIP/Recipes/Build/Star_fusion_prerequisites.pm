@@ -1,4 +1,4 @@
-package MIP::Recipes::Build::Fusion_filter_prerequisites;
+package MIP::Recipes::Build::Star_fusion_prerequisites;
 
 use 5.026;
 use Carp;
@@ -25,26 +25,26 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ build_fusion_filter_prerequisites };
+    our @EXPORT_OK = qw{ build_star_fusion_prerequisites };
 
 }
 
-sub build_fusion_filter_prerequisites {
+sub build_star_fusion_prerequisites {
 
-## Function : Creates the Fusion-filter prerequisites for the human genome and transcriptome
+## Function : Creates the STAR-Fusion prerequisites for the human genome and transcriptome
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $case_id                    => Family id
+##          : $case_id                      => Case id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $recipe_name                 => Program name
+##          : $recipe_name                  => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
 ##          : $profile_base_command         => Submission profile base command
 ##          : $sample_info_href             => Info on samples and case hash {REF}
@@ -159,8 +159,8 @@ sub build_fusion_filter_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Blast qw{ blast_blastn blast_makeblastdb };
-    use MIP::Program::Utility::Fusion_filter
-      qw{ fusion_filter_gtf_file_to_feature_seqs fusion_filter_prep_genome_lib };
+    use MIP::Program::Star_fusion
+      qw{ star_fusion_gtf_file_to_feature_seqs star_fusion_prep_genome_lib };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -225,17 +225,17 @@ sub build_fusion_filter_prerequisites {
         }
     );
 
-    if ( $parameter_href->{fusion_filter_reference_genome}{build_file} == 1 ) {
+    if ( $parameter_href->{star_fusion_reference_genome}{build_file} == 1 ) {
 
         $log->warn( q{Will try to create required }
               . $human_genome_reference
-              . q{ Fusion-filter files before executing }
+              . q{ STAR-Fusion files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building Fusion-filter dir files};
+        say {$FILEHANDLE} q{## Building Star-Fusion dir files};
         ## Get parameters
-        my $fusion_filter_directory_tmp =
-            $active_parameter_href->{fusion_filter_reference_genome}
+        my $star_fusion_directory_tmp =
+            $active_parameter_href->{star_fusion_reference_genome}
           . $UNDERSCORE
           . $random_integer;
 
@@ -243,21 +243,20 @@ sub build_fusion_filter_prerequisites {
         gnu_mkdir(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $fusion_filter_directory_tmp,
+                indirectory_path => $star_fusion_directory_tmp,
                 parents          => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
         ## Build cDNA sequence file
-        fusion_filter_gtf_file_to_feature_seqs(
+        star_fusion_gtf_file_to_feature_seqs(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 gtf_path           => $active_parameter_href->{transcript_annotation},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
-                stdoutfile_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
+                stdoutfile_path => catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -266,7 +265,7 @@ sub build_fusion_filter_prerequisites {
         blast_makeblastdb(
             {
                 cdna_seq_file_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
+                  catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
                 db_type    => q{nucl},
                 FILEHANDLE => $FILEHANDLE,
             }
@@ -276,16 +275,15 @@ sub build_fusion_filter_prerequisites {
         ## Create blast pairs
         blast_blastn(
             {
-                evalue        => $EXPECT_VALUE,
-                database_name => catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE    => $FILEHANDLE,
-                lcase_masking => 1,
+                evalue          => $EXPECT_VALUE,
+                database_name   => catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
+                FILEHANDLE      => $FILEHANDLE,
+                lcase_masking   => 1,
                 max_target_seqs => $MAX_TARGET_SEQS,
                 output_format   => $TABULAR,
-                query_file_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
+                query_file_path => catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
                 stdoutfile_path =>
-                  catfile( $fusion_filter_directory_tmp, q{blast_pairs.outfmt6} ),
+                  catfile( $star_fusion_directory_tmp, q{blast_pairs.outfmt6} ),
                 thread_number => $NUMBER_OF_CORES,
                 word_size     => $WORD_SIZE,
             }
@@ -293,13 +291,13 @@ sub build_fusion_filter_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
         ## Build genome lib
-        fusion_filter_prep_genome_lib(
+        star_fusion_prep_genome_lib(
             {
                 blast_pairs_file_path =>
-                  catfile( $fusion_filter_directory_tmp, q{blast_pairs.outfmt6} ),
+                  catfile( $star_fusion_directory_tmp, q{blast_pairs.outfmt6} ),
                 FILEHANDLE         => $FILEHANDLE,
                 gtf_path           => $active_parameter_href->{transcript_annotation},
-                output_dir_path    => catfile($fusion_filter_directory_tmp),
+                output_dir_path    => catfile($star_fusion_directory_tmp),
                 referencefile_path => $human_genome_reference,
                 thread_number      => $NUMBER_OF_CORES,
             }
@@ -310,14 +308,14 @@ sub build_fusion_filter_prerequisites {
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path =
-              $active_parameter_href->{fusion_filter_reference_genome} . $suffix;
+              $active_parameter_href->{star_fusion_reference_genome} . $suffix;
 
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
                     FILEHANDLE          => $FILEHANDLE,
                     intended_file_path  => $intended_file_path,
-                    temporary_file_path => $fusion_filter_directory_tmp,
+                    temporary_file_path => $star_fusion_directory_tmp,
                 }
             );
         }

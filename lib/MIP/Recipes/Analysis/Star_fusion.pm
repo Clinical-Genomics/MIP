@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -34,7 +34,7 @@ BEGIN {
 
 sub analysis_star_fusion {
 
-## Function : Analysis recipe for star-fusion v1.4.0
+## Function : Analysis recipe for star-fusion v1.8.0
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -144,7 +144,7 @@ sub analysis_star_fusion {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+    use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -250,6 +250,7 @@ sub analysis_star_fusion {
             cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
             FILEHANDLE            => $FILEHANDLE,
+            fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
