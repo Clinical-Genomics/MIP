@@ -2,7 +2,7 @@
 # MIP main environment spec
 emip:
   conda:
-    picard: 2.20.7=0
+    python: 3.7
   pip:
   shell:
     mip_scripts:
