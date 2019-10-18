@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,7 +61,7 @@ diag(   q{Test picardtools_mergesamfiles from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ MergeSamFiles };
+my @function_base_commands = qw{ picard MergeSamFiles };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -134,7 +134,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ picard java };
 
 my %specific_java_argument = (
     java_jar => {
