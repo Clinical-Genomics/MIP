@@ -40,19 +40,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Fusion_filter_prerequisites} =>
-          [qw{ build_fusion_filter_prerequisites }],
+        q{MIP::Recipes::Build::Star_fusion_prerequisites} =>
+          [qw{ build_star_fusion_prerequisites }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Fusion_filter_prerequisites
-  qw{ build_fusion_filter_prerequisites };
+use MIP::Recipes::Build::Star_fusion_prerequisites qw{ build_star_fusion_prerequisites };
 
-diag(   q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
-      . $MIP::Recipes::Build::Fusion_filter_prerequisites::VERSION
+diag(   q{Test build_star_fusion_prerequisites from Star_fusion_prerequisites.pm v}
+      . $MIP::Recipes::Build::Star_fusion_prerequisites::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -91,10 +90,10 @@ my %parameter = test_mip_hashes(
 my %sample_info;
 
 ## Special case
-$active_parameter{fusion_filter_reference_genome} = q{human_genome.fastq};
-$active_parameter{transcript_annotation}          = q{grch37_transcripts.gtf};
+$active_parameter{star_fusion_reference_genome} = q{human_genome.fastq};
+$active_parameter{transcript_annotation}        = q{grch37_transcripts.gtf};
 
-my $is_ok = build_fusion_filter_prerequisites(
+my $is_ok = build_star_fusion_prerequisites(
     {
         active_parameter_href        => \%active_parameter,
         file_info_href               => \%file_info,
@@ -102,7 +101,7 @@ my $is_ok = build_fusion_filter_prerequisites(
         job_id_href                  => \%job_id,
         log                          => $log,
         parameter_href               => \%parameter,
-        parameter_build_suffixes_ref => \@{ $file_info{fusion_filter_reference_genome} },
+        parameter_build_suffixes_ref => \@{ $file_info{star_fusion_reference_genome} },
         profile_base_command         => $slurm_mock_cmd,
         recipe_name                  => $recipe_name,
         sample_info_href             => \%sample_info,

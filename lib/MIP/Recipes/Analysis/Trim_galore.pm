@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -282,6 +282,7 @@ sub analysis_trim_galore {
         ## Trim galore
         trim_galore(
             {
+                cores            => $recipe_resource{core_number},
                 FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => \@infile_paths,
                 outdir_path      => $outsample_directory,
@@ -293,6 +294,7 @@ sub analysis_trim_galore {
         ## Increment paired end tracker
         $paired_end_tracker++;
     }
+    say {$FILEHANDLE} q{wait};
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
