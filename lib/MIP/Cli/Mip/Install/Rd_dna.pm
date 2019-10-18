@@ -176,16 +176,6 @@ sub _build_usage {
             required => 0,
         ),
     );
-    option(
-        q{shell_install} => (
-            cmd_aliases   => [qw{ si }],
-            cmd_flag      => q{shell_install},
-            documentation => q{Install supplied programs via shell instead of via conda},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
-            required      => 0,
-        ),
-    );
 
     option(
         q{skip_programs} => (

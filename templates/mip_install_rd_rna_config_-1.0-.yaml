@@ -6,7 +6,6 @@ emip:
     bioconductor-tximport:
     gffcompare: 0.11.2
     numpy:
-    picard: 2.18.23=0
     pigz:
     pip:
     preseq: 2.0.3=gsl2.2_1
@@ -34,8 +33,6 @@ emip:
       version: git
     mip_scripts:
       version: Your current MIP version
-    picard:
-      version: 2.17.11
     gtf2bed:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
@@ -59,6 +56,10 @@ emip:
       executable:
         multiqc:
       uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+    picard:
+      executable:
+        picard: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:picard-2.20.7
     rseqc:
       executable:
         bam2wig.py:
