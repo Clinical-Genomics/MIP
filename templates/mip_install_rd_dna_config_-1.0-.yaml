@@ -2,15 +2,12 @@
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9=ha228f0b_4
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
-    htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
     numpy:
     pip:
     python: 2.7
-    samtools: 1.9=h8571acd_11
   pip:
   shell:
     mip_scripts:
@@ -79,6 +76,13 @@ emip:
       executable:
         genmod:
       uri: shub://Clinical-Genomics/MIP:genmod-3.7.3
+    htslib:
+      executable:
+        bcftools:
+        bgzip:
+        samtools:
+        tabix:
+      uri: shub://Clinical-Genomics/MIP:htslib-1.9
     manta:
       executable:
         configManta.py:

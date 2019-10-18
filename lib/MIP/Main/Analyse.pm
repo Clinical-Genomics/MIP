@@ -81,7 +81,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -321,15 +321,15 @@ sub mip_analyse {
           analysis_type
           bwa_build_reference
           exome_target_bed
-          fusion_filter_reference_genome
           gatk_path
           infile_dirs
           picardtools_path
+          rtg_vcfeval_reference_genome
           salmon_quant_reference_genome
           sample_info_file
-          sv_vcfparser_select_file
           star_aln_reference_genome
-          rtg_vcfeval_reference_genome
+          star_fusion_reference_genome
+          sv_vcfparser_select_file
           temp_directory
           vcfparser_select_file
           vep_directory_path

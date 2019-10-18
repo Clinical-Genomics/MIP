@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -202,24 +202,24 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
-        analysis_type                  => \&_set_analysis_type,
-        bwa_build_reference            => \&_set_human_genome,
-        fusion_filter_reference_genome => \&_set_human_genome,
-        gatk_path                      => \&_set_dynamic_path,
-        infile_dirs                    => \&_set_infile_dirs,
-        picardtools_path               => \&_set_dynamic_path,
-        program_test_file              => \&_set_program_test_file,
-        reference_dir                  => \&_set_reference_dir,
-        rtg_vcfeval_reference_genome   => \&_set_human_genome,
-        salmon_quant_reference_genome  => \&_set_human_genome,
-        select_programs                => \&_set_uninitialized_parameter,
-        shell_install                  => \&_set_uninitialized_parameter,
-        skip_programs                  => \&_set_uninitialized_parameter,
-        star_aln_reference_genome      => \&_set_human_genome,
-        sv_vcfparser_select_file       => \&_set_vcfparser_select_file,
-        temp_directory                 => \&_set_temp_directory,
-        vcfparser_select_file          => \&_set_vcfparser_select_file,
-        vep_directory_path             => \&_set_dynamic_path,
+        analysis_type                 => \&_set_analysis_type,
+        bwa_build_reference           => \&_set_human_genome,
+        gatk_path                     => \&_set_dynamic_path,
+        infile_dirs                   => \&_set_infile_dirs,
+        picardtools_path              => \&_set_dynamic_path,
+        program_test_file             => \&_set_program_test_file,
+        reference_dir                 => \&_set_reference_dir,
+        rtg_vcfeval_reference_genome  => \&_set_human_genome,
+        salmon_quant_reference_genome => \&_set_human_genome,
+        select_programs               => \&_set_uninitialized_parameter,
+        shell_install                 => \&_set_uninitialized_parameter,
+        skip_programs                 => \&_set_uninitialized_parameter,
+        star_aln_reference_genome     => \&_set_human_genome,
+        star_fusion_reference_genome  => \&_set_human_genome,
+        sv_vcfparser_select_file      => \&_set_vcfparser_select_file,
+        temp_directory                => \&_set_temp_directory,
+        vcfparser_select_file         => \&_set_vcfparser_select_file,
+        vep_directory_path            => \&_set_dynamic_path,
     );
 
     ## Set default value to parameter and/or active parameter
