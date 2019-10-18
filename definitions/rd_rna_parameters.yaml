@@ -10,6 +10,7 @@ human_genome_reference:
     - gatk_splitncigarreads
     - gatk_variantfiltration
     - star_aln
+    - star_fusion
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -24,6 +25,7 @@ human_genome_reference_file_endings:
     - gatk_splitncigarreads
     - gatk_variantfiltration
     - star_aln
+    - star_fusion
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -33,11 +35,11 @@ human_genome_reference_file_endings:
 transcript_annotation:
   associated_recipe:
     - blobfish
+    - gffcompare_ar
     - salmon_quant
     - star_aln
     - star_fusion
     - stringtie_ar
-    - gffcompare_ar
   data_type: SCALAR
   default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file

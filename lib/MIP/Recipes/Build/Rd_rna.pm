@@ -113,7 +113,7 @@ sub build_rd_rna_meta_files {
     use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
 
     my %build_recipe = (
-        fusion_filter_reference_genome      => \&build_star_fusion_prerequisites,
+        star_fusion_reference_genome        => \&build_star_fusion_prerequisites,
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         salmon_quant_reference_genome       => \&build_salmon_quant_prerequisites,
         star_aln_reference_genome           => \&build_star_prerequisites,
