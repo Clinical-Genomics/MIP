@@ -27,7 +27,6 @@ use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Package_manager::Conda qw{ conda_check_env_status };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_conda_path set_custom_default_to_active_parameter set_default_to_active_parameter };
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
@@ -45,7 +44,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.03;
+    our $VERSION = 2.04;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -215,13 +214,6 @@ sub mip_install {
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
-        }
-    );
-
-    ## Check for active conda environment (exit if true)
-    conda_check_env_status(
-        {
-            disable_env_check => $active_parameter{disable_env_check},
         }
     );
 
