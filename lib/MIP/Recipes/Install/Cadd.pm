@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $FORWARD_SLASH $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Singularity qw{ singularity_exec };
 
@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -95,7 +95,9 @@ sub install_cadd {
 
     ## Bind annotation dir path to pathh in container
     my $cadd_bind_path =
-      $annotation_dir_path . $COLON . catdir(qw{ opt CADD-scripts data annotations });
+        $annotation_dir_path
+      . $COLON
+      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } );
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {
