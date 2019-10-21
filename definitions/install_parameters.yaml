@@ -27,12 +27,6 @@ core_number:
   default: 1
   mandatory: no
   type: mip
-disable_env_check:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 environment_base_name: 
   associated_recipe:
    - mip
