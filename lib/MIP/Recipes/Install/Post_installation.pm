@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -281,10 +281,16 @@ sub check_program_installations {
     my $success_case = qq?&& { $success_echo; $installation_outcome=success; }?;
     my $fail_case    = qq?|| { $fail_echo; }?;
 
+    ## Enabling querying of $?
+    say {$FILEHANDLE} q{set +e} . $NEWLINE;
+
     ## Write test oneliner
     say {$FILEHANDLE} q{## Test programs and capture outcome in bash variable};
     print {$FILEHANDLE} join $SPACE, @perl_commands;
     say {$FILEHANDLE} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
+
+    ## Restore errexit
+    say {$FILEHANDLE} q{set -e} . $NEWLINE;
 
     ## Unload env
     say   {$FILEHANDLE} qq{## Unload environment: $env_name};
