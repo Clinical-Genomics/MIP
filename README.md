@@ -110,7 +110,8 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Miniconda] version 4.5.11
 * Singularity version 3.2.1
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
+We recommend miniconda for installing perl and cpanm libraries. However, perlbrew can also be used for installing and managing perl and cpanm libraries together with MIP.
+Installation instructions and setting up specific cpanm libraries using perlbrew can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline follows a similar syntax.
@@ -125,7 +126,7 @@ $ cd MIP
 
 ```Bash
 $ cd definitions
-$ cpanm --installdeps .
+$ bash mip_install_perl.sh -e [mip7_rd-dna] -p [$HOME/miniconda3] 
 $ cd -
 ```  
 
