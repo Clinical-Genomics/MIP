@@ -38,7 +38,7 @@ sub upd_call {
 ## Arguments: $af_tag                 => Allele tag to use
 ##          : $call_type              => Output regions or sites
 ##          : $father_id              => Father ID in vcf
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Path to infile vcf
 ##          : $mother_id              => Mother ID in vcf
 ##          : $outfile_path           => Path to outfile
@@ -54,7 +54,7 @@ sub upd_call {
     my $af_tag;
     my $call_type;
     my $father_id;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $mother_id;
     my $outfile_path;
@@ -84,8 +84,8 @@ sub upd_call {
             store       => \$father_id,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -160,7 +160,7 @@ sub upd_call {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

@@ -71,7 +71,7 @@ my $log = test_log( {} );
 my $test_dir = File::Temp->newdir();
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 ## Given input to create script
 my $directory_id     = q{case_1};
@@ -100,7 +100,7 @@ my ($recipe_file_path) = setup_script(
         active_parameter_href => \%active_parameter,
         directory_id          => $directory_id,
         email_types_ref       => [qw{ FAIL }],
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
         job_id_href           => \%job_id,
         log                   => $log,
         recipe_directory      => $test_recipe_name,
@@ -122,6 +122,6 @@ my $expected_file_path = $file_path_prefix . q{0} . $file_name_suffix;
 ## Then the recipe file path should be returned
 is( $recipe_file_path, $expected_file_path, q{Generated recipe file path} );
 
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

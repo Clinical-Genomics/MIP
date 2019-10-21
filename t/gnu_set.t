@@ -89,7 +89,7 @@ diag("Test gnu_set $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 my $batch_shebang = q{#!};
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => q{set},
     },
@@ -136,7 +136,7 @@ foreach my $key ( keys %argument ) {
 # Fake arguments
 my @args = (
     set_errexit => $argument{set_errexit}{input},
-    FILEHANDLE  => undef,
+    filehandle  => undef,
 );
 
 ## Coderef - enables generalized use of generate call

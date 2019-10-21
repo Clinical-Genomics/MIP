@@ -35,7 +35,7 @@ sub bcftools_base {
 ## Function : Perl wrapper for bcftools base. Based on Bcftools 1.9
 ## Returns  : @commands
 ## Arguments: $commands_ref      => List of commands added earlier
-##          : $FILEHANDLE        => Filehandle to write to
+##          : $filehandle        => Filehandle to write to
 ##          : $outfile_path      => Outfile path
 ##          : $output_type       => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref       => Regions to process {REF}
@@ -47,7 +47,7 @@ sub bcftools_base {
 
     ## Flatten argument(s)
     my $commands_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
     my $output_type;
     my $regions_ref;
@@ -61,8 +61,8 @@ sub bcftools_base {
             store       => \$commands_ref,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         outfile_path => {
             store       => \$outfile_path,
@@ -133,7 +133,7 @@ sub bcftools_base {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

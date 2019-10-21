@@ -212,7 +212,7 @@ sub analysis_picardtools_collecthsmetrics {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -220,7 +220,7 @@ sub analysis_picardtools_collecthsmetrics {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -234,7 +234,7 @@ sub analysis_picardtools_collecthsmetrics {
 
     ### SHELL:
     ## Collecthsmetrics
-    say {$FILEHANDLE} q{## Calculate capture metrics on alignment};
+    say {$filehandle} q{## Calculate capture metrics on alignment};
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
@@ -249,7 +249,7 @@ sub analysis_picardtools_collecthsmetrics {
         {
             bait_interval_file_paths_ref =>
               [ $exome_target_bed_file . $padded_interval_list_ending ],
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $infile_path,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -262,7 +262,7 @@ sub analysis_picardtools_collecthsmetrics {
             temp_directory => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
@@ -277,7 +277,7 @@ sub analysis_picardtools_collecthsmetrics {
             }
         );
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

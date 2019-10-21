@@ -99,7 +99,7 @@ diag(   q{Test tiddit_sv from Tiddit.pm v}
 my @function_base_commands = qw{ TIDDIT.py };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -69,7 +69,7 @@ Readonly my $STATIC_QUANTIZED_QUALS_MAX_LEVEL     => 20;
 my @function_base_commands = qw{ --analysis_type HaplotypeCaller };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

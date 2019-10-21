@@ -63,7 +63,7 @@ diag(   q{Test star_fusion_gtf_file_to_feature_seqs from Star_fusion.pm v}
 my @function_base_commands = qw{ gtf_file_to_feature_seqs.pl };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

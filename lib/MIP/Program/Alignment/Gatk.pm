@@ -41,10 +41,10 @@ BEGIN {
 
 sub gatk_applybqsr {
 
-## Function : Perl wrapper for writing GATK ApplyBQSR recipe to $FILEHANDLE. Based on GATK 4.0.8
+## Function : Perl wrapper for writing GATK ApplyBQSR recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
 ## Arguments: $base_quality_score_recalibration_file => Input recalibration table for BQSR
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -62,7 +62,7 @@ sub gatk_applybqsr {
 
     ## Flatten argument(s)
     my $base_quality_score_recalibration_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -85,7 +85,7 @@ sub gatk_applybqsr {
             store       => \$base_quality_score_recalibration_file,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
@@ -208,7 +208,7 @@ sub gatk_applybqsr {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -217,9 +217,9 @@ sub gatk_applybqsr {
 
 sub gatk_asereadcounter {
 
-## Function : Perl wrapper for writing GATK ASEReadCounter recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK ASEReadCounter recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
+## Arguments: $filehandle           => Sbatch filehandle to write to
 ##          : $infile_path          => Infile path
 ##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages => Use java large pages
@@ -236,7 +236,7 @@ sub gatk_asereadcounter {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -253,8 +253,8 @@ sub gatk_asereadcounter {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
@@ -374,7 +374,7 @@ sub gatk_asereadcounter {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -384,9 +384,9 @@ sub gatk_asereadcounter {
 
 sub gatk_baserecalibrator {
 
-## Function : Perl wrapper for writing GATK BaseRecalibrator recipe to $FILEHANDLE. Based on GATK 4.0.8
+## Function : Perl wrapper for writing GATK BaseRecalibrator recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
-## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
+## Arguments: $filehandle           => Sbatch filehandle to write to
 ##          : $infile_path          => Infile paths
 ##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages => Use java large pages
@@ -404,7 +404,7 @@ sub gatk_baserecalibrator {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $known_sites_ref;
@@ -422,7 +422,7 @@ sub gatk_baserecalibrator {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
@@ -542,7 +542,7 @@ sub gatk_baserecalibrator {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -551,10 +551,10 @@ sub gatk_baserecalibrator {
 
 sub gatk_gatherbqsrreports {
 
-## Function : Perl wrapper for writing GATK GatherBQSRReports recipe to $FILEHANDLE. Based on GATK 4.0.11
+## Function : Perl wrapper for writing GATK GatherBQSRReports recipe to $filehandle. Based on GATK 4.0.11
 ## Returns  : @commands
 ## Arguments: $base_quality_score_recalibration_files_ref => Input recalibration table for BQSR {REF}
-##          : $FILEHANDLE                                 => Sbatch filehandle to write to
+##          : $filehandle                                 => Sbatch filehandle to write to
 ##          : $infile_path                                => Infile paths
 ##          : $intervals_ref                              => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                       => Use java large pages
@@ -572,7 +572,7 @@ sub gatk_gatherbqsrreports {
 
     ## Flatten argument(s)
     my $base_quality_score_recalibration_files_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -595,7 +595,7 @@ sub gatk_gatherbqsrreports {
             store       => \$base_quality_score_recalibration_files_ref,
             strict_type => 1,
         },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        filehandle    => { store => \$filehandle },
         intervals_ref => {
             default     => [],
             defined     => 1,
@@ -692,7 +692,7 @@ sub gatk_gatherbqsrreports {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -701,13 +701,13 @@ sub gatk_gatherbqsrreports {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
 ##          : $dont_use_soft_clipped_bases                   => Do not analyze soft clipped bases in the reads
 ##          : $emit_ref_confidence                           => Mode for emitting reference confidence scores
-##          : $FILEHANDLE                                    => Sbatch filehandle to write to
+##          : $filehandle                                    => Sbatch filehandle to write to
 ##          : $infile_path                                   => Infile paths
 ##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                          => Use java large pages
@@ -733,7 +733,7 @@ sub gatk_haplotypecaller {
     my $annotations_ref;
     my $dbsnp_path;
     my $dont_use_soft_clipped_bases;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -778,8 +778,8 @@ sub gatk_haplotypecaller {
             store       => \$emit_ref_confidence,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
@@ -978,7 +978,7 @@ sub gatk_haplotypecaller {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -987,9 +987,9 @@ sub gatk_haplotypecaller {
 
 sub gatk_printreads {
 
-## Function : Perl wrapper for writing GATK PrintReads recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK PrintReads recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -1004,7 +1004,7 @@ sub gatk_printreads {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -1027,7 +1027,7 @@ sub gatk_printreads {
             store       => \$infile_path,
             strict_type => 1,
         },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        filehandle    => { store => \$filehandle },
         intervals_ref => {
             default     => [],
             defined     => 1,
@@ -1123,7 +1123,7 @@ sub gatk_printreads {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1132,9 +1132,9 @@ sub gatk_printreads {
 
 sub gatk_splitncigarreads {
 
-## Function : Perl wrapper for writing GATK splitNCigarReads recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK splitNCigarReads recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
+## Arguments: $filehandle           => Sbatch filehandle to write to
 ##          : $infile_path          => Infile paths
 ##          : $java_use_large_pages => Use java large pages
 ##          : $maping_quality_from  => Input mapping quality values
@@ -1152,7 +1152,7 @@ sub gatk_splitncigarreads {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $memory_allocation;
     my $outfile_path;
@@ -1167,7 +1167,7 @@ sub gatk_splitncigarreads {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
@@ -1271,7 +1271,7 @@ sub gatk_splitncigarreads {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

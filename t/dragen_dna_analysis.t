@@ -66,7 +66,7 @@ Readonly my $THREAD_NUMBER => 2;
 my @function_base_commands = qw{ dragen };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -70,7 +70,7 @@ Readonly my $MAX_ALLELES => 2;
 Readonly my $MIN_ALLELES => 2;
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -108,7 +108,7 @@ like( $trap->stderr, qr/Command\sline\sdoes\snot/xms, q{Throw error message} );
 ## Given a scalar input when base command exists
 @function_base_commands = qw{ test command };
 %required_argument      = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -160,7 +160,7 @@ foreach my $argument_href (@arguments) {
     );
 }
 
-## Given no FILEHANDLE and hash argument
+## Given no filehandle and hash argument
 @arguments = ( \%specific_argument );
 
 foreach my $argument_href (@arguments) {

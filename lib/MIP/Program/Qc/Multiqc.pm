@@ -33,13 +33,13 @@ Readonly my $SPACE => q{ };
 
 sub multiqc {
 
-## Function  : Perl wrapper for writing multiqc recipe to already open $FILEHANDLE or return commands array. Based on multiqc 0.8.dev0.
+## Function  : Perl wrapper for writing multiqc recipe to already open $filehandle or return commands array. Based on multiqc 0.8.dev0.
 ## Returns   : "@commands"
 ## Arguments : $indir_path             => Indir path
 ##           : $outdir_path            => Outdir path
 ##           : $stderrfile_path        => Stderrfile path
 ##           : $stdoutfile_path        => Stdoutfile path
-##           : $FILEHANDLE             => Filehandle to write to
+##           : $filehandle             => Filehandle to write to
 ##           : $stderrfile_path_append => Append stderr info to file
 ##           : $force                  => Force overwrite of output files
 
@@ -51,7 +51,7 @@ sub multiqc {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
     my $force;
@@ -66,7 +66,7 @@ sub multiqc {
         outdir_path     => { strict_type => 1, store => \$outdir_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        filehandle => { store => \$filehandle },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
         force => {
@@ -110,7 +110,7 @@ sub multiqc {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

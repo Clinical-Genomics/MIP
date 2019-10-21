@@ -46,11 +46,11 @@ Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
-## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Function : Perl wrapper for writing samtools view recipe to $filehandle. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : "@commands"
 ##          : $auto_detect_input_format       => Ignored (input format is auto-detected)
 ##          : $exclude_reads_with_these_flags => Do not output alignments that match the bits set
-##          : $FILEHANDLE                     => Sbatch filehandle to write to
+##          : $filehandle                     => Sbatch filehandle to write to
 ##          : $fraction                       => Subsample the file to only a fraction of the alignments
 ##          : $infile_path                    => Infile path
 ##          : $outfile_path                   => Outfile path
@@ -67,7 +67,7 @@ sub samtools_view {
 
     ## Flatten argument(s)
     my $exclude_reads_with_these_flags;
-    my $FILEHANDLE;
+    my $filehandle;
     my $fraction;
     my $infile_path;
     my $outfile_path;
@@ -95,8 +95,8 @@ sub samtools_view {
             store       => \$exclude_reads_with_these_flags,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         fraction => {
             defined     => 1,
@@ -231,7 +231,7 @@ sub samtools_view {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -239,10 +239,10 @@ sub samtools_view {
 
 sub samtools_index {
 
-## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Function : Perl wrapper for writing samtools index recipe to $filehandle. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : @commands
 ##          : $bai_format             => Generate BAI-format index for BAM files
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
@@ -252,7 +252,7 @@ sub samtools_index {
 
     ## Flatten argument(s)
     my $bai_format;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -260,7 +260,7 @@ sub samtools_index {
 
     my $tmpl = {
         bai_format  => { store => \$bai_format, strict_type => 1, },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -301,7 +301,7 @@ sub samtools_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -310,10 +310,10 @@ sub samtools_index {
 
 sub samtools_stats {
 
-## Function : Perl wrapper for writing samtools stats recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Function : Perl wrapper for writing samtools stats recipe to $filehandle. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : @commands
 ##          : $auto_detect_input_format => Ignored (input format is auto-detected)
-##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $filehandle               => Sbatch filehandle to write to
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
 ##          : $regions_ref              => Regions to process {REF}
@@ -325,7 +325,7 @@ sub samtools_stats {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
@@ -344,7 +344,7 @@ sub samtools_stats {
             store       => \$auto_detect_input_format,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -410,7 +410,7 @@ sub samtools_stats {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
         }
@@ -420,9 +420,9 @@ sub samtools_stats {
 
 sub samtools_faidx {
 
-## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Function : Perl wrapper for writing samtools faidx recipe to $filehandle. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : @commands
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $regions_ref            => The regions to process {REF}
@@ -432,7 +432,7 @@ sub samtools_faidx {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
@@ -440,7 +440,7 @@ sub samtools_faidx {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -486,7 +486,7 @@ sub samtools_faidx {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -495,9 +495,9 @@ sub samtools_faidx {
 
 sub samtools_create_chromosome_files {
 
-## Function : Perl wrapper for writing chromosome files used by other scripts. Writes to FILEHANDLE.
+## Function : Perl wrapper for writing chromosome files used by other scripts. Writes to filehandle.
 ## Returns  :
-##          : $FILEHANDLE         => Sbatch filehandle to write to
+##          : $filehandle         => Sbatch filehandle to write to
 ##          : $infile_path        => Infile path
 ##          : $max_process_number => Max number of processeses
 ##          : $outfile_path       => Outfile path
@@ -508,7 +508,7 @@ sub samtools_create_chromosome_files {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $max_process_number;
     my $regions_ref;
@@ -516,7 +516,7 @@ sub samtools_create_chromosome_files {
     my $temp_directory;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -549,7 +549,7 @@ sub samtools_create_chromosome_files {
     while ( my ( $contig_index, $contig ) = each @{$regions_ref} ) {
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $max_process_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $contig_index,
@@ -558,22 +558,22 @@ sub samtools_create_chromosome_files {
 
         samtools_faidx(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => catfile( $temp_directory, $contig . $suffix ),
                 regions_ref  => [$contig],
             }
         );
-        say {$FILEHANDLE} $SPACE . $AMPERSAND;
+        say {$filehandle} $SPACE . $AMPERSAND;
     }
     return;
 }
 
 sub samtools_idxstats {
 
-## Function : Perl wrapper for writing samtools idxstats recipe to $FILEHANDLE. Based on samtools 1.6 (using htslib 1.6).
+## Function : Perl wrapper for writing samtools idxstats recipe to $filehandle. Based on samtools 1.6 (using htslib 1.6).
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -582,15 +582,15 @@ sub samtools_idxstats {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -633,7 +633,7 @@ sub samtools_idxstats {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -643,9 +643,9 @@ sub samtools_idxstats {
 
 sub samtools_depth {
 
-## Function : Perl wrapper for writing samtools depth recipe to $FILEHANDLE. Based on samtools 1.6 (using htslib 1.6).
+## Function : Perl wrapper for writing samtools depth recipe to $filehandle. Based on samtools 1.6 (using htslib 1.6).
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $max_depth_treshold     => Set the depth value treshold, samtools depth defaults to 8000 if left unset
 ##          : $stderrfile_path        => Stderrfile path
@@ -655,7 +655,7 @@ sub samtools_depth {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $max_depth_treshold;
     my $stderrfile_path;
@@ -665,8 +665,8 @@ sub samtools_depth {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -719,7 +719,7 @@ sub samtools_depth {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

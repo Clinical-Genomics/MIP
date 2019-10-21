@@ -13,8 +13,6 @@ use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
@@ -280,7 +278,7 @@ sub _get_cli_array_option {
 
 sub _get_vcf_in_filehandle {
 
-## Function : Returns FILEHANDLE for infile
+## Function : Returns filehandle for infile
 ## Returns  : $VCF_IN_FH or *STDIN
 ## Arguments: $infile => Infile
 

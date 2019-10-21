@@ -181,9 +181,9 @@ sub build_star_prerequisites {
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -192,7 +192,7 @@ sub build_star_prerequisites {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             directory_id                    => $case_id,
             core_number                     => $NUMBER_OF_CORES,
             job_id_href                     => $job_id_href,
@@ -208,7 +208,7 @@ sub build_star_prerequisites {
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -229,7 +229,7 @@ sub build_star_prerequisites {
               . q{ star files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building Star dir files};
+        say {$filehandle} q{## Building Star dir files};
 
         ## Get parameters
         my $star_directory_tmp =
@@ -240,23 +240,23 @@ sub build_star_prerequisites {
         # Create temp dir
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $star_directory_tmp,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         star_genome_generate(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 fasta_path      => $human_genome_reference,
                 genome_dir_path => $star_directory_tmp,
                 gtf_path        => $active_parameter_href->{transcript_annotation},
                 read_length     => $READ_LENGTH,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ:
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
@@ -267,7 +267,7 @@ sub build_star_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $star_directory_tmp,
                 }
@@ -278,7 +278,7 @@ sub build_star_prerequisites {
         $parameter_href->{star_aln_reference_genome}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

@@ -51,11 +51,11 @@ BEGIN {
 
 sub bcftools_annotate {
 
-## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.9.
+## Function : Perl wrapper for writing bcftools annotate recipe to $filehandle or return commands array. Based on bcftools 1.9.
 ## Returns  : @commands
 ## Arguments: $annotations_file_path  => VCF file or tabix-indexed file path with annotations: CHR\tPOS[\tVALUE]+
 ##          : $columns_name           => List of columns in the annotation file, e.g. CHROM,POS,REF,ALT,-,INFO/TAG
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $headerfile_path        => File with lines which should be appended to the VCF header
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
@@ -74,7 +74,7 @@ sub bcftools_annotate {
     ## Flatten argument(s)
     my $annotations_file_path;
     my $columns_name;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $headerfile_path;
     my $outfile_path;
@@ -93,7 +93,7 @@ sub bcftools_annotate {
     my $tmpl = {
         annotations_file_path => { store => \$annotations_file_path, strict_type => 1, },
         columns_name          => { store => \$columns_name,          strict_type => 1, },
-        FILEHANDLE            => { store => \$FILEHANDLE, },
+        filehandle            => { store => \$filehandle, },
         headerfile_path       => { store => \$headerfile_path,       strict_type => 1, },
         infile_path           => { store => \$infile_path,           strict_type => 1, },
         outfile_path          => { store => \$outfile_path,          strict_type => 1, },
@@ -184,7 +184,7 @@ sub bcftools_annotate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -194,10 +194,10 @@ sub bcftools_annotate {
 
 sub bcftools_call {
 
-## Function : Perl wrapper for writing bcftools call recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools call recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $constrain              => One of: alleles, trio
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $form_fields_ref        => Output format fields {REF}
 ##          : $infile_path            => Infile path to read from
 ##          : $multiallelic_caller    => Alternative model for multiallelic and rare-variant calling
@@ -215,7 +215,7 @@ sub bcftools_call {
 
     ## Flatten argument(s)
     my $constrain;
-    my $FILEHANDLE;
+    my $filehandle;
     my $form_fields_ref;
     my $infile_path;
     my $outfile_path;
@@ -237,7 +237,7 @@ sub bcftools_call {
             store       => \$constrain,
             strict_type => 1,
         },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         form_fields_ref => {
             default     => [],
             defined     => 1,
@@ -334,7 +334,7 @@ sub bcftools_call {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -344,10 +344,10 @@ sub bcftools_call {
 
 sub bcftools_concat {
 
-## Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools concat recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $allow_overlaps         => First coordinate of the next file can precede last record of the current file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
@@ -363,7 +363,7 @@ sub bcftools_concat {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outfile_path;
     my $regions_ref;
@@ -386,7 +386,7 @@ sub bcftools_concat {
             store       => \$allow_overlaps,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         infile_paths_ref =>
           { default => [], store => \$infile_paths_ref, strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
@@ -468,7 +468,7 @@ sub bcftools_concat {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -478,9 +478,9 @@ sub bcftools_concat {
 
 sub bcftools_filter {
 
-## Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools filter recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $exclude                => Exclude sites for which the expression is true
 ##          : $filter_mode            => "+": do not replace but add to existing FILTER; "x": reset filters at sites which pass
 ##          : $include                => Include only sites for which the expression is true
@@ -502,7 +502,7 @@ sub bcftools_filter {
     ## Flatten argument(s)
     my $exclude;
     my $filter_mode;
-    my $FILEHANDLE;
+    my $filehandle;
     my $include;
     my $indel_gap;
     my $infile_path;
@@ -520,7 +520,7 @@ sub bcftools_filter {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         exclude    => {
             store       => \$exclude,
             strict_type => 1,
@@ -657,7 +657,7 @@ sub bcftools_filter {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -668,9 +668,9 @@ sub bcftools_filter {
 
 sub bcftools_index {
 
-## Function : Perl wrapper for writing bcftools index recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools index recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
@@ -684,7 +684,7 @@ sub bcftools_index {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
@@ -698,7 +698,7 @@ sub bcftools_index {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -767,7 +767,7 @@ sub bcftools_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -778,9 +778,9 @@ sub bcftools_index {
 
 sub bcftools_merge {
 
-## Function : Perl wrapper for writing bcftools merge recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools merge recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
@@ -794,7 +794,7 @@ sub bcftools_merge {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outfile_path;
     my $regions_ref;
@@ -808,7 +808,7 @@ sub bcftools_merge {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         infile_paths_ref =>
           { default => [], store => \$infile_paths_ref, strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
@@ -866,7 +866,7 @@ sub bcftools_merge {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -876,10 +876,10 @@ sub bcftools_merge {
 
 sub bcftools_mpileup {
 
-## Function : Perl wrapper for writing bcftools mpileup recipe to $FILEHANDLE. Based on bcftools 1.6 (using htslib 1.6).
+## Function : Perl wrapper for writing bcftools mpileup recipe to $filehandle. Based on bcftools 1.6 (using htslib 1.6).
 ## Returns  : @commands
 ##          : $adjust_mq                        => Adjust mapping quality
-##          : $FILEHANDLE                       => Sbatch filehandle to write to
+##          : $filehandle                       => Sbatch filehandle to write to
 ##          : $infile_paths_ref                 => Infile paths {REF}
 ##          : $outfile_path                     => Outfile path
 ##          : $output_tags_ref                  => Optional tags to output {REF}
@@ -896,7 +896,7 @@ sub bcftools_mpileup {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outfile_path;
     my $output_tags_ref;
@@ -923,7 +923,7 @@ sub bcftools_mpileup {
             store       => \$adjust_mq,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -1019,7 +1019,7 @@ sub bcftools_mpileup {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1028,9 +1028,9 @@ sub bcftools_mpileup {
 
 sub bcftools_norm {
 
-## Function : Perl wrapper for writing bcftools norm recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools norm recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $multiallelic           => To split/join multiallelic calls or not
 ##          : $multiallelic_type      => Type of multiallelic to split/join {OPTIONAL}
@@ -1047,7 +1047,7 @@ sub bcftools_norm {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $multiallelic;
     my $outfile_path;
@@ -1064,7 +1064,7 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
             allow       => [qw{ + - }],
@@ -1151,7 +1151,7 @@ sub bcftools_norm {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1161,9 +1161,9 @@ sub bcftools_norm {
 
 sub bcftools_reheader {
 
-## Function : Perl wrapper for writing bcftools reheader recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools reheader recipe to already open $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $regions_ref            => Regions to process {REF}
@@ -1176,7 +1176,7 @@ sub bcftools_reheader {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
@@ -1187,7 +1187,7 @@ sub bcftools_reheader {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE        => { store   => \$FILEHANDLE, },
+        filehandle        => { store   => \$filehandle, },
         infile_path       => { store   => \$infile_path, strict_type => 1, },
         outfile_path      => { store   => \$outfile_path, strict_type => 1, },
         regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
@@ -1242,7 +1242,7 @@ sub bcftools_reheader {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1255,7 +1255,7 @@ sub bcftools_rename_vcf_samples {
 ## Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
 ## Returns  :
 ## Arguments: $create_sample_file  => Create sample file for bcftools reheader
-##          : $FILEHANDLE          => Filehandle to write to
+##          : $filehandle          => Filehandle to write to
 ##          : $index               => Generate index of reformated file
 ##          : $index_type          => Type of index
 ##          : $infile              => Vcf infile to rename samples for
@@ -1268,7 +1268,7 @@ sub bcftools_rename_vcf_samples {
 
     ## Flatten argument(s)
     my $create_sample_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile;
     my $outfile_path_prefix;
     my $sample_ids_ref;
@@ -1286,7 +1286,7 @@ sub bcftools_rename_vcf_samples {
             store       => \$create_sample_file,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle => { defined => 1, required => 1, store => \$filehandle, },
         index      => {
             allow       => [ undef, 0, 1 ],
             default     => 1,
@@ -1328,7 +1328,7 @@ sub bcftools_rename_vcf_samples {
 
         bcftools_create_reheader_samples_file(
             {
-                FILEHANDLE     => $FILEHANDLE,
+                filehandle     => $filehandle,
                 sample_ids_ref => $sample_ids_ref,
                 temp_directory => $temp_directory,
             }
@@ -1336,20 +1336,20 @@ sub bcftools_rename_vcf_samples {
     }
 
     ## Rename samples in VCF
-    say {$FILEHANDLE} q{## Rename sample(s) names in VCF file};
+    say {$filehandle} q{## Rename sample(s) names in VCF file};
     bcftools_reheader(
         {
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             infile_path       => $infile,
             samples_file_path => catfile( $temp_directory, q{sample_name.txt} ),
         }
     );
     ## Pipe
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     bcftools_view_and_index_vcf(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             index               => $index,
             index_type          => $index_type,
             infile_path         => q{-},
@@ -1365,19 +1365,19 @@ sub bcftools_create_reheader_samples_file {
 
 ## Function : Create reheader samples file.
 ## Returns  :
-## Arguments: $FILEHANDLE          => Filehandle to write to
+## Arguments: $filehandle          => Filehandle to write to
 ##          : $sample_ids_ref      => Samples to rename in the same order as in the vcf {REF}
 ##          : $temp_directory      => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $sample_ids_ref;
     my $temp_directory;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -1398,7 +1398,7 @@ sub bcftools_create_reheader_samples_file {
     use MIP::Gnu::Coreutils qw{ gnu_printf };
 
     ## Create new sample names file
-    say {$FILEHANDLE} q{## Create new sample(s) names file};
+    say {$filehandle} q{## Create new sample(s) names file};
 
     ## Get parameters
     my $format_string = $DOUBLE_QUOTE;
@@ -1410,22 +1410,22 @@ sub bcftools_create_reheader_samples_file {
     $format_string .= $DOUBLE_QUOTE;
     gnu_printf(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             format_string   => $format_string,
             stdoutfile_path => catfile( $temp_directory, q{sample_name.txt} ),
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     return;
 }
 
 sub bcftools_roh {
 
-## Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools roh recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $af_file_path           => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
 ##          : $af_tag                 => Use tag in info field as allelle frequency
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
@@ -1442,7 +1442,7 @@ sub bcftools_roh {
     ## Flatten argument(s)
     my $af_file_path;
     my $af_tag;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
@@ -1462,7 +1462,7 @@ sub bcftools_roh {
             store       => \$af_tag,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1551,7 +1551,7 @@ sub bcftools_roh {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1561,7 +1561,7 @@ sub bcftools_roh {
 
 sub bcftools_stats {
 
-## Function : Perl wrapper for writing bcftools stats recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools stats recipe to already open $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
@@ -1572,7 +1572,7 @@ sub bcftools_stats {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -1585,13 +1585,13 @@ sub bcftools_stats {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        filehandle   => { store => \$filehandle, },
         infile_path  => { store => \$infile_path, strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
         output_type => {
@@ -1646,7 +1646,7 @@ sub bcftools_stats {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1655,12 +1655,12 @@ sub bcftools_stats {
 
 sub bcftools_view {
 
-## Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools view recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
 ## Arguments: $apply_filters_ref      => Require at least one of the listed FILTER strings
 ##          : $exclude_types_ref      => Exclude comma-separated list of variant types: snps,indels,mnps,other
 ##          : $exclude                => Exclude sites for which the expression is true
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $genotype               => Genotype to include (hom|het|miss). Prefix with "^" for exclude
 ##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
@@ -1683,7 +1683,7 @@ sub bcftools_view {
     my $apply_filters_ref;
     my $exclude_types_ref;
     my $exclude;
-    my $FILEHANDLE;
+    my $filehandle;
     my $genotype;
     my $include;
     my $infile_path;
@@ -1703,7 +1703,7 @@ sub bcftools_view {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         apply_filters_ref =>
           { default => [], store => \$apply_filters_ref, strict_type => 1, },
         exclude_types_ref =>
@@ -1838,7 +1838,7 @@ sub bcftools_view {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1850,7 +1850,7 @@ sub bcftools_view_and_index_vcf {
 
 ## Function : View variant calling file and index.
 ## Returns  :
-## Arguments: $FILEHANDLE          => SBATCH script FILEHANDLE to print to
+## Arguments: $filehandle          => SBATCH script filehandle to print to
 ##          : $index               => Generate index of reformated file
 ##          : $index_type          => Type of index
 ##          : $infile_path         => Path to infile to compress and index
@@ -1860,7 +1860,7 @@ sub bcftools_view_and_index_vcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path_prefix;
 
@@ -1870,7 +1870,7 @@ sub bcftools_view_and_index_vcf {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1915,26 +1915,26 @@ sub bcftools_view_and_index_vcf {
 
     bcftools_view(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path,
             outfile_path => $outfile_path,
             output_type  => $output_type,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     if ($index) {
 
-        say {$FILEHANDLE} q{## Index};
+        say {$filehandle} q{## Index};
 
         bcftools_index(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $outfile_path,
                 output_type => $index_type,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     return;
 }

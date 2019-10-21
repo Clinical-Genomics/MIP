@@ -232,15 +232,15 @@ sub analysis_endvariantannotationblock {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             directory_id                    => $case_id,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -275,7 +275,7 @@ sub analysis_endvariantannotationblock {
             {
                 active_parameter_href => $active_parameter_href,
                 elements_ref          => \@concat_contigs,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_prefix         => $infile_path_prefix,
                 infile_postfix        => $infile_postfix,
                 outfile_path_prefix   => $outfile_path_prefix,
@@ -291,7 +291,7 @@ sub analysis_endvariantannotationblock {
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
+                    filehandle       => $filehandle,
                     filter_file_path => catfile(
                         $reference_dir,
                         $active_parameter_href->{sv_reformat_remove_genes_file}
@@ -301,7 +301,7 @@ sub analysis_endvariantannotationblock {
                     invert_match    => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Save filtered file
             $sample_info_href->{recipe}{$recipe_name}
@@ -315,25 +315,25 @@ sub analysis_endvariantannotationblock {
             ## Compress or decompress original file or stream to outfile (if supplied)
             htslib_bgzip(
                 {
-                    FILEHANDLE      => $FILEHANDLE,
+                    filehandle      => $filehandle,
                     infile_path     => $outfile_paths[$analysis_suffix_index],
                     stdoutfile_path => $bgzip_outfile_path,
                     write_to_stdout => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Index file using tabix
             htslib_tabix(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     force       => 1,
                     infile_path => $bgzip_outfile_path,
                     preset      => substr $outfile_suffix,
                     1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
         ## Adds the most complete vcf file to sample_info
@@ -366,7 +366,7 @@ sub analysis_endvariantannotationblock {
         }
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

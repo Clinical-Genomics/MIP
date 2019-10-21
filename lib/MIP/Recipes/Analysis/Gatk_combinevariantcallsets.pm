@@ -201,7 +201,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -209,7 +209,7 @@ sub analysis_gatk_combinevariantcallsets {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -263,12 +263,12 @@ sub analysis_gatk_combinevariantcallsets {
     if ( scalar @variant_callers > 1 ) {
 
         ## GATK CombineVariants
-        say {$FILEHANDLE} q{## GATK CombineVariants};
+        say {$filehandle} q{## GATK CombineVariants};
 
         gatk_combinevariants(
             {
                 exclude_nonvariants => 1,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 genotype_merge_option =>
                   $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
                 infile_paths_ref     => \@combine_infile_paths,
@@ -283,20 +283,20 @@ sub analysis_gatk_combinevariantcallsets {
                 temp_directory     => $temp_directory,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     else {
 
-        say {$FILEHANDLE} q{## Renaming case to facilitate downstream processing};
+        say {$filehandle} q{## Renaming case to facilitate downstream processing};
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $file_path{infile_path},
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
@@ -304,7 +304,7 @@ sub analysis_gatk_combinevariantcallsets {
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $outfile_path,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
@@ -312,7 +312,7 @@ sub analysis_gatk_combinevariantcallsets {
         );
     }
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

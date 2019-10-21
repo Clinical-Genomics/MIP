@@ -176,9 +176,9 @@ sub build_bwa_prerequisites {
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -188,7 +188,7 @@ sub build_bwa_prerequisites {
         {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $PROCESSING_TIME,
@@ -201,7 +201,7 @@ sub build_bwa_prerequisites {
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -222,19 +222,19 @@ sub build_bwa_prerequisites {
               . q{ index files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building BWA index};
+        say {$filehandle} q{## Building BWA index};
 
         ## Get parameters
         my $prefix = $human_genome_reference . $UNDERSCORE . $random_integer;
         bwa_index(
             {
                 construction_algorithm => q{bwtsw},
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 prefix                 => $prefix,
                 reference_genome       => $human_genome_reference,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ_FILE:
         foreach my $file ( @{$parameter_build_suffixes_ref} ) {
@@ -246,7 +246,7 @@ sub build_bwa_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $temporary_file_path,
                 }
@@ -257,7 +257,7 @@ sub build_bwa_prerequisites {
         $parameter_href->{bwa_build_reference}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

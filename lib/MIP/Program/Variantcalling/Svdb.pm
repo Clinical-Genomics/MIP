@@ -33,9 +33,9 @@ BEGIN {
 
 sub svdb_merge {
 
-## Function : Perl wrapper for writing svdb merge recipe to $FILEHANDLE or return commands array. Based on svdb 1.0.7.
+## Function : Perl wrapper for writing svdb merge recipe to $filehandle or return commands array. Based on svdb 1.0.7.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile path {REF}
 ##          : $notag                  => Do not add the the VARID and set entries to the info field
 ##          : $outfile_path           => Outfile path
@@ -48,7 +48,7 @@ sub svdb_merge {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $notag;
     my $outfile_path;
@@ -59,7 +59,7 @@ sub svdb_merge {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -122,7 +122,7 @@ sub svdb_merge {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -133,11 +133,11 @@ sub svdb_merge {
 
 sub svdb_query {
 
-## Function : Perl wrapper for writing svdb query recipe to $FILEHANDLE or return commands array. Based on svdb 2.0.0.
+## Function : Perl wrapper for writing svdb query recipe to $filehandle or return commands array. Based on svdb 2.0.0.
 ## Returns  : @commands
 ## Arguments: $bnd_distance           => Maximum distance between two similar precise breakpoints
 ##          : $dbfile_path            => Svdb database file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $in_frequency_tag       => The frequency count tag, if used, this tag must be present in the INFO column of the input DB (usually AF or FRQ)
 ##          : $in_allele_count_tag    => The allele count tag, if used, this tag must be present in the INFO column of the input DB (usually AC or OCC)
 ##          : $infile_path            => Infile path
@@ -154,7 +154,7 @@ sub svdb_query {
     ## Flatten argument(s)
     my $bnd_distance;
     my $dbfile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $in_frequency_tag;
     my $in_allele_count_tag;
     my $infile_path;
@@ -178,7 +178,7 @@ sub svdb_query {
             strict_type => 1,
             store       => \$dbfile_path
         },
-        FILEHANDLE          => { store       => \$FILEHANDLE },
+        filehandle          => { store       => \$filehandle },
         in_frequency_tag    => { strict_type => 1, store => \$in_frequency_tag },
         in_allele_count_tag => { strict_type => 1, store => \$in_allele_count_tag },
         infile_path => {
@@ -257,7 +257,7 @@ sub svdb_query {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

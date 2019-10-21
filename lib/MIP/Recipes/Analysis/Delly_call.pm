@@ -218,7 +218,7 @@ sub analysis_delly_call {
 
     ## Filehandles
     # Create anonymous filehandles
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -226,7 +226,7 @@ sub analysis_delly_call {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $sample_id,
             core_number                     => $recipe_resource{core_number},
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -240,12 +240,12 @@ sub analysis_delly_call {
 
     ### SHELL:
     ## Delly
-    say {$FILEHANDLE} q{## Delly call};
+    say {$filehandle} q{## Delly call};
 
     delly_call(
         {
             exclude_file_path  => $active_parameter_href->{delly_exclude_file},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             small_indel        => 0,
             infile_path        => $infile_path,
             outfile_path       => $outfile_path,
@@ -254,9 +254,9 @@ sub analysis_delly_call {
             stdoutfile_path    => $recipe_file_path . $DOT . q{stdout.txt},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

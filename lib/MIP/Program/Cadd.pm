@@ -35,7 +35,7 @@ sub cadd {
 
 ## Function : Perl wrapper for dynamic annotation using CADD version 1.4.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $genome_build           => Genome build
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
@@ -49,7 +49,7 @@ sub cadd {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $genome_build;
     my $infile_path;
     my $outfile_path;
@@ -61,8 +61,8 @@ sub cadd {
     my $version;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         genome_build => {
             allow       => [qw{ GRCh37 GRCh38}],
@@ -146,7 +146,7 @@ sub cadd {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

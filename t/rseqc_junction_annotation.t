@@ -68,7 +68,7 @@ diag(   q{Test rseqc_junction_annotation from Rseqc.pm v}
 my @function_base_commands = qw{ junction_annotation.py };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

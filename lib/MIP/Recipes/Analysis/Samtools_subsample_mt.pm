@@ -208,7 +208,7 @@ sub analysis_samtools_subsample_mt {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -216,7 +216,7 @@ sub analysis_samtools_subsample_mt {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -230,41 +230,41 @@ sub analysis_samtools_subsample_mt {
     ### SHELL:
 
     ## Set up seed and fraction combination
-    say {$FILEHANDLE} q{## Creating subsample filter for samtools view};
+    say {$filehandle} q{## Creating subsample filter for samtools view};
 
     ## Get average coverage over MT bases
-    print {$FILEHANDLE} q{MT_COVERAGE=} . $BACKTICK;
+    print {$filehandle} q{MT_COVERAGE=} . $BACKTICK;
 
     # Get depth per base
     bedtools_genomecov(
         {
             depth_each_position => 1,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             bam_infile_path     => $infile_path,
         }
     );
 
     # Pipe to AWK
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     # Add AWK statment for calculation of avgerage coverage
     my $awk_statment = _awk_calculate_average_coverage();
     awk(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             statement  => $awk_statment,
         }
     );
 
     # Close statment
-    say {$FILEHANDLE} $BACKTICK;
+    say {$filehandle} $BACKTICK;
 
     ## Get random seed
     my $seed = int rand $MAX_LIMIT_SEED;
 
     ## Add seed to fraction for ~100x
     # Create bash variable
-    say {$FILEHANDLE} q{SEED_FRACTION=}
+    say {$filehandle} q{SEED_FRACTION=}
 
       # Open statment
       . $BACKTICK
@@ -285,32 +285,32 @@ sub analysis_samtools_subsample_mt {
       . $BACKTICK . $NEWLINE;
 
     ## Filter the bam file to only include a subset of reads that maps to the MT
-    say {$FILEHANDLE} q{## Filter the BAM file};
+    say {$filehandle} q{## Filter the BAM file};
     samtools_view(
         {
             exclude_reads_with_these_flags => $SAMTOOLS_UNMAPPED_READ_FLAG,
-            FILEHANDLE                     => $FILEHANDLE,
+            filehandle                     => $filehandle,
             fraction                       => q{"$SEED_FRACTION"},
             infile_path                    => $infile_path,
             outfile_path                   => $outfile_path,
             with_header                    => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index new bam file
-    say {$FILEHANDLE} q{## Index the subsampled BAM file};
+    say {$filehandle} q{## Index the subsampled BAM file};
     samtools_index(
         {
             bai_format  => 1,
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

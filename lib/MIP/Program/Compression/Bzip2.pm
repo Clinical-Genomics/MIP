@@ -32,13 +32,13 @@ Readonly my $SPACE => q{ };
 
 sub bzip2 {
 
-## Function : Perl wrapper for writing bzip2 recipe to $FILEHANDLE or return commands array. Based on bzip2 v1.0.6
+## Function : Perl wrapper for writing bzip2 recipe to $filehandle or return commands array. Based on bzip2 v1.0.6
 ## Returns  : "@commands"
 ## Arguments: $infile_path            => Infile path
 ##          : $outfile_path           => Path to output file
 ##          : $stdout                 => Write on standard output
 ##          : $decompress             => Decompress bzip2 file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $force                  => Overwrite of output files
@@ -51,7 +51,7 @@ sub bzip2 {
     my $infile_path;
     my $outfile_path;
     my $decompress;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
@@ -76,8 +76,8 @@ sub bzip2 {
             strict_type => 1,
             store       => \$decompress,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         stderrfile_path => {
             strict_type => 1,
@@ -161,7 +161,7 @@ sub bzip2 {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

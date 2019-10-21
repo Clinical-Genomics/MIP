@@ -40,7 +40,7 @@ sub get_reference {
 
 ## Function : Write get reference recipe (download, decompress and validate)
 ## Returns  :
-## Arguments: $FILEHANDLE     => Filehandle to write to
+## Arguments: $filehandle     => Filehandle to write to
 ##          : $recipe_name    => Recipe name
 ##          : $reference_dir  => Reference directory
 ##          : $reference_href => Reference hash {REF}
@@ -50,7 +50,7 @@ sub get_reference {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $recipe_name;
     my $reference_dir;
     my $reference_href;
@@ -61,7 +61,7 @@ sub get_reference {
     my $verbose;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         outdir_path => {
             default     => $arg_href->{reference_dir},
             store       => \$outdir_path,
@@ -124,12 +124,12 @@ sub get_reference {
         my $user         = $reference_href->{user};
 
         ## Download
-        say {$FILEHANDLE} q{## Download } . $recipe_name . $NEWLINE;
+        say {$filehandle} q{## Download } . $recipe_name . $NEWLINE;
 
         wget(
             {
                 continue          => 1,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 outfile_path      => $outfile_path,
                 read_timeout      => $READ_TIMEOUT_SEC,
                 retry_connrefused => 1,
@@ -142,12 +142,12 @@ sub get_reference {
                 verbose           => $verbose,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Check if file needs to be decompress and write decompression if so
         decompress_file(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 outdir_path  => $outdir_path,
                 outfile_path => $outfile_path,
                 decompress_program =>
@@ -158,7 +158,7 @@ sub get_reference {
         ## Check file integrity of file
         check_file_md5sum(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 md5_file_path => $outfile_path,
                 check_method =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },

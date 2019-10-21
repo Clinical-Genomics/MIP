@@ -362,12 +362,12 @@ sub read_infile_vcf {
     $log->info( q{Testing vcf header in file: } . $infile_vcf, $NEWLINE x 2 );
 
     ## Read file
-    open my $FILEHANDLE, q{<}, $infile_vcf
+    open my $filehandle, q{<}, $infile_vcf
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
@@ -500,7 +500,7 @@ sub read_infile_vcf {
             }
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     ## Check keys found in INFO field
     $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
@@ -624,14 +624,14 @@ sub read_sv_infile_vcf {
     $log->info( q{Testing vcf header in file: } . $infile_vcf, $NEWLINE x 2 );
 
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Read file
-    open $FILEHANDLE, q{<}, $infile_vcf
+    open $filehandle, q{<}, $infile_vcf
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
@@ -768,7 +768,7 @@ sub read_sv_infile_vcf {
             }
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     ## Check keys found in INFO field
     $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
@@ -934,15 +934,15 @@ sub read_range_file {
     my @headers;
 
     ## Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Read file
-    open $FILEHANDLE, q{<}, $infile_path
+    open $filehandle, q{<}, $infile_path
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_path . q{:} . $OS_ERROR, $NEWLINE );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
@@ -972,7 +972,7 @@ sub read_range_file {
             next LINE;
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
     $log->info( q{Finished reading } . $range_file_key . q{ file: } . $infile_path,
         $NEWLINE );
     return;

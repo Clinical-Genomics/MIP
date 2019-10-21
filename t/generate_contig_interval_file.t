@@ -63,13 +63,13 @@ diag(   q{Test generate_contig_interval_file from Interval.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given
@@ -82,7 +82,7 @@ my %bed_file_path = generate_contig_interval_file(
     {
         contigs_ref           => \@contigs,
         exome_target_bed_file => $exome_target_bed_file,
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
         max_cores_per_node    => 1,
         outdirectory          => $outdirectory,
         reference_dir         => $reference_dir,
@@ -103,7 +103,7 @@ my %bed_file_path_with_ending = generate_contig_interval_file(
     {
         contigs_ref           => \@contigs,
         exome_target_bed_file => $exome_target_bed_file,
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
         file_ending           => $file_suffix,
         max_cores_per_node    => 1,
         outdirectory          => $outdirectory,
@@ -115,7 +115,7 @@ my %expected_bed_file_path_with_ending = (
     2 => [ catfile( $outdirectory, q{2_} . $exome_target_bed_file . $file_suffix ) ]
 );
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then bed file paths in outdirectory should be returned
 is_deeply(

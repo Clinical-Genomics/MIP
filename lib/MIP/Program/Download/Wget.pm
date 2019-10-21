@@ -33,10 +33,10 @@ BEGIN {
 
 sub wget {
 
-## Function : Perl wrapper for writing wget recipe to $FILEHANDLE or return commands array. Based on GNU Wget 1.12, a non-interactive network retriever.
+## Function : Perl wrapper for writing wget recipe to $filehandle or return commands array. Based on GNU Wget 1.12, a non-interactive network retriever.
 ## Returns  : @commands
 ## Arguments: $continue               => Resume getting a partially-downloaded file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $outfile_path           => Outfile path. Write documents to FILE
 ##          : $quiet                  => Quiet (no output)
 ##          : $read_timeout           => Set the read timeout to SECS
@@ -54,7 +54,7 @@ sub wget {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
     my $read_timeout;
     my $stderrfile_path;
@@ -79,7 +79,7 @@ sub wget {
             store       => \$continue,
             strict_type => 1,
         },
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        filehandle   => { store => \$filehandle, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
         quiet => {
             allow       => [ undef, 0, 1 ],
@@ -202,7 +202,7 @@ sub wget {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

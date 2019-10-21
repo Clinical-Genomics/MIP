@@ -102,46 +102,46 @@ my $test_dir = catdir( $Bin, q{data} );
 my $temp_dir = File::Temp->newdir();
 
 ## Create temporary filehandles
-my $COMMAND_FILEHANDLE = File::Temp->new(
+my $COMMAND_filehandle = File::Temp->new(
     TEMPLATE => q{James_XXXX},
     DIR      => $test_dir,
     SUFFIX   => q{.sh},
 );
-my $TEST_FILEHANDLE = File::Temp->new(
+my $TEST_filehandle = File::Temp->new(
     TEMPLATE => q{Sir_Toby_XXXX},
     DIR      => $test_dir,
     SUFFIX   => q{.txt},
 );
-my $TEMP_FILEHANDLE_1 = File::Temp->new(
+my $TEMP_filehandle_1 = File::Temp->new(
     TEMPLATE => q{Amiral_von_Scneider_XXXX},
     DIR      => $temp_dir,
     SUFFIX   => q{.txt},
 );
-my $TEMP_FILEHANDLE_2 = File::Temp->new(
+my $TEMP_filehandle_2 = File::Temp->new(
     TEMPLATE => q{Mr_Pommeroy_XXXX},
     DIR      => $temp_dir,
     SUFFIX   => q{.txt},
 );
 
 ## Write something to temporary files
-say {$TEMP_FILEHANDLE_1} q{Cheerio Miss Sophie!};
-say {$TEMP_FILEHANDLE_2} q{The same procedure as every year, James!};
+say {$TEMP_filehandle_1} q{Cheerio Miss Sophie!};
+say {$TEMP_filehandle_2} q{The same procedure as every year, James!};
 
 ## Get filenames
-my $command_file_path = $COMMAND_FILEHANDLE->filename;
-my $temp_file_path_1  = $TEMP_FILEHANDLE_1->filename;
-my $temp_file_path_2  = $TEMP_FILEHANDLE_2->filename;
-my $test_file_path    = $TEST_FILEHANDLE->filename;
+my $command_file_path = $COMMAND_filehandle->filename;
+my $temp_file_path_1  = $TEMP_filehandle_1->filename;
+my $temp_file_path_2  = $TEMP_filehandle_2->filename;
+my $test_file_path    = $TEST_filehandle->filename;
 
 ## Create arrays to loop over
 my @temp_paths       = ( $temp_file_path_1,  $temp_file_path_2 );
-my @temp_filehandles = ( $TEMP_FILEHANDLE_1, $TEMP_FILEHANDLE_2 );
+my @temp_filehandles = ( $TEMP_filehandle_1, $TEMP_filehandle_2 );
 
 TEMP_PATH:
 foreach my $temp_path (@temp_paths) {
     check_exist_and_move_file(
         {
-            FILEHANDLE          => $COMMAND_FILEHANDLE,
+            filehandle          => $COMMAND_filehandle,
             intended_file_path  => $test_file_path,
             temporary_file_path => $temp_path,
         }
@@ -150,12 +150,12 @@ foreach my $temp_path (@temp_paths) {
 
 ## Make files readable
 my @filehandles =
-  ( $COMMAND_FILEHANDLE, $TEMP_FILEHANDLE_1, $TEMP_FILEHANDLE_2, $TEST_FILEHANDLE );
+  ( $COMMAND_filehandle, $TEMP_filehandle_1, $TEMP_filehandle_2, $TEST_filehandle );
 
-FILEHANDLE:
-foreach my $FILEHANDLE (@filehandles) {
-    seek $FILEHANDLE, 0, 0
-      or croak q{Seek on $COMMAND_FILEHANDLE failed:} . $ERRNO . $NEWLINE;
+filehandle:
+foreach my $filehandle (@filehandles) {
+    seek $filehandle, 0, 0
+      or croak q{Seek on $COMMAND_filehandle failed:} . $ERRNO . $NEWLINE;
 }
 
 ## Create MD5 object and md5 sum variables
@@ -167,7 +167,7 @@ my $temp_file_md5;
 my $command_counter = 0;
 
 COMMAND:
-while ( my $command = <$COMMAND_FILEHANDLE> ) {
+while ( my $command = <$COMMAND_filehandle> ) {
     next COMMAND if ( $command eq $NEWLINE );
     chomp $command;
 
@@ -185,7 +185,7 @@ while ( my $command = <$COMMAND_FILEHANDLE> ) {
     ok( _file_has_size( { file_path => $temp_paths[$command_counter] } ) == 1,
         q{Temp file has size} );
     ## Capture md5 sum of files before command
-    $pre_test_file_md5 = $md5->addfile($TEST_FILEHANDLE)->hexdigest;
+    $pre_test_file_md5 = $md5->addfile($TEST_filehandle)->hexdigest;
     $temp_file_md5     = $md5->addfile( $temp_filehandles[$command_counter] )->hexdigest;
     ## Test that files start out as different
     isnt( $pre_test_file_md5, $temp_file_md5, q{Initial files have different md5sums} );
@@ -198,7 +198,7 @@ while ( my $command = <$COMMAND_FILEHANDLE> ) {
         q{Temp file has been removed} );
 
     ## Get new md5 sum on $test_file
-    $post_test_file_md5 = $md5->addfile($TEST_FILEHANDLE)->hexdigest;
+    $post_test_file_md5 = $md5->addfile($TEST_filehandle)->hexdigest;
     if ( $command_counter == 0 ) {
         ok( _file_has_size( { file_path => $test_file_path } ) == 1,
             q{Test file has size after mv command} );
@@ -213,10 +213,10 @@ while ( my $command = <$COMMAND_FILEHANDLE> ) {
     $command_counter++;
 }
 
-close $COMMAND_FILEHANDLE;
-close $TEMP_FILEHANDLE_1;
-close $TEMP_FILEHANDLE_2;
-close $TEST_FILEHANDLE;
+close $COMMAND_filehandle;
+close $TEMP_filehandle_1;
+close $TEMP_filehandle_2;
+close $TEST_filehandle;
 
 done_testing();
 

@@ -63,13 +63,13 @@ diag(   q{Test build_capture_file_prerequisites from Capture_file_prerequisites.
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given build parameters
@@ -101,13 +101,13 @@ my %sample_info;
 my $interval_list_suffix        = $file_info{exome_target_bed}[0];
 my $padded_interval_list_suffix = $file_info{exome_target_bed}[1];
 
-FILEHANDLE:
-foreach my $fh ( $FILEHANDLE, undef ) {
+filehandle:
+foreach my $fh ( $filehandle, undef ) {
 
     my $is_ok = build_capture_file_prerequisites(
         {
             active_parameter_href        => \%active_parameter,
-            FILEHANDLE                   => $fh,
+            filehandle                   => $fh,
             file_info_href               => \%file_info,
             infile_lane_prefix_href      => \%infile_lane_prefix,
             job_id_href                  => \%job_id,
@@ -124,6 +124,6 @@ foreach my $fh ( $FILEHANDLE, undef ) {
     ok( $is_ok, q{ Executed build capture prerequisites} );
 }
 
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

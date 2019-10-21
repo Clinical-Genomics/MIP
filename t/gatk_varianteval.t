@@ -64,7 +64,7 @@ diag(   q{Test gatk_varianteval from Gatk v}
 my @function_base_commands = qw{ gatk VariantEval };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

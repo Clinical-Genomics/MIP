@@ -46,7 +46,7 @@ sub install_vep {
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $container_href        => Container hash {REF}
 ##          : $container_path        => Path to VEP container
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -54,7 +54,7 @@ sub install_vep {
     my $active_parameter_href;
     my $container_href;
     my $container_path;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         active_parameter_href => {
@@ -81,10 +81,10 @@ sub install_vep {
             store       => \$container_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
     };
 
@@ -118,7 +118,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     }
 
     ## Install VEP
-    say {$FILEHANDLE} q{## Install VEP plugins and cache};
+    say {$filehandle} q{## Install VEP plugins and cache};
     $log->info(q{Writing instructions for VEP installation});
 
     ## Get VEP version
@@ -128,7 +128,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
             container_path => $container_path,
         }
     );
-    say {$FILEHANDLE} q{VEP_VERSION} . $EQUALS . $vep_version_cmd;
+    say {$filehandle} q{VEP_VERSION} . $EQUALS . $vep_version_cmd;
 
     ## Setup cache_dir_path
     if ( not $cache_dir_path ) {
@@ -139,15 +139,15 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {
-        say {$FILEHANDLE} q{## Create cache directory};
+        say {$filehandle} q{## Create cache directory};
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $cache_dir_path,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Don't install plugins unless specified in the auto flag
@@ -168,12 +168,12 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     singularity_exec(
         {
             bind_paths_ref                 => [$cache_dir_path],
-            FILEHANDLE                     => $FILEHANDLE,
+            filehandle                     => $filehandle,
             singularity_container          => $container_path,
             singularity_container_cmds_ref => \@vep_install_cmds,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## If more than one assembly requested
     if ( ( scalar @assemblies > 1 ) && ( $auto_flag =~ / [cf] /xsm ) ) {
@@ -189,7 +189,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         for my $assembly_version ( 1 .. $NUMBER_OF_ASSEMBLIES ) {
             ## Skip first assembly since it is already installed above
 
-            say {$FILEHANDLE} q{## Install additional VEP cache assembly version};
+            say {$filehandle} q{## Install additional VEP cache assembly version};
 
             @vep_install_cmds = variant_effect_predictor_install(
                 {
@@ -203,12 +203,12 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
             singularity_exec(
                 {
                     bind_paths_ref                 => [$cache_dir_path],
-                    FILEHANDLE                     => $FILEHANDLE,
+                    filehandle                     => $filehandle,
                     singularity_container          => $container_path,
                     singularity_container_cmds_ref => \@vep_install_cmds,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
     }
 
@@ -228,7 +228,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
 
             $finish_plugin_installation{$plugin}->(
                 {
-                    FILEHANDLE      => $FILEHANDLE,
+                    filehandle      => $filehandle,
                     plugin_dir_path => catdir( $cache_dir_path, q{Plugins} ),
                 }
             );
@@ -285,19 +285,19 @@ sub _install_maxentscan_plugin {
 
 ## Function : Write command that installs MaxEntScan
 ## Returns  :
-## Arguments: $FILEHANDLE      => FILEHANDLE
+## Arguments: $filehandle      => filehandle
 ##          : $plugin_dir_path => Plugin path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $plugin_dir_path;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         plugin_dir_path => {
             defined     => 1,
@@ -309,37 +309,37 @@ sub _install_maxentscan_plugin {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} q{## Add MaxEntScan required text file};
+    say {$filehandle} q{## Add MaxEntScan required text file};
     my $maxent_file_path = catfile( $plugin_dir_path, q{fordownload.tar.gz} );
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $maxent_file_path,
             url =>
               q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
 
     tar(
         {
             extract           => 1,
             outdirectory_path => dirname($maxent_file_path),
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             filter_gzip       => 1,
             file_path         => $maxent_file_path,
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
 
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $maxent_file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }
@@ -348,19 +348,19 @@ sub _install_loftool_plugin {
 
 ## Function : Write command that downloads file required by LofTool
 ## Returns  :
-## Arguments: $FILEHANDLE      => FILEHANDLE
+## Arguments: $filehandle      => filehandle
 ##          : $plugin_dir_path => Plugin path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $plugin_dir_path;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         plugin_dir_path => {
             defined     => 1,
@@ -372,16 +372,16 @@ sub _install_loftool_plugin {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} q{## Add LofTool required text file};
+    say {$filehandle} q{## Add LofTool required text file};
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => catfile( $plugin_dir_path, q{LoFtool_scores.txt} ),
             url =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }
@@ -390,19 +390,19 @@ sub _install_exacpli_plugin {
 
 ## Function : Write command that downloads file required by ExACpLI
 ## Returns  :
-## Arguments: $FILEHANDLE      => FILEHANDLE
+## Arguments: $filehandle      => filehandle
 ##          : $plugin_dir_path => Plugin path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $plugin_dir_path;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         plugin_dir_path => {
             defined     => 1,
@@ -414,16 +414,16 @@ sub _install_exacpli_plugin {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} q{## Add pLI required value file};
+    say {$filehandle} q{## Add pLI required value file};
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => catfile( $plugin_dir_path, q{ExACpLI_values.txt} ),
             url =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

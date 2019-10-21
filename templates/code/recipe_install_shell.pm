@@ -58,7 +58,7 @@ sub install_PROGRAM {
 ## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -68,7 +68,7 @@ sub install_PROGRAM {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $PROGRAM_parameters_href;
     my $quiet;
     my $verbose;
@@ -84,10 +84,10 @@ sub install_PROGRAM {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         program_parameters_href => {
             default     => {},
@@ -141,7 +141,7 @@ sub install_PROGRAM {
         }
     );
 
-    say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
+    say {$filehandle} q{### Install} . $SPACE . $program_name;
     $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
     ## Check if installation exists and remove directory
@@ -149,7 +149,7 @@ sub install_PROGRAM {
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             log                    => $log,
             program_directory_path => $program_directory_path,
             program_name           => $program_name,
@@ -157,116 +157,116 @@ sub install_PROGRAM {
     );
 
     ## Activate conda environment
-    say {$FILEHANDLE} q{## Activate conda environment};
+    say {$filehandle} q{## Activate conda environment};
     conda_activate(
         {
             env_name   => $conda_environment,
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Download
-    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    say {$filehandle} q{## Download} . $SPACE . $program_name;
     my $program_zip_path =
       catfile( $conda_prefix_path,
         $program_name . $DASH . $program_version . $DOT . q{zip} );
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $program_zip_path,
             quiet        => $quiet,
             url          => $program_url,
             verbose      => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Extract
-    say {$FILEHANDLE} q{## Extract};
+    say {$filehandle} q{## Extract};
     unzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $program_zip_path,
             quiet       => $quiet,
             verbose     => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Move to PROGRAM directory
-    say {$FILEHANDLE} q{## Move to} . $SPACE . $program_name . $SPACE . q{directory};
+    say {$filehandle} q{## Move to} . $SPACE . $program_name . $SPACE . q{directory};
     gnu_cd(
         {
             directory_path => $program_directory_path,
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Compile
-    say {$FILEHANDLE} q{## Compile};
+    say {$filehandle} q{## Compile};
     gnu_make(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Change mode to executable
     my $file_path = catfile( $program_directory_path, $program_executable );
     gnu_chmod(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             file_path  => $file_path,
             permission => q{a+x},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Make available from conda environment
-    say {$FILEHANDLE} q{## Make available from conda environment};
+    say {$filehandle} q{## Make available from conda environment};
     my $link_path = catfile( $conda_prefix_path, q{bin}, $program_executable );
     gnu_ln(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             link_path   => $link_path,
             symbolic    => 1,
             target_path => $file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Clean-up
-    say {$FILEHANDLE} q{## Clean up};
+    say {$filehandle} q{## Clean up};
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $program_zip_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Go back to starting directoriy
-    say {$FILEHANDLE} q{## Go back to starting directory};
+    say {$filehandle} q{## Go back to starting directory};
     gnu_cd(
         {
             directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Deactivate conda environment};
+    say {$filehandle} q{## Deactivate conda environment};
     conda_deactivate(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

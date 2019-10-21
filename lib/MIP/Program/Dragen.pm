@@ -60,7 +60,7 @@ sub dragen_dna_analysis {
 ##          : $fastq_list_all_samples        => Process all samples together in the same run
 ##          : $fastq_list_file_path          => Fastq list file path [csv_file]
 ##          : $fastq_list_sample_id          => Fastq list sample ID
-##          : $FILEHANDLE                    => Filehandle to write to
+##          : $filehandle                    => Filehandle to write to
 ##          : $force                         => Force overwrite of existing files
 ##          : $is_fastq_interleaved          => Smart pairing
 ##          : $outdirectory_path             => Outdirectory path
@@ -87,7 +87,7 @@ sub dragen_dna_analysis {
     my $fastq_infile_path;
     my $fastq_list_file_path;
     my $fastq_list_sample_id;
-    my $FILEHANDLE;
+    my $filehandle;
     my $is_fastq_interleaved;
     my $outdirectory_path;
     my $outfile_prefix;
@@ -251,8 +251,8 @@ sub dragen_dna_analysis {
             store       => \$fastq_list_sample_id,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         force => {
             allow       => [ undef, 0, 1 ],
@@ -498,7 +498,7 @@ sub dragen_dna_analysis {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -512,7 +512,7 @@ sub dragen_build_hash_table {
 ## Returns  : @commands
 ## Arguments: $build_hash_table           => Build hash table
 ##          : $enable_cnv                 => Enable cnv hash table creation
-##          : $FILEHANDLE                 => Filehandle to write to
+##          : $filehandle                 => Filehandle to write to
 ##          : $ht_alt_liftover_file_path  => Path to lift over file
 ##          : $ht_decoys_file_path        => Path to decoys file
 ##          : $outdirectory_path          => Outdirectory path
@@ -526,7 +526,7 @@ sub dragen_build_hash_table {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $ht_alt_liftover_file_path;
     my $ht_decoys_file_path;
     my $outdirectory_path;
@@ -554,8 +554,8 @@ sub dragen_build_hash_table {
             store       => \$enable_cnv,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         ht_alt_liftover_file_path => {
             store       => \$ht_alt_liftover_file_path,
@@ -642,7 +642,7 @@ sub dragen_build_hash_table {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -655,7 +655,7 @@ sub dragen_load_hash_table {
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 ## Arguments: $dragen_hash_ref_dir_path => Dragen reference genome dir path
-##          : $FILEHANDLE               => Filehandle to write to
+##          : $filehandle               => Filehandle to write to
 ##          : $force_load_reference     => Force load dragen reference
 ##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Append stderr info to file path
@@ -666,7 +666,7 @@ sub dragen_load_hash_table {
 
     ## Flatten argument(s)
     my $dragen_hash_ref_dir_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -676,8 +676,8 @@ sub dragen_load_hash_table {
     my $force_load_reference;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         force_load_reference => {
             allow       => [ undef, 0, 1 ],
@@ -730,7 +730,7 @@ sub dragen_load_hash_table {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

@@ -38,7 +38,7 @@ sub preseq_lc_extrap {
 ## Function : Perl wrapper for Preseq. Based on version 2.0.3
 ## Returns  : @commands
 ## Arguments: $bam_infile_path        => Bam infile path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -50,7 +50,7 @@ sub preseq_lc_extrap {
 
     ## Flatten argument(s)
     my $bam_infile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -65,8 +65,8 @@ sub preseq_lc_extrap {
             store       => \$bam_infile_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         outfile_path => {
             defined     => 1,
@@ -120,7 +120,7 @@ sub preseq_lc_extrap {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

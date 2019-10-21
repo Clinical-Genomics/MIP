@@ -34,17 +34,17 @@ my $NEWLINE    = q{\n};
 
 sub gnu_cd {
 
-##Function : Perl wrapper for writing cd recipe to already open $FILEHANDLE or return commands array. Based on cd 4.0
+##Function : Perl wrapper for writing cd recipe to already open $filehandle or return commands array. Based on cd 4.0
 ##Returns  : "@commands"
 ##Arguments: $directory_path         => Directory path
-##         : $FILEHANDLE             => Filehandle to write to
+##         : $filehandle             => Filehandle to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $directory_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -54,8 +54,8 @@ sub gnu_cd {
             strict_type => 1,
             store       => \$directory_path,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -89,7 +89,7 @@ sub gnu_cd {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -98,9 +98,9 @@ sub gnu_cd {
 
 sub gnu_trap {
 
-##Function : Perl wrapper for writing trap recipe to already open $FILEHANDLE or return commands array. Based on trap 4.0
+##Function : Perl wrapper for writing trap recipe to already open $filehandle or return commands array. Based on trap 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE             => Filehandle to write to
+##Arguments: $filehandle             => Filehandle to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 ##         : $trap_function_call     => The trap function argument
@@ -113,15 +113,15 @@ sub gnu_trap {
     my $trap_function_call;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     use MIP::Check::Parameter qw(check_allowed_array_values);
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -181,7 +181,7 @@ sub gnu_trap {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -189,9 +189,9 @@ sub gnu_trap {
 
 sub gnu_set {
 
-##Function : Perl wrapper for writing set recipe to already open $FILEHANDLE or return commands array. Based on set 4.0
+##Function : Perl wrapper for writing set recipe to already open $filehandle or return commands array. Based on set 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE             => Filehandle to write to
+##Arguments: $filehandle             => Filehandle to write to
 ##         : $separator              => Separator to use when writing
 ##         : $set_errexit            => Halt script if command has non-zero exit code (-e)
 ##         : $set_nounset            => Halt script if variable is uninitialised (-u)
@@ -208,13 +208,13 @@ sub gnu_set {
     my $set_pipefail;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -286,7 +286,7 @@ sub gnu_set {
         {
             commands_ref => \@commands,
             separator    => $NEWLINE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -294,9 +294,9 @@ sub gnu_set {
 
 sub gnu_wait {
 
-##Function : Perl wrapper for writing wait recipe to already open $FILEHANDLE or return commands array. Based on wait 4.0
+##Function : Perl wrapper for writing wait recipe to already open $filehandle or return commands array. Based on wait 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE             => Filehandle to write to
+##Arguments: $filehandle             => Filehandle to write to
 ##         : $processes_ref          => Specified processes to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
@@ -304,14 +304,14 @@ sub gnu_wait {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $processes_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         processes_ref => {
             default     => [],
@@ -351,7 +351,7 @@ sub gnu_wait {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -359,10 +359,10 @@ sub gnu_wait {
 
 sub gnu_unset {
 
-## Function : Perl wrapper for writing unset recipe to already open $FILEHANDLE or return commands array. Based on unset 4.0
+## Function : Perl wrapper for writing unset recipe to already open $filehandle or return commands array. Based on unset 4.0
 ## Returns  : @commands
 ## Arguments: $bash_variable          => Variable to unset
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -371,7 +371,7 @@ sub gnu_unset {
 
     ## Flatten argument(s)
     my $bash_variable;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -383,8 +383,8 @@ sub gnu_unset {
             strict_type => 1,
             store       => \$bash_variable,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -418,7 +418,7 @@ sub gnu_unset {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 

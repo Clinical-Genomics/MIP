@@ -35,9 +35,9 @@ Readonly my $SPACE => q{ };
 
 sub calculate_af {
 
-## Function : Perl wrapper for writing calculate_af recipe to already open $FILEHANDLE or return commands array. Based on calculate_af 0.0.2.
+## Function : Perl wrapper for writing calculate_af recipe to already open $filehandle or return commands array. Based on calculate_af 0.0.2.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -46,15 +46,15 @@ sub calculate_af {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path     => { store => \$infile_path, strict_type => 1, },
         stderrfile_path => {
@@ -94,7 +94,7 @@ sub calculate_af {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -104,9 +104,9 @@ sub calculate_af {
 
 sub max_af {
 
-## Function : Perl wrapper for writing max_af recipe to already open $FILEHANDLE or return commands array. Based on max_af 0.0.2.
+## Function : Perl wrapper for writing max_af recipe to already open $filehandle or return commands array. Based on max_af 0.0.2.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -115,15 +115,15 @@ sub max_af {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path     => { store => \$infile_path, strict_type => 1, },
         stderrfile_path => {
@@ -163,7 +163,7 @@ sub max_af {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

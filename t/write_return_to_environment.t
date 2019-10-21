@@ -66,24 +66,24 @@ diag(   q{Test write_return_to_environment from Setup_script.pm v}
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 write_return_to_environment(
     {
         active_parameter_href => \%active_parameter,
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
     }
 );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then env load command shoudl be written to file
 my ($load_command) = $file_content =~ /^(conda activate test)/ms;

@@ -44,7 +44,7 @@ sub install_blobfish {
 ## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -54,7 +54,7 @@ sub install_blobfish {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $quiet;
     my $blobfish_parameters_href;
     my $verbose;
@@ -70,10 +70,10 @@ sub install_blobfish {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         program_parameters_href => {
             default     => {},
@@ -113,7 +113,7 @@ sub install_blobfish {
         }
     );
 
-    say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
+    say {$filehandle} q{### Install} . $SPACE . $program_name;
     $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
     ## Check if installation exists and remove directory
@@ -121,7 +121,7 @@ sub install_blobfish {
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             log                    => $log,
             program_directory_path => $program_directory_path,
             program_name           => $program_name,
@@ -129,58 +129,58 @@ sub install_blobfish {
     );
 
     ## Activate conda environment
-    say {$FILEHANDLE} q{## Activate conda environment};
+    say {$filehandle} q{## Activate conda environment};
     conda_activate(
         {
             env_name   => $conda_environment,
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Download
-    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    say {$filehandle} q{## Download} . $SPACE . $program_name;
     git_clone(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             outdir_path => $program_directory_path,
             quiet       => $quiet,
             url         => $program_url,
             verbose     => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Change mode
-    say {$FILEHANDLE} q{## Make file executable};
+    say {$filehandle} q{## Make file executable};
     gnu_chmod(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             file_path  => catfile( $program_directory_path, $executable ),
             permission => q{a+x},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Place symlink in bin
-    say {$FILEHANDLE} q{## Linking executable};
+    say {$filehandle} q{## Linking executable};
     gnu_ln(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             link_path   => catfile( $conda_prefix_path, q{bin}, $executable ),
             target_path => catfile( $program_directory_path, $executable ),
             symbolic    => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Deactivate conda environment};
+    say {$filehandle} q{## Deactivate conda environment};
     conda_deactivate(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

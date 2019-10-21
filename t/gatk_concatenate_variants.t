@@ -63,13 +63,13 @@ diag(   q{Test gatk_concatenate_variants from Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given files and input
@@ -86,7 +86,7 @@ gatk_concatenate_variants(
     {
         active_parameter_href => \%active_parameter,
         continue              => 1,
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
         elements_ref          => \@contigs,
         infile_prefix         => $infile_prefix,
         outfile_suffix        => $outfile_suffix,
@@ -94,7 +94,7 @@ gatk_concatenate_variants(
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then write concatenate instructions
 my ($returned_command) = $file_content =~ /(GatherVcfsCloud)/xms;

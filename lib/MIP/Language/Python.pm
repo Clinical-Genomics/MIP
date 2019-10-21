@@ -36,17 +36,17 @@ BEGIN {
 
 sub python_core {
 
-## Function : Perl wrapper for writing python commands to $FILEHANDLE. Based on python 2.7/3.6.
+## Function : Perl wrapper for writing python commands to $filehandle. Based on python 2.7/3.6.
 ## Returns  : @commands
 ## Arguments: $command_mode   => Execute python in command mode
 ##          : $module_mode    => Execute python in module mode
-##          : $FILEHANDLE     => Filehandle to write to
+##          : $filehandle     => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $command_mode;
-    my $FILEHANDLE;
+    my $filehandle;
     my $module_mode;
 
     my $tmpl = {
@@ -55,8 +55,8 @@ sub python_core {
             strict_type => 1,
             store       => \$command_mode,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         module_mode => {
             allow       => [ undef, 0, 1 ],
@@ -88,7 +88,7 @@ sub python_core {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

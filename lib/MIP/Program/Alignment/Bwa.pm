@@ -35,9 +35,9 @@ Readonly my $SPACE => q{ };
 
 sub bwa_mem {
 
-## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
+## Function : Perl wrapper for writing bwa mem recipe to $filehandle. Based on bwa 0.7.15-r1140.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE              => Sbatch filehandle to write to
+## Arguments: $filehandle              => Sbatch filehandle to write to
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
 ##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $interleaved_fastq_file  => Smart pairing
@@ -53,7 +53,7 @@ sub bwa_mem {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $idxbase;
     my $infile_path;
     my $read_group_header;
@@ -69,7 +69,7 @@ sub bwa_mem {
     my $mark_split_as_secondary;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         idxbase    => {
             defined     => 1,
             required    => 1,
@@ -169,7 +169,7 @@ sub bwa_mem {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -179,9 +179,9 @@ sub bwa_mem {
 
 sub run_bwamem {
 
-## Function : Perl wrapper for writing run_bwamem recipe to $FILEHANDLE. Based on bwakit 0.7.12.
+## Function : Perl wrapper for writing run_bwamem recipe to $filehandle. Based on bwakit 0.7.12.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $hla_typing             => Apply HLA typing
 ##          : $idxbase                => Idxbase (human genome references and bwa mem idx files)
 ##          : $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
@@ -195,7 +195,7 @@ sub run_bwamem {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $idxbase;
     my $infile_path;
     my $outfiles_prefix_path;
@@ -209,7 +209,7 @@ sub run_bwamem {
     my $hla_typing;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         hla_typing => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -295,7 +295,7 @@ sub run_bwamem {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -305,10 +305,10 @@ sub run_bwamem {
 
 sub bwa_index {
 
-## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
+## Function : Perl wrapper for writing bwa mem recipe to $filehandle. Based on bwa 0.7.15-r1140.
 ## Returns  : @commands
 ## Arguments: $construction_algorithm => BWT construction algorithm: bwtsw, is or rb2 [auto]
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $prefix                 => Prefix of the index [same as fasta name]
 ##          : $reference_genome       => Reference genome [.fasta]
 ##          : $stderrfile_path        => Stderrfile path
@@ -319,7 +319,7 @@ sub bwa_index {
 
     ## Flatten argument(s)
     my $construction_algorithm;
-    my $FILEHANDLE;
+    my $filehandle;
     my $prefix;
     my $reference_genome;
     my $stderrfile_path;
@@ -334,8 +334,8 @@ sub bwa_index {
             store       => \$construction_algorithm,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         prefix => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
         reference_genome => {
@@ -384,7 +384,7 @@ sub bwa_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

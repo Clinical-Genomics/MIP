@@ -218,7 +218,7 @@ sub analysis_stringtie {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -226,7 +226,7 @@ sub analysis_stringtie {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -241,13 +241,13 @@ sub analysis_stringtie {
     ### SHELL:
 
     ## StringTie
-    say {$FILEHANDLE} q{## StringTie};
+    say {$filehandle} q{## StringTie};
     stringtie(
         {
             cov_ref_transcripts_outfile_path => $outfile_path_prefix
               . q{_cov_refs}
               . $outfile_suffix,
-            FILEHANDLE                  => $FILEHANDLE,
+            filehandle                  => $filehandle,
             gene_abundance_outfile_path => $outfile_path_prefix . q{_gene_abound.txt},
             gtf_reference_path => $active_parameter_href->{transcript_annotation},
             infile_path        => $infile_path,
@@ -258,10 +258,10 @@ sub analysis_stringtie {
             threads            => $recipe_resource{core_number},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE;
+    ## Close filehandle
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

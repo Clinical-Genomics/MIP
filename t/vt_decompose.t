@@ -67,7 +67,7 @@ diag(   q{Test vt_decompose from Vt.pm v}
 my @function_base_commands = qw{ vt decompose };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

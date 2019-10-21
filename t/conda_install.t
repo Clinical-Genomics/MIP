@@ -66,7 +66,7 @@ diag(   q{Test conda_install from Conda.pm v}
 my @function_base_commands = qw{ conda install };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -78,7 +78,7 @@ my %required_argument = (
         inputs_ref      => [qw{ test_package_1=1.2.3 test_package_2=1.2 }],
         expected_output => q{test_package_1=1.2.3 test_package_2=1.2},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

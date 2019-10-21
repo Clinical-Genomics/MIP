@@ -65,7 +65,7 @@ my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given isntall parameters
@@ -79,11 +79,11 @@ my $is_ok = install_singularity_containers(
         conda_env_path        => $active_parameter{emip}{conda_prefix_path},
         container_dir_path    => $active_parameter{emip}{container_dir_path},
         container_href        => $active_parameter{emip}{singularity},
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
     }
 );
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed install singularity container recipe } );

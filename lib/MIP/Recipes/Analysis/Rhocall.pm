@@ -215,8 +215,8 @@ sub analysis_rhocall_annotate {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -224,7 +224,7 @@ sub analysis_rhocall_annotate {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -238,7 +238,7 @@ sub analysis_rhocall_annotate {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## bcftools rho calculation};
+    say {$filehandle} q{## bcftools rho calculation};
 
     my $xargs_file_path_prefix;
 
@@ -246,10 +246,10 @@ sub analysis_rhocall_annotate {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -274,18 +274,18 @@ sub analysis_rhocall_annotate {
         bcftools_roh(
             {
                 af_file_path => $active_parameter_href->{rhocall_frequency_file},
-                FILEHANDLE   => $XARGSFILEHANDLE,
+                filehandle   => $xargsfilehandle,
                 infile_path  => $infile_path{$contig},
                 outfile_path => $roh_outfile_path,
                 samples_ref  => \@sample_ids,
                 skip_indels => 1, # Skip indels as their genotypes are enriched for errors
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         rhocall_annotate(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
+                filehandle   => $xargsfilehandle,
                 infile_path  => $infile_path{$contig},
                 outfile_path => $outfile_path{$contig},
                 rohfile_path => $roh_outfile_path,
@@ -293,12 +293,12 @@ sub analysis_rhocall_annotate {
 
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -496,7 +496,7 @@ sub analysis_rhocall_viz {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -504,7 +504,7 @@ sub analysis_rhocall_viz {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -517,13 +517,13 @@ sub analysis_rhocall_viz {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     my $sample_vcf = $outfile_path_prefix . $DOT . $sample_id . q{.vcf.gz};
 
     bcftools_view(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path,
             min_ac       => 1,
             outfile_path => $sample_vcf,
@@ -531,53 +531,53 @@ sub analysis_rhocall_viz {
             samples_ref  => [$sample_id],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     bcftools_index(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $sample_vcf,
             output_type => q{tbi},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     bcftools_roh(
         {
             af_tag       => q{GNOMADAF},
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $sample_vcf,
             outfile_path => $outfile_path,
             skip_indels => 1,    # Skip indels as their genotypes are enriched for errors
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     gzip(
         {
             decompress   => 1,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             force        => 1,
             infile_path  => $sample_vcf,
             outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     rhocall_viz(
         {
             af_tag       => q{GNOMADAF},
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
             outdir_path  => $outdir_path,
             rohfile_path => $outfile_path,
             wig          => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

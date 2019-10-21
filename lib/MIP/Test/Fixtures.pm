@@ -34,9 +34,6 @@ BEGIN {
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
 }
 
-## Do not lower case variables
-$Params::Check::PRESERVE_CASE = 1;
-
 sub build_usage {
 
 ## Function  : Build the USAGE instructions

@@ -148,7 +148,7 @@ sub analysis_analysisrunstatus {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -156,7 +156,7 @@ sub analysis_analysisrunstatus {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory_allocation},
@@ -168,7 +168,7 @@ sub analysis_analysisrunstatus {
     );
 
     ## Set status flagg so that perl not_finished remains in sample_info_file
-    say {$FILEHANDLE} q?STATUS="0"?;
+    say {$filehandle} q?STATUS="0"?;
 
     my @paths;
 
@@ -183,7 +183,7 @@ sub analysis_analysisrunstatus {
     ### Test all file that are supposed to exists as they are present in the sample_info file
     check_mip_process_files(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             paths_ref  => \@paths
         }
     );
@@ -215,7 +215,7 @@ sub analysis_analysisrunstatus {
         _check_string_within_file(
             {
                 file            => $file,
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 string_to_match => $file_string_to_match,
             }
         );
@@ -230,7 +230,7 @@ sub analysis_analysisrunstatus {
     _check_vcf_header_and_keys(
         {
             analysis_config_file => $active_parameter_href->{config_file_analysis},
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             sample_info_href     => $sample_info_href,
             vcf_file_href        => \%vcf_file,
         }
@@ -239,12 +239,12 @@ sub analysis_analysisrunstatus {
     ## Eval status flag
     _eval_status_flag(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             sample_info_file => $active_parameter_href->{sample_info_file},
         }
     );
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -268,20 +268,20 @@ sub _eval_status_flag {
 
 ## Function : Eval status flag
 ## Returns  :
-## Arguments: $FILEHANDLE       => Filehandle to write to
+## Arguments: $filehandle       => Filehandle to write to
 ##          : $sample_info_file => Sample info file for the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $sample_info_file;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         sample_info_file => {
             defined  => 1,
@@ -293,21 +293,21 @@ sub _eval_status_flag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Eval status value
-    say {$FILEHANDLE} q?if [ $STATUS -ne 1 ]; then?;
+    say {$filehandle} q?if [ $STATUS -ne 1 ]; then?;
 
     ## Execute perl
-    print {$FILEHANDLE} $TAB . q?perl -i -p -e '?;
+    print {$filehandle} $TAB . q?perl -i -p -e '?;
 
     ## Find analysisrunstatus line
-    print {$FILEHANDLE} q?if($_=~/analysisrunstatus\:/) { ?;
+    print {$filehandle} q?if($_=~/analysisrunstatus\:/) { ?;
 
     ## All ok - set runstatus mode to finished
-    say {$FILEHANDLE} q?s/not_finished/finished/g }' ? . $sample_info_file . q? ?;
+    say {$filehandle} q?s/not_finished/finished/g }' ? . $sample_info_file . q? ?;
 
     ## Found discrepancies - exit
-    say {$FILEHANDLE} q?else?;
-    say {$FILEHANDLE} $TAB . q?exit 1?;
-    say {$FILEHANDLE} q?fi?, $NEWLINE;
+    say {$filehandle} q?else?;
+    say {$filehandle} $TAB . q?exit 1?;
+    say {$filehandle} q?fi?, $NEWLINE;
 
     return;
 }
@@ -317,14 +317,14 @@ sub _check_string_within_file {
 ## Function : Test presence of string within file
 ## Returns  :
 ## Arguments: $file            => Files to check
-##          : $FILEHANDLE      => Filehandle to write to
+##          : $filehandle      => Filehandle to write to
 ##          : $string_to_match => String to match within file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $string_to_match;
 
     my $tmpl = {
@@ -333,10 +333,10 @@ sub _check_string_within_file {
             store       => \$file,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         string_to_match => {
             defined     => 1,
@@ -351,29 +351,29 @@ sub _check_string_within_file {
     if ( defined $file ) {
 
         ## Not output the matched text only return the exit status code
-        print {$FILEHANDLE} q?if grep -q "? . $string_to_match . q?" ?;
+        print {$filehandle} q?if grep -q "? . $string_to_match . q?" ?;
 
         ## Infile
-        say {$FILEHANDLE} $file . q?; then?;
+        say {$filehandle} $file . q?; then?;
 
         ## Found pattern
-        say {$FILEHANDLE} $TAB . q?STATUS="1"?;
+        say {$filehandle} $TAB . q?STATUS="1"?;
 
         ## Echo FAILED
-        say {$FILEHANDLE} $TAB
+        say {$filehandle} $TAB
           . q?echo "String match status=FAILED for file: ?
           . $file
           . q?" >&2?;
 
         ## Infile is clean
-        say {$FILEHANDLE} q?else?;
+        say {$filehandle} q?else?;
 
         ## Echo PASSED
-        say {$FILEHANDLE} $TAB
+        say {$filehandle} $TAB
           . q?echo "String match status=PASSED for file: ?
           . $file
           . q?" >&2?;
-        say {$FILEHANDLE} q?fi?, $NEWLINE;
+        say {$filehandle} q?fi?, $NEWLINE;
     }
     return;
 }
@@ -383,7 +383,7 @@ sub _check_vcf_header_and_keys {
 ## Function : Test integrity of vcf data keys in header and body
 ## Returns  :
 ## Arguments: $analysis_config_file => Config file for the analysis
-##          : $FILEHANDLE           => Filehandle to write to
+##          : $filehandle           => Filehandle to write to
 ##          : $vcf_file_href        => Files to check
 ##          : $sample_info_href     => Info on samples and case hash {REF}
 
@@ -391,7 +391,7 @@ sub _check_vcf_header_and_keys {
 
     ## Flatten argument(s)
     my $analysis_config_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $vcf_file_href;
     my $sample_info_href;
 
@@ -401,10 +401,10 @@ sub _check_vcf_header_and_keys {
             required => 1,
             store    => \$analysis_config_file,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         vcf_file_href => {
             default     => {},
@@ -434,44 +434,44 @@ sub _check_vcf_header_and_keys {
               if ( not defined $sample_info_href->{$file}{$mode}{path} );
 
             ## Execute on cmd
-            print {$FILEHANDLE} q?perl -MTest::Harness -e ' ?;
+            print {$filehandle} q?perl -MTest::Harness -e ' ?;
 
             ## Adjust arguments to harness object
-            print {$FILEHANDLE} q?my %args = (?;
+            print {$filehandle} q?my %args = (?;
 
             ## Print individual test results to STDOUT
-            print {$FILEHANDLE} q?verbosity => 1, ?;
+            print {$filehandle} q?verbosity => 1, ?;
 
             ##Argument to test script
-            print {$FILEHANDLE} q?test_args => { ?;
+            print {$filehandle} q?test_args => { ?;
 
             ## Add test for select file using alias
-            print {$FILEHANDLE} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
+            print {$filehandle} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
 
             ## Infile
-            print {$FILEHANDLE} q?"? . $sample_info_href->{$file}{$mode}{path} . q?", ?;
+            print {$filehandle} q?"? . $sample_info_href->{$file}{$mode}{path} . q?", ?;
 
             ##ConfigFile
-            print {$FILEHANDLE} q?"? . $analysis_config_file . q?", ?;
-            print {$FILEHANDLE} q?], ?;
+            print {$filehandle} q?"? . $analysis_config_file . q?", ?;
+            print {$filehandle} q?], ?;
 
-            print {$FILEHANDLE} q?}); ?;
+            print {$filehandle} q?}); ?;
 
             ## Create harness using arguments provided
-            print {$FILEHANDLE} q?my $harness = TAP::Harness->new( \%args ); ?;
+            print {$filehandle} q?my $harness = TAP::Harness->new( \%args ); ?;
 
             ## Execute test(s)
-            print {$FILEHANDLE} q?$harness->runtests( ?;
+            print {$filehandle} q?$harness->runtests( ?;
 
-            print {$FILEHANDLE} q?["?
+            print {$filehandle} q?["?
               . catfile( $Bin, qw{ t mip_analysis.test } )
               . q?", "test ?
               . $mode
               . $SPACE
               . $file . q?"], ?;
 
-            print {$FILEHANDLE} q?)'?;
-            say   {$FILEHANDLE} $NEWLINE;
+            print {$filehandle} q?)'?;
+            say   {$filehandle} $NEWLINE;
         }
     }
     return;

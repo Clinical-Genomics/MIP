@@ -37,14 +37,14 @@ sub covplots_genome {
 ##            genomecov.
 ## Returns  : @commands
 
-## Arguments: $infile_path, $outdirectory_path, $sample_id, $stdoutfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $max_coverage_depth
+## Arguments: $infile_path, $outdirectory_path, $sample_id, $stdoutfile_path, $stderrfile_path, $stderrfile_path_append, $filehandle, $max_coverage_depth
 ##          : $infile_path            => Infile path
 ##          : $outdirectory_path      => Outfile path
 ##          : $sample_id              => Sample id
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $max_coverage_depth     => Max coverage depth
 
     my ($arg_href) = @_;
@@ -56,7 +56,7 @@ sub covplots_genome {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
     my $max_coverage_depth;
@@ -92,8 +92,8 @@ sub covplots_genome {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         max_coverage_depth => {
             default     => 30,
@@ -137,7 +137,7 @@ sub covplots_genome {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

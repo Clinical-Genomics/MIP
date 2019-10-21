@@ -195,8 +195,8 @@ sub analysis_frequency_annotation {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -204,7 +204,7 @@ sub analysis_frequency_annotation {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -217,16 +217,16 @@ sub analysis_frequency_annotation {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number      => $recipe_resource{core_number},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
-            XARGSFILEHANDLE  => $XARGSFILEHANDLE,
+            xargsfilehandle  => $xargsfilehandle,
         }
     );
 
@@ -239,38 +239,38 @@ sub analysis_frequency_annotation {
 
         vcfanno(
             {
-                FILEHANDLE           => $XARGSFILEHANDLE,
+                filehandle           => $xargsfilehandle,
                 infile_path          => $infile_path{$contig},
                 stderrfile_path      => $stderrfile_path,
                 toml_configfile_path => $active_parameter_href->{fqa_vcfanno_config},
             }
         );
 
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         bcftools_view(
             {
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 infile_path            => $DASH,
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{z},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
 
     }
 
-    say {$FILEHANDLE} q{## Index outfiles};
+    say {$filehandle} q{## Index outfiles};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $recipe_resource{core_number},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -283,22 +283,22 @@ sub analysis_frequency_annotation {
 
         bcftools_index(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path{$contig},
                 output_type     => q{tbi},
                 stderrfile_path => $stderrfile_path,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $XARGSFILEHANDLE or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $xargsfilehandle or $log->logcroak(q{Could not close xargsfilehandle});
 
-    say {$FILEHANDLE} q{## Concatenate outfiles};
+    say {$filehandle} q{## Concatenate outfiles};
 
     bcftools_concat(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@outfile_paths,
             output_type      => q{z},
             outfile_path     => $outfile_path_prefix . $DOT . q{vcf.gz},
@@ -306,19 +306,19 @@ sub analysis_frequency_annotation {
             threads          => $recipe_resource{core_number} - 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     bcftools_index(
         {
             infile_path => $outfile_path_prefix . $DOT . q{vcf.gz},
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             output_type => q{tbi},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

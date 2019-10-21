@@ -68,7 +68,7 @@ diag(   q{Test rseqc_inner_distance from Rseqc.pm v}
 my @function_base_commands = qw{ inner_distance.py };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

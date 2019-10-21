@@ -103,7 +103,7 @@ my %active_parameter_test_hash = (
   my $test_dir = File::Temp->newdir();
 my $test_fam_file_path = catfile( $test_dir, q{test_file.fam} );
 my $test_sbatch_path   = catfile( $test_dir, q{test_file.sbatch} );
-my $FILEHANDLE;
+my $filehandle;
 
 ## Create temp logger for Pedigree.pm
 my $test_log_path = catfile( $test_dir, q{test.log} );
@@ -116,16 +116,16 @@ for my $execution_mode (@execution_modes) {
 
     if ( $execution_mode eq q{sbatch} ) {
 
-        $FILEHANDLE = IO::Handle->new();
-        open $FILEHANDLE, q{>}, $test_sbatch_path
-          or croak q{Could not open FILEHANDLE};
+        $filehandle = IO::Handle->new();
+        open $filehandle, q{>}, $test_sbatch_path
+          or croak q{Could not open filehandle};
 
         # Build shebang
         my @commands = (q{#!/usr/bin/env bash});
         unix_write_to_file(
             {
                 commands_ref => \@commands,
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 separator    => $SPACE,
             }
         );
@@ -137,7 +137,7 @@ for my $execution_mode (@execution_modes) {
             active_parameter_href => \%active_parameter_test_hash,
             execution_mode        => $execution_mode,
             fam_file_path         => $test_fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             sample_info_href      => \%sample_info_test_hash,
         }
@@ -149,7 +149,7 @@ for my $execution_mode (@execution_modes) {
         ok( -e $test_sbatch_path, q{fam command written to sbatch file} );
 
         # Execute the sbatch
-        close $FILEHANDLE;
+        close $filehandle;
         system qq{bash $test_sbatch_path};
         unlink $test_sbatch_path or carp qq{Could not unlink $test_sbatch_path};
     }
@@ -203,7 +203,7 @@ for my $execution_mode (@execution_modes) {
       or carp qq{Could not unlink $test_fam_file_path};
 }
 
-## Given no FILEHANDLE when in sbatch mode
+## Given no filehandle when in sbatch mode
 # Run the create fam file test
 trap {
     create_fam_file(
@@ -218,11 +218,11 @@ trap {
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if no FILEHANDLE supplied in sbatch mode} );
+ok( $trap->exit, q{Exit if no filehandle supplied in sbatch mode} );
 like(
     $trap->stderr,
     qr/Please \s+ supply \s+ filehandle \s+ to/xms,
-    q{Throw fatal log message if no FILEHANDLE supplied in sbatch mode}
+    q{Throw fatal log message if no filehandle supplied in sbatch mode}
 );
 
 done_testing();

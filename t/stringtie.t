@@ -67,7 +67,7 @@ Readonly my $THREADS      => 16;
 my @function_base_commands = qw{ stringtie };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

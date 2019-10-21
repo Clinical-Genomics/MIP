@@ -48,7 +48,7 @@ sub install_conda_packages {
 ##           : $conda_env_path      => Path to conda environment (default: conda root)
 ##           : $conda_no_update_dep => Do not update dependencies
 ##           : $conda_packages_href => Hash holding conda packages and their version numbers {REF}
-##           : $FILEHANDLE          => Filehandle to write to
+##           : $filehandle          => Filehandle to write to
 ##           : $quiet               => Log only warnings and above
 ##           : $verbose             => Log debug messages
 
@@ -58,7 +58,7 @@ sub install_conda_packages {
     my $conda_env;
     my $conda_env_path;
     my $conda_packages_href;
-    my $FILEHANDLE;
+    my $filehandle;
     my $quiet;
     my $verbose;
 
@@ -88,9 +88,9 @@ sub install_conda_packages {
             store       => \$conda_packages_href,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         quiet => {
             allow => [ undef, 0, 1 ],
@@ -135,18 +135,18 @@ sub install_conda_packages {
             ## Create conda environment and install packages
             $log->info(
                 q{Writing installation instructions for environment: } . $conda_env );
-            say {$FILEHANDLE} q{## Creating conda environment: }
+            say {$filehandle} q{## Creating conda environment: }
               . $conda_env
               . q{ and install packages};
             conda_create(
                 {
                     conda_channels_ref => [qw{ bioconda conda-forge }],
                     env_name           => $conda_env,
-                    FILEHANDLE         => $FILEHANDLE,
+                    filehandle         => $filehandle,
                     packages_ref       => \@packages,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
         else {
 
@@ -156,33 +156,33 @@ sub install_conda_packages {
             $log->info(
                 q{Writing installation instructions for conda packages to environment: }
                   . $conda_env );
-            say {$FILEHANDLE} q{## Installing conda packages into existing environment};
+            say {$filehandle} q{## Installing conda packages into existing environment};
             conda_install(
                 {
                     conda_channels_ref => [qw{ bioconda conda-forge }],
                     no_update_dep      => $conda_no_update_dep,
-                    FILEHANDLE         => $FILEHANDLE,
+                    filehandle         => $filehandle,
                     env_name           => $conda_env,
                     packages_ref       => \@packages,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
     }
     else {
         $log->info(
             q{Writing instructions for installing and/or updating packages in conda root}
         );
-        say {$FILEHANDLE}
+        say {$filehandle}
           q{## Installing and/or updating python and packages in conda root};
         conda_install(
             {
                 conda_channels_ref => [qw{ bioconda conda-forge }],
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 packages_ref       => \@packages,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     return;

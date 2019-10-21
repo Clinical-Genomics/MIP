@@ -59,13 +59,13 @@ diag(   q{Test decompress_file from Decompression.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a file to decompress, when method gzip unzip and tar
@@ -78,7 +78,7 @@ foreach my $program (@programs) {
 
     decompress_file(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             outdir_path        => $reference_dir,
             outfile_path       => $outfile_path,
             decompress_program => $program,
@@ -87,7 +87,7 @@ foreach my $program (@programs) {
 
 }
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 PROGRAM:
 foreach my $program (@programs) {

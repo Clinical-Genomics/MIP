@@ -5,7 +5,7 @@ Write a file to memory instead of disc:
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
     or croak q{Cannot write to}
     . $SPACE
     . $file_content
@@ -15,10 +15,10 @@ open my $FILEHANDLE, q{>}, \$file_content
 
 ## Write to file
 my $base_command = q{samtools};
-say {$FILEHANDLE} $base_command;
+say {$filehandle} $base_command;
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 ```
 
 Then you can use this as variable to access the content of the file, for instance:

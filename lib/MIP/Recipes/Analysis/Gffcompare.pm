@@ -222,7 +222,7 @@ sub analysis_gffcompare {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -230,7 +230,7 @@ sub analysis_gffcompare {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -245,10 +245,10 @@ sub analysis_gffcompare {
     ### SHELL:
 
     ## GFFcompare
-    say {$FILEHANDLE} q{## GffCompare};
+    say {$filehandle} q{## GffCompare};
     gffcompare(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             genome_sequence_path => $active_parameter_href->{human_genome_reference},
             gtf_reference_path   => $active_parameter_href->{transcript_annotation},
             ignore_non_overlapping_ref => 1,
@@ -256,10 +256,10 @@ sub analysis_gffcompare {
             outfile_path_prefix        => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Rename output files
-    say {$FILEHANDLE} q{## Rename and move GFFCompare output};
+    say {$filehandle} q{## Rename and move GFFCompare output};
     my $gff_output_path    = $outfile_path_prefix . $DOT . q{annotated.gtf};
     my $refmap_infile_path = catfile( $indir_path,
         $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
@@ -275,16 +275,16 @@ sub analysis_gffcompare {
     foreach my $files_ref (@file_names) {
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $files_ref->[0],
                 outfile_path => $files_ref->[1],
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE;
+    ## Close filehandle
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

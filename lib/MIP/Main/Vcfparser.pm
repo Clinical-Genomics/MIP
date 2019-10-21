@@ -372,7 +372,7 @@ sub read_infile_vcf {
     ## Store vcf header "#CHROM" line
     my @vcf_format_columns;
 
-    my $SELECT_FH = _get_select_filehandle(
+    my $select_fh = _get_select_filehandle(
         {
             select_feature_file => $select_feature_file,
             select_outfile_path => $select_outfile_path,
@@ -441,17 +441,17 @@ sub read_infile_vcf {
 
             write_meta_data(
                 {
-                    FILEHANDLE       => *STDOUT,
+                    filehandle       => *STDOUT,
                     meta_data_href   => $meta_data_href,
-                    SELECTFILEHANDLE => $SELECT_FH,
+                    selectfilehandle => $select_fh,
                 }
             );
 
             @vcf_format_columns = parse_vcf_format_line(
                 {
-                    FILEHANDLE       => *STDOUT,
+                    filehandle       => *STDOUT,
                     format_line      => $line,
-                    SELECTFILEHANDLE => $SELECT_FH,
+                    selectfilehandle => $select_fh,
                 }
             );
             next;
@@ -541,11 +541,11 @@ sub read_infile_vcf {
         ## Write until INFO field or end of line
         write_line_elements(
             {
-                FILEHANDLE        => *STDOUT,
+                filehandle        => *STDOUT,
                 last_index        => $last_index,
                 last_separator    => $last_separator,
                 line_elements_ref => \@line_elements,
-                SELECT_FH         => $SELECT_FH,
+                select_fh         => $select_fh,
                 start_index       => 0,
                 vcf_record_href   => \%vcf_record,
             }
@@ -555,26 +555,26 @@ sub read_infile_vcf {
 
             my $info_field_counter = write_feature_file_csq(
                 {
-                    FILEHANDLE         => *STDOUT,
+                    filehandle         => *STDOUT,
                     info_field_counter => 0,
-                    SELECT_FH          => $SELECT_FH,
+                    select_fh          => $select_fh,
                     vcf_record_href    => \%vcf_record,
                 }
             );
 
             write_info_field(
                 {
-                    FILEHANDLE         => *STDOUT,
+                    filehandle         => *STDOUT,
                     info_field_counter => $info_field_counter,
-                    SELECT_FH          => $SELECT_FH,
+                    select_fh          => $select_fh,
                     vcf_record_href    => \%vcf_record,
                 }
             );
 
             write_info_addition_fields(
                 {
-                    FILEHANDLE      => *STDOUT,
-                    SELECT_FH       => $SELECT_FH,
+                    filehandle      => *STDOUT,
+                    select_fh       => $select_fh,
                     vcf_record_href => \%vcf_record,
                 }
             );
@@ -582,12 +582,12 @@ sub read_infile_vcf {
             ## After INFO to the final column
             write_line_elements(
                 {
-                    FILEHANDLE        => *STDOUT,
+                    filehandle        => *STDOUT,
                     first_separator   => $TAB,
                     last_index        => $#line_elements,
                     last_separator    => $NEWLINE,
                     line_elements_ref => \@line_elements,
-                    SELECT_FH         => $SELECT_FH,
+                    select_fh         => $select_fh,
                     start_index       => $FORMAT_COLUMN_INDEX,
                     vcf_record_href   => \%vcf_record,
                 }
@@ -597,7 +597,7 @@ sub read_infile_vcf {
     }
     if ($select_feature_file) {
 
-        close $SELECT_FH;
+        close $select_fh;
     }
     $log->info( q{Finished Processing VCF} . $NEWLINE );
     return;
@@ -655,8 +655,8 @@ sub _get_line_parameters {
 
 sub _get_select_filehandle {
 
-## Function : Returns FILEHANDLE for select file
-## Returns  : $SELECT_FH or undef
+## Function : Returns filehandle for select file
+## Returns  : $select_fh or undef
 ## Arguments: $select_feature_file => Select feature file
 ##          : $select_outfile_path => Select outfile path (VCF)
 
@@ -687,12 +687,12 @@ sub _get_select_filehandle {
 
     my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
-    open my $SELECT_FH, q{>},
+    open my $select_fh, q{>},
       $select_outfile_path
       or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
         $NEWLINE );
 
-    return $SELECT_FH;
+    return $select_fh;
 }
 
 1;

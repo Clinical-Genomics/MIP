@@ -34,9 +34,9 @@ BEGIN {
 
 sub java_core {
 
-## Function : Perl wrapper for writing java recipe to $FILEHANDLE. Based on java openjdk version "1.8.0_92".
+## Function : Perl wrapper for writing java recipe to $filehandle. Based on java openjdk version "1.8.0_92".
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                => Filehandle to write to
+## Arguments: $filehandle                => Filehandle to write to
 ##          : $java_jar                  => The JAR {Optional}
 ##          : $java_use_large_pages      => Use java large pages {Optional}
 ##          : $memory_allocation         => Memory allocation for java
@@ -46,7 +46,7 @@ sub java_core {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $java_jar;
     my $java_use_large_pages;
     my $memory_allocation;
@@ -54,8 +54,8 @@ sub java_core {
     my $temp_directory;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         java_jar => {
             store       => \$java_jar,
@@ -116,7 +116,7 @@ sub java_core {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

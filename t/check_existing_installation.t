@@ -63,7 +63,7 @@ diag(   q{Test check_existing_installation from Installation.pm v}
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 my $conda_prefix_path = catdir( $Bin, qw{ data modules miniconda } );
@@ -77,20 +77,20 @@ trap {
         {
             conda_environment      => q{test_env},
             conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             log                    => $log,
             program_directory_path => $program_directory_path,
             program_name           => q{Picard},
         }
     );
 };
-close $FILEHANDLE;
+close $filehandle;
 ## Then overwrite
 like( $trap->stderr, qr/WARN/xms, q{Warn when installation exists} );
 like( $file_content, qr/Removing\sold\sPicard/xms, q{Write instructions to file} );
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 $program_directory_path =
@@ -101,13 +101,13 @@ my $is_installed = check_existing_installation(
     {
         conda_environment      => q{test_env},
         conda_prefix_path      => $conda_prefix_path,
-        FILEHANDLE             => $FILEHANDLE,
+        filehandle             => $filehandle,
         log                    => $log,
         program_directory_path => $program_directory_path,
         program_name           => q{dummy_program},
     }
 );
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then return 0
 is( $is_installed, 0, q{Return 0 when not installed} );

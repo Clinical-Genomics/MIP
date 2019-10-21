@@ -39,14 +39,14 @@ sub check_file_md5sum {
 ## Function : Check file integrity of file using md5sum
 ## Returns  :
 ## Arguments: $check_method  => Method to perform file check (undef or md5sum)
-##          : $FILEHANDLE    => Filehandle to write to
+##          : $filehandle    => Filehandle to write to
 ##          : $md5_file_path => File to check
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $check_method;
-    my $FILEHANDLE;
+    my $filehandle;
     my $md5_file_path;
 
     my $tmpl = {
@@ -55,7 +55,7 @@ sub check_file_md5sum {
             store       => \$check_method,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle => { defined => 1, required => 1, store => \$filehandle, },
         md5_file_path =>
           { defined => 1, required => 1, store => \$md5_file_path, strict_type => 1, },
     };
@@ -84,7 +84,7 @@ sub check_file_md5sum {
     my $md5sum_check_file = q{md5sum_check} . $UNDERSCORE . $random_integer . q{.txt};
     _write_md5sum_check_file(
         {
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             file_path         => $file_path,
             md5sum_check_file => $md5sum_check_file,
             md5_file_path     => $md5_file_path,
@@ -95,21 +95,21 @@ sub check_file_md5sum {
     gnu_md5sum(
         {
             check       => 1,
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $md5sum_check_file,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Clean-up
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $md5sum_check_file,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     return 1;
 }
 
@@ -117,20 +117,20 @@ sub check_mip_process_files {
 
 ## Function : Test all file that are supposed to exists after process
 ## Returns  :
-## Arguments: $FILEHANDLE => Filehandle to write to
+## Arguments: $filehandle => Filehandle to write to
 ##          : $paths_ref  => Paths to files to check
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $paths_ref;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         paths_ref => {
             default     => [],
@@ -144,7 +144,7 @@ sub check_mip_process_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Create bash array
-    print {$FILEHANDLE} q?readonly FILES=(?;
+    print {$filehandle} q?readonly FILES=(?;
 
   PATH:
     foreach my $path ( @{$paths_ref} ) {
@@ -153,32 +153,32 @@ sub check_mip_process_files {
         next PATH if ( not defined $path );
 
         ## Add to array
-        print {$FILEHANDLE} q?"? . $path . q?" ?;
+        print {$filehandle} q?"? . $path . q?" ?;
     }
 
     ## Close bash array
-    say {$FILEHANDLE} q?)?;
+    say {$filehandle} q?)?;
 
     ## Loop over files
-    say {$FILEHANDLE} q?for file in "${FILES[@]}"?;
+    say {$filehandle} q?for file in "${FILES[@]}"?;
 
     ## For each element in array do
-    say {$FILEHANDLE} q?do? . $SPACE;
+    say {$filehandle} q?do? . $SPACE;
 
     ## File exists and is larger than zero
-    say {$FILEHANDLE} $TAB . q?if [ -s "$file" ]; then?;
+    say {$filehandle} $TAB . q?if [ -s "$file" ]; then?;
 
     ## Echo
-    say {$FILEHANDLE} $TAB x 2 . q?echo "Found file $file"?;
-    say {$FILEHANDLE} $TAB . q?else?;
+    say {$filehandle} $TAB x 2 . q?echo "Found file $file"?;
+    say {$filehandle} $TAB . q?else?;
 
     ## Redirect to STDERR
-    say {$FILEHANDLE} $TAB x 2 . q?echo "Could not find $file" >&2?;
+    say {$filehandle} $TAB x 2 . q?echo "Could not find $file" >&2?;
 
     ## Set status flagg so that perl notFinished remains in sample_info_file
-    say {$FILEHANDLE} $TAB x 2 . q?STATUS="1"?;
-    say {$FILEHANDLE} $TAB . q?fi?;
-    say {$FILEHANDLE} q?done ?, $NEWLINE;
+    say {$filehandle} $TAB x 2 . q?STATUS="1"?;
+    say {$filehandle} $TAB . q?fi?;
+    say {$filehandle} q?done ?, $NEWLINE;
 
     return 1;
 }
@@ -274,7 +274,7 @@ sub _write_md5sum_check_file {
 
 ## Function : Write md5sum file
 ## Returns  :
-## Arguments: $FILEHANDLE        => Filehandle to write to
+## Arguments: $filehandle        => Filehandle to write to
 ##          : $file_path         => Outfile path
 ##          : $md5sum_check_file => Md5sum check file
 ##          : $md5_file_path     => File to check
@@ -282,13 +282,13 @@ sub _write_md5sum_check_file {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_path;
     my $md5sum_check_file;
     my $md5_file_path;
 
     my $tmpl = {
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle => { defined => 1, required => 1, store => \$filehandle, },
         file_path  => {
             defined     => 1,
             required    => 1,
@@ -318,8 +318,8 @@ sub _write_md5sum_check_file {
     $perl_regexp .= $file_path . q?} ' ?;
 
     ## Write perl command to create md5sum check file
-    print {$FILEHANDLE} $perl_regexp . $md5_file_path . q{ > } . $md5sum_check_file;
-    say   {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $perl_regexp . $md5_file_path . q{ > } . $md5sum_check_file;
+    say   {$filehandle} $NEWLINE;
     return;
 }
 

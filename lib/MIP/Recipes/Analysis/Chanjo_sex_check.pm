@@ -203,7 +203,7 @@ sub analysis_chanjo_sex_check {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -211,7 +211,7 @@ sub analysis_chanjo_sex_check {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             job_id_href                     => $job_id_href,
@@ -225,7 +225,7 @@ sub analysis_chanjo_sex_check {
     ### SHELL:
 
     ## chanjo_sexcheck
-    say {$FILEHANDLE} q{## Predicting sex from alignment};
+    say {$filehandle} q{## Predicting sex from alignment};
 
     ## Get parameters
 
@@ -238,15 +238,15 @@ sub analysis_chanjo_sex_check {
     chanjo_sex(
         {
             chr_prefix    => $chr_prefix,
-            FILEHANDLE    => $FILEHANDLE,
+            filehandle    => $filehandle,
             infile_path   => $infile_path,
             log_level     => $active_parameter_href->{chanjo_sexcheck_log_level},
             log_file_path => $log_file_path,
             outfile_path  => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
-    close $FILEHANDLE;
+    say {$filehandle} $NEWLINE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

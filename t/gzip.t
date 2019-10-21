@@ -106,7 +106,7 @@ my %base_argument = (
         input           => q{stderrfile_path_append},
         expected_output => q{2>> stderrfile_path_append},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -119,7 +119,7 @@ my %required_argument = (
         input           => q{infile_path},
         expected_output => q{infile_path},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

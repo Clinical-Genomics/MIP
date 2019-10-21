@@ -64,7 +64,7 @@ diag(   q{Test rtg_vcfeval from Rtg.pm v}
 my @function_base_commands = qw{ rtg vcfeval };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

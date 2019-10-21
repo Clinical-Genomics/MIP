@@ -119,7 +119,7 @@ sub check_existing_installation {
 ## Returns  : $install_check
 ## Arguments: $conda_environment      => Conda environment
 ##          : $conda_prefix_path      => Path to conda environment
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $log                    => Log to write messages to
 ##          : $program_directory_path => Path to program directory
 ##          : $program_name           => Program name
@@ -129,7 +129,7 @@ sub check_existing_installation {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log;
     my $program_directory_path;
     my $program_name;
@@ -157,10 +157,10 @@ sub check_existing_installation {
             store       => \$conda_environment,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         log => {
             defined  => 1,
@@ -185,27 +185,27 @@ sub check_existing_installation {
           . $conda_environment );
     $log->warn(qq{This will overwrite the current $program_name installation});
 
-    say {$FILEHANDLE} qq{## Removing old $program_name directory};
+    say {$filehandle} qq{## Removing old $program_name directory};
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $program_directory_path,
             recursive   => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} qq{## Removing old $program_name links};
+    say {$filehandle} qq{## Removing old $program_name links};
     gnu_find(
         {
             action        => q{-delete},
-            FILEHANDLE    => $FILEHANDLE,
+            filehandle    => $filehandle,
             search_path   => catdir( $conda_prefix_path, q{bin} ),
             test_criteria => q{-xtype l},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return 1;
 }

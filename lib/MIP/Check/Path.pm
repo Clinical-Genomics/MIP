@@ -410,13 +410,13 @@ sub check_gatk_sample_map_paths {
     Readonly my $FIELD_COUNTER    => 2;
 
     ## Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    open $FILEHANDLE, q{<}, $sample_map_path
+    open $filehandle, q{<}, $sample_map_path
       or $log->logdie( q{Cannot open '} . $sample_map_path . q{': } . $OS_ERROR );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         ## Remove newline
         chomp;
@@ -444,7 +444,7 @@ sub check_gatk_sample_map_paths {
               . q{ does not exist} );
         exit 1;
     }
-    close $FILEHANDLE;
+    close $filehandle;
     return 1;
 }
 

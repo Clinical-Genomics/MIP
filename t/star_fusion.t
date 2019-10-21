@@ -68,7 +68,7 @@ Readonly my $THREAD_NUMBER => 16;
 my @function_base_commands = qw{ STAR-Fusion };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

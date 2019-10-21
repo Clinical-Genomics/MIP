@@ -36,7 +36,7 @@ sub replace_iupac {
 
 ## Function : Replace the IUPAC code in alternative allels with N for input stream and writes to stream.
 ## Returns  :
-## Arguments: $FILEHANDLE      => Sbatch filehandle to write to
+## Arguments: $filehandle      => Sbatch filehandle to write to
 ##          : $stderrfile_path => Stderr path to errors write to
 ##          : $stdoutfile_path => Stdoutfile path
 ##          : $xargs           => Write on xargs format
@@ -44,7 +44,7 @@ sub replace_iupac {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stdoutfile_path;
 
@@ -52,10 +52,10 @@ sub replace_iupac {
     my $xargs;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stdoutfile_path => {
@@ -97,11 +97,11 @@ sub replace_iupac {
           q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }'? . $SPACE;
     }
 
-    print {$FILEHANDLE} $regexp;
+    print {$filehandle} $regexp;
 
     unix_standard_streams(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             stderrfile_path => $stderrfile_path,
             stdoutfile_path => $stdoutfile_path,
 

@@ -36,7 +36,7 @@ sub singularity_exec {
 ## Function : Perl wrapper for writing singularity execute command. Based on singularity v3.1.
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
-##          : $FILEHANDLE                     => Filehandle to write to
+##          : $filehandle                     => Filehandle to write to
 ##          : $singularity_container          => Singularity container name
 ##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
@@ -47,7 +47,7 @@ sub singularity_exec {
 
     ## Flatten argument(s)
     my $bind_paths_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $singularity_container;
     my $singularity_container_cmds_ref;
     my $stderrfile_path;
@@ -60,8 +60,8 @@ sub singularity_exec {
             store       => \$bind_paths_ref,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         singularity_container => {
             defined     => 1,
@@ -118,7 +118,7 @@ sub singularity_exec {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -132,7 +132,7 @@ sub singularity_pull {
 ## Function : Perl wrapper for writing singularity pull command. Based on singularity v3.1.
 ## Returns  : @commands
 ## Arguments: $container_uri          => Container URI
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $force                  => Force pull
 ##          : $outfile_path           => Save container to file
 ##          : $stderrfile_path        => Stderrfile path
@@ -143,7 +143,7 @@ sub singularity_pull {
 
     ## Flatten argument(s)
     my $container_uri;
-    my $FILEHANDLE;
+    my $filehandle;
     my $force;
     my $outfile_path;
     my $stderrfile_path;
@@ -157,8 +157,8 @@ sub singularity_pull {
             store       => \$container_uri,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         force => {
             allow       => [ undef, 0, 1 ],
@@ -211,7 +211,7 @@ sub singularity_pull {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

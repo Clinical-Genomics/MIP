@@ -233,7 +233,7 @@ sub analysis_gatk_asereadcounter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -241,7 +241,7 @@ sub analysis_gatk_asereadcounter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -256,10 +256,10 @@ sub analysis_gatk_asereadcounter {
     ### SHELL
 
     ## Restrict analysis to biallelic, heterogenous SNPs
-    say {$FILEHANDLE} q{## Bcftools view};
+    say {$filehandle} q{## Bcftools view};
     bcftools_view(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             genotype     => q{het},
             infile_path  => $variant_infile_path,
             max_alleles  => $ALLELES,
@@ -268,23 +268,23 @@ sub analysis_gatk_asereadcounter {
             types        => q{snps},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $variant_file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    say {$filehandle} q{## GATK ASEReadCounter};
     gatk_asereadcounter(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $alignment_file_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -295,9 +295,9 @@ sub analysis_gatk_asereadcounter {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

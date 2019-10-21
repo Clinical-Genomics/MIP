@@ -64,7 +64,7 @@ diag(   q{Test check_mip_process_files from File.pm v}
 my $test_dir       = File::Temp->newdir();
 my $test_file_path = catfile( $test_dir, q{test.sh} );
 
-open my $FILEHANDLE, q{>}, $test_file_path
+open my $filehandle, q{>}, $test_file_path
   or croak q{Cannot write to} . $SPACE . $test_file_path . $COLON . $SPACE . $OS_ERROR;
 
 ## Given path that exists and one that does not
@@ -72,12 +72,12 @@ my @paths = ( $test_file_path, catfile( cwd(), q{does_not_exist.test} ) );
 
 my $is_ok = check_mip_process_files(
     {
-        FILEHANDLE => $FILEHANDLE,
+        filehandle => $filehandle,
         paths_ref  => \@paths,
     }
 );
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then bash function should be written
 ok( $is_ok, q{Wrote bash test} );

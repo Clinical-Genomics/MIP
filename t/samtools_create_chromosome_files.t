@@ -63,19 +63,19 @@ diag(   q{Test samtools_create_chromosome_files from Samtools.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 # Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given request to index
 samtools_create_chromosome_files(
     {
-        FILEHANDLE         => $FILEHANDLE,
+        filehandle         => $filehandle,
         infile_path        => catfile(qw{ path test.fa}),
         max_process_number => 1,
         regions_ref        => [qw{ X Y }],
@@ -85,7 +85,7 @@ samtools_create_chromosome_files(
 );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then split and index each region
 my @faidx_regexps = (

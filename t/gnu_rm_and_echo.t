@@ -62,7 +62,7 @@ diag(   q{Test gnu_rm_and_echo from Coreutils.pm v}
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a hash with files and new content
@@ -76,11 +76,11 @@ my %file        = (
 my $write_command = gnu_rm_and_echo(
     {
         file_href  => \%file,
-        FILEHANDLE => $FILEHANDLE,
+        filehandle => $filehandle,
         force      => 1,
     }
 );
-close $FILEHANDLE;
+close $filehandle;
 
 ok( $write_command, q{Write rm and echo} );
 

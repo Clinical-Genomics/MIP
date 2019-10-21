@@ -67,7 +67,7 @@ diag(   q{Test python_core from Python.pm v}
 my @function_base_commands = qw{ python };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

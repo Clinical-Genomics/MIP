@@ -223,7 +223,7 @@ sub analysis_bootstrapann {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -231,7 +231,7 @@ sub analysis_bootstrapann {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -246,18 +246,18 @@ sub analysis_bootstrapann {
     ### SHELL
 
     ## BootstrapAnn
-    say {$FILEHANDLE} q{## BootstrapAnn};
+    say {$filehandle} q{## BootstrapAnn};
     bootstrapann(
         {
             ase_file_path   => $ase_infile_path,
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             stdoutfile_path => $outfile_path,
             vcf_infile_path => $variant_infile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

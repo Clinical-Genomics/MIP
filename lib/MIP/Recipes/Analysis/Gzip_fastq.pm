@@ -204,7 +204,7 @@ sub analysis_gzip_fastq {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -234,7 +234,7 @@ sub analysis_gzip_fastq {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -251,7 +251,7 @@ sub analysis_gzip_fastq {
     my $uncompressed_file_counter = 0;
 
     ## Gzip
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
   INFILE:
     while ( my ( $infile_index, $infile ) = each @infile_names ) {
@@ -264,23 +264,23 @@ sub analysis_gzip_fastq {
                 $process_batches_count * $active_parameter_href->{max_cores_per_node} )
             {
 
-                say {$FILEHANDLE} q{wait}, $NEWLINE;
+                say {$filehandle} q{wait}, $NEWLINE;
                 $process_batches_count = $process_batches_count + 1;
             }
 
-            ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+            ## Perl wrapper for writing gzip recipe to $filehandle
             gzip(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     infile_path => $infile_paths[$infile_index],
                 }
             );
-            say {$FILEHANDLE} q{&};
+            say {$filehandle} q{&};
             $uncompressed_file_counter++;
         }
     }
-    print {$FILEHANDLE} $NEWLINE;
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    print {$filehandle} $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 

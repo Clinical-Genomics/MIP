@@ -206,7 +206,7 @@ sub analysis_trim_galore {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -232,7 +232,7 @@ sub analysis_trim_galore {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -246,7 +246,7 @@ sub analysis_trim_galore {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     # Keep track of paired end files
     my $paired_end_tracker = 0;
@@ -283,21 +283,21 @@ sub analysis_trim_galore {
         trim_galore(
             {
                 cores            => $recipe_resource{core_number},
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => \@infile_paths,
                 outdir_path      => $outsample_directory,
                 paired_reads     => $paired_reads,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
     }
-    say {$FILEHANDLE} q{wait};
+    say {$filehandle} q{wait};
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

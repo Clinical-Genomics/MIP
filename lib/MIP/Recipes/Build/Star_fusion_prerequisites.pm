@@ -184,9 +184,9 @@ sub build_star_fusion_prerequisites {
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -197,7 +197,7 @@ sub build_star_fusion_prerequisites {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $NUMBER_OF_CORES,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -211,7 +211,7 @@ sub build_star_fusion_prerequisites {
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -232,7 +232,7 @@ sub build_star_fusion_prerequisites {
               . q{ STAR-Fusion files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building Star-Fusion dir files};
+        say {$filehandle} q{## Building Star-Fusion dir files};
         ## Get parameters
         my $star_fusion_directory_tmp =
             $active_parameter_href->{star_fusion_reference_genome}
@@ -242,24 +242,24 @@ sub build_star_fusion_prerequisites {
         # Create temp dir
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $star_fusion_directory_tmp,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Build cDNA sequence file
         star_fusion_gtf_file_to_feature_seqs(
             {
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 gtf_path           => $active_parameter_href->{transcript_annotation},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
                 stdoutfile_path => catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Make blast database
         blast_makeblastdb(
@@ -267,17 +267,17 @@ sub build_star_fusion_prerequisites {
                 cdna_seq_file_path =>
                   catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
                 db_type    => q{nucl},
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Create blast pairs
         blast_blastn(
             {
                 evalue          => $EXPECT_VALUE,
                 database_name   => catfile( $star_fusion_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 lcase_masking   => 1,
                 max_target_seqs => $MAX_TARGET_SEQS,
                 output_format   => $TABULAR,
@@ -288,21 +288,21 @@ sub build_star_fusion_prerequisites {
                 word_size     => $WORD_SIZE,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Build genome lib
         star_fusion_prep_genome_lib(
             {
                 blast_pairs_file_path =>
                   catfile( $star_fusion_directory_tmp, q{blast_pairs.outfmt6} ),
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 gtf_path           => $active_parameter_href->{transcript_annotation},
                 output_dir_path    => catfile($star_fusion_directory_tmp),
                 referencefile_path => $human_genome_reference,
                 thread_number      => $NUMBER_OF_CORES,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ:
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
@@ -313,7 +313,7 @@ sub build_star_fusion_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $star_fusion_directory_tmp,
                 }
@@ -324,7 +324,7 @@ sub build_star_fusion_prerequisites {
         $parameter_href->{star_aln_reference_genome}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

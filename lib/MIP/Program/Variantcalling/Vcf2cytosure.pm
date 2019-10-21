@@ -36,7 +36,7 @@ sub vcf2cytosure_convert {
 ## Function : Perl wrapper for Vcf2cytosure 0.4.3.
 ## Returns  : @commands
 ## Arguments: $coverage_file          => Path to coverage file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $frequency              => Maximum frequency
 ##          : $frequency_tag          => Frequency tag of the info field
 ##          : $maxbnd                 => Maximum BND size
@@ -54,7 +54,7 @@ sub vcf2cytosure_convert {
 
     ## Flatten argument(s)
     my $coverage_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $maxbnd;
     my $outfile_path;
     my $sex;
@@ -77,8 +77,8 @@ sub vcf2cytosure_convert {
             store       => \$coverage_file,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         frequency => {
             default     => 0.01,
@@ -213,7 +213,7 @@ sub vcf2cytosure_convert {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

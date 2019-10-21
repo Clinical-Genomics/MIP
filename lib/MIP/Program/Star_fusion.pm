@@ -40,7 +40,7 @@ sub star_fusion {
 ##          : $examine_coding_effect  => Append coding effect to fusion
 ##          : $fastq_r1_path          => The path of the R1 fastq
 ##          : $fastq_r2_path          => The path of the R2 fastq
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $fusion_inspector       => Run FusionInspector in either inspect or validate mode
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
 ##          : $output_directory_path  => output directory path
@@ -56,7 +56,7 @@ sub star_fusion {
     my $cpu;
     my $fastq_r1_path;
     my $fastq_r2_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $fusion_inspector;
     my $genome_lib_dir_path;
     my $output_directory_path;
@@ -88,8 +88,8 @@ sub star_fusion {
             store       => \$fastq_r2_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         fusion_inspector => {
             allow       => [ undef, qw{ inspect validate } ],
@@ -180,7 +180,7 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -190,9 +190,9 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
 
 sub star_fusion_gtf_file_to_feature_seqs {
 
-## Function : Perl wrapper for writing gtf_file_to_feature_seqs.pl (part of CTAT Genome Lib which is bundled with STAR-Fusion) command to $FILEHANDLE or return commands array. Based on STAR-Fusion v1.8.0
+## Function : Perl wrapper for writing gtf_file_to_feature_seqs.pl (part of CTAT Genome Lib which is bundled with STAR-Fusion) command to $filehandle or return commands array. Based on STAR-Fusion v1.8.0
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $gtf_path               => Input gtf path
 ##          : $referencefile_path     => Reference sequence file
 ##          : $seq_type               => Sequence type
@@ -203,7 +203,7 @@ sub star_fusion_gtf_file_to_feature_seqs {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $gtf_path;
     my $referencefile_path;
     my $stderrfile_path;
@@ -214,8 +214,8 @@ sub star_fusion_gtf_file_to_feature_seqs {
     my $seq_type;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         gtf_path => {
             defined     => 1,
@@ -275,7 +275,7 @@ sub star_fusion_gtf_file_to_feature_seqs {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -285,10 +285,10 @@ sub star_fusion_gtf_file_to_feature_seqs {
 
 sub star_fusion_prep_genome_lib {
 
-## Function : Perl wrapper for writing prep_genome_lib.pl (part of CTAT Genome Lib which is bundled with STAR-Fusion) command to $FILEHANDLE or return commands array. Based on STAR-Fusion v1.8.0
+## Function : Perl wrapper for writing prep_genome_lib.pl (part of CTAT Genome Lib which is bundled with STAR-Fusion) command to $filehandle or return commands array. Based on STAR-Fusion v1.8.0
 ## Returns  : @commands
 ## Arguments: $blast_pairs_file_path  => Blast pair file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $gtf_path               => Input gtf path
 ##          : $output_dir_path        => Output directory path
 ##          : $referencefile_path     => Reference sequence file
@@ -301,7 +301,7 @@ sub star_fusion_prep_genome_lib {
 
     ## Flatten argument(s)
     my $blast_pairs_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $gtf_path;
     my $output_dir_path;
     my $referencefile_path;
@@ -319,8 +319,8 @@ sub star_fusion_prep_genome_lib {
             store       => \$blast_pairs_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         gtf_path => {
             defined     => 1,
@@ -390,7 +390,7 @@ sub star_fusion_prep_genome_lib {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

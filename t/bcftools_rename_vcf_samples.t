@@ -63,13 +63,13 @@ diag(   q{Test bcftools_rename_vcf_samples from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given
@@ -80,7 +80,7 @@ my $outfile_path_prefix = q{outfile};
 
 bcftools_rename_vcf_samples(
     {
-        FILEHANDLE          => $FILEHANDLE,
+        filehandle          => $filehandle,
         index               => 1,
         index_type          => q{csi},
         infile              => $infile_path,
@@ -92,7 +92,7 @@ bcftools_rename_vcf_samples(
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then samle name file instruction should be written in file
 my $create_sample_file = catfile( $test_dir, q{sample_name.txt} );

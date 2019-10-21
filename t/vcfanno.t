@@ -98,7 +98,7 @@ diag(   q{Test vcfanno from Vcfanno.pm v}
 my @function_base_commands = qw{ vcfanno };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

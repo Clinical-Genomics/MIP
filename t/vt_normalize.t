@@ -67,7 +67,7 @@ diag(   q{Test vt_normalize from Vt.pm v}
 my @function_base_commands = qw{ vt normalize };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

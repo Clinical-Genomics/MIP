@@ -36,10 +36,10 @@ Readonly my $SPACE   => q{ };
 
 sub chanjo_sex {
 
-## Function : Perl wrapper for writing chanjo sex recipe to $FILEHANDLE. Based on chanjo 4.0.0
+## Function : Perl wrapper for writing chanjo sex recipe to $filehandle. Based on chanjo 4.0.0
 ## Returns  : @commands
 ## Arguments: $chr_prefix                           => Chromosome prefix
-##          : $FILEHANDLE                           => Sbatch filehandle to write to
+##          : $filehandle                           => Sbatch filehandle to write to
 ##          : $infile_path                          => Infile path
 ##          : $log_file_path                        => Log file path
 ##          : $log_level                            => Level of logging
@@ -51,7 +51,7 @@ sub chanjo_sex {
 
     ## Flatten argument(s)
     my $chr_prefix;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $log_file_path;
     my $outfile_path;
@@ -67,7 +67,7 @@ sub chanjo_sex {
             strict_type => 1,
             store       => \$chr_prefix
         },
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
+        filehandle  => { required => 1, store => \$filehandle },
         infile_path => {
             required    => 1,
             defined     => 1,
@@ -128,7 +128,7 @@ sub chanjo_sex {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

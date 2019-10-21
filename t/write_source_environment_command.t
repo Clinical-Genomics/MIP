@@ -63,25 +63,25 @@ diag(   q{Test write_source_environment_command from Setup_script.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle and a environment command
 write_source_environment_command(
     {
-        FILEHANDLE                      => $FILEHANDLE,
+        filehandle                      => $filehandle,
         source_environment_commands_ref => [qw{ conda activate test }],
     }
 );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then env comment and env should be written to file
 my ($title) = $file_content =~ /^(## Activate environment)/ms;

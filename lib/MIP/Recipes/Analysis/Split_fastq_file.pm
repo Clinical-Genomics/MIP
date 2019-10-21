@@ -192,7 +192,7 @@ sub analysis_split_fastq_file {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE:
     while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
@@ -203,7 +203,7 @@ sub analysis_split_fastq_file {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $recipe_resource{core_number},
                 directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
                 memory_allocation               => $recipe_resource{memory},
@@ -215,7 +215,7 @@ sub analysis_split_fastq_file {
             }
         );
 
-        say {$FILEHANDLE} q{## } . $recipe_name;
+        say {$filehandle} q{## } . $recipe_name;
 
         my %fastq_file_info;
 
@@ -249,17 +249,17 @@ sub analysis_split_fastq_file {
         pigz(
             {
                 decompress  => 1,
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $infile_path,
                 processes   => $recipe_resource{core_number},
                 stdout      => 1,
             }
         );
-        print {$FILEHANDLE} $PIPE . $SPACE;    #Pipe
+        print {$filehandle} $PIPE . $SPACE;    #Pipe
 
         gnu_split(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => q{-},
                 lines       => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
                 numeric_suffixes => 1,
@@ -270,7 +270,7 @@ sub analysis_split_fastq_file {
                 suffix_length => $SUFFIX_LENGTH,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         my $splitted_suffix               = q{fastq};
         my $splitted_flowcell_name_prefix = catfile( $indir_path_prefix,
@@ -283,51 +283,51 @@ sub analysis_split_fastq_file {
         _list_all_splitted_files(
             {
                 fastq_file_info_href => \%fastq_file_info,
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_suffix        => $DOT . $splitted_suffix,
                 temp_directory       => $temp_directory,
             }
         );
 
-        say {$FILEHANDLE} $NEWLINE . q{## Compress file(s) again};
+        say {$filehandle} $NEWLINE . q{## Compress file(s) again};
         ## Compress file again
         pigz(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $splitted_flowcell_name_prefix
                   . q{*-SP*}
                   . $DOT
                   . $splitted_suffix,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Copies files from temporary folder to source
         gnu_cp(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $splitted_flowcell_name_prefix . q{*-SP*} . $infile_suffix,
                 outfile_path => $indir_path_prefix,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         gnu_mkdir(
             {
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 indirectory_path =>
                   catfile( $indir_path_prefix, q{original_fastq_files}, ),
                 parents => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Move original file to not be included in subsequent analysis
-        say {$FILEHANDLE}
+        say {$filehandle}
           q{## Move original file to not be included in subsequent analysis};
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => catfile(
                     $indir_path_prefix, q{original_fastq_files},
@@ -335,7 +335,7 @@ sub analysis_split_fastq_file {
                 ),
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
@@ -355,7 +355,7 @@ sub analysis_split_fastq_file {
             );
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
     return 1;
 }
 
@@ -364,7 +364,7 @@ sub _list_all_splitted_files {
 ## Function : List all splitted files
 ## Returns  :
 ## Arguments: $fastq_file_info_href => Fastq file info {REF}
-##          : $FILEHANDLE           => Filehandle to write to
+##          : $filehandle           => Filehandle to write to
 ##          : $infile_suffix        => Infile suffix
 ##          : $temp_directory       => Temprary directory
 
@@ -372,7 +372,7 @@ sub _list_all_splitted_files {
 
     ## Flatten argument(s)
     my $fastq_file_info_href;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_suffix;
     my $temp_directory;
 
@@ -384,7 +384,7 @@ sub _list_all_splitted_files {
             strict_type => 1,
             store       => \$fastq_file_info_href
         },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        filehandle    => { store => \$filehandle },
         infile_suffix => {
             required    => 1,
             defined     => 1,
@@ -408,27 +408,27 @@ sub _list_all_splitted_files {
       quote_bash_variable( { string_with_variable_to_quote => $temp_directory, } );
 
     ## Find all splitted files
-    say {$FILEHANDLE} q{splitted_files=(}
+    say {$filehandle} q{splitted_files=(}
       . catfile( $temp_directory_quoted, q{*_splitted_*} )
       . q{)}, $NEWLINE;
 
     ## Iterate through array using a counter
-    say {$FILEHANDLE}
+    say {$filehandle}
       q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
 
     ## Rename each element of array to include splitted suffix in flowcell id
-    print {$FILEHANDLE} $TAB . q?mv "${splitted_files[$file_counter]}" ?;
-    print {$FILEHANDLE} catfile( $temp_directory_quoted, $EMPTY_STR );
-    print {$FILEHANDLE} $fastq_file_info_href->{lane} . $UNDERSCORE;
-    print {$FILEHANDLE} $fastq_file_info_href->{date} . $UNDERSCORE;
-    print {$FILEHANDLE} $fastq_file_info_href->{flowcell} . q?-SP"$file_counter"?;
-    print {$FILEHANDLE} $UNDERSCORE . $fastq_file_info_href->{sample_id} . $UNDERSCORE;
-    print {$FILEHANDLE} $fastq_file_info_href->{index} . $UNDERSCORE;
-    print {$FILEHANDLE} $fastq_file_info_href->{direction} . $infile_suffix;
-    say   {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $TAB . q?mv "${splitted_files[$file_counter]}" ?;
+    print {$filehandle} catfile( $temp_directory_quoted, $EMPTY_STR );
+    print {$filehandle} $fastq_file_info_href->{lane} . $UNDERSCORE;
+    print {$filehandle} $fastq_file_info_href->{date} . $UNDERSCORE;
+    print {$filehandle} $fastq_file_info_href->{flowcell} . q?-SP"$file_counter"?;
+    print {$filehandle} $UNDERSCORE . $fastq_file_info_href->{sample_id} . $UNDERSCORE;
+    print {$filehandle} $fastq_file_info_href->{index} . $UNDERSCORE;
+    print {$filehandle} $fastq_file_info_href->{direction} . $infile_suffix;
+    say   {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} $TAB . q?echo "${splitted_files[$file_counter]}" ?;
-    say {$FILEHANDLE} q{done};
+    say {$filehandle} $TAB . q?echo "${splitted_files[$file_counter]}" ?;
+    say {$filehandle} q{done};
     return;
 }
 1;

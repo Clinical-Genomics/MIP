@@ -41,7 +41,7 @@ sub install_root {
 ## Returns  :
 ## Arguments: $conda_environment => Conda environment
 ##          : $conda_prefix_path => Conda prefix path
-##          : $FILEHANDLE        => Filehandle to write to
+##          : $filehandle        => Filehandle to write to
 ##          : $quiet             => Be quiet
 ##          : $root_binary       => Name of ROOT binary
 ##          : $verbose           => Set verbosity
@@ -51,7 +51,7 @@ sub install_root {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $quiet;
     my $root_binary;
     my $verbose;
@@ -67,10 +67,10 @@ sub install_root {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
@@ -94,23 +94,23 @@ sub install_root {
     my $pwd = cwd();
 
     ### ROOT installation (prerequisite for CNVnator)
-    say {$FILEHANDLE} q{### Install ROOT};
+    say {$filehandle} q{### Install ROOT};
 
     ## Move to miniconda environment
     gnu_cd(
         {
             directory_path => $conda_prefix_path,
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Download ROOT
-    say {$FILEHANDLE} q{## Download ROOT};
+    say {$filehandle} q{## Download ROOT};
     my $root_url = q{https://root.cern.ch/download/} . $root_binary;
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $root_binary,
             quiet        => $quiet,
             url          => $root_url,
@@ -118,43 +118,43 @@ sub install_root {
         }
     );
 
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Extract
-    say {$FILEHANDLE} q{## Extract};
+    say {$filehandle} q{## Extract};
     tar(
         {
             extract    => 1,
             file_path  => $root_binary,
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Use newly installed root during installation
-    say {$FILEHANDLE} q{source}
+    say {$filehandle} q{source}
       . $SPACE
       . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
       . $NEWLINE;
 
     ## Remove ROOT archive
-    say {$FILEHANDLE} q{## Removing ROOT archive};
+    say {$filehandle} q{## Removing ROOT archive};
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $root_binary,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Moving back to original working directory};
+    say {$filehandle} q{## Moving back to original working directory};
     gnu_cd(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             directory_path => $pwd,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 

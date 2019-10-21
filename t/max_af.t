@@ -66,7 +66,7 @@ diag(   q{Test max_af from Allele_frequency.pm v}
 my @function_base_commands = qw{ max_af };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

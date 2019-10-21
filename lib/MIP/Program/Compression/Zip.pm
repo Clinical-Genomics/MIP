@@ -33,12 +33,12 @@ BEGIN {
 
 sub unzip {
 
-## Function : Perl wrapper for writing unzip recipe to $FILEHANDLE or return commands array. Based on unzip v6.0
+## Function : Perl wrapper for writing unzip recipe to $filehandle or return commands array. Based on unzip v6.0
 ## Returns  : @commands
 ##          : $infile_path            => Infile path
 ##          : $outdir_path            => Path to output directory
 ##          : $stdout                 => Write on standard output
-##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
+##          : $filehandle             => Filehandle to write to (scalar undefined)
 ##          : $stderrfile_path        => Stderrfile path (scalar )
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $quiet                  => Suppress all warnings
@@ -51,7 +51,7 @@ sub unzip {
     my $infile_path;
     my $outdir_path;
     my $stdout;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
@@ -75,8 +75,8 @@ sub unzip {
             store       => \$stdout,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -152,7 +152,7 @@ sub unzip {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

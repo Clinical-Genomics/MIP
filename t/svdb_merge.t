@@ -66,7 +66,7 @@ diag(   q{Test svdb_merge from Svdb.pm v}
 my @function_base_commands = qw{ svdb --merge };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

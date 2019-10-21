@@ -214,7 +214,7 @@ sub analysis_bwa_mem {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Assign file tags
     my $outfile_tag =
@@ -265,7 +265,7 @@ sub analysis_bwa_mem {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $recipe_resource{core_number},
                 directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
                 log                             => $log,
@@ -285,7 +285,7 @@ sub analysis_bwa_mem {
         ### SHELL:
 
         ### BWA MEM
-        say {$FILEHANDLE} q{## Aligning reads with }
+        say {$filehandle} q{## Aligning reads with }
           . $recipe_name
           . q{ and sorting via Sambamba};
 
@@ -329,7 +329,7 @@ sub analysis_bwa_mem {
         # Prior to ALTs in reference genome
         bwa_mem(
             {
-                FILEHANDLE              => $FILEHANDLE,
+                filehandle              => $filehandle,
                 idxbase                 => $referencefile_path,
                 infile_path             => $fastq_file_path,
                 interleaved_fastq_file  => $is_interleaved_fastq,
@@ -342,19 +342,19 @@ sub analysis_bwa_mem {
         );
 
         # Pipe SAM to BAM conversion of aligned reads
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         samtools_view(
             {
                 auto_detect_input_format => 1,
-                FILEHANDLE               => $FILEHANDLE,
+                filehandle               => $filehandle,
                 infile_path              => q{-},
                 thread_number            => $recipe_resource{core_number},
                 uncompressed_bam_output  => $uncompressed_bam_output,
                 with_header              => 1,
             }
         );
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Set sambamba sort input; Pipe from samtools view
         $sambamba_sort_infile =
@@ -366,7 +366,7 @@ sub analysis_bwa_mem {
         ## Sort the output from bwa mem|run-bwamem
         sambamba_sort(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 infile_path   => $sambamba_sort_infile,
                 memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
                 outfile_path  => $outfile_path,
@@ -374,38 +374,38 @@ sub analysis_bwa_mem {
                 temp_directory => $temp_directory,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
             samtools_stats(
                 {
                     auto_detect_input_format => 1,
-                    FILEHANDLE               => $FILEHANDLE,
+                    filehandle               => $filehandle,
                     infile_path              => $outfile_path,
                     remove_overlap           => 1,
                 }
             );
-            print {$FILEHANDLE} $PIPE . $SPACE;
+            print {$filehandle} $PIPE . $SPACE;
 
             ## Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout
             _add_percentage_mapped_reads_from_samtools(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
+                    filehandle   => $filehandle,
                     outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
         if (    $active_parameter_href->{bwa_mem_cram}
             and $outfile_suffix ne q{.cram} )
         {
 
-            say {$FILEHANDLE} q{## Create CRAM file from SAM|BAM};
+            say {$filehandle} q{## Create CRAM file from SAM|BAM};
             samtools_view(
                 {
-                    FILEHANDLE         => $FILEHANDLE,
+                    filehandle         => $filehandle,
                     infile_path        => $outfile_path,
                     outfile_path       => $outfile_path_prefix . $DOT . q{cram},
                     output_format      => q{cram},
@@ -413,10 +413,10 @@ sub analysis_bwa_mem {
                     with_header        => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
-        close $FILEHANDLE;
+        close $filehandle;
 
         if ( $recipe_mode == 1 ) {
 
@@ -676,7 +676,7 @@ sub analysis_run_bwa_mem {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Assign file tags
     my $outfile_tag =
@@ -718,7 +718,7 @@ sub analysis_run_bwa_mem {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $recipe_resource{core_number},
                 directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
                 log                             => $log,
@@ -738,7 +738,7 @@ sub analysis_run_bwa_mem {
         ### SHELL:
 
         ### BWA MEM
-        say {$FILEHANDLE} q{## Aligning reads with }
+        say {$filehandle} q{## Aligning reads with }
           . $recipe_name
           . q{ and sorting via Sambamba};
 
@@ -782,7 +782,7 @@ sub analysis_run_bwa_mem {
         # If post to ALTs in reference genome
         run_bwamem(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 hla_typing           => $active_parameter_href->{bwa_mem_hla},
                 infile_path          => $fastq_file_path,
                 idxbase              => $referencefile_path,
@@ -792,9 +792,9 @@ sub analysis_run_bwa_mem {
                 thread_number        => $recipe_resource{core_number},
             }
         );
-        print {$FILEHANDLE} $PIPE . $SPACE;
-        print {$FILEHANDLE} q{sh} . $SPACE;
-        say   {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $PIPE . $SPACE;
+        print {$filehandle} q{sh} . $SPACE;
+        say   {$filehandle} $NEWLINE;
 
         ## Set sambamba sort input; Sort directly from run-bwakit
         $sambamba_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
@@ -805,7 +805,7 @@ sub analysis_run_bwa_mem {
         ## Sort the output from bwa mem|run-bwamem
         sambamba_sort(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 infile_path   => $sambamba_sort_infile,
                 memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
                 outfile_path  => $outfile_path,
@@ -813,38 +813,38 @@ sub analysis_run_bwa_mem {
                 temp_directory => $temp_directory,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
             samtools_stats(
                 {
                     auto_detect_input_format => 1,
-                    FILEHANDLE               => $FILEHANDLE,
+                    filehandle               => $filehandle,
                     infile_path              => $outfile_path,
                     remove_overlap           => 1,
                 }
             );
-            print {$FILEHANDLE} $PIPE . $SPACE;
+            print {$filehandle} $PIPE . $SPACE;
 
             ## Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout
             _add_percentage_mapped_reads_from_samtools(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
+                    filehandle   => $filehandle,
                     outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
         if (    $active_parameter_href->{bwa_mem_cram}
             and $outfile_suffix ne q{.cram} )
         {
 
-            say {$FILEHANDLE} q{## Create CRAM file from SAM|BAM};
+            say {$filehandle} q{## Create CRAM file from SAM|BAM};
             samtools_view(
                 {
-                    FILEHANDLE         => $FILEHANDLE,
+                    filehandle         => $filehandle,
                     infile_path        => $outfile_path,
                     outfile_path       => $outfile_path_prefix . $DOT . q{cram},
                     output_format      => q{cram},
@@ -852,10 +852,10 @@ sub analysis_run_bwa_mem {
                     with_header        => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
-        close $FILEHANDLE;
+        close $filehandle;
 
         if ( $recipe_mode == 1 ) {
 
@@ -937,17 +937,17 @@ sub _add_percentage_mapped_reads_from_samtools {
 
 ## Function : Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout.
 ## Returns  :
-## Arguments: $FILEHANDLE   => Filehandle to write to
+## Arguments: $filehandle   => Filehandle to write to
 ##          : $outfile_path => Outfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle   => { defined => 1, required => 1, store => \$filehandle, },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -960,44 +960,44 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     ## Add percentage mapped reads to samtools stats output
     # Execute perl
-    print {$FILEHANDLE} q?perl -ne '?;
+    print {$filehandle} q?perl -ne '?;
 
     # Initiate variables
-    print {$FILEHANDLE} q?$raw; $map; ?;
+    print {$filehandle} q?$raw; $map; ?;
 
     # Remove newline
-    print {$FILEHANDLE} q?chomp $_; ?;
+    print {$filehandle} q?chomp $_; ?;
 
     # Always relay incoming line to stdout
-    print {$FILEHANDLE} q?print $_, qq{\n}; ?;
+    print {$filehandle} q?print $_, qq{\n}; ?;
 
     # Find raw total sequences
-    print {$FILEHANDLE} q?if ($_=~/raw total sequences:\s+(\d+)/) { ?;
+    print {$filehandle} q?if ($_=~/raw total sequences:\s+(\d+)/) { ?;
 
     # Assign raw total sequence
-    print {$FILEHANDLE} q?$raw = $1; ?;
+    print {$filehandle} q?$raw = $1; ?;
 
     # End if
-    print {$FILEHANDLE} q?} ?;
+    print {$filehandle} q?} ?;
 
     # Find reads mapped
-    print {$FILEHANDLE} q?elsif ($_=~/reads mapped:\s+(\d+)/) { ?;
+    print {$filehandle} q?elsif ($_=~/reads mapped:\s+(\d+)/) { ?;
 
     # Assign reads mapped
-    print {$FILEHANDLE} q?$map = $1; ?;
+    print {$filehandle} q?$map = $1; ?;
 
     # Calculate percentage
-    print {$FILEHANDLE} q?my $percentage = ($map / $raw ) * 100; ?;
+    print {$filehandle} q?my $percentage = ($map / $raw ) * 100; ?;
 
     # Write calculation to stdout
-    print {$FILEHANDLE} q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
+    print {$filehandle} q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
 
     # End elsif
-    print {$FILEHANDLE} q?} ?;
+    print {$filehandle} q?} ?;
 
     # End oneliner
-    print {$FILEHANDLE} q?' ?;
-    say   {$FILEHANDLE} q{>} . $SPACE . $outfile_path;
+    print {$filehandle} q?' ?;
+    say   {$filehandle} q{>} . $SPACE . $outfile_path;
 
     return;
 }

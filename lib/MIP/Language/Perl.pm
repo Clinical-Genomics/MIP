@@ -95,7 +95,7 @@ sub perl_nae_oneliners {
 ## Returns  : @commands
 ## Arguments: $autosplit              => Turns on autosplit mode when used with a -n or -p
 ##          : $command_line           => Enter one line of program
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $n                      => Iterate over filename arguments
 ##          : $oneliner_cmd           => Command to execute
 ##          : $oneliner_name          => Perl oneliner name
@@ -107,7 +107,7 @@ sub perl_nae_oneliners {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $oneliner_cmd;
     my $oneliner_name;
     my $stderrfile_path;
@@ -133,8 +133,8 @@ sub perl_nae_oneliners {
             store       => \$command_line,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         n => {
             allow       => [ undef, 0, 1 ],
@@ -207,7 +207,7 @@ sub perl_nae_oneliners {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

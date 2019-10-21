@@ -62,7 +62,7 @@ diag(   q{Test write_line_elements from Vcfparser.pm v}
 my $range_file_content;
 
 ## Store range feature file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$range_file_content
+open my $filehandle, q{>}, \$range_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $range_file_content
@@ -74,7 +74,7 @@ open my $FILEHANDLE, q{>}, \$range_file_content
 my $select_file_content;
 
 ## Store select file content in memory by using referenced variable
-open my $SELECT_FH, q{>}, \$select_file_content
+open my $select_fh, q{>}, \$select_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $select_file_content
@@ -96,20 +96,20 @@ my %vcf_record      = (
 
 write_line_elements(
     {
-        FILEHANDLE        => $FILEHANDLE,
+        filehandle        => $filehandle,
         first_separator   => $first_separator,
         last_index        => $last_index,
         last_separator    => $last_separator,
         line_elements_ref => \@line_elements,
-        SELECT_FH         => $SELECT_FH,
+        select_fh         => $select_fh,
         start_index       => 0,
         vcf_record_href   => \%vcf_record,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
+close $filehandle;
+close $select_fh;
 
 my $expected_line = q{\s+ 1 \s+ 2 \s+ } . $DOT . $NEWLINE;
 

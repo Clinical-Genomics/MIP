@@ -213,8 +213,8 @@ sub analysis_cadd {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -239,7 +239,7 @@ sub analysis_cadd {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -252,19 +252,19 @@ sub analysis_cadd {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## View indels and calculate CADD
-    say {$FILEHANDLE} q{## CADD};
+    say {$filehandle} q{## CADD};
 
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number      => $core_number,
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
-            XARGSFILEHANDLE  => $XARGSFILEHANDLE,
+            xargsfilehandle  => $xargsfilehandle,
         }
     );
 
@@ -281,7 +281,7 @@ sub analysis_cadd {
 
         bcftools_view(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 infile_path     => $infile_path{$contig},
                 types           => q{indels},
                 outfile_path    => $view_outfile_path,
@@ -289,11 +289,11 @@ sub analysis_cadd {
                 stderrfile_path => $stderrfile_path,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cadd(
             {
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 genome_build           => $assembly_version,
                 infile_path            => $view_outfile_path,
                 outfile_path           => $cadd_outfile_path,
@@ -302,21 +302,21 @@ sub analysis_cadd {
                 version                => $cadd_version,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ### Annotate
     ## Tabix cadd outfile and annotate original vcf file with indel CADD score
-    say {$FILEHANDLE} q{## Tabix and bcftools annotate};
+    say {$filehandle} q{## Tabix and bcftools annotate};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -337,20 +337,20 @@ sub analysis_cadd {
             {
                 begin           => $REGION_START,
                 end             => $REGION_END,
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 force           => 1,
                 infile_path     => $tabix_infile_path,
                 sequence        => $SEQUENCE_NAME,
                 stderrfile_path => $stderrfile_path,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         bcftools_annotate(
             {
                 annotations_file_path  => $tabix_infile_path,
                 columns_name           => $cadd_columns_name,
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
@@ -358,13 +358,13 @@ sub analysis_cadd {
                 stderrfile_path_append => $stderrfile_path,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -570,8 +570,8 @@ sub analysis_cadd_gb_38 {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -596,7 +596,7 @@ sub analysis_cadd_gb_38 {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -609,19 +609,19 @@ sub analysis_cadd_gb_38 {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## View indels and calculate CADD
-    say {$FILEHANDLE} q{## CADD};
+    say {$filehandle} q{## CADD};
 
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number      => $core_number,
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
-            XARGSFILEHANDLE  => $XARGSFILEHANDLE,
+            xargsfilehandle  => $xargsfilehandle,
         }
     );
 
@@ -638,7 +638,7 @@ sub analysis_cadd_gb_38 {
 
         bcftools_view(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 infile_path     => $infile_path{$contig},
                 types           => q{indels},
                 outfile_path    => $view_outfile_path,
@@ -646,7 +646,7 @@ sub analysis_cadd_gb_38 {
                 stderrfile_path => $stderrfile_path,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         ### Need to create synonym contigs for CADD.sh with grch38
         my $synonyms_outfile_path =
@@ -661,17 +661,17 @@ sub analysis_cadd_gb_38 {
         ## Perl
         perl_nae_oneliners(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 oneliner_name   => q{synonyms_grch38_to_grch37},
                 stdinfile_path  => $view_outfile_path,
                 stdoutfile_path => $synonyms_outfile_path,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cadd(
             {
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 genome_build           => $assembly_version,
                 infile_path            => $synonyms_outfile_path,
                 outfile_path           => $cadd_outfile_path,
@@ -680,21 +680,21 @@ sub analysis_cadd_gb_38 {
                 version                => $cadd_version,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ### Annotate
     ## Tabix cadd outfile and annotate original vcf file with indel CADD score
-    say {$FILEHANDLE} q{## Tabix and bcftools annotate};
+    say {$filehandle} q{## Tabix and bcftools annotate};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -713,13 +713,13 @@ sub analysis_cadd_gb_38 {
         htslib_bgzip(
             {
                 decompress      => 1,
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 force           => 1,
                 infile_path     => $tabix_infile_path,
                 write_to_stdout => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         my $perl_outfile_path =
             $outfile_path_prefix
@@ -732,44 +732,44 @@ sub analysis_cadd_gb_38 {
         ## Perl
         perl_nae_oneliners(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 oneliner_name   => q{synonyms_grch37_to_grch38},
                 stdoutfile_path => $perl_outfile_path,
             }
         );
 
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         htslib_bgzip(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 force           => 1,
                 infile_path     => $perl_outfile_path,
                 stdoutfile_path => $tabix_infile_path,
                 write_to_stdout => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         ## Create tabix index
         htslib_tabix(
             {
                 begin           => $REGION_START,
                 end             => $REGION_END,
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 force           => 1,
                 infile_path     => $tabix_infile_path,
                 sequence        => $SEQUENCE_NAME,
                 stderrfile_path => $stderrfile_path,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         bcftools_annotate(
             {
                 annotations_file_path  => $tabix_infile_path,
                 columns_name           => $cadd_columns_name,
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
@@ -777,13 +777,13 @@ sub analysis_cadd_gb_38 {
                 stderrfile_path_append => $stderrfile_path,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 

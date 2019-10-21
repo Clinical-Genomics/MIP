@@ -32,10 +32,10 @@ BEGIN {
 
 sub peddy {
 
-## Function : Perl wrapper for writing peddy recipe to already open $FILEHANDLE or return commands array. Based on peddy 0.2.9.
+## Function : Perl wrapper for writing peddy recipe to already open $filehandle or return commands array. Based on peddy 0.2.9.
 ## Returns  : @commands
 ## Arguments: $case_file_path         => Family file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_prefix_path    => Outfile path
 ##          : $plot                   => Generate plots
@@ -49,7 +49,7 @@ sub peddy {
 
     ## Flatten argument(s)
     my $case_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_prefix_path;
     my $genome_site;
@@ -68,8 +68,8 @@ sub peddy {
             store       => \$case_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         genome_site => {
             store       => \$genome_site,
@@ -163,7 +163,7 @@ sub peddy {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

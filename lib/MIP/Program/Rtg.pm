@@ -35,17 +35,17 @@ sub rtg_base {
 
 ## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE   => Filehandle to write to
+## Arguments: $filehandle   => Filehandle to write to
 ##          : $memory       => Amount of JVM memory allocation (G)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $memory;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         memory     => {
             allow       => qr{ \A\d+G\z }sxm,
             default     => q{16G},
@@ -64,7 +64,7 @@ sub rtg_base {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -75,7 +75,7 @@ sub rtg_format {
 
 ## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $input_format           => Format of input
 ##          : $reference_genome_path  => Human reference genome file path
 ##          : $sdf_output_directory   => Directory name of output SDF
@@ -86,7 +86,7 @@ sub rtg_format {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $reference_genome_path;
     my $sdf_output_directory;
     my $stderrfile_path;
@@ -103,8 +103,8 @@ sub rtg_format {
             store       => \$input_format,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         reference_genome_path => {
             defined     => 1,
@@ -155,7 +155,7 @@ sub rtg_format {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -172,7 +172,7 @@ sub rtg_vcfeval {
 ##          : $baselinefile_path      => VCF file containing baseline variants
 ##          : $callfile_path          => VCF file containing called variants
 ##          : $eval_region_file_path  => Evaluate within regions contained in the supplied BED file, allowing transborder matches
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $outputdirectory_path   => Directory for output
 ##          : $output_mode            => Output reporting mode
 ##          : $sample_id              => Sample ID
@@ -189,7 +189,7 @@ sub rtg_vcfeval {
     my $bed_regionsfile_path;
     my $callfile_path;
     my $eval_region_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outputdirectory_path;
     my $sample_id;
     my $sdf_template_file_path;
@@ -231,8 +231,8 @@ sub rtg_vcfeval {
             store       => \$eval_region_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         outputdirectory_path => {
             defined     => 1,
@@ -322,7 +322,7 @@ sub rtg_vcfeval {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -334,7 +334,7 @@ sub rtg_vcfsubset {
 
 ## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $keep_info_keys_ref     => Keep INFO key value pairs
 ##          : $outfile_path           => Directory name of output SDF
@@ -345,7 +345,7 @@ sub rtg_vcfsubset {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $keep_info_keys_ref;
     my $outfile_path;
@@ -356,8 +356,8 @@ sub rtg_vcfsubset {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -418,7 +418,7 @@ sub rtg_vcfsubset {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
