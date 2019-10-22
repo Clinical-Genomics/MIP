@@ -47,7 +47,7 @@ sub mip_vcfparser {
 ##          : $select_feature_file                   => Select feature file
 ##          : $select_feature_matching_column        => Select feature matching column
 ##          : $select_outfile_path                   => Select file path
-##          : $VCF_IN_FH                             => VCF in filehandle
+##          : $vcf_in_fh                             => VCF in filehandle
 ##          : $write_software_tag                    => Write software tag to vcf header switch
 
     my ($arg_href) = @_;
@@ -65,7 +65,7 @@ sub mip_vcfparser {
     my $padding;
     my $parse_vep;
     my $select_feature_file;
-    my $VCF_IN_FH;
+    my $vcf_in_fh;
     my $write_software_tag;
 
     my $tmpl = {
@@ -116,7 +116,7 @@ sub mip_vcfparser {
             strict_type => 1,
         },
         select_outfile_path => { store => \$select_outfile_path, strict_type => 1, },
-        VCF_IN_FH          => { defined => 1, required => 1, store => \$VCF_IN_FH, },
+        vcf_in_fh          => { defined => 1, required => 1, store => \$vcf_in_fh, },
         write_software_tag => {
             allow       => [ 0, 1 ],
             default     => 1,
@@ -197,7 +197,7 @@ q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli sc
             select_outfile_path => $select_outfile_path,
             tree_href           => \%tree,
             vcfparser_version   => $MIP::Main::Vcfparser::VERSION,
-            VCF_IN_FH           => $VCF_IN_FH,
+            vcf_in_fh           => $vcf_in_fh,
             write_software_tag  => $write_software_tag,
         }
     );
@@ -227,7 +227,7 @@ sub read_infile_vcf {
 ##          : $tree_href                             => Interval tree hash {REF}
 ##          : $vcfparser_version                     => Vcfparser version
 ##          : $write_software_tag                    => Write software tag to vcf header switch
-##          : $VCF_IN_FH                             => The filehandle to read from to
+##          : $vcf_in_fh                             => The filehandle to read from to
 
     my ($arg_href) = @_;
 
@@ -243,7 +243,7 @@ sub read_infile_vcf {
     my $select_outfile_path;
     my $tree_href;
     my $vcfparser_version;
-    my $VCF_IN_FH;
+    my $vcf_in_fh;
 
     ## Default(s)
     my $select_feature_file;
@@ -331,7 +331,7 @@ sub read_infile_vcf {
             store       => \$vcfparser_version,
             strict_type => 1,
         },
-        VCF_IN_FH          => { defined => 1, required => 1, store => \$VCF_IN_FH, },
+        vcf_in_fh          => { defined => 1, required => 1, store => \$vcf_in_fh, },
         write_software_tag => {
             allow       => [ 0, 1 ],
             default     => 1,
@@ -380,7 +380,7 @@ sub read_infile_vcf {
     );
 
   LINE:
-    while (<$VCF_IN_FH>) {
+    while (<$vcf_in_fh>) {
 
         chomp;
 

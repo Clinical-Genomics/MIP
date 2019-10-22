@@ -70,7 +70,7 @@ sub run {
     my $infile = $arg_href->{infile};
 
     ## Enables vcfparser to read infile from either STDIN or file
-    my $VCF_IN_FH = _get_vcf_in_filehandle( { infile => $infile, } );
+    my $vcf_in_fh = _get_vcf_in_filehandle( { infile => $infile, } );
 
     ## Creates log object
     my $log = initiate_logger(
@@ -93,7 +93,7 @@ sub run {
 
     mip_vcfparser(
         {
-            VCF_IN_FH                            => $VCF_IN_FH,
+            vcf_in_fh                            => $vcf_in_fh,
             padding                              => $padding,
             parse_vep                            => $parse_vep,
             per_gene                             => $per_gene,
@@ -279,7 +279,7 @@ sub _get_cli_array_option {
 sub _get_vcf_in_filehandle {
 
 ## Function : Returns filehandle for infile
-## Returns  : $VCF_IN_FH or *STDIN
+## Returns  : $vcf_in_fh or *STDIN
 ## Arguments: $infile => Infile
 
     my ($arg_href) = @_;
@@ -300,9 +300,9 @@ sub _get_vcf_in_filehandle {
 
     return *STDIN if ( $infile eq $DASH );
 
-    open my $VCF_IN_FH, q{<}, $infile
+    open my $vcf_in_fh, q{<}, $infile
       or croak( q{Cannot open } . $infile . $COLON . $OS_ERROR, $NEWLINE );
-    return $VCF_IN_FH;
+    return $vcf_in_fh;
 }
 
 1;
