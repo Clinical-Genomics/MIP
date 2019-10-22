@@ -144,8 +144,7 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Check::Pipeline qw{ check_dragen_rd_dna };
     use MIP::Constants qw{ set_analysis_constants };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
-    use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_rankvariants_ar };
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -265,15 +264,6 @@ sub pipeline_analyse_dragen_rd_dna {
         {
             analysis_recipe_href    => \%analysis_recipe,
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-        }
-    );
-
-    ## Set recipe depending on pedigree
-    set_recipe_on_pedigree(
-        {
-            analysis_recipe_href => \%analysis_recipe,
-            parameter_href       => $parameter_href,
-            sample_info_href     => $sample_info_href,
         }
     );
 
