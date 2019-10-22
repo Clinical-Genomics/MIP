@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $FORWARD_SLASH $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -100,7 +100,7 @@ my $expected = [
     q{extra_dir},
     catdir( $active_parameter{reference_dir}, qw{ CADD-scripts data annotations } )
       . $COLON
-      . catdir(qw{ $FORWARD_SLASH opt CADD-scripts data annotations })
+      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } )
 ];
 ok( $is_ok, q{Execute with extra bind path} );
 is_deeply(

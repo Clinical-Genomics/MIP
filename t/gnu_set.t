@@ -1,89 +1,65 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{ 2018 };
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.026;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use FindBin qw{ $Bin };
+use List::Util qw{ any };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
-## Third party module(s)
-use List::Util qw(any);
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
-use MIP::Test::Writefile qw(test_write_to_file);
-
-our $USAGE = build_usage( {} );
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Test::Commands qw{ test_function };
+use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Writefile qw{ test_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Gnu::Bash}      => [qw{ gnu_set }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
-
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
-    }
-
-##Modules
-    my @modules = ('MIP::Gnu::Bash');
-
-    for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Bash qw(gnu_set);
+use MIP::Gnu::Bash qw{ gnu_set };
 
-my $NEWLINE = q{\n};
-
-diag("Test gnu_set $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(   q{Test gnu_set from Bash.pm v}
+      . $MIP::Gnu::Bash::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $batch_shebang = q{#!};
@@ -102,23 +78,28 @@ my $bash_bin_path =
 my %argument = (
     set_errexit => {
         input           => 1,
-        expected_output => 'set -e',
+        expected_output => q{set -e},
     },
     set_nounset => {
         input           => 1,
-        expected_output => 'set -u',
+        expected_output => q{set -u},
     },
     set_pipefail => {
         input           => 1,
-        expected_output => 'set -o pipefail',
+        expected_output => q{set -o pipefail},
+    },
+    unset_errexit => {
+        input           => 1,
+        expected_output => q{set +e},
     },
 );
 
 my @commands = gnu_set(
     {
-        set_errexit  => $argument{set_errexit}{input},
-        set_nounset  => $argument{set_nounset}{input},
-        set_pipefail => $argument{set_pipefail}{input},
+        set_errexit   => $argument{set_errexit}{input},
+        set_nounset   => $argument{set_nounset}{input},
+        set_pipefail  => $argument{set_pipefail}{input},
+        unset_errexit => $argument{unset_errexit}{input},
     }
 );
 
@@ -133,6 +114,9 @@ foreach my $key ( keys %argument ) {
 
 ## Testing write to file
 
+## Base arguments
+my @function_base_commands = qw{ set };
+
 # Fake arguments
 my @args = (
     set_errexit => $argument{set_errexit}{input},
@@ -141,8 +125,6 @@ my @args = (
 
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&gnu_set;
-
-my @function_base_commands = qw{ set };
 
 test_write_to_file(
     {
@@ -154,39 +136,3 @@ test_write_to_file(
 );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

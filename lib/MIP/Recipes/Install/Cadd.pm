@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -97,7 +97,7 @@ sub install_cadd {
     my $cadd_bind_path =
         $annotation_dir_path
       . $COLON
-      . catdir(qw{ $FORWARD_SLASH opt CADD-scripts data annotations });
+      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } );
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {

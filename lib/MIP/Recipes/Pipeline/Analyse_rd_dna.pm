@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -147,14 +147,15 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
-    use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
+    use MIP::Recipes::Analysis::Chromograph
+      qw{ analysis_chromograph analysis_chromograph_proband };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -266,11 +267,11 @@ sub pipeline_analyse_rd_dna {
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                          # Depends on genome build
         cadd_ar => undef,    # Depends on human reference version
-        chanjo_sexcheck             => \&analysis_chanjo_sex_check,
-        chromograph_ar              => \&analysis_chromograph,
-        cnvnator_ar                 => \&analysis_cnvnator,
-        delly_call                  => \&analysis_delly_call,
-        delly_reformat              => \&analysis_delly_reformat,
+        chanjo_sexcheck => \&analysis_chanjo_sex_check,
+        chromograph_ar  => undef,                         # Depends on pedigree
+        cnvnator_ar     => \&analysis_cnvnator,
+        delly_call      => \&analysis_delly_call,
+        delly_reformat  => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,
@@ -313,7 +314,6 @@ sub pipeline_analyse_rd_dna {
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
-        upd_ar                 => undef,                          # Depends on pedigree
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,
@@ -370,14 +370,6 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
-    ## Set recipe depending on pedigree
-    set_recipe_on_pedigree(
-        {
-            analysis_recipe_href => \%analysis_recipe,
-            sample_info_href     => $sample_info_href,
-        }
-    );
-
   RECIPE:
     foreach my $recipe ( @{$order_recipes_ref} ) {
 
@@ -400,6 +392,15 @@ sub pipeline_analyse_rd_dna {
 
           SAMPLE_ID:
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+                ## Set chromograph recipe depending on pedigree and proband
+                set_recipe_chromograph(
+                    {
+                        analysis_recipe_href => \%analysis_recipe,
+                        sample_id            => $sample_id,
+                        sample_info_href     => $sample_info_href,
+                    }
+                );
 
                 $analysis_recipe{$recipe}->(
                     {

@@ -28,11 +28,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ conda_activate conda_check_env_status conda_create conda_deactivate conda_install };
+    our @EXPORT_OK = qw{ conda_activate conda_create conda_deactivate conda_install };
 }
 
 sub conda_activate {
@@ -77,62 +76,6 @@ sub conda_activate {
     );
 
     return @commands;
-}
-
-sub conda_check_env_status {
-
-## Function  : Check if a conda environment is active (returns name of env if true).
-## Returns   :
-## Arguments : $disable_env_check => Disable environment check
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $disable_env_check;
-
-    my $tmpl = {
-        disable_env_check => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            store       => \$disable_env_check,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ### Require deactivate any activate env prior to installation
-
-    ## Unless the active environment is root the expression will return true
-    ##   and print the environment name
-    my $detect_active_conda_env =
-      q?perl -nae 'if( ($_!~/ ^root | ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
-
-    # Pipes the output from the shell command "conda info --envs"
-    #   to $detect_active_conda_env.
-    #   Output is captured in $env_status.
-    my $env_status;
-    run(
-        command => qq{conda info --envs | $detect_active_conda_env},
-        buffer  => \$env_status
-    );
-
-    # Exit if a conda environment is active
-    if ($env_status) {
-
-        $log->warn( q{Found activated conda env: } . $env_status );
-
-        ## Mainly used for running test script in activated
-        ## env not actual install
-        if ( not $disable_env_check ) {
-
-            $log->fatal(q{Run 'conda deactivate' prior to running installation script});
-            exit 1;
-        }
-    }
-    return;
 }
 
 sub conda_create {

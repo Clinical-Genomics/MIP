@@ -1529,7 +1529,7 @@ upd_ar:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:

@@ -11,6 +11,7 @@ use autodie;
 use Params::Check qw{ check allow last_error };
 
 ## MIPs lib/
+use MIP::Constants qw{ $NEWLINE $SINGLE_QUOTE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -20,17 +21,12 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cd gnu_trap gnu_set gnu_unset gnu_wait };
 
 }
-
-## Constants
-my $SPACE      = q{ };
-my $APOSTROPHE = q{'};
-my $NEWLINE    = q{\n};
 
 sub gnu_cd {
 
@@ -163,7 +159,7 @@ sub gnu_trap {
     if ($trap_function_call) {
 
         # Quote function call to prevent word splitting
-        push @commands, $APOSTROPHE . $trap_function_call . $APOSTROPHE;
+        push @commands, $SINGLE_QUOTE . $trap_function_call . $SINGLE_QUOTE;
     }
     if ( @{$trap_signals_ref} ) {
 
@@ -191,71 +187,64 @@ sub gnu_set {
 
 ##Function : Perl wrapper for writing set recipe to already open $filehandle or return commands array. Based on set 4.0
 ##Returns  : "@commands"
-##Arguments: $filehandle             => Filehandle to write to
-##         : $separator              => Separator to use when writing
-##         : $set_errexit            => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset            => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail           => Detect errors within pipes (-o pipefail)
-##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Append stderr info to file
+##Arguments: $filehandle    => Filehandle to write to
+##         : $separator     => Separator to use when writing
+##         : $set_errexit   => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset   => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail  => Detect errors within pipes (-o pipefail)
+##         : $unset_errexit => Unset errexit flag
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
 
     ## Default(s)
     my $separator;
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
+    my $unset_errexit;
 
     my $tmpl = {
         filehandle => {
             store => \$filehandle,
         },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path,
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append,
-        },
         set_errexit => {
             default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
             store       => \$set_errexit,
+            strict_type => 1,
         },
         set_nounset => {
             default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
             store       => \$set_nounset,
+            strict_type => 1,
         },
         set_pipefail => {
             default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
             store       => \$set_pipefail,
+            strict_type => 1,
         },
         separator => {
             default     => $NEWLINE,
-            strict_type => 1,
             store       => \$separator,
+            strict_type => 1,
+        },
+        unset_errexit => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            store       => \$unset_errexit,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### set
     ##Stores commands depending on input parameters
     my @commands;
-
-    ## Options
 
     # Set flags
     if ($set_errexit) {
@@ -270,23 +259,19 @@ sub gnu_set {
 
         push @commands, q{-o pipefail};
     }
+    if ($unset_errexit) {
 
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path        => $stderrfile_path,
-            stderrfile_path_append => $stderrfile_path_append,
-        }
-      );
+        push @commands, q{+e};
+    }
 
     ## Add set to each element
-    @commands = map { q{set } . $_ } @commands;
+    @commands = map { q{set} . $SPACE . $_ } @commands;
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $NEWLINE,
             filehandle   => $filehandle,
+            separator    => $NEWLINE,
         }
     );
     return @commands;
