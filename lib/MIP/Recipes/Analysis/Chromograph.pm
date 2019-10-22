@@ -375,7 +375,7 @@ sub analysis_chromograph_proband {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Upd qw{ upd_call };
