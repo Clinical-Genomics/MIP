@@ -66,14 +66,14 @@ diag(   q{Test xargs_command from Xargs.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 # Create anonymous filehandle
-my $FILEHANDLE      = IO::Handle->new();
-my $XARGSFILEHANDLE = IO::Handle->new();
+my $filehandle      = IO::Handle->new();
+my $xargsfilehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
@@ -85,7 +85,7 @@ my $xargs_file_path_prefix = q{a_prefix};
 ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
     {
         core_number          => 1,
-        FILEHANDLE           => $FILEHANDLE,
+        filehandle           => $filehandle,
         file_path            => q{a_file_path},
         first_command        => q{bcftools},
         java_jar             => catfile(q{picard.jar}),
@@ -93,13 +93,13 @@ my $xargs_file_path_prefix = q{a_prefix};
         memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
         recipe_info_path     => q{a_file_path},
         temp_directory       => q{a_temp_dir},
-        XARGSFILEHANDLE      => $XARGSFILEHANDLE,
+        xargsfilehandle      => $xargsfilehandle,
         xargs_file_counter   => $xargs_file_counter,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then return TRUE
 ok( $xargs_file_counter, q{ Executed analysis recipe } . $recipe_name );

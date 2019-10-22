@@ -34,10 +34,10 @@ Readonly my $SPACE => q{ };
 
 sub vcfanno {
 
-## Function : Perl wrapper for writing vcfanno recipe to $FILEHANDLE or return commands array. Based on vcfanno 0.1.0.
+## Function : Perl wrapper for writing vcfanno recipe to $filehandle or return commands array. Based on vcfanno 0.1.0.
 ## Returns  : @commands
 ## Arguments: $ends                   => annotate the start and end as well as the interval itself
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $luafile_path           => Optional path to a file containing custom javascript functions to be used as ops
 ##          : $stderrfile_path        => Stderrfile path
@@ -49,7 +49,7 @@ sub vcfanno {
 
     ## Flatten argument(s)
     my $ends;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $luafile_path;
     my $stderrfile_path;
@@ -64,7 +64,7 @@ sub vcfanno {
             strict_type => 1,
             store       => \$ends
         },
-        FILEHANDLE   => { store       => \$FILEHANDLE },
+        filehandle   => { store       => \$filehandle },
         infile_path  => { strict_type => 1, store => \$infile_path },
         luafile_path => { strict_type => 1, store => \$luafile_path },
         stderrfile_path => {
@@ -122,7 +122,7 @@ sub vcfanno {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 

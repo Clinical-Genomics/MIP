@@ -63,7 +63,7 @@ diag(   q{Test singularity_exec from Singularity.pm v}
 my @function_base_commands = qw{ singularity exec };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

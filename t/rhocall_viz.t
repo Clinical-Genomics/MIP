@@ -63,7 +63,7 @@ diag(   q{Test rhocall_viz from Rhocall.pm v}
 my @function_base_commands = qw{ rhocall viz };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

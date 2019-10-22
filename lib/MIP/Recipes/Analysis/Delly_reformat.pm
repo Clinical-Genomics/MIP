@@ -205,8 +205,8 @@ sub analysis_delly_reformat {
 
     ## Filehandles
     # Create anonymous filehandles
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -214,7 +214,7 @@ sub analysis_delly_reformat {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -272,17 +272,17 @@ sub analysis_delly_reformat {
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
         ### Delly merge
-        say {$FILEHANDLE} q{## delly merge} . $NEWLINE;
+        say {$filehandle} q{## delly merge} . $NEWLINE;
 
-        say {$FILEHANDLE} q{## Fix locale bug using old centosOS and Boost library};
-        say {$FILEHANDLE} q?LC_ALL="C"; export LC_ALL ?, $NEWLINE . $NEWLINE;
+        say {$filehandle} q{## Fix locale bug using old centosOS and Boost library};
+        say {$filehandle} q?LC_ALL="C"; export LC_ALL ?, $NEWLINE . $NEWLINE;
 
         ## Get parameters
         my $xargs_file_path_prefix;
 
         delly_merge(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => \@delly_merge_infile_paths,
                 min_size         => 0,
                 max_size         => $SV_MAX_SIZE,
@@ -302,10 +302,10 @@ sub analysis_delly_reformat {
                   . q{stdout.txt},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Delly call regenotype
-        say {$FILEHANDLE} q{## delly call regenotype};
+        say {$filehandle} q{## delly call regenotype};
 
         ## Store outfiles
         my @delly_genotype_outfile_paths;
@@ -314,10 +314,10 @@ sub analysis_delly_reformat {
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 core_number        => $core_number,
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 file_path          => $recipe_file_path,
                 recipe_info_path   => $recipe_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargsfilehandle    => $xargsfilehandle,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -340,7 +340,7 @@ sub analysis_delly_reformat {
             delly_call(
                 {
                     exclude_file_path => $active_parameter_href->{delly_exclude_file},
-                    FILEHANDLE        => $XARGSFILEHANDLE,
+                    filehandle        => $xargsfilehandle,
                     genotypefile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . q{merged}
@@ -360,18 +360,18 @@ sub analysis_delly_reformat {
                       . q{stdout.txt},
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
         }
 
-        close $XARGSFILEHANDLE
-          or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+        close $xargsfilehandle
+          or $log->logcroak(q{Could not close xargsfilehandle});
 
         ### Merge calls
-        say {$FILEHANDLE} q{## bcftools merge};
+        say {$filehandle} q{## bcftools merge};
 
         bcftools_merge(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => \@delly_genotype_outfile_paths,
                 outfile_path     => $outfile_path_prefix
                   . $UNDERSCORE
@@ -382,18 +382,18 @@ sub analysis_delly_reformat {
                 stdoutfile_path => $xargs_file_path_prefix . $DOT . q{stdout.txt},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     else {
 
         # Only one sample
-        say {$FILEHANDLE} q{## Only one sample - skip merging and regenotyping};
-        say {$FILEHANDLE}
+        say {$filehandle} q{## Only one sample - skip merging and regenotyping};
+        say {$filehandle}
 q{## Reformat bcf infile to match outfile from regenotyping with multiple samples};
 
         bcftools_view(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 output_type  => q{v},
                 infile_path  => $delly_merge_infile_paths[0],
                 outfile_path => $outfile_path_prefix
@@ -402,14 +402,14 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
                   . $outfile_suffix,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-    say {$FILEHANDLE} q{## Picard SortVcf};
+    say {$filehandle} q{## Picard SortVcf};
     picardtools_sortvcf(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix ],
             java_jar =>
@@ -425,9 +425,9 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
             temp_directory => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

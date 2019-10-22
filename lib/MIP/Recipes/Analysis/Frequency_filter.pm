@@ -212,8 +212,8 @@ sub analysis_frequency_filter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -221,7 +221,7 @@ sub analysis_frequency_filter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -235,7 +235,7 @@ sub analysis_frequency_filter {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Bcftools filter};
+    say {$filehandle} q{## Bcftools filter};
 
     my $xargs_file_path_prefix;
 
@@ -243,10 +243,10 @@ sub analysis_frequency_filter {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $recipe_resource{core_number},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -270,7 +270,7 @@ sub analysis_frequency_filter {
 
         bcftools_view(
             {
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{v},
@@ -278,12 +278,12 @@ sub analysis_frequency_filter {
                 exclude                => $exclude_filter,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 

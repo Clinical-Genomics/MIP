@@ -39,11 +39,11 @@ Readonly my $DASH  => q{-};
 
 sub variant_integrity_mendel {
 
-## Function : Perl wrapper for writing Variant_integrity mendel recipe to $FILEHANDLE or return commands array. Based on Variant_integrity 3.7.0.
+## Function : Perl wrapper for writing Variant_integrity mendel recipe to $filehandle or return commands array. Based on Variant_integrity 3.7.0.
 ## Returns  : @commands
 ## Arguments: $case_file              => Family file
 ##          : $case_type              => Setup of family file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
@@ -55,7 +55,7 @@ sub variant_integrity_mendel {
     ## Flatten argument(s)
     my $case_file;
     my $case_type;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -76,7 +76,7 @@ sub variant_integrity_mendel {
             store       => \$case_type,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -139,7 +139,7 @@ sub variant_integrity_mendel {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
         }
@@ -150,11 +150,11 @@ sub variant_integrity_mendel {
 
 sub variant_integrity_father {
 
-## Function : Perl wrapper for writing Variant_integrity father recipe to $FILEHANDLE or return commands array. Based on Variant_integrity 3.7.0.
+## Function : Perl wrapper for writing Variant_integrity father recipe to $filehandle or return commands array. Based on Variant_integrity 3.7.0.
 ## Returns  : @commands
 ## Arguments: $case_file              => Family file
 ##          : $case_type              => Setup of family file
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
@@ -166,7 +166,7 @@ sub variant_integrity_father {
     ## Flatten argument(s)
     my $case_file;
     my $case_type;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -187,7 +187,7 @@ sub variant_integrity_father {
             store       => \$case_type,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -252,7 +252,7 @@ sub variant_integrity_father {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

@@ -63,7 +63,7 @@ diag(   q{Test rsync from Rsync.pm v}
 my @function_base_commands = qw{ rsync };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

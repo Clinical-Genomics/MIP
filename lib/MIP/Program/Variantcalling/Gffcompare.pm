@@ -37,7 +37,7 @@ sub gffcompare {
 
 ## Function : Perl wrapper for GffCompare. Based on version 0.10.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                 => Filehandle to write to
+## Arguments: $filehandle                 => Filehandle to write to
 ##          : $genome_sequence_path       => Genome sequence
 ##          : $gtf_reference_path         => Input GTF refrence file
 ##          : $ignore_non_overlapping_ref => Ignore reference transcripts that are not overlapped by any input gtf
@@ -50,7 +50,7 @@ sub gffcompare {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $genome_sequence_path;
     my $gtf_reference_path;
     my $ignore_non_overlapping_ref;
@@ -61,8 +61,8 @@ sub gffcompare {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         genome_sequence_path => {
             store       => \$genome_sequence_path,
@@ -137,7 +137,7 @@ sub gffcompare {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

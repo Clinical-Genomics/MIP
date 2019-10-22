@@ -176,9 +176,9 @@ sub build_rtg_prerequisites {
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -188,7 +188,7 @@ sub build_rtg_prerequisites {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $active_parameter_href->{max_cores_per_node},
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             directory_id          => $case_id,
             job_id_href           => $job_id_href,
             log                   => $log,
@@ -202,7 +202,7 @@ sub build_rtg_prerequisites {
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -223,7 +223,7 @@ sub build_rtg_prerequisites {
               . q{ sdf files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building SDF dir files};
+        say {$filehandle} q{## Building SDF dir files};
         ## Get parameters
         my $sdf_directory_tmp =
             $active_parameter_href->{rtg_vcfeval_reference_genome}
@@ -231,13 +231,13 @@ sub build_rtg_prerequisites {
           . $random_integer;
         rtg_format(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 input_format          => q{fasta},
                 reference_genome_path => $human_genome_reference,
                 sdf_output_directory  => $sdf_directory_tmp,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ:
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
@@ -248,7 +248,7 @@ sub build_rtg_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $sdf_directory_tmp,
                 }
@@ -259,7 +259,7 @@ sub build_rtg_prerequisites {
         $parameter_href->{rtg_vcfeval_reference_genome}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

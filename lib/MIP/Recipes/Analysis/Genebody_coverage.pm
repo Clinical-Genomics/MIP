@@ -199,7 +199,7 @@ sub analysis_genebody_coverage {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -207,7 +207,7 @@ sub analysis_genebody_coverage {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -220,20 +220,20 @@ sub analysis_genebody_coverage {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Rename .bai to .bam.bai
-    say {$FILEHANDLE} q{## Rename .bai to .bam.bai};
+    say {$filehandle} q{## Rename .bai to .bam.bai};
     gnu_cp(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path_prefix . $DOT . q{bai},
             outfile_path => $infile_path_prefix . $infile_suffix . $DOT . q{bai},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     ## Convert bam to bigwig
-    say {$FILEHANDLE} q{## Convert bam to bigwig};
+    say {$filehandle} q{## Convert bam to bigwig};
     my $chrom_size_file_path = catfile(
         $active_parameter_href->{star_aln_reference_genome}
           . $file_info_href->{star_aln_reference_genome}[0],
@@ -242,28 +242,28 @@ sub analysis_genebody_coverage {
     rseqc_bam2wig(
         {
             chrom_size_file_path => $chrom_size_file_path,
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfile_path_prefix  => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Calculate genebody coverage
-    say {$FILEHANDLE} q{## Calculate genebody coverage};
+    say {$filehandle} q{## Calculate genebody coverage};
     my $bigwig_infile_path = $outfile_path_prefix . $DOT . q{bw};
     rseqc_genebody_coverage2(
         {
             bed_file_path       => $active_parameter_href->{rseqc_transcripts_file},
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $bigwig_infile_path,
             outfile_path_prefix => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Cleanup
-    say {$FILEHANDLE} q{## Cleanup};
+    say {$filehandle} q{## Cleanup};
     my @temp_files = (
         $infile_path_prefix . $infile_suffix . $DOT . q{bai},
         $outfile_path_prefix . $DOT . q{wig}
@@ -272,15 +272,15 @@ sub analysis_genebody_coverage {
     foreach my $temp_file (@temp_files) {
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $temp_file,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

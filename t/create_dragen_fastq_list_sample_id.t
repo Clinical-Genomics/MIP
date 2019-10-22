@@ -86,19 +86,19 @@ ok( -e $fastq_file_path, q{Created dragen fastq list file} );
 # Read the created file to check content
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
-open $FILEHANDLE, q{<}, $fastq_file_path
+open $filehandle, q{<}, $fastq_file_path
   or $log->logdie(qq{Can't open $fastq_file_path: $ERRNO });
 
 my @lines;
 LINE:
-while (<$FILEHANDLE>) {
+while (<$filehandle>) {
 
     chomp;
     push @lines, split $COMMA;
 }
-close $FILEHANDLE;
+close $filehandle;
 my @expected_lines = ( @fastq_list_headers, @dragen_fastq_list_lines );
 is_deeply( \@lines, \@expected_lines, q{Correctly wrote file content} );
 

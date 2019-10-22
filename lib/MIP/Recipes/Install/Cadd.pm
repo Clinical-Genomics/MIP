@@ -42,7 +42,7 @@ sub install_cadd {
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $contaienr_href        => Container hah {REF}
 ##          : $container_path        => Path to container
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -50,7 +50,7 @@ sub install_cadd {
     my $active_parameter_href;
     my $container_path;
     my $container_href;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         active_parameter_href => {
@@ -71,9 +71,9 @@ sub install_cadd {
             store       => \$container_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined => 1,
-            store   => \$FILEHANDLE,
+            store   => \$filehandle,
         },
     };
 

@@ -65,7 +65,7 @@ my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given install parameters
@@ -77,7 +77,7 @@ my $is_ok = install_vep(
         active_parameter_href => \%active_parameter,
         container_href        => $active_parameter{emip}{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
     }
 );
 
@@ -91,7 +91,7 @@ $is_ok = install_vep(
         active_parameter_href => \%active_parameter,
         container_href        => $active_parameter{emip}{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
     }
 );
 
@@ -106,7 +106,7 @@ trap {
             active_parameter_href => \%active_parameter,
             container_href        => $active_parameter{emip}{singularity}{vep},
             container_path        => catfile(q{vep.sif}),
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
         }
     )
 };
@@ -121,13 +121,13 @@ $is_ok = install_vep(
         active_parameter_href => \%active_parameter,
         container_href        => $active_parameter{emip}{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
     }
 );
 
 ## Then return undef
 is( $is_ok, undef, q{Return on auto flag a} );
 
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

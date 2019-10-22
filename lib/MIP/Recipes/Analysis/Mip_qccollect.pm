@@ -175,7 +175,7 @@ sub analysis_mip_qccollect {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -183,7 +183,7 @@ sub analysis_mip_qccollect {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -205,12 +205,12 @@ sub analysis_mip_qccollect {
             log_file_path    => $log_file_path,
             regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
             skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

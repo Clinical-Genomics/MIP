@@ -33,11 +33,11 @@ BEGIN {
 
 sub bedtools_genomecov {
 
-## Function : Perl wrapper for writing Bedtools genomecov recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.29.0.
+## Function : Perl wrapper for writing Bedtools genomecov recipe to already open $filehandle or return commands array. Based on Bedtools 2.29.0.
 ## Returns  : @commands
 ## Arguments: $bam_infile_path        => BAM infile path
 ##          : $depth_each_position    => Report the depth at each genome position (with zero-based coordinates)
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path (bed/gff/vcf)
 ##          : $max_coverage           => Combine all positions with a depth >= max into a single bin in the histogram
 ##          : $referencefile_path     => Genome reference file
@@ -49,7 +49,7 @@ sub bedtools_genomecov {
 
     ## Flatten argument(s)
     my $bam_infile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $max_coverage;
     my $referencefile_path;
@@ -71,8 +71,8 @@ sub bedtools_genomecov {
             store       => \$depth_each_position,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path  => { store => \$infile_path, strict_type => 1, },
         max_coverage => {
@@ -140,7 +140,7 @@ sub bedtools_genomecov {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -150,9 +150,9 @@ sub bedtools_genomecov {
 
 sub bedtools_intersect {
 
-## Function : Perl wrapper for writing Bedtools intersect recipe to already open $FILEHANDLE or return commands array. Based on Bedtools 2.29.0.
+## Function : Perl wrapper for writing Bedtools intersect recipe to already open $filehandle or return commands array. Based on Bedtools 2.29.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $intersectfile_path     => Intersect file (-b)
 ##          : $stderrfile_path        => Stderrfile path
@@ -163,7 +163,7 @@ sub bedtools_intersect {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intersectfile_path;
     my $stderrfile_path;
@@ -174,8 +174,8 @@ sub bedtools_intersect {
     my $with_header;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path        => { store => \$infile_path, strict_type => 1, },
         intersectfile_path => {
@@ -238,7 +238,7 @@ sub bedtools_intersect {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -248,9 +248,9 @@ sub bedtools_intersect {
 
 sub bedtools_makewindows {
 
-## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.29.0.
+## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $filehandle. Based on bedtools 2.29.0.
 ## Returns  : "@commands"
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $infile_bed_path        => Input BED file (with chrom,start,end fields).
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
@@ -261,7 +261,7 @@ sub bedtools_makewindows {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_bed_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -270,7 +270,7 @@ sub bedtools_makewindows {
     my $window_size;
 
     my $tmpl = {
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         infile_bed_path => {
             required    => 1,
             store       => \$infile_bed_path,
@@ -326,7 +326,7 @@ sub bedtools_makewindows {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

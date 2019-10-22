@@ -35,7 +35,7 @@ sub gtf2bed {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -45,7 +45,7 @@ sub gtf2bed {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -55,8 +55,8 @@ sub gtf2bed {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             required    => 1,
@@ -98,7 +98,7 @@ sub gtf2bed {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

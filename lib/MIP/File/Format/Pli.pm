@@ -67,13 +67,13 @@ sub load_pli_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    open $FILEHANDLE, q{<}, $infile_path
+    open $filehandle, q{<}, $infile_path
       or $log->logdie( q{Cannot open } . $infile_path . $COLON . $OS_ERROR, $NEWLINE );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
@@ -89,7 +89,7 @@ sub load_pli_file {
         ## Set rounded pli score to hash
         $pli_score_href->{$hgnc_symbol} = sprintf q{%.2f}, $pli_score;
     }
-    close $FILEHANDLE;
+    close $filehandle;
     return 1;
 }
 

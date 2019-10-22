@@ -61,7 +61,7 @@ diag(   q{Test gatk_leftalignandtrimvariants from Variantcalling::Gatk.pm v}
 my @function_base_commands = qw{ gatk LeftAlignAndTrimVariants };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

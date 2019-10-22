@@ -66,7 +66,7 @@ my $log => test_log( { no_screen => 0, } );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given no programs to test
@@ -84,7 +84,7 @@ trap {
     check_program_installations(
         {
             env_name                  => $env_name,
-            FILEHANDLE                => $FILEHANDLE,
+            filehandle                => $filehandle,
             installation              => $installation,
             programs_ref              => \@programs,
             program_test_command_href => \%program_test_command,
@@ -106,7 +106,7 @@ my @is_ok = trap {
     check_program_installations(
         {
             env_name                  => $env_name,
-            FILEHANDLE                => $FILEHANDLE,
+            filehandle                => $filehandle,
             installation              => $installation,
             programs_ref              => \@programs,
             program_test_command_href => \%program_test_command,
@@ -118,6 +118,6 @@ my @is_ok = trap {
 ok( $is_ok[0], q{Wrote test for programs} );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

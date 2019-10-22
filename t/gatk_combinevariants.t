@@ -67,7 +67,7 @@ diag(   q{Test gatk_combinevariants from Gatk v}
 my @function_base_commands = qw{ gatk3 };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

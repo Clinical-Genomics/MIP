@@ -66,7 +66,7 @@ diag(   q{Test gffcompare from Gffcompare.pm v}
 my @function_base_commands = qw{ gffcompare };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

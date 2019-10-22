@@ -54,10 +54,10 @@ BEGIN {
 
 sub gatk_genotypegvcfs {
 
-## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
 ## Arguments: $dbsnp_path               => Path to DbSNP file
-##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $filehandle               => Sbatch filehandle to write to
 ##          : $infile_path              => Path to variant input
 ##          : $include_nonvariant_sites => Include loci found to be non-variant after genotyping
 ##          : $intervals_ref            => One or more genomic intervals over which to operate {REF}
@@ -76,7 +76,7 @@ sub gatk_genotypegvcfs {
 
     ## Flatten argument(s)
     my $dbsnp_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -98,7 +98,7 @@ sub gatk_genotypegvcfs {
             store       => \$dbsnp_path,
             strict_type => 1,
         },
-        FILEHANDLE               => { store => \$FILEHANDLE, },
+        filehandle               => { store => \$filehandle, },
         include_nonvariant_sites => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -234,7 +234,7 @@ sub gatk_genotypegvcfs {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -243,10 +243,10 @@ sub gatk_genotypegvcfs {
 
 sub gatk_selectvariants {
 
-## Function : Perl wrapper for writing GATK SelectVariants recipe to $FILEHANDLE. Based on GATK 4.0.8
+## Function : Perl wrapper for writing GATK SelectVariants recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
 ## Arguments: $exclude_non_variants       => Exclude non-variant sites
-##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $filehandle                 => Sbatch filehandle to write to
 ##          : $infile_path                => Infile paths
 ##          : $intervals_ref              => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages       => Use java large pages
@@ -265,7 +265,7 @@ sub gatk_selectvariants {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -291,7 +291,7 @@ sub gatk_selectvariants {
             store       => \$exclude_non_variants,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -436,7 +436,7 @@ sub gatk_selectvariants {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -452,10 +452,10 @@ sub gatk_selectvariants {
 
 sub gatk_variantrecalibrator {
 
-## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
 ##          : $annotations_ref       => One or more specific annotations to apply to variant calls
-##          : $FILEHANDLE            => Sbatch filehandle to write to
+##          : $filehandle            => Sbatch filehandle to write to
 ##          : $infile_path           => Infile path
 ##          : $intervals_ref         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages  => Use java large pages
@@ -480,7 +480,7 @@ sub gatk_variantrecalibrator {
 
     ## Flatten argument(s)
     my $annotations_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $max_gaussian_level;
@@ -511,7 +511,7 @@ sub gatk_variantrecalibrator {
             store       => \$annotations_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -708,7 +708,7 @@ sub gatk_variantrecalibrator {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -717,9 +717,9 @@ sub gatk_variantrecalibrator {
 
 sub gatk_applyvqsr {
 
-## Function : Perl wrapper for writing GATK ApplyVQSR recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK ApplyVQSR recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                            => Sbatch filehandle to write to
+## Arguments: $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -739,7 +739,7 @@ sub gatk_applyvqsr {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $java_use_large_pages;
@@ -760,8 +760,8 @@ sub gatk_applyvqsr {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -908,7 +908,7 @@ sub gatk_applyvqsr {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -917,9 +917,9 @@ sub gatk_applyvqsr {
 
 sub gatk_calculategenotypeposteriors {
 
-## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -938,7 +938,7 @@ sub gatk_calculategenotypeposteriors {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -957,8 +957,8 @@ sub gatk_calculategenotypeposteriors {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -1093,7 +1093,7 @@ sub gatk_calculategenotypeposteriors {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -1102,10 +1102,10 @@ sub gatk_calculategenotypeposteriors {
 
 sub gatk_cnnscorevariants {
 
-## Function : Perl wrapper for writing GATK CNNScoreVariants recipe to $FILEHANDLE. Based on GATK 4.1.0
+## Function : Perl wrapper for writing GATK CNNScoreVariants recipe to $filehandle. Based on GATK 4.1.0
 ## Returns  : @commands
 ## Arguments: $alignment_infile_paths_ref => BAM/SAM/CRAM file containing reads {REF}
-##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $filehandle                 => Sbatch filehandle to write to
 ##          : $infile_path                => Infile paths
 ##          : $intervals_ref              => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages       => Use java large pages
@@ -1122,7 +1122,7 @@ sub gatk_cnnscorevariants {
 
     ## Flatten argument(s)
     my $alignment_infile_paths_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -1143,7 +1143,7 @@ sub gatk_cnnscorevariants {
             store       => \$alignment_infile_paths_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1253,7 +1253,7 @@ sub gatk_cnnscorevariants {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -1269,7 +1269,7 @@ sub gatk_cnnscorevariants {
 
 sub gatk_combinevariants {
 
-## Function : Perl wrapper for writing GATK combinevariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK combinevariants recipe to $filehandle. Based on GATK 3.7.0.
 ## Returns  : @commands
 ## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
@@ -1280,7 +1280,7 @@ sub gatk_combinevariants {
 ##          : $outfile_path                          => Outfile path
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $prioritize_caller                     => Comma seperated string specifying priority for merging
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
@@ -1302,7 +1302,7 @@ sub gatk_combinevariants {
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $pedigree;
     my $prioritize_caller;
     my $genotype_merge_option;
@@ -1345,7 +1345,7 @@ sub gatk_combinevariants {
             store       => \$referencefile_path
         },
         stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE             => { store       => \$FILEHANDLE },
+        filehandle             => { store       => \$filehandle },
         pedigree               => { strict_type => 1, store => \$pedigree },
         prioritize_caller      => { strict_type => 1, store => \$prioritize_caller },
         downsample_to_coverage => {
@@ -1459,7 +1459,7 @@ sub gatk_combinevariants {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -1469,10 +1469,10 @@ sub gatk_combinevariants {
 
 sub gatk_varianteval {
 
-## Function : Perl wrapper for writing GATK varianteval recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK varianteval recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
 ## Arguments: $dbsnp_file_path                       => DbSNP file path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $indel_gold_standard_file_path         => Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 ##          : $infile_paths_ref                      => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
@@ -1490,7 +1490,7 @@ sub gatk_varianteval {
 
     ## Flatten argument(s)
     my $dbsnp_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $indel_gold_standard_file_path;
     my $infile_paths_ref;
     my $intervals_ref;
@@ -1508,7 +1508,7 @@ sub gatk_varianteval {
 
     my $tmpl = {
         dbsnp_file_path => { store => \$dbsnp_file_path, strict_type => 1, },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         indel_gold_standard_file_path =>
           { store => \$indel_gold_standard_file_path, strict_type => 1, },
         intervals_ref => { default => [], store => \$intervals_ref, strict_type => 1, },
@@ -1620,7 +1620,7 @@ sub gatk_varianteval {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1630,9 +1630,9 @@ sub gatk_varianteval {
 
 sub gatk_leftalignandtrimvariants {
 
-## Function : Perl wrapper for writing GATK LeftAlignAndTrimVariants recipe to $FILEHANDLE. Based on GATK 4.0.0.
+## Function : Perl wrapper for writing GATK LeftAlignAndTrimVariants recipe to $filehandle. Based on GATK 4.0.0.
 ## Returns  : @commands
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile path
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -1648,7 +1648,7 @@ sub gatk_leftalignandtrimvariants {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
@@ -1664,7 +1664,7 @@ sub gatk_leftalignandtrimvariants {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1781,7 +1781,7 @@ sub gatk_leftalignandtrimvariants {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -1795,7 +1795,7 @@ sub gatk_concatenate_variants {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $continue              => Adds an ampersand to the end of the command
-##          : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
+##          : $filehandle            => SBATCH script filehandle to print to
 ##          : $elements_ref          => Holding the number and part of file names to be combined
 ##          : $infile_prefix         => Will be combined with the each array element
 ##          : $infile_postfix        => Will be combined with the each array element
@@ -1808,7 +1808,7 @@ sub gatk_concatenate_variants {
     my $active_parameter_href;
     my $continue;
     my $elements_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_prefix;
     my $infile_postfix;
     my $outfile_path_prefix;
@@ -1833,10 +1833,10 @@ sub gatk_concatenate_variants {
             store       => \$elements_ref,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         infile_prefix => {
             defined     => 1,
@@ -1880,7 +1880,7 @@ sub gatk_concatenate_variants {
         $outfile_path = $infile_prefix . $outfile_suffix;
     }
 
-    say {$FILEHANDLE} q{## GATK GatherVCFs};
+    say {$filehandle} q{## GATK GatherVCFs};
 
     ## Assemble infile paths
     my @infile_paths =
@@ -1888,7 +1888,7 @@ sub gatk_concatenate_variants {
 
     gatk_gathervcfscloud(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_paths_ref     => \@infile_paths,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
@@ -1901,19 +1901,19 @@ sub gatk_concatenate_variants {
     ## Launch multiple processes
     if ($continue) {
 
-        print {$FILEHANDLE} $AMPERSAND;
+        print {$filehandle} $AMPERSAND;
     }
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     return;
 }
 
 sub gatk_variantfiltration {
 
-## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK VariantFiltration recipe to $filehandle. Based on GATK 4.1.0.
 ## Returns  : @commands
 ##          : $cluster_size         => Number of SNPs which make up a cluster
 ##          : $cluster_window_size  => Window size (in bases) in which to evaluate clustered SNPs
-##          : $FILEHANDLE           => Sbatch filehandle to write to
+##          : $filehandle           => Sbatch filehandle to write to
 ##          : $filter_href          => Hash with the name of the filter as key and the filter expression as value {REF}
 ##          : $infile_path          => Infile paths
 ##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
@@ -1932,7 +1932,7 @@ sub gatk_variantfiltration {
     ## Flatten argument(s)
     my $cluster_size;
     my $cluster_window_size;
-    my $FILEHANDLE;
+    my $filehandle;
     my $filter_href;
     my $infile_path;
     my $intervals_ref;
@@ -1959,8 +1959,8 @@ sub gatk_variantfiltration {
             store       => \$cluster_window_size,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         filter_href => {
             default     => {},
@@ -2101,7 +2101,7 @@ sub gatk_variantfiltration {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -2111,9 +2111,9 @@ sub gatk_variantfiltration {
 
 sub gatk_genomicsdbimport {
 
-## Function : Perl wrapper for writing GATK GenomicsDBImport recipe to $FILEHANDLE. Based on GATK 4.0.8
+## Function : Perl wrapper for writing GATK GenomicsDBImport recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                => Sbatch filehandle to write to
+## Arguments: $filehandle                => Sbatch filehandle to write to
 ##          : $genomicsdb_workspace_path => Workspace for GenomicsDB
 ##          : $infile_paths_ref          => GVCF files to be imported to GenomicsDB {REF}
 ##          : $intervals_ref             => One or more genomic intervals over which to operate {REF}
@@ -2132,7 +2132,7 @@ sub gatk_genomicsdbimport {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $genomicsdb_workspace_path;
     my $infile_paths_ref;
     my $intervals_ref;
@@ -2149,7 +2149,7 @@ sub gatk_genomicsdbimport {
     my $xargs_mode;
 
     my $tmpl = {
-        FILEHANDLE                => { store => \$FILEHANDLE },
+        filehandle                => { store => \$filehandle },
         genomicsdb_workspace_path => {
             defined     => 1,
             required    => 1,
@@ -2264,7 +2264,7 @@ sub gatk_genomicsdbimport {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -2273,9 +2273,9 @@ sub gatk_genomicsdbimport {
 
 sub gatk_gathervcfscloud {
 
-## Function : Perl wrapper for writing GATK GatherVcfsCloud recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK GatherVcfsCloud recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                            => Sbatch filehandle to write to
+## Arguments: $filehandle                            => Sbatch filehandle to write to
 ##          : $ignore_safety_checks                  => Disable sanity checks to improve performance
 ##          : $infile_paths_ref                      => VCF files to gather {REF}
 ##          : $java_use_large_pages                  => Use java large pages
@@ -2288,7 +2288,7 @@ sub gatk_gathervcfscloud {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $ignore_safety_checks;
     my $infile_paths_ref;
     my $memory_allocation;
@@ -2301,7 +2301,7 @@ sub gatk_gathervcfscloud {
     my $verbosity;
 
     my $tmpl = {
-        FILEHANDLE           => { store => \$FILEHANDLE, },
+        filehandle           => { store => \$filehandle, },
         ignore_safety_checks => {
             allow       => [ undef, 0, 1 ],
             store       => \$ignore_safety_checks,
@@ -2398,7 +2398,7 @@ sub gatk_gathervcfscloud {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -2407,9 +2407,9 @@ sub gatk_gathervcfscloud {
 
 sub gatk_indexfeaturefile {
 
-## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $FILEHANDLE. Based on GATK 4.0.10.
+## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $filehandle. Based on GATK 4.0.10.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                            => Sbatch filehandle to write to
+## Arguments: $filehandle                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Path to feature file
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $memory_allocation                     => Memory allocation to run Gatk
@@ -2421,7 +2421,7 @@ sub gatk_indexfeaturefile {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $memory_allocation;
     my $outfile_path;
@@ -2433,7 +2433,7 @@ sub gatk_indexfeaturefile {
     my $verbosity;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -2518,7 +2518,7 @@ sub gatk_indexfeaturefile {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

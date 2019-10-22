@@ -210,7 +210,7 @@ sub analysis_gatk_variantevalexome {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -218,7 +218,7 @@ sub analysis_gatk_variantevalexome {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -230,38 +230,38 @@ sub analysis_gatk_variantevalexome {
         }
     );
 
-    say {$FILEHANDLE} q{## Extract exonic variants};
+    say {$filehandle} q{## Extract exonic variants};
     ## Get parameters
     # Collect variants from sample_id with HGVS amino acid chain from CSQ field
     my $view_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{exonic_variants} . $outfile_suffix;
     bcftools_view(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             include         => q{'INFO/CSQ[*]~":p[.]"'},
             infile_path     => $infile_path,
             samples_ref     => [$sample_id],
             stdoutfile_path => $view_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $view_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## VariantEval
-    say {$FILEHANDLE} q{## GATK varianteval};
+    say {$filehandle} q{## GATK varianteval};
     gatk_varianteval(
         {
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
             infile_paths_ref     => [$view_outfile_path],
@@ -273,9 +273,9 @@ sub analysis_gatk_variantevalexome {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

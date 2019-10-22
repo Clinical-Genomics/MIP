@@ -32,7 +32,7 @@ BEGIN {
 
 sub test_write_to_file {
 
-## Function : Test of writing to file using anonymous FILEHANDLE
+## Function : Test of writing to file using anonymous filehandle
 ## Returns  :
 ## Arguments: $args_ref             => Arguments to function call
 ##          : $base_commands_ref    => Base commands {REF}
@@ -74,21 +74,21 @@ sub test_write_to_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    # Add new FILEHANDLE to args
-    push @{$args_ref}, q{FILEHANDLE}, $FILEHANDLE;
+    # Add new filehandle to args
+    push @{$args_ref}, q{filehandle}, $filehandle;
 
     # For storing info to write
     my $file_content;
 
     ## Store file content in memory by using referenced variable
-    open $FILEHANDLE, q{>}, \$file_content
+    open $filehandle, q{>}, \$file_content
       or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
     $module_function_cref->( { @{$args_ref} } );
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     my $base_command = join $separator, @{$base_commands_ref};
 

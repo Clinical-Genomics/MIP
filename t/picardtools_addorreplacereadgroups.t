@@ -63,7 +63,7 @@ diag(   q{Test picardtools_addorreplacereadgroups from Picardtools.pm v}
 my @function_base_commands = qw{ picard AddOrReplaceReadGroups };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -111,7 +111,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -124,14 +124,14 @@ my %required_argument = (
         input           => q{develop},
         expected_output => q{develop},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
 );
 
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

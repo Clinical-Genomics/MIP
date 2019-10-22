@@ -32,10 +32,10 @@ BEGIN {
 
 sub delly_call {
 
-## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
+## Function : Perl wrapper for writing Delly call recipe to $filehandle or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $exclude_file_path      => File with regions to exclude
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $genotypefile_path      => Input VCF/BCF file for re-genotyping
 ##          : $infile_path            => Infile path
 ##          : $mad_cutoff             => Insert size cutoff, median+s*MAD (deletions only)
@@ -52,7 +52,7 @@ sub delly_call {
 
     ## Flatten argument(s)
     my $exclude_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $genotypefile_path;
     my $infile_path;
     my $mad_cutoff;
@@ -71,8 +71,8 @@ sub delly_call {
 
     my $tmpl = {
         exclude_file_path => { store => \$exclude_file_path, strict_type => 1, },
-        FILEHANDLE        => {
-            store => \$FILEHANDLE,
+        filehandle        => {
+            store => \$filehandle,
         },
         genotypefile_path => { store => \$genotypefile_path, strict_type => 1, },
         infile_path       => {
@@ -183,7 +183,7 @@ sub delly_call {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -193,9 +193,9 @@ sub delly_call {
 
 sub delly_merge {
 
-## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
+## Function : Perl wrapper for writing Delly merge recipe to $filehandle or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $max_size               => Max. SV size
 ##          : $min_size               => Min. SV size
@@ -208,7 +208,7 @@ sub delly_merge {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $max_size;
     my $min_size;
@@ -219,8 +219,8 @@ sub delly_merge {
     my $sv_type;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_paths_ref => {
             required    => 1,
@@ -301,7 +301,7 @@ sub delly_merge {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -311,9 +311,9 @@ sub delly_merge {
 
 sub delly_filter {
 
-## Function : Perl wrapper for writing Delly filter recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly filter recipe to $filehandle or return commands array. Based on Delly 0.7.6.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $filter_mode            => Filter mode
 ##          : $infile_path            => Infile pat
 ##          : $max_size               => Max. SV size
@@ -327,7 +327,7 @@ sub delly_filter {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $filter_mode;
     my $infile_path;
     my $max_size;
@@ -339,8 +339,8 @@ sub delly_filter {
     my $sv_type;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         filter_mode => {
             required    => 1,
@@ -434,7 +434,7 @@ sub delly_filter {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

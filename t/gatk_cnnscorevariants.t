@@ -63,7 +63,7 @@ diag(   q{Test gatk_cnnscorevariants from GATK.pm v}
 my @function_base_commands = qw{ gatk CNNScoreVariants };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

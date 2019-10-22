@@ -63,7 +63,7 @@ diag(   q{Test upd_call from Upd.pm v}
 my @function_base_commands = qw{ upd };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

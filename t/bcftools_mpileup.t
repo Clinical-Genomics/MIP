@@ -101,7 +101,7 @@ Readonly my $ADJUST_MAPPING_QUALITY => 45;
 my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -121,7 +121,7 @@ my %required_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

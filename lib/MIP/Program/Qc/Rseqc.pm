@@ -50,7 +50,7 @@ sub rseqc_bam2wig {
 ## Function : Perl wrapper for rseqc bam2wig.py. Version 3.0.0.
 ## Returns  : @commands
 ## Arguments: $chrom_size_file_path   => Tab separated file with chrom name and size
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $strand                 => Library strandedness
 ##          : $outfile_path_prefix    => Prefix for outfiles
@@ -62,7 +62,7 @@ sub rseqc_bam2wig {
 
     ## Flatten argument(s)
     my $chrom_size_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $strand;
     my $outfile_path_prefix;
@@ -77,8 +77,8 @@ sub rseqc_bam2wig {
             store       => \$chrom_size_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -138,7 +138,7 @@ sub rseqc_bam2wig {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -150,7 +150,7 @@ sub rseqc_bam_stat {
 
 ## Function : Perl wrapper for rseqc bam_stat.py. Version 2.6.4.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
 ##          : $stderrfile_path        => Stderrfile path
@@ -160,7 +160,7 @@ sub rseqc_bam_stat {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -170,8 +170,8 @@ sub rseqc_bam_stat {
     my $min_map_quality;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -220,7 +220,7 @@ sub rseqc_bam_stat {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -233,7 +233,7 @@ sub rseqc_genebody_coverage2 {
 ## Function : Perl wrapper for rseqc geneBody_coverage.py. Version 3.0.0.
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Reference gene model
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input BigWig file path
 ##          : $outfile_path_prefix    => Prefix for outfiles
 ##          : $stderrfile_path        => Stderrfile path
@@ -244,7 +244,7 @@ sub rseqc_genebody_coverage2 {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path_prefix;
     my $stderrfile_path;
@@ -258,8 +258,8 @@ sub rseqc_genebody_coverage2 {
             strict_type => 1,
             store       => \$bed_file_path,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -310,7 +310,7 @@ sub rseqc_genebody_coverage2 {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -325,7 +325,7 @@ sub rseqc_infer_experiment {
 ## Arguments: $bed_file_path          => Transcript bed file path
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -334,7 +334,7 @@ sub rseqc_infer_experiment {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -350,8 +350,8 @@ sub rseqc_infer_experiment {
             store       => \$bed_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -402,7 +402,7 @@ sub rseqc_infer_experiment {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -415,7 +415,7 @@ sub rseqc_inner_distance {
 ## Function : Perl wrapper for rseqc inner_distance.py. Version 2.6.4.
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Transcript bed file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
 ##          : $outfiles_path_prefix   => Outpath prefix for output files
@@ -427,7 +427,7 @@ sub rseqc_inner_distance {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfiles_path_prefix;
     my $stderrfile_path;
@@ -444,8 +444,8 @@ sub rseqc_inner_distance {
             store       => \$bed_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -504,7 +504,7 @@ sub rseqc_inner_distance {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -517,7 +517,7 @@ sub rseqc_junction_annotation {
 ## Function : Perl wrapper for rseqc junction_annotation.py. Version 2.6.4.
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Transcript bed file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
 ##          : $outfiles_path_prefix   => Outpath prefix for output files
@@ -529,7 +529,7 @@ sub rseqc_junction_annotation {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfiles_path_prefix;
     my $stderrfile_path;
@@ -546,8 +546,8 @@ sub rseqc_junction_annotation {
             store       => \$bed_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -606,7 +606,7 @@ sub rseqc_junction_annotation {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -619,7 +619,7 @@ sub rseqc_junction_saturation {
 ## Function : Perl wrapper for rseqc junction_saturation.py. Version 2.6.4.
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Transcript bed file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
 ##          : $outfiles_path_prefix   => Outpath prefix for output files
@@ -631,7 +631,7 @@ sub rseqc_junction_saturation {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfiles_path_prefix;
     my $stderrfile_path;
@@ -648,8 +648,8 @@ sub rseqc_junction_saturation {
             store       => \$bed_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -708,7 +708,7 @@ sub rseqc_junction_saturation {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -722,7 +722,7 @@ sub rseqc_read_distribution {
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Transcript bed file path
 ##          : $infile_path            => Input file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -731,7 +731,7 @@ sub rseqc_read_distribution {
 
     ## Flatten argument(s)
     my $bed_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -744,8 +744,8 @@ sub rseqc_read_distribution {
             store       => \$bed_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -788,7 +788,7 @@ sub rseqc_read_distribution {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -800,7 +800,7 @@ sub rseqc_read_duplication {
 
 ## Function : Perl wrapper for rseqc read_duplication.py. Version 2.6.4.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $min_map_quality        => Minimum mapping quality
 ##          : $outfiles_path_prefix   => Outpath prefix for output files
@@ -811,7 +811,7 @@ sub rseqc_read_duplication {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfiles_path_prefix;
     my $stderrfile_path;
@@ -822,8 +822,8 @@ sub rseqc_read_duplication {
     my $min_map_quality;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -880,7 +880,7 @@ sub rseqc_read_duplication {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

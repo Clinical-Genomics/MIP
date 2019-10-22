@@ -36,7 +36,7 @@ sub salmon_index {
 ## Function  : Perl wrapper for Salmon index, version 0.9.1.
 ## Returns   : @commands
 ## Arguments : $fasta_path             => Input reference fasta path, note salmon does not use the genome reference fasta, it uses a fasta file of transcripts
-##           : $FILEHANDLE             => Filehandle to write to
+##           : $filehandle             => Filehandle to write to
 ##           : $outfile_path           => Outfile path
 ##           : $stderrfile_path        => Stderrfile path
 ##           : $stderrfile_path_append => Append stderr info to file path
@@ -46,7 +46,7 @@ sub salmon_index {
 
     ## Flatten argument(s)
     my $fasta_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -59,8 +59,8 @@ sub salmon_index {
             store       => \$fasta_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         outfile_path => {
             defined     => 1,
@@ -104,7 +104,7 @@ sub salmon_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -117,7 +117,7 @@ sub salmon_quant {
 
 ## Function  : Perl wrapper for Salmon quant, version 0.9.1.
 ## Returns   : @commands
-## Arguments : $FILEHANDLE             => Filehandle to write to
+## Arguments : $filehandle             => Filehandle to write to
 ##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
 ##           : $libi_type              => Library visit the salmon website for more  info
@@ -133,7 +133,7 @@ sub salmon_quant {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $gc_bias;
     my $index_path;
     my $outdir_path;
@@ -149,8 +149,8 @@ sub salmon_quant {
     my $validate_mappings;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         gc_bias => {
             store       => \$gc_bias,
@@ -263,7 +263,7 @@ sub salmon_quant {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

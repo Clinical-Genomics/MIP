@@ -39,7 +39,7 @@ sub download_reference {
 ##          : Based on download_reference version 0.0.4
 ## Returns  : @commands
 ## Arguments: $config_file_path              => Config file path
-##          : $FILEHANDLE                    => Filehandle to write to
+##          : $filehandle                    => Filehandle to write to
 ##          : $pipeline                      => Pipeline
 ##          : $reference_dir_path            => Reference directory
 ##          : $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
@@ -51,7 +51,7 @@ sub download_reference {
 
     ## Flatten argument(s)
     my $config_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $pipeline;
     my $reference_dir_path;
     my $reference_genome_versions_ref;
@@ -66,9 +66,9 @@ sub download_reference {
             store       => \$config_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         pipeline => {
             allow       => [qw{ rare_disease rna }],
@@ -136,7 +136,7 @@ sub download_reference {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

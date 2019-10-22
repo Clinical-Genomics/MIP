@@ -34,11 +34,11 @@ Readonly my $SPACE => q{ };
 
 sub blast_blastn {
 
-## Function : Perl wrapper for writing blast blastn recipe to $FILEHANDLE. Based on bwa  2.7.1.
+## Function : Perl wrapper for writing blast blastn recipe to $filehandle. Based on bwa  2.7.1.
 ## Returns  : @commands
 ## Arguments: $database_name          => Database type
 ##          : $evalue                 => Expectation value (E) threshold for saving hits
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $lcase_masking          => Use lower case filtering in query and subject sequence(s)
 ##          : $max_target_seqs        => Max number of target sequences
 ##          : $output_format          => Output format
@@ -52,7 +52,7 @@ sub blast_blastn {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $query_file_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -87,8 +87,8 @@ sub blast_blastn {
             store       => \$database_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         lcase_masking => {
             allow       => [ 0, 1, undef ],
@@ -176,7 +176,7 @@ sub blast_blastn {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -186,10 +186,10 @@ sub blast_blastn {
 
 sub blast_makeblastdb {
 
-## Function : Perl wrapper for writing blast makeblastdb recipe to $FILEHANDLE. Based on bwa  2.7.1.
+## Function : Perl wrapper for writing blast makeblastdb recipe to $filehandle. Based on bwa  2.7.1.
 ## Returns  : @commands
 ## Arguments: $db_type                => Database type
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $cdna_seq_file_path     => CDNA sequence file path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -198,7 +198,7 @@ sub blast_makeblastdb {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $cdna_seq_file_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -220,8 +220,8 @@ sub blast_makeblastdb {
             store       => \$db_type,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -258,7 +258,7 @@ sub blast_makeblastdb {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

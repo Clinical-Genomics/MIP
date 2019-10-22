@@ -66,7 +66,7 @@ diag(   q{Test htslib_bgzip from Htslib.pm v}
 my @function_base_commands = qw{ bgzip };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

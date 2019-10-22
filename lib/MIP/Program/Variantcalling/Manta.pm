@@ -36,11 +36,11 @@ BEGIN {
 
 sub manta_config {
 
-## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.5.0.
+## Function : Perl wrapper for writing Manta config recipe to $filehandle or return commands array. Based on Manta 1.5.0.
 ## Returns  : @commands
 ## Arguments: $call_regions_file_path => Call regions file path
 ##          : $exome_analysis         => Set options for WES input: turn off depth filters
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $outdirectory_path      => Outfile path
 ##          : $referencefile_path     => Reference sequence file
@@ -51,7 +51,7 @@ sub manta_config {
 
     ## Flatten argument(s)
     my $call_regions_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outdirectory_path;
     my $referencefile_path;
@@ -72,7 +72,7 @@ sub manta_config {
             store       => \$exome_analysis,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -131,7 +131,7 @@ sub manta_config {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -141,10 +141,10 @@ sub manta_config {
 
 sub manta_workflow {
 
-## Function : Perl wrapper for writing Manta workflow recipe to $FILEHANDLE or return commands array. Based on Manta 1.5.0.
+## Function : Perl wrapper for writing Manta workflow recipe to $filehandle or return commands array. Based on Manta 1.5.0.
 ## Returns  : "@commands"
 ## Arguments: $core_number            => Number of cores to use
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $mode                   => Mode of parallel
 ##          : $outdirectory_path      => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
@@ -154,7 +154,7 @@ sub manta_workflow {
 
     ## Flatten argument(s)
     my $core_number;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outdirectory_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -168,7 +168,7 @@ sub manta_workflow {
             store       => \$core_number,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         mode       => {
             allow       => [qw{ undef local sge }],
             default     => q{local},
@@ -215,7 +215,7 @@ sub manta_workflow {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

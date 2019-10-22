@@ -76,12 +76,12 @@ my %vcf_schema_and_id_key = (
     INFO       => q{AC},
 );
 
-open my $FILEHANDLE, q{<}, $vcf_path
+open my $filehandle, q{<}, $vcf_path
   or croak( q{Cannot open } . $vcf_path . $COLON . $OS_ERROR, $NEWLINE );
 my $is_ok;
 
 LINE:
-while (<$FILEHANDLE>) {
+while (<$filehandle>) {
 
     chomp;
 
@@ -97,7 +97,7 @@ while (<$FILEHANDLE>) {
         );
     }
 }
-close $FILEHANDLE;
+close $filehandle;
 my %expected_header_data = (
     ALT => {
         NON_REF =>

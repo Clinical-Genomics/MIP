@@ -65,7 +65,7 @@ my $log = test_log( {} );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given packages when no conda env
@@ -83,7 +83,7 @@ trap {
             conda_env           => $conda_env,
             conda_env_path      => $conda_env_path,
             conda_packages_href => \%conda_packages,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
         }
     )
 };
@@ -104,7 +104,7 @@ trap {
             conda_env           => $conda_env,
             conda_env_path      => $conda_env_path,
             conda_packages_href => \%conda_packages,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
         }
     )
 };
@@ -126,7 +126,7 @@ trap {
             conda_env           => $conda_env,
             conda_env_path      => $conda_env_path,
             conda_packages_href => \%conda_packages,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
         }
     )
 };
@@ -147,7 +147,7 @@ trap {
             conda_env           => $conda_env,
             conda_env_path      => $conda_env_path,
             conda_packages_href => \%conda_packages,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
         }
     )
 };
@@ -161,6 +161,6 @@ like(
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

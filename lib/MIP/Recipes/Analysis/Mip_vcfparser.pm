@@ -242,8 +242,8 @@ sub analysis_mip_vcfparser {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -268,7 +268,7 @@ sub analysis_mip_vcfparser {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -283,7 +283,7 @@ sub analysis_mip_vcfparser {
     ### SHELL:
 
     ## vcfparser
-    say {$FILEHANDLE} q{## vcfparser};
+    say {$filehandle} q{## vcfparser};
 
     my $xargs_file_path_prefix;
 
@@ -291,10 +291,10 @@ sub analysis_mip_vcfparser {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -354,7 +354,7 @@ sub analysis_mip_vcfparser {
 
         mip_vcfparser(
             {
-                FILEHANDLE    => $XARGSFILEHANDLE,
+                filehandle    => $xargsfilehandle,
                 infile_path   => $infile_path{$contig},
                 log_file_path => $log_file_path,
                 padding       => $padding,
@@ -376,20 +376,20 @@ sub analysis_mip_vcfparser {
             }
         );
 
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
 
         ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
         _add_all_mt_var_from_research_to_clinical(
             {
                 add_all_mt_var => $active_parameter_href->{vcfparser_add_all_mt_var},
                 contig         => $contig,
-                FILEHANDLE     => $XARGSFILEHANDLE,
+                filehandle     => $xargsfilehandle,
                 infile_path    => $outfile_path{$contig},
                 outfile_path   => $select_outfile,
             }
         );
     }
-    say {$XARGSFILEHANDLE} $NEWLINE;
+    say {$xargsfilehandle} $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
@@ -425,9 +425,9 @@ sub analysis_mip_vcfparser {
         );
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close $FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close $filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close $xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -455,7 +455,7 @@ sub analysis_mip_vcfparser_sv_wes {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -611,7 +611,7 @@ sub analysis_mip_vcfparser_sv_wes {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Always one file for wes
     Readonly my $CORE_NUMBER       => 1;
@@ -654,7 +654,7 @@ sub analysis_mip_vcfparser_sv_wes {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $CORE_NUMBER,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $MEMORY_ALLOCATION,
@@ -669,7 +669,7 @@ sub analysis_mip_vcfparser_sv_wes {
     ### SHELL:
 
     ## vcfparser
-    say {$FILEHANDLE} q{## vcfparser};
+    say {$filehandle} q{## vcfparser};
 
     my $log_file_path = catfile( $outdir_path, q{vcfparser.log} );
     my @select_feature_annotation_columns;
@@ -701,7 +701,7 @@ sub analysis_mip_vcfparser_sv_wes {
 
     mip_vcfparser(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             log_file_path        => $log_file_path,
             parse_vep            => $active_parameter_href->{sv_varianteffectpredictor},
@@ -720,9 +720,9 @@ sub analysis_mip_vcfparser_sv_wes {
             select_outfile                 => $select_outfile,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -780,7 +780,7 @@ sub analysis_mip_vcfparser_sv_wgs {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -969,8 +969,8 @@ sub analysis_mip_vcfparser_sv_wgs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -978,7 +978,7 @@ sub analysis_mip_vcfparser_sv_wgs {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -993,16 +993,16 @@ sub analysis_mip_vcfparser_sv_wgs {
     my @contigs = @{ $file_info_href->{contigs} };
 
     ## vcfparser
-    say {$FILEHANDLE} q{## vcfparser};
+    say {$filehandle} q{## vcfparser};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $recipe_resource{core_number},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -1066,7 +1066,7 @@ sub analysis_mip_vcfparser_sv_wgs {
 
         mip_vcfparser(
             {
-                FILEHANDLE    => $XARGSFILEHANDLE,
+                filehandle    => $xargsfilehandle,
                 infile_path   => $infile_path{$contig},
                 log_file_path => $log_file_path,
                 padding       => $padding,
@@ -1092,20 +1092,20 @@ sub analysis_mip_vcfparser_sv_wgs {
             }
         );
 
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
 
         ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
         _add_all_mt_var_from_research_to_clinical(
             {
                 add_all_mt_var => $active_parameter_href->{sv_vcfparser_add_all_mt_var},
                 contig         => $contig,
-                FILEHANDLE     => $XARGSFILEHANDLE,
+                filehandle     => $xargsfilehandle,
                 infile_path    => $vcfparser_outfile_path,
                 outfile_path   => $select_outfile,
             }
         );
     }
-    say {$XARGSFILEHANDLE} $NEWLINE;
+    say {$xargsfilehandle} $NEWLINE;
 
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@outfile_suffixes) {
@@ -1122,7 +1122,7 @@ sub analysis_mip_vcfparser_sv_wgs {
                 active_parameter_href => $active_parameter_href,
                 elements_ref          => \@concat_contigs,
                 continue              => 1,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_postfix        => $analysis_suffix,
                 infile_prefix         => $outfile_path_prefix,
                 outfile_path_prefix   => $outfile_path_prefix,
@@ -1130,11 +1130,11 @@ sub analysis_mip_vcfparser_sv_wgs {
             }
         );
     }
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    say {$filehandle} q{wait} . $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -1195,7 +1195,7 @@ sub _add_all_mt_var_from_research_to_clinical {
 ## Returns  :
 ## Arguments: $add_all_mt_var => Add all mt variants switch
 ##          : $contig         => Contig {REF}
-##          : $FILEHANDLE     => Filehandle to write to
+##          : $filehandle     => Filehandle to write to
 ##          : $infile_path    => File to copy from
 ##          : $outfile_path   => File to replace
 
@@ -1203,7 +1203,7 @@ sub _add_all_mt_var_from_research_to_clinical {
 
     ## Flatten argument(s)
     my $contig;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
 
@@ -1223,10 +1223,10 @@ sub _add_all_mt_var_from_research_to_clinical {
             store       => \$contig,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -1247,10 +1247,10 @@ sub _add_all_mt_var_from_research_to_clinical {
 
     if ( $add_all_mt_var and $contig =~ / $MT_CONTIG_ID_REG_EXP /sxm ) {
 
-        say {$FILEHANDLE} q{## Replacing clinical MT variants with research MT variants};
+        say {$filehandle} q{## Replacing clinical MT variants with research MT variants};
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path,
             }

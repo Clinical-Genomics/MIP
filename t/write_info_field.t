@@ -62,7 +62,7 @@ diag(   q{Test write_info_field from Vcfparser.pm v}
 my $range_file_content;
 
 ## Store range feature file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$range_file_content
+open my $filehandle, q{>}, \$range_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $range_file_content
@@ -74,7 +74,7 @@ open my $FILEHANDLE, q{>}, \$range_file_content
 my $select_file_content;
 
 ## Store select file content in memory by using referenced variable
-open my $SELECT_FH, q{>}, \$select_file_content
+open my $select_fh, q{>}, \$select_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $select_file_content
@@ -97,16 +97,16 @@ my %vcf_record = (
 
 my $info_field_counter = write_info_field(
     {
-        FILEHANDLE         => $FILEHANDLE,
+        filehandle         => $filehandle,
         info_field_counter => 1,
-        SELECT_FH          => $SELECT_FH,
+        select_fh          => $select_fh,
         vcf_record_href    => \%vcf_record,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
+close $filehandle;
+close $select_fh;
 
 ## Then write info field with ";" first
 my ($ret_range_info) = $range_file_content =~ /\A [;] /msx;
@@ -120,7 +120,7 @@ $range_file_content  = undef;
 $select_file_content = undef;
 
 ## Store range feature file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$range_file_content
+open $filehandle, q{>}, \$range_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $range_file_content
@@ -129,7 +129,7 @@ open $FILEHANDLE, q{>}, \$range_file_content
   . $OS_ERROR;
 
 ## Store select file content in memory by using referenced variable
-open $SELECT_FH, q{>}, \$select_file_content
+open $select_fh, q{>}, \$select_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $select_file_content
@@ -139,16 +139,16 @@ open $SELECT_FH, q{>}, \$select_file_content
 
 $info_field_counter = write_info_field(
     {
-        FILEHANDLE         => $FILEHANDLE,
+        filehandle         => $filehandle,
         info_field_counter => 0,
-        SELECT_FH          => $SELECT_FH,
+        select_fh          => $select_fh,
         vcf_record_href    => \%vcf_record,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
+close $filehandle;
+close $select_fh;
 
 ## Then write info field with key first
 ($ret_range_info) = $range_file_content !~ /\A [;] /msx;

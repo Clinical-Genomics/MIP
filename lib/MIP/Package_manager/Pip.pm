@@ -34,7 +34,7 @@ sub pip_install {
 ## Function : Perl wrapper for writing pip install command. Based on pip v18.1
 ## Returns  : @commands
 ##          : $editable               => Install in editable mode from a local project path or a VCS url.
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $packages_ref           => Array of packages to be installed {REF}
 ##          : $python_module          => Execute pip as python module
 ##          : $quiet                  => Quiet output
@@ -48,7 +48,7 @@ sub pip_install {
 
     ## Flatten argument(s)
     my $editable;
-    my $FILEHANDLE;
+    my $filehandle;
     my $packages_ref;
     my $no_cache_dir;
     my $python_module;
@@ -64,8 +64,8 @@ sub pip_install {
             store       => \$editable,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         packages_ref => {
             default     => [],
@@ -163,7 +163,7 @@ sub pip_install {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

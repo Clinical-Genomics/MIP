@@ -71,7 +71,7 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

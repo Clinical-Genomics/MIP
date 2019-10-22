@@ -30,14 +30,11 @@ BEGIN {
     our @EXPORT_OK = qw{ unix_standard_streams };
 }
 
-# Do not convert to lower case - required to pass $FILEHANDLE
-$Params::Check::PRESERVE_CASE = 1;
-
 sub unix_standard_streams {
 
-## Function : Perl wrapper for writing unix standard_streams recipe to already open $FILEHANDLE or return commands array.
+## Function : Perl wrapper for writing unix standard_streams recipe to already open $filehandle or return commands array.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -47,7 +44,7 @@ sub unix_standard_streams {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -55,7 +52,7 @@ sub unix_standard_streams {
     my $stdoutfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -100,7 +97,7 @@ sub unix_standard_streams {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

@@ -67,7 +67,7 @@ Readonly my $BIN_SIZE => 500;
 my @function_base_commands = qw{ TIDDIT.py --cov };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

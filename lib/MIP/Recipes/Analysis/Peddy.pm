@@ -208,7 +208,7 @@ sub analysis_peddy {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -216,7 +216,7 @@ sub analysis_peddy {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -239,7 +239,7 @@ sub analysis_peddy {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -252,7 +252,7 @@ sub analysis_peddy {
     ## Reformat variant calling file and index
     bcftools_view_and_index_vcf(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $infile_path,
             index               => 1,
             index_type          => q{tbi},
@@ -266,15 +266,15 @@ sub analysis_peddy {
     peddy(
         {
             case_file_path      => $case_file_path,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             genome_site         => $genome_site,
             infile_path         => $outfile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

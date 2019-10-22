@@ -37,7 +37,7 @@ sub bootstrapann {
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 ## Arguments: $ase_file_path          => Path to file with GATK ASEReadCounter data
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -47,7 +47,7 @@ sub bootstrapann {
 
     ## Flatten argument(s)
     my $ase_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -62,8 +62,8 @@ sub bootstrapann {
             store       => \$ase_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -105,7 +105,7 @@ sub bootstrapann {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 

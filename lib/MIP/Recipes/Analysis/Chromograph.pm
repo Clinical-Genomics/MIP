@@ -196,7 +196,7 @@ sub analysis_chromograph {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -204,7 +204,7 @@ sub analysis_chromograph {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -217,32 +217,32 @@ sub analysis_chromograph {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Process the wig file from tiddit_coverage
     chromograph(
         {
             coverage_file_path => $infile_path,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     tar(
         {
             create       => 1,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             file_path    => $outfile_path,
             filter_gzip  => 1,
             in_paths_ref => [$outdir_path],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandle
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -440,7 +440,7 @@ sub analysis_chromograph_proband {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -448,7 +448,7 @@ sub analysis_chromograph_proband {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -471,7 +471,7 @@ sub analysis_chromograph_proband {
     my $tiddit_cov_infile_path = $io{out}{file_path};
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## UPD
     ## Get family hash
@@ -487,60 +487,60 @@ sub analysis_chromograph_proband {
                 af_tag       => q{GNOMADAF},
                 call_type    => $call_type,
                 father_id    => $family_member_id{father},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 mother_id    => $family_member_id{mother},
                 outfile_path => $outfile_path_prefix . $UNDERSCORE . $call_type,
                 proband_id   => $sample_id,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Process the wig file from tiddit_coverage
     chromograph(
         {
             coverage_file_path => $tiddit_cov_infile_path,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Process regions file from UPD
     chromograph(
         {
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             outdir_path           => $outdir_path,
             upd_regions_file_path => $outfile_path_prefix . $UNDERSCORE . q{regions},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Process sites file from UPD
     chromograph(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             outdir_path         => $outdir_path,
             upd_sites_file_path => $outfile_path_prefix . $UNDERSCORE . q{sites},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     tar(
         {
             create       => 1,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             file_path    => $outfile_path,
             filter_gzip  => 1,
             in_paths_ref => [$outdir_path],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

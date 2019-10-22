@@ -30,12 +30,12 @@ BEGIN {
 
 sub tar {
 
-## Function: Perl wrapper for writing tar command recipe to $FILEHANDLE or return commands array. Based on tar 1.23.
+## Function: Perl wrapper for writing tar command recipe to $filehandle or return commands array. Based on tar 1.23.
 ## Returns : @commands
 ##Arguments: $create                 => Create tar archive
 ##         : $extract                => Extract files from an archive
 ##         : $file_path              => Use archive file or device ARCHIVE
-##         : $FILEHANDLE             => Filehandle to write to
+##         : $filehandle             => Filehandle to write to
 ##         : $filter_gzip            => Filter the archive through gzip
 ##         : $in_paths_ref           => Files/directory to compress
 ##         : $outdir_path            => Extract to other than current directory
@@ -49,7 +49,7 @@ sub tar {
     my $create;
     my $extract;
     my $file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $filter_gzip;
     my $in_paths_ref;
     my $outdirectory_path;
@@ -72,8 +72,8 @@ sub tar {
             store       => \$file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         filter_gzip => {
             allow       => [ 0, 1 ],
@@ -145,7 +145,7 @@ sub tar {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

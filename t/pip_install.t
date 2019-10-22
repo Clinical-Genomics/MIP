@@ -67,7 +67,7 @@ diag(   q{Test pip_install from Pip.pm v}
 my @function_base_commands = qw{ pip install };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -90,7 +90,7 @@ my %specific_argument = (
         input           => catdir(qw{ test path }),
         expected_output => q{--editable test/path},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

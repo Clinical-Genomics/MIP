@@ -65,7 +65,7 @@ diag(   q{Test gnu_set from Bash.pm v}
 my $batch_shebang = q{#!};
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => q{set},
     },
@@ -120,7 +120,7 @@ my @function_base_commands = qw{ set };
 # Fake arguments
 my @args = (
     set_errexit => $argument{set_errexit}{input},
-    FILEHANDLE  => undef,
+    filehandle  => undef,
 );
 
 ## Coderef - enables generalized use of generate call

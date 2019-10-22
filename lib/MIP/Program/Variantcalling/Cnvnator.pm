@@ -40,9 +40,9 @@ Readonly my $SPACE => q{ };
 
 sub cnvnator_read_extraction {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
-## Arguments: $FILEHANDLE       => Filehandle to write to
+## Arguments: $filehandle       => Filehandle to write to
 ##          : $infile_paths_ref => Infile paths {REF}
 ##          : $outfile_path      => outfile_path
 ##          : $regions_ref      => The regions to process {REF}
@@ -53,7 +53,7 @@ sub cnvnator_read_extraction {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outfile_path;
     my $regions_ref;
@@ -62,7 +62,7 @@ sub cnvnator_read_extraction {
     my $unique;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -119,7 +119,7 @@ sub cnvnator_read_extraction {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -130,10 +130,10 @@ sub cnvnator_read_extraction {
 
 sub cnvnator_histogram {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
 ## Arguments: $cnv_bin_size            => Copy number variant bin size
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile paths
 ##          : $referencedirectory_path => Reference sequence file
 ##          : $regions_ref             => The regions to process {REF}
@@ -144,7 +144,7 @@ sub cnvnator_histogram {
 
     ## Flatten argument(s)
     my $cnv_bin_size;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $referencedirectory_path;
     my $regions_ref;
@@ -157,7 +157,7 @@ sub cnvnator_histogram {
             store       => \$cnv_bin_size,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -211,7 +211,7 @@ sub cnvnator_histogram {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -222,10 +222,10 @@ sub cnvnator_histogram {
 
 sub cnvnator_statistics {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
 ## Arguments: $cnv_bin_size    => Copy number variant bin size
-##          : $FILEHANDLE      => Filehandle to write to
+##          : $filehandle      => Filehandle to write to
 ##          : $infile_path     => Infile paths
 ##          : $regions_ref     => The regions to process {REF}
 ##          : $stderrfile_path => Stderrfile path
@@ -235,14 +235,14 @@ sub cnvnator_statistics {
 
     ## Flatten argument(s)
     my $cnv_bin_size;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $regions_ref;
     my $stderrfile_path;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        filehandle   => { store => \$filehandle, },
         cnv_bin_size => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$cnv_bin_size,
@@ -290,7 +290,7 @@ sub cnvnator_statistics {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -301,10 +301,10 @@ sub cnvnator_statistics {
 
 sub cnvnator_partition {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
 ## Arguments: $cnv_bin_size    => Copy number variant bin size
-##          : $FILEHANDLE      => Filehandle to write to
+##          : $filehandle      => Filehandle to write to
 ##          : $infile_path     => Infile paths
 ##          : $regions_ref     => The regions to process {REF}
 ##          : $stderrfile_path => Stderrfile path
@@ -314,14 +314,14 @@ sub cnvnator_partition {
 
     ## Flatten argument(s)
     my $cnv_bin_size;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $regions_ref;
     my $stderrfile_path;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        filehandle   => { store => \$filehandle, },
         cnv_bin_size => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$cnv_bin_size,
@@ -369,7 +369,7 @@ sub cnvnator_partition {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -380,10 +380,10 @@ sub cnvnator_partition {
 
 sub cnvnator_calling {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
 ## Arguments: $cnv_bin_size    => Copy number variant bin size
-##          : $FILEHANDLE      => Filehandle to write to
+##          : $filehandle      => Filehandle to write to
 ##          : $infile_path     => Infile paths
 ##          : $regions_ref     => The regions to process {REF}
 ##          : $stderrfile_path => Stderrfile path
@@ -393,7 +393,7 @@ sub cnvnator_calling {
 
     ## Flatten argument(s)
     my $cnv_bin_size;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $regions_ref;
     my $stderrfile_path;
@@ -405,7 +405,7 @@ sub cnvnator_calling {
             store       => \$cnv_bin_size,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -448,7 +448,7 @@ sub cnvnator_calling {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -459,9 +459,9 @@ sub cnvnator_calling {
 
 sub cnvnator_convert_to_vcf {
 
-## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
-## Arguments: $FILEHANDLE              => Filehandle to write to
+## Arguments: $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile paths
 ##          : $referencedirectory_path => Reference sequence file
 ##          : $stdoutfile_path         => Stdoutfile path
@@ -470,14 +470,14 @@ sub cnvnator_convert_to_vcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $referencedirectory_path;
     my $stdoutfile_path;
     my $stderrfile_path;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -519,7 +519,7 @@ sub cnvnator_convert_to_vcf {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

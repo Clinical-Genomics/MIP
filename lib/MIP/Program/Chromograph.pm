@@ -36,7 +36,7 @@ sub chromograph {
 ## Function : Perl wrapper for chromograph.
 ## Returns  : @commands
 ## Arguments: $coverage_file_path     => Coverage data infile
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -50,7 +50,7 @@ sub chromograph {
 
     ## Flatten argument(s)
     my $coverage_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -65,8 +65,8 @@ sub chromograph {
             store       => \$coverage_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         outdir_path => {
             defined     => 1,
@@ -142,7 +142,7 @@ sub chromograph {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

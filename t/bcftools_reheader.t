@@ -98,7 +98,7 @@ diag(   q{Test bcftools_reheader from Bcftools.pm v}
 my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

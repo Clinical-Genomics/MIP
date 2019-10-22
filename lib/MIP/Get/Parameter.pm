@@ -382,7 +382,7 @@ sub get_gatk_intervals {
 ##          : $contigs_ref           => Contigs to split in file
 ##          : $exome_target_bed_href => Exome target bed files lnked to sample ids
 ##          : $file_ending           => File ending to add {Optional}
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $log                   => Log
 ##          : $max_cores_per_node    => Maximum core per node
 ##          : $outdirectory          => Outdirectory
@@ -396,7 +396,7 @@ sub get_gatk_intervals {
     my $contigs_ref;
     my $exome_target_bed_href;
     my $file_ending;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log;
     my $outdirectory;
     my $reference_dir;
@@ -426,7 +426,7 @@ sub get_gatk_intervals {
             store       => \$file_ending,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         log        => {
             store => \$log,
         },
@@ -474,7 +474,7 @@ sub get_gatk_intervals {
             {
                 contigs_ref           => $contigs_ref,
                 exome_target_bed_file => $exome_target_bed_file,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_cores_per_node    => $max_cores_per_node,
                 outdirectory          => $outdirectory,
                 reference_dir         => $reference_dir,

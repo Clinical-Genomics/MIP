@@ -33,12 +33,12 @@ BEGIN {
 
 sub genmod_annotate {
 
-## Function : Perl wrapper for writing Genmod annotate recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
+## Function : Perl wrapper for writing Genmod annotate recipe to $filehandle or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
 ## Arguments: $annotate_region        => Annotate what regions a variant belongs to
 ##          : $append_stderr_info     => Append stderr info to file
 ##          : $cadd_file_paths_ref    => Specify the path to a bgzipped cadd file (with index) with variant scores
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $max_af                 => If the MAX AF should be annotated
 ##          : $outfile_path           => Outfile path to write to
@@ -54,7 +54,7 @@ sub genmod_annotate {
 
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -85,7 +85,7 @@ sub genmod_annotate {
         },
         cadd_file_paths_ref =>
           { default => [], store => \$cadd_file_paths_ref, strict_type => 1, },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -181,7 +181,7 @@ sub genmod_annotate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -192,9 +192,9 @@ sub genmod_annotate {
 
 sub genmod_compound {
 
-## Function : Perl wrapper for writing Genmod compound recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
+## Function : Perl wrapper for writing Genmod compound recipe to $filehandle or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -208,7 +208,7 @@ sub genmod_compound {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -222,7 +222,7 @@ sub genmod_compound {
     my $vep;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -306,7 +306,7 @@ sub genmod_compound {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -316,9 +316,9 @@ sub genmod_compound {
 
 sub genmod_filter {
 
-## Function : Perl wrapper for writing Genmod filter recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
+## Function : Perl wrapper for writing Genmod filter recipe to $filehandle or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -330,7 +330,7 @@ sub genmod_filter {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -343,7 +343,7 @@ sub genmod_filter {
     my $verbosity;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -411,7 +411,7 @@ sub genmod_filter {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -422,11 +422,11 @@ sub genmod_filter {
 
 sub genmod_models {
 
-## Function : Perl wrapper for writing Genmod models recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
+## Function : Perl wrapper for writing Genmod models recipe to $filehandle or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
 ## Arguments: $case_file                    => Family file
 ##          : $case_type                    => Setup of family file
-##          : $FILEHANDLE                   => Filehandle to write to
+##          : $filehandle                   => Filehandle to write to
 ##          : $infile_path                  => Infile path to read from
 ##          : $outfile_path                 => Outfile path to write to
 ##          : $reduced_penetrance_file_path => Reduced penetrance file path
@@ -444,7 +444,7 @@ sub genmod_models {
     ## Flatten argument(s)
     my $case_file;
     my $case_type;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $reduced_penetrance_file_path;
@@ -471,7 +471,7 @@ sub genmod_models {
             store       => \$case_type,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -580,7 +580,7 @@ sub genmod_models {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -590,11 +590,11 @@ sub genmod_models {
 
 sub genmod_score {
 
-## Function : Perl wrapper for writing Genmod score recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
+## Function : Perl wrapper for writing Genmod score recipe to $filehandle or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
 ## Arguments: $case_file               => Family file
 ##          : $case_type               => Setup of family file
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $outfile_path            => Outfile path to write to
 ##          : $rank_model_file_path    => The plug-in config file
@@ -610,7 +610,7 @@ sub genmod_score {
     ## Flatten argument(s)
     my $case_file;
     my $case_type;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $rank_model_file_path;
@@ -635,7 +635,7 @@ sub genmod_score {
             store       => \$case_type,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -727,7 +727,7 @@ sub genmod_score {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 

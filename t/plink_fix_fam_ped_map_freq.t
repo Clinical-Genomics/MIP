@@ -98,7 +98,7 @@ diag(   q{Test plink_fix_fam_ped_map_freq from Plink.pm v}
 my @function_base_commands = qw{ plink2 };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

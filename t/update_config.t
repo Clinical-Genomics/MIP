@@ -65,7 +65,7 @@ my $log = test_log( { no_screen => 0, } );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a config file path when it does not exists
@@ -79,7 +79,7 @@ trap {
     update_config(
         {
             env_name_href     => \%env_name,
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             installations_ref => \@installations,
             log               => $log,
             pipeline          => $pipeline,
@@ -103,7 +103,7 @@ trap {
     update_config(
         {
             env_name_href     => \%env_name,
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             installations_ref => \@installations,
             log               => $log,
             pipeline          => $pipeline,
@@ -121,6 +121,6 @@ like(
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

@@ -67,7 +67,7 @@ Readonly my $MIN_AC      => 1;
 Readonly my $MIN_ALLELES => 2;
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

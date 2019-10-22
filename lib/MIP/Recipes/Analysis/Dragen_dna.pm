@@ -205,7 +205,7 @@ sub analysis_dragen_dna_align_vc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -213,7 +213,7 @@ sub analysis_dragen_dna_align_vc {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -227,7 +227,7 @@ sub analysis_dragen_dna_align_vc {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Get all sample fastq info for dragen as csv file
     my @dragen_fastq_list_lines;
@@ -305,11 +305,11 @@ sub analysis_dragen_dna_align_vc {
 
     my @ssh_cmd = ssh(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             user_at_hostname => $active_parameter_href->{dragen_user_at_hostname},
         }
     );
-    print {$FILEHANDLE} $SPACE;
+    print {$filehandle} $SPACE;
     my @cmds = dragen_dna_analysis(
         {
             alignment_output_format => q{BAM},
@@ -324,7 +324,7 @@ sub analysis_dragen_dna_align_vc {
             enable_variant_caller    => 1,
             fastq_list_sample_id     => $sample_id,
             fastq_list_file_path     => $fastq_list_file_path,
-            FILEHANDLE               => $FILEHANDLE,
+            filehandle               => $filehandle,
             force                    => 1,
             outdirectory_path        => $outdir_path,
             outfile_prefix           => $outfile_name_prefix,
@@ -332,17 +332,17 @@ sub analysis_dragen_dna_align_vc {
             vc_emit_ref_confidence   => q{GVCF},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     _dragen_wait_loop(
         {
             cmd        => join( $SPACE, @ssh_cmd, @cmds ),
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -520,7 +520,7 @@ sub analysis_dragen_dna_joint_calling {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -528,7 +528,7 @@ sub analysis_dragen_dna_joint_calling {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -565,7 +565,7 @@ sub analysis_dragen_dna_joint_calling {
     }
 
     ### SHELL:
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     my $case_file_path;
 
@@ -578,7 +578,7 @@ sub analysis_dragen_dna_joint_calling {
             {
                 active_parameter_href => $active_parameter_href,
                 fam_file_path         => $case_file_path,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 log                   => $log,
                 parameter_href        => $parameter_href,
                 sample_info_href      => $sample_info_href,
@@ -589,33 +589,33 @@ sub analysis_dragen_dna_joint_calling {
     ## DRAGEN combine gvcfs
     my @ssh_cmds = ssh(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             user_at_hostname => $active_parameter_href->{dragen_user_at_hostname},
         }
     );
-    print {$FILEHANDLE} $SPACE;
+    print {$filehandle} $SPACE;
     my @combine_cmds = dragen_dna_analysis(
         {
             dbsnp_file_path => $active_parameter_href->{dragen_dbsnp},
             dragen_hash_ref_dir_path =>
               $active_parameter_href->{dragen_hash_ref_dir_path},
             enable_combinegvcfs        => 1,
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             force                      => 1,
             outdirectory_path          => $outdir_path,
             outfile_prefix             => $outfile_name_prefix . $UNDERSCORE . q{comb},
             sample_gvcf_file_paths_ref => \@dragen_infile_paths,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     _dragen_wait_loop(
         {
             cmd        => join( $SPACE, @ssh_cmds, @combine_cmds ),
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## DRAGEN joint calling
     my $joint_calling_infile =
@@ -623,11 +623,11 @@ sub analysis_dragen_dna_joint_calling {
 
     ssh(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             user_at_hostname => $active_parameter_href->{dragen_user_at_hostname},
         }
     );
-    print {$FILEHANDLE} $SPACE;
+    print {$filehandle} $SPACE;
     my @joint_call_cmds = dragen_dna_analysis(
         {
             dbsnp_file_path         => $active_parameter_href->{dragen_dbsnp},
@@ -635,7 +635,7 @@ sub analysis_dragen_dna_joint_calling {
             dragen_hash_ref_dir_path =>
               $active_parameter_href->{dragen_hash_ref_dir_path},
             enable_joint_genotyping    => 1,
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             force                      => 1,
             pedigree_file_path         => $case_file_path,
             outdirectory_path          => $outdir_path,
@@ -643,18 +643,18 @@ sub analysis_dragen_dna_joint_calling {
             sample_gvcf_file_paths_ref => [$joint_calling_infile],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     _dragen_wait_loop(
         {
             cmd        => join( $SPACE, @ssh_cmds, @joint_call_cmds ),
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -690,7 +690,7 @@ sub _dragen_wait_loop {
 ## Function : Wait for dragen processor to become available
 ## Returns  :
 ## Arguments: $cmd           => Command to retry
-##          : $FILEHANDLE    => Filehandle to write to
+##          : $filehandle    => Filehandle to write to
 ##          : $max_retries   => Maixum number of retries
 ##          : $time_to_sleep => Time to sleep before retrying (seconds)
 
@@ -698,7 +698,7 @@ sub _dragen_wait_loop {
 
     ## Flatten argument(s)
     my $cmd;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
     my $max_retries;
@@ -711,9 +711,9 @@ sub _dragen_wait_loop {
             store       => \$cmd,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         max_retries => {
             allow       => qr{ \A\d+\z }sxm,
@@ -731,28 +731,28 @@ sub _dragen_wait_loop {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} q{status=$?};
-    say {$FILEHANDLE} q{time_to_sleep=} . $time_to_sleep;
+    say {$filehandle} q{status=$?};
+    say {$filehandle} q{time_to_sleep=} . $time_to_sleep;
 
-    say {$FILEHANDLE} q{if [ $status -eq 0 ]};
-    say {$FILEHANDLE} q{then};
-    say {$FILEHANDLE} $TAB, q{echo "$cmd command was successful"};
+    say {$filehandle} q{if [ $status -eq 0 ]};
+    say {$filehandle} q{then};
+    say {$filehandle} $TAB, q{echo "$cmd command was successful"};
 
-    say {$FILEHANDLE} q{else};
-    say {$FILEHANDLE} q?for i in {1..? . $max_retries . q?}?;
-    say {$FILEHANDLE} $TAB . q{do};
-    say {$FILEHANDLE} $TAB x 2
+    say {$filehandle} q{else};
+    say {$filehandle} q?for i in {1..? . $max_retries . q?}?;
+    say {$filehandle} $TAB . q{do};
+    say {$filehandle} $TAB x 2
       . q{echo "$cmd failed $i times: Retrying in $time_to_sleep"};
-    say {$FILEHANDLE} $TAB x 2, qq{sleep $time_to_sleep};
-    say {$FILEHANDLE} $TAB x 2, $cmd;
-    say {$FILEHANDLE} $TAB x 2, q{status=$?};
-    say {$FILEHANDLE} $TAB x 2, q{if [ $status -eq 0 ]};
-    say {$FILEHANDLE} $TAB x 2 . q{then};
-    say {$FILEHANDLE} $TAB x $INDENT_DEPTH_3, q{echo "$cmd command was successful"};
-    say {$FILEHANDLE} $TAB x $INDENT_DEPTH_3, q{break};
-    say {$FILEHANDLE} $TAB x 2, q{fi};
-    say {$FILEHANDLE} $TAB, q{done};
-    say {$FILEHANDLE} q{fi};
+    say {$filehandle} $TAB x 2, qq{sleep $time_to_sleep};
+    say {$filehandle} $TAB x 2, $cmd;
+    say {$filehandle} $TAB x 2, q{status=$?};
+    say {$filehandle} $TAB x 2, q{if [ $status -eq 0 ]};
+    say {$filehandle} $TAB x 2 . q{then};
+    say {$filehandle} $TAB x $INDENT_DEPTH_3, q{echo "$cmd command was successful"};
+    say {$filehandle} $TAB x $INDENT_DEPTH_3, q{break};
+    say {$filehandle} $TAB x 2, q{fi};
+    say {$filehandle} $TAB, q{done};
+    say {$filehandle} q{fi};
 
     return;
 }

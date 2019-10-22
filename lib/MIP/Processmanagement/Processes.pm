@@ -1651,9 +1651,9 @@ sub limit_job_id_string {
 
 sub print_wait {
 
-## Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
+## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate.
 ## Returns  : $process_batches_count
-## Arguments: $FILEHANDLE            => FILEHANDLE to print "wait" statment to
+## Arguments: $filehandle            => filehandle to print "wait" statment to
 ##          : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
 ##          : $process_batches_count => Scales the number of $max_process_number processs used after each print "wait" statement
 ##          : $process_counter       => The number of started processes
@@ -1661,13 +1661,13 @@ sub print_wait {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $max_process_number;
     my $process_batches_count;
     my $process_counter;
 
     my $tmpl = {
-        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle         => { defined => 1, required => 1, store => \$filehandle, },
         max_process_number => {
             defined     => 1,
             required    => 1,
@@ -1696,8 +1696,8 @@ sub print_wait {
     if ( $process_counter == $process_batches_count * $max_process_number ) {
 
         # Print wait statement to filehandle
-        gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
-        say {$FILEHANDLE} $NEWLINE;
+        gnu_wait( { filehandle => $filehandle, } );
+        say {$filehandle} $NEWLINE;
 
 # Increase the maximum number of processs allowed to be used since "wait" was just printed
         $process_batches_count = $process_batches_count + 1;

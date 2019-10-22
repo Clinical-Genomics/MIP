@@ -9,7 +9,6 @@ use charnames qw( :full :short );
 use Carp;
 use autodie;
 use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname);
@@ -36,10 +35,10 @@ sub gnu_less {
 
 ##gnu_less
 
-##Function : Perl wrapper for writing less recipe to already open $FILEHANDLE or return commands array. Based on less 436
+##Function : Perl wrapper for writing less recipe to already open $filehandle or return commands array. Based on less 436
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append
-##         : $FILEHANDLE                => Filehandle to write to
+##Arguments: $filehandle, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append
+##         : $filehandle                => Filehandle to write to
 ##         : $infile_path               => Infile path
 ##         : $outfile_path              => Outfile path
 ##         : $stderrfile_path           => Stderrfile path
@@ -48,15 +47,15 @@ sub gnu_less {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         infile_path => {
             strict_type => 1,
@@ -107,7 +106,7 @@ sub gnu_less {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

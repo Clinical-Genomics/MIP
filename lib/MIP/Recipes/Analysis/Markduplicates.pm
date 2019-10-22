@@ -247,8 +247,8 @@ sub analysis_markduplicates {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     # Store which program performed the markduplication
     my $markduplicates_program;
@@ -275,7 +275,7 @@ sub analysis_markduplicates {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -290,7 +290,7 @@ sub analysis_markduplicates {
     ### SHELL:
 
     ## Marking Duplicates
-    say {$FILEHANDLE} q{## Marking Duplicates};
+    say {$filehandle} q{## Marking Duplicates};
 
     ## Picardtools
     if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
@@ -309,7 +309,7 @@ sub analysis_markduplicates {
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 core_number   => $parallel_processes,
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 file_path     => $recipe_file_path,
                 first_command => q{java},
                 java_jar =>
@@ -319,7 +319,7 @@ sub analysis_markduplicates {
                 picard_use_barclay_parser => 1,
                 recipe_info_path          => $recipe_info_path,
                 temp_directory            => $temp_directory,
-                XARGSFILEHANDLE           => $XARGSFILEHANDLE,
+                xargsfilehandle           => $xargsfilehandle,
                 xargs_file_counter        => $xargs_file_counter,
             }
         );
@@ -333,7 +333,7 @@ sub analysis_markduplicates {
             picardtools_markduplicates(
                 {
                     create_index       => q{true},
-                    FILEHANDLE         => $XARGSFILEHANDLE,
+                    filehandle         => $xargsfilehandle,
                     infile_paths_ref   => [ $infile_path{$contig} ],
                     metrics_file       => $metrics_file,
                     outfile_path       => $outfile_path{$contig},
@@ -341,12 +341,12 @@ sub analysis_markduplicates {
                     stderrfile_path    => $stderrfile_path,
                 }
             );
-            print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
             sambamba_flagstat(
                 {
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    filehandle   => $xargsfilehandle,
                     infile_path  => $outfile_path{$contig},
                     outfile_path => $outfile_path_prefix
                       . $DOT
@@ -356,7 +356,7 @@ sub analysis_markduplicates {
                     stderrfile_path_append => $stderrfile_path,
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
         }
     }
 
@@ -368,10 +368,10 @@ sub analysis_markduplicates {
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 core_number        => $core_number,
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 file_path          => $recipe_file_path,
                 recipe_info_path   => $recipe_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargsfilehandle    => $xargsfilehandle,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -383,7 +383,7 @@ sub analysis_markduplicates {
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
             sambamba_markdup(
                 {
-                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    filehandle      => $xargsfilehandle,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
                     infile_path    => $infile_path{$contig},
@@ -397,12 +397,12 @@ sub analysis_markduplicates {
                     temp_directory  => $temp_directory,
                 }
             );
-            print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
             sambamba_flagstat(
                 {
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    filehandle   => $xargsfilehandle,
                     infile_path  => $outfile_path{$contig},
                     outfile_path => $outfile_path_prefix
                       . $DOT
@@ -412,26 +412,26 @@ sub analysis_markduplicates {
                     stderrfile_path_append => $stderrfile_path,
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
         }
     }
 
     ## Concatenate all metric files
     gnu_cat(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
             stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Collect duplicate reads and reads mapped across all metric contig files. Calculate fraction duplicates.
     ## Write it to stdout.
     _calculate_fraction_duplicates_for_all_metric_files(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             outfile_path_prefix => $outfile_path_prefix,
         }
     );
@@ -442,7 +442,7 @@ sub analysis_markduplicates {
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -453,11 +453,11 @@ sub analysis_markduplicates {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $XARGSFILEHANDLE;
-    close $FILEHANDLE;
+    ## Close filehandleS
+    close $xargsfilehandle;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -506,17 +506,17 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
 
 ## Function : Collect duplicate reads and reads mapped across all metric contig files. Calculate fraction duplicates. Write it to stdout.
 ## Returns  :
-## Arguments: $FILEHANDLE          => Filehandle to write to
+## Arguments: $filehandle          => Filehandle to write to
 ##          : $outfile_path_prefix => Outfile path prefix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path_prefix;
 
     my $tmpl = {
-        FILEHANDLE          => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle          => { defined => 1, required => 1, store => \$filehandle, },
         outfile_path_prefix => {
             defined     => 1,
             required    => 1,
@@ -563,9 +563,9 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     $regexp .= q?last;'?;
 
     ## Sum metric over concatenated file
-    print {$FILEHANDLE} $regexp . $SPACE;
-    print {$FILEHANDLE} $outfile_path_prefix . $UNDERSCORE . q{metric_all} . $SPACE;
-    say   {$FILEHANDLE} q{>}
+    print {$filehandle} $regexp . $SPACE;
+    print {$filehandle} $outfile_path_prefix . $UNDERSCORE . q{metric_all} . $SPACE;
+    say   {$filehandle} q{>}
       . $SPACE
       . $outfile_path_prefix
       . $UNDERSCORE

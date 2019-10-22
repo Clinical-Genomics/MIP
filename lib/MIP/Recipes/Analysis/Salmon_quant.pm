@@ -210,7 +210,7 @@ sub analysis_salmon_quant {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get sequence run type
     my %sequence_run_type = get_sequence_run_type(
@@ -231,7 +231,7 @@ sub analysis_salmon_quant {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -246,7 +246,7 @@ sub analysis_salmon_quant {
     ### SHELL
 
     ## Salmon quant
-    say {$FILEHANDLE} q{## Quantifying transcripts using } . $recipe_name;
+    say {$filehandle} q{## Quantifying transcripts using } . $recipe_name;
 
     ## For paired end
     if ( $sequence_run_mode eq q{paired-end} ) {
@@ -261,7 +261,7 @@ sub analysis_salmon_quant {
 
         salmon_quant(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 gc_bias                => 1,
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
@@ -269,25 +269,25 @@ sub analysis_salmon_quant {
                 read_2_fastq_paths_ref => \@read_2_fastq_paths,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     ## For single end
     else {
 
         salmon_quant(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 gc_bias                => 1,
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
                 read_1_fastq_paths_ref => \@infile_paths,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

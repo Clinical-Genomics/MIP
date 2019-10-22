@@ -66,7 +66,7 @@ diag(   q{Test star_fusion_prep_genome_lib from Star_fusion.pm v}
 my @function_base_commands = qw{ prep_genome_lib.pl };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

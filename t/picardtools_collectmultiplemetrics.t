@@ -64,7 +64,7 @@ diag(   q{Test picardtools_collectmultiplemetrics from Picardtools.pm v}
 my @function_base_commands = qw{ picard CollectMultipleMetrics };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -63,7 +63,7 @@ diag(   q{Test install_pip_packages from Pip.pm v}
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 my $log = test_log( { no_screen => 1, } );
@@ -77,13 +77,13 @@ my %pip_packages = (
 install_pip_packages(
     {
         conda_env         => $conda_env,
-        FILEHANDLE        => $FILEHANDLE,
+        filehandle        => $filehandle,
         pip_packages_href => \%pip_packages,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 # Then install in conda environment
 my ($returned_command) =
@@ -95,14 +95,14 @@ ok( $returned_command, q{Installed pip packages in conda environment} );
 $pip_packages{stranger} = q{not_semantic_versioning};
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 trap {
     install_pip_packages(
         {
             conda_env         => $conda_env,
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             pip_packages_href => \%pip_packages,
         }
     )

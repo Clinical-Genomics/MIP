@@ -66,7 +66,7 @@ diag(   q{Test preseq_lc_extrap from Preseq.pm v}
 my @function_base_commands = qw{ preseq lc_extrap };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

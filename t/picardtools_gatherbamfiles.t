@@ -64,7 +64,7 @@ diag(   q{Test picardtools_gatherbamfiles from Picardtools.pm v}
 my @function_base_commands = qw{ picard GatherBamFiles };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

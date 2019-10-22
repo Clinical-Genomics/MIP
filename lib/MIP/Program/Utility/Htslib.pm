@@ -34,11 +34,11 @@ Readonly my $SPACE => q{ };
 
 sub htslib_bgzip {
 
-## Function : Perl wrapper for writing bgzip recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
+## Function : Perl wrapper for writing bgzip recipe to $filehandle or return commands array. Based on htslib 1.3.1.
 ## Returns  : @commands
 ## Arguments: $decompress             => Decompress file
 ##          : $force                  => Force
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -48,7 +48,7 @@ sub htslib_bgzip {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -72,8 +72,8 @@ sub htslib_bgzip {
             strict_type => 1,
             store       => \$force
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path     => { strict_type => 1, store => \$infile_path },
         stderrfile_path => {
@@ -135,7 +135,7 @@ sub htslib_bgzip {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -143,11 +143,11 @@ sub htslib_bgzip {
 
 sub htslib_tabix {
 
-## Function : Perl wrapper for writing tabix recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
+## Function : Perl wrapper for writing tabix recipe to $filehandle or return commands array. Based on htslib 1.3.1.
 ## Returns  : @commands
 ## Arguments: $begin                  => Column number for region start
 ##          : $end                    => Column number for region end
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $force                  => Overwrite existing index without asking
 ##          : $infile_path            => Infile path to read from
 ##          : $preset                 => Preset
@@ -162,7 +162,7 @@ sub htslib_tabix {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $regions_ref;
     my $stderrfile_path;
@@ -191,8 +191,8 @@ sub htslib_tabix {
             store       => \$end,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         force => {
             allow       => [ 0, 1 ],
@@ -304,7 +304,7 @@ sub htslib_tabix {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

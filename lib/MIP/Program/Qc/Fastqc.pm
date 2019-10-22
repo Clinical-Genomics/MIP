@@ -36,10 +36,10 @@ sub fastqc {
 
 ##fastqc
 
-##Function : Perl wrapper for writing fastqc recipe to already open $FILEHANDLE or return commands array. Based on cp 0.11.5
+##Function : Perl wrapper for writing fastqc recipe to already open $filehandle or return commands array. Based on cp 0.11.5
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outdirectory_path, $extract, $quiet
-##         : $FILEHANDLE        => Filehandle to write to
+##Arguments: $filehandle, $infile_path, $outdirectory_path, $extract, $quiet
+##         : $filehandle        => Filehandle to write to
 ##         : $infile_path       => Infile path
 ##         : $outdirectory_path => Outdirectory path
 ##         : $extract           => If set then the zipped output file will be uncompressed in the same directory after it has been created
@@ -52,12 +52,12 @@ sub fastqc {
     my $quiet;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outdirectory_path;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             required    => 1,
             defined     => 1,
@@ -108,7 +108,7 @@ sub fastqc {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

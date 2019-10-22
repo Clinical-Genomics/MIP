@@ -63,7 +63,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
 my @function_base_commands = qw{ BASE_COMMAND };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

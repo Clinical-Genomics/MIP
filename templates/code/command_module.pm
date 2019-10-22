@@ -35,7 +35,7 @@ sub name_of_subroutine {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -44,7 +44,7 @@ sub name_of_subroutine {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -53,8 +53,8 @@ sub name_of_subroutine {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -93,7 +93,7 @@ sub name_of_subroutine {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

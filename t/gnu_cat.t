@@ -63,7 +63,7 @@ diag(   q{Test gnu_cat from Coreutils.pm v}
 my @function_base_commands = qw{ cat };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

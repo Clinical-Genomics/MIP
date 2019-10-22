@@ -68,7 +68,7 @@ diag(   q{Test trinity_genome_guided from Trinity.pm v}
 my @function_base_commands = qw{ Trinity };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

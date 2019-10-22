@@ -209,7 +209,7 @@ sub analysis_gatk_variantevalall {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -217,7 +217,7 @@ sub analysis_gatk_variantevalall {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -234,13 +234,13 @@ sub analysis_gatk_variantevalall {
     ### Select sample id from case id vcf file
 
     ## GATK SelectVariants
-    say {$FILEHANDLE} q{## GATK SelectVariants};
+    say {$filehandle} q{## GATK SelectVariants};
 
     my $select_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{select} . $infile_suffix;
     gatk_selectvariants(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
@@ -251,14 +251,14 @@ sub analysis_gatk_variantevalall {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK varianteval
-    say {$FILEHANDLE} q{## GATK varianteval};
+    say {$filehandle} q{## GATK varianteval};
 
     gatk_varianteval(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
@@ -271,9 +271,9 @@ sub analysis_gatk_variantevalall {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

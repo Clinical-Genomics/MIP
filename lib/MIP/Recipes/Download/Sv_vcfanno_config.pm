@@ -148,7 +148,7 @@ sub download_sv_vcfanno_config {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -156,7 +156,7 @@ sub download_sv_vcfanno_config {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -172,11 +172,11 @@ sub download_sv_vcfanno_config {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -197,19 +197,19 @@ sub download_sv_vcfanno_config {
         }
     );
 
-    say {$FILEHANDLE} $set_reference_path_regexp, $NEWLINE;
+    say {$filehandle} $set_reference_path_regexp, $NEWLINE;
 
     gnu_mv(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $outfile_path_tmp,
             outfile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

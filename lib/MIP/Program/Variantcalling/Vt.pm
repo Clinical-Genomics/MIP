@@ -33,9 +33,9 @@ Readonly my $SPACE => q{ };
 
 sub vt_decompose {
 
-## Function : Perl wrapper for writing Vt decompose recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
+## Function : Perl wrapper for writing Vt decompose recipe to $filehandle or return commands array. Based on Vt v0.5.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $smart_decomposition    => Smart decomposition
@@ -46,7 +46,7 @@ sub vt_decompose {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -57,8 +57,8 @@ sub vt_decompose {
     my $smart_decomposition;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             required    => 1,
@@ -113,7 +113,7 @@ sub vt_decompose {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 
@@ -124,9 +124,9 @@ sub vt_decompose {
 
 sub vt_normalize {
 
-## Function : Perl wrapper for writing Vt normalize recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
+## Function : Perl wrapper for writing Vt normalize recipe to $filehandle or return commands array. Based on Vt v0.5.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                     => Filehandle to write to
+## Arguments: $filehandle                     => Filehandle to write to
 ##          : $infile_path                    => Infile path to read from
 ##          : $no_fail_inconsistent_reference => Do not fail when REF is inconsistent with reference sequence for non SNPs
 ##          : $outfile_path                   => Outfile path to write to
@@ -138,7 +138,7 @@ sub vt_normalize {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
@@ -150,8 +150,8 @@ sub vt_normalize {
     my $no_fail_inconsistent_reference;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             required    => 1,
@@ -219,7 +219,7 @@ sub vt_normalize {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 
@@ -230,9 +230,9 @@ sub vt_normalize {
 
 sub vt_uniq {
 
-## Function : Perl wrapper for writing Vt normalize recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
+## Function : Perl wrapper for writing Vt normalize recipe to $filehandle or return commands array. Based on Vt v0.5.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -242,7 +242,7 @@ sub vt_uniq {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -250,8 +250,8 @@ sub vt_uniq {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             required    => 1,
@@ -296,7 +296,7 @@ sub vt_uniq {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             commands_ref => \@commands,
             separator    => $SPACE,
 

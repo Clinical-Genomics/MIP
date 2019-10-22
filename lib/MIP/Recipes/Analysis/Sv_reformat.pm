@@ -41,7 +41,7 @@ sub analysis_reformat_sv {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -223,7 +223,7 @@ sub analysis_reformat_sv {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -231,7 +231,7 @@ sub analysis_reformat_sv {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -265,7 +265,7 @@ sub analysis_reformat_sv {
         ## Sort variants in vcf format
         picardtools_sortvcf(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => [$infile_path],
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -277,7 +277,7 @@ sub analysis_reformat_sv {
                 temp_directory       => $active_parameter_href->{temp_directory},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
@@ -300,14 +300,14 @@ sub analysis_reformat_sv {
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
+                    filehandle       => $filehandle,
                     filter_file_path => $filter_file_path,
                     infile_path      => $outfile_paths[$infile_index],
                     invert_match     => 1,
                     stdoutfile_path  => $filter_outfile_path,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             if ( $recipe_mode == 1 ) {
 
@@ -323,11 +323,11 @@ sub analysis_reformat_sv {
             }
         }
 
-        say {$FILEHANDLE} q{## Compress};
+        say {$filehandle} q{## Compress};
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $outfile_paths[$infile_index],
                 outfile_path_prefix => $outfile_path_prefix . $bcftools_suffix,
                 output_type         => q{z},
@@ -375,9 +375,9 @@ sub analysis_reformat_sv {
             );
         }
     }
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
