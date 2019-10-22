@@ -32,7 +32,7 @@ The key sample_id is unique for each molecular library. A subject can have many 
 ![Subject_id DNA-RNA][subject_id]  
 <em>Here the subject_id connects samples across different analysis to one individual</em>  
 ![subject_id intra case][subject_id_2]  
-<em>Subject_id can also connect samples from the same individual taken at different time points</em> 
+<em>Subject_id can also connect samples from the same individual taken at different time points</em>
 
 ## Methods
 get_pedigree_sample_id_attributes:
@@ -47,5 +47,5 @@ my $sample_id_sex = get_pedigree_sample_id_attributes(
 );
 ```
 
-[subject_id]: (../Subject_id_description.png)
-[subject_id_2]: (../Subject_id_description_2.png)
+[subject_id]: (Subject_id_description.png)
+[subject_id_2]: (Subject_id_description_2.png)
