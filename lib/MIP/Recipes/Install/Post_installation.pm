@@ -27,6 +27,7 @@ use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
+use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -282,7 +283,13 @@ sub check_program_installations {
     my $fail_case    = qq?|| { $fail_echo; }?;
 
     ## Enabling querying of $?
-    say {$FILEHANDLE} q{set +e} . $NEWLINE;
+    gnu_set(
+        {
+            FILEHANDLE    => $FILEHANDLE,
+            unset_errexit => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Write test oneliner
     say {$FILEHANDLE} q{## Test programs and capture outcome in bash variable};
@@ -290,7 +297,13 @@ sub check_program_installations {
     say {$FILEHANDLE} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
 
     ## Restore errexit
-    say {$FILEHANDLE} q{set -e} . $NEWLINE;
+    gnu_set(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            set_errexit => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Unload env
     say   {$FILEHANDLE} qq{## Unload environment: $env_name};
