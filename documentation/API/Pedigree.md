@@ -28,11 +28,9 @@ samples: [  # Array of hashes
 ```
 
 #### Note
-The key sample_id is unique for each molecular library. A subject can have many molecular libraries and the key subject_id in the pedigree file is used to link the sample_ids together. Some examples are shown below.
-![Subject_id DNA-RNA][subject_id]  
-<em>Here the subject_id connects samples across different analysis to one individual</em>  
-![subject_id intra case][subject_id_2]  
-<em>Subject_id can also connect samples from the same individual taken at different time points</em>
+The key sample_id is unique for each molecular library. A subject can have many molecular libraries and the key subject_id in the pedigree file is used to link the sample_ids together.  
+![Subject_id_DNA-RNA](Subject_id_description.png)  
+<em>Here the subject_id connects samples across different analysis to one individual</em>
 
 ## Methods
 get_pedigree_sample_id_attributes:
@@ -46,6 +44,3 @@ my $sample_id_sex = get_pedigree_sample_id_attributes(
     }
 );
 ```
-
-[subject_id]:(Subject_id_description.png?raw=true)
-[subject_id_2]:(Subject_id_description_2.png?raw=true)
