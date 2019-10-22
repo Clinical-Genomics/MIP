@@ -285,11 +285,11 @@ sub check_program_installations {
     ## Enabling querying of $?
     gnu_set(
         {
-            FILEHANDLE    => $FILEHANDLE,
+            filehandle    => $filehandle,
             unset_errexit => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Write test oneliner
     say {$filehandle} q{## Test programs and capture outcome in bash variable};
@@ -299,11 +299,11 @@ sub check_program_installations {
     ## Restore errexit
     gnu_set(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             set_errexit => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Unload env
     say   {$filehandle} qq{## Unload environment: $env_name};
