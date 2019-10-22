@@ -47,5 +47,5 @@ my $sample_id_sex = get_pedigree_sample_id_attributes(
 );
 ```
 
-[subject_id]: (Subject_id_description.png)
-[subject_id_2]: (Subject_id_description_2.png)
+[subject_id]:(Subject_id_description.png?raw=true)
+[subject_id_2]:(Subject_id_description_2.png?raw=true)
