@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -147,7 +147,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -394,7 +394,7 @@ sub pipeline_analyse_rd_dna {
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
                 ## Set chromograph recipe depending on pedigree and proband
-                _set_chromograph_recipe(
+                set_recipe_chromograph(
                     {
                         analysis_recipe_href => \%analysis_recipe,
                         sample_id            => $sample_id,
@@ -435,69 +435,6 @@ sub pipeline_analyse_rd_dna {
 
         ## Special case
         exit if ( $recipe eq q{split_fastq_file} );
-    }
-    return;
-}
-
-sub _set_chromograph_recipe {
-
-## Function : Set which recipe to use depending on proband in trio or not
-## Returns  :
-## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $sample_id            => Sample id
-##          : $sample_info_href     => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
-
-    ## Set default recipe
-    $analysis_recipe_href->{chromograph_ar} = \&analysis_chromograph;
-
-    ## Only run chromograp_proband UPD analysis for trios and proband
-    if ( $sample_info_href->{has_trio} ) {
-
-        my $is_sample_proband_in_trio = is_sample_proband_in_trio(
-            {
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        if ($is_sample_proband_in_trio) {
-
-            ## Update recipe to use proband processing instead
-            $analysis_recipe_href->{chromograph_ar} = \&analysis_chromograph_proband;
-        }
     }
     return;
 }
