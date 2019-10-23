@@ -35,6 +35,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **New references**
 - grch37_frequency_vcfanno_filter_config_-v1.2-.toml
 
+**Reference**
+- clinvar: 20191013
+
 **Tools**
 - bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
 - chromograph:

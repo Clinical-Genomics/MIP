@@ -31,9 +31,9 @@ reference:
     - v1.4
     - v1.5
   clinvar:
-    - 20181028
     - 20190305
     - 20190731
+    - 20191013
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -308,15 +308,6 @@ reference_feature:
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   clinvar:
     grch37:
-      20181028:
-        file: clinvar_20181028.vcf.gz
-        file_check: clinvar_20181028.vcf.gz.md5
-        file_index: clinvar_20181028.vcf.gz.tbi
-        outfile: grch37_clinvar_-2018-10-28-.vcf.gz
-        outfile_check: grch37_clinvar_-2018-10-28-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-2018-10-28-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
       20190305:
         file: clinvar_20190305.vcf.gz
         file_check: clinvar_20190305.vcf.gz.md5
@@ -324,6 +315,15 @@ reference_feature:
         outfile: grch37_clinvar_-20190305-.vcf.gz
         outfile_check: grch37_clinvar_-20190305-.vcf.gz.md5
         outfile_index: grch37_clinvar_-20190305-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2019/
+      20191013:
+        file: clinvar_20191013.vcf.gz
+        file_check: clinvar_20191013.vcf.gz.md5
+        file_index: clinvar_20191013.vcf.gz.tbi
+        outfile: grch37_clinvar_-20191013-.vcf.gz
+        outfile_check: grch37_clinvar_-20191013-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20191013-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2019/
     grch38:
@@ -336,7 +336,6 @@ reference_feature:
         outfile_index: grch38_clinvar_-20190305-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
-
       20190731:
         file: clinvar_20190731.vcf.gz
         file_check: clinvar_20190731.vcf.gz.md5
@@ -344,6 +343,15 @@ reference_feature:
         outfile: grch38_clinvar_-20190731-.vcf.gz
         outfile_check: grch38_clinvar_-20190731-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20190731-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
+      20191013:
+        file: clinvar_20191013.vcf.gz
+        file_check: clinvar_20191013.vcf.gz.md5
+        file_index: clinvar_20191013.vcf.gz.tbi
+        outfile: grch38_clinvar_-20191013-.vcf.gz
+        outfile_check: grch38_clinvar_-20191013-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20191013-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
   dbnsfp:
