@@ -87,7 +87,7 @@ emip:
     multiqc:
       executable:
         multiqc:
-      uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+      uri: docker://ewels/multiqc:v1.7
     peddy:
       executable:
         peddy: "python -m peddy"
