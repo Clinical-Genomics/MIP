@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -98,6 +98,23 @@ my $xargs_file_path_prefix = q{a_prefix};
     }
 );
 
+## Create file commands for xargs
+( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+    {
+        core_number          => 1,
+        filehandle           => $filehandle,
+        file_path            => q{a_file_path},
+        first_command        => q{java},
+        java_jar             => catfile(q{picard.jar}),
+        java_use_large_pages => 1,
+        memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+        recipe_info_path     => q{a_file_path},
+        temp_directory       => q{a_temp_dir},
+        xargsfilehandle      => $xargsfilehandle,
+        xargs_file_counter   => $xargs_file_counter,
+    }
+);
+
 ## Close the filehandle
 close $filehandle;
 
@@ -106,4 +123,6 @@ ok( $xargs_file_counter, q{ Executed analysis recipe } . $recipe_name );
 
 ## Clean-up
 remove_tree(q{a_file_path.0.xargs});
+remove_tree(q{a_file_path.1.xargs});
+
 done_testing();
