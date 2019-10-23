@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates };
@@ -308,19 +308,12 @@ sub analysis_markduplicates {
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $parallel_processes,
-                filehandle    => $filehandle,
-                file_path     => $recipe_file_path,
-                first_command => q{java},
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                picard_use_barclay_parser => 1,
-                recipe_info_path          => $recipe_info_path,
-                temp_directory            => $temp_directory,
-                xargsfilehandle           => $xargsfilehandle,
-                xargs_file_counter        => $xargs_file_counter,
+                core_number        => $parallel_processes,
+                filehandle         => $filehandle,
+                file_path          => $recipe_file_path,
+                recipe_info_path   => $recipe_info_path,
+                xargsfilehandle    => $xargsfilehandle,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
 
@@ -332,13 +325,20 @@ sub analysis_markduplicates {
             my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
             picardtools_markduplicates(
                 {
-                    create_index       => q{true},
-                    filehandle         => $xargsfilehandle,
-                    infile_paths_ref   => [ $infile_path{$contig} ],
+                    create_index     => q{true},
+                    filehandle       => $xargsfilehandle,
+                    infile_paths_ref => [ $infile_path{$contig} ],
+                    java_jar         => catfile(
+                        $active_parameter_href->{picardtools_path}, q{picard.jar}
+                    ),
+                    java_use_large_pages =>
+                      $active_parameter_href->{java_use_large_pages},
+                    memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                     metrics_file       => $metrics_file,
                     outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
+                    temp_directory     => $temp_directory,
                 }
             );
             print {$xargsfilehandle} $SEMICOLON . $SPACE;
