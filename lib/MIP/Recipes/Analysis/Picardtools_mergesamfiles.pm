@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_mergesamfiles };
@@ -355,14 +355,7 @@ sub analysis_picardtools_mergesamfiles {
                 core_number   => $parallel_processes,
                 filehandle    => $filehandle,
                 file_path     => $recipe_file_path,
-                first_command => q{java},
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                picard_use_barclay_parser => 1,
                 recipe_info_path          => $recipe_info_path,
-                temp_directory            => $temp_directory,
                 xargsfilehandle           => $xargsfilehandle,
                 xargs_file_counter        => $xargs_file_counter,
             }
@@ -384,10 +377,15 @@ sub analysis_picardtools_mergesamfiles {
                     create_index       => q{true},
                     filehandle         => $xargsfilehandle,
                     infile_paths_ref   => \@merge_infile_paths,
-                    outfile_path       => $outfile_path{$contig},
+		 java_jar =>
+		 catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+		 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+		 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                   outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
-                    threading          => q{true},
+		 temp_directory            => $temp_directory,
+                   threading          => q{true},
                 }
             );
             say {$xargsfilehandle} $NEWLINE;
