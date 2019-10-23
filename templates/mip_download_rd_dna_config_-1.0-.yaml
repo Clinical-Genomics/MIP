@@ -122,8 +122,7 @@ reference_feature:
         outfile_check: grch37_homo_sapiens_-d5-.fasta.gz.md5
         outfile_index: grch37_homo_sapiens_-d5-.fasta.fai.gz
         outfile_index_check: grch37_homo_sapiens_-d5-.fasta.fai.gz.md5
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
@@ -166,8 +165,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       phase1:
         file: Homo_sapiens_assembly38.known_indels.vcf.gz
@@ -190,8 +188,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       2.5:
         file: 1000G_omni2.5.hg38.vcf.gz
@@ -207,8 +204,7 @@ reference_feature:
         outfile: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
         outfile_index: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz.tbi
         outfile_decompress: gzip
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
   1000g_snps:
     grch37:
       phase1:
@@ -224,8 +220,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       phase1:
         file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
@@ -382,8 +377,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
       138:
         file: dbsnp_138.b37.vcf.gz
         file_check: dbsnp_138.b37.vcf.gz.md5
@@ -397,8 +391,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       gold_standard_dbsnp:
         file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
@@ -687,8 +680,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       3.3:
         file: hapmap_3.3.hg38.vcf.gz
@@ -725,8 +717,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://console.cloud.google.com/storage/browser/_details/gatk-legacy-bundles/b37/
     grch38:
       gold_standard_indels:
         file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
