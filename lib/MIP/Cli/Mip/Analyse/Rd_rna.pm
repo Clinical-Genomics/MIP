@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.17;
+our $VERSION = 1.18;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -255,10 +255,10 @@ sub _build_usage {
     );
 
     option(
-        q{is_from_sample} => (
+        q{subject_id} => (
             cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=is_from_sample}],
-            documentation => q{Sample origin of replicate},
+            cmd_tags      => [q{sample_id=subject_id}],
+            documentation => q{Sample origin},
             is            => q{rw},
             isa           => HashRef,
         )

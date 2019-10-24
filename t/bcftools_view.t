@@ -24,7 +24,7 @@ use MIP::Constants qw{ $SPACE $COMMA };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -105,6 +105,10 @@ my %specific_argument = (
     genotype => {
         input           => q{het},
         expected_output => q{--genotype het},
+    },
+    header_only => {
+        input           => 1,
+        expected_output => q{--header-only},
     },
     include => {
         input           => q{INFO/CSQ[*]~":p[.]"},

@@ -188,7 +188,7 @@ picardtools_path:
     - star_aln
   data_type: SCALAR
   type: path
-is_from_sample:
+subject_id:
   associated_recipe:
     - mip
   data_type: HASH
@@ -789,3 +789,18 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+dna_vcf_file:
+  associated_recipe:
+    - dna_vcf_reformat
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
+dna_vcf_reformat:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  program_executables:
+    - bcftools
+  type: recipe

@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -27,12 +27,105 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_file_md5sum check_mip_process_files check_interleaved };
+    our @EXPORT_OK =
+      qw{ check_ids_in_dna_vcf check_file_md5sum check_mip_process_files check_interleaved };
 }
 
 ## Constants
 Readonly my $THREE             => q{3};
 Readonly my $MAX_RANDOM_NUMBER => 10_000;
+
+sub check_ids_in_dna_vcf {
+
+## Function : Check sample ids in dna vcf and compare to input sample ids
+## Returns  :
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $dna_vcf_file          => Unannotated case vcf file from dna pipeline
+##          : $sample_info_href      => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $dna_vcf_file;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1
+        },
+        dna_vcf_file => {
+            store       => \$dna_vcf_file,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_sample_ids_from_vcf };
+
+    return if ( not $dna_vcf_file );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Retrieve sample ids from vcf
+    my @vcf_sample_ids = get_sample_ids_from_vcf(
+        {
+            vcf_file_path => $dna_vcf_file,
+        }
+    );
+
+    my @sample_ids = @{ $active_parameter_href->{sample_ids} };
+
+    my @no_matches;
+    foreach my $sample_id (@sample_ids) {
+
+        my $dna_id = $sample_info_href->{sample}{$sample_id}{subject}{dna_id};
+
+        ## Check if DNA is one of the IDs from the vcf
+        if ( not grep { $dna_id eq $_ } @vcf_sample_ids ) {
+
+            push @no_matches, $sample_id;
+        }
+    }
+
+    ## Check cases
+    if ( scalar @no_matches == scalar @sample_ids ) {
+
+        $log->fatal(q{No matching sample ids between the RNA and DNA data});
+
+        exit 1;
+    }
+    elsif ( scalar @no_matches > 1 and $active_parameter_href->{force_dna_ase} ) {
+
+        $log->warn( q{Turning off ASE analysis for sample: } . join $SPACE, @no_matches );
+
+        @{ $active_parameter_href->{no_ase_samples} } = @no_matches;
+    }
+    elsif ( scalar @no_matches > 1 ) {
+
+        $log->fatal(q{Only partial match between the DNA sample ids and RNA sample ids});
+        $log->fatal(
+q{Start with flag --force_dna_ase to run ASE analysis on the RNA samples with a DNA match}
+        );
+
+        exit 1;
+    }
+
+    return 1;
+}
 
 sub check_file_md5sum {
 

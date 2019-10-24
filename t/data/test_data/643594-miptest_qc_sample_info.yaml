@@ -16,6 +16,9 @@ sample:
     sample_id: ADM1059A1
     sample_name: ADM1059A1
     sex: female
+    subject:
+      id: ADM1059A1
+      dna_id: ADM1059A1
     recipe:
       chanjo_sexcheck:
         ADM1059A1_lanes_1_sorted_md_brecal_sex:
@@ -30,6 +33,9 @@ sample:
     sample_id: ADM1059A2
     sample_name: ADM1059A2
     sex: male
+    subject:
+      id: ADM1059A2
+      dna_id: ADM1059A2
   ADM1059A3:
     analysis_type: wts
     capture_kit: agilent_sureselect.v5
@@ -40,3 +46,6 @@ sample:
     sample_id: ADM1059A3
     sample_name: ADM1059A3
     sex: unknown
+    subject:
+      id: ADM1059A3
+      dna_id: ADM1059A3

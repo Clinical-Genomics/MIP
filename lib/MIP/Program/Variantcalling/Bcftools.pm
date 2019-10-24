@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1662,6 +1662,7 @@ sub bcftools_view {
 ##          : $exclude                => Exclude sites for which the expression is true
 ##          : $filehandle             => Filehandle to write to
 ##          : $genotype               => Genotype to include (hom|het|miss). Prefix with "^" for exclude
+##          : $header_only            => Header only
 ##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
 ##          : $max_alleles            => Max alleles listed in REF and ALT columns
@@ -1685,6 +1686,7 @@ sub bcftools_view {
     my $exclude;
     my $filehandle;
     my $genotype;
+    my $header_only;
     my $include;
     my $infile_path;
     my $max_alleles;
@@ -1711,6 +1713,11 @@ sub bcftools_view {
         exclude  => { store => \$exclude, strict_type => 1, },
         genotype => {
             store       => \$genotype,
+            strict_type => 1,
+        },
+        header_only => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$header_only,
             strict_type => 1,
         },
         include     => { store => \$include,     strict_type => 1, },
@@ -1788,6 +1795,11 @@ sub bcftools_view {
     if ($genotype) {
 
         push @commands, q{--genotype} . $SPACE . $genotype;
+    }
+
+    if ($header_only) {
+
+        push @commands, q{--header-only};
     }
 
     if ($include) {
