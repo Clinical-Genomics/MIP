@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_base rtg_format rtg_vcfeval rtg_vcfsubset };
@@ -42,6 +42,8 @@ sub rtg_base {
 
     ## Flatten argument(s)
     my $filehandle;
+
+    ## Default(s)
     my $memory;
 
     my $tmpl = {
@@ -175,6 +177,7 @@ sub rtg_vcfeval {
 ##          : $filehandle             => Filehandle to write to
 ##          : $outputdirectory_path   => Directory for output
 ##          : $output_mode            => Output reporting mode
+##          : $memory                 => Amount of JVM memory allocation (G)
 ##          : $sample_id              => Sample ID
 ##          : $sdf_template_file_path => SDF (SDF=Rtg specif format) of the reference genome the variants are called against
 ##          : $stderrfile_path        => Stderrfile path
@@ -201,6 +204,7 @@ sub rtg_vcfeval {
     ## Default(s)
     my $all_record;
     my $output_mode;
+    my $memory;
 
     my $tmpl = {
         all_record => {
@@ -233,6 +237,12 @@ sub rtg_vcfeval {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        memory => {
+            allow       => qr{ \A\d+G\z }sxm,
+            default     => q{16G},
+            store       => \$memory,
+            strict_type => 1,
         },
         outputdirectory_path => {
             defined     => 1,
@@ -277,7 +287,10 @@ sub rtg_vcfeval {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ rtg vcfeval };
+    my @commands = rtg_base( { memory => $memory, } );
+
+    ## Add subcommand after base
+    push @commands, qw{ vcfeval };
 
     if ($all_record) {
 
@@ -349,13 +362,13 @@ sub rtg_vcfsubset {
     my $filehandle;
     my $infile_path;
     my $keep_info_keys_ref;
-    my $memory;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     ## Default(s)
+    my $memory;
 
     my $tmpl = {
         filehandle => {
