@@ -67,7 +67,7 @@ emip:
     gatk4:
       executable:
         gatk:
-      uri: shub://Clinical-Genomics/MIP:gatk-4.1.3.0
+      uri: docker://broadinstitute/gatk:4.1.3.0
     genmod:
       executable:
         genmod:
