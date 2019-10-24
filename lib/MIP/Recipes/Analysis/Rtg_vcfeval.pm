@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -350,6 +350,8 @@ sub analysis_rtg_vcfeval {
         say {$filehandle} $NEWLINE;
 
         say {$filehandle} q{## Rtg vcfeval};
+        my $rtg_memory = $recipe_resource{memory} - 1 . q{G};
+
         rtg_vcfeval(
             {
                 baselinefile_path    => $nist_file_path_prefix . $DOT . q{vcf.gz},
@@ -359,6 +361,7 @@ sub analysis_rtg_vcfeval {
                 ),
                 eval_region_file_path => $nist_bed_file_path,
                 filehandle            => $filehandle,
+                memory                => $rtg_memory,
                 outputdirectory_path  => $nist_version_rtg_outdirectory_path,
                 sample_id             => $sample_id,
                 sdf_template_file_path =>

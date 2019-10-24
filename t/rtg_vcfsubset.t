@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -102,6 +102,10 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ a infile path.vcf}),
         expected_output => q{--input} . $EQUALS . catfile(qw{ a infile path.vcf}),
+    },
+    memory => {
+        input           => q{1G},
+        expected_output => q{RTG_MEM} . $EQUALS . q{1G},
     },
     outfile_path => {
         input           => catfile(qw{ a outfile path.vcf}),
