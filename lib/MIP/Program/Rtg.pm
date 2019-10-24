@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_base rtg_format rtg_vcfeval rtg_vcfsubset };
@@ -35,8 +35,8 @@ sub rtg_base {
 
 ## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $filehandle   => Filehandle to write to
-##          : $memory       => Amount of JVM memory allocation (G)
+## Arguments: $filehandle => Filehandle to write to
+##          : $memory     => Amount of JVM memory allocation (G)
 
     my ($arg_href) = @_;
 
@@ -337,6 +337,7 @@ sub rtg_vcfsubset {
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Input file path
 ##          : $keep_info_keys_ref     => Keep INFO key value pairs
+##          : $memory                 => Amount of JVM memory allocation (G)
 ##          : $outfile_path           => Directory name of output SDF
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -348,6 +349,7 @@ sub rtg_vcfsubset {
     my $filehandle;
     my $infile_path;
     my $keep_info_keys_ref;
+    my $memory;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -368,6 +370,12 @@ sub rtg_vcfsubset {
         keep_info_keys_ref => {
             default     => [],
             store       => \$keep_info_keys_ref,
+            strict_type => 1,
+        },
+        memory => {
+            allow       => qr{ \A\d+G\z }sxm,
+            default     => q{16G},
+            store       => \$memory,
             strict_type => 1,
         },
         outfile_path => {
@@ -393,7 +401,7 @@ sub rtg_vcfsubset {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = rtg_base( {} );
+    my @commands = rtg_base( { memory => $memory, } );
 
     ## Add subcommand after base
     push @commands, q{vcfsubset};
