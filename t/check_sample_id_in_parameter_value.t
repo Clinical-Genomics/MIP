@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,7 +73,7 @@ my $is_skipped = check_sample_id_in_parameter_value(
     {
         active_parameter_href => \%active_parameter,
         log                   => $log,
-        parameter_names_ref   => [qw{ is_from_sample }],
+        parameter_names_ref   => [qw{ subject_id }],
         parameter_href        => \%parameter,
         sample_ids_ref        => \@{ $active_parameter{sample_ids} },
     }
@@ -83,16 +83,16 @@ my $is_skipped = check_sample_id_in_parameter_value(
 ok( $is_skipped, q{Skipped parameter} );
 
 ## Given a non-matching sample
-$active_parameter{is_from_sample}{ADM1059A1} = q{ADM1059A1};
-$active_parameter{is_from_sample}{ADM1059A2} = q{not_a_sample};
-$active_parameter{is_from_sample}{ADM1059A3} = q{ADM1059A3};
+$active_parameter{subject_id}{ADM1059A1} = q{ADM1059A1};
+$active_parameter{subject_id}{ADM1059A2} = q{not_a_sample};
+$active_parameter{subject_id}{ADM1059A3} = q{ADM1059A3};
 
 trap {
     check_sample_id_in_parameter_value(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
-            parameter_names_ref   => [qw{ is_from_sample }],
+            parameter_names_ref   => [qw{ subject_id }],
             parameter_href        => \%parameter,
             sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
@@ -108,14 +108,14 @@ like(
 );
 
 ## Given a missing sample
-$active_parameter{is_from_sample}{ADM1059A2} = undef;
+$active_parameter{subject_id}{ADM1059A2} = undef;
 
 trap {
     check_sample_id_in_parameter_value(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
-            parameter_names_ref   => [qw{ is_from_sample }],
+            parameter_names_ref   => [qw{ subject_id }],
             parameter_href        => \%parameter,
             sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }

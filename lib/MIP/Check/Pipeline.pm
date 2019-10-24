@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1020,10 +1020,10 @@ sub check_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_dna_vcf };
     use MIP::Check::Parameter qw{ check_salmon_compatibility
       check_sample_id_in_hash_parameter
-      check_sample_id_in_hash_parameter_path
-      check_sample_id_in_parameter_value };
+      check_sample_id_in_hash_parameter_path };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
@@ -1059,17 +1059,6 @@ sub check_rd_rna {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs }],
-            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
-        }
-    );
-
-    ## Check sample_id provided in hash parameter is included in the analysis
-    check_sample_id_in_parameter_value(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_names_ref   => [qw{ is_from_sample }],
-            parameter_href        => $parameter_href,
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
     );
@@ -1160,6 +1149,15 @@ sub check_rd_rna {
             log                     => $log,
             parameter_href          => $parameter_href,
             sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Check dna vcf
+    check_dna_vcf(
+        {
+            active_parameter_href => $active_parameter_href,
+            dna_vcf_file          => $active_parameter_href->{dna_vcf_file},
+            sample_info_href      => $sample_info_href,
         }
     );
 

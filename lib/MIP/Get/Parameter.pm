@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -683,7 +683,7 @@ sub get_pedigree_sample_id_attributes {
     my $tmpl = {
         attribute => {
             allow => [
-                qw{ analysis_type capture_kit expected_coverage father mother phenotype sample_id sample_name is_from_sample sex }
+                qw{ analysis_type capture_kit expected_coverage father mother phenotype sample_id sample_name sex subject_id }
             ],
             defined     => 1,
             required    => 1,
@@ -1020,7 +1020,7 @@ sub get_user_supplied_info {
         exome_target_bed      => 0,
         expected_coverage     => 0,
         sample_ids            => 0,
-        is_from_sample        => 0,
+        subject_id            => 0,
         supported_capture_kit => 0,
         time_point            => 0,
     );

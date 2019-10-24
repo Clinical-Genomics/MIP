@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -153,11 +153,8 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
-    use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
-    use MIP::Recipes::Analysis::Gatk_variantfiltration
-      qw{ analysis_gatk_variantfiltration };
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -216,12 +213,13 @@ sub pipeline_analyse_rd_rna {
         bcftools_merge            => \&analysis_bcftools_merge,
         blobfish                  => \&analysis_blobfish,
         bootstrapann              => \&analysis_bootstrapann,
+        dna_vcf_reformat          => undef,
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
+        gatk_haplotypecaller      => undef,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
-        gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
+        gatk_variantfiltration    => undef,
         genebody_coverage         => \&analysis_genebody_coverage,
         gffcompare_ar             => \&analysis_gffcompare,
         markduplicates            => \&analysis_markduplicates,
@@ -237,6 +235,14 @@ sub pipeline_analyse_rd_rna {
         trim_galore_ar            => \&analysis_trim_galore,
         varianteffectpredictor    => \&analysis_vep_rna,
         version_collect_ar        => \&analysis_mip_vercollect,
+    );
+
+    set_ase_chain_recipes(
+        {
+            active_parameter_href => $active_parameter_href,
+            analysis_recipe_href  => \%analysis_recipe,
+            sample_info_href      => $sample_info_href,
+        }
     );
 
   RECIPE:
