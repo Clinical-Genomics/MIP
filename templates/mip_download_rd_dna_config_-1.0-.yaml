@@ -89,6 +89,7 @@ reference:
     - na24631_v3.3.2_wgs
   gnomad:
     - r2.0.1
+    - r2.1.1
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -658,6 +659,12 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
         url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
+      r2.1.1:
+        file: gnomad.genomes.r2.1.1.sites.vcf.bgz
+        file_index: gnomad.genomes.r2.1.1.sites.vcf.bgz.tbi
+        outfile: grch37_gnomad.genomes_-r2.1.1-.vcf.gz
+        outfile_index: grch37_gnomad.genomes_-r2.1.1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/vcf/genomes/
     grch38:
       r2.1.1:
         file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz
