@@ -197,7 +197,7 @@ recipe_core_number:
     version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
-    vt_core: 1 
+    vt_core: 1
   type: mip
 set_recipe_core_number:
   associated_recipe:
@@ -2027,3 +2027,16 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+varg_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: recipe
+varg_truth_set_vcf:
+  associated_recipe:
+    - varg_ar
+  data_type: SCALAR
+  exists_check: file
+  type: path
