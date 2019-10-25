@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::RECIPE_NAME;
+package MIP::Recipes::Analysis::Varg;
 
 use 5.026;
 use Carp;
