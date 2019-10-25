@@ -52,6 +52,7 @@ BEGIN {
       $OPEN_BRACE
       $OPEN_BRACKET
       $PIPE
+      $PLUS
       %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
@@ -337,6 +338,7 @@ Readonly our $NEWLINE        => qq{\n};
 Readonly our $OPEN_BRACE     => q{\{};
 Readonly our $OPEN_BRACKET   => q{[};
 Readonly our $PIPE           => q{|};
+Readonly our $PLUS           => q{+};
 Readonly our $SEMICOLON      => q{;};
 Readonly our $SINGLE_QUOTE   => q{'};
 Readonly our $SPACE          => q{ };

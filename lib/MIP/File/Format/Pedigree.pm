@@ -31,8 +31,15 @@ BEGIN {
     our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag has_trio is_sample_proband_in_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+    our @EXPORT_OK = qw{ create_fam_file
+      detect_founders
+      detect_sample_id_gender
+      detect_trio
+      gatk_pedigree_flag
+      has_trio
+      is_sample_proband_in_trio
+      parse_yaml_pedigree_file
+      reload_previous_pedigree_info };
 }
 
 ## Constants
@@ -388,11 +395,13 @@ sub detect_sample_id_gender {
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 1 | ^male/sxm ) {
 
             $found_male = 1;
+            push @{ $sample_info_href->{gender}{males} }, $sample_id;
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm ) {
             ## If female
 
             $found_female = 1;
+            push @{ $sample_info_href->{gender}{females} }, $sample_id;
         }
         else {
             ## Must be other
@@ -403,6 +412,7 @@ sub detect_sample_id_gender {
             # "Other" metrics
             $found_other = 1;
             $found_other_count++;
+            push @{ $sample_info_href->{gender}{others} }, $sample_id;
         }
     }
     return $found_male, $found_female, $found_other, $found_other_count;

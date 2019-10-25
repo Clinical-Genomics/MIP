@@ -17,7 +17,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $PIPE $PLUS $SPACE };
 
 BEGIN {
 
@@ -29,8 +30,189 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_file_suffix parse_io_outfiles };
+      qw{ parse_fastq_for_gender parse_fastq_infiles parse_fastq_infiles_format parse_file_suffix parse_io_outfiles };
 
+}
+
+sub parse_fastq_for_gender {
+
+    ## Function : Parse fastq infiles for gender
+    ## Returns  :
+    ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+    ##          : $file_info_href          => File info hash {REF}
+    ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+    ##          : $log                     => Log object
+    ##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $log;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_cut gnu_head gnu_tail };
+    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Alignment::Bwa qw{ bwa_mem };
+    use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
+
+    ## All sample ids have a gender
+    return if ( not $active_parameter_href->{found_other} );
+
+    ## Constants
+    Readonly my $BYTE_START_POS => 10_000;
+    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 100;
+
+    ## Unpack
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+
+  SAMPLE_ID:
+    for my $sample_id ( @{ $sample_info_href->{gender}{others} } ) {
+
+        ## Only for sample with wgs analysis type
+        next SAMPLE_ID
+          if ( not $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} );
+
+        $log->warn(qq{Detected gender "other/unknown" for sample_id: $sample_id});
+        $log->warn(q{Sampling reads from fastq file to estimate gender});
+
+        ### Estimate gender from reads
+
+        ## Get infile(s)
+        my @infile_paths = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
+        my @bwa_infiles;
+        my @fastq_files;
+
+        ## Perform per single-end or read pair
+        my $paired_end_tracker = 0;
+      INFILE_PREFIX:
+        while ( my ( $infile_index, $infile_prefix ) =
+            each @{ $infile_lane_prefix_href->{$sample_id} } )
+        {
+
+            # Collect paired-end or single-end sequence run type
+            my $sequence_run_type = get_sequence_run_type(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            # Collect interleaved status for fastq file
+            my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            ## Infile(s)
+            push @fastq_files, $infile_paths[$paired_end_tracker];
+
+            # If second read direction is present
+            if ( $sequence_run_type eq q{paired-end} ) {
+
+                # Increment to collect correct read 2
+                $paired_end_tracker = $paired_end_tracker + 1;
+                push @fastq_files, $infile_paths[$paired_end_tracker];
+            }
+
+            ## Build command for streaming of chunk from fastq file
+          FILE:
+            foreach my $file_path (@fastq_files) {
+
+                my @cmds_cat = gnu_cat( { infile_paths_ref => [$file_path], } );
+                $cmds_cat[0] = q{<(} . $cmds_cat[0];
+                push @cmds_cat, $PIPE;
+                push @cmds_cat, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
+                push @cmds_cat, $PIPE;
+                push @cmds_cat, gnu_head( { number => $BYTE_STOP_POS, } );
+                $cmds_cat[-1] = $cmds_cat[-1] . q{)};
+                push @bwa_infiles, join $SPACE, @cmds_cat;
+            }
+            ## Only perform once per sample and fastq file(s)
+            last INFILE_PREFIX;
+        }
+        ## Build bwa mem command
+        my @commands = bwa_mem(
+            {
+                idxbase                 => $referencefile_path,
+                infile_path             => $bwa_infiles[0],
+                mark_split_as_secondary => 1,
+                second_infile_path      => $bwa_infiles[1],
+                thread_number           => 2,
+            }
+        );
+        ## TODO: Add perl oneliner to parse SAM outdata
+        push @commands, $PIPE;
+        push @commands,
+          gnu_cut(
+            {
+                infile_path => $DASH,
+                list        => 3,
+            }
+          );
+        push @commands, $PIPE;
+        push @commands,
+          gnu_grep(
+            {
+                pattern => $DOUBLE_QUOTE . q{chrY}
+                  . $BACKWARD_SLASH
+                  . $PIPE . q{Y}
+                  . $DOUBLE_QUOTE,
+                count => 1,
+            }
+          );
+        say STDERR join $SPACE, @commands;
+
+#  perl_nae_oneliners({$oneliner_cmd => q?'my %seen; while (<>) { if($F[2]~=/\A chrY | \A Y/xsm) {seen{y}++;} }'?,
+#})
+
+    }
+    return;
 }
 
 sub parse_fastq_infiles {

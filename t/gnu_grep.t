@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -86,6 +86,10 @@ my %base_argument = (
 
 ## Specific arguments
 my %specific_argument = (
+    count => {
+        input           => 1,
+        expected_output => q{--count},
+    },
     filter_file_path => {
         input           => q{test_file},
         expected_output => q{--file=test_file},

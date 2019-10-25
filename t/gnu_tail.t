@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -84,8 +84,12 @@ my %base_argument = (
 
 my %specific_argument = (
     lines => {
-        input           => q{5},
-        expected_output => q{--lines=5},
+        input           => 2,
+        expected_output => q{--lines=2},
+    },
+    number => {
+        input           => 2,
+        expected_output => q{-c 2},
     },
 );
 
@@ -100,9 +104,9 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }
