@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
