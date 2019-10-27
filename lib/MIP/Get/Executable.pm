@@ -53,6 +53,7 @@ sub get_binary_version {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Executable qw{ get_executable };
+    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -394,7 +395,6 @@ sub _build_version_cmd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Get perl wrapper around regexp
     my @perl_commands = perl_nae_oneliners(

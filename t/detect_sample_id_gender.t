@@ -107,9 +107,9 @@ foreach my $found_gender ( keys %expected_result ) {
 
 ## Then sample_ids should be added to each gender category
 is_deeply(
-    $sample_info{gender},
+    $active_parameter{gender},
     $expected_gender_info{gender},
-    q{Added gender info to sample_info}
+    q{Added gender info to active parameter}
 );
 
 ## Given no males or females

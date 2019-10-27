@@ -395,24 +395,21 @@ sub detect_sample_id_gender {
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 1 | ^male/sxm ) {
 
             $found_male = 1;
-            push @{ $sample_info_href->{gender}{males} }, $sample_id;
+            push @{ $active_parameter_href->{gender}{males} }, $sample_id;
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm ) {
             ## If female
 
             $found_female = 1;
-            push @{ $sample_info_href->{gender}{females} }, $sample_id;
+            push @{ $active_parameter_href->{gender}{females} }, $sample_id;
         }
         else {
             ## Must be other
 
-            ## Include since it might be male to enable analysis of Y.
-            $found_male = 1;
-
             # "Other" metrics
             $found_other = 1;
             $found_other_count++;
-            push @{ $sample_info_href->{gender}{others} }, $sample_id;
+            push @{ $active_parameter_href->{gender}{others} }, $sample_id;
         }
     }
     return $found_male, $found_female, $found_other, $found_other_count;

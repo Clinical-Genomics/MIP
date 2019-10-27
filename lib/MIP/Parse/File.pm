@@ -4,9 +4,11 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use FindBin qw{ $Bin };
 use File::Spec::Functions qw{ catdir catfile splitdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
+use File::Path qw{ remove_tree };
 use strict;
 use utf8;
 use warnings;
@@ -18,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $PIPE $PLUS $SPACE };
+  qw{ $BACKWARD_SLASH $COLON $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $PIPE $PLUS $SPACE };
 
 BEGIN {
 
@@ -91,10 +93,13 @@ sub parse_fastq_for_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_cut gnu_head gnu_tail };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem };
     use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
+use MIP::Update::Contigs qw{ update_contigs_for_run };
+    use IPC::Cmd qw(run);
 
     ## All sample ids have a gender
     return if ( not $active_parameter_href->{found_other} );
@@ -102,12 +107,13 @@ sub parse_fastq_for_gender {
     ## Constants
     Readonly my $BYTE_START_POS => 10_000;
     Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 100;
+    Readonly my $MALE_THRESHOLD => 25;
 
     ## Unpack
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
   SAMPLE_ID:
-    for my $sample_id ( @{ $sample_info_href->{gender}{others} } ) {
+    for my $sample_id ( @{ $active_parameter_href->{gender}{others} } ) {
 
         ## Only for sample with wgs analysis type
         next SAMPLE_ID
@@ -120,6 +126,7 @@ sub parse_fastq_for_gender {
 
         ## Get infile(s)
         my @infile_paths = @{ $file_info_href->{$sample_id}{mip_infiles} };
+	my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
 
         my @bwa_infiles;
         my @fastq_files;
@@ -162,10 +169,25 @@ sub parse_fastq_for_gender {
 
             ## Build command for streaming of chunk from fastq file
           FILE:
-            foreach my $file_path (@fastq_files) {
+            foreach my $file (@fastq_files) {
 
+	      my $file_path = catfile($infiles_dir, $file);
+
+	      ## Parse file suffix in filename.suffix(.gz).
+	      ## Removes suffix if matching else return undef
+        my $is_gzipped = parse_file_suffix(
+            {
+                file_name   => $file_path,
+                file_suffix => $DOT . q{gz},
+            }
+        );
                 my @cmds_cat = gnu_cat( { infile_paths_ref => [$file_path], } );
+	      if ($is_gzipped) {
+		$cmds_cat[0] = q{<(z} . $cmds_cat[0];
+	      }
+	      else {
                 $cmds_cat[0] = q{<(} . $cmds_cat[0];
+	      }
                 push @cmds_cat, $PIPE;
                 push @cmds_cat, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
                 push @cmds_cat, $PIPE;
@@ -175,7 +197,7 @@ sub parse_fastq_for_gender {
             }
             ## Only perform once per sample and fastq file(s)
             last INFILE_PREFIX;
-        }
+	  }
         ## Build bwa mem command
         my @commands = bwa_mem(
             {
@@ -206,12 +228,47 @@ sub parse_fastq_for_gender {
                 count => 1,
             }
           );
-        say STDERR join $SPACE, @commands;
 
-#  perl_nae_oneliners({$oneliner_cmd => q?'my %seen; while (<>) { if($F[2]~=/\A chrY | \A Y/xsm) {seen{y}++;} }'?,
-#})
+## Store file content in memory by using referenced variable
+my $temp_file = catfile($Bin, q{estimate_gender_from_reads.sh});
+open my $filehandle, q{>}, $temp_file
+    or croak q{Cannot write to}
+    . $SPACE
+    . $temp_file
+    . $COLON
+    . $SPACE
+    . $OS_ERROR;
+        say {$filehandle} join $SPACE, @commands;
 
-    }
+	my $cmds_ref = [ q{bash}, $temp_file ];
+my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
+  run( command => $cmds_ref, verbose => 0 );
+
+	my $number_of_y_reads = $stdout_buf_ref->[0];
+
+	if($number_of_y_reads > $MALE_THRESHOLD) {
+
+	  $log->info(q{Found male according to fastq reads});
+	  $active_parameter_href->{found_male} = 1;
+	}
+else {
+$log->info(q{Found female according to fastq reads});
+}
+
+	## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
+        }
+    );
+## Clean-up
+remove_tree( $temp_file );
+
+      }
     return;
 }
 
