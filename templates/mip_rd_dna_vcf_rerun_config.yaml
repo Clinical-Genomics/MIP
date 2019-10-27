@@ -34,7 +34,7 @@ genmod_annotate_cadd_files:
 genmod_annotate_spidex_file: grch37_spidex_public_noncommercial_-v1_0-.tab.gz
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_cmms_-v1.25-.ini
+rank_model_file: rank_model_cmms_-v1.28-.ini
 sv_fqa_vcfanno_config: grch37_frequency_vcfanno_filter_config_-v1.1-.toml
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
