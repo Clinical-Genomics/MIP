@@ -92,10 +92,11 @@ sub check_ids_in_dna_vcf {
     my @no_matches;
     foreach my $sample_id (@sample_ids) {
 
-        my $dna_id = $sample_info_href->{sample}{$sample_id}{subject}{dna_id};
+        my $dna_sample_id =
+          $sample_info_href->{sample}{$sample_id}{subject}{dna_sample_id};
 
         ## Check if DNA is one of the IDs from the vcf
-        if ( not grep { $dna_id eq $_ } @vcf_sample_ids ) {
+        if ( not grep { $dna_sample_id eq $_ } @vcf_sample_ids ) {
 
             push @no_matches, $sample_id;
         }
@@ -113,6 +114,7 @@ sub check_ids_in_dna_vcf {
         $log->warn( q{Turning off ASE analysis for sample: } . join $SPACE, @no_matches );
 
         @{ $active_parameter_href->{no_ase_samples} } = @no_matches;
+
     }
     elsif ( scalar @no_matches > 1 ) {
 

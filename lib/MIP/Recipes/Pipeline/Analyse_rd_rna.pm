@@ -153,8 +153,11 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
+    use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
+    use MIP::Recipes::Analysis::Gatk_variantfiltration
+      qw{ analysis_gatk_variantfiltration };
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -217,9 +220,9 @@ sub pipeline_analyse_rd_rna {
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_haplotypecaller      => undef,
+        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
-        gatk_variantfiltration    => undef,
+        gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         genebody_coverage         => \&analysis_genebody_coverage,
         gffcompare_ar             => \&analysis_gffcompare,
         markduplicates            => \&analysis_markduplicates,
@@ -241,7 +244,6 @@ sub pipeline_analyse_rd_rna {
         {
             active_parameter_href => $active_parameter_href,
             analysis_recipe_href  => \%analysis_recipe,
-            sample_info_href      => $sample_info_href,
         }
     );
 

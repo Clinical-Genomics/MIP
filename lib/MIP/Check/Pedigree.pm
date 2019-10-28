@@ -15,6 +15,9 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIP lib
+use MIP::Constants qw{ $LOG_NAME $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -23,12 +26,13 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ check_founder_id check_pedigree_mandatory_key check_pedigree_sample_allowed_values check_pedigree_vs_user_input_sample_ids };
+    our @EXPORT_OK = qw{
+      check_founder_id
+      check_pedigree_mandatory_key
+      check_pedigree_sample_allowed_values
+      check_pedigree_vs_user_input_sample_ids
+    };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub check_founder_id {
 
@@ -94,25 +98,33 @@ sub check_pedigree_mandatory_key {
 
 ## Function : Check that the pedigree case mandatory keys are present
 ## Returns  :
-## Arguments: $file_path     => Pedigree file path
-##          : $log           => Log object
-##          : $pedigree_href => YAML pedigree info hash {REF}
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $file_path             => Pedigree file path
+##          : $log                   => Log object
+##          : $pedigree_href         => YAML pedigree info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $file_path;
     my $log;
     my $pedigree_href;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         file_path => {
             defined     => 1,
             required    => 1,
             store       => \$file_path,
             strict_type => 1,
         },
-        log           => { store => \$log },
         pedigree_href => {
             default     => {},
             defined     => 1,
@@ -124,8 +136,17 @@ sub check_pedigree_mandatory_key {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     my @mandatory_case_keys   = qw{ case samples };
     my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
+
+    ## Add analysis specific mandatory keys
+    if ( $active_parameter_href->{dna_vcf_file} ) {
+
+        push @mandatory_sample_keys, q{dna_sample_id};
+    }
 
     ### Family
     ## Check mandatory case keys
