@@ -406,6 +406,10 @@ sub detect_sample_id_gender {
         else {
             ## Must be other
 
+            ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
+            ## will be performed from fastq reads
+            $found_male = 1;
+
             # "Other" metrics
             $found_other = 1;
             $found_other_count++;

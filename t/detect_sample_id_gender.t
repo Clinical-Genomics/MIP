@@ -112,7 +112,11 @@ is_deeply(
     q{Added gender info to active parameter}
 );
 
-## Given no males or females
+## Given no males or females when mix of  wgs analysis type
+$active_parameter{analysis_type}{q{sample-1}} = q{wes};
+$active_parameter{analysis_type}{q{sample-2}} = q{wes};
+$active_parameter{analysis_type}{q{sample-3}} = q{wgs};
+
 %sample_info = (
     sample => {
         q{sample-1} => { sex => q{xyz}, },
@@ -122,7 +126,7 @@ is_deeply(
 );
 
 %expected_result = (
-    found_male        => 0,
+    found_male        => 1,
     found_female      => 0,
     found_other       => 1,
     found_other_count => 3,

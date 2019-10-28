@@ -98,7 +98,7 @@ sub parse_fastq_for_gender {
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem };
     use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
-use MIP::Update::Contigs qw{ update_contigs_for_run };
+    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use IPC::Cmd qw(run);
 
     ## All sample ids have a gender
@@ -126,7 +126,7 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
 
         ## Get infile(s)
         my @infile_paths = @{ $file_info_href->{$sample_id}{mip_infiles} };
-	my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
+        my $infiles_dir  = $file_info_href->{$sample_id}{mip_infiles_dir};
 
         my @bwa_infiles;
         my @fastq_files;
@@ -171,23 +171,23 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
           FILE:
             foreach my $file (@fastq_files) {
 
-	      my $file_path = catfile($infiles_dir, $file);
+                my $file_path = catfile( $infiles_dir, $file );
 
-	      ## Parse file suffix in filename.suffix(.gz).
-	      ## Removes suffix if matching else return undef
-        my $is_gzipped = parse_file_suffix(
-            {
-                file_name   => $file_path,
-                file_suffix => $DOT . q{gz},
-            }
-        );
+                ## Parse file suffix in filename.suffix(.gz).
+                ## Removes suffix if matching else return undef
+                my $is_gzipped = parse_file_suffix(
+                    {
+                        file_name   => $file_path,
+                        file_suffix => $DOT . q{gz},
+                    }
+                );
                 my @cmds_cat = gnu_cat( { infile_paths_ref => [$file_path], } );
-	      if ($is_gzipped) {
-		$cmds_cat[0] = q{<(z} . $cmds_cat[0];
-	      }
-	      else {
-                $cmds_cat[0] = q{<(} . $cmds_cat[0];
-	      }
+                if ($is_gzipped) {
+                    $cmds_cat[0] = q{<(z} . $cmds_cat[0];
+                }
+                else {
+                    $cmds_cat[0] = q{<(} . $cmds_cat[0];
+                }
                 push @cmds_cat, $PIPE;
                 push @cmds_cat, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
                 push @cmds_cat, $PIPE;
@@ -197,7 +197,7 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
             }
             ## Only perform once per sample and fastq file(s)
             last INFILE_PREFIX;
-	  }
+        }
         ## Build bwa mem command
         my @commands = bwa_mem(
             {
@@ -230,45 +230,43 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
           );
 
 ## Store file content in memory by using referenced variable
-my $temp_file = catfile($Bin, q{estimate_gender_from_reads.sh});
-open my $filehandle, q{>}, $temp_file
-    or croak q{Cannot write to}
-    . $SPACE
-    . $temp_file
-    . $COLON
-    . $SPACE
-    . $OS_ERROR;
+        my $temp_file = catfile( $Bin, q{estimate_gender_from_reads.sh} );
+        open my $filehandle, q{>}, $temp_file
+          or croak q{Cannot write to} . $SPACE . $temp_file . $COLON . $SPACE . $OS_ERROR;
         say {$filehandle} join $SPACE, @commands;
 
-	my $cmds_ref = [ q{bash}, $temp_file ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-  run( command => $cmds_ref, verbose => 0 );
+        my $cmds_ref = [ q{bash}, $temp_file ];
+        my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
+          = run( command => $cmds_ref, verbose => 0 );
 
-	my $number_of_y_reads = $stdout_buf_ref->[0];
+        my $number_of_y_reads = $stdout_buf_ref->[0];
 
-	if($number_of_y_reads > $MALE_THRESHOLD) {
+        if ( $number_of_y_reads > $MALE_THRESHOLD ) {
 
-	  $log->info(q{Found male according to fastq reads});
-	  $active_parameter_href->{found_male} = 1;
-	}
-else {
-$log->info(q{Found female according to fastq reads});
-}
-
-	## Update contigs depending on settings in run (wes or if only male samples)
-    update_contigs_for_run(
-        {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            $log->info(q{Found male according to fastq reads});
+            $active_parameter_href->{found_male} = 1;
         }
-    );
-## Clean-up
-remove_tree( $temp_file );
+        else {
+            $log->info(q{Found female according to fastq reads});
+            $active_parameter_href->{found_male} = 0;
+            ## Update contigs depending on settings in run (wes or if only male samples)
+            update_contigs_for_run(
+                {
+                    analysis_type_href => \%{ $active_parameter_href->{analysis_type} },
+                    exclude_contigs_ref =>
+                      \@{ $active_parameter_href->{exclude_contigs} },
+                    file_info_href => $file_info_href,
+                    found_male     => $active_parameter_href->{found_male},
+                    log            => $log,
+                }
+            );
 
-      }
+        }
+
+## Clean-up
+        remove_tree($temp_file);
+
+    }
     return;
 }
 
