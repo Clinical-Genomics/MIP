@@ -122,7 +122,7 @@ is_deeply(
 );
 
 %expected_result = (
-    found_male        => 1,
+    found_male        => 0,
     found_female      => 0,
     found_other       => 1,
     found_other_count => 3,
