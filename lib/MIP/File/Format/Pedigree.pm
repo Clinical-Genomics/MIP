@@ -696,9 +696,9 @@ sub parse_yaml_pedigree_file {
     ## Check pedigree mandatory keys
     check_pedigree_mandatory_key(
         {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => $pedigree_href,
+            active_parameter_href => $active_parameter_href,
+            file_path             => $file_path,
+            pedigree_href         => $pedigree_href,
         }
     );
 

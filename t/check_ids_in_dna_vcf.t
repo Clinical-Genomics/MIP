@@ -82,7 +82,7 @@ ok( $is_ok, q{Found matching RNA and DNA samples} );
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-    $sample_info{sample}{$sample_id}{subject}{dna_id} = $sample_id;
+    $sample_info{sample}{$sample_id}{subject}{dna_sample_id} = $sample_id;
 }
 trap {
     check_ids_in_dna_vcf(
@@ -100,7 +100,7 @@ like( $trap->stderr, qr/No\smatching\ssample\sids/xms, q{Print error message} );
 
 ## Given that some dna samples match
 @{ $active_parameter{sample_ids} } = qw{ ADM1059A1 ADM1059A5 ADM1059A6 };
-$sample_info{sample}{ADM1059A1}{subject}{dna_id} = q{ADM1059A1};
+$sample_info{sample}{ADM1059A1}{subject}{dna_sample_id} = q{ADM1059A1};
 trap {
     check_ids_in_dna_vcf(
         {

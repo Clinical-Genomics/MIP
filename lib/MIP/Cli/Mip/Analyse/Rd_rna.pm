@@ -186,6 +186,17 @@ sub _build_usage {
     );
 
     option(
+        q{dna_vcf_file} => (
+            cmd_aliases   => [qw{ dvf }],
+            cmd_flag      => q{dna_vcf_file},
+            cmd_tags      => [q{Format: vcf | bcf}],
+            documentation => q{Variantcalls made on wgs or wes data },
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{gatk_bundle_download_version} => (
             cmd_aliases   => [qw{ gbdv }],
             cmd_tags      => [q{Default: 2.8}],
@@ -251,16 +262,6 @@ sub _build_usage {
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{subject_id} => (
-            cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=subject_id}],
-            documentation => q{Sample origin},
-            is            => q{rw},
-            isa           => HashRef,
         )
     );
 

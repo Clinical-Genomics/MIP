@@ -1153,7 +1153,7 @@ sub check_rd_rna {
     );
 
     ## Check dna vcf
-    check_dna_vcf(
+    check_ids_in_dna_vcf(
         {
             active_parameter_href => $active_parameter_href,
             dna_vcf_file          => $active_parameter_href->{dna_vcf_file},

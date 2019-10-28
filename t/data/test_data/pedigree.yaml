@@ -12,7 +12,6 @@ samples:
     sample_id: ADM1059A2
     sample_name: NA12882
     sex: male
-    subject_id: Baby_Doe
     time_point: 0
   - analysis_type: wes
     capture_kit: agilent_sureselect_cre.v1
@@ -23,7 +22,6 @@ samples:
     sample_id: ADM1059A1
     sample_name: NA12877
     sex: male
-    subject_id: John_Doe
     time_point: 0
   - analysis_type: wes
     capture_kit: agilent_sureselect_cre.v1
@@ -34,5 +32,4 @@ samples:
     sample_id: ADM1059A3
     sample_name: NA12878
     sex: female
-    subject_id: Jane_Doe
     time_point: 0

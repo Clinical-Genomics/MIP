@@ -11,9 +11,10 @@ samples:
     sample_id: 118-1-2A
     sample_name: 118-1-2A
     sex: unknown
-    subject_id: Baby_Doe
+    dna_sample_id: ADM1059A2 
   - analysis_type: wts
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A1 
     expected_coverage: 150
     father: '0'
     mother: '0'
@@ -21,9 +22,9 @@ samples:
     sample_id: 118-2-1U
     sample_name: 118-2-1U
     sex: unknown
-    subject_id: John_Doe
   - analysis_type: wts
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A3 
     expected_coverage: 150
     father: '0'
     mother: '0'
@@ -31,4 +32,3 @@ samples:
     sample_id: 118-2-2U
     sample_name: 118-2-2U
     sex: unknown
-    subject_id: Jane_Doe
