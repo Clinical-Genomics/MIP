@@ -28,11 +28,19 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag has_trio is_sample_proband_in_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+    our @EXPORT_OK = qw{
+      create_fam_file
+      detect_founders
+      detect_sample_id_gender
+      detect_trio
+      gatk_pedigree_flag
+      has_trio
+      is_sample_proband_in_trio
+      parse_yaml_pedigree_file
+      reload_previous_pedigree_info };
 }
 
 ## Constants

@@ -29,7 +29,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
