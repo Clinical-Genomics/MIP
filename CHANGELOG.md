@@ -28,6 +28,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves stringtie to singularity container
 - Removed cramtools
 - Removes cutadapt 
+- Supply wgs variantcalls for ASE analysis
 
 **CLI**
 - Removes the noupdate option from the installation

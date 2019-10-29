@@ -26,8 +26,15 @@ BEGIN {
     our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+    our @EXPORT_OK = qw{
+      set_ase_chain_recipes
+      set_rankvariants_ar
+      set_recipe_bwa_mem
+      set_recipe_cadd
+      set_recipe_chromograph
+      set_recipe_gatk_variantrecalibration
+      set_recipe_on_analysis_type
+    };
 }
 
 sub set_recipe_bwa_mem {
@@ -428,16 +435,15 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
 }
 
 sub set_ase_chain_recipes {
+
 ## Function : Update analysis recipes for ASE on dna vcf
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $analysis_recipe_href  => Analysis recipe hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $analysis_recipe_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -447,34 +453,22 @@ sub set_ase_chain_recipes {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis qw{ analysis_dna_vcf_reformat };
-    use MIP::Recipes::Analysis qw{ analysis_gatk_asereadcounter_dna };
-    use MIP::Recipes::Analysis qw{ analysis_bcftools_merge_dna_ase };
-
     ## Keep default if no DNA vcf
-    return if ( not $active_parameter_href->{dna_vcf_file} );
+    if ( not $active_parameter_href->{dna_vcf_file} ) {
 
-    ## Reformat vcf
-    $analysis_recipe_href->{dna_vcf_reformat} = \&analysis_dna_vcf_reformat;
+        ## Turn of
+        $active_parameter_href->{dna_vcf_reformat} = 0;
+    }
+    else {
 
-    ## Turn off Haplotypecaller and VariantFiltration
-    $active_parameter_href->{gatk_haplotypecaller}   = 0;
-    $active_parameter_href->{gatk_variantfiltration} = 0;
-
-    ## Shift GATK ase and bcftools merge recipes
-    $analysis_recipe_href->{gatk_asereadcounter} = \&analysis_gatk_asereadcounter_dna;
-    $analysis_recipe_href->{bcftools_merge}      = \&analysis_bcftools_merge_dna_ase;
+        ## Turn off Haplotypecaller and VariantFiltration
+        $active_parameter_href->{gatk_haplotypecaller}   = 0;
+        $active_parameter_href->{gatk_variantfiltration} = 0;
+    }
 
     return;
 }

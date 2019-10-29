@@ -197,6 +197,15 @@ sub _build_usage {
     );
 
     option(
+        q{force_dna_ase} => (
+            cmd_aliases   => [qw{ fda }],
+            documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_bundle_download_version} => (
             cmd_aliases   => [qw{ gbdv }],
             cmd_tags      => [q{Default: 2.8}],

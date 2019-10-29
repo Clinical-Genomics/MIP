@@ -153,6 +153,13 @@ sub analysis_bootstrapann {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
+    ## Return if we ASE hash been turned off for this sample
+    if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+
+        $log->warn(qq{No ASE analysis for $sample_id});
+        return 0;
+    }
+
     ## Unpack parameters
     ## Get the io infiles per chain and id
     my %io = get_io_files(
@@ -168,13 +175,19 @@ sub analysis_bootstrapann {
     my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
 
-    ## Get bam infile from gatk_variantfiltration
+    ## Get vcf file
+    my $vcf_generator_recipe = q{gatk_variantfiltration};
+    if ( $active_parameter_href->{dna_vcf_file} ) {
+
+        $vcf_generator_recipe = q{dna_vcf_reformat};
+    }
+
     my %variant_io = get_io_files(
         {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_variantfiltration},
+            recipe_name    => $vcf_generator_recipe,
             stream         => q{in},
             temp_directory => $temp_directory,
         }

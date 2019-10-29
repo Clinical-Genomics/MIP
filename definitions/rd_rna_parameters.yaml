@@ -106,6 +106,7 @@ recipe_time:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
+    dna_vcf_reformat: 1
     fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
@@ -135,11 +136,12 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
     genebody_coverage: 8
     multiqc_ar: 2
-    picardtools_mergesamfiles: 3
+    picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25
     salmon_quant: 2
@@ -158,6 +160,7 @@ recipe_core_number:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
+    dna_vcf_reformat: 1
     fastqc_ar: 0
     gatk_asereadcounter: 1
     gatk_baserecalibration: 16
@@ -169,7 +172,7 @@ recipe_core_number:
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
-    picardtools_mergesamfiles: 16
+    picardtools_mergesamfiles: 13
     preseq_ar: 1
     rseqc: 1
     sacct: 1
@@ -193,6 +196,12 @@ time_point:
     - mip
   data_type: HASH
   mandatory: no
+  type: mip
+force_dna_ase:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
   type: mip
 ### Programs
 ## Gzip
@@ -703,6 +712,26 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+## Reformat dna vcf
+dna_vcf_reformat:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+  type: recipe
+dna_vcf_file:
+  associated_recipe:
+    - dna_vcf_reformat
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  type: path
+  update_path: absolute_path
 ## VEP
 varianteffectpredictor:
   analysis_mode: case
@@ -783,20 +812,3 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-dna_vcf_reformat:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  outfile_suffix: ".vcf"
-  program_executables:
-    - bcftools
-  type: recipe
-dna_vcf_file:
-  associated_recipe:
-    - dna_vcf_reformat
-  data_type: SCALAR
-  exists_check: file
-  mandatory: no
-  type: path
-  update_path: absolute_path

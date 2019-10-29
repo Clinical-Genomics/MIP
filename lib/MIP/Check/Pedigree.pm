@@ -100,7 +100,6 @@ sub check_pedigree_mandatory_key {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $file_path             => Pedigree file path
-##          : $log                   => Log object
 ##          : $pedigree_href         => YAML pedigree info hash {REF}
 
     my ($arg_href) = @_;
@@ -108,7 +107,6 @@ sub check_pedigree_mandatory_key {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_path;
-    my $log;
     my $pedigree_href;
 
     my $tmpl = {

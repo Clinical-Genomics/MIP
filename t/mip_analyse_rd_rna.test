@@ -22,8 +22,8 @@ use Readonly;
 use autodie qw{open close :all};
 
 ## MIPs lib/
-use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -73,7 +73,7 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 
 ## Test execution of mip
 # Create array for cmd
-my @cmds = (
+my @base_cmds = (
     q{perl},
     $mip_path,
     qw{ analyse rd_rna 118-rnatest },
@@ -103,12 +103,14 @@ my @test_cases = ( $EMPTY_STR, q{--dna_vcf_file} );
 TEST_CASE:
 foreach my $test_case (@test_cases) {
 
+    my @test_cmds = ( @base_cmds, $test_case );
+
     if ( $test_case eq q{--dna_vcf_file} ) {
-        $test_case .= $SPACE . $dna_vcf_file;
+        push @test_cmds, $dna_vcf_file;
     }
 
     my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-        command => \( @cmds, $test_case ),
+        command => \@test_cmds,
         verbose => $VERBOSE
     );
     ok( $success, q{Executed mip} );

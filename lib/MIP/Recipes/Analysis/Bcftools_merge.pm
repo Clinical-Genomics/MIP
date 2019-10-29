@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Readonly;
-use List::MoreUtils qw{ each_array };
+use List::MoreUtils qw{ each_array uniq };
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
@@ -150,6 +150,11 @@ sub analysis_bcftools_merge {
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Case when some samples have ASE turned off
+        if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+            next SAMPLE_ID;
+        }
 
         my %io = get_io_files(
             {

@@ -1017,7 +1017,7 @@ sub get_user_supplied_info {
     ## Define what should be checked
     my %user_supply_switch = (
         analysis_type         => 0,
-        dna_sample_id            => 0,
+        dna_sample_id         => 0,
         exome_target_bed      => 0,
         expected_coverage     => 0,
         sample_ids            => 0,

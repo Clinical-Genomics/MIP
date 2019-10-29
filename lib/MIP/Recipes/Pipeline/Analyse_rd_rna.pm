@@ -174,6 +174,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
+    use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
     use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
 
@@ -216,7 +217,7 @@ sub pipeline_analyse_rd_rna {
         bcftools_merge            => \&analysis_bcftools_merge,
         blobfish                  => \&analysis_blobfish,
         bootstrapann              => \&analysis_bootstrapann,
-        dna_vcf_reformat          => undef,
+        dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
@@ -238,13 +239,6 @@ sub pipeline_analyse_rd_rna {
         trim_galore_ar            => \&analysis_trim_galore,
         varianteffectpredictor    => \&analysis_vep_rna,
         version_collect_ar        => \&analysis_mip_vercollect,
-    );
-
-    set_ase_chain_recipes(
-        {
-            active_parameter_href => $active_parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
-        }
     );
 
   RECIPE:

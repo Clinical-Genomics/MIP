@@ -218,22 +218,22 @@ sub create_fam_file {
     if ( $execution_mode eq q{system} ) {
 
         # Create anonymous filehandle
-        my $filehandle_SYS = IO::Handle->new();
+        my $filehandle_sys = IO::Handle->new();
 
         ## Create dir if it does not exists
         make_path( dirname($fam_file_path) );
 
-        open $filehandle_SYS, q{>}, $fam_file_path
+        open $filehandle_sys, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
         ## Adds the information from the samples in pedigree_lines, separated by \n
       LINE:
         foreach my $line (@pedigree_lines) {
 
-            say {$filehandle_SYS} $line;
+            say {$filehandle_sys} $line;
         }
         $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
-        close $filehandle_SYS;
+        close $filehandle_sys;
     }
 
     if ( $execution_mode eq q{sbatch} ) {

@@ -87,13 +87,14 @@ sub check_ids_in_dna_vcf {
         }
     );
 
-    my @sample_ids = @{ $active_parameter_href->{sample_ids} };
-
+    ## Store sample_ids with no matching vcf sample ids
     my @no_matches;
-    foreach my $sample_id (@sample_ids) {
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $dna_sample_id =
-          $sample_info_href->{sample}{$sample_id}{subject}{dna_sample_id};
+          $sample_info_href->{sample}{$sample_id}{dna_sample_id};
 
         ## Check if DNA is one of the IDs from the vcf
         if ( not grep { $dna_sample_id eq $_ } @vcf_sample_ids ) {
@@ -103,20 +104,20 @@ sub check_ids_in_dna_vcf {
     }
 
     ## Check cases
-    if ( scalar @no_matches == scalar @sample_ids ) {
+    if ( scalar @no_matches == scalar @{ $active_parameter_href->{sample_ids} } ) {
 
         $log->fatal(q{No matching sample ids between the RNA and DNA data});
 
         exit 1;
     }
-    elsif ( scalar @no_matches > 1 and $active_parameter_href->{force_dna_ase} ) {
+    elsif ( scalar @no_matches > 0 and $active_parameter_href->{force_dna_ase} ) {
 
         $log->warn( q{Turning off ASE analysis for sample: } . join $SPACE, @no_matches );
 
         @{ $active_parameter_href->{no_ase_samples} } = @no_matches;
 
     }
-    elsif ( scalar @no_matches > 1 ) {
+    elsif ( scalar @no_matches > 0 ) {
 
         $log->fatal(q{Only partial match between the DNA sample ids and RNA sample ids});
         $log->fatal(

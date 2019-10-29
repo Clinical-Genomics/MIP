@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -60,9 +60,9 @@ diag(   q{Test check_pedigree_mandatory_key from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = tets_log( {} );
+my $log = test_log( {} );
 
-my $active_parameter{dna_vcf_file} = catfile(q{dna.vcf});
+my %active_parameter = ( dna_vcf_file => catfile(q{dna.vcf}) );
 
 my %pedigree = (
     case    => q{case_1},
@@ -127,7 +127,7 @@ trap {
             file_path             => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -148,7 +148,7 @@ trap {
             file_path             => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
