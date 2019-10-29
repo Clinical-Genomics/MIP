@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,13 +59,13 @@ diag(   q{Test detect_sample_id_gender from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given sample ids and genders
-my %active_parameter = ( sample_ids => [qw{ sample-1 sample-2 sample-3 }], );
+my %active_parameter = ( sample_ids => [qw{ sample_1 sample_2 sample_3 }], );
 
 my %sample_info = (
     sample => {
-        q{sample-1} => { sex => q{male}, },
-        q{sample-2} => { sex => q{female}, },
-        q{sample-3} => { sex => q{other}, },
+        sample_1 => { sex => q{male}, },
+        sample_2 => { sex => q{female}, },
+        sample_3 => { sex => q{other}, },
     },
 );
 (
@@ -73,7 +73,6 @@ my %sample_info = (
     $active_parameter{found_male},
     $active_parameter{found_female},
     $active_parameter{found_other},
-    $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -83,17 +82,16 @@ my %sample_info = (
   );
 
 my %expected_result = (
-    found_male        => 1,
-    found_female      => 1,
-    found_other       => 1,
-    found_other_count => 1,
+    found_male   => 2,
+    found_female => 1,
+    found_other  => 1,
 );
 
 my %expected_gender_info = (
     gender => {
-        males   => [q{sample-1}],
-        females => [q{sample-2}],
-        others  => [q{sample-3}],
+        males   => [qw{ sample_1 }],
+        females => [qw{ sample_2 }],
+        others  => [qw{ sample_3 }],
     }
 );
 
@@ -112,31 +110,26 @@ is_deeply(
     q{Added gender info to active parameter}
 );
 
-## Given no males or females when mix of  wgs analysis type
-$active_parameter{analysis_type}{q{sample-1}} = q{wes};
-$active_parameter{analysis_type}{q{sample-2}} = q{wes};
-$active_parameter{analysis_type}{q{sample-3}} = q{wgs};
+## Given no males or females
 
 %sample_info = (
     sample => {
-        q{sample-1} => { sex => q{xyz}, },
-        q{sample-2} => { sex => q{xyz}, },
-        q{sample-3} => { sex => q{other}, },
+        sample_1 => { sex => q{xyz}, },
+        sample_2 => { sex => q{xyz}, },
+        sample_3 => { sex => q{other}, },
     },
 );
 
 %expected_result = (
-    found_male        => 1,
-    found_female      => 0,
-    found_other       => 1,
-    found_other_count => 3,
+    found_male   => 3,
+    found_female => 0,
+    found_other  => 3,
 );
 (
 
     $active_parameter{found_male},
     $active_parameter{found_female},
     $active_parameter{found_other},
-    $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -154,36 +147,3 @@ foreach my $found_gender ( keys %expected_result ) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}
