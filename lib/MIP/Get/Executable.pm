@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -231,6 +231,11 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
             version_regexp =>
 q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        preseq => {
+            version_cmd => q{2>&1 >/dev/null},
+            version_regexp =>
+q?'my ($version) = /Version:\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+        },
         picard => {
             version_cmd => q{BamIndexStats 2>&1 >/dev/null},
             version_regexp =>
@@ -261,6 +266,11 @@ q?'my ($version) = /read_duplication.py\s+(\S+)/xms; if($version) {print $versio
             version_regexp =>
 q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        salmon => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /salmon\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+        },
         sambamba => {
             version_cmd => q{--version 2>&1 >/dev/null},
             version_regexp =>
@@ -275,6 +285,16 @@ q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $ver
             version_cmd => q{--version},
             version_regexp =>
 q?'my ($version) = /\(GNU\s+sed\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        STAR => {
+            version_cmd => q{--version},
+            version_regexp =>
+              q?'my ($version) = /(\S+)/xms; if($version) {print $version; last;}'?,
+        },
+        q{STAR-Fusion} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         stranger => {
             version_cmd => q{--version},
@@ -327,8 +347,9 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
 q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         varg => {
-          version_cmd => q{--version},
-          version_regexp => q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
         },
         vep => {
             version_regexp =>
