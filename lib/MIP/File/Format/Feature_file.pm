@@ -294,14 +294,14 @@ sub read_feature_file {
 
     return if ( not $feature_file_path );
 
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    open $FILEHANDLE, q{<}, $feature_file_path
+    open $filehandle, q{<}, $feature_file_path
       or
       $log->logdie( q{Cannot open } . $feature_file_path . $COLON . $OS_ERROR, $NEWLINE );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         ## Remove newline
         chomp;
@@ -343,7 +343,7 @@ sub read_feature_file {
             }
         );
     }
-    close $FILEHANDLE;
+    close $filehandle;
     $log->info(qq{Finished reading $feature_file_type file: $feature_file_path});
     return 1;
 }

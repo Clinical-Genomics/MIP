@@ -242,6 +242,14 @@ recipe_core_number:
     svrank_model: 1
     sv_vcfanno_config: 1
   type: mip
+recipe_memory:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    # Per process
+    gnomad: 25
+  type: mip
 recipe_time:
   associated_recipe:
    - mip

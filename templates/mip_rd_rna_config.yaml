@@ -14,10 +14,6 @@ load_env:
     installation: emip
     method: conda
     mip:
-  MIP_rd_rna_star:
-    gtf_file_to_feature_seqs.pl:
-    installation: eperl5
-    method: conda
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
@@ -33,5 +29,5 @@ star_fusion_genome_lib_dir: cluster_constant_path!/references/grch37_v19_CTAT_li
 ### Analysis
 ## Programs
 ## Parameters
-picardtools_path: cluster_constant_path!
+picardtools_path: /usr/picard
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/

@@ -191,7 +191,7 @@ sub analysis_vcf2cytosure {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -217,7 +217,7 @@ sub analysis_vcf2cytosure {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -281,7 +281,7 @@ sub analysis_vcf2cytosure {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Creating coverage file with tiddit -cov for samples};
+    say {$filehandle} q{## Creating coverage file with tiddit -cov for samples};
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -299,17 +299,17 @@ sub analysis_vcf2cytosure {
         tiddit_coverage(
             {
                 bin_size            => $bin_size,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $vcf2cytosure_file_info{$sample_id}{in}{q{.bam}},
                 outfile_path_prefix => $tiddit_cov_file_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     # Extract SV from this sample from merged SV VCF file
-    say {$FILEHANDLE} q{## Using bcftools_view to extract SVs for samples} . $NEWLINE;
+    say {$filehandle} q{## Using bcftools_view to extract SVs for samples} . $NEWLINE;
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -330,17 +330,17 @@ sub analysis_vcf2cytosure {
         bcftools_view(
             {
                 exclude      => $active_parameter_href->{vcf2cytosure_exclude_filter},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $vcf2cytosure_file_info{$case_id}{in}{q{.vcf}},
                 samples_ref  => [$sample_id],
                 outfile_path => $bcftools_outfile_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
-    say {$FILEHANDLE}
+    say {$filehandle}
       q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -365,7 +365,7 @@ sub analysis_vcf2cytosure {
         vcf2cytosure_convert(
             {
                 coverage_file   => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 maxbnd          => $active_parameter_href->{vcf2cytosure_maxbnd},
                 outfile_path    => $outfile_path{$sample_id},
                 sex             => $sample_id_sex,
@@ -373,7 +373,7 @@ sub analysis_vcf2cytosure {
                 vcf_infile_path => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
@@ -388,7 +388,7 @@ sub analysis_vcf2cytosure {
             );
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 

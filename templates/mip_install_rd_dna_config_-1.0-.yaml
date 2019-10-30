@@ -1,42 +1,13 @@
 ---
-# MIP main environment spec
+bash_set_errexit: 1
+bash_set_pipefail: 1
 emip:
   conda:
-    bcftools: 1.9=ha228f0b_4
-    bedtools: 2.27.1=he941832_2
-    cramtools: 3.0.b127=2
-    cutadapt: 1.18=py27_0
-    cython: 0.29.1=py27hfc679d8_0
-    cyvcf2: 0.10.0=py27h355e19c_0
-    gatk: 3.8=5
-    gatk4: 4.1.3.0=0
-    gcc: 4.8.5
-    htslib: 1.9=hc238db4_4
-    libstdcxx-ng: 8.2
-    numpy:
-    picard: 2.20.7=0
-    pip:
-    plink2: 1.90b3.35
-    python: 2.7
-    R: 3.3.1 #GATK 3.8.5 req
-    rtg-tools: 3.10.1=0
-    samtools: 1.9=h8571acd_11
-    vcfanno: 0.3.2=0
-    vt: 2015.11.10
+    python: 3.7
   pip:
   shell:
-    bedtools:
-      version: 2.25.0
     mip_scripts:
       version: Your current MIP version
-    picard:
-      conda_dependency:
-        java-jdk:
-      version: 2.3.0
-    plink2:
-      version: 171013
-    vt:
-      version: gitRepo
   singularity:
     bwa:
       executable:
@@ -56,6 +27,10 @@ emip:
         typeHLA-selctg.js:
         seqtk:
       uri: shub://Clinical-Genomics/MIP:bwakit-0.7.15
+    bedtools:
+      executable:
+        bedtools:
+      uri: shub://Clinical-Genomics/MIP:bedtools-2.29.0
     cadd:
       executable:
         CADD.sh:
@@ -85,10 +60,25 @@ emip:
       executable:
         delly:
       uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    gatk:
+      executable:
+        gatk3: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:gatk-3.8
+    gatk4:
+      executable:
+        gatk:
+      uri: docker://broadinstitute/gatk:4.1.3.0
     genmod:
       executable:
         genmod:
       uri: shub://Clinical-Genomics/MIP:genmod-3.7.3
+    htslib:
+      executable:
+        bcftools:
+        bgzip:
+        samtools:
+        tabix:
+      uri: shub://Clinical-Genomics/MIP:htslib-1.9
     manta:
       executable:
         configManta.py:
@@ -97,15 +87,27 @@ emip:
     multiqc:
       executable:
         multiqc:
-      uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+      uri: docker://ewels/multiqc:v1.7
     peddy:
       executable:
         peddy: "python -m peddy"
       uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    picard:
+      executable:
+        picard: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:picard-2.20.7
+    plink:
+      executable:
+        plink2:
+      uri: shub://Clinical-Genomics/MIP:plink-1.90b3.35
     rhocall:
       executable:
         rhocall:
       uri: shub://Clinical-Genomics/MIP:rhocall-0.5.1
+    rtg-tools:
+      executable:
+        rtg:
+      uri: shub://Clinical-Genomics/MIP:rtg-tools-3.10.1
     sambamba:
       executable:
         sambamba:
@@ -134,6 +136,10 @@ emip:
       executable:
         variant_integrity:
       uri: shub://Clinical-Genomics/MIP:variant_integrity-0.0.4
+    vcfanno:
+      executable:
+        vcfanno:
+      uri: shub://Clinical-Genomics/MIP:vcfanno-0.3.2
     vep:
       executable:
         vep:
@@ -142,22 +148,15 @@ emip:
       executable:
         vcf2cytosure:
       uri: shub://J35P312/vcf2cytosure:0.4.3
-# Perl environment spec
-eperl5:
-  conda:
-    bcftools: 1.9=ha228f0b_4
-    gatk4: 4.1.3.0=0
-    samtools: 1.9=h8571acd_11
-    pip:
-    python: 2.7
-  pip:
-  shell:
+    vt:
+      executable:
+        vt:
+      uri: shub://Clinical-Genomics/MIP:vt-2015.11.10
 ## Default base name
 environment_base_name: mip7_rd-dna
 # Specify default environment names
 environment_name:
   emip: mip7_rd-dna
-  eperl5: mip7_rd-dna_perl5
 vep_plugins:
   - dbNSFP
   - ExACpLI

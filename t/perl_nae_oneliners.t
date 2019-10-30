@@ -63,7 +63,7 @@ diag(   q{Test perl_nae_oneliners from Perl.pm v}
 my @function_base_commands = qw{ perl };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

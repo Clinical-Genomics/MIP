@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_mergesamfiles };
@@ -261,8 +261,8 @@ sub analysis_picardtools_mergesamfiles {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get recipe memory allocation
     Readonly my $JAVA_MEMORY_ALLOCATION => 4;
@@ -296,7 +296,7 @@ sub analysis_picardtools_mergesamfiles {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -325,19 +325,19 @@ sub analysis_picardtools_mergesamfiles {
     while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Split BAMs
-        say {$FILEHANDLE} q{## Split alignment files per contig};
+        say {$filehandle} q{## Split alignment files per contig};
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
                 contigs_ref         => \@{ $file_info_href->{bam_contigs_size_ordered} },
                 core_number         => $core_number,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 file_path           => $recipe_file_path,
                 infile_path         => $infile_path,
                 outfile_path_prefix => $outdir_path
                   . $infile_name_prefixes[$infile_index],
                 output_format      => substr( $infile_suffix, 1 ),
                 recipe_info_path   => $recipe_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargsfilehandle    => $xargsfilehandle,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -347,24 +347,17 @@ sub analysis_picardtools_mergesamfiles {
     if ( scalar @infile_paths > 1 ) {
 
         ## picardtools_mergesamfiles
-        say {$FILEHANDLE} q{## Merging alignment files};
+        say {$filehandle} q{## Merging alignment files};
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $parallel_processes,
-                FILEHANDLE    => $FILEHANDLE,
-                file_path     => $recipe_file_path,
-                first_command => q{java},
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                picard_use_barclay_parser => 1,
-                recipe_info_path          => $recipe_info_path,
-                temp_directory            => $temp_directory,
-                XARGSFILEHANDLE           => $XARGSFILEHANDLE,
-                xargs_file_counter        => $xargs_file_counter,
+                core_number        => $parallel_processes,
+                filehandle         => $filehandle,
+                file_path          => $recipe_file_path,
+                recipe_info_path   => $recipe_info_path,
+                xargsfilehandle    => $xargsfilehandle,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
 
@@ -381,33 +374,40 @@ sub analysis_picardtools_mergesamfiles {
 
             picardtools_mergesamfiles(
                 {
-                    create_index       => q{true},
-                    FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => \@merge_infile_paths,
+                    create_index     => q{true},
+                    filehandle       => $xargsfilehandle,
+                    infile_paths_ref => \@merge_infile_paths,
+                    java_jar         => catfile(
+                        $active_parameter_href->{picardtools_path}, q{picard.jar}
+                    ),
+                    java_use_large_pages =>
+                      $active_parameter_href->{java_use_large_pages},
+                    memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                     outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
+                    temp_directory     => $temp_directory,
                     threading          => q{true},
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
         }
     }
     else {
         ## Only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream
 
         ## Rename samples
-        say {$FILEHANDLE}
+        say {$filehandle}
 q{## Renaming sample instead of merge to streamline handling of filenames downstream};
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 core_number        => $core_number,
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 file_path          => $recipe_file_path,
                 recipe_info_path   => $recipe_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargsfilehandle    => $xargsfilehandle,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -426,28 +426,28 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Rename
                 gnu_mv(
                     {
-                        FILEHANDLE   => $XARGSFILEHANDLE,
+                        filehandle   => $xargsfilehandle,
                         infile_path  => $gnu_infile_path,
                         outfile_path => $gnu_outfile_path,
                     }
                 );
-                print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+                print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
                 ## Index
                 samtools_index(
                     {
                         bai_format  => 1,
-                        FILEHANDLE  => $XARGSFILEHANDLE,
+                        filehandle  => $xargsfilehandle,
                         infile_path => $gnu_outfile_path,
                     }
                 );
             }
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
         }
     }
 
     ## Gather BAM files
-    say {$FILEHANDLE} q{## Gather BAM files};
+    say {$filehandle} q{## Gather BAM files};
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
@@ -456,7 +456,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -467,10 +467,10 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $XARGSFILEHANDLE;
-    close $FILEHANDLE;
+    close $xargsfilehandle;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

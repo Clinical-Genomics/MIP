@@ -37,7 +37,7 @@ sub stranger {
 
 ## Function : Perl wrapper for stranger annotation of repeat expansions.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile
 ##          : $log_level              => Log level
 ##          : $repeats_file_path      => Path to a file with repeat definitions
@@ -49,7 +49,7 @@ sub stranger {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $repeats_file_path;
     my $stderrfile_path;
@@ -61,8 +61,8 @@ sub stranger {
     my $log_level;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -122,7 +122,7 @@ sub stranger {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

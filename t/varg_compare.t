@@ -63,7 +63,7 @@ diag(   q{Test varg_compare from Varg.pm v}
 my @function_base_commands = qw{ varg compare };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

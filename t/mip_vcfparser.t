@@ -67,7 +67,7 @@ diag(   q{Test mip_vcfparser from Mip.pm v}
 my @function_base_commands = qw{ mip vcfparser };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

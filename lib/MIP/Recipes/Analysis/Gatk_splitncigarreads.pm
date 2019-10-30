@@ -226,8 +226,8 @@ sub analysis_gatk_splitncigarreads {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();
-    my $FILEHANDLE      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -235,7 +235,7 @@ sub analysis_gatk_splitncigarreads {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -262,16 +262,16 @@ sub analysis_gatk_splitncigarreads {
     );
 
     ## GATK SplitNCigarReads
-    say {$FILEHANDLE} q{## GATK SplitNCigarReads};
+    say {$filehandle} q{## GATK SplitNCigarReads};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -286,7 +286,7 @@ sub analysis_gatk_splitncigarreads {
 
         gatk_splitncigarreads(
             {
-                FILEHANDLE           => $XARGSFILEHANDLE,
+                filehandle           => $xargsfilehandle,
                 infile_path          => $infile_path{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -298,11 +298,11 @@ sub analysis_gatk_splitncigarreads {
                 xargs_mode           => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        print {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE;
-    close $XARGSFILEHANDLE;
+    close $filehandle;
+    close $xargsfilehandle;
 
     if ( $recipe_mode == 1 ) {
 

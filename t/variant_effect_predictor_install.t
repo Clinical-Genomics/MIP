@@ -66,7 +66,7 @@ diag(   q{Test variant_effect_predictor_install from Vep.pm v}
 my @function_base_commands = qw{ INSTALL.pl };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -87,7 +87,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -110,7 +110,7 @@ my %specific_argument = (
         input           => $VEP_VERSION,
         expected_output => q{--CACHE_VERSION} . $SPACE . $VEP_VERSION,
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

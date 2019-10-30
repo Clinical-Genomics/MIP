@@ -68,7 +68,7 @@ diag(   q{Test rseqc_genebody_coverage2 from Rseqc.pm v}
 my @function_base_commands = qw{ geneBody_coverage2.py };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

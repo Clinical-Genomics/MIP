@@ -41,7 +41,7 @@ sub install_mip_scripts {
 ## Returns  :
 ##          : $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $program_parameters_href => Hash with mip_scripts specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -51,7 +51,7 @@ sub install_mip_scripts {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $mip_scripts_parameters_href;
     my $quiet;
     my $verbose;
@@ -67,10 +67,10 @@ sub install_mip_scripts {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         program_parameters_href => {
             default     => {},
@@ -125,7 +125,7 @@ sub install_mip_scripts {
 
     my @mip_directories = qw{ lib t definitions };
 
-    say {$FILEHANDLE} q{### Install MIP};
+    say {$filehandle} q{### Install MIP};
     $log->info(q{Writing installation instructions for MIP});
 
     ## Check if mip installation exists and is executable
@@ -138,42 +138,42 @@ sub install_mip_scripts {
     );
 
     ## Create directories
-    say {$FILEHANDLE} q{## Create directories};
+    say {$filehandle} q{## Create directories};
   DIRECTORY:
     foreach my $directory ( keys %mip_sub_script ) {
 
         my $indirectory_path = catdir( $conda_prefix_path, q{bin}, $directory );
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $indirectory_path,
                 parents          => 1,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
     }
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
 
     ## Copy directory to conda env
-    say {$FILEHANDLE} q{## Copy directory to conda env};
+    say {$filehandle} q{## Copy directory to conda env};
   DIRECTORY:
     foreach my $directory (@mip_directories) {
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 force        => 1,
                 infile_path  => catdir( $Bin, $directory ),
                 outfile_path => catdir( $conda_prefix_path, q{bin} ),
                 recursive    => 1,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
     }
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
 
     ## Copy mip scripts and sub scripts to conda env and make executable
-    say {$FILEHANDLE}
+    say {$filehandle}
       q{## Copy mip scripts and subdirectory scripts to conda env and make executable};
 
   SCRIPT:
@@ -182,22 +182,22 @@ sub install_mip_scripts {
         my $script_no_ending = fileparse( $script, qr/\.[^.]*/xms );
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => catfile( $Bin, $script ),
                 outfile_path => catdir( $conda_prefix_path, q{bin}, $script_no_ending ),
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
 
         my $file_path = catfile( $conda_prefix_path, q{bin}, $script_no_ending );
         gnu_chmod(
             {
                 file_path  => $file_path,
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 permission => q{a+x},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
   DIRECTORY:
@@ -208,25 +208,25 @@ sub install_mip_scripts {
 
             gnu_cp(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
+                    filehandle   => $filehandle,
                     infile_path  => catfile( $Bin, $directory, $script ),
                     outfile_path => catdir( $conda_prefix_path, q{bin}, $directory ),
                 }
             );
-            print {$FILEHANDLE} $NEWLINE;
+            print {$filehandle} $NEWLINE;
 
             my $file_path = catfile( $conda_prefix_path, q{bin}, $directory, $script );
             gnu_chmod(
                 {
-                    FILEHANDLE => $FILEHANDLE,
+                    filehandle => $filehandle,
                     file_path  => $file_path,
                     permission => q{a+x},
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
     }
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
 
     return;
 }

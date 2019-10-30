@@ -35,7 +35,7 @@ sub create_star_fusion_sample_file {
 
 ## Function : Create the samples file for STAR-fusion.
 ## Returns  :
-## Arguments: $FILEHANDLE              => Filehandle to write to
+## Arguments: $filehandle              => Filehandle to write to
 ##          : $infile_paths_ref        => Infile paths for sample {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $sample_id               => Sample id
@@ -45,7 +45,7 @@ sub create_star_fusion_sample_file {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $infile_lane_prefix_href;
     my $sample_id;
@@ -53,10 +53,10 @@ sub create_star_fusion_sample_file {
     my $sample_info_href;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         infile_paths_ref => {
             default     => [],
@@ -97,7 +97,7 @@ sub create_star_fusion_sample_file {
 
     use MIP::Gnu::Coreutils qw{ gnu_echo };
 
-    say {$FILEHANDLE} q{# Generating STAR-fusion 'samples_file'};
+    say {$filehandle} q{# Generating STAR-fusion 'samples_file'};
 
     my %sample_line;
     my @strings;
@@ -146,7 +146,7 @@ sub create_star_fusion_sample_file {
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             no_trailing_newline   => 1,
             outfile_path          => $samples_file_path,
             strings_ref           => \@strings,

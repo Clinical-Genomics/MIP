@@ -244,7 +244,7 @@ sub analysis_variant_integrity {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -252,7 +252,7 @@ sub analysis_variant_integrity {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -270,7 +270,7 @@ sub analysis_variant_integrity {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -285,12 +285,12 @@ sub analysis_variant_integrity {
             {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{mendel},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     # If father is included in analysis
@@ -300,15 +300,15 @@ sub analysis_variant_integrity {
             {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{father},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

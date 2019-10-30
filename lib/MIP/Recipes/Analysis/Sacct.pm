@@ -152,7 +152,7 @@ sub analysis_sacct {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -160,7 +160,7 @@ sub analysis_sacct {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe_resource{core_number},
             directory_id          => $case_id,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             log                   => $log,
             memory_allocation     => $recipe_resource{memory_allocation},
@@ -175,13 +175,13 @@ sub analysis_sacct {
     slurm_sacct(
         {
             fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             job_ids_ref       => \@{ $job_id_href->{PAN}{PAN} },
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

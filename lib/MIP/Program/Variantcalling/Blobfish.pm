@@ -38,7 +38,7 @@ sub blobfish_allvsall {
 ## Function : Perl wrapper for BlobFish in allvsall mode (wrapper for DESeq2), based on version 0.0.2.
 ## Returns  : @commands
 ## Arguments: $conditions_ref         => Conditions for each indir path {REF}
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $indir_paths_ref        => Path to salmon output directories {REF}
 ##          : $outdir_path            => Path to out directory
 ##          : $stderrfile_path        => Stderrfile path
@@ -50,7 +50,7 @@ sub blobfish_allvsall {
 
     ## Flatten argument(s)
     my $conditions_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $indir_paths_ref;
     my $outdir_path;
     my $stderrfile_path;
@@ -65,8 +65,8 @@ sub blobfish_allvsall {
             store       => \$conditions_ref,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         indir_paths_ref => {
             default     => [],
@@ -132,7 +132,7 @@ sub blobfish_allvsall {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

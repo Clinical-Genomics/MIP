@@ -63,7 +63,7 @@ diag(   q{Test ssh from Ssh.pm v}
 my @function_base_commands = qw{ ssh };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

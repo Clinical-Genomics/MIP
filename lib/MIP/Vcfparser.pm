@@ -619,26 +619,26 @@ sub parse_vcf_format_line {
 
 ## Function : Parse VCF format line (#CHROM) and writes line to filehandle(s)
 ## Returns  : @vcf_format_columns
-## Arguments: $FILEHANDLE       => The filehandle to write to
+## Arguments: $filehandle       => The filehandle to write to
 ##          : $format_line      => VCF format line
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $selectfilehandle => The select filehandle to write to {Optional}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $format_line;
-    my $SELECTFILEHANDLE;
+    my $selectfilehandle;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         format_line => {
             defined     => 1,
             required    => 1,
             store       => \$format_line,
             strict_type => 1,
         },
-        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+        selectfilehandle => { store => \$selectfilehandle, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -649,9 +649,9 @@ sub parse_vcf_format_line {
     ## Write #CHROM header line
     _write_to_file(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             meta_data_line   => $format_line,
-            SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            selectfilehandle => $selectfilehandle,
         }
     );
 
@@ -1261,23 +1261,23 @@ sub write_feature_file_csq {
 
 ## Function : Write vcf record to feature files
 ## Returns  : $info_field_counter
-## Arguments: $FILEHANDLE         => The filehandle to write to
+## Arguments: $filehandle         => The filehandle to write to
 ##          : $info_field_counter => Count the number of key_value pairs written
-##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $select_fh          => The select filehandle to write to {Optional}
 ##          : $vcf_record_href    => VCF record {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $SELECT_FH;
+    my $filehandle;
+    my $select_fh;
     my $vcf_record_href;
 
     ## Default(s)
     my $info_field_counter;
 
     my $tmpl = {
-        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle         => { defined => 1, required => 1, store => \$filehandle, },
         info_field_counter => {
             allow       => qr{ \A\d+\z }sxm,
             default     => 0,
@@ -1286,7 +1286,7 @@ sub write_feature_file_csq {
             store       => \$info_field_counter,
             strict_type => 1,
         },
-        SELECT_FH       => { store => \$SELECT_FH, },
+        select_fh       => { store => \$select_fh, },
         vcf_record_href => {
             default     => {},
             defined     => 1,
@@ -1304,12 +1304,12 @@ sub write_feature_file_csq {
 
     if ( $vcf_record_href->{range_transcripts} ) {
 
-        print {$FILEHANDLE} q{CSQ} . $EQUALS . join $COMMA,
+        print {$filehandle} q{CSQ} . $EQUALS . join $COMMA,
           @{ $vcf_record_href->{range_transcripts} };
     }
     if ( $vcf_record_href->{select_transcripts} ) {
 
-        print {$SELECT_FH} q{CSQ} . $EQUALS . join $COMMA,
+        print {$select_fh} q{CSQ} . $EQUALS . join $COMMA,
           @{ $vcf_record_href->{select_transcripts} };
     }
     delete $vcf_record_href->{INFO_key_value}{CSQ};
@@ -1322,20 +1322,20 @@ sub write_info_addition_fields {
 
 ## Function : Write info addition fields of vcf record to feature files
 ## Returns  :
-## Arguments: $FILEHANDLE         => The filehandle to write to
-##          : $SELECT_FH          => The select filehandle to write to {Optional}
+## Arguments: $filehandle         => The filehandle to write to
+##          : $select_fh          => The select filehandle to write to {Optional}
 ##          : $vcf_record_href    => VCF record {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $SELECT_FH;
+    my $filehandle;
+    my $select_fh;
     my $vcf_record_href;
 
     my $tmpl = {
-        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        SELECT_FH       => { store   => \$SELECT_FH, },
+        filehandle      => { defined => 1, required => 1, store => \$filehandle, },
+        select_fh       => { store   => \$select_fh, },
         vcf_record_href => {
             default     => {},
             defined     => 1,
@@ -1358,7 +1358,7 @@ sub write_info_addition_fields {
 
             my $info_string =
               $SEMICOLON . $key . $EQUALS . $vcf_record_href->{$info_addition_key}{$key};
-            print {$FILEHANDLE} $info_string;
+            print {$filehandle} $info_string;
 
             ## Never to select file for this info addition key
             next INFO_KEY if ( $info_addition_key eq q{INFO_addition_range_feature} );
@@ -1366,7 +1366,7 @@ sub write_info_addition_fields {
             ## Write to select file
             next INFO_KEY if ( not $vcf_record_href->{select_transcripts} );
 
-            print {$SELECT_FH} $info_string;
+            print {$select_fh} $info_string;
         }
     }
     return;
@@ -1376,23 +1376,23 @@ sub write_info_field {
 
 ## Function : Write vcf record to feature files
 ## Returns  : $info_field_counter
-## Arguments: $FILEHANDLE         => The filehandle to write to
+## Arguments: $filehandle         => The filehandle to write to
 ##          : $info_field_counter => Count the number of key_value pairs written
-##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $select_fh          => The select filehandle to write to {Optional}
 ##          : $vcf_record_href    => VCF record {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $SELECT_FH;
+    my $filehandle;
+    my $select_fh;
     my $vcf_record_href;
 
     ## Default(s)
     my $info_field_counter;
 
     my $tmpl = {
-        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle         => { defined => 1, required => 1, store => \$filehandle, },
         info_field_counter => {
             allow       => qr{ \A\d+\z }sxm,
             default     => 0,
@@ -1401,7 +1401,7 @@ sub write_info_field {
             store       => \$info_field_counter,
             strict_type => 1,
         },
-        SELECT_FH       => { store => \$SELECT_FH, },
+        select_fh       => { store => \$select_fh, },
         vcf_record_href => {
             default     => {},
             defined     => 1,
@@ -1430,9 +1430,9 @@ sub write_info_field {
 
         if ( $vcf_record_href->{select_transcripts} ) {
 
-            print {$SELECT_FH} $info_string;
+            print {$select_fh} $info_string;
         }
-        print {$FILEHANDLE} $info_string;
+        print {$filehandle} $info_string;
         $info_field_counter++;
     }
     return $info_field_counter;
@@ -1442,29 +1442,29 @@ sub write_line_elements {
 
 ## Function : Writes metadata to filehandle specified by order in meta_data_sections.
 ## Returns  :
-## Arguments: $FILEHANDLE        => The filehandle to write to
+## Arguments: $filehandle        => The filehandle to write to
 ##          : $first_separator   => Separator to write before start index
 ##          : $last_index        => Last element index to write of line array
 ##          : $last_separator    => Separator to write after last index
 ##          : $line_elements_ref => Vcf record line
 ##          : $start_index       => Start element index to write of line array
-##          : $SELECT_FH         => The select filehandle to write to {Optional}
+##          : $select_fh         => The select filehandle to write to {Optional}
 ##          : $vcf_record_href   => Hash for vcf data {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $first_separator;
     my $last_index;
     my $last_separator;
     my $line_elements_ref;
-    my $SELECT_FH;
+    my $select_fh;
     my $start_index;
     my $vcf_record_href;
 
     my $tmpl = {
-        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle      => { defined => 1, required => 1, store => \$filehandle, },
         first_separator => {
             allow       => [ $EMPTY_STR, $TAB ],
             default     => $EMPTY_STR,
@@ -1489,7 +1489,7 @@ sub write_line_elements {
             store       => \$line_elements_ref,
             strict_type => 1,
         },
-        SELECT_FH   => { store => \$SELECT_FH, },
+        select_fh   => { store => \$select_fh, },
         start_index => {
             allow       => qr{ \A \d+ \z }xsm,
             default     => 0,
@@ -1507,12 +1507,12 @@ sub write_line_elements {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    print {$FILEHANDLE} $first_separator,
+    print {$filehandle} $first_separator,
       join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ), $last_separator;
 
     return if ( not $vcf_record_href->{select_transcripts} );
 
-    print {$SELECT_FH} $first_separator,
+    print {$select_fh} $first_separator,
       join( $TAB, @{$line_elements_ref}[ $start_index .. $last_index ] ),
       $last_separator;
 
@@ -1523,19 +1523,19 @@ sub write_meta_data {
 
 ## Function : Writes metadata to filehandle specified by order in meta_data_sections.
 ## Returns  :
-## Arguments: $FILEHANDLE       => The filehandle to write to
+## Arguments: $filehandle       => The filehandle to write to
 ##          : $meta_data_href   => Hash for meta_data {REF}
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $selectfilehandle => The select filehandle to write to {Optional}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $meta_data_href;
-    my $SELECTFILEHANDLE;
+    my $selectfilehandle;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
         meta_data_href => {
             default     => {},
             defined     => 1,
@@ -1543,7 +1543,7 @@ sub write_meta_data {
             store       => \$meta_data_href,
             strict_type => 1,
         },
-        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+        selectfilehandle => { store => \$selectfilehandle, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1570,9 +1570,9 @@ sub write_meta_data {
 
             $write_record{$vcf_schema}->(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
+                    filehandle       => $filehandle,
                     meta_data_href   => $meta_data_href,
-                    SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                    selectfilehandle => $selectfilehandle,
                     vcf_schema       => $vcf_schema,
                 }
             );
@@ -1581,9 +1581,9 @@ sub write_meta_data {
 
         $write_record{vcf_id}->(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 meta_data_href   => $meta_data_href,
-                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                selectfilehandle => $selectfilehandle,
                 vcf_schema       => $vcf_schema,
             }
         );
@@ -1595,30 +1595,30 @@ sub _write_to_file {
 
 ## Function : Writes metadata line to filehandle(s)
 ## Returns  :
-## Arguments: $FILEHANDLE       => The filehandle to write to
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+## Arguments: $filehandle       => The filehandle to write to
+##          : $selectfilehandle => The select filehandle to write to {Optional}
 ##          : $meta_data_line   => Meta data line
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $meta_data_line;
-    my $SELECTFILEHANDLE;
+    my $selectfilehandle;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
         meta_data_line => { defined => 1, required => 1, store => \$meta_data_line, },
-        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+        selectfilehandle => { store => \$selectfilehandle, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} $meta_data_line;
+    say {$filehandle} $meta_data_line;
 
-    if ( defined $SELECTFILEHANDLE ) {
+    if ( defined $selectfilehandle ) {
 
-        say {$SELECTFILEHANDLE} $meta_data_line;
+        say {$selectfilehandle} $meta_data_line;
     }
     return;
 }
@@ -1627,21 +1627,21 @@ sub _write_vcf_schema {
 
 ## Function : Writes vcf schema records metadata to filehandle(s)
 ## Returns  :
-## Arguments: $FILEHANDLE       => The filehandle to write to
+## Arguments: $filehandle       => The filehandle to write to
 ##          : $meta_data_href   => Hash for meta_data {REF}
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $selectfilehandle => The select filehandle to write to {Optional}
 ##          : $vcf_schema       => Vcf schema
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $meta_data_href;
-    my $SELECTFILEHANDLE;
+    my $selectfilehandle;
     my $vcf_schema;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
         meta_data_href => {
             default     => {},
             defined     => 1,
@@ -1649,7 +1649,7 @@ sub _write_vcf_schema {
             store       => \$meta_data_href,
             strict_type => 1,
         },
-        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+        selectfilehandle => { store   => \$selectfilehandle, },
         vcf_schema       => { defined => 1, required => 1, store => \$vcf_schema, },
     };
 
@@ -1660,9 +1660,9 @@ sub _write_vcf_schema {
 
         _write_to_file(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 meta_data_line   => $header_line,
-                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                selectfilehandle => $selectfilehandle,
             }
         );
     }
@@ -1673,21 +1673,21 @@ sub _write_vcf_schema_id_line {
 
 ## Function : Writes vcf id metadata to filehandle(s)
 ## Returns  :
-## Arguments: $FILEHANDLE       => The filehandle to write to
+## Arguments: $filehandle       => The filehandle to write to
 ##          : $meta_data_href   => Hash for meta_data {REF}
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $selectfilehandle => The select filehandle to write to {Optional}
 ##          : $vcf_schema       => Vcf schema
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $meta_data_href;
-    my $SELECTFILEHANDLE;
+    my $selectfilehandle;
     my $vcf_schema;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
         meta_data_href => {
             default     => {},
             defined     => 1,
@@ -1695,7 +1695,7 @@ sub _write_vcf_schema_id_line {
             store       => \$meta_data_href,
             strict_type => 1,
         },
-        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+        selectfilehandle => { store   => \$selectfilehandle, },
         vcf_schema       => { defined => 1, required => 1, store => \$vcf_schema, },
     };
 
@@ -1708,17 +1708,17 @@ sub _write_vcf_schema_id_line {
 
         _write_to_file(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 meta_data_line   => $header_line,
-                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                selectfilehandle => $selectfilehandle,
             }
         );
     }
 
     ## Map of feature file type and corresponding filehandle
     my %feature_annotation = (
-        range  => $FILEHANDLE,
-        select => $SELECTFILEHANDLE,
+        range  => $filehandle,
+        select => $selectfilehandle,
     );
 
     ## Add select specific annotations

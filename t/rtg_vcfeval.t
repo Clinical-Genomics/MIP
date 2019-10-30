@@ -20,12 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,10 +61,10 @@ diag(   q{Test rtg_vcfeval from Rtg.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ rtg vcfeval };
+my @function_base_commands = qw{ rtg };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -129,6 +129,10 @@ my %specific_argument = (
         input           => catfile(qw{path to eval_regionsfile}),
         expected_output => q{--evaluation-regions=}
           . catfile(qw{path to eval_regionsfile}),
+    },
+    memory => {
+        input           => q{1G},
+        expected_output => q{RTG_MEM} . $EQUALS . q{1G},
     },
     outputdirectory_path => {
         input           => catfile(qw{path to outputdirectory_path}),

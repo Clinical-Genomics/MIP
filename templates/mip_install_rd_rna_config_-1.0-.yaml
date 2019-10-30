@@ -1,15 +1,12 @@
 ---
-# MIP main environment spec
+bash_set_errexit: 1
+bash_set_pipefail: 1
 emip:
   conda:
-    bcftools: 1.9
     bioconductor-deseq2: 1.22.1=r351hf484d3e_0
     bioconductor-tximport:
-    gatk4: 4.1.3.0=0
     gffcompare: 0.11.2
-    htslib: 1.9
     numpy:
-    picard: 2.18.23=0
     pigz:
     pip:
     preseq: 2.0.3=gsl2.2_1
@@ -17,7 +14,6 @@ emip:
     r-optparse:
     r-readr:
     salmon: 0.12.0=h86b0361_1
-    samtools: 1.9
     scipy:
   shell:
     blobfish:
@@ -38,8 +34,6 @@ emip:
       version: git
     mip_scripts:
       version: Your current MIP version
-    picard:
-      version: 2.17.11
     gtf2bed:
       version: 1.04.807
       url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
@@ -48,10 +42,25 @@ emip:
       executable:
         fastqc:
       uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
+    gatk4:
+      executable:
+        gatk:
+      uri: shub://Clinical-Genomics/MIP:gatk-4.1.3.0
+    htslib:
+      executable:
+        bcftools:
+        bgzip:
+        samtools:
+        tabix:
+      uri: shub://Clinical-Genomics/MIP:htslib-1.9
     multiqc:
       executable:
         multiqc:
       uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+    picard:
+      executable:
+        picard: "no_executable_in_image"
+      uri: shub://Clinical-Genomics/MIP:picard-2.20.7
     rseqc:
       executable:
         bam2wig.py:
@@ -81,7 +90,7 @@ emip:
         remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
         restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
         STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-      uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.7.0/star-fusion.v1.7.0.simg
+      uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.8.0/star-fusion.v1.8.0.simg
     stringtie:
       executable:
         stringtie:

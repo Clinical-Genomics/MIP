@@ -66,7 +66,7 @@ Readonly my $REGION_EXTENSION_LENGTH => 1500;
 my @function_base_commands = qw{ ExpansionHunter };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

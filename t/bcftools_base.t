@@ -65,7 +65,7 @@ Readonly my $NR_THREADS_TO_USE => 12;
 my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -78,7 +78,7 @@ my %required_argument = (
         inputs_ref      => [qw{ bcftools mpileup }],
         expected_output => q{bcftools mpileup},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

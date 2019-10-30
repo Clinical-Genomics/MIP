@@ -6,7 +6,6 @@ bash_set_pipefail: '0'
 container_dir_path: '0'
 core_number: '1'
 core_ram_memory: '5'
-disable_env_check: 1
 email_types:
   - FAIL
 emip:
@@ -14,8 +13,6 @@ emip:
     R: 3.3.1
     bcftools: 1.9=ha228f0b_4
     bedtools: 2.27.1=he941832_2
-    cramtools: 3.0.b127=2
-    cutadapt: 1.18=py27_0
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
     gatk: 3.8=5
@@ -27,7 +24,6 @@ emip:
     numpy: ~
     picard: 2.20.7=0
     pip: ~
-    plink2: 1.90b3.35
     python: '2.7'
     rtg-tools: 3.10.1=0
     sambamba: 0.6.8=h682856c_0
@@ -45,8 +41,6 @@ emip:
       conda_dependency:
         java-jdk: ~
       version: 2.3.0
-    plink2:
-      version: '171013'
     sambamba:
       version: 0.6.1
     vt:

@@ -153,7 +153,7 @@ sub download_gnomad_pli_per_gene {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -161,7 +161,7 @@ sub download_gnomad_pli_per_gene {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -177,11 +177,11 @@ sub download_gnomad_pli_per_gene {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -190,7 +190,7 @@ sub download_gnomad_pli_per_gene {
         }
     );
 
-    say {$FILEHANDLE} q{## Get HGNC symbol and pLI score};
+    say {$filehandle} q{## Get HGNC symbol and pLI score};
 
     ## Remove ".gz" from outfile to create infile
     my $gnu_cat_infile = fileparse( $reference_href->{outfile}, qr/[.]gz/xsm );
@@ -199,23 +199,23 @@ sub download_gnomad_pli_per_gene {
 
     gnu_cat(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => [ $gnu_cat_infile_path, ],
         }
     );
 
-    print {$FILEHANDLE} $SPACE . $PIPE . $SPACE;
+    print {$filehandle} $SPACE . $PIPE . $SPACE;
 
     my $list_fields = join $COMMA, ( $HGNC_SYMBOL_COL_NR, $PLI_COL_NR );
     gnu_cut(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $DASH,
             list        => $list_fields,
         }
     );
 
-    print {$FILEHANDLE} $SPACE . $PIPE . $SPACE;
+    print {$filehandle} $SPACE . $PIPE . $SPACE;
 
     my $reformated_outfile = join $UNDERSCORE,
       ( $recipe_name, $DASH, $reference_version . $DASH . q{.txt} );
@@ -223,7 +223,7 @@ sub download_gnomad_pli_per_gene {
 
     gnu_grep(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             invert_match    => 1,
             pattern         => q{NA},
             stdoutfile_path => $reformated_outfile_path,
@@ -231,8 +231,8 @@ sub download_gnomad_pli_per_gene {
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

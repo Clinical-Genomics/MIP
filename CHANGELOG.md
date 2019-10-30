@@ -26,7 +26,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moves Trim Galore to singularity container
 - Removes the py3 and perl5 conda environment for the RNA pipeline
 - Moves stringtie to singularity container
-
+- Removed cramtools
+- Removes cutadapt 
 
 **CLI**
 - Removes the noupdate option from the installation
@@ -34,8 +35,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **New references**
 - grch37_frequency_vcfanno_filter_config_-v1.2-.toml
 
+**Reference**
+- clinvar: 20191013
+
 **Tools**
-- chromograph
+- bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
+- chromograph:
 - expansionhunter: 3.0.0 -> 3.1.2
 - GATK: 4.1.2.0-1 -> 4.1.3.0-0 
 - gffcompare: 0.10.6 -> 0.11.2

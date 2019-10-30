@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.07;
+our $VERSION = 2.09;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -130,12 +130,11 @@ sub _build_usage {
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
-            cmd_tags      => [q{Default: mip7_rd-rna mip7_rd-rna_perl5}],
+            cmd_tags      => [q{Default: mip7_rd-rna }],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip   => Optional [Str],
-                eperl5 => Optional [Str],
+                emip => Optional [Str],
             ],
             required => 0,
         ),
@@ -162,9 +161,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
+                        qw{ blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
+                          salmon sambamba star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],
@@ -191,9 +190,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
+                        qw{ blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star-fusion stringtie trim-galore vep }
+                          salmon sambamba star star-fusion stringtie trim-galore vep }
                     ]
                 ),
             ],

@@ -113,7 +113,7 @@ sub download_runstatus {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -121,7 +121,7 @@ sub download_runstatus {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => q{mip_download},
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -137,24 +137,24 @@ sub download_runstatus {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Set status flagg
-    say {$FILEHANDLE} q?STATUS="0"?;
+    say {$filehandle} q?STATUS="0"?;
 
     check_mip_process_files(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             paths_ref  => $active_parameter_href->{runstatus_paths},
         }
     );
 
-    say {$FILEHANDLE} q?if [ "$STATUS" -eq 1 ]; then?;
-    say {$FILEHANDLE} $TAB . q?exit 1?;
-    say {$FILEHANDLE} q?fi?, $NEWLINE;
+    say {$filehandle} q?if [ "$STATUS" -eq 1 ]; then?;
+    say {$filehandle} $TAB . q?exit 1?;
+    say {$filehandle} q?fi?, $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

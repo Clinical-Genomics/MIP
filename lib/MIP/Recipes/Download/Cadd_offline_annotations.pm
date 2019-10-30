@@ -148,7 +148,7 @@ sub download_cadd_offline_annotations {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -156,7 +156,7 @@ sub download_cadd_offline_annotations {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -172,7 +172,7 @@ sub download_cadd_offline_annotations {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Construct outdir path
     my $outdir_path = catdir( $reference_dir, qw{ CADD-scripts data annotations } );
@@ -180,17 +180,17 @@ sub download_cadd_offline_annotations {
     if ( not -d $outdir_path ) {
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $outdir_path,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             outdir_path    => $outdir_path,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
@@ -204,13 +204,13 @@ sub download_cadd_offline_annotations {
 
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 force        => 1,
                 infile_path  => catdir( $outdir_path, q{GRCh37} ),
                 outfile_path => catdir( $outdir_path, q{GRCh37_v1.4} ),
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Replace big tar file with almost empty content to avoid large storage footprint
@@ -219,13 +219,13 @@ sub download_cadd_offline_annotations {
       ( catfile( $reference_dir, $reference_href->{outfile} ) => $echo_message, );
     gnu_rm_and_echo(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             file_href  => \%file,
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

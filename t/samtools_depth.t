@@ -68,7 +68,7 @@ diag(   q{Test samtools_depth from Samtools.pm v}
 my @function_base_commands = qw{ samtools depth };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -88,7 +88,7 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -100,7 +100,7 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

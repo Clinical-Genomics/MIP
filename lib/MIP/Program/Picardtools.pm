@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -47,10 +47,10 @@ BEGIN {
 
 sub picardtools_addorreplacereadgroups {
 
-## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index            => Create index
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $infile_path             => Infile paths
 ##          : $java_jar                => Java jar
 ##          : $java_use_large_pages    => Use java large pages
@@ -67,7 +67,7 @@ sub picardtools_addorreplacereadgroups {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $java_jar;
     my $memory_allocation;
@@ -92,7 +92,7 @@ sub picardtools_addorreplacereadgroups {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -216,7 +216,7 @@ sub picardtools_addorreplacereadgroups {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -230,14 +230,14 @@ sub picardtools_base {
 ## Returns  : @commands
 ## Arguments: $create_index       => Create a BAM index when writing a coordinate-sorted BAM file
 ##          : $commands_ref       => List of commands added earlier
-##          : $FILEHANDLE         => Filehandle to write to
+##          : $filehandle         => Filehandle to write to
 ##          : $referencefile_path => Genome reference file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $commands_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $referencefile_path;
 
     ## Default(s)
@@ -255,7 +255,7 @@ sub picardtools_base {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE         => { store => \$FILEHANDLE, },
+        filehandle         => { store => \$filehandle, },
         referencefile_path => {
             defined     => 1,
             store       => \$referencefile_path,
@@ -268,6 +268,8 @@ sub picardtools_base {
     # Stores commands depending on input parameters
     my @commands = @{$commands_ref};
 
+    unshift @commands, q{picard};
+
     if ( $create_index ne q{false} ) {
 
         push @commands, q{-CREATE_INDEX} . $SPACE . $create_index;
@@ -279,7 +281,7 @@ sub picardtools_base {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -288,10 +290,10 @@ sub picardtools_base {
 
 sub picardtools_createsequencedictionary {
 
-## Function : Perl wrapper for writing picardtools createsequencedictionary recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools createsequencedictionary recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index           => Create index
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $java_jar               => Java jar
 ##          : $java_use_large_pages   => Use java large pages
 ##          : $memory_allocation      => Memory allocation for java
@@ -305,7 +307,7 @@ sub picardtools_createsequencedictionary {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $java_jar;
     my $memory_allocation;
     my $outfile_path;
@@ -320,8 +322,8 @@ sub picardtools_createsequencedictionary {
     my $java_use_large_pages;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         create_index => {
             allow       => [qw{ true false }],
@@ -410,7 +412,7 @@ sub picardtools_createsequencedictionary {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -419,10 +421,10 @@ sub picardtools_createsequencedictionary {
 
 sub picardtools_intervallisttools {
 
-## Function : Perl wrapper for writing picardtools intervallisttools recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools intervallisttools recipe to $filehandle. Based on picardtools 2.20.7.
 ##Returns  : @commands
 ## Arguments: $create_index         => Create index
-##          : $FILEHANDLE           => Sbatch filehandle to write to
+##          : $filehandle           => Sbatch filehandle to write to
 ##          : $infile_paths_ref     => Infile paths {REF}
 ##          : $java_jar             => Java jar
 ##          : $java_use_large_pages => Use java large pages
@@ -436,7 +438,7 @@ sub picardtools_intervallisttools {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $java_jar;
     my $memory_allocation;
@@ -457,7 +459,7 @@ sub picardtools_intervallisttools {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -549,7 +551,7 @@ sub picardtools_intervallisttools {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -558,10 +560,10 @@ sub picardtools_intervallisttools {
 
 sub picardtools_mergesamfiles {
 
-## Function : Perl wrapper for writing picardtools mergesamfiles recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools mergesamfiles recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index           => Create index
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $java_use_large_pages   => Use java large pages
 ##          : $java_jar               => Java jar
@@ -577,7 +579,7 @@ sub picardtools_mergesamfiles {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $java_jar;
     my $memory_allocation;
@@ -600,7 +602,7 @@ sub picardtools_mergesamfiles {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        filehandle       => { store => \$filehandle },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -701,7 +703,7 @@ sub picardtools_mergesamfiles {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -710,10 +712,10 @@ sub picardtools_mergesamfiles {
 
 sub picardtools_markduplicates {
 
-## Function : Perl wrapper for writing picardtools markduplicates recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools markduplicates recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index           => Create index
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $java_jar               => Java jar
 ##          : $java_use_large_pages   => Use java large pages
@@ -728,7 +730,7 @@ sub picardtools_markduplicates {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $memory_allocation;
     my $metrics_file;
     my $infile_paths_ref;
@@ -750,7 +752,7 @@ sub picardtools_markduplicates {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -845,7 +847,7 @@ sub picardtools_markduplicates {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -854,10 +856,10 @@ sub picardtools_markduplicates {
 
 sub picardtools_gatherbamfiles {
 
-## Function : Perl wrapper for writing picardtools gatherbamfiles recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools gatherbamfiles recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index           => Create index
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $java_jar               => Java jar
 ##          : $java_use_large_pages   => Use java large pages
@@ -871,7 +873,7 @@ sub picardtools_gatherbamfiles {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $java_jar;
     my $memory_allocation;
@@ -892,7 +894,7 @@ sub picardtools_gatherbamfiles {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -975,7 +977,7 @@ sub picardtools_gatherbamfiles {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -984,10 +986,10 @@ sub picardtools_gatherbamfiles {
 
 sub picardtools_collectmultiplemetrics {
 
-## Function : Perl wrapper for writing picardtools collectmultiplemetrics recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools collectmultiplemetrics recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index           => Create index
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile paths
 ##          : $java_jar               => Java jar
 ##          : $java_use_large_pages   => Use java large pages
@@ -1001,7 +1003,7 @@ sub picardtools_collectmultiplemetrics {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $java_jar;
     my $memory_allocation;
@@ -1022,7 +1024,7 @@ sub picardtools_collectmultiplemetrics {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1103,7 +1105,7 @@ sub picardtools_collectmultiplemetrics {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1112,11 +1114,11 @@ sub picardtools_collectmultiplemetrics {
 
 sub picardtools_collecthsmetrics {
 
-## Function : Perl wrapper for writing picardtools collecthsmetrics recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools collecthsmetrics recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
 ##          : $create_index                   => Create index
-##          : $FILEHANDLE                     => Sbatch filehandle to write to
+##          : $filehandle                     => Sbatch filehandle to write to
 ##          : $infile_path                    => Infile paths
 ##          : $java_jar                       => Java jar
 ##          : $java_use_large_pages           => Use java large pages
@@ -1131,7 +1133,7 @@ sub picardtools_collecthsmetrics {
 
     ## Flatten argument(s)
     my $bait_interval_file_paths_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $java_jar;
     my $memory_allocation;
@@ -1160,7 +1162,7 @@ sub picardtools_collecthsmetrics {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -1257,7 +1259,7 @@ sub picardtools_collecthsmetrics {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1266,10 +1268,10 @@ sub picardtools_collecthsmetrics {
 
 sub picardtools_sortvcf {
 
-## Function : Perl wrapper for writing picardtools sortvcf recipe to $FILEHANDLE. Based on picardtools 2.20.7.
+## Function : Perl wrapper for writing picardtools sortvcf recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $create_index         => Create index
-##          : $FILEHANDLE           => Sbatch filehandle to write to
+##          : $filehandle           => Sbatch filehandle to write to
 ##          : $java_jar             => Java jar
 ##          : $java_use_large_pages => Use java large pages
 ##          : $infile_paths_ref     => Infile paths {REF}
@@ -1283,7 +1285,7 @@ sub picardtools_sortvcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $java_jar;
     my $memory_allocation;
@@ -1304,7 +1306,7 @@ sub picardtools_sortvcf {
             store       => \$create_index,
             strict_type => 1,
         },
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -1392,7 +1394,7 @@ sub picardtools_sortvcf {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -1404,7 +1406,7 @@ sub sort_vcf {
 ## Function : Writes sbatch code to supplied filehandle to sort variants in vcf format.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
+##          : $filehandle            => SBATCH script filehandle to print to
 ##          : $infile_paths_ref      => Infiles to sort {REF}
 ##          : $outfile               => The sorted outfile
 ##          : $sequence_dict_file    => Human reference sequence dict file
@@ -1413,7 +1415,7 @@ sub sort_vcf {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outfile;
     my $sequence_dict_file;
@@ -1426,7 +1428,7 @@ sub sort_vcf {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        FILEHANDLE       => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle       => { defined => 1, required => 1, store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -1450,12 +1452,12 @@ sub sort_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {$FILEHANDLE} q{## Picard SortVcf};
+    say {$filehandle} q{## Picard SortVcf};
 
     ## Writes java core commands to filehandle.
     picardtools_sortvcf(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_paths_ref     => \@{$infile_paths_ref},
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             java_jar =>

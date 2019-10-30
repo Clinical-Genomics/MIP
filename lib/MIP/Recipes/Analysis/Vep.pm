@@ -227,8 +227,8 @@ sub analysis_vep {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
@@ -257,7 +257,7 @@ sub analysis_vep {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -282,7 +282,7 @@ sub analysis_vep {
     );
 
     ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    say {$filehandle} q{## Varianteffectpredictor};
 
     my $assembly_version =
       $file_info_href->{human_genome_reference_source} . $genome_reference_version;
@@ -294,10 +294,10 @@ sub analysis_vep {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -357,7 +357,7 @@ sub analysis_vep {
                 cache_directory        => $active_parameter_href->{vep_directory_cache},
                 custom_annotations_ref => \@custom_annotations,
                 distance               => $distance,
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 fork                   => $VEP_FORK_NUMBER,
                 infile_format          => substr( $infile_suffix, 1 ),
                 infile_path            => $infile_path{$contig},
@@ -373,12 +373,12 @@ sub analysis_vep {
                 vep_features_ref   => \@vep_features_ref,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -425,7 +425,7 @@ sub analysis_vep_sv_wes {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -605,7 +605,7 @@ sub analysis_vep_sv_wes {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
@@ -631,7 +631,7 @@ sub analysis_vep_sv_wes {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -652,7 +652,7 @@ sub analysis_vep_sv_wes {
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_suffix        => $infile_suffix,
             infile_path_prefix => $infile_path_prefix,
         }
@@ -668,7 +668,7 @@ sub analysis_vep_sv_wes {
     );
 
     ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    say {$filehandle} q{## Varianteffectpredictor};
 
     my $assembly_version =
       $file_info_href->{human_genome_reference_source} . $genome_reference_version;
@@ -711,7 +711,7 @@ sub analysis_vep_sv_wes {
             assembly           => $assembly_version,
             buffer_size        => 100,
             cache_directory    => $active_parameter_href->{vep_directory_cache},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             fork               => $VEP_FORK_NUMBER,
             infile_format      => substr( $infile_suffix, 1 ),
             infile_path        => $vep_infile_path,
@@ -726,9 +726,9 @@ sub analysis_vep_sv_wes {
             vep_features_ref   => \@vep_features_ref,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -764,7 +764,7 @@ sub analysis_vep_sv_wgs {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -946,8 +946,8 @@ sub analysis_vep_sv_wgs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -976,7 +976,7 @@ sub analysis_vep_sv_wgs {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -996,7 +996,7 @@ sub analysis_vep_sv_wgs {
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_suffix        => $infile_suffix,
             infile_path_prefix => $infile_path_prefix,
         }
@@ -1012,7 +1012,7 @@ sub analysis_vep_sv_wgs {
     );
 
     ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    say {$filehandle} q{## Varianteffectpredictor};
 
     my $assembly_version =
       $file_info_href->{human_genome_reference_source} . $genome_reference_version;
@@ -1043,10 +1043,10 @@ sub analysis_vep_sv_wgs {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -1104,7 +1104,7 @@ sub analysis_vep_sv_wgs {
                 buffer_size        => 100,
                 cache_directory    => $active_parameter_href->{vep_directory_cache},
                 distance           => $distance,
-                FILEHANDLE         => $XARGSFILEHANDLE,
+                filehandle         => $xargsfilehandle,
                 fork               => $VEP_FORK_NUMBER,
                 infile_format      => substr( $infile_suffix, 1 ),
                 infile_path        => $vep_infile_path,
@@ -1120,15 +1120,15 @@ sub analysis_vep_sv_wgs {
                 vep_features_ref   => \@vep_features_ref,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
 
         ## Filter out the MT annotations from the combined chr21 chrM call
         if ($mt_name) {
 
-            say {$FILEHANDLE} q{## Filter out MT annotations};
+            say {$filehandle} q{## Filter out MT annotations};
             _subset_vcf(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
+                    filehandle   => $filehandle,
                     infile_path  => $outfile_path{$contig},
                     outfile_path => $outfile_path{$contig},
                     regions_ref  => [qw{ chrM MT }],
@@ -1137,8 +1137,8 @@ sub analysis_vep_sv_wgs {
         }
     }
 
-    close $XARGSFILEHANDLE;
-    close $FILEHANDLE;
+    close $xargsfilehandle;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -1331,7 +1331,7 @@ sub analysis_vep_rna {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -1339,7 +1339,7 @@ sub analysis_vep_rna {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -1353,7 +1353,7 @@ sub analysis_vep_rna {
     ### SHELL:
 
     ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    say {$filehandle} q{## Varianteffectpredictor};
 
     my $assembly_version = $file_info_href->{human_genome_reference_source}
       . $file_info_href->{human_genome_reference_version};
@@ -1390,7 +1390,7 @@ sub analysis_vep_rna {
             cache_directory        => $active_parameter_href->{vep_directory_cache},
             custom_annotations_ref => \@custom_annotations,
             distance               => $ANNOTATION_DISTANCE,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             fork                   => $VEP_FORK_NUMBER,
             infile_format          => substr( $infile_suffix, 1 ),
             infile_path            => $infile_path,
@@ -1400,9 +1400,9 @@ sub analysis_vep_rna {
             vep_features_ref       => \@vep_features_ref,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -1560,19 +1560,19 @@ sub _reformat_sv_with_no_length {
 
 ## Function : Reformat SV with no length as these will fail in the annotation with VEP
 ## Returns  :
-## Arguments: $FILEHANDLE         => Filehandle to write to
+## Arguments: $filehandle         => Filehandle to write to
 ##          : $file_suffix        => File suffix
 ##          : $infile_path_prefix => Infile path prefix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_suffix;
     my $infile_path_prefix;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
+        filehandle  => { required => 1, store => \$filehandle, },
         file_suffix => {
             defined     => 1,
             required    => 1,
@@ -1621,9 +1621,9 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     # All other lines - print
     $perl_fix_sv_nolengths .= q?else {print $_}' ?;
 
-    print {$FILEHANDLE} $perl_fix_sv_nolengths . $SPACE;
-    print {$FILEHANDLE} $infile_path_prefix . $file_suffix . $SPACE;
-    say   {$FILEHANDLE} q{>}
+    print {$filehandle} $perl_fix_sv_nolengths . $SPACE;
+    print {$filehandle} $infile_path_prefix . $file_suffix . $SPACE;
+    say   {$filehandle} q{>}
       . $SPACE
       . $infile_path_prefix
       . $UNDERSCORE
@@ -1637,7 +1637,7 @@ sub _subset_vcf {
 
 ## Function : Subsets the input vcf to only contain a subset, defined in the regions variable
 ## Returns  :
-## Arguments: $FILEHANDLE   => Filehandle
+## Arguments: $filehandle   => Filehandle
 ##          : $infile_path  => Path to infile
 ##          : $outfile_path => Path to outfile
 ##          : $regions_ref  => Array with regions to be included in the subset {REF}
@@ -1645,15 +1645,15 @@ sub _subset_vcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -1684,28 +1684,28 @@ sub _subset_vcf {
     ## Prepare for bcftools_view
     htslib_bgzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $infile_path,
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
     bcftools_index(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $infile_path . q{.gz},
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
     bcftools_view(
         {
             regions_ref  => $regions_ref,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path . q{.gz},
             outfile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

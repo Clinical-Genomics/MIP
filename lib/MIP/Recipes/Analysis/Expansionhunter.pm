@@ -200,7 +200,7 @@ sub analysis_expansionhunter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Update number of cores and memory depending on how many samples that are processed
     my $core_number = get_core_number(
@@ -224,7 +224,7 @@ sub analysis_expansionhunter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -265,10 +265,10 @@ sub analysis_expansionhunter {
         $exphun_sample_file_info{$sample_id}{out} = $infile_path_prefix;
 
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Run Expansion Hunter
-    say {$FILEHANDLE} q{## Run ExpansionHunter};
+    say {$filehandle} q{## Run ExpansionHunter};
 
     # Counter
     my $process_batches_count = 1;
@@ -284,7 +284,7 @@ sub analysis_expansionhunter {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $sample_id_index,
@@ -306,7 +306,7 @@ sub analysis_expansionhunter {
         my $sample_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . $sample_id;
         expansionhunter(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_path           => $exphun_sample_file_info{$sample_id}{in},
                 outfile_path_prefix   => $sample_outfile_path_prefix,
                 reference_genome_path => $human_genome_reference,
@@ -319,11 +319,11 @@ sub analysis_expansionhunter {
                 variant_catalog_file_path => $variant_catalog_file_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
+        say {$filehandle} $AMPERSAND, $NEWLINE;
         push @svdb_infile_paths, $sample_outfile_path_prefix . $outfile_suffix,;
 
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
@@ -332,46 +332,46 @@ sub analysis_expansionhunter {
 
     svdb_merge(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
             stdoutfile_path  => $svdb_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Split multiallelic variants
-    say {$FILEHANDLE} q{## Split multiallelic variants};
+    say {$filehandle} q{## Split multiallelic variants};
     my $vt_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $outfile_suffix;
     vt_decompose(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $svdb_outfile_path,
             outfile_path        => $vt_outfile_path,
             smart_decomposition => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Stranger annotation};
+    say {$filehandle} q{## Stranger annotation};
 
     my $stranger_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $outfile_suffix;
     stranger(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $vt_outfile_path,
             stdoutfile_path => $stranger_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    say {$filehandle} q{## Adding sample id instead of file prefix};
 
     bcftools_rename_vcf_samples(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             index               => 1,
             index_type          => q{csi},
             infile              => $stranger_outfile_path,
@@ -382,7 +382,7 @@ sub analysis_expansionhunter {
         }
     );
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

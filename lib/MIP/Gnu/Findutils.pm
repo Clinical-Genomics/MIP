@@ -39,9 +39,9 @@ Readonly my $SPACE        => q{ };
 
 sub xargs {
 
-## Function : Perl wrapper for writing xargs recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
+## Function : Perl wrapper for writing xargs recipe to already open $filehandle or return command line string. Based on xargs 4.4.2
 ## Returns  : @commands
-## Arguments: $FILEHANDLE         => Filehandle to write to
+## Arguments: $filehandle         => Filehandle to write to
 ##          : $max_args           => Use at most max-args arguments per command line
 ##          : $max_procs          => Run up to max-procs processes at a time
 ##          : $null_character     => Input items are terminated by a null character instead of by whitespace
@@ -60,12 +60,12 @@ sub xargs {
     my $verbose;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $shell_commands_ref;
     my $null_character;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         max_args   => {
             allow       => qr/ ^\d+$ /sxm,
             default     => 1,
@@ -157,7 +157,7 @@ sub xargs {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -165,12 +165,12 @@ sub xargs {
 
 sub gnu_find {
 
-## Function : Perl wrapper for writing find recipe to already open $FILEHANDLE or return command line string. Based on find 4.4.2
+## Function : Perl wrapper for writing find recipe to already open $filehandle or return command line string. Based on find 4.4.2
 ## Returns  : "@commands"
 ## Arguments: $search_path   => Where to perform the search
 ##          : $test_criteria => Evaluation criteria
 ##          : $action        => Action when evaluation is true
-##          : $FILEHANDLE    => Filehandle to write to
+##          : $filehandle    => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -178,7 +178,7 @@ sub gnu_find {
     my $search_path;
     my $test_criteria;
     my $action;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         search_path => {
@@ -196,8 +196,8 @@ sub gnu_find {
         action => {
             store => \$action
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
     };
 
@@ -218,7 +218,7 @@ sub gnu_find {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

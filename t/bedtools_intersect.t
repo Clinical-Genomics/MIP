@@ -4,8 +4,8 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname  };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -20,10 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,19 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Utility::Fusion_filter} =>
-          [qw{ fusion_filter_gtf_file_to_feature_seqs }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Bedtools} => [qw{ bedtools_intersect }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Utility::Fusion_filter qw{ fusion_filter_gtf_file_to_feature_seqs };
+use MIP::Program::Bedtools qw{ bedtools_intersect };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test fusion_filter_gtf_file_to_feature_seqs from Fusion_filter.pm v}
-      . $MIP::Program::Utility::Fusion_filter::VERSION
+diag(   q{Test bedtools_intersect from Bedtools.pm v}
+      . $MIP::Program::Bedtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,10 +61,10 @@ diag(   q{Test fusion_filter_gtf_file_to_feature_seqs from Fusion_filter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ gtf_file_to_feature_seqs.pl };
+my @function_base_commands = qw{ bedtools intersect };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -88,44 +85,31 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    gtf_path => {
-        input           => catfile(qw{ a test transcripts_file.gtf }),
-        expected_output => catfile(qw{ a test transcripts_file.gtf }),
-    },
-    referencefile_path => {
-        input           => catfile(qw{ a test human_reference.fasta }),
-        expected_output => catfile(qw{ a test  human_reference.fasta }),
-    },
-    seq_type => {
-        input           => q{cDNA},
-        expected_output => q{cDNA},
+    intersectfile_path => {
+        input           => q{bwa_mem_rapid_db},
+        expected_output => q{-b bwa_mem_rapid_db},
     },
 );
 
 my %specific_argument = (
-    gtf_path => {
-        input           => catfile(qw{ a test transcripts_file.gtf }),
-        expected_output => catfile(qw{ a test transcripts_file.gtf }),
+    infile_path => {
+        input           => q{stdin},
+        expected_output => q{-a stdin},
     },
-    referencefile_path => {
-        input           => catfile(qw{ a test human_reference.fasta }),
-        expected_output => catfile(qw{ a test  human_reference.fasta }),
-    },
-    seq_type => {
-        input           => q{cDNA},
-        expected_output => q{cDNA},
+    with_header => {
+        input           => 1,
+        expected_output => q{-header},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&fusion_filter_gtf_file_to_feature_seqs;
+my $module_function_cref = \&bedtools_intersect;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
-
     my @commands = test_function(
         {
             argument_href              => $argument_href,

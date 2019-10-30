@@ -67,7 +67,7 @@ Readonly my $STEP_SIZE   => 199_750;
 my @function_base_commands = qw{ bedtools makewindows };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -87,7 +87,7 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

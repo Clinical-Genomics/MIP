@@ -69,7 +69,7 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
 my @function_base_commands = qw{ vcf2cytosure };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

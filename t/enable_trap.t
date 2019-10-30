@@ -63,20 +63,20 @@ diag(   q{Test enable_trap from SHELL.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle
-enable_trap( { FILEHANDLE => $FILEHANDLE } );
+enable_trap( { filehandle => $filehandle } );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then trap comment and trap should be written to file
 my ($enable_trap_command) = $file_content =~ /^(## Enable trap)/ms;

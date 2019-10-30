@@ -207,7 +207,7 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -216,7 +216,7 @@ sub analysis_picardtools_collectmultiplemetrics {
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
             job_id_href                     => $job_id_href,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -230,11 +230,11 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     ### SHELL:
     ## CollectMultipleMetrics
-    say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
+    say {$filehandle} q{## Collecting multiple metrics on alignment};
 
     picardtools_collectmultiplemetrics(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $infile_path,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -245,9 +245,9 @@ sub analysis_picardtools_collectmultiplemetrics {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

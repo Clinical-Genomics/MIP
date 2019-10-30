@@ -31,9 +31,9 @@ reference:
     - v1.4
     - v1.5
   clinvar:
-    - 20181028
     - 20190305
     - 20190731
+    - 20191013
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -89,6 +89,7 @@ reference:
     - na24631_v3.3.2_wgs
   gnomad:
     - r2.0.1
+    - r2.1.1
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -122,8 +123,7 @@ reference_feature:
         outfile_check: grch37_homo_sapiens_-d5-.fasta.gz.md5
         outfile_index: grch37_homo_sapiens_-d5-.fasta.fai.gz
         outfile_index_check: grch37_homo_sapiens_-d5-.fasta.fai.gz.md5
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
@@ -166,8 +166,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       phase1:
         file: Homo_sapiens_assembly38.known_indels.vcf.gz
@@ -190,8 +189,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       2.5:
         file: 1000G_omni2.5.hg38.vcf.gz
@@ -207,8 +205,7 @@ reference_feature:
         outfile: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
         outfile_index: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz.tbi
         outfile_decompress: gzip
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
   1000g_snps:
     grch37:
       phase1:
@@ -224,8 +221,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       phase1:
         file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
@@ -308,15 +304,6 @@ reference_feature:
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   clinvar:
     grch37:
-      20181028:
-        file: clinvar_20181028.vcf.gz
-        file_check: clinvar_20181028.vcf.gz.md5
-        file_index: clinvar_20181028.vcf.gz.tbi
-        outfile: grch37_clinvar_-2018-10-28-.vcf.gz
-        outfile_check: grch37_clinvar_-2018-10-28-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-2018-10-28-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
       20190305:
         file: clinvar_20190305.vcf.gz
         file_check: clinvar_20190305.vcf.gz.md5
@@ -324,6 +311,15 @@ reference_feature:
         outfile: grch37_clinvar_-20190305-.vcf.gz
         outfile_check: grch37_clinvar_-20190305-.vcf.gz.md5
         outfile_index: grch37_clinvar_-20190305-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2019/
+      20191013:
+        file: clinvar_20191013.vcf.gz
+        file_check: clinvar_20191013.vcf.gz.md5
+        file_index: clinvar_20191013.vcf.gz.tbi
+        outfile: grch37_clinvar_-20191013-.vcf.gz
+        outfile_check: grch37_clinvar_-20191013-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20191013-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2019/
     grch38:
@@ -336,7 +332,6 @@ reference_feature:
         outfile_index: grch38_clinvar_-20190305-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
-
       20190731:
         file: clinvar_20190731.vcf.gz
         file_check: clinvar_20190731.vcf.gz.md5
@@ -344,6 +339,15 @@ reference_feature:
         outfile: grch38_clinvar_-20190731-.vcf.gz
         outfile_check: grch38_clinvar_-20190731-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20190731-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
+      20191013:
+        file: clinvar_20191013.vcf.gz
+        file_check: clinvar_20191013.vcf.gz.md5
+        file_index: clinvar_20191013.vcf.gz.tbi
+        outfile: grch38_clinvar_-20191013-.vcf.gz
+        outfile_check: grch38_clinvar_-20191013-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20191013-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
   dbnsfp:
@@ -374,8 +378,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
       138:
         file: dbsnp_138.b37.vcf.gz
         file_check: dbsnp_138.b37.vcf.gz.md5
@@ -389,8 +392,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       gold_standard_dbsnp:
         file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
@@ -650,6 +652,12 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
         url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
+      r2.1.1:
+        file: gnomad.genomes.r2.1.1.sites.vcf.bgz
+        file_index: gnomad.genomes.r2.1.1.sites.vcf.bgz.tbi
+        outfile: grch37_gnomad.genomes_-r2.1.1-.vcf.gz
+        outfile_index: grch37_gnomad.genomes_-r2.1.1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/vcf/genomes/
     grch38:
       r2.1.1:
         file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz
@@ -679,8 +687,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       3.3:
         file: hapmap_3.3.hg38.vcf.gz
@@ -717,8 +724,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
     grch38:
       gold_standard_indels:
         file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz

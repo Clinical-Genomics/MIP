@@ -37,7 +37,7 @@ sub trim_galore {
 ## Returns  : @commands
 ## Arguments: $cores                  => Cores to be used by each process
 ##          : $fastqc                 => Run fastqc after trimming
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $gzip_output            => Gzip output fastq file
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $outdir_path            => Outdirectory path
@@ -51,7 +51,7 @@ sub trim_galore {
 
     ## Flatten argument(s)
     my $cores;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_paths_ref;
     my $outdir_path;
     my $paired_reads;
@@ -76,8 +76,8 @@ sub trim_galore {
             store       => \$fastqc,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         gzip_output => {
             allow       => [ undef, 0, 1 ],
@@ -155,7 +155,7 @@ sub trim_galore {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

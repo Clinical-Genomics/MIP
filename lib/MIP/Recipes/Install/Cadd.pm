@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -42,7 +42,7 @@ sub install_cadd {
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $contaienr_href        => Container hah {REF}
 ##          : $container_path        => Path to container
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -50,7 +50,7 @@ sub install_cadd {
     my $active_parameter_href;
     my $container_path;
     my $container_href;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         active_parameter_href => {
@@ -71,9 +71,9 @@ sub install_cadd {
             store       => \$container_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined => 1,
-            store   => \$FILEHANDLE,
+            store   => \$filehandle,
         },
     };
 
@@ -97,7 +97,7 @@ sub install_cadd {
     my $cadd_bind_path =
         $annotation_dir_path
       . $COLON
-      . catdir(qw{ $FORWARD_SLASH opt CADD-scripts data annotations });
+      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } );
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {

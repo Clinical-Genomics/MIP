@@ -66,7 +66,7 @@ Readonly my $STEP => 10_000;
 my @function_base_commands = qw{ chromograph };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

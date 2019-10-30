@@ -68,7 +68,7 @@ diag(   q{Test rseqc_infer_experiment from Rseqc.pm v}
 my @function_base_commands = qw{ infer_experiment.py };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

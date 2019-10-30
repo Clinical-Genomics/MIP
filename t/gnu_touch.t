@@ -63,7 +63,7 @@ diag(   q{Test gnu_touch from Coreutils.pm v}
 my @function_base_commands = qw{ touch };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

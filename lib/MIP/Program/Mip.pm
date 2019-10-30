@@ -33,7 +33,7 @@ sub mip_qccollect {
 
 ## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $log_file_path          => Log file path
 ##          : $outfile_path           => Outfile path
@@ -46,7 +46,7 @@ sub mip_qccollect {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $log_file_path;
     my $outfile_path;
@@ -59,8 +59,8 @@ sub mip_qccollect {
     my $skip_evaluation;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -146,7 +146,7 @@ sub mip_qccollect {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -157,7 +157,7 @@ sub mip_vcfparser {
 
 ## Function : Perl wrapper for MIPs vcfparser to separate clinical variants from research
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                            => Filehandle to write to
+## Arguments: $filehandle                            => Filehandle to write to
 ##          : $infile_path                           => Infile path
 ##          : $log_file_path                         => Log file path
 ##          : $padding                               => Pad each gene with X number of nucleotides
@@ -177,7 +177,7 @@ sub mip_vcfparser {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $log_file_path;
     my $pli_values_file_path;
@@ -197,8 +197,8 @@ sub mip_vcfparser {
     my $per_gene;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -347,7 +347,7 @@ sub mip_vcfparser {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -359,7 +359,7 @@ sub mip_vercollect {
 
 ## Function : Perl wrapper for vercollect
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $log_file_path          => Log file path
 ##          : $outfile_path           => Outfile path
@@ -370,7 +370,7 @@ sub mip_vercollect {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $log_file_path;
     my $outfile_path;
@@ -381,8 +381,8 @@ sub mip_vercollect {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -446,7 +446,7 @@ sub mip_vercollect {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

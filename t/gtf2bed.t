@@ -63,7 +63,7 @@ diag(   q{Test gtf2bed from Gtf2bed.pm v}
 my @function_base_commands = qw{ gtf2bed };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

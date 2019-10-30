@@ -105,7 +105,7 @@ sub create_fam_file {
 ##          : $case_id               => Case_id
 ##          : $execution_mode        => Either system (direct) or via sbatch
 ##          : $fam_file_path         => Case file path
-##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $filehandle            => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $include_header        => Include header ("1") or not ("0")
 ##          : $log                   => Log object
 ##          : $parameter_href        => Hash with paremters from yaml file {REF}
@@ -116,7 +116,7 @@ sub create_fam_file {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $fam_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log;
     my $parameter_href;
     my $sample_info_href;
@@ -151,8 +151,8 @@ sub create_fam_file {
             store       => \$fam_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         include_header => {
             allow       => [ 0, 1 ],
@@ -218,22 +218,22 @@ sub create_fam_file {
     if ( $execution_mode eq q{system} ) {
 
         # Create anonymous filehandle
-        my $FILEHANDLE_SYS = IO::Handle->new();
+        my $filehandle_SYS = IO::Handle->new();
 
         ## Create dir if it does not exists
         make_path( dirname($fam_file_path) );
 
-        open $FILEHANDLE_SYS, q{>}, $fam_file_path
+        open $filehandle_SYS, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
         ## Adds the information from the samples in pedigree_lines, separated by \n
       LINE:
         foreach my $line (@pedigree_lines) {
 
-            say {$FILEHANDLE_SYS} $line;
+            say {$filehandle_SYS} $line;
         }
         $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
-        close $FILEHANDLE_SYS;
+        close $filehandle_SYS;
     }
 
     if ( $execution_mode eq q{sbatch} ) {
@@ -241,22 +241,22 @@ sub create_fam_file {
         ## Check to see if file already exists
         if ( not -f $fam_file_path ) {
 
-            if ($FILEHANDLE) {
+            if ($filehandle) {
 
-                say {$FILEHANDLE} q{#Generating '.fam' file};
+                say {$filehandle} q{#Generating '.fam' file};
 
                 ## Get parameters
                 my @strings = map { $_ . q{\n} } @pedigree_lines;
                 gnu_echo(
                     {
                         enable_interpretation => 1,
-                        FILEHANDLE            => $FILEHANDLE,
+                        filehandle            => $filehandle,
                         no_trailing_newline   => 1,
                         outfile_path          => $fam_file_path,
                         strings_ref           => \@strings,
                     }
                 );
-                say {$FILEHANDLE} $NEWLINE;
+                say {$filehandle} $NEWLINE;
             }
             else {
 

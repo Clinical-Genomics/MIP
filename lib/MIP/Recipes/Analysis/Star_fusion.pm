@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -34,7 +34,7 @@ BEGIN {
 
 sub analysis_star_fusion {
 
-## Function : Analysis recipe for star-fusion v1.4.0
+## Function : Analysis recipe for star-fusion v1.8.0
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -144,7 +144,7 @@ sub analysis_star_fusion {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+    use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -206,7 +206,7 @@ sub analysis_star_fusion {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
 # Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -214,7 +214,7 @@ sub analysis_star_fusion {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -229,13 +229,13 @@ sub analysis_star_fusion {
     ### SHELL
 
     ## Star-fusion
-    say {$FILEHANDLE} q{## Performing fusion transcript detections using } . $recipe_name;
+    say {$filehandle} q{## Performing fusion transcript detections using } . $recipe_name;
 
     ## Create sample file
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
     create_star_fusion_sample_file(
         {
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             infile_paths_ref        => \@infile_paths,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             samples_file_path       => $sample_files_path,
@@ -243,22 +243,23 @@ sub analysis_star_fusion {
             sample_info_href        => $sample_info_href,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     star_fusion(
         {
             cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
+            fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
         ## Collect QC metadata info for later use

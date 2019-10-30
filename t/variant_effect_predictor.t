@@ -66,7 +66,7 @@ Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 my @function_base_commands = qw{ vep };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -87,7 +87,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -124,7 +124,7 @@ my %specific_argument = (
         input           => 10,
         expected_output => q{--distance} . $SPACE . q{10},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -215,7 +215,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -223,7 +223,7 @@ sub analysis_gatk_variantrecalibration_wes {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -246,7 +246,7 @@ sub analysis_gatk_variantrecalibration_wes {
             active_parameter_href => $active_parameter_href,
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -272,7 +272,7 @@ sub analysis_gatk_variantrecalibration_wes {
   MODE:
     foreach my $mode (@modes) {
 
-        say {$FILEHANDLE} q{## GATK VariantRecalibrator};
+        say {$filehandle} q{## GATK VariantRecalibrator};
 
         ## Get parameters
         my $max_gaussian_level;
@@ -309,7 +309,7 @@ sub analysis_gatk_variantrecalibration_wes {
         gatk_variantrecalibrator(
             {
                 annotations_ref      => \@annotations,
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_path          => $infile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 max_gaussian_level   => $max_gaussian_level,
@@ -325,10 +325,10 @@ sub analysis_gatk_variantrecalibration_wes {
                 verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## GATK ApplyVQSR
-        say {$FILEHANDLE} q{## GATK ApplyVQSR};
+        say {$filehandle} q{## GATK ApplyVQSR};
 
         ## Get parameters
         my $ts_filter_level;
@@ -342,7 +342,7 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{apply} . $outfile_suffix;
         gatk_applyvqsr(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_path          => $infile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -356,7 +356,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
         ## Set infiles for next step(s)
         $select_infile_path = $apply_vqsr_outfile_path;
         $norm_infile_path   = $apply_vqsr_outfile_path;
@@ -369,7 +369,7 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 infile_path     => $norm_infile_path,
                 multiallelic    => $DASH,
                 outfile_path    => $norm_outfile_path,
@@ -383,7 +383,7 @@ sub analysis_gatk_variantrecalibration_wes {
         ## Set outfile path for next step
         $select_infile_path = $norm_outfile_path;
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ### GATK SelectVariants
@@ -391,11 +391,11 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
     # Exome analysis
 
-    say {$FILEHANDLE} q{## GATK SelectVariants};
+    say {$filehandle} q{## GATK SelectVariants};
 
     gatk_selectvariants(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             exclude_non_variants => 1,
             infile_path          => $select_infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
@@ -407,20 +407,20 @@ sub analysis_gatk_variantrecalibration_wes {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Genotype refinement
     if (    $parameter_href->{cache}{trio}
         and $active_parameter_href->{gatk_calculategenotypeposteriors} )
     {
 
-        say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
+        say {$filehandle} q{## GATK CalculateGenotypePosteriors};
 
         my $calculategt_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_path          => $outfile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
@@ -435,17 +435,17 @@ sub analysis_gatk_variantrecalibration_wes {
                 verbosity      => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $calculategt_outfile_path,
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
@@ -455,7 +455,7 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{selected_normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                FILEHANDLE     => $FILEHANDLE,
+                filehandle     => $filehandle,
                 infile_path    => $outfile_path,
                 multiallelic   => $DASH,
                 outfile_path   => $selected_norm_outfile_path,
@@ -463,19 +463,19 @@ sub analysis_gatk_variantrecalibration_wes {
                 reference_path => $referencefile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $selected_norm_outfile_path,
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -699,7 +699,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -707,7 +707,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -730,7 +730,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             active_parameter_href => $active_parameter_href,
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -754,7 +754,7 @@ sub analysis_gatk_variantrecalibration_wgs {
   MODE:
     foreach my $mode (@modes) {
 
-        say {$FILEHANDLE} q{## GATK VariantRecalibrator};
+        say {$filehandle} q{## GATK VariantRecalibrator};
 
         ## Get parameters
         my $max_gaussian_level;
@@ -833,7 +833,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         gatk_variantrecalibrator(
             {
                 annotations_ref       => \@annotations,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_path           => $varrecal_infile_path,
                 java_use_large_pages  => $active_parameter_href->{java_use_large_pages},
                 max_gaussian_level    => $max_gaussian_level,
@@ -851,10 +851,10 @@ sub analysis_gatk_variantrecalibration_wgs {
                 verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## GATK ApplyVQSR
-        say {$FILEHANDLE} q{## GATK ApplyVQSR};
+        say {$filehandle} q{## GATK ApplyVQSR};
 
         ## Get parameters
         my $applyvqsr_infile_path;
@@ -882,7 +882,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
         gatk_applyvqsr(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_path          => $applyvqsr_infile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx10g},
@@ -896,7 +896,7 @@ sub analysis_gatk_variantrecalibration_wgs {
                 verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## GenotypeRefinement
@@ -904,13 +904,13 @@ sub analysis_gatk_variantrecalibration_wgs {
         and $active_parameter_href->{gatk_calculategenotypeposteriors} )
     {
 
-        say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
+        say {$filehandle} q{## GATK CalculateGenotypePosteriors};
 
         my $calculategt_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                filehandle           => $filehandle,
                 infile_path          => $outfile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
@@ -925,17 +925,17 @@ sub analysis_gatk_variantrecalibration_wgs {
                 verbosity      => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $calculategt_outfile_path,
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
@@ -945,7 +945,7 @@ sub analysis_gatk_variantrecalibration_wgs {
           $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                FILEHANDLE     => $FILEHANDLE,
+                filehandle     => $filehandle,
                 infile_path    => $outfile_path,
                 multiallelic   => $DASH,
                 output_type    => q{v},
@@ -953,19 +953,19 @@ sub analysis_gatk_variantrecalibration_wgs {
                 reference_path => $referencefile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $bcftools_outfile_path,
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

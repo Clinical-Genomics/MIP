@@ -110,7 +110,8 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Miniconda] version 4.5.11
 * Singularity version 3.2.1
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
+We recommend miniconda for installing perl and cpanm libraries. However, perlbrew can also be used for installing and managing perl and cpanm libraries together with MIP.
+Installation instructions and setting up specific cpanm libraries using perlbrew can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline follows a similar syntax.
@@ -125,7 +126,7 @@ $ cd MIP
 
 ```Bash
 $ cd definitions
-$ cpanm --installdeps .
+$ bash mip_install_perl.sh -e [mip7_rd-dna] -p [$HOME/miniconda3] 
 $ cd -
 ```  
 
@@ -142,13 +143,10 @@ $ perl mip install rd_dna
 This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
-  The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
+  By default the batch script will attempt to install the MIP dependencies in a conda environment called mip7_rd-dna.
   * mip7_rd-dna
-  * mip7_rd-dna_perl5
-  * mip7_rd-dna_py3
-  * mip7_rd-dna_tiddit
 
-It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``--environment_name`` flag. E.g. ``--installations emip --environment_name emip=MIP``.   
+It is possible to specify the name of the environment using the ``--environment_name`` flag. E.g. --environment_name emip=MIP``.
 
 The default environment names can be modified with the using any or all of the CLI options ``--envionment_prefix <prefix>``, ``--environment_suffix <suffix>`` and ``--environment_date``. MIP will then create conda environments with the pattern: \<prefix>\_mip7_rd-dna_\<date>\_\<suffix>
 
@@ -182,11 +180,6 @@ $ perl t/mip_analyse_rd_dna.test
     mip7_rd-dna:
       installation: emip
       mip:
-      method: conda
-    mip7_rd-dna_perl5:
-      bwa_mem:
-      fastqc_ar:
-      installation: eperl5
       method: conda
   ```
 

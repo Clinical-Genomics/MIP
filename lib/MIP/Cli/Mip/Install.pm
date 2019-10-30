@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -80,17 +80,6 @@ sub _build_usage {
             isa           => Int,
             required      => 0,
 
-        ),
-    );
-
-    option(
-        q{disable_env_check} => (
-            cmd_aliases   => [qw{ dec }],
-            cmd_flag      => q{disable_env_check},
-            documentation => q{Disable source environment check},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
         ),
     );
 

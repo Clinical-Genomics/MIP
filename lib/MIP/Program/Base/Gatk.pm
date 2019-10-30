@@ -38,7 +38,7 @@ sub gatk_base {
 ##          : $base_quality_score_recalibration_file => Base quality score recalibration file
 ##          : $commands_ref                          => List of commands added earlier
 ##          : $disable_indel_qual                    => Disable indel quality
-##          : $FILEHANDLE                            => Filehandle to write to
+##          : $filehandle                            => Filehandle to write to
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
@@ -58,7 +58,7 @@ sub gatk_base {
     my $commands_ref;
     my $disable_indel_qual;
     my $downsample_to_coverage;
-    my $FILEHANDLE;
+    my $filehandle;
     my $intervals_ref;
     my $pedigree;
     my $pedigree_validation_type;
@@ -92,7 +92,7 @@ sub gatk_base {
             store       => \$downsample_to_coverage,
             strict_type => 1,
         },
-        FILEHANDLE                            => { store => \$FILEHANDLE, },
+        filehandle                            => { store => \$filehandle, },
         gatk_disable_auto_index_and_file_lock => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -213,7 +213,7 @@ sub gatk_base {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

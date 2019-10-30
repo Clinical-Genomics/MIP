@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Star_fusion} => [qw{ star_fusion }],
-        q{MIP::Test::Fixtures}                       => [qw{ test_standard_cli }],
+        q{MIP::Program::Star_fusion} => [qw{ star_fusion }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+use MIP::Program::Star_fusion qw{ star_fusion };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test star_fusion from Star_fusion.pm v}
-      . $MIP::Program::Variantcalling::Star_fusion::VERSION
+      . $MIP::Program::Star_fusion::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -71,7 +68,7 @@ Readonly my $THREAD_NUMBER => 16;
 my @function_base_commands = qw{ STAR-Fusion };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -114,6 +111,10 @@ my %specific_argument = (
     examine_coding_effect => {
         input           => 1,
         expected_output => q{--examine_coding_effect},
+    },
+    fusion_inspector => {
+        input           => q{inspect},
+        expected_output => q{--FusionInspector inspect},
     },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),

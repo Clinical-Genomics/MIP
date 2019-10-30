@@ -197,7 +197,7 @@ sub analysis_preseq {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -205,7 +205,7 @@ sub analysis_preseq {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -217,22 +217,22 @@ sub analysis_preseq {
     );
 
     ### SHELL:
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Run Preseq lc_extrap
-    say {$FILEHANDLE} q{## Run lc_extrap};
+    say {$filehandle} q{## Run lc_extrap};
     preseq_lc_extrap(
         {
             bam_infile_path => $infile_path,
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             outfile_path    => $outfile_path,
             verbose         => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandle
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

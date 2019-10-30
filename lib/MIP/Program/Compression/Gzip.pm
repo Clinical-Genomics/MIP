@@ -34,10 +34,10 @@ BEGIN {
 
 sub gzip {
 
-## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
+## Function : Perl wrapper for writing gzip recipe to $filehandle or return commands array. Based on gzip 1.3.12.
 ## Returns  : @commands
 ## Arguments: $decompress             => Decompress
-##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
+##          : $filehandle             => Filehandle to write to (scalar undefined)
 ##          : $force                  => Force overwrite of output file and compress links
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path. Write documents to FILE
@@ -51,7 +51,7 @@ sub gzip {
 
     ## Flatten argument(s)
     my $decompress;
-    my $FILEHANDLE;
+    my $filehandle;
     my $force;
     my $infile_path;
     my $outfile_path;
@@ -75,7 +75,7 @@ sub gzip {
           { allow => [ undef, 0, 1 ], store => \$decompress, strict_type => 1, },
         force => { allow => [ undef, 0, 1 ], store => \$force, strict_type => 1, },
         outfile_path    => { store => \$outfile_path, strict_type => 1, },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -146,7 +146,7 @@ sub gzip {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

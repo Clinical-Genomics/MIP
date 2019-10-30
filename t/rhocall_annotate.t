@@ -63,7 +63,7 @@ diag(   q{Test rhocall_annotate from Rhocall.pm v}
 my @function_base_commands = qw{ rhocall annotate };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

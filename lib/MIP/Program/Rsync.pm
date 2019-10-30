@@ -39,7 +39,7 @@ sub rsync {
 ##          : $compress               => Compress file data during the transfer
 ##          : $copy_links             => Transform symlink into referent file/dir
 ##          : $destination            => Destination to rsync to
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $source                 => Source to rsync from
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -51,7 +51,7 @@ sub rsync {
 
     ## Flatten argument(s)
     my $destination;
-    my $FILEHANDLE;
+    my $filehandle;
     my $source;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -89,8 +89,8 @@ sub rsync {
             store       => \$destination,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         source => {
             defined     => 1,
@@ -158,7 +158,7 @@ sub rsync {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

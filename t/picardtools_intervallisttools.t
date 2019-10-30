@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,14 +64,14 @@ diag(   q{Test picardtools_intervallisttools from Picardtools.pm v}
 Readonly my $PADDING => 100;
 
 ## Base arguments
-my @function_base_commands = qw{ IntervalListTools };
+my @function_base_commands = qw{ picard IntervalListTools };
 
 my %base_argument = (
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

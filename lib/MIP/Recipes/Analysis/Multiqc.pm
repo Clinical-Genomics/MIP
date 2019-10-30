@@ -154,7 +154,7 @@ sub analysis_multiqc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -162,7 +162,7 @@ sub analysis_multiqc {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory_allocation},
@@ -175,7 +175,7 @@ sub analysis_multiqc {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Multiqc};
+    say {$filehandle} q{## Multiqc};
 
     ## Always analyse case
     my @report_ids = ($case_id);
@@ -204,13 +204,13 @@ sub analysis_multiqc {
 
         multiqc(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 indir_path  => $indir_path,
                 outdir_path => $outdir_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
@@ -234,7 +234,7 @@ sub analysis_multiqc {
             );
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

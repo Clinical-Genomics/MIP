@@ -77,20 +77,20 @@ my %active_parameter = (
 
 ### Given a request to create bash file
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 # Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## When the sub is launched
 trap {
     setup_install_script(
         {
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             file_name             => q{test.sh},
             remove_dir            => catfile( cwd(), $DOT, q{test} ),
             invoke_login_shell    => 0,
@@ -104,20 +104,20 @@ trap {
 };
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then '--account' should  be part of the header
 ok( $file_content =~ / (\/usr\/bin\/env\/bash)$ /xms, q{Create bash file} );
 
 ### Given input to write bash file for sbatch submission
 # Create anonymous filehandle
-my $FILEHANDLE_SBATCH = IO::Handle->new();
+my $filehandle_SBATCH = IO::Handle->new();
 
 # For storing info to write
 my $file_content_sbatch;
 
 # Store file content in memory by using referenced variable
-open $FILEHANDLE_SBATCH, q{>}, \$file_content_sbatch
+open $filehandle_SBATCH, q{>}, \$file_content_sbatch
   or croak q{Cannot write to}
   . $SPACE
   . $file_content_sbatch
@@ -129,7 +129,7 @@ open $FILEHANDLE_SBATCH, q{>}, \$file_content_sbatch
 trap {
     setup_install_script(
         {
-            FILEHANDLE            => $FILEHANDLE_SBATCH,
+            filehandle            => $filehandle_SBATCH,
             file_name             => q{test.sh},
             remove_dir            => catfile( cwd(), $DOT, q{test} ),
             invoke_login_shell    => 1,
@@ -143,7 +143,7 @@ trap {
 };
 
 # Close the filehandle
-close $FILEHANDLE_SBATCH;
+close $filehandle_SBATCH;
 
 ## Then '--account' should  be part of the header
 ok( $file_content_sbatch =~ / ^(\#SBATCH) /xms, q{Create sbatch headers} );

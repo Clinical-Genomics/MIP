@@ -10,14 +10,10 @@ load_env:
   mip_travis:
     cadd_ar:
     endvariantannotationblock:
-    gatk:
     installation: emip
     method: conda
     mip:
     picard:
-  mip_travis_eperl5:
-    installation: eperl5
-    method: conda
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test

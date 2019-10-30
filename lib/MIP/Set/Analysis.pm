@@ -23,127 +23,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_recipe_on_analysis_type set_recipe_on_pedigree set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
-}
-
-sub set_recipe_on_analysis_type {
-
-## Function : Set which recipe to use depending on consensus analysis type
-## Returns  :
-## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $consensus_analysis_type => Consensus analysis type
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $consensus_analysis_type;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Gatk_variantrecalibration
-      qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
-    use MIP::Recipes::Analysis::Mip_vcfparser
-      qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
-
-    my %analysis_type_recipe = (
-        vrn => {
-            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
-        },
-        wes => {
-            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
-            sv_varianteffectpredictor => \&analysis_vep_sv_wes,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wes,
-        },
-        wgs => {
-            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
-            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
-        },
-    );
-
-    ## If not a defined consensus analysis type e.g. "mixed"
-    if ( not exists $analysis_type_recipe{$consensus_analysis_type} ) {
-
-        ## Use wgs as fallback
-        $consensus_analysis_type = q{wgs};
-    }
-
-  ANALYSIS_RECIPE:
-    foreach my $recipe_name ( keys %{$analysis_recipe_href} ) {
-
-        next ANALYSIS_RECIPE
-          if ( not exists $analysis_type_recipe{$consensus_analysis_type}{$recipe_name} );
-
-        $analysis_recipe_href->{$recipe_name} =
-          $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
-    }
-    return;
-}
-
-sub set_recipe_on_pedigree {
-
-## Function : Set which recipe to use depending on pedigree
-## Returns  :
-## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $sample_info_href     => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
-
-    ## Only run upd analysis for trios
-    if ( $sample_info_href->{has_trio} ) {
-
-        $analysis_recipe_href->{upd_ar} = \&analysis_upd;
-    }
-
-    return;
+      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 }
 
 sub set_recipe_bwa_mem {
@@ -272,6 +156,71 @@ sub set_recipe_cadd {
     return;
 }
 
+sub set_recipe_chromograph {
+
+## Function : Set which recipe to use depending on proband in trio and proband or not
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_id            => Sample id
+##          : $sample_info_href     => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
+    use MIP::Recipes::Analysis::Chromograph
+      qw{ analysis_chromograph analysis_chromograph_proband };
+
+    ## Set default recipe
+    $analysis_recipe_href->{chromograph_ar} = \&analysis_chromograph;
+
+    ## Only run chromograp_proband UPD analysis for trios and proband
+    if ( $sample_info_href->{has_trio} ) {
+
+        my $is_sample_proband_in_trio = is_sample_proband_in_trio(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        if ($is_sample_proband_in_trio) {
+
+            ## Update recipe to use proband processing instead
+            $analysis_recipe_href->{chromograph_ar} = \&analysis_chromograph_proband;
+        }
+    }
+    return;
+}
+
 sub set_recipe_gatk_variantrecalibration {
 
 ## Function : Update which gatk variant recalibration to use depending on number of samples
@@ -332,6 +281,79 @@ q{Switched from VariantRecalibration to CNNScoreVariants for single sample analy
     ## Use new CNN recipe for single samples
     $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
 
+    return;
+}
+
+sub set_recipe_on_analysis_type {
+
+## Function : Set which recipe to use depending on consensus analysis type
+## Returns  :
+## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $consensus_analysis_type => Consensus analysis type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $consensus_analysis_type;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Gatk_variantrecalibration
+      qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
+    use MIP::Recipes::Analysis::Mip_vcfparser
+      qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
+
+    my %analysis_type_recipe = (
+        vrn => {
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
+        },
+        wes => {
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
+            sv_varianteffectpredictor => \&analysis_vep_sv_wes,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wes,
+        },
+        wgs => {
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
+        },
+    );
+
+    ## If not a defined consensus analysis type e.g. "mixed"
+    if ( not exists $analysis_type_recipe{$consensus_analysis_type} ) {
+
+        ## Use wgs as fallback
+        $consensus_analysis_type = q{wgs};
+    }
+
+  ANALYSIS_RECIPE:
+    foreach my $recipe_name ( keys %{$analysis_recipe_href} ) {
+
+        next ANALYSIS_RECIPE
+          if ( not exists $analysis_type_recipe{$consensus_analysis_type}{$recipe_name} );
+
+        $analysis_recipe_href->{$recipe_name} =
+          $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
+    }
     return;
 }
 

@@ -41,7 +41,7 @@ sub star_aln {
 ##           : $chim_junction_overhang_min => Minimum overhang for a chimeric junction
 ##           : $chim_segment_min           => Minimum length of chimaeric segment
 ##           : $chim_segment_read_gap_max  => Maximum gap in the read sequence between chimeric segments
-##           : $FILEHANDLE                 => Filehandle to write to
+##           : $filehandle                 => Filehandle to write to
 ##           : $genome_dir_path            => Directory of the reference genome
 ##           : $infile_paths_ref           => Fastq file path(s)
 ##           : $limit_bam_sort_ram         => Memory available for sorting the output bam
@@ -60,7 +60,7 @@ sub star_aln {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $chim_out_type;
     my $genome_dir_path;
     my $infile_paths_ref;
@@ -126,8 +126,8 @@ sub star_aln {
             store       => \$chim_segment_read_gap_max,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         genome_dir_path => {
             defined     => 1,
@@ -287,7 +287,7 @@ sub star_aln {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -300,7 +300,7 @@ sub star_genome_generate {
 ## Function  : Perl wrapper for STAR genomeGenerate, v2.5.3a.
 ## Returns   : @commands
 ## Arguments : $fasta_path             => Input reference fasta path
-##           : $FILEHANDLE             => Filehandle to write to
+##           : $filehandle             => Filehandle to write to
 ##           : $genome_dir_path        => Output directory path
 ##           : $gtf_path               => Input gtf path
 ##           : $read_length            => Maximum expected readlength
@@ -313,7 +313,7 @@ sub star_genome_generate {
 
     ## Flatten argument(s)
     my $fasta_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $genome_dir_path;
     my $gtf_path;
     my $stderrfile_path;
@@ -331,8 +331,8 @@ sub star_genome_generate {
             store       => \$fasta_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         genome_dir_path => {
             defined     => 1,
@@ -405,7 +405,7 @@ sub star_genome_generate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

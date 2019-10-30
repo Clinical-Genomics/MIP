@@ -63,7 +63,7 @@ diag(   q{Test tar from Tar.pm v}
 my @function_base_commands = qw{ tar };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -84,7 +84,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -107,7 +107,7 @@ my %specific_argument = (
         input           => catfile(qw{ path to file }),
         expected_output => q{--file=} . catfile(qw{ path to file }),
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

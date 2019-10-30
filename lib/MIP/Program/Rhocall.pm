@@ -33,9 +33,9 @@ BEGIN {
 
 sub rhocall_aggregate {
 
-## Function : Perl wrapper for writing rhocall aggregate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
+## Function : Perl wrapper for writing rhocall aggregate recipe to $filehandle or return commands array. Based on rhocall 0.3.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -45,7 +45,7 @@ sub rhocall_aggregate {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -53,8 +53,8 @@ sub rhocall_aggregate {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -102,7 +102,7 @@ sub rhocall_aggregate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -112,10 +112,10 @@ sub rhocall_aggregate {
 
 sub rhocall_annotate {
 
-## Function : Perl wrapper for writing rhocall annotate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
+## Function : Perl wrapper for writing rhocall annotate recipe to $filehandle or return commands array. Based on rhocall 0.3.
 ## Returns  : @commands
 ## Arguments: $bedfile_path           => BED file with AZ windows
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $rohfile_path           => Rho style bcftools file
@@ -128,7 +128,7 @@ sub rhocall_annotate {
 
     ## Flatten argument(s)
     my $bedfile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $rohfile_path;
@@ -139,8 +139,8 @@ sub rhocall_annotate {
 
     my $tmpl = {
         bedfile_path => { store => \$bedfile_path, strict_type => 1, },
-        FILEHANDLE   => {
-            store => \$FILEHANDLE,
+        filehandle   => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -211,7 +211,7 @@ sub rhocall_annotate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -221,10 +221,10 @@ sub rhocall_annotate {
 
 sub rhocall_viz {
 
-## Function : Perl wrapper for writing rhocall viz recipe to $FILEHANDLE or return commands array. Based on rhocall 0.5.1.
+## Function : Perl wrapper for writing rhocall viz recipe to $filehandle or return commands array. Based on rhocall 0.5.1.
 ## Returns  : @commands
 ## Arguments: $af_tag                 => Allele frequency to use
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $outdir_path            => Directory path to write to
 ##          : $rohfile_path           => Rho style bcftools file
@@ -237,7 +237,7 @@ sub rhocall_viz {
 
     ## Flatten argument(s)
     my $af_tag;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outdir_path;
     my $rohfile_path;
@@ -252,8 +252,8 @@ sub rhocall_viz {
             store       => \$af_tag,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             allow       => qr/ vcf\z /xms,
@@ -325,7 +325,7 @@ sub rhocall_viz {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

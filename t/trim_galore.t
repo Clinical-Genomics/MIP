@@ -65,7 +65,7 @@ Readonly my $CORES => 12;
 my @function_base_commands = qw{ trim_galore };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

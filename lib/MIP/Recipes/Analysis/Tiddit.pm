@@ -190,7 +190,7 @@ sub analysis_tiddit {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Update number of cores and memory depending on how many samples that are processed
     my $core_number = get_core_number(
@@ -214,7 +214,7 @@ sub analysis_tiddit {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -254,7 +254,7 @@ sub analysis_tiddit {
         $tiddit_sample_file_info{$sample_id}{out} =
           $outfile_path_prefix . $UNDERSCORE . $sample_id;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     # Start counter
     my $process_batches_count = 1;
@@ -267,7 +267,7 @@ sub analysis_tiddit {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $sample_id_index,
@@ -277,7 +277,7 @@ sub analysis_tiddit {
         ## Tiddit
         tiddit_sv(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $tiddit_sample_file_info{$sample_id}{in},
                 minimum_number_supporting_pairs =>
                   $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
@@ -285,9 +285,9 @@ sub analysis_tiddit {
                 referencefile_path  => $active_parameter_href->{human_genome_reference},
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
@@ -304,22 +304,22 @@ sub analysis_tiddit {
 
     write_source_environment_command(
         {
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             source_environment_commands_ref => \@program_source_commands,
         }
     );
 
     svdb_merge(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
             stdoutfile_path  => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

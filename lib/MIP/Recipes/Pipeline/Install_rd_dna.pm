@@ -29,15 +29,11 @@ use MIP::Script::Setup_script qw{ setup_install_script };
 use MIP::Set::Parameter qw{ set_programs_for_installation };
 
 ## Recipes
-use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
-use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
-use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
-use MIP::Recipes::Install::Vt qw{ install_vt };
 
 BEGIN {
 
@@ -45,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -97,7 +93,7 @@ sub pipeline_install_rd_dna {
     ## Installation instruction file
     my $file_name_path = catfile( cwd(), q{mip.sh} );
 
-    open my $FILEHANDLE, q{>}, $file_name_path
+    open my $filehandle, q{>}, $file_name_path
       or $log->logcroak( q{Cannot write to}
           . $SPACE
           . $SINGLE_QUOTE
@@ -113,7 +109,7 @@ sub pipeline_install_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             file_name             => $file_name_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             invoke_login_shell    => $active_parameter_href->{sbatch_mode},
             log                   => $log,
             remove_dir            => catfile( cwd(), $DOT . q{MIP} ),
@@ -127,8 +123,8 @@ sub pipeline_install_rd_dna {
 
     ## Source conda
     if ( not $active_parameter_href->{sbatch_mode} ) {
-        say {$FILEHANDLE} q{## Source conda};
-        say {$FILEHANDLE} q{source}
+        say {$filehandle} q{## Source conda};
+        say {$filehandle} q{source}
           . $SPACE
           . catfile( $active_parameter_href->{conda_path}, qw{ etc profile.d conda.sh } )
           . $NEWLINE;
@@ -158,7 +154,7 @@ sub pipeline_install_rd_dna {
                   $active_parameter_href->{$installation}{conda_prefix_path},
                 conda_no_update_dep => $active_parameter_href->{conda_no_update_dep},
                 conda_packages_href => $active_parameter_href->{$installation}{conda},
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 quiet               => $active_parameter_href->{quiet},
                 verbose             => $active_parameter_href->{verbose},
             }
@@ -168,7 +164,7 @@ sub pipeline_install_rd_dna {
         install_pip_packages(
             {
                 conda_env  => $active_parameter_href->{environment_name}{$installation},
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 pip_packages_href => $active_parameter_href->{$installation}{pip},
                 quiet             => $active_parameter_href->{quiet},
             }
@@ -182,7 +178,7 @@ sub pipeline_install_rd_dna {
                   $active_parameter_href->{$installation}{conda_prefix_path},
                 container_dir_path => $active_parameter_href->{container_dir_path},
                 container_href => $active_parameter_href->{$installation}{singularity},
-                FILEHANDLE     => $FILEHANDLE,
+                filehandle     => $filehandle,
                 quiet          => $active_parameter_href->{quiet},
                 verbose        => $active_parameter_href->{verbose},
             }
@@ -190,13 +186,7 @@ sub pipeline_install_rd_dna {
 
         ### Install shell programs
         ## Create dispatch table for shell installation subs
-        my %shell_subs = (
-            bedtools    => \&install_bedtools,
-            mip_scripts => \&install_mip_scripts,
-            picard      => \&install_picard,
-            plink2      => \&install_plink2,
-            vt          => \&install_vt,
-        );
+        my %shell_subs = ( mip_scripts => \&install_mip_scripts, );
 
         ## Launch shell installation subroutines
       SHELL_PROGRAM:
@@ -209,7 +199,7 @@ sub pipeline_install_rd_dna {
                       $active_parameter_href->{environment_name}{$installation},
                     conda_prefix_path =>
                       $active_parameter_href->{$installation}{conda_prefix_path},
-                    FILEHANDLE => $FILEHANDLE,
+                    filehandle => $filehandle,
                     program_parameters_href =>
                       \%{ $active_parameter_href->{$installation}{shell}{$shell_program}
                       },
@@ -224,7 +214,7 @@ sub pipeline_install_rd_dna {
     check_mip_installation(
         {
             active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
         }
     );
 
@@ -232,7 +222,7 @@ sub pipeline_install_rd_dna {
     update_config(
         {
             env_name_href     => $active_parameter_href->{environment_name},
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             installations_ref => $active_parameter_href->{installations},
             log               => $log,
             pipeline          => $active_parameter_href->{process},
@@ -243,7 +233,7 @@ sub pipeline_install_rd_dna {
 
     $log->info(q{Finished writing installation instructions for MIP});
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
     return;
 }
 

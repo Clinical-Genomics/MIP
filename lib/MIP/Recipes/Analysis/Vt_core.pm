@@ -42,7 +42,7 @@ sub analysis_vt_core {
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
 ##          : $case_id                 => The case ID
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $infile_path             => Infile path
@@ -64,7 +64,7 @@ sub analysis_vt_core {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $contig;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $infile_path;
@@ -128,7 +128,7 @@ sub analysis_vt_core {
             store       => \$case_id,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         gnu_sed    => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -237,7 +237,7 @@ sub analysis_vt_core {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
     ## Create anonymous filehandle
-    $FILEHANDLE = IO::Handle->new();
+    $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -245,7 +245,7 @@ sub analysis_vt_core {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -274,7 +274,7 @@ sub analysis_vt_core {
 
         bcftools_view(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $infile_path,
                 output_type => $bcftools_output_type,
             }
@@ -284,11 +284,11 @@ sub analysis_vt_core {
     if ($gnu_sed) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         gnu_sed(
             {
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
             }
         );
@@ -296,11 +296,11 @@ sub analysis_vt_core {
     if ($decompose) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_decompose(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 infile_path            => q{-},
                 smart_decomposition    => 1,
                 stderrfile_path        => $stderrfile_path,
@@ -311,11 +311,11 @@ sub analysis_vt_core {
     if ($normalize) {
 
         # Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_normalize(
             {
-                FILEHANDLE                     => $FILEHANDLE,
+                filehandle                     => $filehandle,
                 infile_path                    => q{-},
                 no_fail_inconsistent_reference => 1,
                 referencefile_path             => $human_genome_reference,
@@ -327,11 +327,11 @@ sub analysis_vt_core {
     if ($uniq) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_uniq(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 infile_path            => q{-},
                 stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path,
@@ -345,18 +345,18 @@ sub analysis_vt_core {
     if ( -e $infile_path_tbi || $bgzip ) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         htslib_bgzip(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 write_to_stdout => 1,
             }
         );
     }
 
     ## Temporary outfile
-    print {$FILEHANDLE} q{>}
+    print {$filehandle} q{>}
       . $SPACE
       . $outfile_path
       . $UNDERSCORE
@@ -364,7 +364,7 @@ sub analysis_vt_core {
       . $UNDERSCORE
       . $random_integer
       . $SPACE;
-    print {$FILEHANDLE} $cmd_break;
+    print {$filehandle} $cmd_break;
 
     ## tabix index
     if ( -e $infile_path_tbi || $tabix ) {
@@ -373,29 +373,29 @@ sub analysis_vt_core {
           $outfile_path . $UNDERSCORE . q{splitted} . $UNDERSCORE . $random_integer;
         htslib_tabix(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 infile_path => $tabix_infile_path,
                 preset      => q{vcf},
             }
         );
-        print {$FILEHANDLE} $cmd_break;
+        print {$filehandle} $cmd_break;
 
         ## Move index in place
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $tabix_infile_path . $tabix_suffix,
                 outfile_path => $outfile_path . $tabix_suffix,
             }
         );
-        print {$FILEHANDLE} $cmd_break;
+        print {$filehandle} $cmd_break;
     }
 
     ## Move processed reference to original place
     gnu_mv(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $outfile_path
               . $UNDERSCORE
               . q{splitted}
@@ -404,9 +404,9 @@ sub analysis_vt_core {
             outfile_path => $outfile_path,
         }
     );
-    print {$FILEHANDLE} $cmd_break;
+    print {$filehandle} $cmd_break;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -439,7 +439,7 @@ sub analysis_vt_core_rio {
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
 ##          : $case_id                 => The case ID
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
 ##          : $human_genome_reference  => Human genome reference
 ##          : $infile_path             => Infile path
@@ -457,7 +457,7 @@ sub analysis_vt_core_rio {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $contig;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $xargs_file_path_prefix;
 
@@ -517,7 +517,7 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$case_id
         },
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
+        filehandle => { required => 1, store => \$filehandle },
         gnu_sed    => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
@@ -615,7 +615,7 @@ sub analysis_vt_core_rio {
 
         bcftools_view(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $infile_path,
                 output_type => $bcftools_output_type,
             }
@@ -625,11 +625,11 @@ sub analysis_vt_core_rio {
     if ($gnu_sed) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         gnu_sed(
             {
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
             }
         );
@@ -637,11 +637,11 @@ sub analysis_vt_core_rio {
     if ($decompose) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_decompose(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 infile_path            => q{-},
                 smart_decomposition    => 1,
                 stderrfile_path_append => $stderrfile_path,
@@ -651,11 +651,11 @@ sub analysis_vt_core_rio {
     if ($normalize) {
 
         # Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_normalize(
             {
-                FILEHANDLE                     => $FILEHANDLE,
+                filehandle                     => $filehandle,
                 infile_path                    => q{-},
                 no_fail_inconsistent_reference => 1,
                 referencefile_path             => $human_genome_reference,
@@ -666,11 +666,11 @@ sub analysis_vt_core_rio {
     if ( $active_parameter_href->{vt_uniq} > 0 && $uniq ) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         vt_uniq(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 infile_path            => q{-},
                 stderrfile_path_append => $stderrfile_path,
             }
@@ -683,18 +683,18 @@ sub analysis_vt_core_rio {
     if ( -e $infile_path_tbi || $bgzip ) {
 
         ## Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         htslib_bgzip(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 write_to_stdout => 1,
             }
         );
     }
 
     ## Temporary outfile
-    print {$FILEHANDLE} q{>}
+    print {$filehandle} q{>}
       . $SPACE
       . $outfile_path
       . $UNDERSCORE
@@ -702,7 +702,7 @@ sub analysis_vt_core_rio {
       . $UNDERSCORE
       . $random_integer
       . $SPACE;
-    print {$FILEHANDLE} $cmd_break;
+    print {$filehandle} $cmd_break;
 
     ## tabix index
     if ( -e $infile_path_tbi || $tabix ) {
@@ -711,29 +711,29 @@ sub analysis_vt_core_rio {
           $outfile_path . $UNDERSCORE . q{splitted} . $UNDERSCORE . $random_integer;
         htslib_tabix(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 infile_path => $tabix_infile_path,
                 preset      => q{vcf},
             }
         );
-        print {$FILEHANDLE} $cmd_break;
+        print {$filehandle} $cmd_break;
 
         ## Move index in place
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $tabix_infile_path . $tabix_suffix,
                 outfile_path => $outfile_path . $tabix_suffix,
             }
         );
-        print {$FILEHANDLE} $cmd_break;
+        print {$filehandle} $cmd_break;
     }
 
     ## Move processed reference to original place
     gnu_mv(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $outfile_path
               . $UNDERSCORE
               . q{splitted}
@@ -742,7 +742,7 @@ sub analysis_vt_core_rio {
             outfile_path => $outfile_path,
         }
     );
-    print {$FILEHANDLE} $cmd_break;
+    print {$filehandle} $cmd_break;
 
     return 1;
 }

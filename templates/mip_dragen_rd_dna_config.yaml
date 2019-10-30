@@ -13,7 +13,6 @@ project_id: travis_test
 load_env:
   mip_travis:
     cadd_ar:
-    gatk:
     method: conda
     mip:
     picard:

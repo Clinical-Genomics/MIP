@@ -206,7 +206,7 @@ sub analysis_star_aln {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
@@ -237,7 +237,7 @@ sub analysis_star_aln {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $recipe_resource{core_number},
                 directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
                 memory_allocation               => $recipe_resource{memory},
@@ -253,7 +253,7 @@ sub analysis_star_aln {
         ### SHELL
 
         ## Star aln
-        say {$FILEHANDLE} q{## Aligning reads with } . $recipe_name;
+        say {$filehandle} q{## Aligning reads with } . $recipe_name;
 
         ### Get parameters
         ## Infile(s)
@@ -272,7 +272,7 @@ sub analysis_star_aln {
 
         star_aln(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 align_intron_max    => $active_parameter_href->{align_intron_max},
                 align_mates_gap_max => $active_parameter_href->{align_mates_gap_max},
                 align_sjdb_overhang_min =>
@@ -288,7 +288,7 @@ sub analysis_star_aln {
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
             },
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -305,7 +305,7 @@ sub analysis_star_aln {
         picardtools_addorreplacereadgroups(
             {
                 create_index => q{true},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $outfile_path_prefix
                   . $DOT
                   . q{Aligned.sortedByCoord.out}
@@ -323,10 +323,10 @@ sub analysis_star_aln {
             },
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
-        ## Close FILEHANDLES
-        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+        ## Close filehandleS
+        close $filehandle or $log->logcroak(q{Could not close filehandle});
 
         if ( $recipe_mode == 1 ) {
 

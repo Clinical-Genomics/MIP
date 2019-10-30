@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -149,7 +149,7 @@ sub download_gnomad {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -157,7 +157,7 @@ sub download_gnomad {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -173,11 +173,11 @@ sub download_gnomad {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -198,29 +198,31 @@ sub download_gnomad {
         $DASH . $reference_version . q{-.vcf.gz}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+    my $rtg_memory              = $recipe_resource{memory} - 1 . q{G};
 
     rtg_vcfsubset(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
             keep_info_keys_ref => $info_key{$reference_version},
+            memory             => $rtg_memory,
             outfile_path       => $reformated_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     htslib_tabix(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $reformated_outfile_path,
             preset      => q{vcf},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

@@ -102,7 +102,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

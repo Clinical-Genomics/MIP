@@ -36,14 +36,14 @@ Readonly my $LENGTH_CHR_1 => 248_956_422;
 
 sub variant_effect_predictor {
 
-## Function : Perl wrapper for writing variant_effect_predictor recipe to $FILEHANDLE or return commands array. Based on VEP 90.
+## Function : Perl wrapper for writing variant_effect_predictor recipe to $filehandle or return commands array. Based on VEP 90.
 ## Returns  : @commands
 ## Arguments: $assembly                => Assembly version to use
 ##          : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
 ##          : $cache_directory         => VEP chache directory
 ##          : $custom_annotations_ref  => Custom annotations {REF}
 ##          : $distance                => Modify the distance up and/or downstream between a variant and a transcript for which VEP will assign the upstream_gene_variant or downstream_gene_variant consequences
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $infile_format           => Input file format - one of "ensembl", "vcf", "hgvs", "id"
 ##          : $max_sv_size             => Extend the maximum Structural Variant size VEP can process
@@ -66,7 +66,7 @@ sub variant_effect_predictor {
     my $buffer_size;
     my $cache_directory;
     my $custom_annotations_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $plugins_dir_path;
@@ -111,8 +111,8 @@ sub variant_effect_predictor {
             store       => \$distance,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         fork => {
             allow       => qr/ ^\d+$ /xsm,
@@ -276,7 +276,7 @@ sub variant_effect_predictor {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -291,7 +291,7 @@ sub variant_effect_predictor_install {
 ##          : $auto                   => Run installer without user prompts. Use "a" (API + Faidx/htslib),"l" (Faidx/htslib only), "c" (cache), "f" (FASTA), "p" (plugins) to specify parts to install.
 ##          : $cache_directory        => Set destination directory for cache files
 ##          : $cache_version          => Set cache version to download
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $no_update              => Don't update
 ##          : $no_htslib              => Don't attempt to install Bio::DB::HTS/htslib
 ##          : $plugins_ref            => Vep plugins {REF}
@@ -308,7 +308,7 @@ sub variant_effect_predictor_install {
     my $auto;
     my $cache_directory;
     my $cache_version;
-    my $FILEHANDLE;
+    my $filehandle;
     my $no_htslib;
     my $no_update;
     my $plugins_ref;
@@ -323,7 +323,7 @@ sub variant_effect_predictor_install {
         auto            => { store => \$auto,            strict_type => 1, },
         cache_directory => { store => \$cache_directory, strict_type => 1, },
         cache_version   => { store => \$cache_version,   strict_type => 1, },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         no_update       => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
@@ -402,7 +402,7 @@ sub variant_effect_predictor_install {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

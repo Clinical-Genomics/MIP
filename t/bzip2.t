@@ -107,7 +107,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -139,7 +139,7 @@ my %specific_argument = (
         input           => catfile(qw{ path to file }),
         expected_output => catfile(qw{ path to file }),
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

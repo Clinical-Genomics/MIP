@@ -28,11 +28,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ conda_activate conda_check_env_status conda_create conda_deactivate conda_install };
+    our @EXPORT_OK = qw{ conda_activate conda_create conda_deactivate conda_install };
 }
 
 sub conda_activate {
@@ -40,13 +39,13 @@ sub conda_activate {
 ##Function : Activate conda environment
 ##Returns  : @commands
 ##Arguments: $env_name   => Name of conda environment
-##         : $FILEHANDLE => Filehandle to write to
+##         : $filehandle => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $env_name;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         env_name => {
@@ -54,8 +53,8 @@ sub conda_activate {
             store       => \$env_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
     };
 
@@ -72,67 +71,11 @@ sub conda_activate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
     return @commands;
-}
-
-sub conda_check_env_status {
-
-## Function  : Check if a conda environment is active (returns name of env if true).
-## Returns   :
-## Arguments : $disable_env_check => Disable environment check
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $disable_env_check;
-
-    my $tmpl = {
-        disable_env_check => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            store       => \$disable_env_check,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ### Require deactivate any activate env prior to installation
-
-    ## Unless the active environment is root the expression will return true
-    ##   and print the environment name
-    my $detect_active_conda_env =
-      q?perl -nae 'if( ($_!~/ ^root | ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
-
-    # Pipes the output from the shell command "conda info --envs"
-    #   to $detect_active_conda_env.
-    #   Output is captured in $env_status.
-    my $env_status;
-    run(
-        command => qq{conda info --envs | $detect_active_conda_env},
-        buffer  => \$env_status
-    );
-
-    # Exit if a conda environment is active
-    if ($env_status) {
-
-        $log->warn( q{Found activated conda env: } . $env_status );
-
-        ## Mainly used for running test script in activated
-        ## env not actual install
-        if ( not $disable_env_check ) {
-
-            $log->fatal(q{Run 'conda deactivate' prior to running installation script});
-            exit 1;
-        }
-    }
-    return;
 }
 
 sub conda_create {
@@ -141,7 +84,7 @@ sub conda_create {
 ##Returns  : @commands
 ##Arguments: $conda_channels_ref => Search for packages in specified conda channels {REF}
 ##         : $env_name           => Name of environment to create
-##         : $FILEHANDLE         => Filehandle to write to
+##         : $filehandle         => Filehandle to write to
 ##         : $no_confirmation    => Do not ask for confirmation
 ##         : $packages_ref       => Packages to be installed
 ##         : $quiet              => Do not display progress bar
@@ -151,7 +94,7 @@ sub conda_create {
     ## Flatten argument(s)
     my $conda_channels_ref;
     my $env_name;
-    my $FILEHANDLE;
+    my $filehandle;
     my $no_confirmation;
     my $packages_ref;
     my $quiet;
@@ -179,9 +122,9 @@ sub conda_create {
             store       => \$env_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         no_confirmation => {
             allow       => [ 0, 1 ],
@@ -233,7 +176,7 @@ sub conda_create {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -245,16 +188,16 @@ sub conda_deactivate {
 
 ##Function : Deactivate conda environment
 ##Returns  : @commands
-##Arguments: $FILEHANDLE => Filehandle to write to
+##Arguments: $filehandle => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
     };
 
@@ -265,7 +208,7 @@ sub conda_deactivate {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         },
     );
 
@@ -278,7 +221,7 @@ sub conda_install {
 ##Returns  : @commands
 ##Arguments: $conda_channels_ref => Search for packages in specified conda channels {REF}
 ##         : $env_name           => Name of environment to create
-##         : $FILEHANDLE         => Filehandle to write to
+##         : $filehandle         => Filehandle to write to
 ##         : $no_confirmation    => Do not ask for confirmation
 ##         : $no_update_dep     => Only update dependencies that are required for the package to function
 ##         : $packages_ref       => Packages to be installed
@@ -289,7 +232,7 @@ sub conda_install {
     ## Flatten argument(s)
     my $conda_channels_ref;
     my $env_name;
-    my $FILEHANDLE;
+    my $filehandle;
     my $no_confirmation;
     my $no_update_dep;
     my $packages_ref;
@@ -318,9 +261,9 @@ sub conda_install {
             store       => \$env_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         no_confirmation => {
             allow       => [ 0, 1 ],
@@ -386,7 +329,7 @@ sub conda_install {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

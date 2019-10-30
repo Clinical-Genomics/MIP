@@ -18,9 +18,6 @@ use warnings;
 use Readonly;
 use autodie;
 
-## MIPs lib/
-use MIP::Constants qw{ $COLON $DOT $NEWLINE $SPACE $UNDERSCORE };
-
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -29,10 +26,7 @@ BEGIN {
     our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{
-      create_temp_dir
-      help
-      print_parameter_defaults };
+    our @EXPORT_OK = qw{ help print_parameter_defaults };
 }
 
 sub help {
@@ -40,15 +34,15 @@ sub help {
 ## Function : Print help text and exit with supplied exit code
 ## Returns  :
 ## Arguments: $exit_code => Exit code
-##          : $USAGE     => Help text
+##          : $usage     => Help text
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $usage;
+
     ## Default(s)
     my $exit_code;
-
-    ## Flatten argument(s)
-    my $USAGE;
 
     my $tmpl = {
         exit_code => {
@@ -57,80 +51,18 @@ sub help {
             store       => \$exit_code,
             strict_type => 1,
         },
-        USAGE => {
+        usage => {
             defined     => 1,
             required    => 1,
-            store       => \$USAGE,
+            store       => \$usage,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {*STDOUT} $USAGE;
+    say {*STDOUT} $usage;
     exit $exit_code;
-}
-
-sub create_temp_dir {
-
-## Function : Create a temporary directory and returns the path to it
-## Returns  : $temp_dir_path
-## Arguments: $directory_base_name  => Base name of directroy
-##          : $directory_path       => Where to create the temporary directory
-##          : $FILEHANDLE           => Filehandle to write to
-##          : $max_expression_value => Max integrer to add to directory_name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $directory_base_name;
-    my $directory_path;
-    my $FILEHANDLE;
-    my $max_expression_value;
-
-    my $tmpl = {
-        directory_base_name => {
-            default     => q{temp_dir},
-            defined     => 1,
-            store       => \$directory_base_name,
-            strict_type => 1,
-        },
-        directory_path => {
-            default     => cwd(),
-            defined     => 1,
-            store       => \$directory_path,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-        max_expression_value => {
-            default     => 1000,
-            defined     => 1,
-            store       => \$max_expression_value,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-
-    my $temp_dir_path = catdir( $directory_path,
-        $directory_base_name . $UNDERSCORE . int rand $max_expression_value );
-
-    if ($FILEHANDLE) {
-
-        gnu_mkdir(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $temp_dir_path,
-                parents          => 1,
-            }
-        );
-    }
-
-    return $temp_dir_path;
 }
 
 sub print_parameter_defaults {

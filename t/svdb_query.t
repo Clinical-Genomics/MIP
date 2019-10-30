@@ -68,7 +68,7 @@ Readonly my $EVENT_OVERLAP => 0.6;
 my @function_base_commands = qw{ svdb --query };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

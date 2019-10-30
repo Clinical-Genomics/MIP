@@ -98,7 +98,7 @@ diag(   q{Test genmod_compound from Genmod.pm v}
 my @function_base_commands = qw{ genmod };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

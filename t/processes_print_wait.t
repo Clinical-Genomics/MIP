@@ -81,13 +81,13 @@ diag(
 "Test print_wait $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, '>', \$file_content
+open $filehandle, '>', \$file_content
   or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
 
 # Process number to test
@@ -107,12 +107,12 @@ foreach my $process_counter (@process_counters) {
             process_counter       => $process_counter,
             max_process_number    => $MAX_PROCESS_NUMBER,
             process_batches_count => $process_batch_count,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
         }
       );
 }
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Test
 is( $returned_process_batch_count[0], 1, q{Did not print wait} );

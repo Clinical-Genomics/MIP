@@ -72,9 +72,7 @@ gatk_path:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 gatk_use_new_qual_calculator:
   associated_recipe:
    - gatk_haplotypecaller
@@ -331,9 +329,7 @@ picardtools_path:
    - picardtools_mergesamfiles
    - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 replace_iupac:
   associated_recipe:
    - mip
@@ -1533,7 +1529,7 @@ upd_ar:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:

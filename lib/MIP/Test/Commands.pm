@@ -150,7 +150,7 @@ sub test_command {
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 ## Arguments: $array_args_ref         => Array input values
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $hash_arg_href          => Hash input key value pairs
 ##          : $scalar_arg             => Scalar input value
 ##          : $stderrfile_path        => Stderrfile path
@@ -162,7 +162,7 @@ sub test_command {
 
     ## Flatten argument(s)
     my $array_args_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $hash_arg_href;
     my $scalar_arg;
     my $stderrfile_path;
@@ -176,8 +176,8 @@ sub test_command {
             store       => \$array_args_ref,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         hash_arg_href => {
             default     => {},
@@ -240,7 +240,7 @@ sub test_command {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -385,8 +385,8 @@ sub test_function {
                 );
             }
 
-            ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq q{FILEHANDLE} ) {
+            ## Special case for test of filehandle. Does not return @commands
+            if ( $argument eq q{filehandle} ) {
 
                 test_write_to_file(
                     {
@@ -404,8 +404,8 @@ sub test_function {
         }
         else {
 
-            ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq q{FILEHANDLE} ) {
+            ## Special case for test of filehandle. Does not return @commands
+            if ( $argument eq q{filehandle} ) {
 
                 test_write_to_file(
                     {

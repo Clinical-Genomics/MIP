@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -225,7 +225,9 @@ sub pipeline_download_rd_dna {
         }
     }
 
-    return if ( not @{ $active_parameter_href->{runstatus_paths} } );
+    return
+      if ( not exists $active_parameter_href->{runstatus_paths}
+        or not @{ $active_parameter_href->{runstatus_paths} } );
 
     ## Check downloaded file exists and has a file size greater than zero
     download_runstatus(

@@ -72,7 +72,7 @@ diag(   q{Test slurm_build_sbatch_header from SLURM.pm v}
 my $sbatch_shebang = q{#SBATCH };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => $sbatch_shebang,
     },
@@ -146,7 +146,7 @@ foreach my $key ( keys %argument ) {
 # Fake arguments
 my @args = (
     project_id => 1,
-    FILEHANDLE => undef,
+    filehandle => undef,
 );
 
 ## Coderef - enables generalized use of generate call

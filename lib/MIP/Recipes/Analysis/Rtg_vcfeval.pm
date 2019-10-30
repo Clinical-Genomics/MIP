@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -144,7 +144,7 @@ sub analysis_rtg_vcfeval {
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bedtools qw{ bedtools_intersectbed };
+    use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
@@ -231,7 +231,7 @@ sub analysis_rtg_vcfeval {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -239,7 +239,7 @@ sub analysis_rtg_vcfeval {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -262,7 +262,7 @@ sub analysis_rtg_vcfeval {
             not
             exists $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id} );
 
-        say {$FILEHANDLE} q{### Processing NIST ID: }
+        say {$filehandle} q{### Processing NIST ID: }
           . $nist_id
           . q{ reference version: }
           . $nist_version;
@@ -283,36 +283,36 @@ sub analysis_rtg_vcfeval {
 
             my $bedtools_outfile_path =
               catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.bed} );
-            bedtools_intersectbed(
+            bedtools_intersect(
                 {
-                    FILEHANDLE         => $FILEHANDLE,
+                    filehandle         => $filehandle,
                     infile_path        => $nist_bed_file_path,
                     intersectfile_path => $exome_target_bed_file,
                     stdoutfile_path    => $bedtools_outfile_path,
                     with_header        => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Expect input file from intersect
             $nist_bed_file_path = $bedtools_outfile_path;
         }
 
-        say {$FILEHANDLE} q{## Create sample specific directory};
+        say {$filehandle} q{## Create sample specific directory};
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $rtg_outdirectory_path,
                 parents          => 1,
             }
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Adding sample name to baseline calls};
+        say {$filehandle} q{## Adding sample name to baseline calls};
         bcftools_rename_vcf_samples(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 index               => 1,
                 index_type          => q{tbi},
                 infile              => $nist_vcf_file_path,
@@ -323,10 +323,10 @@ sub analysis_rtg_vcfeval {
             }
         );
 
-        say {$FILEHANDLE} q{## Compressing and indexing sample calls};
+        say {$filehandle} q{## Compressing and indexing sample calls};
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 index       => 1,
                 index_type  => q{tbi},
                 infile_path => $infile_path,
@@ -336,20 +336,22 @@ sub analysis_rtg_vcfeval {
             }
         );
 
-        say {$FILEHANDLE} q{## Remove potential old Rtg vcfeval outdir};
+        say {$filehandle} q{## Remove potential old Rtg vcfeval outdir};
         my $nist_version_rtg_outdirectory_path =
           catfile( $rtg_outdirectory_path, $nist_version );
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 infile_path => $nist_version_rtg_outdirectory_path,
                 recursive   => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Rtg vcfeval};
+        say {$filehandle} q{## Rtg vcfeval};
+        my $rtg_memory = $recipe_resource{memory} - 1 . q{G};
+
         rtg_vcfeval(
             {
                 baselinefile_path    => $nist_file_path_prefix . $DOT . q{vcf.gz},
@@ -358,7 +360,8 @@ sub analysis_rtg_vcfeval {
                     $rtg_outdirectory_path, $outfile_name_prefix . $DOT . q{vcf.gz}
                 ),
                 eval_region_file_path => $nist_bed_file_path,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
+                memory                => $rtg_memory,
                 outputdirectory_path  => $nist_version_rtg_outdirectory_path,
                 sample_id             => $sample_id,
                 sdf_template_file_path =>
@@ -369,11 +372,11 @@ sub analysis_rtg_vcfeval {
             }
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandle
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

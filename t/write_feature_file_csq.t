@@ -62,7 +62,7 @@ diag(   q{Test write_feature_file_csq from Vcfparser.pm v}
 my $range_file_content;
 
 ## Store range feature file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$range_file_content
+open my $filehandle, q{>}, \$range_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $range_file_content
@@ -74,7 +74,7 @@ open my $FILEHANDLE, q{>}, \$range_file_content
 my $select_file_content;
 
 ## Store select file content in memory by using referenced variable
-open my $SELECT_FH, q{>}, \$select_file_content
+open my $select_fh, q{>}, \$select_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $select_file_content
@@ -93,16 +93,16 @@ my %vcf_record = (
 
 my $info_field_counter = write_feature_file_csq(
     {
-        FILEHANDLE         => $FILEHANDLE,
+        filehandle         => $filehandle,
         info_field_counter => 0,
-        SELECT_FH          => $SELECT_FH,
+        select_fh          => $select_fh,
         vcf_record_href    => \%vcf_record,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
+close $filehandle;
+close $select_fh;
 
 ## Then write feature file csq transcripts
 my ($ret_range_csq) = $range_file_content =~ /\A CSQ=$range_csq \z/msx;

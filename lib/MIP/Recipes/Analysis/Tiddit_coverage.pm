@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -153,8 +153,8 @@ sub analysis_tiddit_coverage {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_baserecalibration},
-            stream         => q{out},
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -199,7 +199,7 @@ sub analysis_tiddit_coverage {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -207,7 +207,7 @@ sub analysis_tiddit_coverage {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             job_id_href                     => $job_id_href,
@@ -220,19 +220,19 @@ sub analysis_tiddit_coverage {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Generating coverage data from alignment};
+    say {$filehandle} q{## Generating coverage data from alignment};
 
     tiddit_coverage(
         {
             bin_size            => $active_parameter_href->{tiddit_coverage_bin_size},
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $infile_path,
             outfile_path_prefix => $outfile_path_prefix,
             output_wig          => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
-    close $FILEHANDLE;
+    say {$filehandle} $NEWLINE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

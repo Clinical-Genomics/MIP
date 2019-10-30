@@ -27,6 +27,7 @@ use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
+use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -36,7 +37,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -52,13 +53,13 @@ sub check_mip_installation {
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $FILEHANDLE            => Open filehandle
+##          : $filehandle            => Open filehandle
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         active_parameter_href => {
@@ -68,9 +69,9 @@ sub check_mip_installation {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
     };
 
@@ -95,7 +96,7 @@ sub check_mip_installation {
         check_program_installations(
             {
                 env_name     => $active_parameter_href->{environment_name}{$installation},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 installation => $installation,
                 programs_ref => \@programs_to_test,
                 program_test_command_href => \%program_test_cmds,
@@ -110,7 +111,7 @@ sub check_program_installations {
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
 ## Arguments: $env_name                   => Program environment name
-##          : $FILEHANDLE                 => open filehandle
+##          : $filehandle                 => open filehandle
 ##          : $installation               => installation
 ##          : $programs_ref               => Programs to check {REF}
 ##          : $program_test_command_href  => Hash with test commands {REF}
@@ -119,7 +120,7 @@ sub check_program_installations {
 
     ## Flatten argument(s)
     my $env_name;
-    my $FILEHANDLE;
+    my $filehandle;
     my $installation;
     my $programs_ref;
     my $program_test_command_href;
@@ -131,9 +132,9 @@ sub check_program_installations {
             store       => \$env_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         installation => {
             defined     => 1,
@@ -202,7 +203,7 @@ sub check_program_installations {
         return;
     }
 
-    say {$FILEHANDLE} qq{## Testing programs installed in $env_name};
+    say {$filehandle} qq{## Testing programs installed in $env_name};
 
     ## Build header string to echo
     my @header = ( q{\n} . ( $HASH_SIGN x $COLUMN_WIDTH x $COLUMNS ) . q{\n\n} );
@@ -212,11 +213,11 @@ sub check_program_installations {
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             strings_ref           => \@header,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Print programs selected for installation in sets
     my $program_iterator = natatime $COLUMNS, @sorted_programs;
@@ -235,26 +236,26 @@ sub check_program_installations {
           . $DOUBLE_QUOTE;
         gnu_printf(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 format_string => $format_string,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
     }
 
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             strings_ref           => [q{\n\tTesting installation\n}],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Load env
-    say   {$FILEHANDLE} qq{## Load environment: $env_name};
-    say   {$FILEHANDLE} join $SPACE, @env_method_load_cmds;
-    print {$FILEHANDLE} $NEWLINE;
+    say   {$filehandle} qq{## Load environment: $env_name};
+    say   {$filehandle} join $SPACE, @env_method_load_cmds;
+    print {$filehandle} $NEWLINE;
 
     ## Create success and fail case
     my $installation_outcome = uc $installation;
@@ -281,15 +282,33 @@ sub check_program_installations {
     my $success_case = qq?&& { $success_echo; $installation_outcome=success; }?;
     my $fail_case    = qq?|| { $fail_echo; }?;
 
+    ## Enabling querying of $?
+    gnu_set(
+        {
+            filehandle    => $filehandle,
+            unset_errexit => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     ## Write test oneliner
-    say {$FILEHANDLE} q{## Test programs and capture outcome in bash variable};
-    print {$FILEHANDLE} join $SPACE, @perl_commands;
-    say {$FILEHANDLE} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
+    say {$filehandle} q{## Test programs and capture outcome in bash variable};
+    print {$filehandle} join $SPACE, @perl_commands;
+    say {$filehandle} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
+
+    ## Restore errexit
+    gnu_set(
+        {
+            filehandle  => $filehandle,
+            set_errexit => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Unload env
-    say   {$FILEHANDLE} qq{## Unload environment: $env_name};
-    say   {$FILEHANDLE} join $SPACE, @env_method_unload_cmds;
-    print {$FILEHANDLE} $NEWLINE;
+    say   {$filehandle} qq{## Unload environment: $env_name};
+    say   {$filehandle} join $SPACE, @env_method_unload_cmds;
+    print {$filehandle} $NEWLINE;
 
     return 1;
 }
@@ -299,7 +318,7 @@ sub update_config {
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
 ## Arguments: $env_name_href     => Program environment name hash {REF}
-##          : $FILEHANDLE        => open filehandle
+##          : $filehandle        => open filehandle
 ##          : $installations_ref => Array with installations {REF}
 ##          : $log               => Log
 ##          : $pipeline          => Pipeline
@@ -310,7 +329,7 @@ sub update_config {
 
     ## Flatten argument(s)
     my $env_name_href;
-    my $FILEHANDLE;
+    my $filehandle;
     my $installations_ref;
     my $log;
     my $pipeline;
@@ -325,9 +344,9 @@ sub update_config {
             store       => \$env_name_href,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         installations_ref => {
             default     => [],
@@ -414,13 +433,13 @@ q{MIP will not attempt to update config as the specified path does not exist.}
     ## Copy the config
     gnu_cp(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             force        => 1,
             infile_path  => $load_config_path,
             outfile_path => $save_config_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Load config
     my %config             = load_yaml( { yaml_file => $load_config_path, } );
@@ -428,16 +447,16 @@ q{MIP will not attempt to update config as the specified path does not exist.}
 
     ## Broadcast message
     my $status_message = q{## Updating/writing config if the installation was succesful};
-    say {$FILEHANDLE} q{## Updating/writing config if the installation was succesful};
+    say {$filehandle} q{## Updating/writing config if the installation was succesful};
     gnu_echo(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             strings_ref => [$status_message],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{SUCCESS_COUNTER=0};
+    say {$filehandle} q{SUCCESS_COUNTER=0};
   CONFIG_ENV_NAME:
     foreach my $config_env_name ( keys %config_environment ) {
         if (
@@ -492,7 +511,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
             $success_check .= $TAB . $fail_echo . $NEWLINE;
             $success_check .= q{fi};
 
-            say {$FILEHANDLE} $success_check . $NEWLINE;
+            say {$filehandle} $success_check . $NEWLINE;
         }
         if ( not $config_environment{$config_env_name}{installation} ) {
             $log->warn(
@@ -500,19 +519,19 @@ qq{Automatic update of $load_config_path not possible. The config lacks informat
             );
             gnu_rm(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     force       => 1,
                     infile_path => $save_config_path,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
             return;
         }
     }
 
     ## Rm temporary config if no installation was free from errors
     if ($write_config) {
-        say {$FILEHANDLE}
+        say {$filehandle}
           q{## Remove copied template config if no installation was succesful};
 
         # build_cleanup_check
@@ -526,7 +545,7 @@ qq{Automatic update of $load_config_path not possible. The config lacks informat
         my $cleanup_check = q{if [[ "$SUCCESS_COUNTER" -eq 0 ]]; then} . $NEWLINE;
         $cleanup_check .= $TAB . $rm_temp_config . $NEWLINE;
         $cleanup_check .= q{fi};
-        say {$FILEHANDLE} $cleanup_check;
+        say {$filehandle} $cleanup_check;
     }
     return;
 }

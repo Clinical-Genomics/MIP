@@ -98,7 +98,7 @@ diag(   q{Test gnu_unset from Bash.pm v}
 my @function_base_commands = qw{ unset };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -203,7 +203,7 @@ sub analysis_sambamba_depth {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -211,7 +211,7 @@ sub analysis_sambamba_depth {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -226,7 +226,7 @@ sub analysis_sambamba_depth {
     ### SHELL:
 
     ## sambamba_depth
-    say {$FILEHANDLE} q{## Annotating bed from alignment};
+    say {$filehandle} q{## Annotating bed from alignment};
 
     ## Get parameters
     my $sambamba_filter =
@@ -252,7 +252,7 @@ sub analysis_sambamba_depth {
     sambamba_depth(
         {
             depth_cutoffs_ref => \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             filter            => $sambamba_filter,
             fix_mate_overlap  => 1,
             infile_path       => $infile_path,
@@ -262,9 +262,9 @@ sub analysis_sambamba_depth {
             region            => $active_parameter_href->{sambamba_depth_bed},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

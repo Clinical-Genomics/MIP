@@ -105,22 +105,22 @@ my $file_content;
 my $select_file_content;
 
 ## Open files for writing
-open my $SELECT_VCF_FH, q{>}, \$select_file_content
+open my $select_vcf_fh, q{>}, \$select_file_content
   or croak( q{Cannot open } . $select_file_content . $COLON . $OS_ERROR, $NEWLINE );
 
-open my $VCF_OUT_FH, q{>}, \$file_content
+open my $vcf_out_fh, q{>}, \$file_content
   or croak( q{Cannot open } . $file_content . $COLON . $OS_ERROR, $NEWLINE );
 
 write_meta_data(
     {
-        FILEHANDLE       => $VCF_OUT_FH,
+        filehandle       => $vcf_out_fh,
         meta_data_href   => \%meta_data,
-        SELECTFILEHANDLE => $SELECT_VCF_FH,
+        selectfilehandle => $select_vcf_fh,
     }
 );
 
-close $SELECT_VCF_FH;
-close $VCF_OUT_FH;
+close $select_vcf_fh;
+close $vcf_out_fh;
 
 my $expected_header = <<'EOF';
 ##fileformat=VCFv4.2

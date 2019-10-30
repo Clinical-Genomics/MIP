@@ -196,7 +196,7 @@ sub analysis_bcftools_merge {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -204,7 +204,7 @@ sub analysis_bcftools_merge {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -217,7 +217,7 @@ sub analysis_bcftools_merge {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Test if the case has samples to merge
     if ( scalar @infile_paths > 1 ) {
@@ -229,7 +229,7 @@ sub analysis_bcftools_merge {
             ## Index files before merging
             bcftools_view_and_index_vcf(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     infile_path         => $infile_path,
                     outfile_path_prefix => $infile_path_prefix,
                     output_type         => q{b},
@@ -238,35 +238,35 @@ sub analysis_bcftools_merge {
         }
 
         ## Merge sample VCFs
-        say {$FILEHANDLE} q{## Merge bcf files};
+        say {$filehandle} q{## Merge bcf files};
         @infile_paths = map { $_ . q{.bcf} } @infile_path_prefixes;
         bcftools_merge(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => \@infile_paths,
                 outfile_path     => $outfile_path,
                 output_type      => q{v},
             }
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     ## Otherwise just rename the sample
     else {
-        say {$FILEHANDLE}
+        say {$filehandle}
           q{## Renaming single sample case to facilitate downstream processing};
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_paths[0],
                 outfile_path => $outfile_path,
             }
         );
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

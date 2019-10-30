@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,10 +61,10 @@ diag(   q{Test picardtools_markduplicates from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ MarkDuplicates };
+my @function_base_commands = qw{ picard MarkDuplicates };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -132,7 +132,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ picard java };
 
 my %specific_java_argument = (
     java_jar => {

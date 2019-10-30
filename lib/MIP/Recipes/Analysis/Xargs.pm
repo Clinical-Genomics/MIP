@@ -35,10 +35,10 @@ BEGIN {
 
 sub xargs_command {
 
-##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
+##Function : Creates the command line for xargs. Writes to sbatch filehandle and opens xargs filehandle
 ##Returns  : xargs_file_counter, $xargs_file_path
 ##Arguments: $core_number               => Number of cores to use
-##         : $FILEHANDLE                => Sbatch filehandle to write to
+##         : $filehandle                => Sbatch filehandle to write to
 ##         : $file_path                 => File path
 ##         : $first_command             => Inital command
 ##         : $java_jar                  => Java jar
@@ -49,13 +49,13 @@ sub xargs_command {
 ##         : $recipe_info_path          => Program info path
 ##         : $temp_directory            => Redirect tmp files to java temp {Optional}
 ##         : $xargs_file_counter        => Xargs file counter
-##         : $XARGSFILEHANDLE           => XARGS filehandle to write to
+##         : $xargsfilehandle           => XARGS filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $core_number;
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_path;
     my $first_command;
     my $java_jar;
@@ -63,7 +63,7 @@ sub xargs_command {
     my $memory_allocation;
     my $picard_use_barclay_parser;
     my $recipe_info_path;
-    my $XARGSFILEHANDLE;
+    my $xargsfilehandle;
     my $temp_directory;
 
     ## Default(s)
@@ -77,7 +77,7 @@ sub xargs_command {
             strict_type => 1,
             store       => \$core_number
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        filehandle => { required => 1, defined => 1, store => \$filehandle },
         file_path  => {
             required    => 1,
             defined     => 1,
@@ -103,7 +103,7 @@ sub xargs_command {
           { strict_type => 1, store => \$picard_use_barclay_parser },
         recipe_info_path => { strict_type => 1, store => \$recipe_info_path },
         temp_directory   => { strict_type => 1, store => \$temp_directory },
-        XARGSFILEHANDLE    => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
+        xargsfilehandle    => { required => 1, defined => 1, store => \$xargsfilehandle },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -140,13 +140,13 @@ sub xargs_command {
     ## Read xargs command file
     gnu_cat(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => [$xargs_file_path],
         }
     );
 
     # Pipe
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     my @commands;
     if ( ( defined $first_command ) && ( $first_command eq q{java} ) ) {
@@ -169,7 +169,7 @@ sub xargs_command {
 
     xargs(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             max_procs          => $core_number,
             null_character     => $null_character,
             replace_str        => 1,
@@ -177,10 +177,10 @@ sub xargs_command {
             verbose            => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     # Open xargs file for writing
-    open $XARGSFILEHANDLE, q{>}, $xargs_file_path
+    open $xargsfilehandle, q{>}, $xargs_file_path
       or $log->logdie(
         q{Cannot write to '} . $xargs_file_path . q{' :} . $OS_ERROR . $NEWLINE x 2 );
 

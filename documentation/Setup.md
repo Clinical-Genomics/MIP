@@ -54,8 +54,8 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [MultiQC] (version: 1.6)
 - [Peddy] (version: 0.4.2)
 - [PicardTools] (version: 2.18.14)
-- [PLINK2] (version: 1.90b3x35)
-- [rtg-tools] (version: 3.9.1)
+- [PLINK] (version: 1.90b3x35)
+- [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.9)
 - [Stranger] (version: 0.5.4)
@@ -160,7 +160,7 @@ MIP will split the variants into two sets (clinical a.k.a "selected" and researc
 [Peddy]: https://github.com/brentp/peddy
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
 [PicardTools]: http://broadinstitute.github.io/picard/
-[PLINK2]: https://www.cog-genomics.org/plink2
+[PLINK]: https://www.cog-genomics.org/plink2
 [rtg-tools]: https://github.com/RealTimeGenomics/rtg-tools
 [Sambamba]: http://lomereiter.github.io/sambamba/
 [Samtools]: http://www.htslib.org/

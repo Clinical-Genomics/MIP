@@ -41,7 +41,7 @@ sub install_pip_packages {
 ## Function : Recipe for install pip package(s).
 ## Returns  :
 ## Arguments: $conda_env         => Name of conda environment
-##          : $FILEHANDLE        => Filehandle to write to
+##          : $filehandle        => Filehandle to write to
 ##          : $pip_packages_href => Hash with pip packages and their version numbers {REF}
 ##          : $quiet             => Optionally turn on quiet output
 ##          : $verbose           => Log debug messages
@@ -50,7 +50,7 @@ sub install_pip_packages {
 
     ## Flatten argument(s)
     my $conda_env;
-    my $FILEHANDLE;
+    my $filehandle;
     my $pip_packages_href;
     my $quiet;
     my $verbose;
@@ -62,9 +62,9 @@ sub install_pip_packages {
             store       => \$conda_env,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         pip_packages_href => {
             default => {},
@@ -97,20 +97,20 @@ sub install_pip_packages {
     );
 
     $log->info(q{Writing install instructions for pip packages});
-    say {$FILEHANDLE} q{### Install PIP packages};
+    say {$filehandle} q{### Install PIP packages};
 
     ## Install PIP packages in conda environment
-    say {$FILEHANDLE} q{## Install PIP packages in conda environment:} . $SPACE
+    say {$filehandle} q{## Install PIP packages in conda environment:} . $SPACE
       . $conda_env;
 
     ## Activate conda environment
     conda_activate(
         {
             env_name   => $conda_env,
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Create an array for pip packages that are to be installed from provided hash
     my @packages = _create_package_array(
@@ -123,20 +123,20 @@ sub install_pip_packages {
     ## Install PIP packages
     pip_install(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             packages_ref => \@packages,
             quiet        => $quiet,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Deactivate conda environment};
+    say {$filehandle} q{## Deactivate conda environment};
     conda_deactivate(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

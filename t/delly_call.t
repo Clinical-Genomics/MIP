@@ -67,7 +67,7 @@ diag(   q{Test delly_call from Delly.pm v}
 my @function_base_commands = qw{ delly call };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -230,8 +230,8 @@ sub analysis_cnvnator {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -239,7 +239,7 @@ sub analysis_cnvnator {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -272,17 +272,17 @@ sub analysis_cnvnator {
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
         {
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             human_genome_reference => $human_genome_reference,
             temp_directory         => $outdir_path_prefix,
         }
     );
 
     ## Call to Samtools to create chromosome sequence files (.fa) used by Cnvnator
-    say {$FILEHANDLE} q{## Create by cnvnator required 'chr.fa' files};
+    say {$filehandle} q{## Create by cnvnator required 'chr.fa' files};
     samtools_create_chromosome_files(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             infile_path        => $human_genome_reference,
             max_process_number => $core_number,
             regions_ref        => \@size_ordered_contigs,
@@ -290,16 +290,16 @@ sub analysis_cnvnator {
             temp_directory     => $outdir_path_prefix,
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## cnvnator
-    say {$FILEHANDLE} q{## cnvnator};
+    say {$filehandle} q{## cnvnator};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            filehandle         => $filehandle,
+            xargsfilehandle    => $xargsfilehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
             core_number        => $core_number,
@@ -324,10 +324,10 @@ sub analysis_cnvnator {
                 regions_ref      => [$contig],
                 stdoutfile_path  => $stdbasefile_path_prefix . $DOT . q{stdout.txt},
                 stderrfile_path  => $stdbasefile_path_prefix . $DOT . q{stderr.txt},
-                FILEHANDLE       => $XARGSFILEHANDLE,
+                filehandle       => $xargsfilehandle,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cnvnator_histogram(
             {
@@ -335,7 +335,7 @@ sub analysis_cnvnator {
                 regions_ref             => [$contig],
                 cnv_bin_size            => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $outdir_path_prefix,
-                FILEHANDLE              => $XARGSFILEHANDLE,
+                filehandle              => $xargsfilehandle,
                 stdoutfile_path         => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{histogram.stdout.txt},
@@ -344,14 +344,14 @@ sub analysis_cnvnator {
                   . q{histogram.stderr.txt},
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cnvnator_statistics(
             {
                 infile_path     => $root_file,
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 stdoutfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{statistics.stdout.txt},
@@ -360,14 +360,14 @@ sub analysis_cnvnator {
                   . q{statistics.stderr.txt},
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cnvnator_partition(
             {
                 infile_path     => $root_file,
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 stdoutfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{partition.stdout.txt},
@@ -376,7 +376,7 @@ sub analysis_cnvnator {
                   . q{partition.stderr.txt},
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cnvnator_calling(
             {
@@ -388,13 +388,13 @@ sub analysis_cnvnator {
                   . q{cnvnator},
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{calling.stderr.txt},
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         cnvnator_convert_to_vcf(
             {
@@ -404,25 +404,25 @@ sub analysis_cnvnator {
                   . $UNDERSCORE
                   . q{convert_to_vcf.stderr.txt},
                 referencedirectory_path => $outdir_path_prefix,
-                FILEHANDLE              => $XARGSFILEHANDLE,
+                filehandle              => $xargsfilehandle,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## Write sbatch code to supplied filehandle to concatenate variants in vcf format.
-    say {$FILEHANDLE} q{## Format the VCF};
+    say {$filehandle} q{## Format the VCF};
 
     ## Store infiles for bcftools concat
     my @concat_infile_paths;
 
-    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    say {$filehandle} q{## Adding sample id instead of file prefix};
     my $rename_sample = first_value { $sample_id eq $_ }
     @{ $active_parameter_href->{sample_ids} };
 
     bcftools_create_reheader_samples_file(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             sample_ids_ref => [$rename_sample],
             temp_directory => $outdir_path_prefix,
         }
@@ -450,7 +450,7 @@ sub analysis_cnvnator {
         bcftools_rename_vcf_samples(
             {
                 create_sample_file  => 0,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 index               => 0,
                 infile              => $cnvnator_outfile_path,
                 outfile_path_prefix => $fixed_vcffile_path_prefix,
@@ -463,29 +463,29 @@ sub analysis_cnvnator {
         ## Add contigs to header
         bcftools_annotate(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 headerfile_path => catfile( $outdir_path_prefix, q{contig_header.txt} ),
                 infile_path     => $fixed_vcffile_path_prefix . $outfile_suffix,
                 outfile_path    => $fixed_header_vcffile_path,
                 output_type     => q{v},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    say {$FILEHANDLE} q{## Concatenate VCFs};
+    say {$filehandle} q{## Concatenate VCFs};
     bcftools_concat(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@concat_infile_paths,
             outfile_path     => $outfile_path,
             output_type      => q{v},
             rm_dups          => 0,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -518,22 +518,22 @@ sub analysis_cnvnator {
 sub _add_contigs_to_vcfheader {
 
 ## Function : Change the sample ID in the VCF header
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $human_genome_reference => Human genome reference
 ##          : $temp_directory         => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $human_genome_reference;
     my $temp_directory;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         human_genome_reference => {
             defined  => 1,
@@ -557,12 +557,12 @@ sub _add_contigs_to_vcfheader {
     ## Write contig ID from header
     $regexp .= q?{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 
-    print {$FILEHANDLE} $regexp . $SPACE;
+    print {$filehandle} $regexp . $SPACE;
 
     # Reference fai file
-    print {$FILEHANDLE} $human_genome_reference . $DOT . q{fai} . $SPACE;
+    print {$filehandle} $human_genome_reference . $DOT . q{fai} . $SPACE;
 
-    say {$FILEHANDLE} q{>} . $SPACE . catfile( $temp_directory, q{contig_header.txt} ),
+    say {$filehandle} q{>} . $SPACE . catfile( $temp_directory, q{contig_header.txt} ),
       $NEWLINE;
 
     return;

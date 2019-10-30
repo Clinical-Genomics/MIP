@@ -95,7 +95,7 @@ diag(   q{Test pigz from Pigz v}
 my @function_base_commands = qw{ pigz };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -108,7 +108,7 @@ my %required_argument = (
         input           => q{infile_path},
         expected_output => q{infile_path},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

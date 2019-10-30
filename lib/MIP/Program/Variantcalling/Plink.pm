@@ -14,6 +14,7 @@ use utf8;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -22,23 +23,22 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
+    our @EXPORT_OK = qw{ plink_calculate_inbreeding
+      plink_check_sex_chroms
+      plink_create_mibs
+      plink_fix_fam_ped_map_freq
+      plink_sex_check plink_variant_pruning };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
-Readonly my $COMMA => q{,};
 
 sub plink_variant_pruning {
 
 ## Function : Perl wrapper for writing Plink recipe to prune variants and create unique IDs. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $const_fid           => Assign case id to all samples in file
-##          : $FILEHANDLE          => Filehandle to write to
+##          : $filehandle          => Filehandle to write to
 ##          : $indep               => Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
 ##          : $indep_step_size     => Indep step size (variant ct)
 ##          : $indep_vif_threshold => Indep vif threshold
@@ -55,7 +55,7 @@ sub plink_variant_pruning {
 
     ## Flatten argument(s)
     my $const_fid;
-    my $FILEHANDLE;
+    my $filehandle;
     my $indep;
     my $indep_step_size;
     my $indep_vif_threshold;
@@ -76,7 +76,7 @@ sub plink_variant_pruning {
             store       => \$const_fid,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         indep      => {
             required    => 1,
             store       => \$indep,
@@ -126,7 +126,7 @@ sub plink_variant_pruning {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     if ($make_bed) {
 
@@ -168,7 +168,7 @@ sub plink_variant_pruning {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -181,7 +181,7 @@ sub plink_fix_fam_ped_map_freq {
 ## Arguments: $allow_no_sex          => Allow no sex for sample ids
 ##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
 ##          : $fam_file_path         => Fam file path
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $freqx                 => Writes a minor allele frequency report
 ##          : $make_just_fam         => Just update fam file
 ##          : $outfile_prefix        => Outfile prefix
@@ -194,7 +194,7 @@ sub plink_fix_fam_ped_map_freq {
     my $allow_no_sex;
     my $binary_fileset_prefix;
     my $fam_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $make_just_fam;
     my $outfile_prefix;
     my $stderrfile_path;
@@ -220,7 +220,7 @@ sub plink_fix_fam_ped_map_freq {
             store       => \$fam_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         freqx      => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -250,7 +250,7 @@ sub plink_fix_fam_ped_map_freq {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -287,7 +287,7 @@ sub plink_fix_fam_ped_map_freq {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -301,7 +301,7 @@ sub plink_calculate_inbreeding {
 ## Returns  : @commands
 ## Arguments: $binary_fileset_prefix   => Specify .bed + .bim + .fam prefix
 ##          : $extract_file            => Exclude all variants not named in the file
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $het                     => Reports method-of-moments estimates
 ##          : $inbreeding_coefficients => Estimate inbreeding coefficients
 ##          : $outfile_prefix          => Outfile prefix
@@ -313,7 +313,7 @@ sub plink_calculate_inbreeding {
     ## Flatten argument(s)
     my $binary_fileset_prefix;
     my $extract_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $inbreeding_coefficients;
     my $outfile_prefix;
     my $stderrfile_path;
@@ -356,7 +356,7 @@ sub plink_calculate_inbreeding {
             store       => \$extract_file,
             strict_type => 1,
         },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        filehandle      => { store => \$filehandle, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
 
     };
@@ -364,7 +364,7 @@ sub plink_calculate_inbreeding {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -397,7 +397,7 @@ sub plink_calculate_inbreeding {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -410,7 +410,7 @@ sub plink_create_mibs {
 ## Function : Perl wrapper for writing Plink recipe to create .mibs per case. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $cluster         => Perform IBS clustering
-##          : $FILEHANDLE      => Filehandle to write to
+##          : $filehandle      => Filehandle to write to
 ##          : $map_file_path   => Map file path
 ##          : $matrix          => Create a N x N matrix of genome-wide average IBS pairwise identities
 ##          : $outfile_prefix  => Outfile prefix
@@ -420,7 +420,7 @@ sub plink_create_mibs {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $map_file_path;
     my $outfile_prefix;
     my $ped_file_path;
@@ -431,14 +431,14 @@ sub plink_create_mibs {
     my $matrix;
 
     my $tmpl = {
-        ped_file_path => { required => 1, store => \$ped_file_path, strict_type => 1, },
-        map_file_path => { required => 1, store => \$map_file_path, strict_type => 1, },
-        cluster       => {
+        cluster => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$cluster,
             strict_type => 1,
         },
+        filehandle    => { store    => \$filehandle, },
+        map_file_path => { required => 1, store => \$map_file_path, strict_type => 1, },
         matrix => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -446,14 +446,14 @@ sub plink_create_mibs {
             strict_type => 1,
         },
         outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
+        ped_file_path  => { required => 1, store => \$ped_file_path,  strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     push @commands, q{--ped} . $SPACE . $ped_file_path;
 
@@ -481,7 +481,7 @@ sub plink_create_mibs {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -495,7 +495,7 @@ sub plink_check_sex_chroms {
 ## Function : Perl wrapper for writing Plink recipe to check sex chromosomes. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $make_bed              => Save data in plink binary format
 ##          : $no_fail               => Do not fail when no variants would be affected by split_x
 ##          : $outfile_prefix        => Outfile prefix
@@ -507,7 +507,7 @@ sub plink_check_sex_chroms {
 
     ## Flatten argument(s)
     my $binary_fileset_prefix;
-    my $FILEHANDLE;
+    my $filehandle;
     my $make_bed;
     my $outfile_prefix;
     my $regions_ref;
@@ -523,7 +523,7 @@ sub plink_check_sex_chroms {
             store       => \$binary_fileset_prefix,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         make_bed   => { store => \$make_bed, strict_type => 1, },
         no_fail => {
             allow       => [ 0, 1 ],
@@ -545,7 +545,7 @@ sub plink_check_sex_chroms {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -575,7 +575,7 @@ sub plink_check_sex_chroms {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -590,7 +590,7 @@ sub plink_sex_check {
 ## Returns  : @commands
 ## Arguments: $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
 ##          : $extract_file          => Exclude all variants not named in the file
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $outfile_prefix        => Outfile prefix
 ##          : $read_freqfile_path    => Read from frequency file path
 ##          : $sex_check_min_f       => Sex check minimum F [female male]
@@ -601,7 +601,7 @@ sub plink_sex_check {
     ## Flatten argument(s)
     my $binary_fileset_prefix;
     my $extract_file;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_prefix;
     my $read_freqfile_path;
     my $sex_check_min_f;
@@ -613,19 +613,19 @@ sub plink_sex_check {
             store       => \$binary_fileset_prefix,
             strict_type => 1,
         },
-        extract_file => { store => \$extract_file, strict_type => 1, },
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        extract_file   => { store    => \$extract_file, strict_type => 1, },
+        filehandle     => { store    => \$filehandle, },
         outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
         read_freqfile_path => { store => \$read_freqfile_path, strict_type => 1, },
-        sex_check_min_f    => { store => \$sex_check_min_f,    strict_type => 1, },
-        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
+        sex_check_min_f    => { store => \$sex_check_min_f, strict_type => 1, },
+        stderrfile_path    => { store => \$stderrfile_path, strict_type => 1, },
 
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2};
+    my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -657,7 +657,7 @@ sub plink_sex_check {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

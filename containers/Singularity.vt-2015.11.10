@@ -2,7 +2,7 @@ Bootstrap: docker
 From: ubuntu:xenial
 
 %help
-    This is a container for installing Chromograph version 0.1
+    This is a container for installing vt version 2015.11.10
 
 %labels
     Maintainer Clinical-Genomics/MIP
@@ -51,16 +51,7 @@ From: ubuntu:xenial
     conda config --add channels bioconda
 
     ## Install conda packages
-    conda install --yes pip python=3.7
+    conda install --yes vt=2015.11.10
 
     ## Clean up after conda
     /opt/conda/bin/conda clean -tipsy
-
-    ## Clone git repository
-    git clone https://github.com/mikaell/chromograph.git /opt/conda/share/chromograph
-
-    ## Move to chromograph directory
-    cd /opt/conda/share/chromograph
-
-    ## Install
-    python -m pip install --editable .

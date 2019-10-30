@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,24 +65,25 @@ my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given isntall parameters
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{install_rd_rna_active_parameter}, } );
+$active_parameter{reference_dir} = catdir(qw{ a dir });
 
 my $is_ok = install_singularity_containers(
     {
-        conda_env          => $active_parameter{environment_name}{emip},
-        conda_env_path     => $active_parameter{emip}{conda_prefix_path},
-        container_dir_path => $active_parameter{emip}{container_dir_path},
-        container_href     => $active_parameter{emip}{singularity},
-        FILEHANDLE         => $FILEHANDLE,
+        active_parameter_href => \%active_parameter,
+        conda_env_path        => $active_parameter{emip}{conda_prefix_path},
+        container_dir_path    => $active_parameter{emip}{container_dir_path},
+        container_href        => $active_parameter{emip}{singularity},
+        filehandle            => $filehandle,
     }
 );
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed install singularity container recipe } );

@@ -37,9 +37,9 @@ BEGIN {
 
 sub sambamba_view {
 
-## Function : Perl wrapper for writing sambamba view recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba view recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $output_format          => Output format
@@ -53,7 +53,7 @@ sub sambamba_view {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
@@ -67,7 +67,7 @@ sub sambamba_view {
     my $with_header;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
+        filehandle  => { required => 1, store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -151,7 +151,7 @@ sub sambamba_view {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -160,9 +160,9 @@ sub sambamba_view {
 
 sub sambamba_index {
 
-## Function : Perl wrapper for writing sambamba index recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba index recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $show_progress          => Show progress
 ##          : $stderrfile_path        => Stderrfile path
@@ -171,7 +171,7 @@ sub sambamba_index {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -180,7 +180,7 @@ sub sambamba_index {
     my $show_progress;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
+        filehandle  => { required => 1, store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -221,7 +221,7 @@ sub sambamba_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -230,9 +230,9 @@ sub sambamba_index {
 
 sub sambamba_sort {
 
-## Function : Perl wrapper for writing sambamba sort recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba sort recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $memory_limit           => Approximate total memory limit for all threads
 ##          : $outfile_path           => Outfile path
@@ -244,7 +244,7 @@ sub sambamba_sort {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $memory_limit;
     my $outfile_path;
@@ -256,7 +256,7 @@ sub sambamba_sort {
     my $show_progress;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
+        filehandle  => { required => 1, store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -323,7 +323,7 @@ sub sambamba_sort {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -333,9 +333,9 @@ sub sambamba_sort {
 
 sub sambamba_markdup {
 
-## Function : Perl wrapper for writing sambamba markdup recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba markdup recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $hash_table_size        => Size of hash table for finding read pairs
 ##          : $infile_path            => Infile path
 ##          : $io_buffer_size         => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
@@ -349,7 +349,7 @@ sub sambamba_markdup {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $hash_table_size;
     my $infile_path;
     my $io_buffer_size;
@@ -363,7 +363,7 @@ sub sambamba_markdup {
     my $show_progress;
 
     my $tmpl = {
-        FILEHANDLE      => { required => 1, store => \$FILEHANDLE, },
+        filehandle      => { required => 1, store => \$filehandle, },
         hash_table_size => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$hash_table_size,
@@ -444,7 +444,7 @@ sub sambamba_markdup {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -453,9 +453,9 @@ sub sambamba_markdup {
 
 sub sambamba_flagstat {
 
-## Function : Perl wrapper for writing sambamba flagstat recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba flagstat recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+## Arguments: $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
@@ -464,14 +464,14 @@ sub sambamba_flagstat {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -510,7 +510,7 @@ sub sambamba_flagstat {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -519,10 +519,10 @@ sub sambamba_flagstat {
 
 sub sambamba_depth {
 
-## Function : Perl wrapper for writing sambamba depth recipe to $FILEHANDLE. Based on sambamba 0.6.5
+## Function : Perl wrapper for writing sambamba depth recipe to $filehandle. Based on sambamba 0.6.5
 ## Returns  : @commands
 ## Arguments: $depth_cutoffs_ref      => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $filehandle             => Sbatch filehandle to write to
 ##          : $filter                 => Set custom filter for alignments
 ##          : $fix_mate_overlap       => Detect overlaps of mate reads and handle them on per-base basis
 ##          : $infile_path            => Infile path
@@ -537,7 +537,7 @@ sub sambamba_depth {
 
     ## Flatten argument(s)
     my $depth_cutoffs_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $filter;
     my $infile_path;
     my $outfile_path;
@@ -553,7 +553,7 @@ sub sambamba_depth {
     my $tmpl = {
         depth_cutoffs_ref =>
           { default => [], store => \$depth_cutoffs_ref, strict_type => 1, },
-        FILEHANDLE       => { required => 1,        store       => \$FILEHANDLE, },
+        filehandle       => { required => 1,        store       => \$filehandle, },
         filter           => { store    => \$filter, strict_type => 1, },
         fix_mate_overlap => {
             allow       => [ 0, 1 ],
@@ -640,7 +640,7 @@ sub sambamba_depth {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -650,18 +650,18 @@ sub sambamba_depth {
 
 sub split_and_index_aligment_file {
 
-## Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
+## Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch filehandle and opens xargs filehandle
 ## Returns  : $xargs_file_counter
 ## Arguments: $contigs_ref         => Contigs to process {REF}
 ##          : $core_number         => Number of cores to use
-##          : $FILEHANDLE          => Sbatch filehandle to write to
+##          : $filehandle          => Sbatch filehandle to write to
 ##          : $file_path           => File name - ususally sbatch
 ##          : $infile_path         => Infile path
 ##          : $outfile_path_prefix => Outfile path prefix
 ##          : $output_format       => Output format
 ##          : $recipe_info_path    => Program info path
 ##          : $temp_directory      => Temporary directory
-##          : $XARGSFILEHANDLE     => XARGS filehandle to write to
+##          : $xargsfilehandle     => XARGS filehandle to write to
 ##          : $xargs_file_counter  => The xargs file counter
 
     my ($arg_href) = @_;
@@ -669,12 +669,12 @@ sub split_and_index_aligment_file {
     ## Flatten argument(s)
     my $contigs_ref;
     my $core_number;
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_path;
     my $infile_path;
     my $outfile_path_prefix;
     my $recipe_info_path;
-    my $XARGSFILEHANDLE;
+    my $xargsfilehandle;
 
     ## Default(s)
     my $output_format;
@@ -694,7 +694,7 @@ sub split_and_index_aligment_file {
             store       => \$core_number,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle => { defined => 1, required => 1, store => \$filehandle, },
         file_path  => {
             defined     => 1,
             required    => 1,
@@ -721,7 +721,7 @@ sub split_and_index_aligment_file {
             store       => \$recipe_info_path,
             strict_type => 1,
         },
-        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        xargsfilehandle => { defined => 1, required => 1, store => \$xargsfilehandle, },
         xargs_file_counter => {
             allow       => qr/ ^\d+$ /xsm,
             default     => 0,
@@ -742,10 +742,10 @@ sub split_and_index_aligment_file {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -767,7 +767,7 @@ sub split_and_index_aligment_file {
 
         sambamba_view(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_path,
                 output_format   => $output_format,
@@ -779,7 +779,7 @@ sub split_and_index_aligment_file {
         );
 
         # Seperate commands
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         my $stderrfile_path_index =
             $xargs_file_path_prefix
@@ -791,13 +791,13 @@ sub split_and_index_aligment_file {
           . q{stderr.txt};
         sambamba_index(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path,
                 show_progress   => 1,
                 stderrfile_path => $stderrfile_path_index,
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        print {$xargsfilehandle} $NEWLINE;
     }
     return $xargs_file_counter;
 }

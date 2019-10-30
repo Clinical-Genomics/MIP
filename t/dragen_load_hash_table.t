@@ -63,7 +63,7 @@ diag(   q{Test dragen_load_hash_table from Dragen.pm v}
 my @function_base_commands = qw{ dragen };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

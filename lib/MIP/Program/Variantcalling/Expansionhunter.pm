@@ -33,9 +33,9 @@ BEGIN {
 
 sub expansionhunter {
 
-## Function : Perl wrapper for writing Expansion Hunter command to $FILEHANDLE or return commands array. Based on Expansionhunter version 3.0.0
+## Function : Perl wrapper for writing Expansion Hunter command to $filehandle or return commands array. Based on Expansionhunter version 3.0.0
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                => Filehandle to write to
+## Arguments: $filehandle                => Filehandle to write to
 ##          : $infile_path               => Path to sorted, indexed bam file
 ##          : $log_level                 => Log level
 ##          : $outfile_path_prefix       => Path to vcf file
@@ -50,7 +50,7 @@ sub expansionhunter {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $log_level;
     my $outfile_path_prefix;
@@ -63,8 +63,8 @@ sub expansionhunter {
     my $variant_catalog_file_path;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -159,7 +159,7 @@ sub expansionhunter {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

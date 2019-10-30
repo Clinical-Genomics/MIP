@@ -36,7 +36,7 @@ sub tiddit_coverage {
 ## Function : Perl wrapper for Tiddit coverage. Based on Tiddit 2.7.1.
 ## Returns  : @commands
 ## Arguments: $bin_size               => Bin size
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path_prefix    => Outfile path prefix
 ##          : $stderrfile_path        => Stderrfile path
@@ -47,7 +47,7 @@ sub tiddit_coverage {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path_prefix;
     my $stderrfile_path;
@@ -65,8 +65,8 @@ sub tiddit_coverage {
             store       => \$bin_size,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -131,7 +131,7 @@ sub tiddit_coverage {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
@@ -141,9 +141,9 @@ sub tiddit_coverage {
 
 sub tiddit_sv {
 
-## Function : Perl wrapper for writing tiddit sv recipe to $FILEHANDLE or return commands array. Based on tiddit 2.7.1.
+## Function : Perl wrapper for writing tiddit sv recipe to $filehandle or return commands array. Based on tiddit 2.7.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                      => Filehandle to write to
+## Arguments: $filehandle                      => Filehandle to write to
 ##          : $infile_path                     => Infile path
 ##          : $minimum_number_supporting_pairs => Minimum number of supporting pairs in order to call a variation event
 ##          : $outfile_path_prefix             => Outfile path. Write documents to FILE
@@ -155,7 +155,7 @@ sub tiddit_sv {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $minimum_number_supporting_pairs;
     my $outfile_path_prefix;
@@ -165,7 +165,7 @@ sub tiddit_sv {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -233,7 +233,7 @@ sub tiddit_sv {
       unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
       );

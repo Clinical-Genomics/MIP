@@ -39,15 +39,15 @@ sub pigz {
 
 ## pigz
 
-## Function : Perl wrapper for writing pigz recipe to $FILEHANDLE or return commands array. Based on pigz 2.3.1.
+## Function : Perl wrapper for writing pigz recipe to $filehandle or return commands array. Based on pigz 2.3.1.
 ## Returns  : "@commands"
-## Arguments: $infile_path, $stdout, $decompress,  $outfile_path, $processes, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $quiet, $verbose
+## Arguments: $infile_path, $stdout, $decompress,  $outfile_path, $processes, $filehandle, $stderrfile_path, $stderrfile_path_append, $quiet, $verbose
 ##          : $infile_path            => Infile path
 ##          : $stdout                 => Write on standard output, keep original files unchanged
 ##          : $decompress             => Decompress
 ##          : $outfile_path           => Outfile path
 ##          : $processes              => Allow up to n compression threads
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $quiet                  => Suppress all warnings
@@ -61,7 +61,7 @@ sub pigz {
     my $decompress;
     my $outfile_path;
     my $processes;
-    my $FILEHANDLE;
+    my $filehandle;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
@@ -84,7 +84,7 @@ sub pigz {
             strict_type => 1,
             store       => \$processes
         },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
+        filehandle      => { store       => \$filehandle },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -155,7 +155,7 @@ sub pigz {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

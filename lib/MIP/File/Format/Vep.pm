@@ -81,7 +81,7 @@ sub create_vep_synonyms_file {
     ## Create dir if it does not exists
     make_path( dirname($outfile_path) );
 
-    open my $FILEHANDLE_SYS, q{>}, $outfile_path
+    open my $filehandle_SYS, q{>}, $outfile_path
       or $log->logdie(qq{Cannot open $outfile_path: $ERRNO });
 
   CONTIG:
@@ -93,10 +93,10 @@ sub create_vep_synonyms_file {
         ## No defined synonym
         next CONTIG if ( not $synonymous_contig );
 
-        say {$FILEHANDLE_SYS} $primary_contig . $TAB . $synonymous_contig;
+        say {$filehandle_SYS} $primary_contig . $TAB . $synonymous_contig;
     }
     $log->info( q{Wrote: } . $outfile_path, $NEWLINE );
-    close $FILEHANDLE_SYS;
+    close $filehandle_SYS;
     return $outfile_path;
 }
 

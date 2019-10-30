@@ -66,7 +66,7 @@ diag(   q{Test blobfish_allvsall from Blobfish.pm v}
 my @function_base_commands = q{BlobFish.py --allvsall};
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

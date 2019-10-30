@@ -36,7 +36,7 @@ sub stringtie {
 ## Function : Perl wrapper for StringTie. Based on version 1.3.4.
 ## Returns  : @commands
 ## Arguments: $cov_ref_transcripts_outfile_path => Fully covered reference transcripts
-##          : $FILEHANDLE                       => Filehandle to write to
+##          : $filehandle                       => Filehandle to write to
 ##          : $gene_abundance_outfile_path      => Gene aboundances
 ##          : $gtf_reference_path               => Input GTF refrence file
 ##          : $infile_path                      => Input bam file path
@@ -53,7 +53,7 @@ sub stringtie {
 
     ## Flatten argument(s)
     my $cov_ref_transcripts_outfile_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $gene_abundance_outfile_path;
     my $gtf_reference_path;
     my $infile_path;
@@ -71,8 +71,8 @@ sub stringtie {
             store       => \$cov_ref_transcripts_outfile_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         gene_abundance_outfile_path => {
             store       => \$gene_abundance_outfile_path,
@@ -177,7 +177,7 @@ sub stringtie {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

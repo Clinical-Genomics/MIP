@@ -62,7 +62,7 @@ diag(   q{Test write_info_addition_fields from Vcfparser.pm v}
 my $range_file_content;
 
 ## Store range feature file content in memory by using referenced variable
-open my $FILEHANDLE, q{>}, \$range_file_content
+open my $filehandle, q{>}, \$range_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $range_file_content
@@ -74,7 +74,7 @@ open my $FILEHANDLE, q{>}, \$range_file_content
 my $select_file_content;
 
 ## Store select file content in memory by using referenced variable
-open my $SELECT_FH, q{>}, \$select_file_content
+open my $select_fh, q{>}, \$select_file_content
   or croak q{Cannot write to}
   . $SPACE
   . $select_file_content
@@ -104,15 +104,15 @@ my %vcf_record = (
 
 write_info_addition_fields(
     {
-        FILEHANDLE      => $FILEHANDLE,
-        SELECT_FH       => $SELECT_FH,
+        filehandle      => $filehandle,
+        select_fh       => $select_fh,
         vcf_record_href => \%vcf_record,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
-close $SELECT_FH;
+close $filehandle;
+close $select_fh;
 
 my $expected_info_add_content     = q{[;]AF=1};
 my $expected_info_add_sel_content = q{[;]SELECT_AF=1};

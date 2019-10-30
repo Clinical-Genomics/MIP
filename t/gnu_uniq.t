@@ -63,7 +63,7 @@ diag(   q{Test gnu_uniq from Coreutils.pm v}
 my @function_base_commands = qw{ uniq };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

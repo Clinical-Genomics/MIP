@@ -148,7 +148,7 @@ sub download_cadd_whole_genome_snvs {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -156,7 +156,7 @@ sub download_cadd_whole_genome_snvs {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -172,7 +172,7 @@ sub download_cadd_whole_genome_snvs {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Construct outdir path
     my $outdir_path =
@@ -186,17 +186,17 @@ sub download_cadd_whole_genome_snvs {
     if ( not -d $outdir_path ) {
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $outdir_path,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $outdir_path,
             reference_href => $reference_href,
@@ -211,13 +211,13 @@ sub download_cadd_whole_genome_snvs {
     gnu_echo(
         {
             outfile_path => $file_path,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             strings_ref  => [$echo_message],
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

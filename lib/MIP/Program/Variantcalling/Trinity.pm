@@ -35,9 +35,9 @@ Readonly my $SPACE => q{ };
 
 sub trinity_genome_guided {
 
-## Function : Perl wrapper for writing Trinity genome guided asssembly recipe to $FILEHANDLE or return commands array.
+## Function : Perl wrapper for writing Trinity genome guided asssembly recipe to $filehandle or return commands array.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $max_intron_distance    => Maximum intron distance
 ##          : $max_memory             => Maximum memory (gigabytes)
@@ -49,7 +49,7 @@ sub trinity_genome_guided {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $max_intron_distance;
     my $max_memory;
@@ -59,7 +59,7 @@ sub trinity_genome_guided {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -124,7 +124,7 @@ sub trinity_genome_guided {
       unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
       );

@@ -216,7 +216,7 @@ sub analysis_fastqc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -255,7 +255,7 @@ sub analysis_fastqc {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -270,17 +270,17 @@ sub analysis_fastqc {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Create output dir};
+    say {$filehandle} q{## Create output dir};
     gnu_mkdir(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             indirectory_path => $outsample_directory,
             parents          => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     my $process_batches_count = 1;
 
@@ -289,7 +289,7 @@ sub analysis_fastqc {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $index,
@@ -299,12 +299,12 @@ sub analysis_fastqc {
         fastqc(
             {
                 extract           => 1,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 infile_path       => $infile_path,
                 outdirectory_path => $outsample_directory,
             }
         );
-        say {$FILEHANDLE} q{&}, $NEWLINE;
+        say {$filehandle} q{&}, $NEWLINE;
 
         ## Collect QC metadata info for active recipe for later use
         if ( $recipe_mode == 1 ) {
@@ -321,9 +321,9 @@ sub analysis_fastqc {
             );
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 

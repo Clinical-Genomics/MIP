@@ -35,7 +35,7 @@ sub varg_compare {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path_truth      => Truth infile vcf
 ##          : $infile_path_vcf        => vcf-file to compare with truth set
 ##          : $stderrfile_path        => Stderrfile path
@@ -46,7 +46,7 @@ sub varg_compare {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path_truth;
     my $infile_path_vcf;
     my $stderrfile_path;
@@ -57,8 +57,8 @@ sub varg_compare {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         infile_path_truth => {
             defined     => 1,
@@ -108,7 +108,7 @@ sub varg_compare {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
