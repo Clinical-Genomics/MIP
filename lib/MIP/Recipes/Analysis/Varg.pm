@@ -35,7 +35,7 @@ BEGIN {
 
 sub analysis_varg {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Compares the selected SNV, and SVs with a truth set.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -134,12 +134,14 @@ sub analysis_varg {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-    #endvariantannotationblock
     ## Unpack parameters
     ## Get the io infiles per chain and id
+    use Data::Printer;
+    #say STDERR $case_id;
+    #say STDERR $file_info_href;
+
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -149,10 +151,13 @@ sub analysis_varg {
             stream         => q{out},
         }
     );
-    my %infile_path_snv        = $io{out}{file_path_href}{selected};
+    say STDERR q{TEST};
 
-    #sv_reformat
-    my %io = get_io_files(
+    my $infile_name_prefix = $io{out}{file_name_prefix};
+
+    my $infile_path_snv = $io{out}{file_path_href}{selected};
+
+    %io = get_io_files(
         {
             id             => $case_id,
             file_info_href => $file_info_href,
@@ -162,7 +167,7 @@ sub analysis_varg {
         }
     );
 
-    my %infile_path_sv        = $io{out}{file_path_href}{selected};
+    my $infile_path_sv = $io{out}{file_path_href}{selected};
 
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
     my $job_id_chain         = get_recipe_attributes(
@@ -189,13 +194,15 @@ sub analysis_varg {
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
-                iterators_ref    => \@contigs_size_ordered,
+                iterators_ref    => [qw{snv sv}],
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
             }
         )
     );
+
+    p $io{out};
 
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -204,7 +211,7 @@ sub analysis_varg {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -212,7 +219,7 @@ sub analysis_varg {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -225,36 +232,34 @@ sub analysis_varg {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
-    my $infile_path_truth = $active_parameter_href->{varg_truth_set_vcf}
-
-    my $validation_file_out_snv =
-      $outfile_path_prefix . $UNDERSCORE . q{snv} . $DOT . q{txt}
-
-    my $validation_file_out_sv =
-      $outfile_path_prefix . $UNDERSCORE . q{sv} . $DOT . q{txt}
-
+    my $infile_path_truth = $active_parameter_href->{varg_truth_set_vcf};
+    my $validation_file_out_snv = $outfile_path_prefix . $UNDERSCORE . q{snv} . $DOT . q{txt};
+    my $validation_file_out_sv = $outfile_path_prefix . $UNDERSCORE . q{sv} . $DOT . q{txt};
 
     # Run varg for SNVs
-    varg_compare{
-      FILEHANDLE         => $file_ending,
-      infile_path_truth  => $infile_path_truth,
-      infile_path_vcf    => $infile_path_snv,
-      stdoutfile_path    => $validation_file_out_snv
-    }
+    varg_compare(
+        {
+            filehandle        => $filehandle,
+            infile_path_truth => $infile_path_truth,
+            infile_path_vcf   => $infile_path_snv,
+            stdoutfile_path   => $validation_file_out_snv
+        }
+    );
 
     # Run varg for SVs
-    varg_compare{
-      FILEHANDLE         => $file_ending,
-      infile_path_truth  => $infile_path_truth,
-      infile_path_vcf    => $infile_path_sv,
-      stdoutfile_path    => $validation_file_out_sv
-    }
-
+    varg_compare(
+        {
+            filehandle        => $filehandle,
+            infile_path_truth => $infile_path_truth,
+            infile_path_vcf   => $infile_path_sv,
+            stdoutfile_path   => $validation_file_out_sv
+        }
+    );
 
     ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
 

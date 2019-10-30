@@ -2031,8 +2031,13 @@ varg_ar:
   analysis_mode: case
   associated_recipe:
     - mip
+    - sv_reformat
+    - endvariantannotationblock
   data_type: SCALAR
   default: 0
+  outfile_suffix: '.txt'
+  program_executables:
+    - varg
   type: recipe
 varg_truth_set_vcf:
   associated_recipe:

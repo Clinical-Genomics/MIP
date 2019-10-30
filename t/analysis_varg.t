@@ -48,18 +48,16 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis:Varg qw{ analysis_varg };
+use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
 
-diag(   q{Test analysis_RECIPE from MODULE.pm v}
-      . $MIP::Recipes::Analysis::MODULE::VERSION
+diag(   q{Test analysis_varg from Varg.pm v}
+      . $MIP::Recipes::Analysis::Varg::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
-
-Readonly my $TRUT_SET_VCF => q{truth_set_vcf.vcf}
 
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
@@ -76,8 +74,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{varg_truth_set_vcf}               = $$TRUT_SET_VCF
-my $case_id = $active_parameter{case_id};
+$active_parameter{varg_truth_set_vcf}               = q{a_truth_set.vcf};
+my $case_id =
+  $active_parameter{case_id};
 
 my %file_info = test_mip_hashes(
     {
@@ -98,11 +97,11 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$parameter{$recipe_name}{chain} = q{MAIN};
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
-
 my $is_ok = analysis_varg(
     {
         active_parameter_href   => \%active_parameter,
