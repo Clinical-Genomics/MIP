@@ -261,13 +261,28 @@ sub analysis_gatk_asereadcounter {
     );
 
     ### SHELL
+    
+    ## Restrict analysis to biallelic, heterogenous SNPs    
+    say {$filehandle} q{## Bcftools view};  
+    bcftools_view(  
+        {   
+            filehandle   => $filehandle,    
+            genotype     => q{het}, 
+            infile_path  => $variant_infile_path,   
+            max_alleles  => $ALLELES,   
+            min_alleles  => $ALLELES,   
+            outfile_path => $variant_file_path, 
+            types        => q{snps},    
+        }   
+    );  
+    say {$filehandle} $NEWLINE;
 
     ## Index VCF
     say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
             filehandle  => $filehandle,
-            infile_path => $variant_infile_path,
+            infile_path => $variant_file_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -282,7 +297,7 @@ sub analysis_gatk_asereadcounter {
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
             referencefile_path   => $active_parameter_href->{human_genome_reference},
-            variant_infile_path  => $variant_infile_path,
+            variant_infile_path  => $variant_file_path,
             verbosity            => $active_parameter_href->{gatk_logging_level},
             temp_directory       => $temp_directory,
         }
