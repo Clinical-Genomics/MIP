@@ -75,8 +75,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 $active_parameter{varg_truth_set_vcf}               = q{a_truth_set.vcf};
-my $case_id =
-  $active_parameter{case_id};
+my $case_id = $active_parameter{case_id};
 
 my %file_info = test_mip_hashes(
     {
@@ -89,6 +88,14 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+
+$file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_name_prefix} =
+  q{select};
+$file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_path_href}{selected}
+  = q{select.vcf};
+$file_info{io}{TEST}{$case_id}{sv_reformat}{out}{file_path_href}{selected} =
+  q{sv.select.vcf};
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -97,9 +104,12 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$parameter{$recipe_name}{chain} = q{MAIN};
-@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{$recipe_name}{chain}              = q{TEST};
+$parameter{endvariantannotationblock}{chain} = q{TEST};
+$parameter{sv_reformat}{chain}               = q{TEST};
+@{ $parameter{cache}{order_recipes_ref} } =
+  ( qw{ endvariantannotationblock sv_reformat }, $recipe_name );
+$parameter{$recipe_name}{outfile_suffix} = q{.txt};
 
 my %sample_info;
 my $is_ok = analysis_varg(

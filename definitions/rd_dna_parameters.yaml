@@ -191,6 +191,7 @@ recipe_core_number:
     sv_vcfparser: 13
     tiddit_coverage: 1
     upd_ar: 1
+    varg_ar: 1
     variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
@@ -298,6 +299,7 @@ recipe_time:
     tiddit: 20
     tiddit_coverage: 5
     upd_ar: 1
+    varg_ar: 1
     varianteffectpredictor: 10
     variant_integrity_ar: 1
     version_collect_ar: 1
@@ -2027,11 +2029,10 @@ varg_ar:
   analysis_mode: case
   associated_recipe:
     - mip
-    - sv_reformat
-    - endvariantannotationblock
   data_type: SCALAR
   default: 0
-  outfile_suffix: '.txt'
+  file_tag: ""
+  outfile_suffix: ".txt"
   program_executables:
     - varg
   type: recipe

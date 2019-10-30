@@ -136,12 +136,8 @@ sub analysis_varg {
     ### PREPROCESSING:
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-    ## Unpack parameters
-    ## Get the io infiles per chain and id
-    use Data::Printer;
-    #say STDERR $case_id;
-    #say STDERR $file_info_href;
 
+    ## Unpack parameters
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -151,11 +147,8 @@ sub analysis_varg {
             stream         => q{out},
         }
     );
-    say STDERR q{TEST};
-
     my $infile_name_prefix = $io{out}{file_name_prefix};
-
-    my $infile_path_snv = $io{out}{file_path_href}{selected};
+    my $infile_path_snv    = $io{out}{file_path_href}{selected};
 
     %io = get_io_files(
         {
@@ -194,20 +187,15 @@ sub analysis_varg {
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
-                iterators_ref    => [qw{snv sv}],
+                iterators_ref    => [qw{ snv sv }],
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
             }
         )
     );
-
-    p $io{out};
-
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_paths = @{ $io{out}{file_paths} };
+    my %outfile_path  = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -234,9 +222,9 @@ sub analysis_varg {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $infile_path_truth = $active_parameter_href->{varg_truth_set_vcf};
-    my $validation_file_out_snv = $outfile_path_prefix . $UNDERSCORE . q{snv} . $DOT . q{txt};
-    my $validation_file_out_sv = $outfile_path_prefix . $UNDERSCORE . q{sv} . $DOT . q{txt};
+    my $infile_path_truth       = $active_parameter_href->{varg_truth_set_vcf};
+    my $validation_file_out_snv = $outfile_path{snv};
+    my $validation_file_out_sv  = $outfile_path{sv};
 
     # Run varg for SNVs
     varg_compare(
@@ -247,6 +235,7 @@ sub analysis_varg {
             stdoutfile_path   => $validation_file_out_snv
         }
     );
+    say {$filehandle} $NEWLINE;
 
     # Run varg for SVs
     varg_compare(
@@ -258,8 +247,8 @@ sub analysis_varg {
         }
     );
 
-    ## Close FILEHANDLES
-    close $filehandle or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandles
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
