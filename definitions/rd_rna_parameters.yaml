@@ -127,7 +127,7 @@ recipe_time:
     star_fusion: 8
     stringtie_ar: 2
     trim_galore_ar: 8
-    varianteffectpredictor: 2
+    varianteffectpredictor: 6
     version_collect_ar: 1
   type: mip
 recipe_memory:
