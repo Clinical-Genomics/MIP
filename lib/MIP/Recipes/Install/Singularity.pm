@@ -285,7 +285,7 @@ sub setup_singularity_executable {
                 singularity_container_cmds_ref => [$container_executable],
             }
         );
-        push @singularity_cmds, ($bash_command);
+        push @singularity_cmds, $bash_command;
 
         my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
 
@@ -299,6 +299,7 @@ sub setup_singularity_executable {
         );
         print {$filehandle} $NEWLINE;
 
+      CMD:
         foreach my $cmd ( $executable_dir_cmd, $conda_env_dir_cmd ) {
 
             gnu_echo(
