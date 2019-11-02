@@ -119,6 +119,7 @@ sub install_singularity_containers {
 
     ## Set default path for containers
     if ( not $container_dir_path ) {
+
         $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
     }
 
@@ -151,6 +152,11 @@ sub install_singularity_containers {
         $container_href->{program_bind_paths} = [];
 
         my $container_path = catfile( $container_dir_path, $container . q{.sif} );
+
+        ## Place relative to conda proxy bin
+        my $relative_container_path =
+          catdir( qw{ \"\$CONDA_ENV_DIR\" share containers }, $container . q{.sif} );
+
         singularity_pull(
             {
                 container_uri => $container_href->{$container}{uri},
@@ -178,7 +184,7 @@ sub install_singularity_containers {
         setup_singularity_executable(
             {
                 conda_env_path         => $conda_env_path,
-                container_path         => $container_path,
+                container_path         => $relative_container_path,
                 executable_href        => $container_href->{$container}{executable},
                 filehandle             => $filehandle,
                 program_bind_paths_ref => $container_href->{program_bind_paths},
@@ -254,6 +260,11 @@ sub setup_singularity_executable {
       . $BACKWARD_SLASH
       . $DOUBLE_QUOTE;
 
+    ## Find proxy bin directory
+    my $executable_dir_cmd = q{DIR=$(dirname "$(readlink -f "$0")")};
+    ## Assign conda env dir to enable relative path to proxy bin within conda env
+    my $conda_env_dir_cmd = q{CONDA_ENV_DIR="$(dirname "$DIR")"};
+
   EXECUTABLE:
     foreach my $executable ( keys %{$executable_href} ) {
 
@@ -274,19 +285,22 @@ sub setup_singularity_executable {
                 singularity_container_cmds_ref => [$container_executable],
             }
         );
-        push @singularity_cmds, $bash_command;
+        push @singularity_cmds, ($bash_command);
 
         my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
 
-        gnu_echo(
-            {
-                filehandle     => $filehandle,
-                outfile_path   => $proxy_executable_path,
-                string_wrapper => $SINGLE_QUOTE,
-                strings_ref    => \@shebang,
-            }
-        );
-        print {$filehandle} $NEWLINE;
+        foreach my $cmd ( @shebang, $executable_dir_cmd, $conda_env_dir_cmd ) {
+
+            gnu_echo(
+                {
+                    filehandle             => $filehandle,
+                    stdoutfile_path_append => $proxy_executable_path,
+                    string_wrapper         => $SINGLE_QUOTE,
+                    strings_ref            => [$cmd],
+                }
+            );
+            print {$filehandle} $NEWLINE;
+        }
         gnu_echo(
             {
                 filehandle             => $filehandle,
