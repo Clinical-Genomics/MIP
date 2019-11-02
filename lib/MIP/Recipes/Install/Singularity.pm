@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_singularity_containers };
@@ -289,7 +289,17 @@ sub setup_singularity_executable {
 
         my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
 
-        foreach my $cmd ( @shebang, $executable_dir_cmd, $conda_env_dir_cmd ) {
+        gnu_echo(
+            {
+                filehandle     => $filehandle,
+                outfile_path   => $proxy_executable_path,
+                string_wrapper => $SINGLE_QUOTE,
+                strings_ref    => \@shebang,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+
+        foreach my $cmd ( $executable_dir_cmd, $conda_env_dir_cmd ) {
 
             gnu_echo(
                 {
