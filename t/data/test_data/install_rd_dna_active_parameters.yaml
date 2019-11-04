@@ -3,7 +3,6 @@ add_environment_date: '0'
 bash_set_errexit: '0'
 bash_set_nounset: '0'
 bash_set_pipefail: '0'
-container_dir_path: '0'
 core_number: '1'
 core_ram_memory: '5'
 email_types:
