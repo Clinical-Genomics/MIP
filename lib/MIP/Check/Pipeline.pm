@@ -132,7 +132,8 @@ sub check_dragen_rd_dna {
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
-    use MIP::Parse::File qw{ parse_fastq_for_gender parse_fastq_infiles };
+    use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
