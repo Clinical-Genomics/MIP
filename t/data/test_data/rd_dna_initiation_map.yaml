@@ -41,7 +41,7 @@ CHAIN_ALL:
          - vcf2cytosure_ar
    - CHAIN_MAIN:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
-      - PARALLEL: 
+      - PARALLEL:
          - bcftools_mpileup
          - GATK_HAPLOTYPECALLER:
             - gatk_haplotypecaller
@@ -74,5 +74,6 @@ CHAIN_ALL:
          - gatk_variantevalexome
    - qccollect_ar
    - multiqc_ar
+   - varg_ar
    - analysisrunstatus
-   - sacct 
+   - sacct
