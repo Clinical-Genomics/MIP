@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -60,16 +60,6 @@ sub _build_usage {
             isa           => Bool,
             required      => 0,
         ),
-    );
-
-    option(
-        q{container_dir_path} => (
-            cmd_aliases   => [qw{ cntdp }],
-            cmd_tags      => [q{Default: /<MIPs_conda_env>/share/containers}],
-            documentation => q{Pull containers to this directory },
-            is            => q{rw},
-            isa           => Str,
-        )
     );
 
     option(
