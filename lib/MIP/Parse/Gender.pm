@@ -380,11 +380,11 @@ sub parse_fastq_for_gender {
         push @commands,
           gnu_grep(
             {
+                count   => 1,
                 pattern => $DOUBLE_QUOTE . q{chrY}
                   . $BACKWARD_SLASH
                   . $PIPE . q{Y}
                   . $DOUBLE_QUOTE,
-                count => 1,
             }
           );
 
