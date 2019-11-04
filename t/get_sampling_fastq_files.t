@@ -21,7 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Gender}  => [qw{ parse_fastq_for_gender }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Parse::Gender}  => [qw{ get_sampling_fastq_files }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+use MIP::Parse::Gender qw{ get_sampling_fastq_files };
 
-diag(   q{Test parse_fastq_for_gender from Gender.pm v}
+diag(   q{Test get_sampling_fastq_files from Gender.pm v}
       . $MIP::Parse::Gender::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,9 +58,7 @@ diag(   q{Test parse_fastq_for_gender from Gender.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1 } );
-
-## Given no other gender
+## Given
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
@@ -68,7 +66,7 @@ my %active_parameter = test_mip_hashes(
     }
 );
 my $sample_id = $active_parameter{sample_ids}[2];
-$active_parameter{found_other} = 0;
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -90,33 +88,19 @@ my %sample_info = (
     },
 );
 
-my $is_gender_other = parse_fastq_for_gender(
+my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
+        infile_paths_ref        => $file_info{$sample_id}{mip_infiles},
+        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
+my @expected_fastq_files = qw{ ADM1059A3.fastq ADM1059A3.fastq };
+## Then return undef for interleaved
+is( $is_interleaved_fastq, undef, q{No interleaved files} );
 
-## Then skip estimation using reads
-is( $is_gender_other, undef, q{No unknown gender} );
-
-## Given a sample when gender unknown
-$active_parameter{found_other}    = 1;
-$active_parameter{found_male}     = 1;
-$active_parameter{gender}{others} = [$sample_id];
-
-$is_gender_other = parse_fastq_for_gender(
-    {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then skip estimation using reads
-is( $is_gender_other, undef, q{Unknown gender} );
+## Then return fastq files
+is_deeply( \@fastq_files, \@expected_fastq_files, q{Got fastq files} );
 
 done_testing();

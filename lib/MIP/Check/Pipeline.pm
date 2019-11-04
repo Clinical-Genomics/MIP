@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -678,7 +678,6 @@ sub check_rd_dna {
             active_parameter_href   => $active_parameter_href,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
-            log                     => $log,
             sample_info_href        => $sample_info_href,
         }
     );
