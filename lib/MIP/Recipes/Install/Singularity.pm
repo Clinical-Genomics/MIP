@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_singularity_containers };
@@ -118,10 +118,7 @@ sub install_singularity_containers {
     say {$filehandle} q{## Pull containers with Singularity};
 
     ## Set default path for containers
-    if ( not $container_dir_path ) {
-
-        $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
-    }
+    $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
 
     ## Containers requiring something extra
     my %finish_container_installation = (
