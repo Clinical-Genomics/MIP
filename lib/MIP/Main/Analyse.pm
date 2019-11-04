@@ -192,7 +192,7 @@ sub mip_analyse {
 
         ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
         my @remove_keys =
-          (qw{ found_female found_male found_other gender log_file dry_run_all });
+          qw{ found_female found_male found_other gender log_file dry_run_all };
 
       KEY:
         foreach my $key (@remove_keys) {
