@@ -139,15 +139,15 @@ recipe_memory:
     gatk_variantfiltration: 8
     genebody_coverage: 8
     multiqc_ar: 2
-    picardtools_mergesamfiles: 3
+    picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25
     salmon_quant: 2
     star_aln: 3
     star_fusion: 3
     stringtie_ar: 2
-    trim_galore_ar: 8
-    varianteffectpredictor: 8
+    trim_galore_ar: 5
+    varianteffectpredictor: 12
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -160,8 +160,8 @@ recipe_core_number:
     bootstrapann: 1
     fastqc_ar: 0
     gatk_asereadcounter: 1
-    gatk_baserecalibration: 16
-    gatk_haplotypecaller: 16
+    gatk_baserecalibration: 13
+    gatk_haplotypecaller: 13
     gatk_splitncigarreads: 12
     gatk_variantfiltration: 1
     genebody_coverage: 1
@@ -169,7 +169,7 @@ recipe_core_number:
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
-    picardtools_mergesamfiles: 16
+    picardtools_mergesamfiles: 13
     preseq_ar: 1
     rseqc: 1
     sacct: 1
@@ -177,7 +177,6 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 24
     stringtie_ar: 36
-    trim_galore_ar: 1
     varianteffectpredictor: 1
     version_collect_ar: 1
   type: mip
