@@ -1566,7 +1566,7 @@ fqf_annotations:
   data_type: ARRAY
   default:
    - GNOMADAF
-   - GNOMADAF_POPMAX
+   - GNOMADAF_popmax
    - SWEGENAF
   type: recipe_argument
 fqf_bcftools_filter_threshold:
