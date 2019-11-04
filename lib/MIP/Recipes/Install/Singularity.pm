@@ -46,7 +46,6 @@ sub install_singularity_containers {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $conda_env_path        => Path to conda environment
-##          : $container_dir_path    => Pull containers to this path
 ##          : $container_href        => Hash with container {REF}
 ##          : $filehandle            => Filehandle
 ##          : $quiet                 => Optionally turn on quiet output
@@ -57,7 +56,6 @@ sub install_singularity_containers {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $conda_env_path;
-    my $container_dir_path;
     my $container_href;
     my $filehandle;
     my $quiet;
@@ -72,11 +70,6 @@ sub install_singularity_containers {
         conda_env_path => {
             required    => 1,
             store       => \$conda_env_path,
-            strict_type => 1,
-        },
-        container_dir_path => {
-            required    => 1,
-            store       => \$container_dir_path,
             strict_type => 1,
         },
         container_href => {
@@ -117,8 +110,8 @@ sub install_singularity_containers {
 
     say {$filehandle} q{## Pull containers with Singularity};
 
-    ## Set default path for containers
-    $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
+    ## Set dir path for containers
+    my $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
 
     ## Containers requiring something extra
     my %finish_container_installation = (
