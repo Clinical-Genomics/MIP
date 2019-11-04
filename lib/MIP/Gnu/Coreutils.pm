@@ -576,7 +576,7 @@ sub gnu_head {
             strict_type => 1,
         },
         number => {
-            allow       => qr/ ^\d+$ /xms,
+            allow       => qr{\A \d+ \z}xms,
             store       => \$number,
             strict_type => 1,
         },
