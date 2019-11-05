@@ -35,7 +35,8 @@ sub gnu_grep {
 
 ##Function : Perl wrapper for writing grep recipe to already open $filehandle or return commands array. Based on grep 2.6.3
 ##Returns  : @commands
-##Arguments:$filehandle              => Filehandle to write to
+##Arguments: $count                  => Count
+##         : $filehandle             => Filehandle to write to
 ##         : $filter_file_path       => Obtain patterns from file, one per line
 ##         : $infile_path            => Infile path
 ##         : $invert_match           => Invert the sense of matching, to select non-matching lines
@@ -48,6 +49,7 @@ sub gnu_grep {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $count;
     my $filehandle;
     my $filter_file_path;
     my $infile_path;
@@ -61,6 +63,12 @@ sub gnu_grep {
     my $word_regexp;
 
     my $tmpl = {
+        count => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$count,
+            strict_type => 1,
+        },
         filehandle       => { store => \$filehandle, },
         filter_file_path => { store => \$filter_file_path, strict_type => 1, },
         infile_path => {
@@ -96,6 +104,10 @@ sub gnu_grep {
     my @commands = qw{ grep };
 
     ## Options
+    if ($count) {
+
+        push @commands, q{--count};
+    }
     if ($invert_match) {
 
         push @commands, q{--invert-match};

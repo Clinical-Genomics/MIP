@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -95,7 +95,7 @@ sub delete_male_contig {
 ## Returns  : @contigs
 ## Arguments: $contigs_ref      => Contigs array to update {REF}
 ##          : $contig_names_ref => Contig names to remove {REF}
-##          : $found_male       => Male was included in the analysis
+##          : $found_male       => Male(s) was included in the analysis
 
     my ($arg_href) = @_;
 
@@ -128,7 +128,7 @@ sub delete_male_contig {
             strict_type => 1,
         },
         found_male => {
-            allow       => [ 0, 1 ],
+            allow       => qr{\A \d+ \z}sxm,
             defined     => 1,
             required    => 1,
             store       => \$found_male,

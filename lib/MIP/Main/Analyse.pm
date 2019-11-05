@@ -81,7 +81,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -191,9 +191,8 @@ sub mip_analyse {
           load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
         ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-        my @remove_keys = (
-            qw{ found_female found_male found_other found_other_count log_file dry_run_all }
-        );
+        my @remove_keys =
+          qw{ found_female found_male found_other gender log_file dry_run_all };
 
       KEY:
         foreach my $key (@remove_keys) {
@@ -639,13 +638,12 @@ sub mip_analyse {
         }
     );
 
-## Detect the gender(s) included in current analysis
+    ## Detect the gender(s) included in current analysis
     (
 
         $active_parameter{found_male},
         $active_parameter{found_female},
         $active_parameter{found_other},
-        $active_parameter{found_other_count},
       )
       = detect_sample_id_gender(
         {

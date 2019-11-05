@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -218,7 +218,7 @@ sub analysis_plink {
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
-            if (    $active_parameter_href->{found_other_count} ne scalar @sample_ids
+            if (    $active_parameter_href->{found_other} ne scalar @sample_ids
                 and $mode eq q{check_for_sex} )
             {
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
@@ -370,7 +370,7 @@ sub analysis_plink {
     my $allow_no_sex;
 
     ## If not all samples have a known sex
-    if ( $active_parameter_href->{found_other_count} ) {
+    if ( $active_parameter_href->{found_other} ) {
 
         $allow_no_sex = 1;
     }
@@ -426,7 +426,7 @@ sub analysis_plink {
         say {$filehandle} $NEWLINE;
     }
 
-    if ( $active_parameter_href->{found_other_count} ne scalar @sample_ids ) {
+    if ( $active_parameter_href->{found_other} ne scalar @sample_ids ) {
 
         ## Only if not all samples have unknown sex
         ### Plink sex-check

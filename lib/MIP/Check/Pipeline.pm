@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -133,6 +133,7 @@ sub check_dragen_rd_dna {
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -294,6 +295,15 @@ sub check_dragen_rd_dna {
         }
     );
 
+    parse_fastq_for_gender(
+        {
+            active_parameter_href   => $active_parameter_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+
     ## Add to sample info
     set_in_sample_info(
         {
@@ -414,6 +424,7 @@ sub check_rd_dna {
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters
       qw{  update_exome_target_bed update_vcfparser_outfile_counter };
@@ -670,6 +681,15 @@ sub check_rd_dna {
             infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
+        }
+    );
+
+    parse_fastq_for_gender(
+        {
+            active_parameter_href   => $active_parameter_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 

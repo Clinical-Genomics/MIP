@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ size_sort_select_file_contigs update_contigs_for_run };
@@ -191,7 +191,7 @@ sub update_contigs_for_run {
             strict_type => 1,
         },
         found_male => {
-            allow       => [ 0, 1 ],
+            allow       => qr{\A \d+ \z}sxm,
             defined     => 1,
             required    => 1,
             store       => \$found_male,
