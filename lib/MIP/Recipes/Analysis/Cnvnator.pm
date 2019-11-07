@@ -162,7 +162,7 @@ sub analysis_cnvnator {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Samtools qw{ samtools_create_chromosome_files };
+    use MIP::Program::Samtools qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
