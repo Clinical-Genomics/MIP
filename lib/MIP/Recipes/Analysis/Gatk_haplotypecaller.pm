@@ -161,7 +161,7 @@ sub analysis_gatk_haplotypecaller {
       qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
+    use MIP::Program::Gatk qw{ gatk_haplotypecaller };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };

@@ -20,10 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,11 +43,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_gatherbqsrreports };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_gatherbqsrreports };
 
 diag(   q{Test gatk_gatherbqsrreports from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,13 +58,13 @@ diag(   q{Test gatk_gatherbqsrreports from Alignment::Gatk.pm v}
 my @function_base_commands = qw{ gatk GatherBQSRReports };
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
 );
 
