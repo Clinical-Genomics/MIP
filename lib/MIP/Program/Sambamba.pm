@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Sambamba;
+package MIP::Program::Sambamba;
 
 use 5.026;
 use Carp;

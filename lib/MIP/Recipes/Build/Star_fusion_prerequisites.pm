@@ -158,7 +158,7 @@ sub build_star_fusion_prerequisites {
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Blast qw{ blast_blastn blast_makeblastdb };
+    use MIP::Program::Blast qw{ blast_blastn blast_makeblastdb };
     use MIP::Program::Star_fusion
       qw{ star_fusion_gtf_file_to_feature_seqs star_fusion_prep_genome_lib };
     use MIP::Recipes::Build::Human_genome_prerequisites
