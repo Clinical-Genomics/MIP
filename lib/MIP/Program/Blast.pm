@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Blast;
+package MIP::Program::Blast;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -15,6 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ blast_blastn blast_makeblastdb };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub blast_blastn {
 

@@ -20,10 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +35,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA             => q{,};
 Readonly my $EXPECT_VALUE      => 1e-2;
 Readonly my $MAX_TARGET_SEQS   => 1001;
 Readonly my $MAX_THREAD_NUMBER => 16;
-Readonly my $SPACE             => q{ };
 Readonly my $TABULAR           => 6;
 Readonly my $WORD_SIZE         => 11;
 
@@ -48,18 +48,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Blast} => [qw{ blast_blastn }],
-        q{MIP::Test::Fixtures}            => [qw{ test_standard_cli }],
+        q{MIP::Program::Blast} => [qw{ blast_blastn }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Blast qw{ blast_blastn };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Blast qw{ blast_blastn };
 
 diag(   q{Test blast_blastn from Blast.pm v}
-      . $MIP::Program::Alignment::Blast::VERSION
+      . $MIP::Program::Blast::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
