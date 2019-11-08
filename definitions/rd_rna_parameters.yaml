@@ -138,7 +138,7 @@ recipe_memory:
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
     genebody_coverage: 8
-    multiqc_ar: 2
+    multiqc_ar: 10
     picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25

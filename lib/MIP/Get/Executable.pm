@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -126,7 +126,7 @@ q?'my ($version) = /bam2wig.py\s+(\S+)/xms; if($version) {print $version;last;}'
         q{bam_stat.py} => {
             version_cmd => q{--version},
             version_regexp =>
-q?'my ($version) = /bam_stat.py.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+q?'my ($version) = /bam_stat.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bcftools => {
             version_cmd => q{2>&1 >/dev/null},
@@ -185,7 +185,7 @@ q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;
         gffcompare => {
             version_cmd => q{--version 2>&1 >/dev/null},
             version_regexp =>
-q?my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
+q?'my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{grep} => {
             version_cmd => q{--version},
