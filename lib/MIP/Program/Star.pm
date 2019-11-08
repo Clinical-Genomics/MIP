@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Star;
+package MIP::Program::Star;
 
 use 5.026;
 use Carp;
