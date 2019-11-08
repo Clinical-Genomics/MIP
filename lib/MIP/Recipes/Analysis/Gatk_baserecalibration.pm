@@ -160,7 +160,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk
+    use MIP::Program::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };

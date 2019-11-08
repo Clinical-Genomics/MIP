@@ -20,6 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -33,8 +35,6 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA       => q{,};
-Readonly my $SPACE       => q{ };
 Readonly my $QUALSCORE_1 => 10;
 Readonly my $QUALSCORE_2 => 20;
 
@@ -47,11 +47,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_applybqsr };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_applybqsr };
 
 diag(   q{Test gatk_applybqsr from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

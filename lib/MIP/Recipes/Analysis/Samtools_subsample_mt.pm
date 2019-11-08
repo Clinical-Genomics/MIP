@@ -141,7 +141,7 @@ sub analysis_samtools_subsample_mt {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Program::Bedtools qw{ bedtools_genomecov };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };

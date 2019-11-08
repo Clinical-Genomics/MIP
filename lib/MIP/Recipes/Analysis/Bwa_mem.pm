@@ -146,7 +146,7 @@ sub analysis_bwa_mem {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem };
-    use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -606,7 +606,7 @@ sub analysis_run_bwa_mem {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
