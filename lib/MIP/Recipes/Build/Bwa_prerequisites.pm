@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_bwa_prerequisites };
@@ -157,7 +157,7 @@ sub build_bwa_prerequisites {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Bwa qw{ bwa_index };
+    use MIP::Program::Bwa qw{ bwa_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };

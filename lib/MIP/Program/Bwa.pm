@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Bwa;
+package MIP::Program::Bwa;
 
 use 5.026;
 use strict;
@@ -15,6 +15,7 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,15 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_mem run_bwamem bwa_index };
 
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub bwa_mem {
 
@@ -115,24 +113,18 @@ sub bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Bwa
-    # Stores commands depending on input parameters
     my @commands = qw{ bwa mem };
 
-    ##Options
     if ($thread_number) {
 
-        # Number of threads
         push @commands, q{-t} . $SPACE . $thread_number;
     }
     if ($interleaved_fastq_file) {
 
-        # Interleaved fastq file
         push @commands, q{-p};
     }
     if ($mark_split_as_secondary) {
 
-        # Mark shorter split hits as secondary
         push @commands, q{-M};
     }
     if ($soft_clip_sup_align) {
@@ -141,14 +133,12 @@ sub bwa_mem {
     }
     if ($read_group_header) {
 
-        # Read group header line
         push @commands, q{-R} . $SPACE . $read_group_header;
     }
 
     ## Human reference genome and bwa mem files
     push @commands, $idxbase;
 
-    ## Infile
     push @commands, $infile_path;
 
     ## Read 2
@@ -248,34 +238,26 @@ sub run_bwamem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Run_bwamem
-    # Stores commands depending on input parameters
     my @commands = qw{ run-bwamem };
 
-    ## Options
     if ($thread_number) {
 
-        # Number of threads
         push @commands, q{-t} . $SPACE . $thread_number;
     }
     if ($hla_typing) {
 
-        # Apply HLA typing
         push @commands, q{-H};
     }
     if ($read_group_header) {
 
-        # Read group header line
         push @commands, q{-R} . $SPACE . $read_group_header;
     }
 
-    # Outfiles prefix
     push @commands, q{-o} . $SPACE . $outfiles_prefix_path;
 
     ## Human reference genome and bwa mem files
     push @commands, $idxbase;
 
-    ## Infile
     push @commands, $infile_path;
 
     ## Read 2
@@ -360,7 +342,6 @@ sub bwa_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bwa index };
 
     push @commands, q{-p} . $SPACE . $prefix;
