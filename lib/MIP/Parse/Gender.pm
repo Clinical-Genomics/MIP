@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -313,7 +313,7 @@ sub parse_fastq_for_gender {
 
     use MIP::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Program::Alignment::Bwa qw{ bwa_mem };
+    use MIP::Program::Bwa qw{ bwa_mem };
 
     ## All sample ids have a gender - non need to continue
     return if ( not $active_parameter_href->{found_other} );
