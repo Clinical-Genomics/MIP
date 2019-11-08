@@ -26,7 +26,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Star} => [qw{ star_aln }],
-        q{MIP::Test::Fixtures}           => [qw{ test_standard_cli }],
+        q{MIP::Program::Star}  => [qw{ star_aln }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Star qw{ star_aln };
+use MIP::Program::Star qw{ star_aln };
 
 diag(   q{Test star_aln from Star.pm v}
-      . $MIP::Program::Alignment::Star::VERSION
+      . $MIP::Program::Star::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -74,9 +74,9 @@ Readonly my $THREAD_NUMBER              => 16;
 my @function_base_commands = qw{ STAR };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -86,9 +86,9 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -208,10 +208,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

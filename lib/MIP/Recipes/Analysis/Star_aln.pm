@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -143,7 +143,7 @@ sub analysis_star_aln {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Picardtools qw{ picardtools_addorreplacereadgroups };
-    use MIP::Program::Alignment::Star qw{ star_aln };
+    use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
