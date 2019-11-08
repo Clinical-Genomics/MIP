@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -119,7 +119,22 @@ sub install_mip_scripts {
         t =>
           [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
         templates => [
-            qw{ mip_rd_dna_config.yaml mip_rd_dna_vcf_rerun_config.yaml mip_rd_rna_config.yaml }
+            qw{ 643594-miptest_pedigree.yaml
+              gene_panel.bed
+              grch38_mip_rd_dna_config.yaml
+              mip_download_rd_dna_config_-1.0-.yaml
+              mip_download_rd_rna_config_-1.0-.yaml
+              mip_dragen_rd_dna_config.yaml
+              mip_install_rd_dna_config_-1.0-.yaml
+              mip_install_rd_rna_config_-1.0-.yaml
+              mip_log.yaml
+              mip_rd_dna_config.yaml
+              mip_rd_dna_vcf_rerun_config.yaml
+              mip_rd_rna_config.yaml
+              qc_regexp_-v1.24-.yaml
+              rank_model_cmms_-v1.28-.ini
+              svrank_model_cmms_-v1.8-.ini
+              }
         ],
     );
 

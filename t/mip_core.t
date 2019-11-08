@@ -18,14 +18,14 @@ use IPC::Cmd qw{ can_run run };
 use Modern::Perl qw{ 2018 };
 use Readonly;
 
-##MIPs lib/
+## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 our $USAGE = build_usage( {} );
 
@@ -254,7 +254,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -323,12 +323,18 @@ sub mip_scripts {
         templates => [
             qw{ 643594-miptest_pedigree.yaml
               gene_panel.bed
-              mip_rd_dna_config.yaml
+              grch38_mip_rd_dna_config.yaml
+              mip_download_rd_dna_config_-1.0-.yaml
+              mip_download_rd_rna_config_-1.0-.yaml
+              mip_dragen_rd_dna_config.yaml
+              mip_install_rd_dna_config_-1.0-.yaml
+              mip_install_rd_rna_config_-1.0-.yaml
               mip_log.yaml
-              mip_rd_rna_config.yaml
+              mip_rd_dna_config.yaml
               mip_rd_dna_vcf_rerun_config.yaml
-              qc_regexp_-v1.23-.yaml
-              rank_model_cmms_-v1.26-.ini
+              mip_rd_rna_config.yaml
+              qc_regexp_-v1.24-.yaml
+              rank_model_cmms_-v1.28-.ini
               svrank_model_cmms_-v1.8-.ini
               }
         ],
