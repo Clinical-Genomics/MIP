@@ -1,19 +1,23 @@
-package MIP::Program::Alignment::Samtools;
+package MIP::Program::Samtools;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
-use utf8;    #Allow unicode characters in this script
-use warnings qw{ FATAL utf8 };
+use utf8;
 use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use File::Spec::Functions qw{ catdir catfile };
-use Params::Check qw{ allow check last_error };
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $AMPERSAND $COMMA $SPACE };
 use MIP::Processmanagement::Processes qw{ print_wait };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -22,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -38,11 +42,6 @@ BEGIN {
       samtools_view };
 
 }
-
-## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $COMMA     => q{,};
-Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
@@ -157,25 +156,20 @@ sub samtools_view {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ samtools view };
 
-    ## Options
     if ($thread_number) {
 
-        #Number of threads
         push @commands, q{--threads} . $SPACE . $thread_number;
     }
 
     if ($with_header) {
 
-        #Include header
         push @commands, q{-h};
     }
 
     if ($output_format) {
 
-        #Output format
         push @commands, q{--output-fmt} . $SPACE . uc $output_format;
     }
 
@@ -194,7 +188,6 @@ sub samtools_view {
     }
     if ($outfile_path) {
 
-        #Specify output filename
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
@@ -209,12 +202,10 @@ sub samtools_view {
 
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     if ( @{$regions_ref} ) {
 
-        #Limit output to regions
         push @commands, join $SPACE, @{$regions_ref};
     }
 
@@ -230,8 +221,8 @@ sub samtools_view {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -275,20 +266,15 @@ sub samtools_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ samtools index };
 
-    ## Options
     if ($bai_format) {
 
-        # Generate BAI-format index for BAM files
         push @commands, q{-b};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -370,7 +356,6 @@ sub samtools_stats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ samtools stats };
 
     if ($auto_detect_input_format) {
@@ -383,18 +368,15 @@ sub samtools_stats {
         push @commands, q{--remove-overlaps};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     if ( @{$regions_ref} ) {
 
-        # Limit output to regions
         push @commands, join $SPACE, @{$regions_ref};
     }
 
     if ($outfile_path) {
 
-        # Specify output filename
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
@@ -410,8 +392,8 @@ sub samtools_stats {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -456,25 +438,20 @@ sub samtools_faidx {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ samtools faidx };
 
-    ## Infile
     push @commands, $infile_path;
 
     if ( @{$regions_ref} ) {
 
-        # Limit output to regions
         push @commands, join $SPACE, @{$regions_ref};
     }
 
     if ($outfile_path) {
 
-        # Specify output filename
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -546,6 +523,7 @@ sub samtools_create_chromosome_files {
 
     my $process_batches_count = 1;
 
+  CONTIG:
     while ( my ( $contig_index, $contig ) = each @{$regions_ref} ) {
         $process_batches_count = print_wait(
             {
@@ -614,13 +592,10 @@ sub samtools_idxstats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ samtools idxstats };
 
-    ## Infile
     push @commands, $infile_path;
 
-    ## Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -695,18 +670,15 @@ sub samtools_depth {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ samtools depth };
 
-    ## Optionally set the read depth cutoff value
     if ($max_depth_treshold) {
+
         push @commands, q{-d} . $SPACE . $max_depth_treshold;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    ## Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
