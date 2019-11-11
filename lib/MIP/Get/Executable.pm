@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -53,6 +53,7 @@ sub get_binary_version {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Executable qw{ get_executable };
+    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -125,7 +126,7 @@ q?'my ($version) = /bam2wig.py\s+(\S+)/xms; if($version) {print $version;last;}'
         q{bam_stat.py} => {
             version_cmd => q{--version},
             version_regexp =>
-q?'my ($version) = /bam_stat.py.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+q?'my ($version) = /bam_stat.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bcftools => {
             version_cmd => q{2>&1 >/dev/null},
@@ -184,7 +185,7 @@ q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;
         gffcompare => {
             version_cmd => q{--version 2>&1 >/dev/null},
             version_regexp =>
-q?my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
+q?'my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{grep} => {
             version_cmd => q{--version},
@@ -231,6 +232,11 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
             version_regexp =>
 q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        preseq => {
+            version_cmd => q{2>&1 >/dev/null},
+            version_regexp =>
+q?'my ($version) = /Version:\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+        },
         picard => {
             version_cmd => q{BamIndexStats 2>&1 >/dev/null},
             version_regexp =>
@@ -261,6 +267,11 @@ q?'my ($version) = /read_duplication.py\s+(\S+)/xms; if($version) {print $versio
             version_regexp =>
 q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        salmon => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /salmon\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+        },
         sambamba => {
             version_cmd => q{--version 2>&1 >/dev/null},
             version_regexp =>
@@ -275,6 +286,16 @@ q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $ver
             version_cmd => q{--version},
             version_regexp =>
 q?'my ($version) = /\(GNU\s+sed\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        STAR => {
+            version_cmd => q{--version},
+            version_regexp =>
+              q?'my ($version) = /(\S+)/xms; if($version) {print $version; last;}'?,
+        },
+        q{STAR-Fusion} => {
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         stranger => {
             version_cmd => q{--version},
@@ -327,8 +348,9 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
 q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         varg => {
-          version_cmd => q{--version},
-          version_regexp => q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
+            version_cmd => q{--version},
+            version_regexp =>
+q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
         },
         vep => {
             version_regexp =>
@@ -394,7 +416,6 @@ sub _build_version_cmd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Get perl wrapper around regexp
     my @perl_commands = perl_nae_oneliners(

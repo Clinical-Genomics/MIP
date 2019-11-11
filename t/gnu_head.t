@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -81,13 +81,17 @@ my %base_argument = (
 );
 
 my %specific_argument = (
-    lines => {
-        input           => q{5},
-        expected_output => q{-n 5},
-    },
     infile_path => {
         input           => catfile(qw{a file_path }),
         expected_output => catfile(qw{a file_path }),
+    },
+    lines => {
+        input           => 2,
+        expected_output => q{-n 2},
+    },
+    number => {
+        input           => 2,
+        expected_output => q{-c 2},
     },
 );
 

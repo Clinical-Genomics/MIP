@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Gatk;
+package MIP::Program::Gatk;
 
 use 5.026;
 use strict;
@@ -16,7 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE $DOUBLE_QUOTE };
-use MIP::Program::Base::Gatk qw{ gatk_java_options gatk_common_options };
+use MIP::Program::Base::Gatk qw{ gatk_common_options gatk_java_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -85,7 +85,7 @@ sub gatk_applybqsr {
             store       => \$base_quality_score_recalibration_file,
             strict_type => 1,
         },
-        filehandle  => { store => \$filehandle },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
@@ -146,8 +146,6 @@ sub gatk_applybqsr {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## GATK ApplyBQSR
 
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
@@ -323,8 +321,6 @@ sub gatk_asereadcounter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## GATK ASEReadCounter
-
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
 
@@ -361,6 +357,7 @@ sub gatk_asereadcounter {
 
     ## Add output
     if ($outfile_path) {
+
         push @commands, q{--output} . $SPACE . $outfile_path;
     }
 
@@ -378,7 +375,6 @@ sub gatk_asereadcounter {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -422,7 +418,7 @@ sub gatk_baserecalibrator {
     my $xargs_mode;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
@@ -490,8 +486,6 @@ sub gatk_baserecalibrator {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## GATK BaseRecalibrator
 
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
@@ -595,7 +589,7 @@ sub gatk_gatherbqsrreports {
             store       => \$base_quality_score_recalibration_files_ref,
             strict_type => 1,
         },
-        filehandle    => { store => \$filehandle },
+        filehandle    => { store => \$filehandle, },
         intervals_ref => {
             default     => [],
             defined     => 1,
@@ -644,8 +638,6 @@ sub gatk_gatherbqsrreports {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## GATK GatherBQSRReports
 
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
@@ -779,7 +771,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         filehandle => {
-            store => \$filehandle
+            store => \$filehandle,
         },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
@@ -878,8 +870,6 @@ sub gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## GATK HaplotyeCaller
-
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
 
@@ -921,6 +911,7 @@ sub gatk_haplotypecaller {
 
     ## Add dbsnp
     if ($dbsnp_path) {
+
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
     }
 
@@ -941,6 +932,7 @@ sub gatk_haplotypecaller {
 
     ## No soft clipped bases
     if ($dont_use_soft_clipped_bases) {
+
         push @commands, q{--dont-use-soft-clipped-bases};
     }
 
@@ -949,11 +941,13 @@ sub gatk_haplotypecaller {
 
     ## Add PCR indel model
     if ($pcr_indel_model) {
+
         push @commands, q{--pcr-indel-model} . $SPACE . $pcr_indel_model;
     }
 
     ## Add sample ploidy
     if ($sample_ploidy) {
+
         push @commands, q{--sample-ploidy} . $SPACE . $sample_ploidy;
     }
 
@@ -989,17 +983,17 @@ sub gatk_printreads {
 
 ## Function : Perl wrapper for writing GATK PrintReads recipe to $filehandle. Based on GATK 4.0.8.
 ## Returns  : @commands
-##          : $filehandle                            => Sbatch filehandle to write to
-##          : $infile_path                           => Infile paths
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $verbosity                             => Set the minimum level of logging
+##          : $filehandle           => Sbatch filehandle to write to
+##          : $infile_path          => Infile paths
+##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $read_filters_ref     => Filters to apply to reads before analysis {REF}
+##          : $referencefile_path   => Reference sequence file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+##          : $verbosity            => Set the minimum level of logging
 
     my ($arg_href) = @_;
 
@@ -1027,7 +1021,7 @@ sub gatk_printreads {
             store       => \$infile_path,
             strict_type => 1,
         },
-        filehandle    => { store => \$filehandle },
+        filehandle    => { store => \$filehandle, },
         intervals_ref => {
             default     => [],
             defined     => 1,
@@ -1078,7 +1072,6 @@ sub gatk_printreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## GATK PrintReads
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };
 
@@ -1225,8 +1218,6 @@ sub gatk_splitncigarreads {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## GATK SplitNCigarReads
 
     # Stores commands depending on input parameters
     my @commands = qw{ gatk };

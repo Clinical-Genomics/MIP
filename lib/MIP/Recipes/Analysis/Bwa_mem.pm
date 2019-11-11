@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -145,9 +145,9 @@ sub analysis_bwa_mem {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Bwa qw{ bwa_mem };
-    use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
+    use MIP::Program::Bwa qw{ bwa_mem };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
+    use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -605,9 +605,9 @@ sub analysis_run_bwa_mem {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
+    use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
+    use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -129,9 +129,6 @@ sub download_gnomad {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
 
-    ## Constants
-    Readonly my $RTG_MEMORY => 5;
-
     ### PREPROCESSING:
 
     ## Retrieve logger object
@@ -201,13 +198,14 @@ sub download_gnomad {
         $DASH . $reference_version . q{-.vcf.gz}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+    my $rtg_memory              = $recipe_resource{memory} - 1 . q{G};
 
     rtg_vcfsubset(
         {
             filehandle         => $filehandle,
             infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
             keep_info_keys_ref => $info_key{$reference_version},
-            memory             => $RTG_MEMORY . q{G},
+            memory             => $rtg_memory,
             outfile_path       => $reformated_outfile_path,
         }
     );

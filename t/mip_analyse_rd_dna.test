@@ -74,6 +74,8 @@ GetOptions(
 
 ok( can_run(q{mip}), q{Checking can run mip} );
 
+Readonly my $DRY_RUN_MODE => 2;
+
 ## Update path in toml config
 _write_toml_config(
     {
@@ -109,6 +111,13 @@ my $cmds_ref = [
     qw{ --dra --svv 0 --vb },
     q{--fqa_vcfanno_config},
     $toml_config_path,
+    q{--varg_ar},
+    $DRY_RUN_MODE,
+    q{--varg_truth_set_vcf},
+    catfile(
+        $cluster_constant_path,
+        qw{ test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf }
+    ),
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =

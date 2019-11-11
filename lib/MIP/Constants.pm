@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
 
@@ -33,6 +33,7 @@ BEGIN {
       $BACKWARD_SLASH
       $CLOSE_BRACE
       $CLOSE_BRACKET
+      $CLOSE_PARENTHESIS
       $COLON
       $COMMA
       $DASH
@@ -51,7 +52,9 @@ BEGIN {
       $NEWLINE
       $OPEN_BRACE
       $OPEN_BRACKET
+      $OPEN_PARENTHESIS
       $PIPE
+      $PLUS
       %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
@@ -316,32 +319,35 @@ Readonly our %PRIMARY_CONTIG => (
 );
 
 ## Symbols
-Readonly our $AMPERSAND      => q{&};
-Readonly our $ASTERISK       => q{*};
-Readonly our $AT             => q{@};
-Readonly our $BACKTICK       => q{`};
-Readonly our $BACKWARD_SLASH => q{\\};
-Readonly our $CLOSE_BRACE    => q{\}};
-Readonly our $CLOSE_BRACKET  => q{]};
-Readonly our $COLON          => q{:};
-Readonly our $COMMA          => q{,};
-Readonly our $DASH           => q{-};
-Readonly our $DOLLAR_SIGN    => q{$};
-Readonly our $DOT            => q{.};
-Readonly our $DOUBLE_QUOTE   => q{"};
-Readonly our $EMPTY_STR      => q{};
-Readonly our $ESCAPE         => q{\\};
-Readonly our $EQUALS         => q{=};
-Readonly our $FORWARD_SLASH  => q{/};
-Readonly our $NEWLINE        => qq{\n};
-Readonly our $OPEN_BRACE     => q{\{};
-Readonly our $OPEN_BRACKET   => q{[};
-Readonly our $PIPE           => q{|};
-Readonly our $SEMICOLON      => q{;};
-Readonly our $SINGLE_QUOTE   => q{'};
-Readonly our $SPACE          => q{ };
-Readonly our $TAB            => qq{\t};
-Readonly our $UNDERSCORE     => q{_};
+Readonly our $AMPERSAND         => q{&};
+Readonly our $ASTERISK          => q{*};
+Readonly our $AT                => q{@};
+Readonly our $BACKTICK          => q{`};
+Readonly our $BACKWARD_SLASH    => q{\\};
+Readonly our $CLOSE_BRACE       => q{\}};
+Readonly our $CLOSE_BRACKET     => q{]};
+Readonly our $CLOSE_PARENTHESIS => q{)};
+Readonly our $COLON             => q{:};
+Readonly our $COMMA             => q{,};
+Readonly our $DASH              => q{-};
+Readonly our $DOLLAR_SIGN       => q{$};
+Readonly our $DOT               => q{.};
+Readonly our $DOUBLE_QUOTE      => q{"};
+Readonly our $EMPTY_STR         => q{};
+Readonly our $ESCAPE            => q{\\};
+Readonly our $EQUALS            => q{=};
+Readonly our $FORWARD_SLASH     => q{/};
+Readonly our $NEWLINE           => qq{\n};
+Readonly our $OPEN_BRACE        => q{\{};
+Readonly our $OPEN_BRACKET      => q{[};
+Readonly our $OPEN_PARENTHESIS  => q{(};
+Readonly our $PIPE              => q{|};
+Readonly our $PLUS              => q{+};
+Readonly our $SEMICOLON         => q{;};
+Readonly our $SINGLE_QUOTE      => q{'};
+Readonly our $SPACE             => q{ };
+Readonly our $TAB               => qq{\t};
+Readonly our $UNDERSCORE        => q{_};
 
 sub set_analysis_constants {
 

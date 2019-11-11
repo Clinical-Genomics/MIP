@@ -161,7 +161,7 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
+    use MIP::Program::Gatk qw{ gatk_splitncigarreads };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };

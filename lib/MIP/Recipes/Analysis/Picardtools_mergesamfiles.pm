@@ -168,8 +168,8 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools
       qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
-    use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
-    use MIP::Program::Alignment::Samtools qw{ samtools_index };
+    use MIP::Program::Sambamba qw{ split_and_index_aligment_file };
+    use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };

@@ -546,6 +546,7 @@ sub gnu_head {
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $lines                  => Lines to print
+##          : $number                 => Number of first bytes to display
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -556,6 +557,7 @@ sub gnu_head {
     my $filehandle;
     my $infile_path;
     my $lines;
+    my $number;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -571,6 +573,11 @@ sub gnu_head {
         lines => {
             allow       => qr/ ^\d+$ /xms,
             store       => \$lines,
+            strict_type => 1,
+        },
+        number => {
+            allow       => qr{\A \d+ \z}xms,
+            store       => \$number,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -596,6 +603,9 @@ sub gnu_head {
         push @commands, q{-n} . $SPACE . $lines;
     }
 
+    if ($number) {
+        push @commands, q{-c} . $SPACE . $number;
+    }
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -1494,6 +1504,7 @@ sub gnu_tail {
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $lines                  => Lines to print
+##          : $number                 => Location in number of bytes
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -1503,6 +1514,7 @@ sub gnu_tail {
     ## Flatten argument(s)
     my $filehandle;
     my $lines;
+    my $number;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -1514,6 +1526,11 @@ sub gnu_tail {
         lines => {
             allow       => qr/ ^\d+$ /xms,
             store       => \$lines,
+            strict_type => 1,
+        },
+        number => {
+            allow       => qr/\A \d+ \z | \A [+]\d+ \z /xms,
+            store       => \$number,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -1536,7 +1553,11 @@ sub gnu_tail {
     my @commands = q{tail};
 
     if ($lines) {
-        push @commands, q{--lines=} . $lines;
+        push @commands, q{--lines} . $EQUALS . $lines;
+    }
+
+    if ($number) {
+        push @commands, q{-c} . $SPACE . $number;
     }
 
     push @commands,

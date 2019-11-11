@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Samtools} => [qw{ samtools_stats }],
-        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
+        q{MIP::Program::Samtools} => [qw{ samtools_stats }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Samtools qw{ samtools_stats };
+use MIP::Program::Samtools qw{ samtools_stats };
 
 diag(   q{Test samtools_stats from Samtools.pm v}
-      . $MIP::Program::Alignment::Samtools::VERSION
+      . $MIP::Program::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +59,7 @@ diag(   q{Test samtools_stats from Samtools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-use MIP::Program::Alignment::Samtools qw{samtools_stats};
+use MIP::Program::Samtools qw{ samtools_stats };
 
 ## Base arguments
 my @function_base_commands = qw{ samtools };
@@ -129,9 +126,9 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
             function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

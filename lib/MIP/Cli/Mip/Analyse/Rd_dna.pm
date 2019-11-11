@@ -2245,6 +2245,26 @@ q{Regular expression file containing the regular expression to be used for each 
         )
     );
 
+    option(
+        q{varg_ar} => (
+            cmd_aliases   => [qw{ varg }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Compare resulting SVs and SNVs with positive controls},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{varg_truth_set_vcf} => (
+            cmd_aliases   => [qw{ vts }],
+            cmd_tags      => [q{Format: vcf}],
+            documentation => q{vcf with expected SVs and SNVs},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 

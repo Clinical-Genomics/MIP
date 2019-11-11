@@ -354,7 +354,7 @@ sub detect_founders {
 sub detect_sample_id_gender {
 
 ## Function : Detect gender of the current analysis
-## Returns  : "$found_male $found_female $found_other $found_other_count"
+## Returns  : "$found_male $found_female $found_other"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
 
@@ -384,10 +384,9 @@ sub detect_sample_id_gender {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Initialize
-    my $found_male        = 0;
-    my $found_female      = 0;
-    my $found_other       = 0;
-    my $found_other_count = 0;
+    my $found_male   = 0;
+    my $found_female = 0;
+    my $found_other  = 0;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -395,25 +394,28 @@ sub detect_sample_id_gender {
         ## If male
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 1 | ^male/sxm ) {
 
-            $found_male = 1;
+            $found_male++;
+            push @{ $active_parameter_href->{gender}{males} }, $sample_id;
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm ) {
             ## If female
 
-            $found_female = 1;
+            $found_female++;
+            push @{ $active_parameter_href->{gender}{females} }, $sample_id;
         }
         else {
             ## Must be other
 
-            ## Include since it might be male to enable analysis of Y.
-            $found_male = 1;
+            ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
+            ## will be performed from fastq reads
+            $found_male++;
 
             # "Other" metrics
-            $found_other = 1;
-            $found_other_count++;
+            $found_other++;
+            push @{ $active_parameter_href->{gender}{others} }, $sample_id;
         }
     }
-    return $found_male, $found_female, $found_other, $found_other_count;
+    return $found_male, $found_female, $found_other;
 }
 
 sub detect_trio {

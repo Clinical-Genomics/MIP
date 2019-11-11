@@ -144,7 +144,7 @@ sub analysis_gatk_asereadcounter {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Gatk qw{ gatk_asereadcounter };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Script::Setup_script qw{ setup_script };

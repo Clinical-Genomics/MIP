@@ -208,6 +208,7 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
+    use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
@@ -314,6 +315,7 @@ sub pipeline_analyse_rd_dna {
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
+        varg_ar                => \&analysis_varg, 
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,

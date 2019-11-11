@@ -1,4 +1,4 @@
-package MIP::Program::Alignment::Chanjo;
+package MIP::Program::Chanjo;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,28 +25,24 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ chanjo_sex };
 }
 
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
 sub chanjo_sex {
 
 ## Function : Perl wrapper for writing chanjo sex recipe to $filehandle. Based on chanjo 4.0.0
 ## Returns  : @commands
-## Arguments: $chr_prefix                           => Chromosome prefix
-##          : $filehandle                           => Sbatch filehandle to write to
-##          : $infile_path                          => Infile path
-##          : $log_file_path                        => Log file path
-##          : $log_level                            => Level of logging
-##          : $outfile_path                         => Outfile path
-##          : $stderrfile_path                      => Stderrfile path
-##          : $stderrfile_path_append               => Stderrfile path append
+## Arguments: $chr_prefix             => Chromosome prefix
+##          : $filehandle             => Sbatch filehandle to write to
+##          : $infile_path            => Infile path
+##          : $log_file_path          => Log file path
+##          : $log_level              => Level of logging
+##          : $outfile_path           => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -63,35 +60,34 @@ sub chanjo_sex {
 
     my $tmpl = {
         chr_prefix => {
-            allow       => [ undef, qw{chr} ],
+            allow       => [ undef, qw{ chr } ],
+            store       => \$chr_prefix,
             strict_type => 1,
-            store       => \$chr_prefix
         },
-        filehandle  => { required => 1, store => \$filehandle },
+        filehandle  => { required => 1, store => \$filehandle, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        log_file_path => { strict_type => 1, store => \$log_file_path },
+        log_file_path => { store => \$log_file_path, strict_type => 1, },
         log_level     => {
+            allow       => [qw{ DEBUG INFO WARNING ERROR CRITICAL }],
             default     => q{INFO},
-            allow       => [qw{DEBUG INFO WARNING ERROR CRITICAL}],
+            store       => \$log_level,
             strict_type => 1,
-            store       => \$log_level
         },
-        outfile_path           => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Chanjo
-    my @commands = qw{chanjo};    #Stores commands depending on input parameters
+    my @commands = qw{ chanjo };
 
-    ## Chanjo main options
     if ($log_level) {
 
         push @commands, q{--log-level} . $SPACE . $log_level;
@@ -103,12 +99,11 @@ sub chanjo_sex {
 
     push @commands, q{sex};
 
-    ## Options
     if ($chr_prefix) {
 
         push @commands, q{--prefix} . $SPACE . $chr_prefix;
     }
-    ##Infile
+
     push @commands, $infile_path;
 
     if ($outfile_path) {
@@ -127,11 +122,10 @@ sub chanjo_sex {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 

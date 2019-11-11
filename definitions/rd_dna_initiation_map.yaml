@@ -82,5 +82,6 @@ CHAIN_ALL:
    - qccollect_ar
    - version_collect_ar
    - multiqc_ar
+   - varg_ar
    - analysisrunstatus
    - sacct

@@ -163,7 +163,7 @@ sub analysis_markduplicates {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
+    use MIP::Program::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
