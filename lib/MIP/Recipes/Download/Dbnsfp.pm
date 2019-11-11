@@ -465,7 +465,7 @@ sub _reformat_dbnsfp {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
 
     ## Any chr will do to generate header info
     my $dbnsfp_chr1_file_path = $infile_path . q{1.gz};

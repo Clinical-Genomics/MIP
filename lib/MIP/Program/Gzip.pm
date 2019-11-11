@@ -1,4 +1,4 @@
-package MIP::Program::Compression::Gzip;
+package MIP::Program::Gzip;
 
 use Carp;
 use charnames qw{ :full :short };

@@ -67,7 +67,7 @@ sub decompress_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Parse::File qw{ parse_file_suffix };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Compression::Zip qw{ unzip };
 

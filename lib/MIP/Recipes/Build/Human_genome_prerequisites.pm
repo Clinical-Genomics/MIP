@@ -161,7 +161,7 @@ sub build_human_genome_prerequisites {
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Program::Samtools qw{ samtools_faidx };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Build::Capture_file_prerequisites
