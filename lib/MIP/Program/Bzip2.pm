@@ -1,18 +1,22 @@
-package MIP::Program::Compression::Bzip2;
+package MIP::Program::Bzip2;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
-use open qw{  :encoding(UTF-8) :std};
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
+## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -21,105 +25,99 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bzip2 };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub bzip2 {
 
 ## Function : Perl wrapper for writing bzip2 recipe to $filehandle or return commands array. Based on bzip2 v1.0.6
-## Returns  : "@commands"
-## Arguments: $infile_path            => Infile path
-##          : $outfile_path           => Path to output file
-##          : $stdout                 => Write on standard output
-##          : $decompress             => Decompress bzip2 file
+## Returns  : @commands
+## Arguments: $decompress             => Decompress bzip2 file
 ##          : $filehandle             => Filehandle to write to
+##          : $force                  => Overwrite of output files
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Path to output file
+##          : $quiet                  => Suppress all warnings
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $force                  => Overwrite of output files
-##          : $quiet                  => Suppress all warnings
+##          : $stdout                 => Write on standard output
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
-    my $outfile_path;
     my $decompress;
     my $filehandle;
+    my $infile_path;
+    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     ## Default(s)
-    my $stdout;
     my $force;
     my $quiet;
+    my $stdout;
     my $verbose;
 
     my $tmpl = {
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            strict_type => 1,
-            store       => \$outfile_path
-        },
         decompress => {
-            strict_type => 1,
             store       => \$decompress,
+            strict_type => 1,
         },
         filehandle => {
-            store => \$filehandle
-        },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append
-        },
-        stdout => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$stdout
+            store => \$filehandle,
         },
         force => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$force,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
         },
         quiet => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdout => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$stdout,
+            strict_type => 1,
         },
         verbose => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = q{bzip2};
 
-    ## Options
     if ($quiet) {
         push @commands, q{--quiet};
     }
@@ -160,11 +158,10 @@ sub bzip2 {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
