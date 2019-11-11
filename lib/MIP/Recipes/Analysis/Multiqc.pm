@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -165,7 +165,7 @@ sub analysis_multiqc {
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $recipe_resource{memory_allocation},
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
