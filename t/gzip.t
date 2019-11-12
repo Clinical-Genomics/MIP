@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,8 +41,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Gzip} => [qw{ gzip }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Program::Gzip}  => [qw{ gzip }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,10 +63,10 @@ diag(   q{Test gzip from Gzip.pm v}
 my @function_base_commands = qw{ gzip };
 
 my %base_argument = (
-filehandle => {
-    input           => undef,
-    expected_output => \@function_base_commands,
-},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -80,10 +80,10 @@ filehandle => {
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-filehandle => {
-    input           => undef,
-    expected_output => \@function_base_commands,
-},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     infile_path => {
         input           => q{infile_path},
         expected_output => q{infile_path},
@@ -91,22 +91,22 @@ filehandle => {
 );
 
 my %specific_argument = (
-decompress => {
-    input           => 1,
-    expected_output => q{--decompress},
-},
-force => {
-    input           => 1,
-    expected_output => q{--force},
-},
-outfile_path => {
-    input           => q{outfile_path},
-    expected_output => q{> outfile_path},
-},
-quiet => {
-    input           => 1,
-    expected_output => q{--quiet},
-},
+    decompress => {
+        input           => 1,
+        expected_output => q{--decompress},
+    },
+    force => {
+        input           => 1,
+        expected_output => q{--force},
+    },
+    outfile_path => {
+        input           => q{outfile_path},
+        expected_output => q{> outfile_path},
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
+    },
     stdout => {
         input           => q{stdout},
         expected_output => q{--stdout},
