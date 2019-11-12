@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -219,7 +219,8 @@ sub check_if_processed_by_vt {
         $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
         ## Detect if vt program has processed reference
-        my $ret = `bcftools view $reference_file_path | $regexp`;
+        my $ret =
+`export MIP_BIND="$reference_file_path"; bcftools view $reference_file_path | $regexp; unset MIP_BIND`;
 
         ## No trace of vt processing found
         if ( not $ret ) {

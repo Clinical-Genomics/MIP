@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -167,7 +167,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     );
     singularity_exec(
         {
-            bind_paths_ref                 => [$cache_dir_path],
             filehandle                     => $filehandle,
             singularity_container          => $container_path,
             singularity_container_cmds_ref => \@vep_install_cmds,
