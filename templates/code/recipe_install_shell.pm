@@ -117,7 +117,7 @@ sub install_PROGRAM {
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Zip qw{ unzip };
 
     ## Unpack parameters
     my $program_version = $PROGRAM_parameters_href->{version};
