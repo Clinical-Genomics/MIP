@@ -430,7 +430,7 @@ sub analysis_rhocall_viz {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_index bcftools_roh bcftools_view };

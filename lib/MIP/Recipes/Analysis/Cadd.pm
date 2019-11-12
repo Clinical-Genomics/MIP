@@ -492,7 +492,7 @@ sub analysis_cadd_gb_38 {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };

@@ -137,7 +137,7 @@ sub analysis_gzip_fastq {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## No uncompressed fastq infiles
