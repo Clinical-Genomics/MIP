@@ -1,4 +1,4 @@
-package MIP::Recipes::Install::Bcftools;
+package MIP::Recipes::Install::Htslib;
 
 use 5.026;
 use Carp;
@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOUBLE_QUOTE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DOUBLE_QUOTE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Singularity qw{ singularity_exec };
 
@@ -32,12 +32,12 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ install_bcftools };
+    our @EXPORT_OK = qw{ install_htslib };
 }
 
-sub install_bcftools {
+sub install_htslib {
 
-## Function : Add relative bind path for bcftools
+## Function : Add relative bind path for htslib
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
 ##          : $contaienr_href        => Container hah {REF}
@@ -79,18 +79,21 @@ sub install_bcftools {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Only add MIP_BIND for bcftools
-    return if ( not $container_path =~ /bcftools.sif \z/sxm );
-
-    my $bcftools_bind_path = $DOUBLE_QUOTE . q{$MIP_BIND} . $DOUBLE_QUOTE;
+    my $htslib_bind_path =
+        $BACKWARD_SLASH
+      . $DOUBLE_QUOTE
+      . $BACKWARD_SLASH
+      . q{$MIP_BIND}
+      . $BACKWARD_SLASH
+      . $DOUBLE_QUOTE;
 
     ## Store annotation dir path for later
     if ( $container_href->{program_bind_paths} ) {
 
-        push @{ $container_href->{program_bind_paths} }, $bcftools_bind_path;
+        push @{ $container_href->{program_bind_paths} }, $htslib_bind_path;
     }
     else {
-        $container_href->{program_bind_paths} = [$bcftools_bind_path];
+        $container_href->{program_bind_paths} = [$htslib_bind_path];
     }
     return 1;
 }

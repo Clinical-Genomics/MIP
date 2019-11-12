@@ -21,7 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $DOUBLE_QUOTE $FORWARD_SLASH $SPACE };
+use MIP::Constants qw{ $BACKWARD_SLASH $COLON $COMMA $DOUBLE_QUOTE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Install::Bcftools} => [qw{ install_bcftools }],
+        q{MIP::Recipes::Install::Htslib} => [qw{ install_htslib }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Install::Bcftools qw{ install_bcftools };
+use MIP::Recipes::Install::Htslib qw{ install_htslib };
 
-diag(   q{Test install_bcftools from Bcftools.pm v}
-      . $MIP::Recipes::Install::Bcftools::VERSION
+diag(   q{Test install_htslib from Htslib.pm v}
+      . $MIP::Recipes::Install::Htslib::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -71,19 +71,25 @@ open my $filehandle, q{>}, \$file_content
 ## Given install parameters
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
-my $is_ok = install_bcftools(
+my $is_ok = install_htslib(
     {
         active_parameter_href => \%active_parameter,
         container_href        => $active_parameter{emip}{singularity}{htslib},
-        container_path        => catfile(q{bcftools.sif}),
+        container_path        => catfile(q{htslib.sif}),
         filehandle            => $filehandle,
     }
 );
 
-my $expected = [ $DOUBLE_QUOTE . q{$MIP_BIND} . $DOUBLE_QUOTE ];
+my $expected =
+  [     $BACKWARD_SLASH
+      . $DOUBLE_QUOTE
+      . $BACKWARD_SLASH
+      . q{$MIP_BIND}
+      . $BACKWARD_SLASH
+      . $DOUBLE_QUOTE ];
 
 ## Then return TRUE
-ok( $is_ok, q{Executed install bcftools recipe } );
+ok( $is_ok, q{Executed install htslib recipe } );
 
 ## Then append relative bind baths
 is_deeply( $active_parameter{emip}{singularity}{htslib}{program_bind_paths},

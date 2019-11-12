@@ -26,7 +26,7 @@ use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_echo gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Singularity qw{ singularity_exec singularity_pull };
-use MIP::Recipes::Install::Bcftools qw{ install_bcftools };
+use MIP::Recipes::Install::Htslib qw{ install_htslib };
 use MIP::Recipes::Install::Cadd qw{ install_cadd };
 use MIP::Recipes::Install::Vep qw{ install_vep };
 
@@ -116,7 +116,7 @@ sub install_singularity_containers {
 
     ## Containers requiring something extra
     my %finish_container_installation = (
-        htslib => \&install_bcftools,
+        htslib => \&install_htslib,
         cadd   => \&install_cadd,
         vep    => \&install_vep,
     );

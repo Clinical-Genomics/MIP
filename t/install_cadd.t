@@ -21,7 +21,8 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $DOUBLE_QUOTE $FORWARD_SLASH $SPACE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $COLON $COMMA $DOUBLE_QUOTE $FORWARD_SLASH $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -114,7 +115,12 @@ $active_parameter{reference_dir}                               = undef;
 $active_parameter{emip}{singularity}{cadd}{program_bind_paths} = undef;
 $expected                                                      = [
     catdir(
-        $DOUBLE_QUOTE . q{$MIP_BIND} . $DOUBLE_QUOTE,
+        $BACKWARD_SLASH
+          . $DOUBLE_QUOTE
+          . $BACKWARD_SLASH
+          . q{$MIP_BIND}
+          . $BACKWARD_SLASH
+          . $DOUBLE_QUOTE,
         qw{ CADD-scripts data annotations }
       )
       . $COLON
