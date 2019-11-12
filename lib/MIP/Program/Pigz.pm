@@ -1,4 +1,4 @@
-package MIP::Program::Compression::Zip;
+package MIP::Program::Pigz;
 
 use 5.026;
 use Carp;
@@ -22,43 +22,45 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
-    use base qw{ Exporter };
+    use base qw{Exporter};
 
     # Set the version for version checking
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ unzip };
+    our @EXPORT_OK = qw{ pigz };
 }
 
-sub unzip {
+sub pigz {
 
-## Function : Perl wrapper for writing unzip recipe to $filehandle or return commands array. Based on unzip v6.0
+## Function : Perl wrapper for writing pigz recipe to $filehandle or return commands array. Based on pigz 2.3.1.
 ## Returns  : @commands
+## Arguments: $decompress             => Decompress
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
-##          : $outdir_path            => Path to output directory
-##          : $stdout                 => Write on standard output
-##          : $filehandle             => Filehandle to write to (scalar undefined)
-##          : $stderrfile_path        => Stderrfile path (scalar )
-##          : $stderrfile_path_append => Append stderr info to file path
+##          : $outfile_path           => Outfile path
+##          : $processes              => Allow up to n compression threads
 ##          : $quiet                  => Suppress all warnings
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdout                 => Write on standard output, keep original files unchanged
 ##          : $verbose                => Verbosity
-##          : $force                  => Overwrite existing files
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
-    my $outdir_path;
-    my $stdout;
+    my $decompress;
     my $filehandle;
+    my $infile_path;
+    my $outfile_path;
+    my $processes;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdout;
 
     ## Default(s)
     my $quiet;
     my $verbose;
-    my $force;
 
     my $tmpl = {
         infile_path => {
@@ -67,78 +69,66 @@ sub unzip {
             store       => \$infile_path,
             strict_type => 1,
         },
-        outdir_path => {
-            store       => \$outdir_path,
+        stdout       => { store => \$stdout,       strict_type => 1, },
+        decompress   => { store => \$decompress,   strict_type => 1, },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        processes    => {
+            allow       => qr{ \A\d+\z }sxm,
+            store       => \$processes,
             strict_type => 1,
         },
-        stdout => {
-            store       => \$stdout,
-            strict_type => 1,
-        },
-        filehandle => {
-            store => \$filehandle,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path_append => {
-            store       => \$stderrfile_path_append,
-            strict_type => 1,
-        },
+        filehandle      => { store => \$filehandle, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
         quiet => {
-            allow       => [ undef, 0, 1 ],
+            allow       => [ 0, 1 ],
             default     => 0,
             store       => \$quiet,
             strict_type => 1,
         },
         verbose => {
-            allow       => [ undef, 0, 1 ],
+            allow       => [ 0, 1 ],
             default     => 0,
             store       => \$verbose,
             strict_type => 1,
         },
-        force => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$force,
-            strict_type => 1,
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ unzip };
+    my @commands = qw{ pigz };
 
-    ## Options
+    if ($processes) {
+
+        push @commands, q{--processes} . $SPACE . $processes;
+    }
+
     if ($quiet) {
 
-        push @commands, q{-q};
+        push @commands, q{--quiet};
     }
 
     if ($verbose) {
 
-        push @commands, q{-v};
+        push @commands, q{--verbose};
     }
 
-    if ($force) {
+    if ($decompress) {
 
-        push @commands, q{-o};
+        push @commands, q{--decompress};
     }
 
     if ($stdout) {
 
-        push @commands, q{-p};
+        push @commands, q{--stdout};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    ## Outfile
-    if ($outdir_path) {
-        push @commands, q{-d} . $SPACE . $outdir_path;
+    if ($outfile_path) {
+
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -156,6 +146,7 @@ sub unzip {
             separator    => $SPACE,
         }
     );
+
     return @commands;
 }
 
