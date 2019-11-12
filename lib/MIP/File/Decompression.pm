@@ -68,7 +68,7 @@ sub decompress_file {
 
     use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Program::Compression::Gzip qw{ gzip };
-    use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Tar qw{ tar };
     use MIP::Program::Zip qw{ unzip };
 
     return if ( not defined $decompress_program );
