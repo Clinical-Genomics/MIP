@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Compression::Tar} => [qw{ tar }],
-        q{MIP::Test::Fixtures}            => [qw{ test_standard_cli }],
+        q{MIP::Program::Tar}   => [qw{ tar }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Tar qw{ tar };
 
 diag(   q{Test tar from Tar.pm v}
-      . $MIP::Program::Compression::Tar::VERSION
+      . $MIP::Program::Tar::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
