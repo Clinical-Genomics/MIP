@@ -134,7 +134,7 @@ sub analysis_chromograph {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -376,7 +376,7 @@ sub analysis_chromograph_proband {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Upd qw{ upd_call };
     use MIP::Parse::File qw{ parse_io_outfiles };

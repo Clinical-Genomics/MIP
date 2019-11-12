@@ -21,7 +21,7 @@ use Readonly;
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
-use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Tar qw{ tar };
 use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {

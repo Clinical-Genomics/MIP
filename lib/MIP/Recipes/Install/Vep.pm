@@ -23,7 +23,7 @@ use Readonly;
 use MIP::Constants qw{ $BACKTICK $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
-use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Tar qw{ tar };
 use MIP::Program::Download::Wget qw{ wget };
 use MIP::Program::Singularity qw{ singularity_exec };
 use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
