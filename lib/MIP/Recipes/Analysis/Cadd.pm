@@ -263,7 +263,7 @@ sub analysis_cadd {
             filehandle    => $filehandle,
         }
     );
-    say {$filehandle} . $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
@@ -639,7 +639,7 @@ sub analysis_cadd_gb_38 {
             filehandle    => $filehandle,
         }
     );
-    say {$filehandle} . $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
