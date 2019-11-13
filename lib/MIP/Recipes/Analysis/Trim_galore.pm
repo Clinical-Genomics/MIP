@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $AMPERSAND $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -278,15 +278,18 @@ sub analysis_trim_galore {
             push @fastq_files, $infile_paths[$paired_end_tracker];
         }
 
-        ## Store original working directory
+        my $stderrfile_path =
+          catfile( $recipe_info_path . $DOT . $infile_prefix . $DOT . q{stderr.txt} );
+
         ## Trim galore
         trim_galore(
             {
                 cores            => $recipe_resource{core_number},
                 filehandle       => $filehandle,
-                infile_paths_ref => \@infile_paths,
+                infile_paths_ref => \@fastq_files,
                 outdir_path      => $outsample_directory,
                 paired_reads     => $paired_reads,
+                stderrfile_path  => $stderrfile_path,
             }
         );
         say {$filehandle} $AMPERSAND . $NEWLINE;
