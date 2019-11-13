@@ -86,7 +86,6 @@ vep_custom_annotation:
    file_type: vcf
    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20190305-.vcf.gz
    vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
-vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
 vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data/cache/
 vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins
 vep_plugin:

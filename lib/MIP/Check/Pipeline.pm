@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -188,9 +188,7 @@ sub check_dragen_rd_dna {
     ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            log                 => $log,
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 
@@ -503,9 +501,7 @@ sub check_rd_dna {
     ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            log                 => $log,
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 
@@ -850,9 +846,7 @@ sub check_rd_dna_vcf_rerun {
     ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            log                 => $log,
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 

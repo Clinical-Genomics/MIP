@@ -735,13 +735,6 @@ vep_directory_cache:
   is_reference: 1
   type: path
   update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 vep_features:
   associated_recipe:
     - varianteffectpredictor

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,14 +65,14 @@ my $test_dir = File::Temp->newdir();
 my $log = test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_directory_path = catdir( $Bin, qw{ data modules miniconda envs mip_travis bin } );
+my $vep_binary_path =
+  catdir( $Bin, qw{ data modules miniconda envs mip_travis bin vep } );
 my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data cache } );
 ## When comparing API and cache version
 my $match = check_vep_directories(
     {
-        log                 => $log,
         vep_directory_cache => $vep_directory_cache,
-        vep_directory_path  => $vep_directory_path,
+        vep_binary_path     => $vep_binary_path,
     }
 );
 ## Then return true
@@ -86,7 +86,7 @@ trap {
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -104,7 +104,7 @@ trap {
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -113,7 +113,7 @@ ok( $trap->return, q{Return on unknown cache version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 
 ## Given a direcory that lacks a working vep bin
-$vep_directory_path = catdir( $Bin, qw{ data modules miniconda envs test_env bin} );
+$vep_binary_path = catdir( $Bin, qw{ data modules miniconda envs test_env bin vep} );
 $vep_directory_cache =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When trying to retrieve API version
@@ -122,7 +122,7 @@ trap {
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };

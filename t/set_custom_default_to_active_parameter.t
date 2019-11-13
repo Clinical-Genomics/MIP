@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 $VERBOSE = test_standard_cli(
     {
@@ -254,8 +254,6 @@ my %test_hash = (
     picardtools_path => catdir(
         $active_parameter{conda_path}, qw{ envs test_env_1 share picard-2.14.1-0 }
     ),
-    vep_directory_path =>
-      catdir( $active_parameter{conda_path}, qw{ envs test_env bin } ),
 );
 
 TEST_PATH:

@@ -87,7 +87,7 @@ recipe_memory:
    - mip
   data_type: HASH
   default:
-    # Per process 
+    # Per process
     cadd_ar: 3
     endvariantannotationblock: 8
     frequency_annotation: 3
@@ -607,13 +607,6 @@ vep_directory_cache:
   data_type: SCALAR
   exists_check: directory
   is_reference: 1
-  type: path
-  update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-   - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
   type: path
   update_path: absolute_path
 vep_features:

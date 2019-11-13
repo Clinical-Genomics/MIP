@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -219,7 +219,6 @@ sub set_custom_default_to_active_parameter {
         sv_vcfparser_select_file      => \&_set_vcfparser_select_file,
         temp_directory                => \&_set_temp_directory,
         vcfparser_select_file         => \&_set_vcfparser_select_file,
-        vep_directory_path            => \&_set_dynamic_path,
     );
 
     ## Set default value to parameter and/or active parameter
@@ -1454,10 +1453,6 @@ sub _set_dynamic_path {
         picardtools_path => {
             bin_file        => q{picard.jar},
             environment_key => q{picard},
-        },
-        vep_directory_path => {
-            bin_file        => q{vep},
-            environment_key => q{varianteffectpredictor},
         },
     );
 

@@ -81,7 +81,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -331,7 +331,6 @@ sub mip_analyse {
           sv_vcfparser_select_file
           temp_directory
           vcfparser_select_file
-          vep_directory_path
         };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
