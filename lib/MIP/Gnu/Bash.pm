@@ -21,10 +21,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ gnu_cd gnu_trap gnu_set gnu_unset gnu_wait };
+    our @EXPORT_OK = qw{ gnu_cd gnu_export gnu_trap gnu_set gnu_unset gnu_wait };
 
 }
 
@@ -47,29 +47,26 @@ sub gnu_cd {
 
     my $tmpl = {
         directory_path => {
-            strict_type => 1,
             store       => \$directory_path,
+            strict_type => 1,
         },
         filehandle => {
             store => \$filehandle,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### cd
-    ##Stores commands depending on input parameters
-    my @commands = q{cd};
+    my @commands = qw{ cd };
 
-    ## Options
     if ($directory_path) {
 
         push @commands, $directory_path;
@@ -92,10 +89,74 @@ sub gnu_cd {
     return @commands;
 }
 
+sub gnu_export {
+
+##Function : Perl wrapper for writing cd recipe to already open $filehandle or return commands array. Based on export 4.0
+##Returns  : @commands
+##Arguments: $bash_variable          => Bash variable to export
+##         : $filehandle             => Filehandle to write to
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $bash_variable;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    my $tmpl = {
+        bash_variable => {
+            required    => 1,
+            store       => \$bash_variable,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ### cd
+    ##Stores commands depending on input parameters
+    my @commands = qw{ export };
+
+    if ($bash_variable) {
+
+        push @commands, $bash_variable;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
 sub gnu_trap {
 
 ##Function : Perl wrapper for writing trap recipe to already open $filehandle or return commands array. Based on trap 4.0
-##Returns  : "@commands"
+##Returns  : @commands
 ##Arguments: $filehandle             => Filehandle to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
@@ -120,20 +181,19 @@ sub gnu_trap {
             store => \$filehandle,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         trap_function_call => {
-            strict_type => 1,
             store       => \$trap_function_call,
+            strict_type => 1,
         },
         trap_signals_ref => {
-            default => [],
-            allow   => [
+            allow => [
                 sub {
                     check_allowed_array_values(
                         {
@@ -143,18 +203,15 @@ sub gnu_trap {
                     );
                 }
             ],
-            strict_type => 1,
+            default     => [],
             store       => \$trap_signals_ref,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### trap
-    ##Stores commands depending on input parameters
-    my @commands = q{trap};
-
-    ## Options
+    my @commands = qw{ trap };
 
     if ($trap_function_call) {
 
@@ -176,8 +233,8 @@ sub gnu_trap {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -186,7 +243,7 @@ sub gnu_trap {
 sub gnu_set {
 
 ##Function : Perl wrapper for writing set recipe to already open $filehandle or return commands array. Based on set 4.0
-##Returns  : "@commands"
+##Returns  : @commands
 ##Arguments: $filehandle    => Filehandle to write to
 ##         : $separator     => Separator to use when writing
 ##         : $set_errexit   => Halt script if command has non-zero exit code (-e)
@@ -280,7 +337,7 @@ sub gnu_set {
 sub gnu_wait {
 
 ##Function : Perl wrapper for writing wait recipe to already open $filehandle or return commands array. Based on wait 4.0
-##Returns  : "@commands"
+##Returns  : @commands
 ##Arguments: $filehandle             => Filehandle to write to
 ##         : $processes_ref          => Specified processes to write to
 ##         : $stderrfile_path        => Stderrfile path
@@ -300,26 +357,23 @@ sub gnu_wait {
         },
         processes_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$processes_ref,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### wait
-    ##Stores commands depending on input parameters
-    my @commands = q{wait};
+    my @commands = qw{ wait };
 
-    ## Options
     if ( @{$processes_ref} ) {
 
         push @commands, join $SPACE, @{$processes_ref};
@@ -335,8 +389,8 @@ sub gnu_wait {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -365,30 +419,29 @@ sub gnu_unset {
         bash_variable => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$bash_variable,
+            strict_type => 1,
         },
         filehandle => {
             store => \$filehandle,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores command
-    my @commands = q{unset};
+    my @commands = qw{ unset };
 
     push @commands, $bash_variable;
 
@@ -403,12 +456,13 @@ sub gnu_unset {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
     );
     return @commands;
 }
+
 1;

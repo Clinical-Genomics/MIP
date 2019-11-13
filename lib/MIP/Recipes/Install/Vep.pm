@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -135,7 +135,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         $cache_dir_path = catdir( $reference_dir_path,
             q{ensembl-tools-release-} . $vep_version, q{cache} );
     }
-    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {
