@@ -460,12 +460,14 @@ sub set_ase_chain_recipes {
     ## Keep default if no DNA vcf
     if ( not $active_parameter_href->{dna_vcf_file} ) {
 
-        ## Turn of
+        ## Turn off vcf reformat
         $active_parameter_href->{dna_vcf_reformat} = 0;
     }
     else {
 
-        ## Turn off Haplotypecaller and VariantFiltration
+        ## Turn off variantcalling part of RNA pipeline
+        $active_parameter_href->{gatk_splitncigarreads}  = 0;
+        $active_parameter_href->{gatk_baserecalibration} = 0;
         $active_parameter_href->{gatk_haplotypecaller}   = 0;
         $active_parameter_href->{gatk_variantfiltration} = 0;
     }

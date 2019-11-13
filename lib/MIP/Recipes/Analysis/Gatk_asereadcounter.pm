@@ -159,7 +159,7 @@ sub analysis_gatk_asereadcounter {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Return if we ASE hash been turned off for this sample
+    ## Return if ASE has been turned off for this sample
     if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
 
         $log->warn(qq{No ASE analysis for $sample_id});
@@ -188,7 +188,7 @@ sub analysis_gatk_asereadcounter {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_baserecalibration},
+            recipe_name    => q{markduplicates},
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -261,20 +261,20 @@ sub analysis_gatk_asereadcounter {
     );
 
     ### SHELL
-    
-    ## Restrict analysis to biallelic, heterogenous SNPs    
-    say {$filehandle} q{## Bcftools view};  
-    bcftools_view(  
-        {   
-            filehandle   => $filehandle,    
-            genotype     => q{het}, 
-            infile_path  => $variant_infile_path,   
-            max_alleles  => $ALLELES,   
-            min_alleles  => $ALLELES,   
-            outfile_path => $variant_file_path, 
-            types        => q{snps},    
-        }   
-    );  
+
+    ## Restrict analysis to biallelic, heterogenous SNPs
+    say {$filehandle} q{## Bcftools view};
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            genotype     => q{het},
+            infile_path  => $variant_infile_path,
+            max_alleles  => $ALLELES,
+            min_alleles  => $ALLELES,
+            outfile_path => $variant_file_path,
+            types        => q{snps},
+        }
+    );
     say {$filehandle} $NEWLINE;
 
     ## Index VCF

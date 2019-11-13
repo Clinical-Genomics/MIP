@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -153,7 +153,7 @@ sub analysis_bootstrapann {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Return if we ASE hash been turned off for this sample
+    ## Return if ASE has been turned off for this sample
     if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
 
         $log->warn(qq{No ASE analysis for $sample_id});
@@ -194,7 +194,10 @@ sub analysis_bootstrapann {
     );
     my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
     my $variant_suffix             = $variant_io{out}{file_suffix};
-    my $variant_infile_path        = $variant_infile_path_prefix . $variant_suffix;
+
+    #my $variant_infile_path        = $variant_infile_path_prefix . $variant_suffix;
+    my $variant_infile_path =
+      $variant_infile_path_prefix . $UNDERSCORE . q{restricted} . $variant_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {

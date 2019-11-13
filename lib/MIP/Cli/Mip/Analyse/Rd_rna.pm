@@ -226,16 +226,6 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_downsample_to_coverage} => (
-            cmd_aliases   => [qw{ gdco }],
-            cmd_tags      => [q{Default: 1000}],
-            documentation => q{Coverage to downsample to at any given locus},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{gatk_use_new_qual_calculator} => (
             cmd_aliases   => [qw{ gatknq }],
             cmd_flag      => q{gatk_new_qual},
