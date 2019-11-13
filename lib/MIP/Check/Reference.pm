@@ -18,7 +18,7 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $SPACE $TAB };
+use MIP::Constants qw{ $DOT $EQUALS $NEWLINE $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -187,6 +187,8 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+
     my %vt_regexp;
 
     $vt_regexp{vt_decompose}{vcf_key} = q{OLD_MULTIALLELIC};
@@ -218,9 +220,15 @@ sub check_if_processed_by_vt {
         ## If header is finished quit
         $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
+        ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
+        my $export_cmd = join $SPACE,
+          gnu_export( { bash_variable => q{MIP_BIND} . $EQUALS . $reference_file_path } );
+
+        ## Unset MIP_BIND after system parsing
+        my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
+
         ## Detect if vt program has processed reference
-        my $ret =
-`export MIP_BIND="$reference_file_path"; bcftools view $reference_file_path | $regexp; unset MIP_BIND`;
+        my $ret = `$export_cmd; bcftools view $reference_file_path | $regexp; $unset_cmd`;
 
         ## No trace of vt processing found
         if ( not $ret ) {
