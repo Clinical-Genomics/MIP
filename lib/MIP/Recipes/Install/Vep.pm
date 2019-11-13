@@ -135,7 +135,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         $cache_dir_path = catdir( $reference_dir_path,
             q{ensembl-tools-release-} . $vep_version, q{cache} );
     }
-    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {
@@ -167,6 +166,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     );
     singularity_exec(
         {
+            bind_paths_ref                 => [$cache_dir_path],
             filehandle                     => $filehandle,
             singularity_container          => $container_path,
             singularity_container_cmds_ref => \@vep_install_cmds,
