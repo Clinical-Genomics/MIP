@@ -1856,14 +1856,15 @@ sub check_vep_directories {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $vep_binary_path;
     my $vep_directory_cache;
+
+    ## Default(s)
+    my $vep_binary_path;
 
     my $tmpl = {
         vep_binary_path => {
             default     => q{vep},
             defined     => 1,
-            required    => 1,
             store       => \$vep_binary_path,
             strict_type => 1,
         },
