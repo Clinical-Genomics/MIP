@@ -25,11 +25,12 @@ use autodie qw{open close :all};
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
+use MIP::Test::Writefile qw{ write_toml_config };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.08;
+our $VERSION = 1.10;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -77,10 +78,11 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 Readonly my $DRY_RUN_MODE => 2;
 
 ## Update path in toml config
-_write_toml_config(
+write_toml_config(
     {
-        toml_config_path   => $toml_config_path,
-        toml_template_path => $toml_template_path,
+        test_reference_path => $test_reference_path,
+        toml_config_path    => $toml_config_path,
+        toml_template_path  => $toml_template_path,
     }
 );
 
@@ -166,48 +168,4 @@ sub build_usage {
     -h/--help        Display this help message
     -v/--version     Display version
 END_USAGE
-}
-
-sub _write_toml_config {
-
-## Function : Copy toml template and update to system specific path
-## Returns  :
-## Arguments: $toml_config_path   => Path to new toml config
-##          : $toml_template_path => Path to toml template
-
-    my ($arg_href) = @_;
-
-    my $tmpl = {
-        toml_config_path => {
-            store       => \$toml_config_path,
-            strict_type => 1,
-        },
-        toml_template_path => {
-            store       => \$toml_template_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use File::Copy qw{ cp };
-    use Path::Tiny qw{ path };
-
-    ## Create copy of template
-    cp $toml_template_path, $toml_config_path;
-
-    ## Create Path::Tiny object
-    $toml_config_path = path($toml_config_path);
-
-    ## Read into memory
-    my $toml_config = $toml_config_path->slurp_utf8;
-
-    ## Replace with system specific path
-    $toml_config =~ s/TEST_REFERENCES!/$test_reference_path/xms;
-
-    ## Write to file
-    $toml_config_path->spew_utf8($toml_config);
-
-    return;
-
 }

@@ -30,7 +30,7 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -78,8 +78,9 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 ## Update path in toml config
 write_toml_config(
     {
-        toml_config_path   => $toml_config_path,
-        toml_template_path => $toml_template_path,
+        test_reference_path => $test_reference_path,
+        toml_config_path    => $toml_config_path,
+        toml_template_path  => $toml_template_path,
     }
 );
 
