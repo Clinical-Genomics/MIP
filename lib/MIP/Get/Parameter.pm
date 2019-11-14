@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1071,8 +1071,8 @@ sub get_vep_version {
 
     my $tmpl = {
         vep_bin_path => {
+            default     => q{vep},
             defined     => 1,
-            required    => 1,
             store       => \$vep_bin_path,
             strict_type => 1,
         },

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_vep_directories }],
+        q{MIP::Check::Parameter} => [qw{ check_vep_api_cache_versions }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_vep_directories };
+use MIP::Check::Parameter qw{ check_vep_api_cache_versions };
 
-diag(   q{Test check_vep_directories from Parameter.pm v}
+diag(   q{Test check_vep_api_cache_versions from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -65,14 +65,14 @@ my $test_dir = File::Temp->newdir();
 my $log = test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_directory_path = catdir( $Bin, qw{ data modules miniconda envs mip_travis bin } );
+my $vep_binary_path =
+  catdir( $Bin, qw{ data modules miniconda envs mip_travis bin vep } );
 my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data cache } );
 ## When comparing API and cache version
-my $match = check_vep_directories(
+my $match = check_vep_api_cache_versions(
     {
-        log                 => $log,
         vep_directory_cache => $vep_directory_cache,
-        vep_directory_path  => $vep_directory_path,
+        vep_binary_path     => $vep_binary_path,
     }
 );
 ## Then return true
@@ -82,11 +82,11 @@ ok( $match, q{Return on matching versions} );
 $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data cache2 } );
 ## When comparing API and cache version
 trap {
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -100,11 +100,11 @@ $vep_directory_cache =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
 ## When trying to retireve the cache versions
 trap {
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -113,16 +113,16 @@ ok( $trap->return, q{Return on unknown cache version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 
 ## Given a direcory that lacks a working vep bin
-$vep_directory_path = catdir( $Bin, qw{ data modules miniconda envs test_env bin} );
+$vep_binary_path = catdir( $Bin, qw{ data modules miniconda envs test_env bin vep} );
 $vep_directory_cache =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When trying to retrieve API version
 trap {
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_directory_path  => $vep_directory_path,
+            vep_binary_path     => $vep_binary_path,
         }
     )
 };

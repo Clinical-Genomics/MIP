@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -59,7 +59,7 @@ BEGIN {
       check_sample_id_in_parameter_value
       check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
       check_vep_plugin
     };
 }
@@ -1846,31 +1846,26 @@ sub check_vep_custom_annotation {
     return 1;
 }
 
-sub check_vep_directories {
+sub check_vep_api_cache_versions {
 
-## Function : Compare VEP directory and VEP chache versions. Exit if non-match
+## Function : Compare VEP API and VEP chache versions. Exit if non-match
 ## Returns  :
-## Arguments: $log                   => Log object
-##          : $vep_directory_path    => VEP directory path {REF}
-##          : $vep_directory_cache   => VEP cache directory path {REF}
+## Arguments: $vep_binary_path     => VEP binary path {REF}
+##          : $vep_directory_cache => VEP cache directory path {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
-    my $vep_directory_path;
     my $vep_directory_cache;
 
+    ## Default(s)
+    my $vep_binary_path;
+
     my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        vep_directory_path => {
+        vep_binary_path => {
+            default     => q{vep},
             defined     => 1,
-            required    => 1,
-            store       => \$vep_directory_path,
+            store       => \$vep_binary_path,
             strict_type => 1,
         },
         vep_directory_cache => {
@@ -1886,9 +1881,12 @@ sub check_vep_directories {
     use File::Find::Rule;
     use MIP::Get::Parameter qw{ get_vep_version };
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     my $vep_version = get_vep_version(
         {
-            vep_bin_path => catfile( $vep_directory_path, q{vep} ),
+            vep_bin_path => $vep_binary_path,
         }
     );
 

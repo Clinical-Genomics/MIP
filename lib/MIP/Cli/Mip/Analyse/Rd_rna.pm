@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.17;
+our $VERSION = 1.18;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -926,15 +926,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         q{vep_directory_cache} => (
             cmd_aliases   => [qw{ vepc }],
             documentation => q{Specify the cache directory to use},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_directory_path} => (
-            cmd_aliases   => [qw{ vepp }],
-            documentation => q{Path to VEP script directory},
             is            => q{rw},
             isa           => Str,
         )
