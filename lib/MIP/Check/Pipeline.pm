@@ -125,7 +125,7 @@ sub check_dragen_rd_dna {
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -186,7 +186,7 @@ sub check_dragen_rd_dna {
     }
 
     ## Check that VEP directory and VEP cache match
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
         }
@@ -411,7 +411,7 @@ sub check_rd_dna {
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
       check_vep_plugin
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
@@ -499,7 +499,7 @@ sub check_rd_dna {
     }
 
     ## Check that VEP directory and VEP cache match
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
         }
@@ -787,7 +787,7 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -844,7 +844,7 @@ sub check_rd_dna_vcf_rerun {
     }
 
     ## Check that VEP directory and VEP cache match
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
         }

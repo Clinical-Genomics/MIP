@@ -59,7 +59,7 @@ BEGIN {
       check_sample_id_in_parameter_value
       check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
       check_vep_plugin
     };
 }
@@ -1846,7 +1846,7 @@ sub check_vep_custom_annotation {
     return 1;
 }
 
-sub check_vep_directories {
+sub check_vep_api_cache_versions {
 
 ## Function : Compare VEP API and VEP chache versions. Exit if non-match
 ## Returns  :
