@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -240,14 +240,15 @@ sub analysis_multiqc {
 
         submit_recipe(
             {
-                base_command        => $profile_base_command,
-                dependency_method   => q{add_to_all},
-                job_dependency_type => q{afterok},
-                job_id_chain        => $job_id_chain,
-                job_id_href         => $job_id_href,
-                log                 => $log,
-                recipe_file_path    => $recipe_file_path,
-                submission_profile  => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{add_to_all},
+                job_dependency_type  => q{afterok},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

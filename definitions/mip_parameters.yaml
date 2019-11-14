@@ -41,6 +41,12 @@ email_types:
   element_separator: ,
   mandatory: no
   type: mip
+job_reservation_name:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 log_file:
   associated_recipe:
    - mip

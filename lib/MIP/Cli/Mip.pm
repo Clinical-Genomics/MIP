@@ -94,6 +94,15 @@ sub _build_usage {
     );
 
     option(
+        q{job_reservation_name} => (
+            cmd_aliases   => [qw{ job_res_name }],
+            documentation => q{Allocate node resources from named reservation},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{log_file} => (
             cmd_aliases   => [qw{ log }],
             documentation => q{Log file},

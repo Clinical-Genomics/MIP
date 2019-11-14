@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -482,10 +482,14 @@ sub analysis_bwa_mem {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
-                    log                     => $log,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $infile_index,
-                    sample_id               => $sample_id,
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
+                    recipe_file_path     => $recipe_file_path,
+                    recipe_files_tracker => $infile_index,
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    sample_id          => $sample_id,
                     submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
@@ -921,11 +925,13 @@ sub analysis_run_bwa_mem {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
-                    log                     => $log,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $infile_index,
-                    sample_id               => $sample_id,
-                    submission_profile => $active_parameter_href->{submission_profile},
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
+                    recipe_file_path     => $recipe_file_path,
+                    recipe_files_tracker => $infile_index,
+                    sample_id            => $sample_id,
+                    submission_profile   => $active_parameter_href->{submission_profile},
                 }
             );
         }

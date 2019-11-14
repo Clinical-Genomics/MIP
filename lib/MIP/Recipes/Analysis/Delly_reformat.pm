@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -448,6 +448,7 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

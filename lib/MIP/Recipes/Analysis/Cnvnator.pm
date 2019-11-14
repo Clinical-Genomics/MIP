@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -507,6 +507,7 @@ sub analysis_cnvnator {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
