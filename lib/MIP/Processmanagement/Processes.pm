@@ -1718,10 +1718,11 @@ sub submit_recipe {
 ##          : $job_dependency_type     => Job dependency type
 ##          : $log                     => Log object
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $sample_id               => Sample id
-##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $recipe_file_path        => Recipe file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
+##          : $job_reservation_name    => Allocate resources from named reservation
+##          : $sample_id               => Sample id
+##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $submission_profile      => Submission profile
 
     my ($arg_href) = @_;
@@ -1735,10 +1736,11 @@ sub submit_recipe {
     my $job_dependency_type;
     my $log;
     my $parallel_chains_ref;
-    my $sample_id;
-    my $sample_ids_ref;
     my $recipe_file_path;
     my $recipe_files_tracker;
+    my $job_reservation_name;
+    my $sample_id;
+    my $sample_ids_ref;
 
     ## Default(s)
     my $base_command;
@@ -1798,6 +1800,10 @@ sub submit_recipe {
             store       => \$recipe_files_tracker,
             strict_type => 1,
         },
+        job_reservation_name => {
+            store       => \$job_reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -1831,11 +1837,11 @@ sub submit_recipe {
             job_id_href             => $job_id_href,
             log                     => $log,
             parallel_chains_ref     => $parallel_chains_ref,
-            sample_id               => $sample_id,
-            sample_ids_ref          => $sample_ids_ref,
             recipe_file_path        => $recipe_file_path,
             recipe_files_tracker    => $recipe_files_tracker,
-
+            reservation_name        => $job_reservation_name,
+            sample_id               => $sample_id,
+            sample_ids_ref          => $sample_ids_ref,
         }
     );
     return 1;

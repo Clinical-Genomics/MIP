@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $NEWLINE $PIPE $SPACE $TAB };
+use MIP::Constants qw{ $COMMA $EQUALS $NEWLINE $PIPE $SPACE $TAB };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -198,6 +198,7 @@ sub slurm_sbatch {
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile_path
 ##          : $job_ids_string         => Slurm job ids string (:job_id:job_id...n)
+##          : $reservation_name       => Allocate resources from named reservation
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -209,6 +210,7 @@ sub slurm_sbatch {
     my $filehandle;
     my $infile_path;
     my $job_ids_string;
+    my $reservation_name;
     my $stderrfile_path;
     my $stdoutfile_path;
 
@@ -237,6 +239,10 @@ sub slurm_sbatch {
             store       => \$job_ids_string,
             strict_type => 1,
         },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -253,17 +259,17 @@ sub slurm_sbatch {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## sbatch
-
-    # Stores commands depending on input parameters
     my @commands = $base_command;
 
-    ## Options
-    if ( ($dependency_type) && ($job_ids_string) ) {
+    if ( $dependency_type and $job_ids_string ) {
+
         push @commands, q{--dependency=} . $dependency_type . $job_ids_string;
     }
 
-    # Infile
+    if ($reservation_name) {
+
+        push @commands, q{--reservation} . $EQUALS . $reservation_name;
+    }
     push @commands, $infile_path;
 
     push @commands,

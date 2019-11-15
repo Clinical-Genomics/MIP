@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -372,11 +372,13 @@ sub analysis_star_aln {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
-                    log                     => $log,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $infile_index,
-                    sample_id               => $sample_id,
-                    submission_profile => $active_parameter_href->{submission_profile},
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
+                    recipe_file_path     => $recipe_file_path,
+                    recipe_files_tracker => $infile_index,
+                    sample_id            => $sample_id,
+                    submission_profile   => $active_parameter_href->{submission_profile},
                 }
             );
         }
