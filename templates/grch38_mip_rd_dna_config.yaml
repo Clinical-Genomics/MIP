@@ -1,32 +1,20 @@
 ---
 ## Environment
 analysis_constant_path: analysis
-bash_set_errexit: 1
-bash_set_nounset: 0
-bash_set_pipefail: 1
-core_ram_memory: 5
-java_use_large_pages: 1
 load_env:
   mip_travis:
-    cadd_ar:
-    endvariantannotationblock:
     installation: emip
     method: conda
     mip:
-    picard:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
-singularity_container:
-  TIDDIT.py:
-    container_path: #Path to container
-    extra_bind_paths: #[ARRAY]
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
-vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panel.bed
 sv_vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panel.bed
+vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panel.bed
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
@@ -78,49 +66,33 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
-qccollect_regexp_file: qc_regexp_-v1.22-.yaml
+qccollect_regexp_file: qc_regexp_-v1.24-.yaml
 ### Analysis
 ## Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: gatk
-gatk_haplotypecaller_no_soft_clipped_bases: 1
-gatk_variantrecalibration_dp_annotation: 1
-gatk_variantrecalibration_indel_max_gaussians: 1
-gatk_variantrecalibration_snv_max_gaussians: 0
-gatk_combinevariantcallsets_bcf_file: 1
-genmod_annotate_regions: 1
-genmod_models_whole_gene: 1
+gatk_combinevariants_prioritize_caller: gatk,bcftools
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 rankvariant_binary_file: 1
-sv_bcftools_view_filter: 1
-sv_combinevariantcallsets_bcf_file: 1
-sv_genmod_annotate_regions: 1
-sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
 sv_svdb_merge_prioritize: tiddit,cnvnator,manta
-sv_svdb_query: 1
-sv_vcfparser_per_gene: 1
-sv_vcfparser_vep_transcripts: 1
-sv_vcfparser_select_file_matching_column: 3
 sv_vep_plugin:
-  LoF:
-   exists_check: file
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
   ExACpLI:
    exists_check: file
-   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-sv_vt_decompose: 1
-vcfparser_vep_transcripts: 1
-vcfparser_select_file_matching_column: 3
+   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 vep_custom_annotation:
   genomic_superdups_frac_match:
    annotation_type: overlap
    force_report_coordinates: 0
    key: genomic_superdups_frac_match
    file_type: bed
-   path: [PATH_TO]/references/grch38_genomic_superdups_reformated_-20190826-.bed.gz
+   path: cluster_constant_path!/references/grch38_genomic_superdups_reformated_-20190826-.bed.gz
+  clinvar:
+    annotation_type: exact
+    force_report_coordinates: 0
+    key: CLINVAR
+    file_type: vcf
+    path: cluster_constant_path!/references/grch38_clinvar_reformated_-20190305-.vcf.gz
+    vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/
 vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins
 vep_plugin:
@@ -132,22 +104,16 @@ vep_plugin:
     - phyloP100way_vertebrate
     - phastCons100way_vertebrate
     - REVEL_rankscore
-   path: t/data/references/grch38_dbnsfp_reformated_-4.0b2a-.txt.gz
+   path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.0b2a-.txt.gz
   ExACpLI:
    exists_check: file
-   path: t/data/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoF:
-   exists_check: file
-   parameters:
-    - filter_position:0.05
-   path: human_ancestor_fa:cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/human_ancestor.fa
+   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exists_check: file
+    path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
    exists_check: directory
    parameters:
     - SWA
     - NCSS
    path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
-vt_decompose: 1
-vt_normalize: 1
-vt_uniq: 1
-vt_missing_alt_allele: 1

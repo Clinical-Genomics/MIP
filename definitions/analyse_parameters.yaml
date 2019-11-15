@@ -48,12 +48,11 @@ case_id:
    - mip
   data_type: SCALAR
   type: mip
-## java large pages - affects all modules using java
 java_use_large_pages:
   associated_recipe:
    - varianteffectpredictor
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 load_env:
   associated_recipe:
