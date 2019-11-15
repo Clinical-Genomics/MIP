@@ -487,8 +487,6 @@ sub analysis_bwa_mem {
                     log                  => $log,
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $infile_index,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
                     sample_id          => $sample_id,
                     submission_profile => $active_parameter_href->{submission_profile},
                 }
