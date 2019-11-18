@@ -3,6 +3,7 @@ package MIP::Program::Mip;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ canonpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -23,10 +24,120 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser mip_vercollect };
+    our @EXPORT_OK = qw{ mip_download mip_qccollect mip_vcfparser mip_vercollect };
+}
+
+sub mip_download {
+
+## Function : Perl wrapper for writing mip_download command to filehandle.
+##          : Based on MIP version 7.1.4
+## Returns  : @commands
+## Arguments: $config_file_path              => Config file path
+##          : $filehandle                    => Filehandle to write to
+##          : $pipeline                      => Pipeline
+##          : $reference_dir_path            => Reference directory
+##          : $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
+##          : $stderrfile_path               => Stderrfile path
+##          : $stderrfile_path_append        => Append stderr info to file path
+##          : $stdoutfile_path               => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $config_file_path;
+    my $filehandle;
+    my $pipeline;
+    my $reference_dir_path;
+    my $reference_genome_versions_ref;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        config_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$config_file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        pipeline => {
+            allow       => [qw{ rare_disease rna }],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
+            strict_type => 1,
+        },
+        reference_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir_path,
+            strict_type => 1,
+        },
+        reference_genome_versions_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome_versions_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands = q{mip download};
+
+    push @commands, $pipeline;
+
+    push @commands, q{--config_file} . $SPACE . $config_file_path;
+
+    push @commands, q{--reference_dir} . $SPACE . canonpath($reference_dir_path);
+
+    push @commands,
+        q{--reference_genome_versions}
+      . $SPACE
+      . join $SPACE
+      . q{--reference_genome_versions}
+      . $SPACE,
+      @{$reference_genome_versions_ref};
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+
+    return @commands;
 }
 
 sub mip_qccollect {
