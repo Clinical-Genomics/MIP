@@ -13,7 +13,7 @@ unset OPTARG
 unset OPTIND
 
 CONDA_PATH="$HOME/miniconda3"
-ENV_NAME='mip7_rd-dna'
+ENV_NAME='mip_rd-dna'
 EXISTING_ENV='false'
 
 while getopts ':he:p:x' option; do
