@@ -24,7 +24,7 @@ use MIP::Constants qw{ $BACKTICK $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SP
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
 use MIP::Program::Tar qw{ tar };
-use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Wget qw{ wget };
 use MIP::Program::Singularity qw{ singularity_exec };
 use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
 
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -104,7 +104,7 @@ sub get_reference {
 
     use MIP::Check::File qw{ check_file_md5sum };
     use MIP::File::Decompression qw{ decompress_file };
-    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Program::Wget qw{ wget };
 
     ## Potential download files
     my @file_keys = qw{ file file_check
