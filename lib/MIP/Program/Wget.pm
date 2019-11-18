@@ -1,4 +1,4 @@
-package MIP::Program::Download::Wget;
+package MIP::Program::Wget;
 
 use 5.026;
 use Carp;
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ wget };
@@ -132,8 +132,6 @@ sub wget {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Wget
-    # Stores commands depending on input parameters
     my @commands = qw{ wget };
 
     if ($quiet) {
