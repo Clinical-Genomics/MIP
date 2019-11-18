@@ -31,7 +31,7 @@ use MIP::PATH::TO:MODULE qw{SUB_ROUTINE};
 ```
 To:
 ```Perl
-use MIP::Program::Qc::Fastqc;
+use MIP::Program::Fastqc;
 ```
 #### Name of sub routine
 Change:
