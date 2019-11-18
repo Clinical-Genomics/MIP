@@ -6,7 +6,6 @@ node_ram_memory: 180
 project_id: test
 load_env:
   MIP_rd_rna:
-    installation: emip
     method: conda
     mip:
 slurm_quality_of_service: low

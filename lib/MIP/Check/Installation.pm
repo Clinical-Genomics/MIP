@@ -23,14 +23,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_and_add_dependencies
       check_existing_installation
       check_mip_executable
-      check_python_compability
     };
 }
 
@@ -245,109 +244,6 @@ sub check_mip_executable {
 
     $log->warn(q{This will overwrite the current installation of MIP});
     return;
-}
-
-sub check_python_compability {
-
-## Function : Test if specified programs are to be installed in a python 3 environment
-## Returns  :
-## Arguments: $installation_set_href => The environment specific installation hash {REF}
-##          : $log                   => Log
-##          : $python3_programs_ref  => Programs requiring python 3
-##          : $python_version        => The python version that are to be used for the environment
-##          : $select_programs_ref   => Programs selected for installation by the user {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $installation_set_href;
-    my $log;
-    my $python3_programs_ref;
-    my $python_version;
-    my $select_programs_ref;
-
-    my $tmpl = {
-        installation_set_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$installation_set_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        python3_programs_ref => {
-            default  => [],
-            required => 1,
-            store    => \$python3_programs_ref,
-        },
-        python_version => {
-            required => 1,
-            store    => \$python_version,
-        },
-        select_programs_ref => {
-            default  => [],
-            required => 1,
-            store    => \$select_programs_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Array::Utils qw{ intersect unique };
-
-    ## Return if no python 3 programs are set
-    return 1 if ( not $python3_programs_ref );
-
-    ## Display warning if python isn't part of the installation
-    if ( not $python_version ) {
-        $log->warn(
-            q{Python is not part of the installation. Skipping python compability check.}
-        );
-        return 1;
-    }
-
-    ## Check format of python version
-    if (
-        $python_version !~ m{
-        ^(?: [23] )      # Assert that the python major version starts with 2 or 3
-        [.]              # Major version separator
-        (?: \d+$         # Assert that the minor version is a digit
-        | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits
-        }xms
-      )
-    {
-        $log->fatal(
-            q{Please specify a python 2 or 3 version, given: } . $python_version );
-        exit 1;
-    }
-
-    ## Cover the case where no program has been actively chosen for installation
-    my @programs_to_check;
-    if ( scalar @{$select_programs_ref} == 0 ) {
-        @programs_to_check = unique(
-            keys %{ $installation_set_href->{conda} },
-            keys %{ $installation_set_href->{shell} },
-            keys %{ $installation_set_href->{pip} },
-        );
-    }
-    else {
-        @programs_to_check = @{$select_programs_ref};
-    }
-
-    my @conflicts = intersect( @programs_to_check, @{$python3_programs_ref} );
-
-    ## Check if a python 2 environment has been specified and a python 3
-    ## program has been specified for installation in that environment
-    if ( ( $python_version =~ m/^2/xms ) and ( scalar @conflicts > 0 ) ) {
-        $log->fatal( q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
-            @conflicts );
-        exit 1;
-    }
-    return 1;
 }
 
 1;

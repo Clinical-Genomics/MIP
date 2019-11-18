@@ -26,7 +26,7 @@ use MIP::Constants
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,7 +76,7 @@ $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_cadd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{cadd},
+        container_href        => $active_parameter{singularity}{cadd},
         container_path        => catfile(q{cadd.sif}),
         filehandle            => $filehandle,
     }
@@ -86,11 +86,11 @@ my $is_ok = install_cadd(
 ok( $is_ok, q{Executed install cadd recipe } );
 
 ## Given existing bind paths
-$active_parameter{emip}{singularity}{cadd}{program_bind_paths} = [q{extra_dir}];
+$active_parameter{singularity}{cadd}{program_bind_paths} = [q{extra_dir}];
 $is_ok = install_cadd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{cadd},
+        container_href        => $active_parameter{singularity}{cadd},
         container_path        => catfile(q{cadd.sif}),
         filehandle            => $filehandle,
     }
@@ -106,14 +106,14 @@ my $expected = [
 ok( $is_ok, q{Execute with extra bind path} );
 is_deeply(
     $expected,
-    $active_parameter{emip}{singularity}{cadd}{program_bind_paths},
+    $active_parameter{singularity}{cadd}{program_bind_paths},
     q{Add extra bind paths}
 );
 
 ## Given no reference directory
-$active_parameter{reference_dir}                               = undef;
-$active_parameter{emip}{singularity}{cadd}{program_bind_paths} = undef;
-$expected                                                      = [
+$active_parameter{reference_dir}                         = undef;
+$active_parameter{singularity}{cadd}{program_bind_paths} = undef;
+$expected                                                = [
     catdir(
         $BACKWARD_SLASH
           . $DOUBLE_QUOTE
@@ -129,14 +129,14 @@ $expected                                                      = [
 install_cadd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{cadd},
+        container_href        => $active_parameter{singularity}{cadd},
         container_path        => catfile(q{cadd.sif}),
         filehandle            => $filehandle,
     }
 );
 
 ## Then append relative bind baths
-is_deeply( $active_parameter{emip}{singularity}{cadd}{program_bind_paths},
+is_deeply( $active_parameter{singularity}{cadd}{program_bind_paths},
     $expected, q{Add MIP_BIND relative bind path} );
 close $filehandle;
 

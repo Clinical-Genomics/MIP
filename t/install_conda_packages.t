@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,35 +68,14 @@ my $file_content;
 open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## Given packages when no conda env
+## Given packages when no conda env path exists
 my %conda_packages = (
     picard => undef,
     pip    => q{19.1.0},
     python => q{2.7},
 );
-my $conda_env;
+my $conda_env      = q{test_env};
 my $conda_env_path = catdir(qw{ a non existing conda env path });
-
-trap {
-    install_conda_packages(
-        {
-            conda_env           => $conda_env,
-            conda_env_path      => $conda_env_path,
-            conda_packages_href => \%conda_packages,
-            filehandle          => $filehandle,
-        }
-    )
-};
-
-## Then broadcast installing in conda root message
-like(
-    $trap->stderr,
-    qr/updating\s+packages\s+in\s+conda\s+root/xms,
-    q{Install in conda root}
-);
-
-## Given packages when conda env is defined into a new env
-$conda_env = q{test_env};
 
 trap {
     install_conda_packages(
@@ -117,7 +96,6 @@ like(
 );
 
 ## Given packages when conda env is defined and env path exits
-$conda_env      = q{test_env};
 $conda_env_path = catdir( $Bin, qw{ data modules miniconda envs test_env } );
 
 trap {

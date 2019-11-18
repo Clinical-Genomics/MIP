@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,34 +67,30 @@ my %parameter =
   test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
 
 ## Hash attribute
-my %environment_name = get_install_parameter_attribute(
+my %singularity_container = get_install_parameter_attribute(
     {
         parameter_href => \%parameter,
-        parameter_name => q{environment_name},
+        parameter_name => q{singularity},
     }
 );
 
 ## Then all env names should have been loaded
 is_deeply(
-    \%environment_name,
-    \%{ $parameter{environment_name} },
+    \%singularity_container,
+    \%{ $parameter{singularity} },
     q{Got hash attribute }
 );
 
 ## Array attribute
-my @full_installation_envs = get_install_parameter_attribute(
+my @vep_plugins = get_install_parameter_attribute(
     {
         parameter_href => \%parameter,
-        parameter_name => q{installations},
+        parameter_name => q{vep_plugins},
     }
 );
 
 ## Then all full installation envs should have been loaded
-is_deeply(
-    \@full_installation_envs,
-    \@{ $parameter{installations} },
-    q{Got array attibute}
-);
+is_deeply( \@vep_plugins, \@{ $parameter{vep_plugins} }, q{Got array attibute} );
 
 ## Scalar attribute
 my $bash_set_errexit = get_install_parameter_attribute(

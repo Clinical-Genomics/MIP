@@ -16,12 +16,10 @@ use warnings qw{ FATAL utf8 };
 
 ## MIPs lib/
 use MIP::Constants qw{
-  $CLOSE_BRACKET
   $COLON
   $DOT
   $LOG_NAME
   $NEWLINE
-  $OPEN_BRACKET
   $SINGLE_QUOTE
   $SPACE
 };
@@ -41,7 +39,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -130,83 +128,71 @@ sub pipeline_install_rd_dna {
           . $NEWLINE;
     }
 
-  INSTALLATION:
-    foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
-        my $env_name = $active_parameter_href->{environment_name}{$installation};
+    my $env_name = $active_parameter_href->{environment_name};
 
-        $log->info( $OPEN_BRACKET . $installation . $CLOSE_BRACKET );
-        $log->info( q{Working on environment: } . $env_name );
+    $log->info( q{Installing into environment: } . $env_name );
 
-        ## Process input parameters to get a correct combination of programs that are to be installed
-        set_programs_for_installation(
-            {
-                active_parameter_href => $active_parameter_href,
-                installation          => $installation,
-                log                   => $log,
-            }
-        );
-
-        ## Installing Conda packages
-        install_conda_packages(
-            {
-                conda_env => $active_parameter_href->{environment_name}{$installation},
-                conda_env_path =>
-                  $active_parameter_href->{$installation}{conda_prefix_path},
-                conda_no_update_dep => $active_parameter_href->{conda_no_update_dep},
-                conda_packages_href => $active_parameter_href->{$installation}{conda},
-                filehandle          => $filehandle,
-                quiet               => $active_parameter_href->{quiet},
-                verbose             => $active_parameter_href->{verbose},
-            }
-        );
-
-        ## Install PIP packages
-        install_pip_packages(
-            {
-                conda_env  => $active_parameter_href->{environment_name}{$installation},
-                filehandle => $filehandle,
-                pip_packages_href => $active_parameter_href->{$installation}{pip},
-                quiet             => $active_parameter_href->{quiet},
-            }
-        );
-
-        ## Pull and link containers
-        install_singularity_containers(
-            {
-                active_parameter_href => $active_parameter_href,
-                conda_env_path =>
-                  $active_parameter_href->{$installation}{conda_prefix_path},
-                container_href => $active_parameter_href->{$installation}{singularity},
-                filehandle     => $filehandle,
-                quiet          => $active_parameter_href->{quiet},
-                verbose        => $active_parameter_href->{verbose},
-            }
-        );
-
-        ### Install shell programs
-        ## Create dispatch table for shell installation subs
-        my %shell_subs = ( mip_scripts => \&install_mip_scripts, );
-
-        ## Launch shell installation subroutines
-      SHELL_PROGRAM:
-        for my $shell_program ( keys %{ $active_parameter_href->{$installation}{shell} } )
+    ## Process input parameters to get a correct combination of programs that are to be installed
+    set_programs_for_installation(
         {
-
-            $shell_subs{$shell_program}->(
-                {
-                    conda_environment =>
-                      $active_parameter_href->{environment_name}{$installation},
-                    conda_prefix_path =>
-                      $active_parameter_href->{$installation}{conda_prefix_path},
-                    filehandle => $filehandle,
-                    program_parameters_href =>
-                      \%{ $active_parameter_href->{$installation}{shell}{$shell_program}
-                      },
-                    quiet   => $active_parameter_href->{quiet},
-                    verbose => $active_parameter_href->{verbose},
-                }
-            );
+            active_parameter_href => $active_parameter_href,
         }
+    );
+
+    ## Installing Conda packages
+    install_conda_packages(
+        {
+            conda_env           => $active_parameter_href->{environment_name},
+            conda_env_path      => $active_parameter_href->{conda_prefix_path},
+            conda_no_update_dep => $active_parameter_href->{conda_no_update_dep},
+            conda_packages_href => $active_parameter_href->{conda},
+            filehandle          => $filehandle,
+            quiet               => $active_parameter_href->{quiet},
+            verbose             => $active_parameter_href->{verbose},
+        }
+    );
+
+    ## Install PIP packages
+    install_pip_packages(
+        {
+            conda_env         => $active_parameter_href->{environment_name},
+            filehandle        => $filehandle,
+            pip_packages_href => $active_parameter_href->{pip},
+            quiet             => $active_parameter_href->{quiet},
+        }
+    );
+
+    ## Pull and link containers
+    install_singularity_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            conda_env_path        => $active_parameter_href->{conda_prefix_path},
+            container_href        => $active_parameter_href->{singularity},
+            filehandle            => $filehandle,
+            quiet                 => $active_parameter_href->{quiet},
+            verbose               => $active_parameter_href->{verbose},
+        }
+    );
+
+    ### Install shell programs
+    ## Create dispatch table for shell installation subs
+    my %shell_subs = ( mip_scripts => \&install_mip_scripts, );
+
+    ## Launch shell installation subroutines
+  SHELL_PROGRAM:
+    for my $shell_program ( keys %{ $active_parameter_href->{shell} } ) {
+
+        $shell_subs{$shell_program}->(
+            {
+                conda_environment => $active_parameter_href->{environment_name},
+                conda_prefix_path => $active_parameter_href->{conda_prefix_path},
+                filehandle        => $filehandle,
+                program_parameters_href =>
+                  \%{ $active_parameter_href->{shell}{$shell_program} },
+                quiet   => $active_parameter_href->{quiet},
+                verbose => $active_parameter_href->{verbose},
+            }
+        );
     }
 
     ## Write tests
@@ -220,13 +206,11 @@ sub pipeline_install_rd_dna {
     ## Update/create config
     update_config(
         {
-            env_name_href     => $active_parameter_href->{environment_name},
-            filehandle        => $filehandle,
-            installations_ref => $active_parameter_href->{installations},
-            log               => $log,
-            pipeline          => $active_parameter_href->{process},
-            update_config     => $active_parameter_href->{update_config},
-            write_config      => $active_parameter_href->{write_config},
+            env_name      => $active_parameter_href->{environment_name},
+            filehandle    => $filehandle,
+            pipeline      => $active_parameter_href->{process},
+            update_config => $active_parameter_href->{update_config},
+            write_config  => $active_parameter_href->{write_config},
         }
     );
 

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,8 +76,8 @@ $active_parameter{reference_dir} = catdir(qw{ a dir });
 my $is_ok = install_singularity_containers(
     {
         active_parameter_href => \%active_parameter,
-        conda_env_path        => $active_parameter{emip}{conda_prefix_path},
-        container_href        => $active_parameter{emip}{singularity},
+        conda_env_path        => $active_parameter{conda_prefix_path},
+        container_href        => $active_parameter{singularity},
         filehandle            => $filehandle,
     }
 );
