@@ -47,7 +47,7 @@ emip:
     chromograph:
       executable:
         chromograph:
-      uri: shub://Clinical-Genomics/MIP:chromograph-0.1
+      uri: shub://Clinical-Genomics/MIP:chromograph-0.1.2
     expansionhunter:
       executable:
         ExpansionHunter:
