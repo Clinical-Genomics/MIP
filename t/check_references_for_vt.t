@@ -63,7 +63,7 @@ my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 my %active_parameter_test = (
     fqa_vcfanno_config => catfile(
-        $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
+        $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.1-.toml }
     ),
     frequency_annotation               => 1,
     gatk_baserecalibration             => 1,

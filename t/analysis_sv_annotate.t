@@ -81,7 +81,7 @@ my $case_id = $active_parameter{case_id};
 $active_parameter{sv_frequency_filter}           = 1;
 $active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
 $active_parameter{sv_fqa_vcfanno_config}         = catfile( $Bin,
-    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
+    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.1-.toml } );
 $active_parameter{sv_svdb_query} = 1;
 $active_parameter{sv_svdb_query_db_files} =
   { a_file =>
