@@ -973,7 +973,7 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
         my $dependency_href =
           Dive( $active_parameter_href->{shell}, $shell_program, q{conda_dependency} );
 
-        next SHELL_PROGRAM if not defined $dependency_href;
+        next SHELL_PROGRAM if ( not defined $dependency_href );
         check_and_add_dependencies(
             {
                 conda_program_href => $active_parameter_href->{conda},

@@ -305,11 +305,11 @@ sub update_config {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $env_name     => Program environment name hash {REF}
-##          : $filehandle        => open filehandle
-##          : $pipeline          => Pipeline
-##          : $update_config     => Path to config to update
-##          : $write_config      => Create new config from template
+## Arguments: $env_name      => Program environment name hash
+##          : $filehandle    => open filehandle
+##          : $pipeline      => Pipeline
+##          : $update_config => Path to config to update
+##          : $write_config  => Create new config from template
 
     my ($arg_href) = @_;
 
@@ -351,7 +351,7 @@ sub update_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Return if no config options
-    return if ( not $update_config ) and ( not $write_config );
+    return if ( not $update_config and not $write_config );
 
     ## Retrieve logger object
     my $log = retrieve_log( { log_name => $LOG_NAME, } );

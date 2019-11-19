@@ -74,7 +74,7 @@ my %singularity_container = get_install_parameter_attribute(
     }
 );
 
-## Then all env names should have been loaded
+## Then all singularity containers should have been loaded
 is_deeply(
     \%singularity_container,
     \%{ $parameter{singularity} },
@@ -89,7 +89,7 @@ my @vep_plugins = get_install_parameter_attribute(
     }
 );
 
-## Then all full installation envs should have been loaded
+## Then all VEP plugins should have been loaded
 is_deeply( \@vep_plugins, \@{ $parameter{vep_plugins} }, q{Got array attibute} );
 
 ## Scalar attribute
