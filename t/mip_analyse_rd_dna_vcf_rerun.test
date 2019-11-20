@@ -42,7 +42,7 @@ my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $toml_template_path  = catfile( $test_reference_path,
     q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
 my $toml_config_path =
-  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config_-v1.0-.toml} );
+  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(

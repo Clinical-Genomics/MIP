@@ -76,7 +76,7 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{fqa_vcfanno_config} = catfile( $Bin,
-    qw{ data references grch37_frequency_vcfanno_filter_config_template-v1.0-.toml } );
+    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{fqf_annotations}               = [qw{ GNOMADAF }];
 $active_parameter{fqf_bcftools_filter_threshold} = 1;
 
