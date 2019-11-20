@@ -7,7 +7,7 @@ LABEL base_image="ubuntu:16.04"
 LABEL version="1"
 LABEL software="mip"
 LABEL software.version="7.1.4"
-LABEL about.summary="Base image for MIP"
+LABEL about.summary="Base image for MIP's dependency tools"
 LABEL about.home="https://github.com/Clinical-Genomics/MIP"
 LABEL about.documentation="https://clinical-genomics.gitbook.io/project-mip/"
 LABEL about.license_file="https://github.com/Clinical-Genomics/MIP/blob/master/LICENSE"
@@ -16,6 +16,7 @@ LABEL about.tags="Clinical,variants,analysis,pipeline"
 
 ################## MAINTAINER ######################
 MAINTAINER Henrik Stranneheim <henrik.stranneheim@scilifelab.se>
+MAINTAINER Anders Jemt <anders.jemt@scilifelab.se>
 
 ENV DEBIAN_FRONTEND noninteractive
 
