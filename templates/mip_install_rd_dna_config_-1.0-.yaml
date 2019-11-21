@@ -29,7 +29,7 @@ singularity:
   bedtools:
     executable:
       bedtools:
-    uri: shub://Clinical-Genomics/MIP:bedtools-2.29.0
+    uri: docker://clinicalgenomics/bedtools:2.2.29
   cadd:
     executable:
       CADD.sh:
