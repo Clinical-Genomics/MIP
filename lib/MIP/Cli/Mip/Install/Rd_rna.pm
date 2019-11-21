@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.09;
+our $VERSION = 2.10;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -130,24 +130,10 @@ sub _build_usage {
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
-            cmd_tags      => [q{Default: mip7_rd-rna }],
+            cmd_tags      => [q{Default: MIP_rd-rna }],
             documentation => q{Set environment names},
             is            => q{rw},
-            isa           => Dict [
-                emip => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{installations} => (
-            cmd_aliases   => [qw{ install }],
-            cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip}],
-            documentation => q{Environments to install},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip }] ), ],
+            isa           => Str,
             required      => 0,
         ),
     );

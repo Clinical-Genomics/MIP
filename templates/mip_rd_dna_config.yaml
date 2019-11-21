@@ -3,7 +3,6 @@
 analysis_constant_path: analysis
 load_env:
   mip_travis:
-    installation: emip
     method: conda
     mip:
 max_cores_per_node: 36

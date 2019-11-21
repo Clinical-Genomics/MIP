@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -67,6 +67,7 @@ sub install_conda_packages {
 
     my $tmpl = {
         conda_env => {
+            required    => 1,
             store       => \$conda_env,
             strict_type => 1,
         },
@@ -127,58 +128,37 @@ sub install_conda_packages {
         }
     );
 
-    if ( defined $conda_env ) {
+    if ( not -d $conda_env_path ) {
 
-        ## Check for existing conda environment
-        if ( not -d $conda_env_path ) {
-
-            ## Create conda environment and install packages
-            $log->info(
-                q{Writing installation instructions for environment: } . $conda_env );
-            say {$filehandle} q{## Creating conda environment: }
-              . $conda_env
-              . q{ and install packages};
-            conda_create(
-                {
-                    conda_channels_ref => [qw{ bioconda conda-forge }],
-                    env_name           => $conda_env,
-                    filehandle         => $filehandle,
-                    packages_ref       => \@packages,
-                }
-            );
-            say {$filehandle} $NEWLINE;
-        }
-        else {
-
-            $log->warn(
-                q{Conda environment: } . $conda_env . $SPACE . q{already exists} );
-            $log->warn(q{Will try to install packages into existing environment});
-            $log->info(
-                q{Writing installation instructions for conda packages to environment: }
-                  . $conda_env );
-            say {$filehandle} q{## Installing conda packages into existing environment};
-            conda_install(
-                {
-                    conda_channels_ref => [qw{ bioconda conda-forge }],
-                    no_update_dep      => $conda_no_update_dep,
-                    filehandle         => $filehandle,
-                    env_name           => $conda_env,
-                    packages_ref       => \@packages,
-                }
-            );
-            say {$filehandle} $NEWLINE;
-        }
+        ## Create conda environment and install packages
+        $log->info( q{Writing installation instructions for environment: } . $conda_env );
+        say {$filehandle} q{## Creating conda environment: }
+          . $conda_env
+          . q{ and install packages};
+        conda_create(
+            {
+                conda_channels_ref => [qw{ bioconda conda-forge }],
+                env_name           => $conda_env,
+                filehandle         => $filehandle,
+                packages_ref       => \@packages,
+            }
+        );
+        say {$filehandle} $NEWLINE;
     }
     else {
+
+        $log->warn( q{Conda environment: } . $conda_env . $SPACE . q{already exists} );
+        $log->warn(q{Will try to install packages into existing environment});
         $log->info(
-            q{Writing instructions for installing and/or updating packages in conda root}
-        );
-        say {$filehandle}
-          q{## Installing and/or updating python and packages in conda root};
+            q{Writing installation instructions for conda packages to environment: }
+              . $conda_env );
+        say {$filehandle} q{## Installing conda packages into existing environment};
         conda_install(
             {
                 conda_channels_ref => [qw{ bioconda conda-forge }],
+                no_update_dep      => $conda_no_update_dep,
                 filehandle         => $filehandle,
+                env_name           => $conda_env,
                 packages_ref       => \@packages,
             }
         );

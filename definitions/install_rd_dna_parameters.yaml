@@ -1,26 +1,8 @@
 ---
-emip:
+environment_name:
   associated_recipe:
    - mip
-  data_type: HASH
+  data_type: SCALAR
+  default: mip_rd-dna
   mandatory: no
-  type: mip
-installations:
-  associated_recipe:
-    - mip
-  data_type: ARRAY
-  default:
-    - emip
-  mandatory: no
-  type: mip
-python3_programs:
-  associated_recipe:
-   - mip
-  data_type: ARRAY
-  default:
-    - chanjo
-    - chromograph
-    - genmod
-    - variant_integrity
-    - upd
   type: mip

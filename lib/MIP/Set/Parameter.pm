@@ -28,12 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
-      set_conda_env_names_and_paths
       set_config_to_active_parameters
       set_custom_default_to_active_parameter
       set_default_config_dynamic_parameters
@@ -59,13 +58,11 @@ sub set_conda_path {
 ## Function : Set path to conda
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
 
     my $tmpl = {
         active_parameter_href => {
@@ -75,17 +72,15 @@ sub set_conda_path {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Unix qw{ is_binary_in_path };
     use MIP::Get::Parameter qw{ get_conda_path };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Check if conda is in path
     is_binary_in_path(
@@ -100,6 +95,11 @@ sub set_conda_path {
 
     ## Set path to conda
     $active_parameter_href->{conda_path} = $conda_path;
+
+    ## Set path to conda env
+    my $environment_name = $active_parameter_href->{environment_name};
+    $active_parameter_href->{conda_prefix_path} =
+      catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
 
     return;
 }
@@ -888,89 +888,19 @@ sub set_parameter_to_broadcast {
     return;
 }
 
-sub set_conda_env_names_and_paths {
-
-## Function : Set conda environmnet specific names and paths
-## Returns  :
-## Arguments: $parameter_href => The entire parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Parse::Parameter qw{ parse_conda_env_name };
-
-    ## A default name on which to build environment names if non specified
-    my $base_name = $active_parameter_href->{environment_base_name};
-
-    ## Get date and reformat to six digits
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime time;
-    my $date = sprintf '%02d%02d%02d', $year % $ONE_HUNDRED, $mon + 1, $mday;
-
-    ## Set up conda environment names and prefix paths for environments
-  ENVIRONMENT:
-    foreach my $environment ( @{ $active_parameter_href->{installations} } ) {
-
-        ## Construct conda environment name
-        my $environment_name = parse_conda_env_name(
-            {
-                base_name      => $base_name,
-                date           => $date,
-                environment    => $environment,
-                parameter_href => $active_parameter_href,
-            }
-        );
-
-        ## Set names and paths
-        $active_parameter_href->{environment_name}{$environment} = $environment_name;
-        $active_parameter_href->{$environment}{conda_prefix_path} =
-          catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
-
-    }
-    return;
-}
-
 sub set_programs_for_installation {
 
-## Function : Process the lists of programs that has been selected for or omitted from installation
+## Function : Process the lists of programs that has been selected for installation
 ##          : and update the environment packages
 ## Returns  :
-## Arguments: $installation          => Environment to be installed
-##          : $log                   => Log
-##          : $active_parameter_href => The entire active parameter hash {REF}
+## Arguments: $active_parameter_href => The entire active parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $installation;
-    my $log;
     my $active_parameter_href;
 
     my $tmpl = {
-        installation => {
-            defined     => 1,
-            required    => 1,
-            store       => \$installation,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         active_parameter_href => {
             default     => {},
             defined     => 1,
@@ -985,8 +915,10 @@ sub set_programs_for_installation {
     use Array::Utils qw{ array_minus };
     use Data::Diver qw{ Dive };
     use MIP::Get::Parameter qw{ get_programs_for_shell_installation };
-    use MIP::Check::Installation
-      qw{ check_and_add_dependencies check_python_compability };
+    use MIP::Check::Installation qw{ check_and_add_dependencies };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Check that the options supplied are compatible with each other
     if (    ( scalar @{ $active_parameter_href->{skip_programs} } > 0 )
@@ -998,85 +930,59 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
         exit 1;
     }
 
-    ## Check that only one environment has been specified for installation if the option select_program is used
-    if (    ( scalar @{ $active_parameter_href->{select_programs} } > 0 )
-        and ( scalar @{ $active_parameter_href->{installations} } > 1 ) )
-    {
-        $log->fatal(
-q{Please select a single installation environment when using the option --select_programs}
-        );
-        exit 1;
-    }
-
     ## Get programs that are to be installed via shell
     my @shell_programs_to_install = get_programs_for_shell_installation(
         {
-            conda_programs_href        => $active_parameter_href->{$installation}{conda},
+            conda_programs_href        => $active_parameter_href->{conda},
             log                        => $log,
             prefer_shell               => $active_parameter_href->{prefer_shell},
             shell_install_programs_ref => $active_parameter_href->{shell_install},
-            shell_programs_href        => $active_parameter_href->{$installation}{shell},
+            shell_programs_href        => $active_parameter_href->{shell},
         }
     );
 
     ## Remove the conda packages that has been selected to be installed via SHELL
-    delete @{ $active_parameter_href->{$installation}{conda} }
-      {@shell_programs_to_install};
+    delete @{ $active_parameter_href->{conda} }{@shell_programs_to_install};
 
     ## Delete shell programs that are to be installed via conda instead of shell
-    my @shell_programs_to_delete =
-      keys %{ $active_parameter_href->{$installation}{shell} };
+    my @shell_programs_to_delete = keys %{ $active_parameter_href->{shell} };
     @shell_programs_to_delete =
       array_minus( @shell_programs_to_delete, @shell_programs_to_install );
-    delete @{ $active_parameter_href->{$installation}{shell} }{@shell_programs_to_delete};
+    delete @{ $active_parameter_href->{shell} }{@shell_programs_to_delete};
 
     ## Solve the installation when the skip_program or select_program parameter has been used
   INSTALL_MODE:
     foreach my $install_mode (qw{ conda pip shell singularity }) {
 
         ## Remove programs that are to be skipped
-        delete @{ $active_parameter_href->{$installation}{$install_mode} }
+        delete @{ $active_parameter_href->{$install_mode} }
           { @{ $active_parameter_href->{skip_programs} } };
 
         ## Remove all non-selected programs
         if ( scalar @{ $active_parameter_href->{select_programs} } > 0 ) {
-            my @non_selects =
-              keys %{ $active_parameter_href->{$installation}{$install_mode} };
+            my @non_selects = keys %{ $active_parameter_href->{$install_mode} };
             @non_selects =
               array_minus( @non_selects, @{ $active_parameter_href->{select_programs} } );
-            delete @{ $active_parameter_href->{$installation}{$install_mode} }
-              {@non_selects};
+            delete @{ $active_parameter_href->{$install_mode} }{@non_selects};
         }
     }
 
     ## Check and add dependencies that are needed for shell programs if they are missing from the programs that are to be installed via conda.
   SHELL_PROGRAM:
-    foreach my $shell_program ( keys %{ $active_parameter_href->{$installation}{shell} } )
-    {
-        my $dependency_href = Dive( $active_parameter_href->{$installation},
-            q{shell}, $shell_program, q{conda_dependency} );
-        next SHELL_PROGRAM if not defined $dependency_href;
+    foreach my $shell_program ( keys %{ $active_parameter_href->{shell} } ) {
+        my $dependency_href =
+          Dive( $active_parameter_href->{shell}, $shell_program, q{conda_dependency} );
+
+        next SHELL_PROGRAM if ( not defined $dependency_href );
         check_and_add_dependencies(
             {
-                conda_program_href => $active_parameter_href->{$installation}{conda},
+                conda_program_href => $active_parameter_href->{conda},
                 dependency_href    => $dependency_href,
                 log                => $log,
                 shell_program      => $shell_program,
             }
         );
     }
-
-    ## Exit if a python 2 env has ben specified for a python 3 program
-    check_python_compability(
-        {
-            installation_set_href => $active_parameter_href->{$installation},
-            log                   => $log,
-            python3_programs_ref  => $active_parameter_href->{python3_programs},
-            python_version      => $active_parameter_href->{$installation}{conda}{python},
-            select_programs_ref => $active_parameter_href->{select_programs},
-        }
-    );
-
     return;
 }
 
