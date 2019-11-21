@@ -38,6 +38,7 @@ RUN apt-get clean all && \
         dpkg            \
         fuse            \
         git             \
+        locales         \
         wget            \
         zip             \
         build-essential \
@@ -47,6 +48,13 @@ RUN apt-get clean all && \
         apt-get clean && \
         apt-get purge && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set locale
+RUN locale-gen en_US.UTF-8
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 # Install conda and give write permissions to conda folder
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
@@ -61,6 +69,9 @@ ENV PATH=$PATH:/opt/conda/bin
 RUN conda config --add channels defaults
 RUN conda config --add channels bioconda
 RUN conda config --add channels conda-forge
+
+# Clean up after conda
+RUN  /opt/conda/bin/conda clean -tipsy
 
 VOLUME ["/data", "/config"]
 
