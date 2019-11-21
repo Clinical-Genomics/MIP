@@ -59,8 +59,8 @@ RUN mkdir /data /config
 ENV PATH=$PATH:/opt/conda/bin
 
 RUN conda config --add channels defaults
-RUN conda config --add channels conda-forge
 RUN conda config --add channels bioconda
+RUN conda config --add channels conda-forge
 
 VOLUME ["/data", "/config"]
 
