@@ -11,7 +11,7 @@ singularity:
   bwa:
     executable:
       bwa:
-    uri: shub://Clinical-Genomics/MIP:bwa-0.7.17
+    uri: docker://clinicalgenomics/bwa:0.7.17
   bwakit:
     executable:
       bwa-postalt.js:
