@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,7 +68,7 @@ my $file_content;
 open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## Given packages when no conda env path exists
+## Given packages
 my %conda_packages = (
     picard => undef,
     pip    => q{19.1.0},
@@ -88,7 +88,7 @@ trap {
     )
 };
 
-## Then broadcast installing in conda root message
+## Then broadcast installing in new conda environment message
 like(
     $trap->stderr,
     qr/Writing\s+installation\s+instructions\s+for\s+environmen/xms,
@@ -114,28 +114,6 @@ like(
     $trap->stderr,
     qr/install\s+packages\s+into\s+existing\s+environment/xms,
     q{Install in existing conda env }
-);
-
-## Given a package when not following semantic versioning
-$conda_packages{picard} = q{not_semantic_version};
-
-trap {
-    install_conda_packages(
-        {
-            conda_env           => $conda_env,
-            conda_env_path      => $conda_env_path,
-            conda_packages_href => \%conda_packages,
-            filehandle          => $filehandle,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if version is defined and not semantic version} );
-like(
-    $trap->die,
-    qr/The\s+version\s+number\s+does\s+not\s+match/xms,
-    q{Throw error if version is defined and not semantic version}
 );
 
 ## Close the filehandle
