@@ -38,9 +38,9 @@ BEGIN {
       get_merged_infile_prefix
       get_path_entries
       get_read_length
+      get_sample_ids_from_vcf
       get_select_file_contigs
-      get_seq_dict_contigs
-      get_sample_ids_from_vcf };
+      get_seq_dict_contigs };
 }
 
 sub get_exom_target_bed_file {

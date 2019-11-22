@@ -195,7 +195,6 @@ sub analysis_bootstrapann {
     my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
     my $variant_suffix             = $variant_io{out}{file_suffix};
 
-    #my $variant_infile_path        = $variant_infile_path_prefix . $variant_suffix;
     my $variant_infile_path =
       $variant_infile_path_prefix . $UNDERSCORE . q{restricted} . $variant_suffix;
 
