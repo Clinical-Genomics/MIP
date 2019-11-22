@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -108,9 +108,6 @@ sub install_conda_packages {
     ## Packages to be installed
     my @conda_packages = keys %{$conda_packages_href};
 
-    ## Return if no packages are to be installed
-    return if not @conda_packages;
-
     ## Retrieve logger object
     my $log = retrieve_log(
         {
@@ -149,10 +146,13 @@ sub install_conda_packages {
 
         $log->warn( q{Conda environment: } . $conda_env . $SPACE . q{already exists} );
         $log->warn(q{Will try to install packages into existing environment});
-        $log->info(
-            q{Writing installation instructions for conda packages to environment: }
+        $log->info( q{Writing installation instructions for packages to environment: }
               . $conda_env );
-        say {$filehandle} q{## Installing conda packages into existing environment};
+        say {$filehandle} q{## Installing packages into existing environment};
+
+        ## Return if no conda packages are to be installed
+        return if ( scalar @packages == 0 );
+
         conda_install(
             {
                 conda_channels_ref => [qw{ bioconda conda-forge }],
@@ -208,15 +208,6 @@ sub _create_package_array {
 
         if ( defined $package_version ) {
 
-            # Check that the version number matches pattern
-            if ( $package_version !~ qr/\d+.\d+ | \d+.\d+.\d+/xms ) {
-
-                croak q{The version number does not match defiend pattern for }
-                  . q{package: }
-                  . $package
-                  . $SPACE
-                  . $package_version;
-            }
             push @packages, $package . $package_version_separator . $package_version;
         }
         else {
