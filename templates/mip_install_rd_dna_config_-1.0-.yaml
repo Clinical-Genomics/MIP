@@ -54,7 +54,7 @@ singularity:
   fastqc:
     executable:
       fastqc:
-    uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
+    uri: docker://clinicalgenomics/fastqc:0.11.8
   delly:
     executable:
       delly:
