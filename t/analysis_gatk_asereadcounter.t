@@ -96,7 +96,7 @@ my %file_info = test_mip_hashes(
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-    %{ $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration} } = test_mip_hashes(
+    %{ $file_info{io}{TEST}{$sample_id}{markduplicates} } = test_mip_hashes(
         {
             mip_hash_name => q{io},
         }
@@ -106,9 +106,9 @@ foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_path_prefix} =
+    $file_info{io}{TEST}{$sample_id}{markduplicates}{out}{file_path_prefix} =
       q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_suffix} =
+    $file_info{io}{TEST}{$sample_id}{markduplicates}{out}{file_suffix} =
       q{.bam};
 }
 
@@ -132,10 +132,10 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ gatk_baserecalibration }, $recipe_name );
+  ( qw{ markduplicates }, $recipe_name );
 
 ## Enable gatk baserecalibration io collection
-$parameter{gatk_baserecalibration}{chain} = q{TEST};
+$parameter{markduplicates}{chain} = q{TEST};
 
 my %sample_info;
 
@@ -154,7 +154,7 @@ my $is_ok = analysis_gatk_asereadcounter(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok, q{Executed analysis recipe } . $recipe_name );
 
 ## Given a sample id where ase has been turned off
 $active_parameter{no_ase_samples} = [qw{ ADM1059A1 }];
