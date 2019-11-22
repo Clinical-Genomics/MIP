@@ -148,7 +148,7 @@ sub analysis_varg {
         }
     );
     my $infile_name_prefix = $io{out}{file_name_prefix};
-    my $infile_path_snv    = $io{out}{file_path_href}{selected};
+    my $infile_path_snv    = $io{out}{file_path_href}{selected} . $DOT . q{gz};
 
     %io = get_io_files(
         {
@@ -160,8 +160,7 @@ sub analysis_varg {
         }
     );
 
-    my $infile_path_sv = $io{out}{file_path_href}{selected};
-
+    my $infile_path_sv = $io{out}{file_path_href}{selected} . $DOT . q{gz};
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
     my $job_id_chain         = get_recipe_attributes(
         {
