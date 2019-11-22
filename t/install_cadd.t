@@ -21,11 +21,12 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $FORWARD_SLASH $SPACE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $COLON $COMMA $DOUBLE_QUOTE $FORWARD_SLASH $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +76,7 @@ $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_cadd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{cadd},
+        container_href        => $active_parameter{singularity}{cadd},
         container_path        => catfile(q{cadd.sif}),
         filehandle            => $filehandle,
     }
@@ -85,11 +86,11 @@ my $is_ok = install_cadd(
 ok( $is_ok, q{Executed install cadd recipe } );
 
 ## Given existing bind paths
-$active_parameter{emip}{singularity}{cadd}{program_bind_paths} = [q{extra_dir}];
+$active_parameter{singularity}{cadd}{program_bind_paths} = [q{extra_dir}];
 $is_ok = install_cadd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{cadd},
+        container_href        => $active_parameter{singularity}{cadd},
         container_path        => catfile(q{cadd.sif}),
         filehandle            => $filehandle,
     }
@@ -105,25 +106,38 @@ my $expected = [
 ok( $is_ok, q{Execute with extra bind path} );
 is_deeply(
     $expected,
-    $active_parameter{emip}{singularity}{cadd}{program_bind_paths},
+    $active_parameter{singularity}{cadd}{program_bind_paths},
     q{Add extra bind paths}
 );
 
 ## Given no reference directory
-$active_parameter{reference_dir} = undef;
-trap {
-    install_cadd(
-        {
-            active_parameter_href => \%active_parameter,
-            container_href        => $active_parameter{emip}{singularity}{cadd},
-            container_path        => catfile(q{cadd.sif}),
-            filehandle            => $filehandle,
-        }
-    )
-};
+$active_parameter{reference_dir}                         = undef;
+$active_parameter{singularity}{cadd}{program_bind_paths} = undef;
+$expected                                                = [
+    catdir(
+        $BACKWARD_SLASH
+          . $DOUBLE_QUOTE
+          . $BACKWARD_SLASH
+          . q{$MIP_BIND}
+          . $BACKWARD_SLASH
+          . $DOUBLE_QUOTE,
+        qw{ CADD-scripts data annotations }
+      )
+      . $COLON
+      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } )
+];
+install_cadd(
+    {
+        active_parameter_href => \%active_parameter,
+        container_href        => $active_parameter{singularity}{cadd},
+        container_path        => catfile(q{cadd.sif}),
+        filehandle            => $filehandle,
+    }
+);
 
-## Then exit and print fatal message
-ok( $trap->exit, q{Exit without a reference directory} );
+## Then append relative bind baths
+is_deeply( $active_parameter{singularity}{cadd}{program_bind_paths},
+    $expected, q{Add MIP_BIND relative bind path} );
 close $filehandle;
 
 done_testing();

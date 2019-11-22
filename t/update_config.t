@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,8 +69,7 @@ open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a config file path when it does not exists
-my %env_name;
-my @installations = qw{ emip };
+my $env_name      = q{test};
 my $pipeline      = q{rd_dna};
 my $update_config = q{config_does_not_exists};
 my $write_config  = 1;
@@ -78,13 +77,11 @@ my $write_config  = 1;
 trap {
     update_config(
         {
-            env_name_href     => \%env_name,
-            filehandle        => $filehandle,
-            installations_ref => \@installations,
-            log               => $log,
-            pipeline          => $pipeline,
-            update_config     => $update_config,
-            write_config      => $write_config,
+            env_name      => $env_name,
+            filehandle    => $filehandle,
+            pipeline      => $pipeline,
+            update_config => $update_config,
+            write_config  => $write_config,
         }
     )
 };
@@ -94,30 +91,6 @@ like(
     $trap->stderr,
     qr/MIP\s+will\s+not\s+attempt\s+to\s+update/xms,
     q{Throw not update message}
-);
-
-## Given a config when no valid installation env
-$update_config = catfile( $Bin, qw{ data test_data not_valid_config.yaml } );
-
-trap {
-    update_config(
-        {
-            env_name_href     => \%env_name,
-            filehandle        => $filehandle,
-            installations_ref => \@installations,
-            log               => $log,
-            pipeline          => $pipeline,
-            update_config     => $update_config,
-            write_config      => $write_config,
-        }
-    )
-};
-
-# Then throw warning
-like(
-    $trap->stderr,
-    qr/The\s+config\s+lacks\s+information\s+linking\s+it/xms,
-    q{Throw missing link to installation message}
 );
 
 ## Close the filehandle

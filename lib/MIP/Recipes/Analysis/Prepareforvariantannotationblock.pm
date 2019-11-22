@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_prepareforvariantannotationblock };
@@ -336,6 +336,7 @@ sub analysis_prepareforvariantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

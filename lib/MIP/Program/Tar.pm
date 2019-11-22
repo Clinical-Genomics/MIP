@@ -1,4 +1,4 @@
-package MIP::Program::Compression::Tar;
+package MIP::Program::Tar;
 
 use 5.026;
 use strict;
@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tar };

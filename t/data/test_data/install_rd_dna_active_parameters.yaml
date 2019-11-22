@@ -7,62 +7,64 @@ core_number: '1'
 core_ram_memory: '5'
 email_types:
   - FAIL
-emip:
-  conda:
-    R: 3.3.1
-    bcftools: 1.9=ha228f0b_4
-    bedtools: 2.27.1=he941832_2
-    cython: 0.29.1=py27hfc679d8_0
-    cyvcf2: 0.10.0=py27h355e19c_0
-    gatk: 3.8=5
-    gatk4: 4.1.3.0=0
-    gcc: 4.8.5
-    htslib: 1.9=hc238db4_4
-    ldc: 1.11.0=hb2c9046_0
-    libstdcxx-ng: '8.2'
-    numpy: ~
-    picard: 2.20.7=0
-    pip: ~
-    python: '2.7'
-    rtg-tools: 3.10.1=0
-    sambamba: 0.6.8=h682856c_0
-    samtools: 1.9=h8571acd_11
-    vcfanno: 0.3.2=0
-    vt: 2015.11.10
-  conda_prefix_path: t/data/modules/miniconda/envs/mip_travis
+conda:
+  R: 3.3.1
+  bcftools: 1.9=ha228f0b_4
+  bedtools: 2.27.1=he941832_2
+  cython: 0.29.1=py27hfc679d8_0
+  cyvcf2: 0.10.0=py27h355e19c_0
+  gatk: 3.8=5
+  gatk4: 4.1.3.0=0
+  gcc: 4.8.5
+  htslib: 1.9=hc238db4_4
+  ldc: 1.11.0=hb2c9046_0
+  libstdcxx-ng: '8.2'
+  numpy: ~
+  picard: 2.20.7=0
   pip: ~
-  shell:
-    bedtools:
-      version: 2.25.0
-    mip_scripts:
-      version: Your current MIP version
-    picard:
-      conda_dependency:
-        java-jdk: ~
-      version: 2.3.0
-    sambamba:
-      version: 0.6.1
-    vt:
-      version: gitRepo
-  singularity:
-    cadd:
-      executable:
-        CADD.sh:
-      uri: shub://Clinical-Genomics/MIP:cadd-1.5
-    cnvnator:
-      executable:
-        cnvnator: ~
-        cnvnator2VCF.pl: ~
-      uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
-    vep:
-      executable:
-        vep: ~
-      uri: shub://Clinical-Genomics/MIP:vep-97.4
-environment_base_name: mip_travis
-environment_name:
-  emip: mip_travis
-installations:
-  - emip
+  python: '2.7'
+  rtg-tools: 3.10.1=0
+  sambamba: 0.6.8=h682856c_0
+  samtools: 1.9=h8571acd_11
+  vcfanno: 0.3.2=0
+  vt: 2015.11.10
+conda_prefix_path: t/data/modules/miniconda/envs/mip_travis
+pip: ~
+shell:
+  bedtools:
+    version: 2.25.0
+  mip_scripts:
+    version: Your current MIP version
+  picard:
+    conda_dependency:
+      java-jdk: ~
+    version: 2.3.0
+  sambamba:
+    version: 0.6.1
+  vt:
+    version: gitRepo
+singularity:
+  cadd:
+    executable:
+      CADD.sh:
+    uri: shub://Clinical-Genomics/MIP:cadd-1.5
+  cnvnator:
+    executable:
+      cnvnator: ~
+      cnvnator2VCF.pl: ~
+    uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+  htslib:
+    executable:
+      bcftools:
+      bgzip:
+      samtools:
+      tabix:
+    uri: shub://Clinical-Genomics/MIP:htslib-1.9
+  vep:
+    executable:
+      vep: ~
+    uri: shub://Clinical-Genomics/MIP:vep-97.4
+environment_name: mip_travis
 max_cores_per_node: '36'
 mip: 1
 node_ram_memory: '128'

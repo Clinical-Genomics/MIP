@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -412,15 +412,16 @@ sub analysis_vt_core {
 
         submit_recipe(
             {
-                base_command       => $profile_base_command,
-                dependency_method  => q{island_to_samples},
-                case_id            => $case_id,
-                job_id_href        => $job_id_href,
-                log                => $log,
-                job_id_chain       => q{MAIN},
-                recipe_file_path   => $recipe_file_path,
-                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{island_to_samples},
+                case_id              => $case_id,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                job_id_chain         => q{MAIN},
+                recipe_file_path     => $recipe_file_path,
+                sample_ids_ref       => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

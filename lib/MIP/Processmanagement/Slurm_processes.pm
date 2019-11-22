@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -58,6 +58,7 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
 ##          : $job_id_href             => The info on job ids hash {REF}
 ##          : $log                     => Log
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_id               => Sample id
 ##          : $sbatch_file_name        => Sbatch file name
 
@@ -69,6 +70,7 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_id;
     my $sbatch_file_name;
 
@@ -113,7 +115,11 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
             required => 1,
             store    => \$log,
         },
-        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             defined     => 1,
             required    => 1,
@@ -191,6 +197,7 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -245,6 +252,7 @@ sub slurm_submit_job_no_dependency_dead_end {
 ## Arguments: $base_command     => Sbatch
 ##          : $log              => Log object
 ##          : $job_id_href      => The info on job ids hash {REF}
+##          : $reservation_name => Allocate resources from named reservation
 ##          : $sbatch_file_name => Sbatch file name
 
     my ($arg_href) = @_;
@@ -252,6 +260,7 @@ sub slurm_submit_job_no_dependency_dead_end {
     ## Flatten argument(s)
     my $log;
     my $job_id_href;
+    my $reservation_name;
     my $sbatch_file_name;
 
     ## Default(s)
@@ -275,6 +284,10 @@ sub slurm_submit_job_no_dependency_dead_end {
             store       => \$job_id_href,
             strict_type => 1,
         },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sbatch_file_name => {
             defined     => 1,
             required    => 1,
@@ -294,6 +307,7 @@ sub slurm_submit_job_no_dependency_dead_end {
         {
             base_command     => $base_command,
             log              => $log,
+            reservation_name => $reservation_name,
             sbatch_file_name => $sbatch_file_name,
         }
     );
@@ -325,6 +339,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
 ##          : $job_id_href      => The info on job ids hash {REF}
 ##          : $log              => Log
 ##          : $path             => Trunk or branch
+##          : $reservation_name => Allocate resources from named reservation
 ##          : $sample_id        => Sample id
 ##          : $sbatch_file_name => Sbatch file name
 
@@ -335,6 +350,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_id;
     my $sbatch_file_name;
 
@@ -365,7 +381,11 @@ sub slurm_submit_job_no_dependency_add_to_sample {
             required => 1,
             store    => \$log,
         },
-        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             defined     => 1,
             required    => 1,
@@ -399,6 +419,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
         {
             base_command     => $base_command,
             log              => $log,
+            reservation_name => $reservation_name,
             sbatch_file_name => $sbatch_file_name,
         }
     );
@@ -439,6 +460,7 @@ sub slurm_submit_job_no_dependency_add_to_samples {
 ##          : $job_id_href      => Info on job id dependencies hash {REF}
 ##          : $log              => Log
 ##          : $path             => Trunk or branch
+##          : $reservation_name => Allocate resources from named reservation
 ##          : $sample_ids_ref   => Sample ids {REF}
 ##          : $sbatch_file_name => Sbatch file name
 
@@ -449,6 +471,7 @@ sub slurm_submit_job_no_dependency_add_to_samples {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_ids_ref;
     my $sbatch_file_name;
 
@@ -480,6 +503,10 @@ sub slurm_submit_job_no_dependency_add_to_samples {
             store    => \$log,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -510,6 +537,7 @@ sub slurm_submit_job_no_dependency_add_to_samples {
         {
             base_command     => $base_command,
             log              => $log,
+            reservation_name => $reservation_name,
             sbatch_file_name => $sbatch_file_name,
         }
     );
@@ -562,6 +590,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $log                     => Log
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_id               => Sample id
 ##          : $sbatch_file_name        => Sbatch file name
 
@@ -573,6 +602,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_id;
     my $sbatch_file_name;
 
@@ -617,7 +647,11 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             required => 1,
             store    => \$log,
         },
-        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -694,6 +728,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -770,6 +805,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
 ##          : $job_id_href             => The info on job ids hash {REF}
 ##          : $log                     => Log
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_id               => Sample id
 ##          : $sbatch_file_name        => Sbatch file name
 
@@ -781,6 +817,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_id;
     my $sbatch_file_name;
 
@@ -825,7 +862,11 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             required => 1,
             store    => \$log,
         },
-        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -902,6 +943,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -989,6 +1031,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
 ##          : $log                     => Log
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $sbatch_file_name        => Sbatch file name
 
@@ -1001,6 +1044,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
     my $log;
     my $parallel_chains_ref;
     my $path;
+    my $reservation_name;
     my $sample_ids_ref;
     my $sbatch_file_name;
 
@@ -1051,6 +1095,10 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -1120,6 +1168,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -1187,6 +1236,7 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
 ##          : $log                     => Log
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $sbatch_file_name        => Sbatch file name
 
@@ -1199,6 +1249,7 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
     my $log;
     my $parallel_chains_ref;
     my $path;
+    my $reservation_name;
     my $sample_ids_ref;
     my $sbatch_file_name;
 
@@ -1249,6 +1300,10 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -1318,6 +1373,7 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -1376,6 +1432,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
 ##          : $log                     => Log
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $sbatch_file_name        => Sbatch file name
 ##          : $sbatch_script_tracker   => Track the number of parallel processes (e.g. sbatch scripts for a module)
@@ -1389,6 +1446,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
     my $log;
     my $parallel_chains_ref;
     my $path;
+    my $reservation_name;
     my $sample_ids_ref;
     my $sbatch_file_name;
     my $sbatch_script_tracker;
@@ -1438,6 +1496,10 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
         parallel_chains_ref => {
             default     => [],
             store       => \$parallel_chains_ref,
+            strict_type => 1,
+        },
+        reservation_name => {
+            store       => \$reservation_name,
             strict_type => 1,
         },
         sample_ids_ref => {
@@ -1501,6 +1563,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -1562,6 +1625,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
 ##          : $job_id_href             => The info on job ids hash {REF}
 ##          : $log                     => Log
 ##          : $path                    => Trunk or branch
+##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_id               => Sample id
 ##          : $sbatch_file_name        => Sbatch file name
 ##          : $sbatch_script_tracker   => Track the number of parallel processes (e.g. sbatch scripts for a module)
@@ -1574,6 +1638,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sample_id;
     my $sbatch_file_name;
     my $sbatch_script_tracker;
@@ -1619,7 +1684,11 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             required => 1,
             store    => \$log,
         },
-        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -1726,6 +1795,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -1783,6 +1853,7 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
 ##          : $job_id_href         => The info on job ids hash {REF}
 ##          : $log                 => Log
 ##          : $path                => Trunk or branch
+##          : $reservation_name    => Allocate resources from named reservation
 ##          : $sbatch_file_name    => Sbatch file name
 
     my ($arg_href) = @_;
@@ -1791,6 +1862,7 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
     my $job_id_href;
     my $log;
     my $path;
+    my $reservation_name;
     my $sbatch_file_name;
 
     ## Default(s)
@@ -1822,6 +1894,10 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
             store    => \$log,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sbatch_file_name => {
             defined     => 1,
             required    => 1,
@@ -1862,6 +1938,7 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
             log                 => $log,
+            reservation_name    => $reservation_name,
             sbatch_file_name    => $sbatch_file_name,
         }
     );
@@ -1908,6 +1985,7 @@ sub submit_jobs_to_sbatch {
 ##          : $job_dependency_type => Job dependency type
 ##          : $job_ids_string      => Job ids string
 ##          : $log                 => Log
+##          : $reservation_name    => Allocate resources from named reservation
 ##          : $sbatch_file_name    => Sbatch file to submit
 
     my ($arg_href) = @_;
@@ -1916,6 +1994,7 @@ sub submit_jobs_to_sbatch {
     my $job_dependency_type;
     my $job_ids_string;
     my $log;
+    my $reservation_name;
     my $sbatch_file_name;
 
     ## Default(s)
@@ -1934,6 +2013,10 @@ sub submit_jobs_to_sbatch {
             required => 1,
             store    => \$log,
         },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sbatch_file_name => {
             defined     => 1,
             required    => 1,
@@ -1944,16 +2027,17 @@ sub submit_jobs_to_sbatch {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Workloadmanager::Slurm qw{slurm_sbatch};
+    use MIP::Workloadmanager::Slurm qw{ slurm_sbatch };
     use MIP::Unix::System qw{ system_cmd_call };
 
     ## Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
         {
-            base_command    => $base_command,
-            dependency_type => $job_dependency_type,
-            infile_path     => $sbatch_file_name,
-            job_ids_string  => $job_ids_string,
+            base_command     => $base_command,
+            dependency_type  => $job_dependency_type,
+            infile_path      => $sbatch_file_name,
+            job_ids_string   => $job_ids_string,
+            reservation_name => $reservation_name,
         }
     );
 
@@ -2038,10 +2122,11 @@ sub submit_slurm_recipe {
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $log                     => Log
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $sample_id               => Sample id
-##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $recipe_file_path        => Sbatch file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. sbatch scripts for a module)
+##          : $reservation_name        => Allocate resources from named reservation
+##          : $sample_id               => Sample id
+##          : $sample_ids_ref          => Sample ids {REF}
 
     my ($arg_href) = @_;
 
@@ -2054,10 +2139,11 @@ sub submit_slurm_recipe {
     my $job_id_href;
     my $log;
     my $parallel_chains_ref;
-    my $sample_id;
-    my $sample_ids_ref;
+    my $reservation_name;
     my $recipe_file_path;
     my $recipe_files_tracker;
+    my $sample_id;
+    my $sample_ids_ref;
 
     ## Default(s)
     my $base_command;
@@ -2128,6 +2214,10 @@ sub submit_slurm_recipe {
             store       => \$recipe_file_path,
             strict_type => 1,
         },
+        reservation_name => {
+            store       => \$reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -2154,6 +2244,7 @@ sub submit_slurm_recipe {
                 job_dependency_type => $job_dependency_type,
                 log                 => $log,
                 path                => $job_id_chain,
+                reservation_name    => $reservation_name,
                 sbatch_file_name    => $recipe_file_path,
             }
         );
@@ -2170,6 +2261,7 @@ sub submit_slurm_recipe {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
+                reservation_name        => $reservation_name,
                 sample_ids_ref          => $sample_ids_ref,
                 sbatch_file_name        => $recipe_file_path,
             }
@@ -2184,6 +2276,7 @@ sub submit_slurm_recipe {
                 base_command     => $base_command,
                 job_id_href      => $job_id_href,
                 log              => $log,
+                reservation_name => $reservation_name,
                 sbatch_file_name => $recipe_file_path,
             }
         );
@@ -2198,6 +2291,7 @@ sub submit_slurm_recipe {
                 job_id_href      => $job_id_href,
                 log              => $log,
                 path             => $job_id_chain,
+                reservation_name => $reservation_name,
                 sample_id        => $sample_id,
                 sbatch_file_name => $recipe_file_path
             }
@@ -2213,6 +2307,7 @@ sub submit_slurm_recipe {
                 job_id_href      => $job_id_href,
                 log              => $log,
                 path             => $job_id_chain,
+                reservation_name => $reservation_name,
                 sample_ids_ref   => $sample_ids_ref,
                 sbatch_file_name => $recipe_file_path,
             }
@@ -2229,6 +2324,7 @@ sub submit_slurm_recipe {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
+                reservation_name        => $reservation_name,
                 sample_id               => $sample_id,
                 sbatch_file_name        => $recipe_file_path,
             }
@@ -2246,6 +2342,7 @@ sub submit_slurm_recipe {
                 log                     => $log,
                 path                    => $job_id_chain,
                 parallel_chains_ref     => $parallel_chains_ref,
+                reservation_name        => $reservation_name,
                 sample_ids_ref          => $sample_ids_ref,
                 sbatch_file_name        => $recipe_file_path,
             }
@@ -2262,6 +2359,7 @@ sub submit_slurm_recipe {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
+                reservation_name        => $reservation_name,
                 sample_ids_ref          => $sample_ids_ref,
                 sbatch_file_name        => $recipe_file_path,
                 sbatch_script_tracker   => $recipe_files_tracker,
@@ -2279,6 +2377,7 @@ sub submit_slurm_recipe {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
+                reservation_name        => $reservation_name,
                 sample_id               => $sample_id,
                 sbatch_file_name        => $recipe_file_path,
             }
@@ -2295,6 +2394,7 @@ sub submit_slurm_recipe {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
+                reservation_name        => $reservation_name,
                 sample_id               => $sample_id,
                 sbatch_file_name        => $recipe_file_path,
                 sbatch_script_tracker   => $recipe_files_tracker,
@@ -2313,6 +2413,7 @@ sub submit_slurm_recipe {
             job_id_href             => $job_id_href,
             log                     => $log,
             path                    => $job_id_chain,
+            reservation_name        => $reservation_name,
             sample_id               => $sample_id,
             sbatch_file_name        => $recipe_file_path,
         }

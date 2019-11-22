@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_split_fastq_file };
@@ -144,7 +144,7 @@ sub analysis_split_fastq_file {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Pigz qw{ pigz };
+    use MIP::Program::Pigz qw{ pigz };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -347,9 +347,11 @@ sub analysis_split_fastq_file {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
-                    log                     => $log,
-                    recipe_file_path        => $recipe_file_path,
-                    sample_id               => $sample_id,
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                => $log,
+                    recipe_file_path   => $recipe_file_path,
+                    sample_id          => $sample_id,
                     submission_profile => $active_parameter_href->{submission_profile},
                 }
             );

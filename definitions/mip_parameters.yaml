@@ -5,7 +5,7 @@ bash_set_errexit:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   type: mip
 bash_set_nounset:
   associated_recipe:
@@ -17,7 +17,7 @@ bash_set_pipefail:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   type: mip
 conda_path:
   associated_recipe:
@@ -39,6 +39,12 @@ email_types:
   default:
    - FAIL
   element_separator: ,
+  mandatory: no
+  type: mip
+job_reservation_name:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
   mandatory: no
   type: mip
 log_file:

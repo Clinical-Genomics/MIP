@@ -29,7 +29,6 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_conda_path set_custom_default_to_active_parameter set_default_to_active_parameter };
-use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 use MIP::Update::Path qw{ update_to_absolute_path };
 
 ## Recipes
@@ -44,7 +43,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.04;
+    our $VERSION = 2.05;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -211,14 +210,6 @@ sub mip_install {
 
     ## Set path to conda
     set_conda_path(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-        }
-    );
-
-    ## Set environment names and environment specific conda paths
-    set_conda_env_names_and_paths(
         {
             active_parameter_href => \%active_parameter,
         }

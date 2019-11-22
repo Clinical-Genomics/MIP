@@ -23,8 +23,8 @@ use Readonly;
 use MIP::Constants qw{ $BACKTICK $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
-use MIP::Program::Compression::Tar qw{ tar };
-use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Tar qw{ tar };
+use MIP::Program::Wget qw{ wget };
 use MIP::Program::Singularity qw{ singularity_exec };
 use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
 
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -135,7 +135,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         $cache_dir_path = catdir( $reference_dir_path,
             q{ensembl-tools-release-} . $vep_version, q{cache} );
     }
-    push @{ $container_href->{program_bind_paths} }, $cache_dir_path;
 
     ## Make sure that the cache directory exists
     if ( not -d $cache_dir_path ) {

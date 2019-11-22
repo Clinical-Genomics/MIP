@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -137,7 +137,7 @@ sub analysis_gzip_fastq {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## No uncompressed fastq infiles
@@ -286,15 +286,16 @@ sub analysis_gzip_fastq {
 
         submit_recipe(
             {
-                base_command       => $profile_base_command,
-                case_id            => $case_id,
-                dependency_method  => q{island_to_sample},
-                job_id_chain       => $job_id_chain,
-                job_id_href        => $job_id_href,
-                log                => $log,
-                recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
-                submission_profile => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{island_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                sample_id            => $sample_id,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -1,18 +1,10 @@
 ---
 ## Environment
 analysis_constant_path: analysis
-bash_set_errexit: 1
-bash_set_nounset: 0
-bash_set_pipefail: 1
-core_ram_memory: 5
-java_use_large_pages: 1
 load_env:
   mip_travis:
-    endvariantannotationblock:
-    installation: emip
     method: conda
     mip:
-    picard:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
@@ -20,8 +12,8 @@ slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
-vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 sv_vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
+vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
@@ -50,44 +42,23 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
-qccollect_regexp_file: qc_regexp_-v1.23-.yaml
-qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+qccollect_regexp_file: qc_regexp_-v1.24-.yaml
 ### Analysis
 ### Programs
 ## Parameters
 fqf_annotations:
   - GNOMADAF
-  - GNOMADAF_POPMAX
+  - GNOMADAF_popmax
   - SWEGENAF
 gatk_combinevariants_prioritize_caller: gatk,bcftools
-gatk_haplotypecaller_no_soft_clipped_bases: 1
 gatk_path: /opt/conda/opt/gatk-3.8
-gatk_variantrecalibration_dp_annotation: 1
-gatk_variantrecalibration_indel_max_gaussians: 1
-gatk_variantrecalibration_snv_max_gaussians: 0
-gatk_combinevariantcallsets_bcf_file: 1
-genmod_annotate_regions: 1
-genmod_models_whole_gene: 1
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
-rankvariant_binary_file: 1
-sv_bcftools_view_filter: 1
-sv_combinevariantcallsets_bcf_file: 1
-sv_genmod_annotate_regions: 1
-sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
-sv_svdb_query: 1
-sv_vcfparser_per_gene: 1
-sv_vcfparser_select_file_matching_column: 3
-sv_vt_decompose: 1
 sv_vep_plugin:
   ExACpLI:
     exists_check: file
     path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-sv_vcfparser_vep_transcripts: 1
-sv_vt_decompose: 1
-vcfparser_vep_transcripts: 1
-vcfparser_select_file_matching_column: 3
 vep_custom_annotation:
   genomic_superdups_frac_match:
     annotation_type: overlap
@@ -126,7 +97,3 @@ vep_plugin:
       - SWA
       - NCSS
     path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins/fordownload
-vt_decompose: 1
-vt_normalize: 1
-vt_uniq: 1
-vt_missing_alt_allele: 1

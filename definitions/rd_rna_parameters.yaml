@@ -72,6 +72,15 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: recipe_argument
+gatk_path:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_splitncigarreads
+    - gatk_variantfiltration
+  data_type: SCALAR
+  type: path
 gatk_use_new_qual_calculator:
   associated_recipe:
     - gatk_haplotypecaller
@@ -126,8 +135,8 @@ recipe_time:
     star_aln: 6
     star_fusion: 8
     stringtie_ar: 2
-    trim_galore_ar: 8
-    varianteffectpredictor: 6
+    trim_galore_ar: 6
+    varianteffectpredictor: 2
     version_collect_ar: 1
   type: mip
 recipe_memory:
@@ -756,13 +765,6 @@ vep_directory_cache:
   data_type: SCALAR
   exists_check: directory
   is_reference: 1
-  type: path
-  update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
   type: path
   update_path: absolute_path
 vep_features:

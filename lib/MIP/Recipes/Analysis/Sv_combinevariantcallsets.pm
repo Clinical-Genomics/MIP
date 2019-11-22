@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -391,6 +391,7 @@ sub analysis_sv_combinevariantcallsets {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 parallel_chains_ref     => \@parallel_chains,
                 recipe_file_path        => $recipe_file_path,

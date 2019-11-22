@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -127,7 +127,7 @@ sub analysis_multiqc {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Multiqc qw{ multiqc };
+    use MIP::Program::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
 
@@ -240,14 +240,15 @@ sub analysis_multiqc {
 
         submit_recipe(
             {
-                base_command        => $profile_base_command,
-                dependency_method   => q{add_to_all},
-                job_dependency_type => q{afterok},
-                job_id_chain        => $job_id_chain,
-                job_id_href         => $job_id_href,
-                log                 => $log,
-                recipe_file_path    => $recipe_file_path,
-                submission_profile  => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{add_to_all},
+                job_dependency_type  => q{afterok},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

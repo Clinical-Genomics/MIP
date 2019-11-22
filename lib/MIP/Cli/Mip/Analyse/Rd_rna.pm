@@ -932,15 +932,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{vep_directory_path} => (
-            cmd_aliases   => [qw{ vepp }],
-            documentation => q{Path to VEP script directory},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{vep_features} => (
             cmd_aliases => [qw{ vepf }],
             cmd_tags    => [

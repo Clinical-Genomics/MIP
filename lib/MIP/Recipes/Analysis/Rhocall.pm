@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -318,6 +318,7 @@ sub analysis_rhocall_annotate {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -430,7 +431,7 @@ sub analysis_rhocall_viz {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_index bcftools_roh bcftools_view };
@@ -600,6 +601,7 @@ sub analysis_rhocall_viz {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,

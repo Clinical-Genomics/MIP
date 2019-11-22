@@ -53,6 +53,9 @@ do
     if ! [[ $infile =~ .*\.(t|pm|pl|test)$ ]] ; then
         echo "[SKIPPING]: $infile"
         continue
+    ## Skip removed files
+    elif ! [[ -f $infile ]] ; then
+        continue
     fi
 
     echo ""

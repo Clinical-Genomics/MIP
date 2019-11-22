@@ -808,7 +808,7 @@ sv_combinevariantcallsets_bcf_file:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_merge_prioritize:
   associated_recipe:
@@ -820,7 +820,7 @@ sv_vt_decompose:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_annotate:
   analysis_mode: case
@@ -855,19 +855,19 @@ sv_bcftools_view_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_frequency_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query_db_files:
   associated_recipe:
@@ -1012,7 +1012,7 @@ sv_vcfparser_per_gene:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_vcfparser_select_feature_annotation_columns:
   associated_recipe:
@@ -1032,12 +1032,13 @@ sv_vcfparser_select_file_matching_column:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 sv_vcfparser_vep_transcripts:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_rankvariant:
   analysis_mode: case
@@ -1052,7 +1053,7 @@ sv_genmod_annotate_regions:
   associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_genmod_models_case_type:
   associated_recipe:
@@ -1183,7 +1184,7 @@ gatk_haplotypecaller_no_soft_clipped_bases:
   associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_haplotypecaller_pcr_indel_model:
   associated_recipe:
@@ -1305,13 +1306,13 @@ gatk_variantrecalibration_dp_annotation:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_variantrecalibration_indel_max_gaussians:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_variantrecalibration_indel_tsfilter_level:
   associated_recipe:
@@ -1392,7 +1393,7 @@ gatk_combinevariantcallsets_bcf_file:
   associated_recipe:
    - gatk_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_combinevariants_genotype_merge_option:
   associated_recipe:
@@ -1472,14 +1473,14 @@ vt_missing_alt_allele:
   associated_recipe:
    - vt_ar
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_uniq:
   associated_recipe:
    - vt_ar
    - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_core:
   analysis_mode: case
@@ -1676,13 +1677,6 @@ vep_directory_cache:
   is_reference: 1
   type: path
   update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-   - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 vep_features:
   associated_recipe:
    - varianteffectpredictor
@@ -1785,12 +1779,13 @@ vcfparser_select_file_matching_column:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 vcfparser_vep_transcripts:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 ## Case_check
 peddy_ar:
@@ -1910,7 +1905,7 @@ genmod_annotate_regions:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 genmod_annotate_spidex_file:
   associated_recipe:
@@ -1940,7 +1935,7 @@ genmod_models_whole_gene:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 rank_model_file:
   associated_recipe:
@@ -1966,7 +1961,7 @@ rankvariant_binary_file:
   associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 endvariantannotationblock_remove_genes_file:
   associated_recipe:

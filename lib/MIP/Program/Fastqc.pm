@@ -1,4 +1,4 @@
-package MIP::Program::Qc::Fastqc;
+package MIP::Program::Fastqc;
 
 use strict;
 use warnings;
@@ -14,6 +14,7 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -22,93 +23,81 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(fastqc);
+    our @EXPORT_OK = qw{ fastqc };
 
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub fastqc {
 
-##fastqc
-
-##Function : Perl wrapper for writing fastqc recipe to already open $filehandle or return commands array. Based on cp 0.11.5
-##Returns  : "@commands"
-##Arguments: $filehandle, $infile_path, $outdirectory_path, $extract, $quiet
+##Function : Perl wrapper for writing fastqc recipe to already open $filehandle or return commands array. Based on fastq 0.11.5
+##Returns  : @commands
+##Arguments: $extract           => If set then the zipped output file will be uncompressed in the same directory after it has been created
 ##         : $filehandle        => Filehandle to write to
 ##         : $infile_path       => Infile path
 ##         : $outdirectory_path => Outdirectory path
-##         : $extract           => If set then the zipped output file will be uncompressed in the same directory after it has been created
 ##         : $quiet             => Supress all progress messages on stdout and only report errors
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $extract;
-    my $quiet;
 
     ## Flatten argument(s)
     my $filehandle;
     my $infile_path;
     my $outdirectory_path;
 
+    ## Default(s)
+    my $extract;
+    my $quiet;
+
     my $tmpl = {
-        filehandle  => { store => \$filehandle },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outdirectory_path => { strict_type => 1, store => \$outdirectory_path },
+        outdirectory_path => { store => \$outdirectory_path, strict_type => 1, },
         extract           => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$extract,
             strict_type => 1,
-            store       => \$extract
         },
         quiet => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Fastqc
-    # Stores commands depending on input parameters
-    my @commands = qw(fastqc);
+    my @commands = qw{ fastqc };
 
     if ($quiet) {
 
-        # Supress all progress messages on stdout and only report errors
         push @commands, q{--quiet};
     }
     if ($extract) {
 
-# Zipped output file will be uncompressed in the same directory after it has been created
         push @commands, q{--extract};
     }
     if ($outdirectory_path) {
 
-        # Create all output files in the specified output directory
         push @commands, q{--outdir} . $SPACE . $outdirectory_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;

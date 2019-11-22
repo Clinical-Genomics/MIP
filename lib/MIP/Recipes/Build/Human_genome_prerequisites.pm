@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -160,8 +160,8 @@ sub build_human_genome_prerequisites {
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Samtools qw{ samtools_faidx };
-    use MIP::Program::Compression::Gzip qw{ gzip };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Build::Capture_file_prerequisites

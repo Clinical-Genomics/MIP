@@ -37,7 +37,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -83,26 +83,22 @@ sub check_mip_installation {
         }
     );
 
-  INSTALLATION:
-    foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
-        ## Get the programs that mip has tried to install
-        my @programs_to_test = (
-            keys %{ $active_parameter_href->{$installation}{conda} },
-            keys %{ $active_parameter_href->{$installation}{pip} },
-            keys %{ $active_parameter_href->{$installation}{shell} },
-            keys %{ $active_parameter_href->{$installation}{singularity} },
-        );
+    ## Get the programs that mip has tried to install
+    my @programs_to_test = (
+        keys %{ $active_parameter_href->{conda} },
+        keys %{ $active_parameter_href->{pip} },
+        keys %{ $active_parameter_href->{shell} },
+        keys %{ $active_parameter_href->{singularity} },
+    );
 
-        check_program_installations(
-            {
-                env_name     => $active_parameter_href->{environment_name}{$installation},
-                filehandle   => $filehandle,
-                installation => $installation,
-                programs_ref => \@programs_to_test,
-                program_test_command_href => \%program_test_cmds,
-            }
-        );
-    }
+    check_program_installations(
+        {
+            env_name                  => $active_parameter_href->{environment_name},
+            filehandle                => $filehandle,
+            programs_ref              => \@programs_to_test,
+            program_test_command_href => \%program_test_cmds,
+        }
+    );
     return;
 }
 
@@ -112,7 +108,6 @@ sub check_program_installations {
 ## Returns  :
 ## Arguments: $env_name                   => Program environment name
 ##          : $filehandle                 => open filehandle
-##          : $installation               => installation
 ##          : $programs_ref               => Programs to check {REF}
 ##          : $program_test_command_href  => Hash with test commands {REF}
 
@@ -121,7 +116,6 @@ sub check_program_installations {
     ## Flatten argument(s)
     my $env_name;
     my $filehandle;
-    my $installation;
     my $programs_ref;
     my $program_test_command_href;
 
@@ -135,12 +129,6 @@ sub check_program_installations {
         filehandle => {
             required => 1,
             store    => \$filehandle,
-        },
-        installation => {
-            defined     => 1,
-            required    => 1,
-            store       => \$installation,
-            strict_type => 1,
         },
         programs_ref => {
             default     => [],
@@ -258,7 +246,7 @@ sub check_program_installations {
     print {$filehandle} $NEWLINE;
 
     ## Create success and fail case
-    my $installation_outcome = uc $installation;
+    my $installation_outcome = uc $env_name;
     my $success_message =
       q{\n\tAll programs were succesfully installed in: } . $env_name . q{\n};
     my $fail_message =
@@ -317,47 +305,31 @@ sub update_config {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $env_name_href     => Program environment name hash {REF}
-##          : $filehandle        => open filehandle
-##          : $installations_ref => Array with installations {REF}
-##          : $log               => Log
-##          : $pipeline          => Pipeline
-##          : $update_config     => Path to config to update
-##          : $write_config      => Create new config from template
+## Arguments: $env_name      => Program environment name hash
+##          : $filehandle    => open filehandle
+##          : $pipeline      => Pipeline
+##          : $update_config => Path to config to update
+##          : $write_config  => Create new config from template
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $env_name_href;
+    my $env_name;
     my $filehandle;
-    my $installations_ref;
-    my $log;
     my $pipeline;
     my $update_config;
     my $write_config;
 
     my $tmpl = {
-        env_name_href => {
+        env_name => {
             defined     => 1,
-            default     => {},
             required    => 1,
-            store       => \$env_name_href,
+            store       => \$env_name,
             strict_type => 1,
         },
         filehandle => {
             required => 1,
             store    => \$filehandle,
-        },
-        installations_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$installations_ref,
-            strict_type => 1,
-        },
-        log => {
-            required => 1,
-            store    => \$log,
         },
         pipeline => {
             defined     => 1,
@@ -379,10 +351,13 @@ sub update_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Return if no config options
-    return if ( not $update_config ) and ( not $write_config );
+    return if ( not $update_config and not $write_config );
+
+    ## Retrieve logger object
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     ## Map installation to bash paramter
-    my %installation_outcome = map { $_ => q{$} . uc $_ } @{$installations_ref};
+    my $installation_outcome = q{$} . $env_name;
 
     ## Set config paths
     my $load_config_path;
@@ -459,80 +434,53 @@ q{MIP will not attempt to update config as the specified path does not exist.}
     say {$filehandle} q{SUCCESS_COUNTER=0};
   CONFIG_ENV_NAME:
     foreach my $config_env_name ( keys %config_environment ) {
-        if (
-            any { $_ eq $config_environment{$config_env_name}{installation} }
-            @{$installations_ref}
-          )
-        {
 
-            my $installation = $config_environment{$config_env_name}{installation};
-            my $old_env_name = $config_env_name;
-            my $new_env_name =
-              $env_name_href->{ $config_environment{$config_env_name}{installation} };
+        ## Build update_config_command
+        my $update_config_command = build_update_config_command(
+            {
+                new_env_name     => $env_name,
+                old_env_name     => $config_env_name,
+                save_config_path => $save_config_path,
+            }
+        );
 
-            ## Build update_config_command
-            my $update_config_command = build_update_config_command(
-                {
-                    new_env_name     => $new_env_name,
-                    old_env_name     => $old_env_name,
-                    save_config_path => $save_config_path,
-                }
-            );
+        ## Create status messages
+        my $success_message = qq{Updated config ($save_config_path) with $env_name};
+        my $fail_message =
+          q{\nFailed one or more installation tests in environment: } . $env_name . q{\n};
+        $fail_message .= q{Config won't be updated/written for this environment\n};
+        my $success_echo = join $SPACE,
+          gnu_echo(
+            {
+                enable_interpretation => 1,
+                strings_ref           => [$success_message],
+            }
+          );
+        my $fail_echo = join $SPACE,
+          gnu_echo(
+            {
+                enable_interpretation => 1,
+                strings_ref           => [$fail_message],
+            }
+          );
 
-            ## Create status messages
-            my $success_message =
-              qq{Updated config ($save_config_path) with $new_env_name};
-            my $fail_message = q{\nFailed one or more installation tests in environment: }
-              . $new_env_name . q{\n};
-            $fail_message .= q{Config won't be updated/written for this environment\n};
-            my $success_echo = join $SPACE,
-              gnu_echo(
-                {
-                    enable_interpretation => 1,
-                    strings_ref           => [$success_message],
-                }
-              );
-            my $fail_echo = join $SPACE,
-              gnu_echo(
-                {
-                    enable_interpretation => 1,
-                    strings_ref           => [$fail_message],
-                }
-              );
+        ## Check for success
+        my $success_check =
+          qq{if [[ "$installation_outcome" == "success" ]]; then} . $NEWLINE;
+        $success_check .= $TAB . $update_config_command . $NEWLINE;
+        $success_check .= $TAB . $success_echo . $NEWLINE;
+        $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
+        $success_check .= q{else} . $NEWLINE;
+        $success_check .= $TAB . $fail_echo . $NEWLINE;
+        $success_check .= q{fi};
 
-            ## Check for success
-            my $success_check =
-              qq{if [[ "$installation_outcome{$installation}" == "success" ]]; then}
-              . $NEWLINE;
-            $success_check .= $TAB . $update_config_command . $NEWLINE;
-            $success_check .= $TAB . $success_echo . $NEWLINE;
-            $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
-            $success_check .= q{else} . $NEWLINE;
-            $success_check .= $TAB . $fail_echo . $NEWLINE;
-            $success_check .= q{fi};
-
-            say {$filehandle} $success_check . $NEWLINE;
-        }
-        if ( not $config_environment{$config_env_name}{installation} ) {
-            $log->warn(
-qq{Automatic update of $load_config_path not possible. The config lacks information linking it to a MIP installation.}
-            );
-            gnu_rm(
-                {
-                    filehandle  => $filehandle,
-                    force       => 1,
-                    infile_path => $save_config_path,
-                }
-            );
-            say {$filehandle} $NEWLINE;
-            return;
-        }
+        say {$filehandle} $success_check . $NEWLINE;
     }
 
     ## Rm temporary config if no installation was free from errors
     if ($write_config) {
         say {$filehandle}
-          q{## Remove copied template config if no installation was succesful};
+          q{## Remove copied template config if the installation wasn't succesful};
 
         # build_cleanup_check
         my $rm_temp_config = join $SPACE,

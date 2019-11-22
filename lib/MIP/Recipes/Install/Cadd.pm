@@ -20,7 +20,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $FORWARD_SLASH $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $COLON $DOUBLE_QUOTE $FORWARD_SLASH $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Program::Singularity qw{ singularity_exec };
 
@@ -29,7 +30,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -86,8 +87,16 @@ sub install_cadd {
     my $reference_dir_path = $active_parameter_href->{reference_dir};
 
     if ( not $reference_dir_path ) {
-        $log->fatal(q{Please supply a reference directory when installing CADD});
-        exit 1;
+        $log->warn(
+q{Please supply a reference directory when installing CADD to use a static path}
+        );
+        $reference_dir_path =
+            $BACKWARD_SLASH
+          . $DOUBLE_QUOTE
+          . $BACKWARD_SLASH
+          . q{$MIP_BIND}
+          . $BACKWARD_SLASH
+          . $DOUBLE_QUOTE;
     }
 
     my $annotation_dir_path =

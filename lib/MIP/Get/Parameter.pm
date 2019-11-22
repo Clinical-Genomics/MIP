@@ -1071,8 +1071,8 @@ sub get_vep_version {
 
     my $tmpl = {
         vep_bin_path => {
+            default     => q{vep},
             defined     => 1,
-            required    => 1,
             store       => \$vep_bin_path,
             strict_type => 1,
         },

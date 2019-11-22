@@ -1,9 +1,8 @@
 ---
-add_environment_date:
+conda: 
   associated_recipe:
    - mip
-  data_type: SCALAR
-  default: 0
+  data_type: HASH
   mandatory: no
   type: mip
 config_file:
@@ -20,35 +19,10 @@ core_number:
   default: 1
   mandatory: no
   type: mip
-environment_base_name: 
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-environment_name:
+pip: 
   associated_recipe:
    - mip
   data_type: HASH
-  mandatory: no
-  type: mip
-environment_prefix:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-environment_suffix:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-installations:
-  associated_recipe:
-   - mip
-  data_type: ARRAY
-  element_separator: ,
   mandatory: no
   type: mip
 prefer_shell:
@@ -104,6 +78,18 @@ sbatch_mode:
    - mip
   data_type: SCALAR
   default: 0
+  mandatory: no
+  type: mip
+shell: 
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+singularity: 
+  associated_recipe:
+   - mip
+  data_type: HASH
   mandatory: no
   type: mip
 slurm_quality_of_service:

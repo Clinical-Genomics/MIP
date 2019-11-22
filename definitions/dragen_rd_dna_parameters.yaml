@@ -87,7 +87,7 @@ recipe_memory:
    - mip
   data_type: HASH
   default:
-    # Per process 
+    # Per process
     cadd_ar: 3
     endvariantannotationblock: 8
     frequency_annotation: 3
@@ -207,19 +207,19 @@ sv_bcftools_view_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_frequency_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query_db_files:
   associated_recipe:
@@ -316,7 +316,7 @@ sv_vcfparser_per_gene:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_vcfparser_select_feature_annotation_columns:
   associated_recipe:
@@ -336,12 +336,13 @@ sv_vcfparser_select_file_matching_column:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 sv_vcfparser_vep_transcripts:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_rankvariant:
   analysis_mode: case
@@ -358,7 +359,7 @@ sv_genmod_annotate_regions:
   associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_genmod_models_case_type:
   associated_recipe:
@@ -378,7 +379,7 @@ sv_genmod_models_whole_gene:
   associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_rank_model_file:
   associated_recipe:
@@ -405,7 +406,7 @@ sv_rankvariant_binary_file:
   associated_recipe:
    - sv_reformat
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_reformat_remove_genes_file:
   associated_recipe:
@@ -467,27 +468,27 @@ vt_decompose:
    - vt_ar
    - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_normalize:
   associated_recipe:
    - vt_ar
    - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_missing_alt_allele:
   associated_recipe:
    - vt_ar
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_uniq:
   associated_recipe:
    - vt_ar
    - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_core:
   analysis_mode: case
@@ -609,13 +610,6 @@ vep_directory_cache:
   is_reference: 1
   type: path
   update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-   - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 vep_features:
   associated_recipe:
    - varianteffectpredictor
@@ -717,12 +711,13 @@ vcfparser_select_file_matching_column:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 vcfparser_vep_transcripts:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 ## RankVariant
 rankvariant:
@@ -805,7 +800,7 @@ rankvariant_binary_file:
   associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 endvariantannotationblock_remove_genes_file:
   associated_recipe:

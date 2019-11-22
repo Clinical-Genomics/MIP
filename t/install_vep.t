@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +75,7 @@ $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{vep},
+        container_href        => $active_parameter{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
         filehandle            => $filehandle,
     }
@@ -89,7 +89,7 @@ $active_parameter{vep_auto_flag} = q{acf};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{vep},
+        container_href        => $active_parameter{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
         filehandle            => $filehandle,
     }
@@ -104,7 +104,7 @@ trap {
     install_vep(
         {
             active_parameter_href => \%active_parameter,
-            container_href        => $active_parameter{emip}{singularity}{vep},
+            container_href        => $active_parameter{singularity}{vep},
             container_path        => catfile(q{vep.sif}),
             filehandle            => $filehandle,
         }
@@ -119,7 +119,7 @@ $active_parameter{vep_auto_flag} = q{a};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{emip}{singularity}{vep},
+        container_href        => $active_parameter{singularity}{vep},
         container_path        => catfile(q{vep.sif}),
         filehandle            => $filehandle,
     }

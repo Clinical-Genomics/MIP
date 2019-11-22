@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -143,7 +143,7 @@ sub analysis_manta {
     use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Manta qw{ manta_config manta_workflow };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -317,6 +317,7 @@ sub analysis_manta {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

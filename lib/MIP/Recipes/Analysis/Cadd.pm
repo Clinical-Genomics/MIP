@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $COMMA $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_gb_38 };
@@ -135,6 +135,7 @@ sub analysis_cadd {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
@@ -254,6 +255,16 @@ sub analysis_cadd {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    ## Add reference dir for CADD mounting point
+    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    gnu_export(
+        {
+            bash_variable => $bash_variable,
+            filehandle    => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
 
@@ -361,7 +372,15 @@ sub analysis_cadd {
         say {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Close filehandleS
+    gnu_unset(
+        {
+            bash_variable => q{MIP_BIND},
+            filehandle    => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
@@ -385,6 +404,7 @@ sub analysis_cadd {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -490,9 +510,10 @@ sub analysis_cadd_gb_38 {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
@@ -610,6 +631,16 @@ sub analysis_cadd_gb_38 {
     ### SHELL:
 
     say {$filehandle} q{## } . $recipe_name;
+
+    ## Add reference dir for CADD mounting point
+    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    gnu_export(
+        {
+            bash_variable => $bash_variable,
+            filehandle    => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
@@ -780,7 +811,15 @@ sub analysis_cadd_gb_38 {
         say {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Close filehandleS
+    gnu_unset(
+        {
+            bash_variable => q{MIP_BIND},
+            filehandle    => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
@@ -802,9 +841,10 @@ sub analysis_cadd_gb_38 {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

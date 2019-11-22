@@ -1,89 +1,57 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2018 };
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{help};
-
-our $USAGE = build_usage( {} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-
-###User Options
-GetOptions(
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },    #Display help text
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
-        exit;
-    },    #Display version number
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Program::Pigz}  => [qw{ pigz }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{help}];
-
-  PERL_MODULES:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-##Modules
-    my @modules = (q{MIP::Program::Compression::Pigz});
-
-  MODULES:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Compression::Pigz qw{pigz};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Pigz qw{ pigz };
 
 diag(   q{Test pigz from Pigz v}
-      . $MIP::Program::Compression::Pigz::VERSION
+      . $MIP::Program::Pigz::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -104,17 +72,33 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{infile_path},
-    },
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
+    infile_path => {
+        input           => q{infile_path},
+        expected_output => q{infile_path},
+    },
 );
 
 my %specific_argument = (
+    decompress => {
+        input           => q{decompress},
+        expected_output => q{--decompress},
+    },
+    outfile_path => {
+        input           => q{outfile_path},
+        expected_output => q{> outfile_path},
+    },
+    processes => {
+        input           => 2,
+        expected_output => q{--processes 2},
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -127,24 +111,8 @@ my %specific_argument = (
         input           => q{stdout},
         expected_output => q{--stdout},
     },
-    decompress => {
-        input           => q{decompress},
-        expected_output => q{--decompress},
-    },
-    outfile_path => {
-        input           => q{outfile_path},
-        expected_output => q{> outfile_path},
-    },
-    processes => {
-        input           => q{8},
-        expected_output => q{--processes 8},
-    },
-    quiet => {
-        input           => q{1},
-        expected_output => q{--quiet},
-    },
     verbose => {
-        input           => q{1},
+        input           => 1,
         expected_output => q{--verbose},
     },
 
@@ -161,48 +129,12 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

@@ -1,19 +1,18 @@
-package MIP::Program::Compression::Gzip;
+package MIP::Program::Pigz;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
@@ -23,28 +22,28 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
-    use base qw{ Exporter };
+    use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ gzip };
+    our @EXPORT_OK = qw{ pigz };
 }
 
-sub gzip {
+sub pigz {
 
-## Function : Perl wrapper for writing gzip recipe to $filehandle or return commands array. Based on gzip 1.3.12.
+## Function : Perl wrapper for writing pigz recipe to $filehandle or return commands array. Based on pigz 2.3.1.
 ## Returns  : @commands
 ## Arguments: $decompress             => Decompress
-##          : $filehandle             => Filehandle to write to (scalar undefined)
-##          : $force                  => Force overwrite of output file and compress links
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path. Write documents to FILE
-##          : $stderrfile_path        => Stderrfile path (scalar )
+##          : $outfile_path           => Outfile path
+##          : $processes              => Allow up to n compression threads
+##          : $quiet                  => Suppress all warnings
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdout                 => Write on standard output, keep original files unchanged
-##          : $quiet                  => Suppress all warnings
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
@@ -52,9 +51,9 @@ sub gzip {
     ## Flatten argument(s)
     my $decompress;
     my $filehandle;
-    my $force;
     my $infile_path;
     my $outfile_path;
+    my $processes;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdout;
@@ -70,11 +69,14 @@ sub gzip {
             store       => \$infile_path,
             strict_type => 1,
         },
-        stdout => { store => \$stdout, strict_type => 1, },
-        decompress =>
-          { allow => [ undef, 0, 1 ], store => \$decompress, strict_type => 1, },
-        force => { allow => [ undef, 0, 1 ], store => \$force, strict_type => 1, },
-        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        stdout       => { store => \$stdout,       strict_type => 1, },
+        decompress   => { store => \$decompress,   strict_type => 1, },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        processes    => {
+            allow       => qr{ \A\d+\z }sxm,
+            store       => \$processes,
+            strict_type => 1,
+        },
         filehandle      => { store => \$filehandle, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
@@ -91,15 +93,17 @@ sub gzip {
             store       => \$verbose,
             strict_type => 1,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ gzip };
+    my @commands = qw{ pigz };
 
-    ## Options
+    if ($processes) {
+
+        push @commands, q{--processes} . $SPACE . $processes;
+    }
+
     if ($quiet) {
 
         push @commands, q{--quiet};
@@ -115,21 +119,13 @@ sub gzip {
         push @commands, q{--decompress};
     }
 
-    if ($force) {
-
-        push @commands, q{--force};
-    }
-
-    ## Write to stdout stream
     if ($stdout) {
 
         push @commands, q{--stdout};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    ## Outfile
     if ($outfile_path) {
 
         push @commands, q{>} . $SPACE . $outfile_path;
@@ -150,6 +146,7 @@ sub gzip {
             separator    => $SPACE,
         }
     );
+
     return @commands;
 }
 

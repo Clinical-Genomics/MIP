@@ -126,7 +126,7 @@ $ cd MIP
 
 ```Bash
 $ cd definitions
-$ bash mip_install_perl.sh -e [mip7_rd-dna] -p [$HOME/miniconda3]
+$ bash mip_install_perl.sh -e [mip_rd-dna] -p [$HOME/miniconda3]
 $ cd -
 ```  
 
@@ -143,11 +143,9 @@ $ perl mip install rd_dna
 This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
-By default the batch script will attempt to install the MIP dependencies in a conda environment called mip7_rd-dna
+By default the batch script will attempt to install the MIP dependencies in a conda environment called mip_rd-dna
 
-It is possible to specify the name of the environment using the ``--environment_name`` flag. E.g. --environment_name emip=MIP``.   
-
-The default environment names can be modified with the using any or all of the CLI options ``--envionment_prefix <prefix>``, ``--environment_suffix <suffix>`` and ``--environment_date``. MIP will then create conda environments with the pattern: \<prefix>\_mip7_rd-dna_\<date>\_\<suffix>
+It is possible to specify the name of the environment using the ``--environment_name`` flag. E.g. --environment_name MIP``.   
 
   - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
   - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
@@ -176,8 +174,7 @@ $ perl t/mip_analyse_rd_dna.test
 
   ```Yml
   load_env:
-    mip7_rd-dna:
-      installation: emip
+    mip_rd-dna:
       mip:
       method: conda
   ```

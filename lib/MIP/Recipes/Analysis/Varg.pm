@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_varg };
@@ -148,7 +148,7 @@ sub analysis_varg {
         }
     );
     my $infile_name_prefix = $io{out}{file_name_prefix};
-    my $infile_path_snv    = $io{out}{file_path_href}{selected};
+    my $infile_path_snv    = $io{out}{file_path_href}{selected} . $DOT . q{gz};
 
     %io = get_io_files(
         {
@@ -160,8 +160,7 @@ sub analysis_varg {
         }
     );
 
-    my $infile_path_sv = $io{out}{file_path_href}{selected};
-
+    my $infile_path_sv = $io{out}{file_path_href}{selected} . $DOT . q{gz};
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
     my $job_id_chain         = get_recipe_attributes(
         {
@@ -269,6 +268,7 @@ sub analysis_varg {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
