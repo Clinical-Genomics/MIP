@@ -186,6 +186,26 @@ sub _build_usage {
     );
 
     option(
+        q{dna_vcf_file} => (
+            cmd_aliases   => [qw{ dvf }],
+            cmd_flag      => q{dna_vcf_file},
+            cmd_tags      => [q{Format: vcf | bcf}],
+            documentation => q{Variantcalls made on wgs or wes data },
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{force_dna_ase} => (
+            cmd_aliases   => [qw{ fda }],
+            documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_bundle_download_version} => (
             cmd_aliases   => [qw{ gbdv }],
             cmd_tags      => [q{Default: 2.8}],
@@ -202,16 +222,6 @@ sub _build_usage {
             documentation => q{Disable auto index creation and locking when reading rods},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{gatk_downsample_to_coverage} => (
-            cmd_aliases   => [qw{ gdco }],
-            cmd_tags      => [q{Default: 1000}],
-            documentation => q{Coverage to downsample to at any given locus},
-            is            => q{rw},
-            isa           => Int,
         )
     );
 
@@ -251,16 +261,6 @@ sub _build_usage {
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{is_from_sample} => (
-            cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=is_from_sample}],
-            documentation => q{Sample origin of replicate},
-            is            => q{rw},
-            isa           => HashRef,
         )
     );
 

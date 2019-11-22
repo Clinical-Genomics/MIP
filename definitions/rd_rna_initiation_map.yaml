@@ -29,6 +29,7 @@ CHAIN_ALL:
     - gatk_baserecalibration
     - gatk_haplotypecaller
     - gatk_variantfiltration
+    - dna_vcf_reformat
     - gatk_asereadcounter
     - bootstrapann
     - bcftools_merge

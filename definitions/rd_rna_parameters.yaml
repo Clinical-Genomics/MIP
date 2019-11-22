@@ -115,6 +115,7 @@ recipe_time:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
+    dna_vcf_reformat: 1
     fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
@@ -144,6 +145,7 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
     genebody_coverage: 8
@@ -167,6 +169,7 @@ recipe_core_number:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
+    dna_vcf_reformat: 1
     fastqc_ar: 0
     gatk_asereadcounter: 1
     gatk_baserecalibration: 13
@@ -196,17 +199,17 @@ picardtools_path:
     - star_aln
   data_type: SCALAR
   type: path
-is_from_sample:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 time_point:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
+  type: mip
+force_dna_ase:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
   type: mip
 ### Programs
 ## Gzip
@@ -717,6 +720,26 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+## Reformat dna vcf
+dna_vcf_reformat:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+  type: recipe
+dna_vcf_file:
+  associated_recipe:
+    - dna_vcf_reformat
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  type: path
+  update_path: absolute_path
 ## VEP
 varianteffectpredictor:
   analysis_mode: case

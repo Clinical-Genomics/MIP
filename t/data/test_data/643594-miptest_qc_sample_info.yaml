@@ -9,6 +9,7 @@ sample:
   ADM1059A1:
     analysis_type: wgs
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A1
     expected_coverage: 150
     father: ADM1059A2
     mother: ADM1059A3
@@ -23,6 +24,7 @@ sample:
   ADM1059A2:
     analysis_type: wgs
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A2
     expected_coverage: 150
     father: 0
     mother: 0
@@ -33,6 +35,7 @@ sample:
   ADM1059A3:
     analysis_type: wts
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A3
     expected_coverage: 150
     father: 0
     mother: 0

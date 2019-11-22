@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -116,5 +116,24 @@ my $is_ok = analysis_bootstrapann(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given a sample id where ASE has been turned off
+$active_parameter{no_ase_samples} = [qw{ ADM1059A1 }];
+$is_ok = analysis_bootstrapann(
+    {
+        active_parameter_href   => \%active_parameter,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return FALSE
+is( $is_ok, 0, q{When no ASE, turn off } . $recipe_name );
 
 done_testing();

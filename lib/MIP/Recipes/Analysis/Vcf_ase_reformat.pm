@@ -1,13 +1,13 @@
-package MIP::Recipes::Analysis::BootstrapAnn;
+package MIP::Recipes::Analysis::Vcf_ase_reformat;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Basename qw{ basename fileparse };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use POSIX qw{ floor };
 use strict;
 use utf8;
 use warnings;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,20 +26,20 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_bootstrapann };
+    our @EXPORT_OK = qw{ analysis_vcf_ase_reformat };
 
 }
 
-sub analysis_bootstrapann {
+sub analysis_vcf_ase_reformat {
 
-## Function : BootstrapAnn analysis for RNA recipe
+## Function : Prepare supplied vcf file for ASE
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $file_info_href          => File info hash {REF}
+##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -48,10 +48,12 @@ sub analysis_bootstrapann {
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
@@ -65,6 +67,7 @@ sub analysis_bootstrapann {
     my $case_id;
     my $profile_base_command;
     my $temp_directory;
+    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -74,7 +77,7 @@ sub analysis_bootstrapann {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        case_id_ref => {
+        case_id => {
             default     => $arg_href->{active_parameter_href}{case_id},
             store       => \$case_id,
             strict_type => 1,
@@ -136,6 +139,12 @@ sub analysis_bootstrapann {
             store       => \$temp_directory,
             strict_type => 1,
         },
+        xargs_file_counter => {
+            allow       => qr{ \A\d+\z }xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -144,60 +153,17 @@ sub analysis_bootstrapann {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_io_files };
 
-    ### PREPROCESSING
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Return if ASE has been turned off for this sample
-    if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
-
-        $log->warn(qq{No ASE analysis for $sample_id});
-        return 0;
-    }
-
     ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
-            temp_directory => $temp_directory,
-        }
-    );
-    my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
-
-    ## Get vcf file
-    my $vcf_generator_recipe = q{gatk_variantfiltration};
-    if ( $active_parameter_href->{dna_vcf_file} ) {
-
-        $vcf_generator_recipe = q{dna_vcf_reformat};
-    }
-
-    my %variant_io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => $vcf_generator_recipe,
-            stream         => q{in},
-            temp_directory => $temp_directory,
-        }
-    );
-    my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
-    my $variant_suffix             = $variant_io{out}{file_suffix};
-
-    my $variant_infile_path =
-      $variant_infile_path_prefix . $UNDERSCORE . q{restricted} . $variant_suffix;
-
     my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
@@ -205,10 +171,7 @@ sub analysis_bootstrapann {
             recipe_name    => $recipe_name,
         }
     );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-
-    ## Get module parameters
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -216,7 +179,33 @@ sub analysis_bootstrapann {
         }
     );
 
-    ## Outpaths
+    ## Special case as this is vcf input
+    ## Set input files to user specified vcf file
+    set_io_files(
+        {
+            chain_id       => $job_id_chain,
+            id             => $case_id,
+            file_paths_ref => [ $active_parameter_href->{dna_vcf_file} ],
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+
+## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_path = $io{in}{file_path};
+
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
@@ -225,7 +214,7 @@ sub analysis_bootstrapann {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@ase_infile_name_prefixes,
+                file_name_prefixes_ref => [$sample_id],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
@@ -233,8 +222,7 @@ sub analysis_bootstrapann {
             }
         )
     );
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = ${ $io{out}{file_paths} }[0];
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -254,32 +242,33 @@ sub analysis_bootstrapann {
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
         }
     );
 
-    ### SHELL
+    ### SHELL:
 
-    ## BootstrapAnn
-    say {$filehandle} q{## BootstrapAnn};
-    bootstrapann(
+    my $dna_sample_id = $sample_info_href->{sample}{$sample_id}{dna_sample_id};
+
+    ## Uncompress vcf
+    bcftools_view(
         {
-            ase_file_path   => $ase_infile_path,
-            filehandle      => $filehandle,
-            stdoutfile_path => $outfile_path,
-            vcf_infile_path => $variant_infile_path,
+            filehandle   => $filehandle,
+            infile_path  => $infile_path,
+            outfile_path => $outfile_path,
+            output_type  => q{v},
+            samples_ref  => [$dna_sample_id],
         }
     );
     say {$filehandle} $NEWLINE;
 
-    close $filehandle;
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
@@ -290,12 +279,11 @@ sub analysis_bootstrapann {
         submit_recipe(
             {
                 base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
@@ -305,4 +293,5 @@ sub analysis_bootstrapann {
     }
     return 1;
 }
+
 1;

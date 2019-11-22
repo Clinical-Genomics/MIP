@@ -28,10 +28,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_fam_file
+    our @EXPORT_OK = qw{
+      create_fam_file
       detect_founders
       detect_sample_id_gender
       detect_trio
@@ -225,22 +226,22 @@ sub create_fam_file {
     if ( $execution_mode eq q{system} ) {
 
         # Create anonymous filehandle
-        my $filehandle_SYS = IO::Handle->new();
+        my $filehandle_sys = IO::Handle->new();
 
         ## Create dir if it does not exists
         make_path( dirname($fam_file_path) );
 
-        open $filehandle_SYS, q{>}, $fam_file_path
+        open $filehandle_sys, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
         ## Adds the information from the samples in pedigree_lines, separated by \n
       LINE:
         foreach my $line (@pedigree_lines) {
 
-            say {$filehandle_SYS} $line;
+            say {$filehandle_sys} $line;
         }
         $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
-        close $filehandle_SYS;
+        close $filehandle_sys;
     }
 
     if ( $execution_mode eq q{sbatch} ) {
@@ -705,9 +706,9 @@ sub parse_yaml_pedigree_file {
     ## Check pedigree mandatory keys
     check_pedigree_mandatory_key(
         {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => $pedigree_href,
+            active_parameter_href => $active_parameter_href,
+            file_path             => $file_path,
+            pedigree_href         => $pedigree_href,
         }
     );
 

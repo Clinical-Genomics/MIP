@@ -1034,16 +1034,17 @@ sub check_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter qw{ check_salmon_compatibility
       check_sample_id_in_hash_parameter
-      check_sample_id_in_hash_parameter_path
-      check_sample_id_in_parameter_value };
+      check_sample_id_in_hash_parameter_path };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
 
@@ -1077,14 +1078,19 @@ sub check_rd_rna {
         }
     );
 
-    ## Check sample_id provided in hash parameter is included in the analysis
-    check_sample_id_in_parameter_value(
+    ## Check dna vcf
+    check_ids_in_dna_vcf(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_names_ref   => [qw{ is_from_sample }],
-            parameter_href        => $parameter_href,
-            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+            dna_vcf_file          => $active_parameter_href->{dna_vcf_file},
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Set ASE recipes depending on previous check
+    set_ase_chain_recipes(
+        {
+            active_parameter_href => $active_parameter_href,
         }
     );
 

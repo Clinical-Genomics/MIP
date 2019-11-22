@@ -56,7 +56,6 @@ BEGIN {
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_sample_id_in_parameter_value
       check_select_file_contigs
       check_vep_custom_annotation
       check_vep_api_cache_versions
@@ -1610,113 +1609,6 @@ sub check_sample_id_in_hash_parameter_path {
                       . join $COMMA
                       . $SPACE,
                     ( keys %seen ),
-                );
-                exit 1;
-            }
-        }
-    }
-    return 1;
-}
-
-sub check_sample_id_in_parameter_value {
-
-## Function : Check sample_id provided in hash parameter value is included in the analysis
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_names_ref;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_names_ref,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        ## Skip undef parameters in current analysis
-        next PARAMETER
-          if ( not defined $active_parameter_href->{$parameter_name} );
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-            ## Unpack
-            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
-
-            ## Check that a value exists
-            if ( not defined $sample_id_value ) {
-
-                $log->fatal(
-                    q{Could not find value for }
-                      . $sample_id
-                      . q{ for parameter '--}
-                      . $parameter_name
-                      . $SINGLE_QUOTE
-                      . q{. Provided sample_ids for parameter are: }
-                      . join $COMMA
-                      . $SPACE,
-                    ( keys %{ $active_parameter_href->{$parameter_name} } )
-                );
-                exit 1;
-            }
-            ## Check that sample_ids match
-            if ( not any { $_ eq $sample_id_value } @{$sample_ids_ref} ) {
-
-                $log->fatal(
-                    q{Could not find matching sample_id in analysis for }
-                      . $sample_id_value
-                      . q{ for parameter '--}
-                      . $parameter_name
-                      . $SINGLE_QUOTE
-                      . q{. Provided sample_ids for analysis are: }
-                      . join $COMMA
-                      . $SPACE,
-                    @{$sample_ids_ref}
                 );
                 exit 1;
             }

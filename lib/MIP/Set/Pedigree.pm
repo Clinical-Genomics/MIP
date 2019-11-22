@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -80,7 +80,7 @@ sub set_active_parameter_pedigree_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @pedigree_keys = qw{ analysis_type expected_coverage is_from_sample time_point };
+    my @pedigree_keys = qw{ analysis_type expected_coverage time_point };
     my @sample_ids    = @{ $pedigree_href->{samples} };
 
   SAMPLE_HREF:

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -72,7 +72,7 @@ my %sample_info = (
             phenotype         => q{affected},
             sample_id         => q{God of thunder},
             sample_name       => q{Thor},
-            is_from_sample    => q{Valhalla},
+            dna_sample_id     => q{God of thunder},
             sex               => q{male},
         },
     },
@@ -86,7 +86,7 @@ my %attribute = (
     phenotype         => q{affected},
     sample_id         => q{God of thunder},
     sample_name       => q{Thor},
-    is_from_sample    => q{Valhalla},
+    dna_sample_id     => q{God of thunder},
     sex               => q{male},
 );
 

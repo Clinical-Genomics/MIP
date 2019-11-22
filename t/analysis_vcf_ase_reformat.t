@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Bcftools_merge} => [qw{ analysis_bcftools_merge }],
+        q{MIP::Recipes::Analysis::Vcf_ase_reformat} => [qw{ analysis_vcf_ase_reformat }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
+use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat };
 
-diag(   q{Test analysis_bcftools_merge from Bcftools_merge.pm v}
-      . $MIP::Recipes::Analysis::Bcftools_merge::VERSION
+diag(   q{Test analysis_vcf_ase_reformat from Vcf_ase_reformat.pm v}
+      . $MIP::Recipes::Analysis::Vcf_ase_reformat::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,8 +61,8 @@ diag(   q{Test analysis_bcftools_merge from Bcftools_merge.pm v}
 
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
-## Given recipe parameters when sample infiles to merge
-my $recipe_name    = q{bcftools_merge};
+## Given analysis parameters
+my $recipe_name    = q{dna_vcf_reformat};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,11 +74,18 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+my $sample_id = $active_parameter{sample_ids}[0];
+$active_parameter{dna_vcf_file} = catfile(q{variant.vcf});
 
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
         recipe_name   => $recipe_name,
+    }
+);
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+    {
+        mip_hash_name => q{io},
     }
 );
 
@@ -92,42 +99,22 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
-$active_parameter{no_ase_samples} = [qw{ ADM1059A3 }];
-my $is_ok = analysis_bcftools_merge(
+
+my $is_ok = analysis_vcf_ase_reformat(
     {
         active_parameter_href   => \%active_parameter,
-        case_id                 => $active_parameter{case_id},
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ merging files} );
-
-## Given a single sample
-@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
-
-$is_ok = analysis_bcftools_merge(
-    {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $active_parameter{case_id},
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ renaming files} );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();
