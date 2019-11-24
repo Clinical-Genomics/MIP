@@ -15,5 +15,8 @@ MAINTAINER Clinical-Genomics/MIP
 
 RUN conda install fastqc=0.11.8=1
 
+## Clean up after conda
+RUN /opt/conda/bin/conda clean -tipsy
+#
 WORKDIR /data/
 
