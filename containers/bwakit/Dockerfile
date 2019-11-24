@@ -22,7 +22,7 @@ RUN /opt/conda/bin/conda clean -tipsy
 RUN ln -s /opt/conda/share/bwakit-0.7.15-1/bwa /opt/conda/bin/bwa && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/bwa-postalt.js /opt/conda/bin/bwa-postalt.js && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/fermi2 /opt/conda/bin/fermi2 && \
-    ln -s /opt/conda/share/bwakit-0.7.15-1/fermi2.pl /opt/conda/bin/fermi2.pl
+    ln -s /opt/conda/share/bwakit-0.7.15-1/fermi2.pl /opt/conda/bin/fermi2.pl && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/htsbox /opt/conda/bin/htsbox && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/k8 /opt/conda/bin/k8 && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/ropebwt2 /opt/conda/bin/ropebwt2 && \
@@ -33,6 +33,6 @@ RUN ln -s /opt/conda/share/bwakit-0.7.15-1/bwa /opt/conda/bin/bwa && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/trimadap /opt/conda/bin/trimadap && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/typeHLA-selctg.js /opt/conda/bin/typeHLA-selctg.js && \
     ln -s /opt/conda/share/bwakit-0.7.15-1/typeHLA.js /opt/conda/bin/typeHLA.js && \
-    ln -s /opt/conda/share/bwakit-0.7.15-1/typeHLA.sh /opt/conda/bin/typeHLA.sh && \
+    ln -s /opt/conda/share/bwakit-0.7.15-1/typeHLA.sh /opt/conda/bin/typeHLA.sh
 
 WORKDIR /data/
