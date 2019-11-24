@@ -25,7 +25,7 @@ singularity:
       typeHLA.sh:
       typeHLA-selctg.js:
       seqtk:
-    uri: shub://Clinical-Genomics/MIP:bwakit-0.7.15
+    uri: docker://clinicalgenomics/bwakit:0.7.15
   bedtools:
     executable:
       bedtools:
