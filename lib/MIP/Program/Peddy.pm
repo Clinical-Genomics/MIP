@@ -1,4 +1,4 @@
-package MIP::Program::Qc::Peddy;
+package MIP::Program::Peddy;
 
 use 5.026;
 use Carp;
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ peddy };
@@ -36,26 +36,26 @@ sub peddy {
 ## Returns  : @commands
 ## Arguments: $case_file_path         => Family file path
 ##          : $filehandle             => Filehandle to write to
+##          : $genome_site            => Sites (either hg38 or file path)
 ##          : $infile_path            => Infile path
 ##          : $outfile_prefix_path    => Outfile path
 ##          : $plot                   => Generate plots
 ##          : $processor_number       => Number of processors to use
-##          : $genome_site           => Sites (either hg38 or file path)
-##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_file_path;
     my $filehandle;
+    my $genome_site;
     my $infile_path;
     my $outfile_prefix_path;
-    my $genome_site;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $plot;
@@ -115,10 +115,8 @@ sub peddy {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ peddy };
 
-    ## Options
     if ($genome_site) {
 
         push @commands, q{--sites} . $SPACE . $genome_site;
@@ -134,13 +132,11 @@ sub peddy {
         push @commands, q{--plot};
     }
 
-    ## Outfile
     if ($outfile_prefix_path) {
 
         push @commands, q{--prefix} . $SPACE . $outfile_prefix_path;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
