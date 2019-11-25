@@ -42,7 +42,7 @@ singularity:
   chanjo:
     executable:
       chanjo:
-    uri: shub://Clinical-Genomics/MIP:chanjo-4.2.0
+    uri: docker://clinicalgenomics/chanjo:4.2.0
   chromograph:
     executable:
       chromograph:
