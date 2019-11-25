@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -137,7 +137,7 @@ sub analysis_peddy {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Qc::Peddy qw{ peddy };
+    use MIP::Program::Peddy qw{ peddy };
     use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

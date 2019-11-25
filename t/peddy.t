@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,18 +44,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Qc::Peddy} => [qw{ peddy }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Program::Peddy} => [qw{ peddy }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Qc::Peddy qw{ peddy };
+use MIP::Program::Peddy qw{ peddy };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test peddy from Peddy.pm v}
-      . $MIP::Program::Qc::Peddy::VERSION
+      . $MIP::Program::Peddy::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
