@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -106,6 +106,10 @@ my %specific_argument = (
     output_wig => {
         input           => 1,
         expected_output => q{-w},
+    },
+    skip_quality_track => {
+        input           => 1,
+        expected_output => q{-u},
     },
 );
 

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -229,6 +229,7 @@ sub analysis_tiddit_coverage {
             infile_path         => $infile_path,
             outfile_path_prefix => $outfile_path_prefix,
             output_wig          => 1,
+            skip_quality_track  => 1,
         }
     );
     say {$filehandle} $NEWLINE;
