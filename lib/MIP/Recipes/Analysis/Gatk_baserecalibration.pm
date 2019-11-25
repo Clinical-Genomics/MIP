@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_baserecalibration };
@@ -163,6 +163,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Program::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
@@ -446,19 +447,41 @@ sub analysis_gatk_baserecalibration {
     );
     say {$filehandle} $NEWLINE;
 
+    ## Create BAM to CRAM for long term storage
+    my $cram_outfile_path = $outfile_path_prefix . $DOT . q{cram};
+
+    say {$filehandle} q{## BAM to CRAM for long term storage};
+    samtools_view(
+        {
+            filehandle         => $filehandle,
+            infile_path        => $outfile_path_prefix . $outfile_suffix,
+            outfile_path       => $cram_outfile_path,
+            output_format      => q{cram},
+            referencefile_path => $referencefile_path,
+            thread_number      => $parallel_processes,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Index CRAM
+    samtools_index(
+        {
+            filehandle  => $filehandle,
+            infile_path => $cram_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     close $xargsfilehandle;
     close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
-        my $gathered_outfile_path =
-          catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
-
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $gathered_outfile_path,
+                path             => $cram_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -469,7 +492,7 @@ sub analysis_gatk_baserecalibration {
         set_processing_metafile_in_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
-                path             => $gathered_outfile_path,
+                path             => $cram_outfile_path,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
