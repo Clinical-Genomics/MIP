@@ -254,7 +254,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -291,9 +291,8 @@ sub mip_scripts {
     }
 
     my %mip_sub_scripts = (
-        utility_scripts =>
-          [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
-        definitions => [
+        utility_scripts => [qw{ calculate_af.pl max_af.pl }],
+        definitions     => [
             qw{ analyse_parameters.yaml
               cpanfile
               download_rd_dna_parameters.yaml
