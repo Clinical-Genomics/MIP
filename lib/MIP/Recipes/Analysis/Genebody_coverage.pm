@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_genebody_coverage };
@@ -135,7 +135,7 @@ sub analysis_genebody_coverage {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm };
-    use MIP::Program::Qc::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
+    use MIP::Program::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
