@@ -22,9 +22,7 @@ RUN /opt/conda/bin/conda clean -tipsy
 RUN git clone https://github.com/mikaell/chromograph.git /opt/conda/share/chromograph
 
 ## Move to chromograph directory
-RUN cd /opt/conda/share/chromograph
-
-## Install
-RUN python -m pip install --editable .
+RUN cd /opt/conda/share/chromograph && \
+    python -m pip install --editable .
 
 WORKDIR /data/
