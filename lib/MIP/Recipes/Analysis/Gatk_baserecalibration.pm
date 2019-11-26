@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_baserecalibration };
@@ -416,6 +416,7 @@ sub analysis_gatk_baserecalibration {
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
       map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
+    my $store_outfile_path = $outfile_path_prefix . $outfile_suffix;
 
     picardtools_gatherbamfiles(
         {
@@ -448,30 +449,32 @@ sub analysis_gatk_baserecalibration {
     say {$filehandle} $NEWLINE;
 
     ## Create BAM to CRAM for long term storage
-    my $cram_outfile_path = $outfile_path_prefix . $DOT . q{cram};
+    if ( $active_parameter_href->{gatk_baserecalibration_bam_to_cram} ) {
 
-    say {$filehandle} q{## BAM to CRAM for long term storage};
-    samtools_view(
-        {
-            filehandle         => $filehandle,
-            infile_path        => $outfile_path_prefix . $outfile_suffix,
-            outfile_path       => $cram_outfile_path,
-            output_format      => q{cram},
-            referencefile_path => $referencefile_path,
-            thread_number      => $parallel_processes,
-        }
-    );
-    say {$filehandle} $NEWLINE;
+        $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
 
-    ## Index CRAM
-    samtools_index(
-        {
-            filehandle  => $filehandle,
-            infile_path => $cram_outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
+        say {$filehandle} q{## BAM to CRAM for long term storage};
+        samtools_view(
+            {
+                filehandle         => $filehandle,
+                infile_path        => $outfile_path_prefix . $outfile_suffix,
+                outfile_path       => $store_outfile_path,
+                output_format      => q{cram},
+                referencefile_path => $referencefile_path,
+                thread_number      => $parallel_processes,
+            }
+        );
+        say {$filehandle} $NEWLINE;
 
+        ## Index CRAM
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $store_outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
     close $xargsfilehandle;
     close $filehandle;
 
@@ -481,7 +484,7 @@ sub analysis_gatk_baserecalibration {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $cram_outfile_path,
+                path             => $store_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -492,7 +495,7 @@ sub analysis_gatk_baserecalibration {
         set_processing_metafile_in_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
-                path             => $cram_outfile_path,
+                path             => $store_outfile_path,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

@@ -496,7 +496,14 @@ gatk_baserecalibration:
   outfile_suffix: ".bam"
   program_executables:
    - gatk
+   - samtools
   type: recipe
+gatk_baserecalibration_bam_to_cram:
+  associated_recipe:
+   - gatk_baserecalibration
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 gatk_baserecalibration_known_sites:
   associated_recipe:
    - gatk_baserecalibration
