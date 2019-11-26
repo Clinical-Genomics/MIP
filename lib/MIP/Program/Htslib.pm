@@ -1,4 +1,4 @@
-package MIP::Program::Utility::Htslib;
+package MIP::Program::Htslib;
 
 use 5.026;
 use Carp;
@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ htslib_bgzip htslib_tabix };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub htslib_bgzip {
 
@@ -101,7 +99,6 @@ sub htslib_bgzip {
     ## Stores commands depending on input parameters
     my @commands = q{bgzip};
 
-    ## Options
     if ($decompress) {
 
         push @commands, q{--decompress};
@@ -116,7 +113,6 @@ sub htslib_bgzip {
         push @commands, q{--stdout};
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -134,8 +130,8 @@ sub htslib_bgzip {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -244,7 +240,6 @@ sub htslib_tabix {
     ## Stores commands depending on input parameters
     my @commands = q{tabix};
 
-    ## Options
     if ($force) {
 
         push @commands, q{--force};
@@ -279,13 +274,11 @@ sub htslib_tabix {
         push @commands, q{--sequence} . $SPACE . $sequence;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
     }
 
-    # Limit output to regions
     if ( @{$regions_ref} ) {
 
         push @commands, join $SPACE, @{$regions_ref};
@@ -303,8 +296,8 @@ sub htslib_tabix {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_dbnsfp };
@@ -132,7 +132,7 @@ sub download_dbnsfp {
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_sort };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Language::Awk qw{ awk };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
