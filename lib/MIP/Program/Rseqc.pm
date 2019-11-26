@@ -1,4 +1,4 @@
-package MIP::Program::Qc::Rseqc;
+package MIP::Program::Rseqc;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,9 +42,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $EQUAL           => q{=};
 Readonly my $MIN_MAP_QUALITY => q{30};
-Readonly my $SPACE           => q{ };
 
 sub rseqc_bam2wig {
 
@@ -116,15 +115,15 @@ sub rseqc_bam2wig {
     ## Stores commands depending on input parameters
     my @commands = qw{ bam2wig.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--chromSize} . $EQUAL . $chrom_size_file_path;
+    push @commands, q{--chromSize} . $EQUALS . $chrom_size_file_path;
 
     if ($strand) {
-        push @commands, q{--strand} . $EQUAL . $strand;
+        push @commands, q{--strand} . $EQUALS . $strand;
     }
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfile_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfile_path_prefix;
 
     push @commands,
       unix_standard_streams(
@@ -204,9 +203,9 @@ sub rseqc_bam_stat {
     ## Stores commands depending on input parameters
     my @commands = qw{ bam_stat.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
     push @commands,
       unix_standard_streams(
@@ -292,11 +291,11 @@ sub rseqc_genebody_coverage2 {
     ## Stores commands depending on input parameters
     my @commands = qw{ geneBody_coverage2.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfile_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfile_path_prefix;
 
     push @commands,
       unix_standard_streams(
@@ -384,11 +383,11 @@ sub rseqc_infer_experiment {
     ## Stores commands depending on input parameters
     my @commands = qw{ infer_experiment.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
     push @commands,
       unix_standard_streams(
@@ -484,13 +483,13 @@ sub rseqc_inner_distance {
     ## Stores commands depending on input parameters
     my @commands = qw{ inner_distance.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfiles_path_prefix;
 
     push @commands,
       unix_standard_streams(
@@ -586,13 +585,13 @@ sub rseqc_junction_annotation {
     ## Stores commands depending on input parameters
     my @commands = qw{ junction_annotation.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfiles_path_prefix;
 
     push @commands,
       unix_standard_streams(
@@ -688,13 +687,13 @@ sub rseqc_junction_saturation {
     ## Stores commands depending on input parameters
     my @commands = qw{ junction_saturation.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfiles_path_prefix;
 
     push @commands,
       unix_standard_streams(
@@ -772,9 +771,9 @@ sub rseqc_read_distribution {
     ## Stores commands depending on input parameters
     my @commands = qw{ read_distribution.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+    push @commands, q{--refgene} . $EQUALS . $bed_file_path;
 
     push @commands,
       unix_standard_streams(
@@ -862,11 +861,11 @@ sub rseqc_read_duplication {
     ## Stores commands depending on input parameters
     my @commands = qw{ read_duplication.py };
 
-    push @commands, q{--input-file} . $EQUAL . $infile_path;
+    push @commands, q{--input-file} . $EQUALS . $infile_path;
 
-    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+    push @commands, q{--mapq} . $EQUALS . $min_map_quality;
 
-    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+    push @commands, q{--out-prefix} . $EQUALS . $outfiles_path_prefix;
 
     push @commands,
       unix_standard_streams(
