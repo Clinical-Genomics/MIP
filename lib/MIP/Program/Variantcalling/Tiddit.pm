@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tiddit_coverage tiddit_sv };
@@ -39,10 +39,11 @@ sub tiddit_coverage {
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path_prefix    => Outfile path prefix
+##          : $output_wig             => Generate wig instead of bed
+##          : $skip_quality_track     => Skip quality track in output file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $output_wig             => Generate wig instead of bed
 
     my ($arg_href) = @_;
 
@@ -50,6 +51,7 @@ sub tiddit_coverage {
     my $filehandle;
     my $infile_path;
     my $outfile_path_prefix;
+    my $skip_quality_track;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -75,7 +77,18 @@ sub tiddit_coverage {
             strict_type => 1,
         },
         outfile_path_prefix => { store => \$outfile_path_prefix, strict_type => 1, },
-        stderrfile_path     => {
+        output_wig          => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$output_wig,
+            strict_type => 1,
+        },
+        skip_quality_track => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$skip_quality_track,
+            strict_type => 1,
+        },
+        stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
         },
@@ -85,12 +98,6 @@ sub tiddit_coverage {
         },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
-            strict_type => 1,
-        },
-        output_wig => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$output_wig,
             strict_type => 1,
         },
     };
@@ -115,6 +122,11 @@ sub tiddit_coverage {
     if ($output_wig) {
 
         push @commands, q{-w};
+    }
+
+    if ($skip_quality_track) {
+
+        push @commands, q{-u};
     }
 
     push @commands, q{--bam} . $SPACE . $infile_path;
