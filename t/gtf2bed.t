@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Utility::Gtf2bed} => [qw{ gtf2bed }],
-        q{MIP::Test::Fixtures}            => [qw{ test_standard_cli }],
+        q{MIP::Program::Gtf2bed} => [qw{ gtf2bed }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Utility::Gtf2bed qw{ gtf2bed };
+use MIP::Program::Gtf2bed qw{ gtf2bed };
 
 diag(   q{Test gtf2bed from Gtf2bed.pm v}
-      . $MIP::Program::Utility::Gtf2bed::VERSION
+      . $MIP::Program::Gtf2bed::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
