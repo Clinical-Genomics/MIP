@@ -17,6 +17,6 @@ RUN conda install bedtools=2.29.0
 
 ## Clean up after conda
 RUN /opt/conda/bin/conda clean -tipsy
-#
+
 WORKDIR /data/
 

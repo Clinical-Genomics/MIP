@@ -13,12 +13,9 @@ LABEL extra.binaries="expansionhunter"
 ################## MAINTAINER ######################
 MAINTAINER Clinical-Genomics/MIP
 
-RUN wget --no-verbose https://github.com/Illumina/ExpansionHunter/releases/download/v3.1.2/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz -O /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz && \
-    tar --extract --file=/opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz --directory=/opt/conda/share/ && \
-    rm /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64.tar.gz
+RUN conda install -c bioconda expansionhunter
 
-RUN chmod -R 755 /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64 && \
-    chmod a+x /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64/bin/ExpansionHunter && \
-    ln --symbolic --force /opt/conda/share/ExpansionHunter-v3.1.2-linux_x86_64/bin/ExpansionHunter /opt/conda/bin/
+## Clean up after conda
+RUN /opt/conda/bin/conda clean -tipsy
 
 WORKDIR /data/
