@@ -440,7 +440,8 @@ sub analysis_markduplicates {
     ## Gather bam files in contig order
     my @gather_infile_paths =
       map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
-    my $store_outfile_path = $outfile_path_prefix . $outfile_suffix;
+    my $store_outfile_path   = $outfile_path_prefix . $outfile_suffix;
+    my $store_outfile_suffix = $outfile_suffix;
 
     picardtools_gatherbamfiles(
         {
@@ -460,7 +461,8 @@ sub analysis_markduplicates {
 
     if ( not $active_parameter_href->{markduplicates_no_bam_to_cram} ) {
 
-        $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
+        $store_outfile_path   = $outfile_path_prefix . $DOT . q{cram};
+        $store_outfile_suffix = q{cram};
 
         ## Create BAM to CRAM for long term storage
         say {$filehandle} q{## BAM to CRAM for long term storage};
@@ -505,7 +507,7 @@ sub analysis_markduplicates {
 
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix . $DOT . q{cram},
+                infile           => $outfile_name_prefix . $DOT . $store_outfile_suffix,
                 path             => $store_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
