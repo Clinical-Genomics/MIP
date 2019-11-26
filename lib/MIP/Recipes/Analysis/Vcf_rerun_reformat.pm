@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
@@ -137,7 +137,7 @@ sub analysis_vcf_rerun_reformat_sv {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_io_files };
 
@@ -372,7 +372,7 @@ sub analysis_vcf_rerun_reformat {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

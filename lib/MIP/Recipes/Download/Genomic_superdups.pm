@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
@@ -129,7 +129,7 @@ sub download_genomic_superdups {
     use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_file_suffix };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

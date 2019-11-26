@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -123,7 +123,7 @@ sub download_gnomad {
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Rtg qw{ rtg_vcfsubset };
-    use MIP::Program::Utility::Htslib qw{ htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

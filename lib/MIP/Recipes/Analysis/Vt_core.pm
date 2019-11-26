@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -203,7 +203,7 @@ sub analysis_vt_core {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
@@ -578,7 +578,7 @@ sub analysis_vt_core_rio {
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };

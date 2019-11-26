@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_gb_38 };
@@ -36,9 +36,9 @@ BEGIN {
 
 ## Constants
 Readonly my $GENOME_BUILD_NR_38 => 38;
-Readonly my $REGION_START       => q{2};
-Readonly my $REGION_END         => q{2};
-Readonly my $SEQUENCE_NAME      => q{1};
+Readonly my $REGION_START       => 2;
+Readonly my $REGION_END         => 2;
+Readonly my $SEQUENCE_NAME      => 1;
 
 sub analysis_cadd {
 
@@ -139,7 +139,7 @@ sub analysis_cadd {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
-    use MIP::Program::Utility::Htslib qw{ htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -516,7 +516,7 @@ sub analysis_cadd_gb_38 {
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };

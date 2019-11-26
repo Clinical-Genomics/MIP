@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1682,7 +1682,7 @@ sub _subset_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_index bcftools_view };
 
     ## Prepare for bcftools_view
