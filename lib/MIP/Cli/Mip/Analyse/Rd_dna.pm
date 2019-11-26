@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.34;
+our $VERSION = 1.35;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -478,6 +478,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{markduplicates_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ mdnbtc }],
+            cmd_flag      => q{markduplicates_nbtc},
+            documentation => q{Generate CRAM from BAM},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{markduplicates_picardtools_markduplicates} => (
             cmd_aliases   => [qw{ mdpmd }],
             cmd_flag      => q{picard_markduplicates},
@@ -543,9 +553,9 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
     );
 
     option(
-        q{gatk_baserecalibration_bam_to_cram} => (
-            cmd_aliases   => [qw{ gbrbtc }],
-            cmd_flag      => q{gatk_baserecal_btc},
+        q{gatk_baserecalibration_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ gbrnbtc }],
+            cmd_flag      => q{gatk_baserecal_nbtc},
             documentation => q{Generate CRAM from BAM},
             is            => q{rw},
             isa           => Bool,

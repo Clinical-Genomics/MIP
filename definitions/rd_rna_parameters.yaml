@@ -446,6 +446,12 @@ markduplicates:
     - picard
     - sambamba
   type: recipe
+markduplicates_no_bam_to_cram:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 markduplicates_picardtools_markduplicates:
   associated_recipe:
     - markduplicates
@@ -500,6 +506,12 @@ gatk_baserecalibration:
   program_executables:
     - gatk
   type: recipe
+gatk_baserecalibration_no_bam_to_cram:
+  associated_recipe:
+   - gatk_baserecalibration
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 gatk_baserecalibration_known_sites:
   associated_recipe:
     - gatk_baserecalibration

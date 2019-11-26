@@ -449,7 +449,7 @@ sub analysis_gatk_baserecalibration {
     say {$filehandle} $NEWLINE;
 
     ## Create BAM to CRAM for long term storage
-    if ( $active_parameter_href->{gatk_baserecalibration_bam_to_cram} ) {
+    if ( not $active_parameter_href->{gatk_baserecalibration_no_bam_to_cram} ) {
 
         $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
 
