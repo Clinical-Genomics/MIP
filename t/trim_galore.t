@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Trimming::Trim_galore} => [qw{ trim_galore }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Trim_galore} => [qw{ trim_galore }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Trimming::Trim_galore qw{ trim_galore };
+use MIP::Program::Trim_galore qw{ trim_galore };
 
 diag(   q{Test trim_galore from Trim_galore.pm v}
-      . $MIP::Program::Trimming::Trim_galore::VERSION
+      . $MIP::Program::Trim_galore::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
