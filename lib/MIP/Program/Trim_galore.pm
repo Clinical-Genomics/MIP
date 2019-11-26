@@ -1,4 +1,4 @@
-package MIP::Program::Trimming::Trim_galore;
+package MIP::Program::Trim_galore;
 
 use 5.026;
 use Carp;
