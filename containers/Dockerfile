@@ -28,33 +28,25 @@ deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-security main restricted univ
     cat /etc/apt/sources.list.bkp >> /etc/apt/sources.list && \
     cat /etc/apt/sources.list
 
-RUN apt-get clean all && \
-    apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y  \
-        curl            \
-        grep            \
-        sed             \
-        dpkg            \
-        fuse            \
-        git             \
-        locales         \
-        wget            \
-        zip             \
+RUN apt-get update --fix-missing && \
+    apt-get install -y \
         build-essential \
-        pkg-config      \
-        bzip2           \
-        ca-certificates && \
-        apt-get clean && \
-        apt-get purge && \
-        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Set locale
-RUN locale-gen en_US.UTF-8
-
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+        coreutils \
+        dialog \
+        git \
+        language-pack-en-base \
+        libbz2-dev \
+        libcurl4-openssl-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libncursesw5-dev \
+        libreadline-dev \
+        libssl-dev \
+        unzip \
+        wget \
+        zlib1g-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install conda and give write permissions to conda folder
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
