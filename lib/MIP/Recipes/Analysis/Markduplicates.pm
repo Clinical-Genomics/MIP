@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates };
@@ -164,6 +164,7 @@ sub analysis_markduplicates {
     use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Sambamba qw{ sambamba_flagstat sambamba_markdup };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -439,6 +440,9 @@ sub analysis_markduplicates {
     ## Gather bam files in contig order
     my @gather_infile_paths =
       map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
+    my $store_outfile_path   = $outfile_path_prefix . $outfile_suffix;
+    my $store_outfile_suffix = $outfile_suffix;
+
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
@@ -455,6 +459,35 @@ sub analysis_markduplicates {
     );
     say {$filehandle} $NEWLINE;
 
+    if ( not $active_parameter_href->{markduplicates_no_bam_to_cram} ) {
+
+        $store_outfile_path   = $outfile_path_prefix . $DOT . q{cram};
+        $store_outfile_suffix = q{cram};
+
+        ## Create BAM to CRAM for long term storage
+        say {$filehandle} q{## BAM to CRAM for long term storage};
+        samtools_view(
+            {
+                filehandle         => $filehandle,
+                infile_path        => $outfile_path_prefix . $outfile_suffix,
+                outfile_path       => $store_outfile_path,
+                output_format      => q{cram},
+                referencefile_path => $referencefile_path,
+                thread_number      => $core_number,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        ## Index CRAM
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $store_outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+
     ## Close filehandleS
     close $xargsfilehandle;
     close $filehandle;
@@ -468,6 +501,16 @@ sub analysis_markduplicates {
                 path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
                 recipe_name => q{markduplicates},
                 sample_id   => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_recipe_outfile_in_sample_info(
+            {
+                infile           => $outfile_name_prefix . $DOT . $store_outfile_suffix,
+                path             => $store_outfile_path,
+                recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );

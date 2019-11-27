@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.18;
+our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -337,6 +337,16 @@ sub _build_usage {
     );
 
     option(
+        q{gatk_baserecalibration_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ gbrnbtc }],
+            cmd_flag      => q{gatk_baserecal_nbtc},
+            documentation => q{Generate CRAM from BAM},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_baserecalibration_covariates} => (
             cmd_aliases => [qw{ gbrcov }],
             cmd_flag    => q{gatk_baserecal_covariates},
@@ -595,6 +605,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Markduplicate reads},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{markduplicates_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ mdnbtc }],
+            cmd_flag      => q{markduplicates_nbtc},
+            documentation => q{Generate CRAM from BAM},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
