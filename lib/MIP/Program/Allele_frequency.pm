@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Allele_frequency;
+package MIP::Program::Allele_frequency;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ calculate_af max_af };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub calculate_af {
 
@@ -73,10 +71,8 @@ sub calculate_af {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{calculate_af};
+    my @commands = qw{ calculate_af };
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -142,10 +138,8 @@ sub max_af {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{max_af};
+    my @commands = qw{ max_af };
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
