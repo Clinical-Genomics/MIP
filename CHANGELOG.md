@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.11]
+- Fixed bug that will casue select vcf files for snv/indel to not be produced if you turn off all SV programs
+ 
 ## [7.1.10]
 - Added BAM contigs set to allow for single ladies to get a proper check sex (no pun intended:). Actually it is for all female only analyses.
 
