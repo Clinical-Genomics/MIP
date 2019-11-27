@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Allele_frequency;
+package MIP::Program::Allele_frequency;
 
 use 5.026;
 use Carp;
