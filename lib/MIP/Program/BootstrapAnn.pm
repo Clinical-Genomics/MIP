@@ -1,5 +1,6 @@
-package MIP::Program::Variantcalling::BootstrapAnn;
+package MIP::Program::BootstrapAnn;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -15,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bootstrapann };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub bootstrapann {
 
@@ -52,8 +51,6 @@ sub bootstrapann {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $vcf_infile_path;
-
-    ## Default(s)
 
     my $tmpl = {
         ase_file_path => {
@@ -88,7 +85,7 @@ sub bootstrapann {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{BootstrapAnn.py};
+    my @commands = qw{ BootstrapAnn.py };
 
     push @commands, q{--vcf} . $SPACE . $vcf_infile_path;
 
@@ -105,8 +102,8 @@ sub bootstrapann {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }
