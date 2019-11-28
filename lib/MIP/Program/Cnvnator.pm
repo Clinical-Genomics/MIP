@@ -1,24 +1,22 @@
-package MIP::Program::Variantcalling::Cnvnator;
+package MIP::Program::Cnvnator;
 
 use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
+## CPANM
+use autodie qw{ :all };
 use Readonly;
 
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -27,21 +25,23 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
+    our @EXPORT_OK = qw{ cnvnator_calling
+      cnvnator_convert_to_vcf
+      cnvnator_histogram
+      cnvnator_partition
+      cnvnator_read_extraction
+      cnvnator_statistics
+    };
 
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub cnvnator_read_extraction {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
+## Returns  : @commands
 ## Arguments: $filehandle       => Filehandle to write to
 ##          : $infile_paths_ref => Infile paths {REF}
 ##          : $outfile_path      => outfile_path
@@ -84,11 +84,8 @@ sub cnvnator_read_extraction {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## cnvnator
     my @commands = qw{ cnvnator };
 
-    ## Options
-    # Limit output to regions
     if ( @{$regions_ref} ) {
 
         push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
@@ -101,11 +98,9 @@ sub cnvnator_read_extraction {
 
     if ($outfile_path) {
 
-        # Specify output filename
         push @commands, q{-root} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, q{-tree}, join $SPACE, @{$infile_paths_ref};
 
     push @commands,
@@ -123,15 +118,13 @@ sub cnvnator_read_extraction {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub cnvnator_histogram {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
+## Returns  : @commands
 ## Arguments: $cnv_bin_size            => Copy number variant bin size
 ##          : $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile paths
@@ -177,11 +170,8 @@ sub cnvnator_histogram {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## cnvnator
     my @commands = qw{ cnvnator };
 
-    ## Options:
-    # limit output to regions
     if ( @{$regions_ref} ) {
 
         push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
@@ -197,7 +187,6 @@ sub cnvnator_histogram {
         push @commands, q{-his} . $SPACE . $cnv_bin_size;
     }
 
-    ## Infile
     push @commands, q{-root}, $infile_path;
 
     push @commands,
@@ -215,173 +204,13 @@ sub cnvnator_histogram {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub cnvnator_statistics {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
-## Arguments: $cnv_bin_size    => Copy number variant bin size
-##          : $filehandle      => Filehandle to write to
-##          : $infile_path     => Infile paths
-##          : $regions_ref     => The regions to process {REF}
-##          : $stderrfile_path => Stderrfile path
-##          : $stdoutfile_path => Stdoutfile path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $cnv_bin_size;
-    my $filehandle;
-    my $infile_path;
-    my $regions_ref;
-    my $stderrfile_path;
-    my $stdoutfile_path;
-
-    my $tmpl = {
-        filehandle   => { store => \$filehandle, },
-        cnv_bin_size => {
-            allow       => qr/ ^\d+$ /sxm,
-            store       => \$cnv_bin_size,
-            strict_type => 1,
-        },
-        infile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## cnvnator
-    my @commands = qw{ cnvnator };
-
-    ## Options:
-    # Limit output to regions
-    if ( @{$regions_ref} ) {
-
-        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
-    }
-
-    if ($cnv_bin_size) {
-
-        push @commands, q{-stat} . $SPACE . $cnv_bin_size;
-    }
-
-    ## Infile
-    push @commands, q{-root}, $infile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-            stdoutfile_path => $stdoutfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            filehandle   => $filehandle,
-            separator    => $SPACE,
-        }
-    );
-
-    return @commands;
-
-}
-
-sub cnvnator_partition {
-
-## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
-## Arguments: $cnv_bin_size    => Copy number variant bin size
-##          : $filehandle      => Filehandle to write to
-##          : $infile_path     => Infile paths
-##          : $regions_ref     => The regions to process {REF}
-##          : $stderrfile_path => Stderrfile path
-##          : $stdoutfile_path => Stdoutfile path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $cnv_bin_size;
-    my $filehandle;
-    my $infile_path;
-    my $regions_ref;
-    my $stderrfile_path;
-    my $stdoutfile_path;
-
-    my $tmpl = {
-        filehandle   => { store => \$filehandle, },
-        cnv_bin_size => {
-            allow       => qr/ ^\d+$ /sxm,
-            store       => \$cnv_bin_size,
-            strict_type => 1,
-        },
-        infile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## cnvnator
-    my @commands = qw{ cnvnator };
-
-    ## Options:
-    # Limit output to regions
-    if ( @{$regions_ref} ) {
-
-        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
-    }
-
-    if ($cnv_bin_size) {
-
-        push @commands, q{-partition} . $SPACE . $cnv_bin_size;
-    }
-
-    ## Infile
-    push @commands, q{-root}, $infile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-            stdoutfile_path => $stdoutfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            filehandle   => $filehandle,
-            separator    => $SPACE,
-        }
-    );
-
-    return @commands;
-
-}
-
-sub cnvnator_calling {
-
-## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
+## Returns  : @commands
 ## Arguments: $cnv_bin_size    => Copy number variant bin size
 ##          : $filehandle      => Filehandle to write to
 ##          : $infile_path     => Infile paths
@@ -419,11 +248,8 @@ sub cnvnator_calling {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## cnvnator
     my @commands = qw{ cnvnator };
 
-    ## Options:
-    # Limit output to regions
     if ( @{$regions_ref} ) {
 
         push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
@@ -431,10 +257,9 @@ sub cnvnator_calling {
 
     if ($cnv_bin_size) {
 
-        push @commands, q{-call} . $SPACE . $cnv_bin_size;
+        push @commands, q{-stat} . $SPACE . $cnv_bin_size;
     }
 
-    ## Infile
     push @commands, q{-root}, $infile_path;
 
     push @commands,
@@ -452,15 +277,159 @@ sub cnvnator_calling {
             separator    => $SPACE,
         }
     );
-
     return @commands;
+}
 
+sub cnvnator_partition {
+
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
+## Returns  : @commands
+## Arguments: $cnv_bin_size    => Copy number variant bin size
+##          : $filehandle      => Filehandle to write to
+##          : $infile_path     => Infile paths
+##          : $regions_ref     => The regions to process {REF}
+##          : $stderrfile_path => Stderrfile path
+##          : $stdoutfile_path => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cnv_bin_size;
+    my $filehandle;
+    my $infile_path;
+    my $regions_ref;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        cnv_bin_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$cnv_bin_size,
+            strict_type => 1,
+        },
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ cnvnator };
+
+    if ( @{$regions_ref} ) {
+
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
+    }
+
+    if ($cnv_bin_size) {
+
+        push @commands, q{-partition} . $SPACE . $cnv_bin_size;
+    }
+
+    push @commands, q{-root}, $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+            stdoutfile_path => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub cnvnator_calling {
+
+## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
+## Returns  : @commands
+## Arguments: $cnv_bin_size    => Copy number variant bin size
+##          : $filehandle      => Filehandle to write to
+##          : $infile_path     => Infile paths
+##          : $regions_ref     => The regions to process {REF}
+##          : $stderrfile_path => Stderrfile path
+##          : $stdoutfile_path => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cnv_bin_size;
+    my $filehandle;
+    my $infile_path;
+    my $regions_ref;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        cnv_bin_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$cnv_bin_size,
+            strict_type => 1,
+        },
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ cnvnator };
+
+    if ( @{$regions_ref} ) {
+
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
+    }
+
+    if ($cnv_bin_size) {
+
+        push @commands, q{-call} . $SPACE . $cnv_bin_size;
+    }
+
+    push @commands, q{-root}, $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+            stdoutfile_path => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
 }
 
 sub cnvnator_convert_to_vcf {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $filehandle or return commands array. Based on cnvnator 0.3.3.
-## Returns  : "@commands"
+## Returns  : @commands
 ## Arguments: $filehandle              => Filehandle to write to
 ##          : $infile_path             => Infile paths
 ##          : $referencedirectory_path => Reference sequence file
@@ -496,13 +465,10 @@ sub cnvnator_convert_to_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## cnvnator
     my @commands = qw{ cnvnator2VCF.pl };
 
-    ## Infile
     push @commands, $infile_path;
 
-    ## Options
     if ($referencedirectory_path) {
 
         push @commands, $referencedirectory_path;
@@ -523,9 +489,7 @@ sub cnvnator_convert_to_vcf {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 1;
