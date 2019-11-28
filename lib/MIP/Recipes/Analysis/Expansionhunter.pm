@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ each_array };
 use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 use Readonly;
 
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -275,7 +276,8 @@ sub analysis_expansionhunter {
 
     ## Expansion hunter calling per sample id
     # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my @svdb_infile_paths;
+    my @vt_infile_paths;
+    my @vt_outfile_paths;
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -320,36 +322,47 @@ sub analysis_expansionhunter {
             }
         );
         say {$filehandle} $AMPERSAND, $NEWLINE;
-        push @svdb_infile_paths, $sample_outfile_path_prefix . $outfile_suffix,;
+        push @vt_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
+        push @vt_outfile_paths,
+            $outfile_path_prefix
+          . $UNDERSCORE . q{vt}
+          . $UNDERSCORE
+          . $sample_id
+          . $outfile_suffix;
 
     }
     say {$filehandle} q{wait}, $NEWLINE;
 
+    ## Split multiallelic variants
+    say {$filehandle} q{## Split multiallelic variants};
+    ## Create iterator object
+    my $vt_file_paths_iter = each_array( @vt_infile_paths, @vt_outfile_paths );
+
+  VT_FILES_ITER:
+    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths_iter->() ) {
+
+        vt_decompose(
+            {
+                filehandle          => $filehandle,
+                infile_path         => $vt_infile_path,
+                outfile_path        => $vt_outfile_path,
+                smart_decomposition => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
     my $svdb_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
 
     svdb_merge(
         {
             filehandle       => $filehandle,
-            infile_paths_ref => \@svdb_infile_paths,
+            infile_paths_ref => \@vt_outfile_paths,
             notag            => 1,
             stdoutfile_path  => $svdb_outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Split multiallelic variants
-    say {$filehandle} q{## Split multiallelic variants};
-    my $vt_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $outfile_suffix;
-    vt_decompose(
-        {
-            filehandle          => $filehandle,
-            infile_path         => $svdb_outfile_path,
-            outfile_path        => $vt_outfile_path,
-            smart_decomposition => 1,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -357,11 +370,11 @@ sub analysis_expansionhunter {
     say {$filehandle} q{## Stranger annotation};
 
     my $stranger_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
             filehandle      => $filehandle,
-            infile_path     => $vt_outfile_path,
+            infile_path     => $svdb_outfile_path,
             stdoutfile_path => $stranger_outfile_path,
         }
     );
