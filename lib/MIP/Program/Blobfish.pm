@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Blobfish;
+package MIP::Program::Blobfish;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ blobfish_allvsall };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub blobfish_allvsall {
 
@@ -108,16 +106,12 @@ sub blobfish_allvsall {
     ## Stores commands depending on input parameters
     my @commands = q{BlobFish.py --allvsall};
 
-    ## Add infile paths
     push @commands, q{--paths} . $SPACE . join $SPACE, @{$indir_paths_ref};
 
-    ## Add conditions
     push @commands, q{--conditions} . $SPACE . join $SPACE, @{$conditions_ref};
 
-    ## Transcript to gene file
     push @commands, q{--tx} . $SPACE . $tx2gene_file_path;
 
-    ## Outpath
     push @commands, q{--dir} . $SPACE . $outdir_path;
 
     push @commands,
