@@ -335,10 +335,11 @@ sub analysis_expansionhunter {
 
     ## Split multiallelic variants
     say {$filehandle} q{## Split multiallelic variants};
-    my $vt_file_paths = each_array( @vt_infile_paths, @vt_outfile_paths );
+    ## Create iterator object
+    my $vt_file_paths_iter = each_array( @vt_infile_paths, @vt_outfile_paths );
 
-  VT_SAMPLE_FILES:
-    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths->() ) {
+  VT_FILES_ITER:
+    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths_iter->() ) {
 
         vt_decompose(
             {

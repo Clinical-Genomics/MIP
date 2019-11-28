@@ -328,7 +328,7 @@ chim_out_type:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: WithinBAM SoftClip
+  default: WithinBAM
   type: recipe_argument
 pe_overlap_nbases_min:
   associated_recipe:
