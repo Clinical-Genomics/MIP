@@ -77,7 +77,7 @@ singularity:
       bgzip:
       samtools:
       tabix:
-    uri: shub://Clinical-Genomics/MIP:htslib-1.9
+    uri: docker://clinicalgenomics/htslib:1.9
   manta:
     executable:
       configManta.py:
