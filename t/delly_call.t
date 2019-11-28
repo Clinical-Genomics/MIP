@@ -21,10 +21,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,8 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $MIN_MAP_QUAL       => q{20};
-Readonly my $INSERT_SIZE_CUTOFF => q{15};
+Readonly my $MIN_MAP_QUAL       => 20;
+Readonly my $INSERT_SIZE_CUTOFF => 15;
 
 BEGIN {
 
@@ -44,18 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Delly} => [qw{ delly_call }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Delly} => [qw{ delly_call }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Delly qw{ delly_call };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Delly qw{ delly_call };
 
 diag(   q{Test delly_call from Delly.pm v}
-      . $MIP::Program::Variantcalling::Delly::VERSION
+      . $MIP::Program::Delly::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

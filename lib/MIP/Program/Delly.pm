@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Delly;
+package MIP::Program::Delly;
 
 use 5.026;
 use Carp;
@@ -24,11 +24,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delly_call delly_filter delly_merge };
 }
+
+## Constants
+Readonly my $MIN_MAP_QUAL       => 20;
+Readonly my $INSERT_SIZE_CUTOFF => 15;
 
 sub delly_call {
 
@@ -64,10 +68,6 @@ sub delly_call {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $sv_type;
-
-    ## Constants
-    Readonly my $MIN_MAP_QUAL       => q{20};
-    Readonly my $INSERT_SIZE_CUTOFF => q{15};
 
     my $tmpl = {
         exclude_file_path => { store => \$exclude_file_path, strict_type => 1, },
@@ -130,7 +130,6 @@ sub delly_call {
     ## Stores commands depending on input parameters
     my @commands = qw{ delly call };
 
-    ## Options
     if ($sv_type) {
 
         push @commands, q{--type} . $SPACE . $sv_type;
@@ -150,33 +149,29 @@ sub delly_call {
         push @commands, q{--exclude} . $SPACE . $exclude_file_path;
     }
 
-    # Reference sequence file
     if ($referencefile_path) {
 
         push @commands, q{--genome} . $SPACE . $referencefile_path;
     }
 
-    # Specify output filename
     if ($genotypefile_path) {
 
         push @commands, q{--vcffile} . $SPACE . $genotypefile_path;
     }
 
-    # Specify output filename
     if ($outfile_path) {
 
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -264,7 +259,6 @@ sub delly_merge {
     ## Stores commands depending on input parameters
     my @commands = qw{ delly merge };
 
-    ## Options
     if ($sv_type) {
 
         push @commands, q{--type} . $SPACE . $sv_type;
@@ -280,21 +274,19 @@ sub delly_merge {
         push @commands, q{--maxsize} . $SPACE . $max_size;
     }
 
-    # Specify output filename
     if ($outfile_path) {
 
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, join $SPACE, @{$infile_paths_ref};
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -389,10 +381,8 @@ sub delly_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ delly filter };
 
-    ## Options
     if ($sv_type) {
 
         push @commands, q{--type} . $SPACE . $sv_type;
@@ -413,21 +403,19 @@ sub delly_filter {
         push @commands, q{--maxsize} . $SPACE . $max_size;
     }
 
-    # Specify output filename
     if ($outfile_path) {
 
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -436,7 +424,6 @@ sub delly_filter {
             commands_ref => \@commands,
             filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;
