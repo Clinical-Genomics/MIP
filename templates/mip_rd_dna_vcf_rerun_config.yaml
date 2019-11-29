@@ -5,7 +5,6 @@ load_env:
   mip_travis:
     method: conda
     mip:
-    picard:
 max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
@@ -48,6 +47,7 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
+picardtools_path: /usr/picard
 sv_genmod_models_case_type: cmms
 sv_vep_plugin:
   ExACpLI:
