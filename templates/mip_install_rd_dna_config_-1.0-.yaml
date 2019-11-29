@@ -82,7 +82,7 @@ singularity:
     executable:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
-    uri: shub://Clinical-Genomics/MIP:manta-1.6.0
+    uri: docker://clinicalgenomics/manta:1.6.0
   multiqc:
     executable:
       multiqc:
