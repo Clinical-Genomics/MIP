@@ -115,7 +115,7 @@ sub genmod_annotate {
         temp_directory_path  => { store => \$temp_directory_path,  strict_type => 1, },
         thousand_g_file_path => { store => \$thousand_g_file_path, strict_type => 1, },
         verbosity            => {
-            allow       => qr/ ^\w+$ /sxm,
+            allow       => qr/ \A \w+ \z /sxm,
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -253,7 +253,7 @@ sub genmod_compound {
             strict_type => 1,
         },
         verbosity => {
-            allow       => qr/ ^\w+$ /sxm,
+            allow       => qr/ \A \w+ \z /sxm,
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -365,7 +365,7 @@ sub genmod_filter {
             strict_type => 1,
         },
         verbosity => {
-            allow       => qr/ ^\w+$ /sxm,
+            allow       => qr/ \A \w+ \z /sxm,
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -502,7 +502,7 @@ sub genmod_models {
             strict_type => 1,
         },
         verbosity => {
-            allow       => qr/ ^\w+$ /sxm,
+            allow       => qr/ \A \w+ \z /sxm,
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -663,7 +663,7 @@ sub genmod_score {
         },
         temp_directory_path => { store => \$temp_directory_path, strict_type => 1, },
         verbosity           => {
-            allow       => qr/ ^\w+$ /sxm,
+            allow       => qr/ \A \w+ \z /sxm,
             store       => \$verbosity,
             strict_type => 1,
         },
