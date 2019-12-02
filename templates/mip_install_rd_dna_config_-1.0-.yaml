@@ -94,7 +94,7 @@ singularity:
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: shub://Clinical-Genomics/MIP:picard-2.20.7
+    uri: docker://broadinstitute/picard:2.20.7
   plink:
     executable:
       plink2:
