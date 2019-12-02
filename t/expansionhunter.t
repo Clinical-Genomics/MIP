@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Expansionhunter} => [qw{ expansionhunter }],
-        q{MIP::Test::Fixtures}                           => [qw{ test_standard_cli }],
+        q{MIP::Program::Expansionhunter} => [qw{ expansionhunter }],
+        q{MIP::Test::Fixtures}           => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
+use MIP::Program::Expansionhunter qw{ expansionhunter };
 
 diag(   q{Test expansionhunter from Expansionhunter.pm v}
-      . $MIP::Program::Variantcalling::Expansionhunter::VERSION
+      . $MIP::Program::Expansionhunter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -91,6 +91,12 @@ my %required_argument = (
         input           => catfile(qw{ a test path }),
         expected_output => q{--reads} . $SPACE . catfile(qw{ a test path }),
     },
+    outfile_path_prefix => {
+        input           => catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix}
+          . $SPACE
+          . catfile(qw{ a test outfile_path_prefix }),
+    },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
         expected_output => q{--reference} . $SPACE . catfile(qw{ a test fasta }),
@@ -100,12 +106,6 @@ my %required_argument = (
         expected_output => q{--variant-catalog}
           . $SPACE
           . catdir(qw{ a test variant_catalog_file.json }),
-    },
-    outfile_path_prefix => {
-        input           => catfile(qw{ a test outfile_path_prefix }),
-        expected_output => q{--output-prefix}
-          . $SPACE
-          . catfile(qw{ a test outfile_path_prefix }),
     },
 );
 
@@ -117,6 +117,12 @@ my %specific_argument = (
     log_level => {
         input           => q{debug},
         expected_output => q{--log-level} . $SPACE . q{debug},
+    },
+    outfile_path_prefix => {
+        input           => catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix}
+          . $SPACE
+          . catfile(qw{ a test outfile_path_prefix }),
     },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
@@ -137,12 +143,6 @@ my %specific_argument = (
         expected_output => q{--variant-catalog}
           . $SPACE
           . catdir(qw{ a test variant_catalog_file.json }),
-    },
-    outfile_path_prefix => {
-        input           => catfile(qw{ a test outfile_path_prefix }),
-        expected_output => q{--output-prefix}
-          . $SPACE
-          . catfile(qw{ a test outfile_path_prefix }),
     },
 );
 

@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Expansionhunter;
+package MIP::Program::Expansionhunter;
 
 use 5.026;
 use Carp;
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ expansionhunter };
