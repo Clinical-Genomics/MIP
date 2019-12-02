@@ -98,7 +98,7 @@ singularity:
   plink:
     executable:
       plink2:
-    uri: shub://Clinical-Genomics/MIP:plink-1.90b3.35
+    uri: docker://Clinical-Genomics/MIP:plink-1.90b3.35
   rhocall:
     executable:
       rhocall:
