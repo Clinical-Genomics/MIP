@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -146,7 +146,7 @@ sub analysis_expansionhunter {
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view };
-    use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Expansionhunter qw{ expansionhunter };
     use MIP::Program::Variantcalling::Stranger qw{ stranger };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
