@@ -1,4 +1,4 @@
-package MIP::Program::Genmod;
+package MIP::Program::Variantcalling::Genmod;
 
 use 5.026;
 use Carp;
@@ -126,6 +126,7 @@ sub genmod_annotate {
     ## Genmod annotate
     my @commands = qw{ genmod };
 
+    ## Options
     if ($verbosity) {
 
         push @commands, $DASH . $verbosity;
@@ -165,6 +166,7 @@ sub genmod_annotate {
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
+    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -184,6 +186,7 @@ sub genmod_annotate {
 
         }
     );
+
     return @commands;
 }
 
@@ -199,8 +202,8 @@ sub genmod_compound {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $temp_directory_path    => Directory for storing intermediate files
 ##          : $thread_number          => Define how many processes that should be use for annotation
-##          : $vep                    => If variants are annotated with the Variant Effect Predictor
 ##          : $verbosity              => Increase output verbosity
+##          : $vep                    => If variants are annotated with the Variant Effect Predictor
 
     my ($arg_href) = @_;
 
@@ -215,11 +218,11 @@ sub genmod_compound {
 
     ## Default(s)
     my $thread_number;
-    my $vep;
     my $verbosity;
+    my $vep;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle, },
+        filehandle  => { store => \$filehandle },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -246,15 +249,15 @@ sub genmod_compound {
             store       => \$thread_number,
             strict_type => 1,
         },
+        verbosity => {
+            allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
+            strict_type => 1,
+        },
         vep => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$vep,
-            strict_type => 1,
-        },
-        verbosity => {
-            allow       => qr/ ^\w+$ /sxm,
-            store       => \$verbosity,
             strict_type => 1,
         },
     };
@@ -264,11 +267,11 @@ sub genmod_compound {
     ## Genmod compound
     my @commands = qw{ genmod };
 
+    ## Options
     if ($verbosity) {
 
         push @commands, q{-} . $verbosity;
     }
-
     push @commands, q{compound};
 
     if ($temp_directory_path) {
@@ -288,6 +291,7 @@ sub genmod_compound {
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
+    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -376,11 +380,11 @@ sub genmod_filter {
     ## Genmod filter
     my @commands = qw{ genmod };
 
+    ## Options
     if ($verbosity) {
 
         push @commands, q{-} . $verbosity;
     }
-
     push @commands, q{filter};
 
     if ($threshold) {
@@ -412,6 +416,7 @@ sub genmod_filter {
 
         }
     );
+
     return @commands;
 }
 
@@ -450,8 +455,8 @@ sub genmod_models {
 
     ## Default(s)
     my $thread_number;
-    my $vep;
     my $verbosity;
+    my $vep;
     my $whole_gene;
 
     my $tmpl = {
@@ -495,15 +500,15 @@ sub genmod_models {
             store       => \$thread_number,
             strict_type => 1,
         },
+        verbosity => {
+            allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
+            strict_type => 1,
+        },
         vep => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$vep,
-            strict_type => 1,
-        },
-        verbosity => {
-            allow       => qr/ ^\w+$ /sxm,
-            store       => \$verbosity,
             strict_type => 1,
         },
         whole_gene => {
@@ -519,11 +524,11 @@ sub genmod_models {
     ## Genmod annotate
     my @commands = qw{ genmod };
 
+    ## Options
     if ($verbosity) {
 
         push @commands, q{-} . $verbosity;
     }
-
     push @commands, q{models};
 
     if ($temp_directory_path) {
@@ -560,6 +565,7 @@ sub genmod_models {
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
+    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -674,6 +680,7 @@ sub genmod_score {
     ## Genmod score
     my @commands = qw{ genmod };
 
+    ## Options
     if ($verbosity) {
 
         push @commands, q{-} . $verbosity;
@@ -706,6 +713,7 @@ sub genmod_score {
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
+    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -719,8 +727,8 @@ sub genmod_score {
 
     unix_write_to_file(
         {
-            commands_ref => \@commands,
             filehandle   => $filehandle,
+            commands_ref => \@commands,
             separator    => $SPACE,
 
         }
