@@ -102,7 +102,7 @@ singularity:
   rhocall:
     executable:
       rhocall:
-    uri: shub://Clinical-Genomics/MIP:rhocall-0.5.1
+    uri: docker://clinicalgenomics/rhocall:0.5.1
   rtg-tools:
     executable:
       rtg:
