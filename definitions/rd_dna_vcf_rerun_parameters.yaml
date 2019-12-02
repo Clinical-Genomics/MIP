@@ -114,10 +114,7 @@ picardtools_path:
   associated_recipe:
    - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
-###Programs
 sv_vcf_rerun_reformat:
   analysis_mode: case
   associated_recipe:
