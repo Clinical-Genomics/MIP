@@ -90,7 +90,7 @@ singularity:
   peddy:
     executable:
       peddy: "python -m peddy"
-    uri: shub://Clinical-Genomics/MIP:peddy-0.4.3
+    uri: docker://clinicalgenomics/peddy:0.4.3
   picard:
     executable:
       picard: "no_executable_in_image"
