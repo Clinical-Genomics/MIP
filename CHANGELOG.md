@@ -34,10 +34,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removes the noupdate option from the installation
 
 **New references**
-- grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+- grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml
+- grch37_frequency_vcfanno_filter_config_-v1.3-.toml
 
 **Reference**
 - clinvar: 20191013
+- gnomad: r2.0.1 -> r2.1.1
+- loqusdb: 2018-12-18 -> 2019-11-04
 
 **Tools**
 - bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
