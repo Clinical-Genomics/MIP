@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -252,6 +252,8 @@ sub analysis_star_fusion {
             filehandle            => $filehandle,
             fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
+            min_junction_reads =>
+              $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }

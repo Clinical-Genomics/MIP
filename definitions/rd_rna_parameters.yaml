@@ -119,7 +119,7 @@ recipe_time:
     fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
-    gatk_haplotypecaller: 2
+    gatk_haplotypecaller: 4
     gatk_splitncigarreads: 8
     gatk_variantfiltration: 1
     genebody_coverage: 3
@@ -159,6 +159,7 @@ recipe_memory:
     stringtie_ar: 2
     trim_galore_ar: 5
     varianteffectpredictor: 12
+    version_collect_ar: 8
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -328,7 +329,7 @@ chim_out_type:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: WithinBAM
+  default: WithinBAM SoftClip 
   type: recipe_argument
 pe_overlap_nbases_min:
   associated_recipe:
@@ -375,6 +376,12 @@ star_fusion_genome_lib_dir:
   exists_check: directory
   is_reference: 1
   type: path
+star_fusion_min_junction_reads:
+  associated_recipe:
+    - star_fusion
+  data_type: SCALAR
+  mandatory: no
+  type: recipe_argument
 star_fusion_reference_genome:
   associated_recipe:
     - star_fusion
