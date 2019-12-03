@@ -114,7 +114,7 @@ singularity:
   stranger:
     executable:
       stranger:
-    uri: shub://Clinical-Genomics/MIP:stranger-0.5.4
+    uri: docker://clinicalgenomics/stranger:0.5.4
   svdb:
     executable:
       svdb:
