@@ -110,7 +110,7 @@ singularity:
   sambamba:
     executable:
       sambamba:
-    uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    uri: docker://clinicalgenomics/sambamba:0.6.8
   stranger:
     executable:
       stranger:
