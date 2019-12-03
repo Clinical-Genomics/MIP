@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Perl} => [qw{ replace_iupac }],
-        q{MIP::Test::Fixtures}                => [qw{ test_standard_cli }],
+        q{MIP::Program::Perl}  => [qw{ replace_iupac }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
+use MIP::Program::Perl qw{ replace_iupac };
 
 diag(   q{Test replace_iupac from Perl.pm v}
-      . $MIP::Program::Variantcalling::Perl::VERSION
+      . $MIP::Program::Perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
