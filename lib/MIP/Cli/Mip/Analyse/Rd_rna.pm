@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.19;
+our $VERSION = 1.20;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -517,6 +517,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_fusion_min_junction_reads} => (
+            cmd_tags      => [q{Star-Fusion parameter}],
+            documentation => q{STAR-Fusion: Minimum junction spanning reads},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
