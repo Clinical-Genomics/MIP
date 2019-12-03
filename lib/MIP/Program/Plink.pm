@@ -1,16 +1,18 @@
-package MIP::Program::Variantcalling::Plink;
+package MIP::Program::Plink;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
@@ -23,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ plink_calculate_inbreeding
@@ -125,7 +127,6 @@ sub plink_variant_pruning {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     if ($make_bed) {
@@ -167,8 +168,8 @@ sub plink_variant_pruning {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -249,7 +250,6 @@ sub plink_fix_fam_ped_map_freq {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
@@ -291,7 +291,6 @@ sub plink_fix_fam_ped_map_freq {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -328,21 +327,16 @@ sub plink_calculate_inbreeding {
             store       => \$binary_fileset_prefix,
             strict_type => 1,
         },
-        outfile_prefix => {
+        extract_file => {
             required    => 1,
-            store       => \$outfile_prefix,
+            store       => \$extract_file,
             strict_type => 1,
         },
-        het => {
+        filehandle => { store => \$filehandle, },
+        het        => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$het,
-            strict_type => 1,
-        },
-        small_sample => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$small_sample,
             strict_type => 1,
         },
         inbreeding_coefficients => {
@@ -351,19 +345,23 @@ sub plink_calculate_inbreeding {
             store       => \$inbreeding_coefficients,
             strict_type => 1,
         },
-        extract_file => {
+        outfile_prefix => {
             required    => 1,
-            store       => \$extract_file,
+            store       => \$outfile_prefix,
             strict_type => 1,
         },
-        filehandle      => { store => \$filehandle, },
+        small_sample => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$small_sample,
+            strict_type => 1,
+        },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
 
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
@@ -401,7 +399,6 @@ sub plink_calculate_inbreeding {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -452,7 +449,6 @@ sub plink_create_mibs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     push @commands, q{--ped} . $SPACE . $ped_file_path;
@@ -485,9 +481,7 @@ sub plink_create_mibs {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub plink_check_sex_chroms {
@@ -544,7 +538,6 @@ sub plink_check_sex_chroms {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
@@ -579,9 +572,7 @@ sub plink_check_sex_chroms {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub plink_sex_check {
@@ -624,7 +615,6 @@ sub plink_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ plink2 };
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
@@ -661,7 +651,6 @@ sub plink_sex_check {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
