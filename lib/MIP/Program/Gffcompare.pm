@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Gffcompare;
+package MIP::Program::Gffcompare;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gffcompare };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub gffcompare {
 
@@ -108,16 +106,17 @@ sub gffcompare {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = q{gffcompare};
 
     if ($genome_sequence_path) {
+
         push @commands, q{-s} . $SPACE . $genome_sequence_path;
     }
 
     push @commands, q{-r} . $SPACE . $gtf_reference_path;
 
     if ($ignore_non_overlapping_ref) {
+
         push @commands, q{-R};
     }
 
