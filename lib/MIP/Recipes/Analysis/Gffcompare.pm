@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -151,7 +151,7 @@ sub analysis_gffcompare {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gffcompare qw{ gffcompare };
+    use MIP::Program::Gffcompare qw{ gffcompare };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
