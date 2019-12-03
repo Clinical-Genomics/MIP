@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Manta;
+package MIP::Program::Manta;
 
 use 5.026;
 use Carp;
@@ -135,7 +135,6 @@ sub manta_config {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -193,7 +192,6 @@ sub manta_workflow {
 
     push @commands, catfile( $outdirectory_path, q{runWorkflow.py} );
 
-    ## Options
     if ($mode) {
 
         push @commands, q{--mode} . $SPACE . $mode;
@@ -219,9 +217,7 @@ sub manta_workflow {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 1;

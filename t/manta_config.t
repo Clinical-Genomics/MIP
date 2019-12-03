@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Manta} => [qw{ manta_config }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Manta} => [qw{ manta_config }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Manta qw{ manta_config };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Manta qw{ manta_config };
 
 diag(   q{Test manta_config from Manta v}
-      . $MIP::Program::Variantcalling::Manta::VERSION
+      . $MIP::Program::Manta::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,6 +63,10 @@ diag(   q{Test manta_config from Manta v}
 my @function_base_commands = qw{ configManta.py };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -71,10 +74,6 @@ my %base_argument = (
     stderrfile_path_append => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
-    },
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
 );
 
