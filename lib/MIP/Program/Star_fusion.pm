@@ -104,11 +104,9 @@ sub star_fusion {
             strict_type => 1,
         },
         min_junction_reads => {
-
-            #allow => qr/ \A \d+ \z /xms,
+            allow => qr/ \A \d+ \z /xms,
             store => \$min_junction_reads,
-
-            #strict_type => 1,
+            strict_type => 1,
         },
         output_directory_path => {
             required    => 1,
