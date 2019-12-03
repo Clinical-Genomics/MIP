@@ -106,7 +106,7 @@ singularity:
   rtg-tools:
     executable:
       rtg:
-    uri: shub://Clinical-Genomics/MIP:rtg-tools-3.10.1
+    uri: docker://realtimegenomics/rtg-tools:3.10.1
   sambamba:
     executable:
       sambamba:
