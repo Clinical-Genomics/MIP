@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Svdb;
+package MIP::Program::Svdb;
 
 use 5.026;
 use Carp;
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ svdb_merge svdb_query };
@@ -87,10 +87,8 @@ sub svdb_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## svdb
     my @commands = qw{ svdb --merge };
 
-    ## Options
     if ($priority) {
 
         ## Priority order of structural variant calls
@@ -107,7 +105,6 @@ sub svdb_merge {
         push @commands, q{--same_order};
     }
 
-    ## Infile
     push @commands, q{--vcf} . $SPACE . join $SPACE, @{$infile_paths_ref};
 
     push @commands,
@@ -168,7 +165,7 @@ sub svdb_query {
 
     my $tmpl = {
         bnd_distance => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             strict_type => 1,
             store       => \$bnd_distance
         },
@@ -191,7 +188,7 @@ sub svdb_query {
         out_allele_count_tag => { strict_type => 1, store => \$out_allele_count_tag },
         out_frequency_tag    => { strict_type => 1, store => \$out_frequency_tag },
         overlap              => {
-            allow       => qr/ ^\d+ | d+[.]d+$ /sxm,
+            allow       => qr/ \A \d+ | d+[.]d+$ /sxm,
             strict_type => 1,
             store       => \$overlap
         },
@@ -211,10 +208,8 @@ sub svdb_query {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## svdb
     my @commands = qw{ svdb --query };
 
-    ## Options
     if ($bnd_distance) {
 
         push @commands, q{--bnd_distance} . $SPACE . $bnd_distance;
@@ -242,7 +237,6 @@ sub svdb_query {
 
     push @commands, q{--db} . $SPACE . $dbfile_path;
 
-    ## Infile
     push @commands, q{--query_vcf} . $SPACE . $infile_path;
 
     push @commands,
