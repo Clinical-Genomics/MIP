@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Salmon;
+package MIP::Program::Salmon;
 
 use 5.026;
 use Carp;
@@ -84,10 +84,8 @@ sub salmon_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ salmon index };
 
-    # Options
     push @commands, q{--transcripts} . $SPACE . $fasta_path;
 
     push @commands, q{--index} . $SPACE . $outfile_path;
@@ -110,7 +108,6 @@ sub salmon_index {
         }
     );
     return @commands;
-
 }
 
 sub salmon_quant {
@@ -214,7 +211,6 @@ sub salmon_quant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ salmon quant };
 
     if ($gc_bias) {
