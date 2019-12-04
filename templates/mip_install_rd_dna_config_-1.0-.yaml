@@ -130,7 +130,7 @@ singularity:
   upd:
     executable:
       upd:
-    uri: shub://Clinical-Genomics/MIP:upd-0.1
+    uri: docker://clinicalgenomics/upd:0.1
   variant_integrity:
     executable:
       variant_integrity:

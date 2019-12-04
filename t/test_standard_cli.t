@@ -20,10 +20,10 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $SPACE };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,20 +32,13 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -83,11 +76,9 @@ my $expected_version_return = join $SPACE, @{ $return{output} };
 like( $expected_version_return, qr/test_standard_cli.t \s+ 1/xms, q{Show version} );
 
 ## Given verbose and help
-
 my $command_help_string = qq{perl $PROGRAM_NAME -h};
 %return = system_cmd_call( { command_string => $command_help_string, } );
 
-#my $ret = `perl $PROGRAM_NAME -v `;
 my $expected_help_return = join $SPACE, @{ $return{output} };
 
 ## Then show help text
