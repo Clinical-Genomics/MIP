@@ -56,6 +56,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rtg-tools: 3.9.1-1 -> 3.10.1-0
 - star: 2.6.1d -> 2.7.3a
 - star-fusion: 1.5.0 -> 1.7.0
+- stranger: 0.5.4 -> 0.5.5
 - stringtie: 1.3.4 -> 2.0.3
 - svdb: 2.0.0 -> 2.2.0
 - trim-galore: 0.5.0 -> 0.6.4
