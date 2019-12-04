@@ -41,6 +41,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - clinvar: 20191013
 - gnomad: r2.0.1 -> r2.1.1
 - loqusdb: 2018-12-18 -> 2019-11-04
+- expansionhunter: 3.0.0 -> 3.1.2
 
 **Tools**
 - bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
