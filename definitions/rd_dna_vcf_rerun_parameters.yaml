@@ -7,7 +7,6 @@ decompose_normalize_references:
   default:
    - fqa_vcfanno_config
    - sv_fqa_vcfanno_config
-  element_separator: ,
   type: mip
 gatk_logging_level:
   associated_recipe:
@@ -156,7 +155,6 @@ sv_fqa_vcfanno_config:
 sv_fqa_annotations:
   associated_recipe:
    - sv_annotate
-  element_separator: ,
   data_type: ARRAY
   default:
    - GNOMADAF
@@ -202,7 +200,6 @@ sv_varianteffectpredictor:
 sv_vep_features:
   associated_recipe:
    - sv_varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
    - appris
@@ -251,7 +248,6 @@ sv_vcfparser_add_all_mt_var:
 sv_vcfparser_range_feature_annotation_columns:
   associated_recipe:
    - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -280,7 +276,6 @@ sv_vcfparser_per_gene:
 sv_vcfparser_select_feature_annotation_columns:
   associated_recipe:
    - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -514,7 +509,6 @@ frequency_filter:
 fqf_annotations:
   associated_recipe:
    - frequency_filter
-  element_separator: ,
   data_type: ARRAY
   default:
    - GNOMADAF
@@ -542,7 +536,6 @@ cadd_ar:
 cadd_column_names:
   associated_recipe:
    - cadd_ar
-  element_separator: ,
   data_type: ARRAY
   default:
    - Chrom
@@ -591,7 +584,6 @@ vep_directory_cache:
 vep_features:
   associated_recipe:
    - varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
    - appris
@@ -658,7 +650,6 @@ vcfparser_outfile_count:
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
    - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -674,7 +665,6 @@ vcfparser_range_feature_file:
 vcfparser_select_feature_annotation_columns:
   associated_recipe:
    - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -713,7 +703,6 @@ genmod_annotate_cadd_files:
   associated_recipe:
    - rankvariant
   data_type: ARRAY
-  element_separator: ,
   exists_check: file
   is_reference: 1
   mandatory: no

@@ -31,7 +31,6 @@ recipe_argument: {
   ]
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type
   default: "SCALAR | ARRAY | HASH",
-  element_separator: string, # Delimiter for input/output on cli
   is_reference: integer, value="1" # Defines this parameter as a reference to log
   mandatory: string, value="yes" # Do not supply to make optional
   type: string, value="mip(=global) | recipe_argument(=argument to a recipe)"
@@ -42,7 +41,6 @@ path_parameter: { # Path hash
   ]
   build_file: integer, value="0 | 1" # Build recipe switch, used to build reference meta data files
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type
-  element_separator: string, # Delimiter for input/output on cli
   exists_check: integer, value="file | directory"  # Do not supply key to remove check
   is_reference: integer, value="1" # Defines this parameter as a reference to log
   mandatory: string, value="yes" # Do not supply to make optional

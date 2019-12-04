@@ -103,21 +103,18 @@ select_programs:
   associated_recipe:
    - mip
   data_type: ARRAY
-  element_separator: ,
   mandatory: no
   type: mip
 shell_install:
   associated_recipe:
    - mip
   data_type: ARRAY
-  element_separator: ,
   mandatory: no
   type: mip
 skip_programs: 
   associated_recipe:
    - mip
   data_type: ARRAY
-  element_separator: ,
   mandatory: no
   type: mip
 temp_directory:
