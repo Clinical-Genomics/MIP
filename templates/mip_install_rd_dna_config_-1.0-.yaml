@@ -126,7 +126,7 @@ singularity:
   varg:
     executable:
       varg:
-    uri: shub://Clinical-Genomics/MIP:varg-1.0.0
+    uri: docker://clinicalgenomics/varg:1.2.0
   upd:
     executable:
       upd:
