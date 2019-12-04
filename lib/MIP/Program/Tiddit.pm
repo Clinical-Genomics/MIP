@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Tiddit;
+package MIP::Program::Tiddit;
 
 use 5.026;
 use Carp;
@@ -24,12 +24,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tiddit_coverage tiddit_sv };
 
 }
+
+## Constants
+Readonly my $BIN_SIZE => 500;
 
 sub tiddit_coverage {
 
@@ -62,8 +65,8 @@ sub tiddit_coverage {
 
     my $tmpl = {
         bin_size => {
-            allow       => [ undef, qr/ ^\d+$ /sxm ],
-            default     => 500,
+            allow       => [ undef, qr/ \A \d+ \z /sxm ],
+            default     => $BIN_SIZE,
             store       => \$bin_size,
             strict_type => 1,
         },
@@ -104,16 +107,13 @@ sub tiddit_coverage {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ TIDDIT.py --cov };
 
-    # Option: specify output prefix
     if ($outfile_path_prefix) {
 
         push @commands, q{-o} . $SPACE . $outfile_path_prefix;
     }
 
-    # Option: specify bin size
     if ($bin_size) {
 
         push @commands, q{-z} . $SPACE . $bin_size;
@@ -177,7 +177,7 @@ sub tiddit_sv {
     my $stdoutfile_path;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -185,7 +185,7 @@ sub tiddit_sv {
             strict_type => 1,
         },
         minimum_number_supporting_pairs => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             store       => \$minimum_number_supporting_pairs,
             strict_type => 1,
         },
@@ -212,16 +212,13 @@ sub tiddit_sv {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## tiddit
     my @commands = qw{ TIDDIT.py --sv };
 
-    ## Option: minimum number of supporting pairs in order to call a variation event
     if ($minimum_number_supporting_pairs) {
 
         push @commands, q{-p} . $SPACE . $minimum_number_supporting_pairs;
     }
 
-    # Outfile prefix
     if ($outfile_path_prefix) {
 
         push @commands, q{-o} . $SPACE . $outfile_path_prefix;
@@ -229,7 +226,6 @@ sub tiddit_sv {
 
     push @commands, q{--ref} . $SPACE . $referencefile_path;
 
-    ## Infile
     push @commands, q{--bam} . $SPACE . $infile_path;
 
     push @commands,
