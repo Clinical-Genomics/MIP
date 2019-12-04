@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -311,14 +311,12 @@ sub test_standard_cli {
 
         # Display help text
         q{h|help} => sub {
-            done_testing();
             say {*STDOUT} $USAGE;
             exit;
         },
 
         # Display version number
         q{v|version} => sub {
-            done_testing();
             say {*STDOUT} $NEWLINE
               . basename($PROGRAM_NAME)
               . $SPACE
@@ -329,7 +327,6 @@ sub test_standard_cli {
         q{vb|verbose} => $verbose,
       )
       or (
-        done_testing(),
         help(
             {
                 USAGE     => $USAGE,
@@ -337,7 +334,6 @@ sub test_standard_cli {
             }
         )
       );
-
     return $verbose;
 }
 
