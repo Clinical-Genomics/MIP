@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -188,15 +188,11 @@ sub analysis_bootstrapann {
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $vcf_generator_recipe,
-            stream         => q{in},
+            stream         => q{out},
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
-    my $variant_suffix             = $variant_io{out}{file_suffix};
-
-    my $variant_infile_path =
-      $variant_infile_path_prefix . $UNDERSCORE . q{restricted} . $variant_suffix;
+    my $variant_infile_path = $variant_io{out}{file_path};
 
     my $job_id_chain = get_recipe_attributes(
         {

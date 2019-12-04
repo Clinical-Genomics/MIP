@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_call test_command test_function };
@@ -124,7 +124,7 @@ sub build_call {
 
     ### Combine the specific and required argument keys and values to test
     ## SCALAR
-    if ( $argument && $input_value ) {
+    if ( $argument && defined $input_value ) {
         push @keys,   $argument;
         push @values, $input_value;
     }

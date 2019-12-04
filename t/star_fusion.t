@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -121,6 +121,10 @@ my %specific_argument = (
         expected_output => q{--genome_lib_dir}
           . $SPACE
           . catfile(qw{ dir genome_lib_dir_path }),
+    },
+    min_junction_reads => {
+        input           => 0,
+        expected_output => q{--min_junction_reads 0},
     },
     output_directory_path => {
         input           => catfile(qw{ dir }),

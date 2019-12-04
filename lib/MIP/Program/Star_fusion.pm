@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -43,6 +43,7 @@ sub star_fusion {
 ##          : $filehandle             => Filehandle to write to
 ##          : $fusion_inspector       => Run FusionInspector in either inspect or validate mode
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
+##          : $min_junction_reads     => Minimum number of reads spanning the junction {REF}
 ##          : $output_directory_path  => output directory path
 ##          : $samples_file_path      => Sample file path
 ##          : $sjdb_path              => Splice junction database file path (the junctions tab file)
@@ -60,6 +61,7 @@ sub star_fusion {
     my $fusion_inspector;
     my $genome_lib_dir_path;
     my $output_directory_path;
+    my $min_junction_reads;
     my $samples_file_path;
     my $sjdb_path;
     my $stderrfile_path;
@@ -99,6 +101,11 @@ sub star_fusion {
         genome_lib_dir_path => {
             required    => 1,
             store       => \$genome_lib_dir_path,
+            strict_type => 1,
+        },
+        min_junction_reads => {
+            allow => [undef, qr/ \A \d+ \z /xms],
+            store => \$min_junction_reads,
             strict_type => 1,
         },
         output_directory_path => {
@@ -164,6 +171,10 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
 
     if ($fusion_inspector) {
         push @commands, q{--FusionInspector} . $SPACE . $fusion_inspector,;
+    }
+
+    if ( defined $min_junction_reads ) {
+        push @commands, q{--min_junction_reads} . $SPACE . $min_junction_reads;
     }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;
