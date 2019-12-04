@@ -134,7 +134,7 @@ singularity:
   variant_integrity:
     executable:
       variant_integrity:
-    uri: shub://Clinical-Genomics/MIP:variant_integrity-0.0.4
+    uri: docker://Clinical-Genomics/MIP:variant_integrity-0.0.4
   vcfanno:
     executable:
       vcfanno:
