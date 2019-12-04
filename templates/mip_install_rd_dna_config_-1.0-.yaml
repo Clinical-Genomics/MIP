@@ -138,7 +138,7 @@ singularity:
   vcfanno:
     executable:
       vcfanno:
-    uri: shub://Clinical-Genomics/MIP:vcfanno-0.3.2
+    uri: docker://clinicalgenomics/vcfanno:0.3.2
   vep:
     executable:
       vep:
