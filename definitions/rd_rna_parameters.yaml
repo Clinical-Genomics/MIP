@@ -522,7 +522,6 @@ gatk_baserecalibration_no_bam_to_cram:
 gatk_baserecalibration_known_sites:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
     - grch37_1000g_indels_-phase1-.vcf
@@ -535,7 +534,6 @@ gatk_baserecalibration_known_sites:
 gatk_baserecalibration_read_filters:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
     - OverclippedReadFilter
@@ -543,7 +541,6 @@ gatk_baserecalibration_read_filters:
 gatk_baserecalibration_static_quantized_quals:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   default:
@@ -620,7 +617,6 @@ gatk_haplotypecaller:
 gatk_haplotypecaller_annotation:
   associated_recipe:
     - gatk_haplotypecaller
-  element_separator: ,
   data_type: ARRAY
   default:
     - BaseQualityRankSumTest
@@ -789,7 +785,6 @@ vep_directory_cache:
 vep_features:
   associated_recipe:
     - varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
     - appris

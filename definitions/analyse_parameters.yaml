@@ -39,7 +39,6 @@ dry_run_all:
 exclude_contigs:
   associated_recipe:
    - mip
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: mip
@@ -117,7 +116,6 @@ reference_dir:
 sample_ids:
   associated_recipe:
    - mip
-  element_separator: ,
   data_type: ARRAY
   type: mip
 sample_info_file:
@@ -207,7 +205,6 @@ sacct_format_fields:
    - end
    - state
    - exitcode
-  element_separator: ,
   type: recipe_argument
 temp_directory:
   associated_recipe:
