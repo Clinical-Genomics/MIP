@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -143,7 +143,7 @@ sub analysis_vcf2cytosure {
     use MIP::Get::Parameter
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+    use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
