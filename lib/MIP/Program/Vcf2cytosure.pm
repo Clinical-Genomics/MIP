@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Vcf2cytosure;
+package MIP::Program::Vcf2cytosure;
 
 use 5.026;
 use Carp;
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -128,7 +128,7 @@ sub vcf2cytosure_convert {
             strict_type => 1,
         },
         variant_size => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr/ \A \d+ \z /xsm,
             default     => 5000,
             store       => \$variant_size,
             strict_type => 1,
@@ -149,36 +149,35 @@ sub vcf2cytosure_convert {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{vcf2cytosure};
+    my @commands = qw{ vcf2cytosure };
 
-    # Option: Version of program
     if ($version) {
 
         push @commands, q{--version};
     }
 
-    # Option: specify minimum variant size
     if ($variant_size) {
+
         push @commands, q{--size} . $SPACE . $variant_size;
     }
 
-    # Option: specify maximum frequency
     if ($frequency) {
+
         push @commands, q{--frequency} . $SPACE . $frequency;
     }
 
-    # Option: specify frequency tag
     if ($frequency_tag) {
+
         push @commands, q{--frequency_tag} . $SPACE . $frequency_tag;
     }
 
     if ($maxbnd) {
+
         push @commands, q{--maxbnd} . $SPACE . $maxbnd;
     }
 
-    # Option: no filtering. Overrides previous filtering options
     if ($no_filter) {
+
         push @commands, q{--no-filter};
     }
 
@@ -186,19 +185,19 @@ sub vcf2cytosure_convert {
 
         push @commands, q{--sex} . $SPACE . $sex;
     }
+
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
     }
 
     if ($sex) {
+
         push @commands, q{--sex} . $SPACE . $sex;
     }
 
-    # Coverage file
     push @commands, q{--coverage} . $SPACE . $coverage_file;
 
-    # VCF file
     push @commands, q{--vcf} . $SPACE . $vcf_infile_path;
 
     push @commands,

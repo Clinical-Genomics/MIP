@@ -143,7 +143,7 @@ sub analysis_vcf2cytosure {
     use MIP::Get::Parameter
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+    use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
