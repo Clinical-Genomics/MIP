@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Trinity;
+package MIP::Program::Trinity;
 
 use 5.026;
 use Carp;
@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,15 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ trinity_genome_guided };
 
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub trinity_genome_guided {
 
@@ -59,7 +57,7 @@ sub trinity_genome_guided {
     my $stdoutfile_path;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -67,7 +65,7 @@ sub trinity_genome_guided {
             strict_type => 1,
         },
         max_intron_distance => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             default     => 10_000,
             store       => \$max_intron_distance,
             strict_type => 1,
@@ -77,8 +75,7 @@ sub trinity_genome_guided {
             store       => \$max_memory,
             strict_type => 1,
         },
-        number_cpu =>
-          { default => 16, store => \$number_cpu, strict_type => 1, },
+        number_cpu      => { default => 16, store => \$number_cpu, strict_type => 1, },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -95,20 +92,14 @@ sub trinity_genome_guided {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Trinity
     my @commands = qw{ Trinity };
 
-    ## Infile
     push @commands, q{--genome_guided_bam} . $SPACE . $infile_path;
 
-    ## cpu
-    push @commands,
-      q{--genome_guided_max_intron} . $SPACE . $max_intron_distance;
+    push @commands, q{--genome_guided_max_intron} . $SPACE . $max_intron_distance;
 
-    ## intron distance
     push @commands, q{--CPU} . $SPACE . $number_cpu;
 
-    ## maximum memory
     push @commands, q{--max_memory} . $SPACE . $max_memory . q{G};
 
     push @commands,
