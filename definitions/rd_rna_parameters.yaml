@@ -299,19 +299,19 @@ align_intron_max:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 100000
+  mandatory: no
   type: recipe_argument
 align_mates_gap_max:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 100000
+  mandatory: no
   type: recipe_argument
 align_sjdb_overhang_min:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 10
+  mandatory: no
   type: recipe_argument
 chim_junction_overhang_min:
   associated_recipe:
@@ -329,7 +329,7 @@ chim_out_type:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: WithinBAM SoftClip 
+  default: WithinBAM SoftClip
   type: recipe_argument
 pe_overlap_nbases_min:
   associated_recipe:
