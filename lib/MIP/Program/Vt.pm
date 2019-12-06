@@ -1,5 +1,6 @@
-package MIP::Program::Variantcalling::Vt;
+package MIP::Program::Vt;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -11,9 +12,11 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -22,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vt_decompose vt_normalize vt_uniq };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub vt_decompose {
 
@@ -63,30 +63,29 @@ sub vt_decompose {
         infile_path => {
             required    => 1,
             defined     => 1,
-            strict_type => 1,
             store       => \$infile_path,
-        },
-        outfile_path        => { strict_type => 1, store => \$outfile_path, },
-        smart_decomposition => {
-            default     => 0,
-            allow       => [ 0, 1 ],
             strict_type => 1,
+        },
+        outfile_path        => { store => \$outfile_path, strict_type => 1, },
+        smart_decomposition => {
+            allow       => [ 0, 1 ],
+            default     => 0,
             store       => \$smart_decomposition,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ vt decompose };
 
     if ($smart_decomposition) {
@@ -94,7 +93,6 @@ sub vt_decompose {
         push @commands, q{-s};
     }
 
-    # Specify output filename
     if ($outfile_path) {
 
         push @commands, q{-o} . $SPACE . $outfile_path;
@@ -113,10 +111,9 @@ sub vt_decompose {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;
@@ -154,41 +151,39 @@ sub vt_normalize {
             store => \$filehandle,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         no_fail_inconsistent_reference => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
             strict_type => 1,
             store       => \$no_fail_inconsistent_reference,
         },
-        outfile_path       => { strict_type => 1, store => \$outfile_path },
+        outfile_path       => { store => \$outfile_path, strict_type => 1, },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ vt normalize };
 
-    ## Options
     if ($no_fail_inconsistent_reference) {
 
         push @commands, q{-n};
@@ -199,13 +194,11 @@ sub vt_normalize {
         push @commands, q{-r} . $SPACE . $referencefile_path;
     }
 
-    #Specify output filename
     if ($outfile_path) {
 
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -219,10 +212,9 @@ sub vt_normalize {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;
@@ -254,35 +246,32 @@ sub vt_uniq {
             store => \$filehandle,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
-        },
-        outfile_path    => { strict_type => 1, store => \$outfile_path, },
-        stderrfile_path => {
             strict_type => 1,
+        },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        stderrfile_path => {
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ vt uniq };
 
-    #Specify output filename
     if ($outfile_path) {
 
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -296,10 +285,9 @@ sub vt_uniq {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;
