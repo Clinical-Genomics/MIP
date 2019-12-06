@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Vep;
+package MIP::Program::Vep;
 
 use Carp;
 use English qw{ -no_match_vars };
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
@@ -36,7 +36,7 @@ Readonly my $LENGTH_CHR_1 => 248_956_422;
 
 sub variant_effect_predictor {
 
-## Function : Perl wrapper for writing variant_effect_predictor recipe to $filehandle or return commands array. Based on VEP 90.
+## Function : Perl wrapper for writing variant_effect_predictor recipe to $filehandle or return commands array. Based on VEP 97.
 ## Returns  : @commands
 ## Arguments: $assembly                => Assembly version to use
 ##          : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
@@ -92,7 +92,7 @@ sub variant_effect_predictor {
             strict_type => 1,
         },
         buffer_size => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             store       => \$buffer_size,
             strict_type => 1,
         },
@@ -106,7 +106,7 @@ sub variant_effect_predictor {
             strict_type => 1,
         },
         distance => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr/ \A \d+ \z /xsm,
             default     => 5000,
             store       => \$distance,
             strict_type => 1,
@@ -115,7 +115,7 @@ sub variant_effect_predictor {
             store => \$filehandle,
         },
         fork => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr/ \A \d+ \z /xsm,
             default     => 0,
             store       => \$fork,
             strict_type => 1,
@@ -189,11 +189,8 @@ sub variant_effect_predictor {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Vep
-    # Stores commands depending on input parameters
-    my @commands = q{vep};
+    my @commands = qw{ vep };
 
-    ## Options
     if ($fork) {
 
         push @commands, q{--fork} . $SPACE . $fork;
@@ -229,7 +226,6 @@ sub variant_effect_predictor {
         push @commands, q{--} . $outfile_format;
     }
 
-    # If regions limit output
     if ( @{$regions_ref} ) {
 
         push @commands, q{--chr} . $SPACE . join $COMMA, @{$regions_ref};
@@ -255,7 +251,6 @@ sub variant_effect_predictor {
         push @commands, q{--} . join q{ --}, @{$vep_features_ref};
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, q{--input_file} . $SPACE . $infile_path;
@@ -285,7 +280,7 @@ sub variant_effect_predictor {
 
 sub variant_effect_predictor_install {
 
-## Function : Perl wrapper for vep INSTALL script. Based on version 92.
+## Function : Perl wrapper for vep INSTALL script. Based on version 97.
 ## Returns  : @commands
 ## Arguments: $assembly               => Assembly name to use if more than one during --AUTO
 ##          : $auto                   => Run installer without user prompts. Use "a" (API + Faidx/htslib),"l" (Faidx/htslib only), "c" (cache), "f" (FASTA), "p" (plugins) to specify parts to install.
@@ -350,7 +345,6 @@ sub variant_effect_predictor_install {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ INSTALL.pl };
 
     if ($auto) {
@@ -406,7 +400,6 @@ sub variant_effect_predictor_install {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 

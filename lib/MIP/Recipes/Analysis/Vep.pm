@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -156,7 +156,7 @@ sub analysis_vep {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -534,7 +534,7 @@ sub analysis_vep_sv_wes {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -873,7 +873,7 @@ sub analysis_vep_sv_wgs {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -1272,7 +1272,7 @@ sub analysis_vep_rna {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
