@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -33,7 +33,7 @@ BEGIN {
 
 sub star_aln {
 
-## Function  : Perl wrapper for STAR v2.5.3a.
+## Function  : Perl wrapper for STAR v2.7.3a.
 ## Returns   : @commands
 ## Arguments : $align_intron_max           => Maximum intron size
 ##           : $align_mates_gap_max        => Maximum gap between two mates
@@ -60,49 +60,45 @@ sub star_aln {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $align_intron_max;
+    my $align_mates_gap_max;
+    my $align_sjdb_overhang_min;
     my $filehandle;
     my $chim_out_type;
+    my $chim_junction_overhang_min;
+    my $chim_segment_min;
     my $genome_dir_path;
     my $infile_paths_ref;
+    my $limit_bam_sort_ram;
     my $outfile_name_prefix;
     my $pe_overlap_nbases_min;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $thread_number;
 
     ## Default(s)
-    my $align_intron_max;
-    my $align_mates_gap_max;
-    my $align_sjdb_overhang_min;
-    my $chim_junction_overhang_min;
-    my $chim_segment_min;
     my $chim_segment_read_gap_max;
-    my $limit_bam_sort_ram;
     my $out_sam_strand_field;
     my $out_sam_type;
     my $quant_mode;
     my $read_files_command;
-    my $thread_number;
     my $two_pass_mode;
 
     my $tmpl = {
         align_intron_max => {
-            default     => 100_000,
             store       => \$align_intron_max,
             strict_type => 1,
         },
         align_mates_gap_max => {
-            default     => 100_000,
             store       => \$align_mates_gap_max,
             strict_type => 1,
         },
         align_sjdb_overhang_min => {
-            default     => 10,
             store       => \$align_sjdb_overhang_min,
             strict_type => 1,
         },
         chim_junction_overhang_min => {
-            default     => 12,
             store       => \$chim_junction_overhang_min,
             strict_type => 1,
         },
@@ -117,7 +113,6 @@ sub star_aln {
             strict_type => 1,
         },
         chim_segment_min => {
-            default     => 12,
             store       => \$chim_segment_min,
             strict_type => 1,
         },
@@ -143,7 +138,6 @@ sub star_aln {
             strict_type => 1,
         },
         limit_bam_sort_ram => {
-            default     => 315_321_372_30,
             store       => \$limit_bam_sort_ram,
             strict_type => 1,
         },
@@ -192,8 +186,7 @@ sub star_aln {
             strict_type => 1,
         },
         thread_number => {
-            allow       => qr/ ^\d+$ /xms,
-            default     => 16,
+            allow       => qr/ \A \d+ \z /xms,
             store       => \$thread_number,
             strict_type => 1,
         },
