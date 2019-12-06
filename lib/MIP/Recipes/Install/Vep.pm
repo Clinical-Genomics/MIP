@@ -26,14 +26,14 @@ use MIP::Language::Perl qw{ perl_nae_oneliners };
 use MIP::Program::Tar qw{ tar };
 use MIP::Program::Wget qw{ wget };
 use MIP::Program::Singularity qw{ singularity_exec };
-use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
+use MIP::Program::Vep qw{ variant_effect_predictor_install };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
