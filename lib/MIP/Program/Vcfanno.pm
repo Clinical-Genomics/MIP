@@ -1,5 +1,6 @@
-package MIP::Program::Variantcalling::Vcfanno;
+package MIP::Program::Vcfanno;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -15,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcfanno };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub vcfanno {
 
@@ -59,40 +58,38 @@ sub vcfanno {
 
     my $tmpl = {
         ends => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$ends,
             strict_type => 1,
-            store       => \$ends
         },
-        filehandle   => { store       => \$filehandle },
-        infile_path  => { strict_type => 1, store => \$infile_path },
-        luafile_path => { strict_type => 1, store => \$luafile_path },
+        filehandle   => { store => \$filehandle, },
+        infile_path  => { store => \$infile_path, strict_type => 1, },
+        luafile_path => { store => \$luafile_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         toml_configfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$toml_configfile_path,
             strict_type => 1,
-            store       => \$toml_configfile_path
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Vcfanno
-    my @commands = q{vcfanno};
+    my @commands = qw{ vcfanno };
 
-    ## Options
     if ($luafile_path) {
 
         push @commands, q{-lua} . $SPACE . $luafile_path;
@@ -102,10 +99,8 @@ sub vcfanno {
         push @commands, q{-ends};
     }
 
-    ## Toml config file path
     push @commands, $toml_configfile_path;
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -122,8 +117,8 @@ sub vcfanno {
 
     unix_write_to_file(
         {
-            filehandle   => $filehandle,
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

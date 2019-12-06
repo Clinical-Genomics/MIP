@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_annotation };
@@ -130,7 +130,7 @@ sub analysis_frequency_annotation {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_concat bcftools_index bcftools_view };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
+    use MIP::Program::Vcfanno qw{ vcfanno };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
