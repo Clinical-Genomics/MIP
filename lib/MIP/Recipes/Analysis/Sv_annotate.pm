@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -151,7 +151,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Genmod qw{ genmod_annotate };
     use MIP::Program::Picardtools qw{ sort_vcf };
     use MIP::Program::Svdb qw{ svdb_query };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
+    use MIP::Program::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
