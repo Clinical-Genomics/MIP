@@ -150,7 +150,7 @@ singularity:
   vt:
     executable:
       vt:
-    uri: shub://Clinical-Genomics/MIP:vt-2015.11.10
+    uri: docker://clinicalgenomics/vt:2015.11.10
 vep_plugins:
   - dbNSFP
   - ExACpLI
