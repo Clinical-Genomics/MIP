@@ -109,6 +109,10 @@ my %specific_argument = (
         input           => catfile(qw{ my fusion blacklist.tsv }),
         expected_output => q{-b} . $SPACE . catfile(qw{ my fusion blacklist.tsv }),
     },
+    dna_sv_file_path => {
+        input           => catfile(qw{ my wgs_sv_calls.tsv }),
+        expected_output => q{-d} . $SPACE . catfile(qw{ my wgs_sv_calls.tsv }),
+    },
     discarded_fusion_file_path => {
         input           => catfile(qw{ my fusion.discarded.tsv }),
         expected_output => q{-O} . $SPACE . catfile(qw{ my fusion.discarded.tsv }),

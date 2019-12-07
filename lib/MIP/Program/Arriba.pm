@@ -35,6 +35,7 @@ sub arriba {
 ## Returns  : @commands
 ## Arguments: $annotation_file_path       => Path to GTF file with annotations
 ##          : $blacklist_file_path        => Path to file with blacklist events
+##          : $dna_sv_file_path           => Path to file with wgs SV calls
 ##          : $discarded_fusion_file_path => Path to write discarded fusion events to
 ##          : $filehandle                 => Filehandle to write to
 ##          : $genome_file_path           => Genome reference path
@@ -52,6 +53,7 @@ sub arriba {
     ## Flatten argument(s)
     my $annotation_file_path;
     my $blacklist_file_path;
+    my $dna_sv_file_path;
     my $discarded_fusion_file_path;
     my $filehandle;
     my $genome_file_path;
@@ -72,6 +74,10 @@ sub arriba {
         },
         blacklist_file_path => {
             store       => \$blacklist_file_path,
+            strict_type => 1,
+        },
+        dna_sv_file_path => {
+            store       => \$dna_sv_file_path,
             strict_type => 1,
         },
         discarded_fusion_file_path => {
@@ -130,6 +136,11 @@ sub arriba {
     if ($blacklist_file_path) {
 
         push @commands, q{-b} . $SPACE . $blacklist_file_path;
+    }
+
+    if ($dna_sv_file_path) {
+
+        push @commands, q{-d} . $SPACE . $dna_sv_file_path;
     }
 
     if ($discarded_fusion_file_path) {
