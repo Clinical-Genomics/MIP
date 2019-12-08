@@ -91,8 +91,8 @@ my %required_argument = (
         expected_output => q{-a} . $SPACE . catfile(qw{ my genome.fa }),
     },
     infile_path => {
-        input           => catfile(qw{ my Aligned.bam }),
-        expected_output => q{-x} . $SPACE . catfile(qw{ my Aligned.bam }),
+        input           => catfile(qw{ my aligned.bam }),
+        expected_output => q{-x} . $SPACE . catfile(qw{ my aligned.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ my fusions.tsv }),
@@ -122,8 +122,8 @@ my %specific_argument = (
         expected_output => q{-a} . $SPACE . catfile(qw{ my genome.fa }),
     },
     infile_path => {
-        input           => catfile(qw{ my Aligned.bam }),
-        expected_output => q{-x} . $SPACE . catfile(qw{ my Aligned.bam }),
+        input           => catfile(qw{ my aligned.bam }),
+        expected_output => q{-x} . $SPACE . catfile(qw{ my aligned.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ my fusions.tsv }),

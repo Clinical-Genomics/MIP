@@ -120,7 +120,10 @@ sub arriba {
             store       => \$stderrfile_path_append,
             strict_type => 1,
         },
-        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdinfile_path => {
+            store       => \$stdinfile_path,
+            strict_type => 1,
+        },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
             strict_type => 1,
