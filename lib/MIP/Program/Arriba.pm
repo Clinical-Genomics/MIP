@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,7 +26,7 @@ BEGIN {
 
     our $VERSION = 1.00;
 
-    our @EXPORT_OK = qw{ arriba };
+    our @EXPORT_OK = qw{ arriba draw_fusions };
 }
 
 sub arriba {
@@ -188,4 +188,120 @@ sub arriba {
     return @commands;
 }
 
+sub draw_fusions {
+
+## Function : Perl wrapper for Arriba's draw_fusion.R script. Based on Arriba 1.1.0
+## Returns  : @commands
+## Arguments: $alignment_file_path      => Path to BAM file with alignments
+##          : $annotation_file_path     => Path to annotation file
+##          : $cytoband_file_path       => Path to file with coordinates for cytobands
+##          : $filehandle               => Filehandle to write to
+##          : $fusion_file_path         => Path gene fusion file
+##          : $outfile_path             => Path to PDF outfile
+##          : $protein_domain_file_path => Path to file with protein domains
+##          : $stderrfile_path          => Stderrfile path
+##          : $stderrfile_path_append   => Append stderr info to file path
+##          : $stdoutfile_path          => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $alignment_file_path;
+    my $annotation_file_path;
+    my $cytoband_file_path;
+    my $filehandle;
+    my $fusion_file_path;
+    my $outfile_path;
+    my $protein_domain_file_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        alignment_file_path => {
+            required    => 1,
+            store       => \$alignment_file_path,
+            strict_type => 1,
+        },
+        annotation_file_path => {
+            required    => 1,
+            store       => \$annotation_file_path,
+            strict_type => 1,
+        },
+        cytoband_file_path => {
+            store       => \$cytoband_file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        fusion_file_path => {
+            required    => 1,
+            store       => \$fusion_file_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        protein_domain_file_path => {
+            store       => \$protein_domain_file_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ draw_fusions.R };
+
+    push @commands, q{--alignments} . $EQUALS . $alignment_file_path;
+
+    push @commands, q{--annotation} . $EQUALS . $annotation_file_path;
+
+    if ($cytoband_file_path) {
+
+        push @commands, q{--cytobands} . $EQUALS . $cytoband_file_path;
+    }
+
+    push @commands, q{--fusions} . $EQUALS . $fusion_file_path;
+
+    push @commands, q{--output} . $EQUALS . $outfile_path;
+
+    if ($protein_domain_file_path) {
+
+        push @commands, q{--proteinDomains} . $EQUALS . $protein_domain_file_path;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 1;
