@@ -2,6 +2,9 @@
 ## Program tests
 # execution: the command and evaluate exit status, a non-zero exit status will fail the test
 # path: the program is executable and has been added to PATH
+  arriba:
+    execution: 'arriba -h'
+    path: 'arriba'
   bcftools:
     execution: 'bcftools --version'
     path: 'bcftools'

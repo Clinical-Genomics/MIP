@@ -37,6 +37,11 @@ shell:
     version: 1.04.807
     url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
 singularity:
+  arriba:
+    executable: 
+      arriba: /arriba_v1.1.0/arriba
+      draw_fusions.R: /arriba_v1.1.0/draw_fusions.R
+    uri: docker://uhrigs/arriba:1.1.0
   fastqc:
     executable:
       fastqc:
