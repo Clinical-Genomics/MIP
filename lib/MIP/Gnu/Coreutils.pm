@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -49,6 +49,7 @@ BEGIN {
       gnu_sort
       gnu_split
       gnu_tail
+      gnu_tee
       gnu_touch
       gnu_uniq
     };
@@ -1575,6 +1576,69 @@ sub gnu_tail {
             filehandle   => $filehandle,
             separator    => $SPACE,
 
+        }
+    );
+    return @commands;
+}
+
+sub gnu_tee {
+
+## Function : Perl wrapper for writing tee command to already open $filehandle or return commands array. Based on tee 8.22
+## Returns  : @commands
+## Arguments: $filehandle             => Filehandle to write to
+##          : $outfile_paths_ref      => Outfile paths {REF}
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append to stderrinfo to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $outfile_paths_ref;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        outfile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_paths_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ tee };
+
+    push @commands, join $SPACE, @{$outfile_paths_ref};
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;
