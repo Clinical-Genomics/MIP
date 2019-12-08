@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -35,27 +35,37 @@ sub star_aln {
 
 ## Function  : Perl wrapper for STAR v2.7.3a.
 ## Returns   : @commands
-## Arguments : $align_intron_max           => Maximum intron size
-##           : $align_mates_gap_max        => Maximum gap between two mates
-##           : $align_sjdb_overhang_min    => Minimum overhang (i.e. block size) for spliced alignments
-##           : $chim_junction_overhang_min => Minimum overhang for a chimeric junction
-##           : $chim_segment_min           => Minimum length of chimaeric segment
-##           : $chim_segment_read_gap_max  => Maximum gap in the read sequence between chimeric segments
-##           : $filehandle                 => Filehandle to write to
-##           : $genome_dir_path            => Directory of the reference genome
-##           : $infile_paths_ref           => Fastq file path(s)
-##           : $limit_bam_sort_ram         => Memory available for sorting the output bam
-##           : $outfile_name_prefix        => Prefix of the output files (remember to end with a ".")
-##           : $out_sam_strand_field       => Cufflinks-like strand field flag
-##           : $out_sam_type               => Format of the output aligned reads
-##           : $pe_overlap_nbases_min      => Min overlapp to trigger merging and realignment
-##           : $quant_mode                 => Types of quantification requested
-##           : $read_files_command         => A command which will be applied to the input files
-##           : $stderrfile_path            => Stderrfile path
-##           : $stderrfile_path_append     => Append stderr info to file path
-##           : $stdoutfile_path            => Stdoutfile path
-##           : $thread_number              => Number of threads
-##           : $two_pass_mode              => Two pass mode setting (None or Basic)
+## Arguments : $align_intron_max              => Maximum intron size
+##           : $align_mates_gap_max           => Maximum gap between two mates
+##           : $align_sjdb_overhang_min       => Minimum overhang (i.e. block size) for spliced alignments
+##           : $align_sj_stitch_mismatch_nmax => Number of mismatches allowed for each splicing motif (4)
+##           : $chim_junction_overhang_min    => Minimum overhang for a chimeric junction
+##           : $chim_score_junction_non_gtag  => Penalty for a non-GT/AG chimeric junction
+##           : $chim_score_drop_max           => Max drop of total score from the read length
+##           : $chim_score_min                => Minimum total score of chimeric alignment
+##           : $chim_score_separation         => Minimum difference between chimeric scores
+##           : $chim_segment_min              => Minimum length of chimeric segment
+##           : $chim_segment_read_gap_max     => Maximum gap in the read sequence between chimeric segments
+##           : $filehandle                    => Filehandle to write to
+##           : $genome_dir_path               => Directory of the reference genome
+##           : $infile_paths_ref              => Fastq file path(s)
+##           : $limit_bam_sort_ram            => Memory available for sorting the output bam
+##           : $outfile_name_prefix           => Prefix of the output files (remember to end with a ".")
+##           : $out_bam_compression           => Compression level of BAM file
+##           : $out_filter_mismatch_nmax      => Max number of missmatches allowed in alignment
+##           : $out_filter_multimap_nmax      => Max number of loci a read is allowed to map to
+##           : $out_sam_strand_field          => Cufflinks-like strand field flag
+##           : $out_sam_type                  => Format of the output aligned reads
+##           : $out_sam_unmapped              => Write unmapped reads to main BAM file
+##           : $out_std                       => Which output will be directed to stdout
+##           : $pe_overlap_nbases_min         => Min overlapp to trigger merging and realignment
+##           : $quant_mode                    => Types of quantification requested
+##           : $read_files_command            => A command which will be applied to the input files
+##           : $stderrfile_path               => Stderrfile path
+##           : $stderrfile_path_append        => Append stderr info to file path
+##           : $stdoutfile_path               => Stdoutfile path
+##           : $thread_number                 => Number of threads
+##           : $two_pass_mode                 => Two pass mode setting (None or Basic)
 
     my ($arg_href) = @_;
 
@@ -63,14 +73,24 @@ sub star_aln {
     my $align_intron_max;
     my $align_mates_gap_max;
     my $align_sjdb_overhang_min;
-    my $filehandle;
-    my $chim_out_type;
+    my $align_sj_stitch_mismatch_nmax;
     my $chim_junction_overhang_min;
+    my $chim_out_type;
+    my $chim_score_drop_max;
+    my $chim_score_junction_non_gtag;
+    my $chim_score_min;
+    my $chim_score_separation;
     my $chim_segment_min;
+    my $filehandle;
     my $genome_dir_path;
     my $infile_paths_ref;
     my $limit_bam_sort_ram;
     my $outfile_name_prefix;
+    my $out_bam_compression;
+    my $out_filter_mismatch_nmax;
+    my $out_filter_multimap_nmax;
+    my $out_sam_unmapped;
+    my $out_std;
     my $pe_overlap_nbases_min;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -98,7 +118,13 @@ sub star_aln {
             store       => \$align_sjdb_overhang_min,
             strict_type => 1,
         },
+        align_sj_stitch_mismatch_nmax => {
+            allow       => qr/\A (?: -?\d+\s ){3} -?\d \z /xms,
+            store       => \$align_sj_stitch_mismatch_nmax,
+            strict_type => 1,
+        },
         chim_junction_overhang_min => {
+            allow       => [ undef, qr/\A \d+ \z /xms ],
             store       => \$chim_junction_overhang_min,
             strict_type => 1,
         },
@@ -112,11 +138,32 @@ sub star_aln {
             store       => \$chim_out_type,
             strict_type => 1,
         },
+        chim_score_drop_max => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$chim_score_drop_max,
+            strict_type => 1,
+        },
+        chim_score_junction_non_gtag => {
+            allow       => qr/ \A -? \d+ \z /xms,
+            store       => \$chim_score_junction_non_gtag,
+            strict_type => 1,
+        },
+        chim_score_min => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$chim_score_min,
+            strict_type => 1,
+        },
+        chim_score_separation => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$chim_score_separation,
+            strict_type => 1,
+        },
         chim_segment_min => {
             store       => \$chim_segment_min,
             strict_type => 1,
         },
         chim_segment_read_gap_max => {
+            allow       => qr/ \A \d+ \z /xms,
             default     => 3,
             store       => \$chim_segment_read_gap_max,
             strict_type => 1,
@@ -143,8 +190,22 @@ sub star_aln {
         },
         outfile_name_prefix => {
             defined     => 1,
-            required    => 1,
             store       => \$outfile_name_prefix,
+            strict_type => 1,
+        },
+        out_bam_compression => {
+            allow       => qr/ -1 | [0-10] /xms,
+            store       => \$out_bam_compression,
+            strict_type => 1,
+        },
+        out_filter_mismatch_nmax => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$out_filter_mismatch_nmax,
+            strict_type => 1,
+        },
+        out_filter_multimap_nmax => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$out_filter_multimap_nmax,
             strict_type => 1,
         },
         out_sam_strand_field => {
@@ -156,6 +217,16 @@ sub star_aln {
         out_sam_type => {
             default     => q{BAM} . $SPACE . q{SortedByCoordinate},
             store       => \$out_sam_type,
+            strict_type => 1,
+        },
+        out_sam_unmapped => {
+            allow       => [ qw{ None Within }, q{Within KeepPairs} ],
+            store       => \$out_sam_unmapped,
+            strict_type => 1,
+        },
+        out_std => {
+            allow       => [qw{ Log SAM BAM_Unsorted BAM_SortedByCoordinate BAM_Quant }],
+            store       => \$out_std,
             strict_type => 1,
         },
         pe_overlap_nbases_min => {
@@ -200,7 +271,6 @@ sub star_aln {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
     my @commands = qw{ STAR };
 
     push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
@@ -209,63 +279,106 @@ sub star_aln {
 
     push @commands, q{--readFilesIn} . $SPACE . join $SPACE, @{$infile_paths_ref};
 
-    push @commands, q{--outFileNamePrefix} . $SPACE . $outfile_name_prefix;
-
     push @commands, q{--outSAMtype} . $SPACE . $out_sam_type;
 
-    ## Options
     if ($align_intron_max) {
-        push @commands, q{--alignIntronMax} . $SPACE . $align_intron_max;
 
+        push @commands, q{--alignIntronMax} . $SPACE . $align_intron_max;
     }
     if ($align_mates_gap_max) {
-        push @commands, q{--alignMatesGapMax} . $SPACE . $align_mates_gap_max;
 
+        push @commands, q{--alignMatesGapMax} . $SPACE . $align_mates_gap_max;
     }
     if ($align_sjdb_overhang_min) {
+
         push @commands, q{--alignSJDBoverhangMin} . $SPACE . $align_sjdb_overhang_min;
-
     }
-    if ($chim_segment_min) {
-        push @commands, q{--chimSegmentMin} . $SPACE . $chim_segment_min;
+    if ($align_sj_stitch_mismatch_nmax) {
 
+        push @commands,
+          q{--alignSJstitchMismatchNmax} . $SPACE . $align_sj_stitch_mismatch_nmax;
     }
-    if ($chim_junction_overhang_min) {
+    if ( defined $chim_junction_overhang_min ) {
+
         push @commands,
           q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
-
     }
     if ($chim_out_type) {
+
         push @commands, q{--chimOutType} . $SPACE . $chim_out_type;
-
     }
-    if ($chim_segment_read_gap_max) {
-        push @commands, q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
+    if ( defined $chim_score_drop_max ) {
 
+        push @commands, q{--chimScoreDropMax} . $SPACE . $chim_score_drop_max;
+    }
+    if ( defined $chim_score_junction_non_gtag ) {
+
+        push @commands,
+          q{--chimScoreJunctionNonGTAG} . $SPACE . $chim_score_junction_non_gtag;
+    }
+    if ( defined $chim_score_min ) {
+
+        push @commands, q{--chimScoreMin} . $SPACE . $chim_score_min;
+    }
+    if ( defined $chim_score_separation ) {
+
+        push @commands, q{--chimScoreSeparation} . $SPACE . $chim_score_separation;
+    }
+    if ( defined $chim_segment_min ) {
+
+        push @commands, q{--chimSegmentMin} . $SPACE . $chim_segment_min;
+    }
+    if ( defined $chim_segment_read_gap_max ) {
+
+        push @commands, q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
     }
     if ($limit_bam_sort_ram) {
+
         push @commands, q{--limitBAMsortRAM} . $SPACE . $limit_bam_sort_ram;
-
     }
-    if ($pe_overlap_nbases_min) {
-        push @commands, q{--peOverlapNbasesMin} . $SPACE . $pe_overlap_nbases_min;
+    if ( defined $out_bam_compression ) {
 
+        push @commands, q{--outBAMcompression} . $SPACE . $out_bam_compression;
     }
-    if ($quant_mode) {
-        push @commands, q{--quantMode} . $SPACE . $quant_mode;
+    if ($outfile_name_prefix) {
 
+        push @commands, q{--outFileNamePrefix} . $SPACE . $outfile_name_prefix;
+    }
+    if ($out_filter_mismatch_nmax) {
+
+        push @commands, q{--outFilterMismatchNmax} . $SPACE . $out_filter_mismatch_nmax;
+    }
+    if ($out_filter_multimap_nmax) {
+
+        push @commands, q{--outFilterMultimapNmax} . $SPACE . $out_filter_multimap_nmax;
     }
     if ($out_sam_strand_field) {
+
         push @commands, q{--outSAMstrandField} . $SPACE . $out_sam_strand_field;
     }
-    if ($thread_number) {
-        push @commands, q{--runThreadN} . $SPACE . $thread_number;
+    if ($out_sam_unmapped) {
 
+        push @commands, q{--outSAMunmapped} . $SPACE . $out_sam_unmapped;
+    }
+    if ($out_std) {
+
+        push @commands, q{--outStd} . $SPACE . $out_std;
+    }
+    if ($pe_overlap_nbases_min) {
+
+        push @commands, q{--peOverlapNbasesMin} . $SPACE . $pe_overlap_nbases_min;
+    }
+    if ($quant_mode) {
+
+        push @commands, q{--quantMode} . $SPACE . $quant_mode;
+    }
+    if ($thread_number) {
+
+        push @commands, q{--runThreadN} . $SPACE . $thread_number;
     }
     if ($two_pass_mode) {
 
         push @commands, q{--twopassMode} . $SPACE . $two_pass_mode;
-
     }
 
     push @commands,
