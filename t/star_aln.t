@@ -211,10 +211,6 @@ my %specific_argument = (
         input           => q{Within},
         expected_output => q{--outSAMunmapped Within},
     },
-    out_std => {
-        input           => q{BAM_Unsorted},
-        expected_output => q{--outStd BAM_Unsorted},
-    },
     pe_overlap_nbases_min => {
         input           => $PE_OVERLAP_NBASES_MIN,
         expected_output => q{--peOverlapNbasesMin} . $SPACE . $PE_OVERLAP_NBASES_MIN,
@@ -226,6 +222,10 @@ my %specific_argument = (
     read_files_command => {
         input           => q{gunzip} . $SPACE . q{-c},
         expected_output => q{--readFilesCommand} . $SPACE . q{gunzip} . $SPACE . q{-c},
+    },
+    stdout_data_type => {
+        input           => q{BAM_Unsorted},
+        expected_output => q{--outStd BAM_Unsorted},
     },
     thread_number => {
         input           => $THREAD_NUMBER,

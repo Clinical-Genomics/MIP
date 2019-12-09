@@ -57,12 +57,12 @@ sub star_aln {
 ##           : $out_sam_strand_field          => Cufflinks-like strand field flag
 ##           : $out_sam_type                  => Format of the output aligned reads
 ##           : $out_sam_unmapped              => Write unmapped reads to main BAM file
-##           : $out_std                       => Which output will be directed to stdout
 ##           : $pe_overlap_nbases_min         => Min overlapp to trigger merging and realignment
 ##           : $quant_mode                    => Types of quantification requested
 ##           : $read_files_command            => A command which will be applied to the input files
 ##           : $stderrfile_path               => Stderrfile path
 ##           : $stderrfile_path_append        => Append stderr info to file path
+##           : $stdout_data_type              => Which output will be directed to stdout
 ##           : $stdoutfile_path               => Stdoutfile path
 ##           : $thread_number                 => Number of threads
 ##           : $two_pass_mode                 => Two pass mode setting (None or Basic)
@@ -90,10 +90,10 @@ sub star_aln {
     my $out_filter_mismatch_nmax;
     my $out_filter_multimap_nmax;
     my $out_sam_unmapped;
-    my $out_std;
     my $pe_overlap_nbases_min;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdout_data_type;
     my $stdoutfile_path;
     my $thread_number;
 
@@ -119,7 +119,12 @@ sub star_aln {
             strict_type => 1,
         },
         align_sj_stitch_mismatch_nmax => {
-            allow       => qr/\A (?: -?\d+\s ){3} -?\d \z /xms,
+            allow => qr{\A (?:  # open non-capture group
+                        -?\d+\s # possible negative digit followed by space
+                        )       # close grouping
+                        {3}     # there is three of them
+                        -?\d+   # final digit possibly negative
+                        \z }xms,
             store       => \$align_sj_stitch_mismatch_nmax,
             strict_type => 1,
         },
@@ -224,11 +229,6 @@ sub star_aln {
             store       => \$out_sam_unmapped,
             strict_type => 1,
         },
-        out_std => {
-            allow       => [qw{ Log SAM BAM_Unsorted BAM_SortedByCoordinate BAM_Quant }],
-            store       => \$out_std,
-            strict_type => 1,
-        },
         pe_overlap_nbases_min => {
             store       => \$pe_overlap_nbases_min,
             strict_type => 1,
@@ -250,6 +250,11 @@ sub star_aln {
         },
         stderrfile_path_append => {
             store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdout_data_type => {
+            allow       => [qw{ Log SAM BAM_Unsorted BAM_SortedByCoordinate BAM_Quant }],
+            store       => \$stdout_data_type,
             strict_type => 1,
         },
         stdoutfile_path => {
@@ -360,10 +365,6 @@ sub star_aln {
 
         push @commands, q{--outSAMunmapped} . $SPACE . $out_sam_unmapped;
     }
-    if ($out_std) {
-
-        push @commands, q{--outStd} . $SPACE . $out_std;
-    }
     if ($pe_overlap_nbases_min) {
 
         push @commands, q{--peOverlapNbasesMin} . $SPACE . $pe_overlap_nbases_min;
@@ -371,6 +372,10 @@ sub star_aln {
     if ($quant_mode) {
 
         push @commands, q{--quantMode} . $SPACE . $quant_mode;
+    }
+    if ($stdout_data_type) {
+
+        push @commands, q{--outStd} . $SPACE . $stdout_data_type;
     }
     if ($thread_number) {
 
