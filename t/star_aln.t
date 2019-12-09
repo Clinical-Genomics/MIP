@@ -26,7 +26,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,11 +65,14 @@ Readonly my $ALIGN_INTRON_MAX           => 100_000;
 Readonly my $ALIGN_MATES_GAP_MAX        => 100_000;
 Readonly my $ALIGN_SJDB_OVERHANG_MIN    => 10;
 Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 12;
+Readonly my $CHIM_SCORE_DROP_MAX        => 30;
 Readonly my $CHIM_SEGMENT_MIN           => 12;
 Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
 Readonly my $LIMIT_BAM_SORT_RAM         => 315_321_372_30;
+Readonly my $MINUS_ONE                  => -1;
 Readonly my $PE_OVERLAP_NBASES_MIN      => 10;
 Readonly my $THREAD_NUMBER              => 16;
+Readonly my $THREE                      => 3;
 
 my @function_base_commands = qw{ STAR };
 
@@ -105,10 +108,6 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ dir r2.fq.gz }),
     },
-    outfile_name_prefix => {
-        input           => catfile(qw{ dir test }),
-        expected_output => q{--outFileNamePrefix} . $SPACE . catfile(qw{ dir test }),
-    },
     out_sam_type => {
         input           => q{BAM SortedByCoordinate},
         expected_output => q{--outSAMtype} . $SPACE . q{BAM SortedByCoordinate},
@@ -132,6 +131,10 @@ my %specific_argument = (
         input           => $ALIGN_SJDB_OVERHANG_MIN,
         expected_output => q{--alignSJDBoverhangMin} . $SPACE . $ALIGN_SJDB_OVERHANG_MIN,
     },
+    align_sj_stitch_mismatch_nmax => {
+        input           => q{5 -1 5 5},
+        expected_output => q{--alignSJstitchMismatchNmax 5 -1 5 5},
+    },
     chim_junction_overhang_min => {
         input           => $CHIM_JUNCTION_OVERHANG_MIN,
         expected_output => q{--chimJunctionOverhangMin}
@@ -141,6 +144,22 @@ my %specific_argument = (
     chim_out_type => {
         input           => q{WithinBAM},
         expected_output => q{--chimOutType} . $SPACE . q{WithinBAM},
+    },
+    chim_score_drop_max => {
+        input           => $CHIM_SCORE_DROP_MAX,
+        expected_output => q{--chimScoreDropMax} . $SPACE . $CHIM_SCORE_DROP_MAX,
+    },
+    chim_score_junction_non_gtag => {
+        input           => 0,
+        expected_output => q{--chimScoreJunctionNonGTAG 0},
+    },
+    chim_score_min => {
+        input           => 1,
+        expected_output => q{--chimScoreMin 1},
+    },
+    chim_score_separation => {
+        input           => 1,
+        expected_output => q{--chimScoreSeparation 1},
     },
     chim_segment_min => {
         input           => $CHIM_SEGMENT_MIN,
@@ -164,9 +183,21 @@ my %specific_argument = (
         input           => $LIMIT_BAM_SORT_RAM,
         expected_output => q{--limitBAMsortRAM} . $SPACE . $LIMIT_BAM_SORT_RAM,
     },
+    out_bam_compression => {
+        input           => $MINUS_ONE,
+        expected_output => q{--outBAMcompression} . $SPACE . $MINUS_ONE,
+    },
     outfile_name_prefix => {
         input           => catfile(qw{ dir test }),
         expected_output => q{--outFileNamePrefix} . $SPACE . catfile(qw{ dir test }),
+    },
+    out_filter_mismatch_nmax => {
+        input           => $THREE,
+        expected_output => q{--outFilterMismatchNmax} . $SPACE . $THREE,
+    },
+    out_filter_multimap_nmax => {
+        input           => 1,
+        expected_output => q{--outFilterMultimapNmax 1},
     },
     out_sam_strand_field => {
         input           => q{intronMotif},
@@ -175,6 +206,10 @@ my %specific_argument = (
     out_sam_type => {
         input           => q{BAM SortedByCoordinate},
         expected_output => q{--outSAMtype} . $SPACE . q{BAM SortedByCoordinate},
+    },
+    out_sam_unmapped => {
+        input           => q{Within},
+        expected_output => q{--outSAMunmapped Within},
     },
     pe_overlap_nbases_min => {
         input           => $PE_OVERLAP_NBASES_MIN,
@@ -187,6 +222,10 @@ my %specific_argument = (
     read_files_command => {
         input           => q{gunzip} . $SPACE . q{-c},
         expected_output => q{--readFilesCommand} . $SPACE . q{gunzip} . $SPACE . q{-c},
+    },
+    stdout_data_type => {
+        input           => q{BAM_Unsorted},
+        expected_output => q{--outStd BAM_Unsorted},
     },
     thread_number => {
         input           => $THREAD_NUMBER,
