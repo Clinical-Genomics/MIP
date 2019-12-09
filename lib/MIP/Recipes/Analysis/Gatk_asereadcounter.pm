@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -146,7 +146,7 @@ sub analysis_gatk_asereadcounter {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_asereadcounter };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 

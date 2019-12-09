@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_gb_38 };
@@ -137,7 +137,7 @@ sub analysis_cadd {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -514,7 +514,7 @@ sub analysis_cadd_gb_38 {
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Gzip qw{ gzip };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

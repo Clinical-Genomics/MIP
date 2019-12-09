@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -153,8 +153,7 @@ sub analysis_delly_reformat {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_merge bcftools_index bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Delly qw{ delly_call delly_merge };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
