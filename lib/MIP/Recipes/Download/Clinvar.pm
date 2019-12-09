@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_clinvar };
@@ -125,7 +125,7 @@ sub download_clinvar {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
+    use MIP::Program::Bcftools qw{ bcftools_annotate };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

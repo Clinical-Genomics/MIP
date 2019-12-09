@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -145,7 +145,7 @@ sub analysis_vcf2cytosure {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

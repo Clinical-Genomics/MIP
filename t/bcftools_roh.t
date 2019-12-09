@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_roh }],
-        q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
+        q{MIP::Program::Bcftools} => [qw{ bcftools_roh }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_roh };
+use MIP::Program::Bcftools qw{ bcftools_roh };
 
 diag(   q{Test bcftools_roh from Bcftools v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+      . $MIP::Program::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

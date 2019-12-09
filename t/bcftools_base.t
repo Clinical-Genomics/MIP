@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Base::Bcftools} => [qw{ bcftools_base }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Program::Bcftools} => [qw{ bcftools_base }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Base::Bcftools qw{ bcftools_base };
+use MIP::Program::Bcftools qw{ bcftools_base };
 
-diag(   q{Test bcftools_base from Base::Bcftools.pm v}
-      . $MIP::Program::Base::Bcftools::VERSION
+diag(   q{Test bcftools_base from Bcftools.pm v}
+      . $MIP::Program::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,6 +59,7 @@ diag(   q{Test bcftools_base from Base::Bcftools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
 Readonly my $NR_THREADS_TO_USE => 12;
 
 ## Base arguments
@@ -126,10 +127,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

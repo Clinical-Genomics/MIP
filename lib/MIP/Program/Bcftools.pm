@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Bcftools;
+package MIP::Program::Bcftools;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,6 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
-use MIP::Program::Base::Bcftools qw{ bcftools_base };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -27,11 +26,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       bcftools_annotate
+      bcftools_base
       bcftools_call
       bcftools_concat
       bcftools_create_reheader_samples_file
@@ -125,7 +125,6 @@ sub bcftools_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools annotate };
 
     ## Bcftools base args
@@ -140,7 +139,6 @@ sub bcftools_annotate {
         }
     );
 
-    ## Options
     if ($annotations_file_path) {
 
         push @commands, q{--annotations} . $SPACE . $annotations_file_path;
@@ -188,7 +186,111 @@ sub bcftools_annotate {
             separator    => $SPACE,
         }
     );
+    return @commands;
+}
 
+sub bcftools_base {
+
+## Function : Perl wrapper for bcftools base. Based on Bcftools 1.9
+## Returns  : @commands
+## Arguments: $commands_ref      => List of commands added earlier
+##          : $filehandle        => Filehandle to write to
+##          : $outfile_path      => Outfile path
+##          : $output_type       => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $regions_ref       => Regions to process {REF}
+##          : $samples_file_path => File of samples to annotate
+##          : $samples_ref       => Samples to include or exclude if prefixed with "^"
+##          : $threads           => Extra compression threds in addition to main thread
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $commands_ref;
+    my $filehandle;
+    my $outfile_path;
+    my $output_type;
+    my $regions_ref;
+    my $samples_file_path;
+    my $samples_ref;
+    my $threads;
+
+    my $tmpl = {
+        commands_ref => {
+            default     => [],
+            store       => \$commands_ref,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        output_type => {
+            allow       => [ undef, qw{ b u z v} ],
+            store       => \$output_type,
+            strict_type => 1,
+        },
+        regions_ref => {
+            default     => [],
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        samples_file_path => {
+            store       => \$samples_file_path,
+            strict_type => 1,
+        },
+        samples_ref => {
+            default     => [],
+            store       => \$samples_ref,
+            strict_type => 1,
+        },
+        threads => {
+            allow       => qr/\A \d+ \z | undef /xms,
+            store       => \$threads,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = @{$commands_ref};
+
+    if ($samples_file_path) {
+
+        push @commands, q{--samples-file} . $SPACE . $samples_file_path;
+    }
+    if ( @{$samples_ref} ) {
+
+        push @commands, q{--samples} . $SPACE . join $COMMA, @{$samples_ref};
+    }
+    if ( @{$regions_ref} ) {
+
+        push @commands, q{--regions} . $SPACE . join $COMMA, @{$regions_ref};
+    }
+    if ($outfile_path) {
+
+        push @commands, q{--output} . $SPACE . $outfile_path;
+    }
+
+    if ($output_type) {
+
+        push @commands, q{--output-type} . $SPACE . $output_type;
+    }
+
+    if ($threads) {
+
+        push @commands, q{--threads} . $SPACE . $threads;
+    }
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
     return @commands;
 }
 
@@ -280,7 +382,6 @@ sub bcftools_call {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools call };
 
     ## Bcftools base args
@@ -295,7 +396,6 @@ sub bcftools_call {
         }
     );
 
-    ## Options
     if ($multiallelic_caller) {
 
         push @commands, q{--multiallelic-caller};
@@ -338,7 +438,6 @@ sub bcftools_call {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -414,7 +513,7 @@ sub bcftools_concat {
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
         threads         => {
-            allow       => qr/\A \d+ \z | undef /xms,
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
             default     => 0,
             store       => \$threads,
             strict_type => 1,
@@ -423,7 +522,6 @@ sub bcftools_concat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools concat };
 
     ## Bcftools base args
@@ -439,7 +537,6 @@ sub bcftools_concat {
         }
     );
 
-    ## Options
     if ($allow_overlaps) {
 
         push @commands, q{--allow-overlaps};
@@ -450,7 +547,6 @@ sub bcftools_concat {
         push @commands, q{--rm-dups} . $SPACE . $rm_dups;
     }
 
-    ## Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands, join $SPACE, @{$infile_paths_ref};
@@ -473,7 +569,6 @@ sub bcftools_concat {
         }
     );
     return @commands;
-
 }
 
 sub bcftools_filter {
@@ -540,7 +635,7 @@ sub bcftools_filter {
             strict_type => 1,
         },
         indel_gap => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             store       => \$indel_gap,
             strict_type => 1,
         },
@@ -573,7 +668,7 @@ sub bcftools_filter {
             strict_type => 1,
         },
         snp_gap => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             store       => \$snp_gap,
             strict_type => 1,
         },
@@ -593,7 +688,6 @@ sub bcftools_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools filter };
 
     ## Bcftools base args
@@ -608,7 +702,6 @@ sub bcftools_filter {
         }
     );
 
-    ## Options
     if ($exclude) {
 
         push @commands, q{--exclude} . $SPACE . $exclude;
@@ -661,9 +754,7 @@ sub bcftools_filter {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub bcftools_index {
@@ -727,7 +818,6 @@ sub bcftools_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools index };
 
     ## Bcftools base args
@@ -741,7 +831,6 @@ sub bcftools_index {
         }
     );
 
-    ## Options
     # Special case: 'csi' or 'tbi'
     if ($output_type) {
 
@@ -749,7 +838,6 @@ sub bcftools_index {
         push @commands, q{--} . $output_type;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -771,9 +859,7 @@ sub bcftools_index {
             separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 sub bcftools_merge {
@@ -833,7 +919,6 @@ sub bcftools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools merge };
 
     ## Bcftools base args
@@ -848,7 +933,6 @@ sub bcftools_merge {
         }
     );
 
-    ## Options
     if ( @{$infile_paths_ref} ) {
 
         push @commands, join $SPACE, @{$infile_paths_ref};
@@ -870,7 +954,6 @@ sub bcftools_merge {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -918,7 +1001,7 @@ sub bcftools_mpileup {
 
     my $tmpl = {
         adjust_mq => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             default     => $ADJUST_MAPPING_QUALITY,
             store       => \$adjust_mq,
             strict_type => 1,
@@ -972,7 +1055,6 @@ sub bcftools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ bcftools mpileup };
 
     ## Bcftools base args
@@ -987,7 +1069,6 @@ sub bcftools_mpileup {
         }
     );
 
-    ## Options
     push @commands, q{--adjust-MQ} . $SPACE . $adjust_mq;
 
     if ($per_sample_increased_sensitivity) {
@@ -1000,13 +1081,10 @@ sub bcftools_mpileup {
         push @commands, q{--annotate} . $SPACE . join $COMMA, @{$output_tags_ref};
     }
 
-    # Reference sequence file
     push @commands, q{--fasta-ref} . $SPACE . $referencefile_path;
 
-    ## Infile
     push @commands, join $SPACE, @{$infile_paths_ref};
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -1108,7 +1186,6 @@ sub bcftools_norm {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools norm };
 
     ## Bcftools base args
@@ -1123,7 +1200,6 @@ sub bcftools_norm {
         }
     );
 
-    ## Options
     if ($multiallelic) {
 
         push @commands, q{--multiallelics} . $SPACE . $multiallelic . $multiallelic_type;
@@ -1134,7 +1210,6 @@ sub bcftools_norm {
         push @commands, q{--fasta-ref} . $SPACE . $reference_path;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -1155,7 +1230,6 @@ sub bcftools_norm {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -1205,7 +1279,6 @@ sub bcftools_reheader {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools reheader };
 
     ## Bcftools base args
@@ -1217,14 +1290,11 @@ sub bcftools_reheader {
         }
     );
 
-    ## Options
-
     if ($samples_file_path) {
 
         push @commands, q{--samples} . $SPACE . $samples_file_path;
     }
 
-    # Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -1246,7 +1316,6 @@ sub bcftools_reheader {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -1300,7 +1369,7 @@ sub bcftools_rename_vcf_samples {
             strict_type => 1,
         },
         infile => { defined => 1, required => 1, store => \$infile, strict_type => 1, },
-        outfile_path_prefix => { strict_type => 1, store => \$outfile_path_prefix, },
+        outfile_path_prefix => { store => \$outfile_path_prefix, strict_type => 1, },
         output_type         => {
             allow       => [qw{ b u z v }],
             default     => q{v},
@@ -1357,17 +1426,16 @@ sub bcftools_rename_vcf_samples {
             output_type         => $output_type,
         }
     );
-
     return;
 }
 
 sub bcftools_create_reheader_samples_file {
 
-## Function : Create reheader samples file.
+## Function : Create reheader samples file
 ## Returns  :
-## Arguments: $filehandle          => Filehandle to write to
-##          : $sample_ids_ref      => Samples to rename in the same order as in the vcf {REF}
-##          : $temp_directory      => Temporary directory
+## Arguments: $filehandle     => Filehandle to write to
+##          : $sample_ids_ref => Samples to rename in the same order as in the vcf {REF}
+##          : $temp_directory => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -1502,7 +1570,6 @@ sub bcftools_roh {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools roh };
 
     ## Bcftools base args
@@ -1517,7 +1584,6 @@ sub bcftools_roh {
         }
     );
 
-    ## Options
     if ($af_file_path) {
 
         push @commands, q{--AF-file} . $SPACE . $af_file_path;
@@ -1533,7 +1599,6 @@ sub bcftools_roh {
         push @commands, q{--skip-indels};
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -1555,7 +1620,6 @@ sub bcftools_roh {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
@@ -1615,7 +1679,6 @@ sub bcftools_stats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools stats };
 
     ## Bcftools base args
@@ -1628,7 +1691,6 @@ sub bcftools_stats {
         }
     );
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
@@ -1723,7 +1785,7 @@ sub bcftools_view {
         include     => { store => \$include,     strict_type => 1, },
         infile_path => { store => \$infile_path, strict_type => 1, },
         max_alleles => {
-            allow       => [ undef, qr/ ^\d+$ /xms ],
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$max_alleles,
             strict_type => 1,
         },
@@ -1732,7 +1794,7 @@ sub bcftools_view {
             strict_type => 1,
         },
         min_alleles => {
-            allow       => [ undef, qr/ ^\d+$ /xms ],
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$min_alleles,
             strict_type => 1,
         },
@@ -1762,7 +1824,6 @@ sub bcftools_view {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
     my @commands = qw{ bcftools view };
 
     ## Bcftools base args
@@ -1776,7 +1837,6 @@ sub bcftools_view {
         }
     );
 
-    ## Options
     if ( @{$apply_filters_ref} ) {
 
         push @commands, q{--apply-filters} . $SPACE . join $COMMA, @{$apply_filters_ref};
@@ -1854,7 +1914,6 @@ sub bcftools_view {
             separator    => $SPACE,
         }
     );
-
     return @commands;
 }
 
