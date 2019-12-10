@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_endvariantannotationblock };
@@ -156,7 +156,7 @@ sub analysis_endvariantannotationblock {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
+    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

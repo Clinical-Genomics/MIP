@@ -139,7 +139,7 @@ sub analysis_gatk_cnnscorevariants {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_norm };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_cnnscorevariants };
+    use MIP::Program::Gatk qw{ gatk_cnnscorevariants };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

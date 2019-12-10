@@ -21,10 +21,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,16 +41,18 @@ BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
     ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Program::Gatk}  => [qw{ gatk_calculategenotypeposteriors }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_calculategenotypeposteriors };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_calculategenotypeposteriors };
 
 diag(   q{Test gatk_calculategenotypeposteriors from Variantcalling::Gatk.pm v}
-      . $MIP::Program::Variantcalling::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,13 +64,13 @@ diag(   q{Test gatk_calculategenotypeposteriors from Variantcalling::Gatk.pm v}
 my @function_base_commands = qw{ gatk CalculateGenotypePosteriors };
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
 );
 

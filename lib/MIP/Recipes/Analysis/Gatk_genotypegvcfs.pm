@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -141,8 +141,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
+    use MIP::Program::Gatk qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

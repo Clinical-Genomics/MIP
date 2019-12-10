@@ -151,7 +151,7 @@ sub analysis_bcftools_mpileup {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools
       qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm bcftools_view };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
+    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Perl qw{ replace_iupac };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
