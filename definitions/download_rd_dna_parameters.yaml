@@ -322,7 +322,7 @@ svrank_model:
   data_type: SCALAR
   default: 1
   type: recipe
-sv_vcfanno_config:
+sv_fqa_vcfanno_config:
   analysis_mode: case
   associated_recipe:
    - mip

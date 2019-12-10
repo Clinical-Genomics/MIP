@@ -41,10 +41,10 @@ sub download_RECIPE_NAME {
 ##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
+##          : $quiet                 => Quiet (no output)
 ##          : $recipe_name           => Recipe name
 ##          : $reference_href        => Reference hash {REF}
 ##          : $reference_version     => Reference version
-##          : $quiet                 => Quiet (no output)
 ##          : $temp_directory        => Temporary directory for recipe
 ##          : $verbose               => Verbosity
 
@@ -88,6 +88,12 @@ sub download_RECIPE_NAME {
             store       => \$profile_base_command,
             strict_type => 1,
         },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -105,12 +111,6 @@ sub download_RECIPE_NAME {
             defined     => 1,
             required    => 1,
             store       => \$reference_version,
-            strict_type => 1,
-        },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
             strict_type => 1,
         },
         temp_directory => {
