@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_salmon_compatibility }],
+        q{MIP::Check::Parameter} => [qw{ check_recipe_fastq_compatibility }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_salmon_compatibility };
+use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
-diag(   q{Test check_salmon_compatibility from Parameter.pm v}
+diag(   q{Test check_recipe_fastq_compatibility from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -98,34 +98,34 @@ my %sample_info        = (
 );
 
 ## Given that both lanes have been sequenced the same way
-my $salmon_compatibility = check_salmon_compatibility(
+my $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
     {
         active_parameter_href   => \%active_parameter,
         infile_lane_prefix_href => \%infile_lane_prefix,
-        log                     => $log,
         parameter_href          => \%parameter,
+        recipe_name             => q{salmon_quant},
         sample_info_href        => \%sample_info,
     }
 );
 ## Then OK
-ok( $salmon_compatibility, q{Compatible} );
+ok( $recipe_fastq_compatibility, q{Compatible} );
 
 ## Given a lane difference
 $sample_info{sample}{$sample_id}{file}{test_lane2}{sequence_run_type} = q{single_end};
 
 trap {
-    $salmon_compatibility = check_salmon_compatibility(
+    $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
         {
             active_parameter_href   => \%active_parameter,
             infile_lane_prefix_href => \%infile_lane_prefix,
-            log                     => $log,
             parameter_href          => \%parameter,
+            recipe_name             => q{salmon_quant},
             sample_info_href        => \%sample_info,
         }
-    );
+    )
 };
 ## Then not compatible
-is( $salmon_compatibility, 0, q{Identify non compatible sequence types} );
+is( $recipe_fastq_compatibility, 0, q{Identify non compatible sequence types} );
 like( $trap->stderr, qr/Multiple\ssequence\srun\stypes\sdetected/xms, q{Log warning} );
 
 done_testing();

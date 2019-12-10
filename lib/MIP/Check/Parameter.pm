@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -50,9 +50,9 @@ BEGIN {
       check_parameter_hash
       check_prioritize_variant_callers
       check_recipe_exists_in_hash
+      check_recipe_fastq_compatibility
       check_recipe_mode
       check_recipe_name
-      check_salmon_compatibility
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -1900,14 +1900,14 @@ sub check_vep_plugin {
     return 1;
 }
 
-sub check_salmon_compatibility {
+sub check_recipe_fastq_compatibility {
 
-## Function : Check that Salmon is compatible with the fastq sequence modes. Turn of downstream applications otherwise
+## Function : Check that the recipe is compatible with the fastq sequence modes. Turn of downstream applications otherwise
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameter hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $log                     => Log
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $recipe_name             => Recipe name
 ##          : $sample_info_href        => Sample info hash {REF}
 
     my ($arg_href) = @_;
@@ -1915,8 +1915,8 @@ sub check_salmon_compatibility {
     ## Flatten arguments
     my $active_parameter_href;
     my $infile_lane_prefix_href;
-    my $log;
     my $parameter_href;
+    my $recipe_name;
     my $sample_info_href;
 
     my $tmpl = {
@@ -1934,16 +1934,17 @@ sub check_salmon_compatibility {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            required    => 1,
+            defined     => 1,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1962,9 +1963,12 @@ sub check_salmon_compatibility {
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
     ## Check if program is gong to run
-    return if ( $active_parameter_href->{salmon_quant} != 1 );
+    return if ( $active_parameter_href->{$recipe_name} == 0 );
 
-    my $is_salmon_compatible = 1;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $is_compatible = 1;
 
     ## Get sequence run modes
   SAMPLE_ID:
@@ -1980,30 +1984,30 @@ sub check_salmon_compatibility {
 
         ## Turn of Salmon if multiple sequence types are present
         if ( uniq( values %sequence_run_type ) > 1 ) {
-            $is_salmon_compatible = 0;
+            $is_compatible = 0;
         }
     }
 
-    if ( not $is_salmon_compatible ) {
+    if ( not $is_compatible ) {
 
         ## Turn of salmon and downstream recipes
         $log->warn(q{Multiple sequence run types detected});
-        $log->warn(q{Turning off salmon_quant and downstream recipes});
+        $log->warn(qq{Turning off $recipe_name and downstream recipes});
 
-        my $salmon_chain;
+        my $recipe_chain;
         get_recipe_chain(
             {
-                recipe               => q{salmon_quant},
+                recipe               => $recipe_name,
                 dependency_tree_href => $parameter_href->{dependency_tree},
-                chain_id_ref         => \$salmon_chain,
+                chain_id_ref         => \$recipe_chain,
             }
         );
 
         my @chain_recipes = get_chain_recipes(
             {
                 dependency_tree_href    => $parameter_href->{dependency_tree},
-                chain_initiation_point  => $salmon_chain,
-                recipe_initiation_point => q{salmon_quant},
+                chain_initiation_point  => $recipe_chain,
+                recipe_initiation_point => $recipe_name,
             }
         );
 
@@ -2013,12 +2017,11 @@ sub check_salmon_compatibility {
                 active_parameter_href => $active_parameter_href,
                 recipes_ref           => \@chain_recipes,
                 mode                  => 0,
-                log                   => $log,
             }
         );
     }
 
-    return $is_salmon_compatible;
+    return $is_compatible;
 }
 
 sub _check_parameter_mandatory_keys_exits {

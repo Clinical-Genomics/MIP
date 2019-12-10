@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -64,6 +64,7 @@ sub get_binary_version {
   BINARY:
     while ( my ( $binary, $binary_path ) = each %{$binary_info_href} ) {
 
+        say STDERR $binary;
         ## No information on how to get version for this binary - skip
         next BINARY if ( not exists $executable{$binary} );
 
@@ -118,6 +119,11 @@ sub get_executable {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %executable = (
+        arriba => {
+            version_cmd => q{-h},
+            version_regexp =>
+q?'my ($version) = /\AVersion:\s(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         q{bam2wig.py} => {
             version_cmd => q{--version},
             version_regexp =>
@@ -211,11 +217,6 @@ q?'my ($version) = /inner_distance.py\s+(\S+)/xms; if($version) {print $version;
             version_cmd => q{--version},
             version_regexp =>
 q?'my ($version) = /junction_annotation.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
-        },
-        q{junction_saturation.py} => {
-            version_cmd => q{--version},
-            version_regexp =>
-q?'my ($version) = /junction_saturation.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         mip => {
             version_cmd => q{version},

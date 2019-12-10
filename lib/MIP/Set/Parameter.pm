@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -991,7 +991,6 @@ sub set_recipe_mode {
 ## Function : Set recipe mode
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $log                   => Log
 ##          : $mode                  => Mode to set
 ##          : $recipes_ref           => Recipes to set {REF}
 
@@ -999,7 +998,6 @@ sub set_recipe_mode {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $mode;
     my $recipes_ref;
 
@@ -1010,11 +1008,6 @@ sub set_recipe_mode {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         mode => {
             allow       => [ 0, 1, $TWO ],
@@ -1033,6 +1026,9 @@ sub set_recipe_mode {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set recipe mode
   RECIPE:

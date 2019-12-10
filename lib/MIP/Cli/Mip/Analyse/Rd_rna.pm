@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.20;
+our $VERSION = 1.21;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -154,6 +154,46 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{arriba_ar} => (
+            cmd_aliases   => [qw{ arriba }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Detect and visualize fusions using Arriba},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{arriba_blacklist_path} => (
+            cmd_aliases   => [qw{ abp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba blacklist file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_cytoband_path} => (
+            cmd_aliases   => [qw{ acbp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba cytoband file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_proteindomain_path} => (
+            cmd_aliases   => [qw{ apdp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba protein domain file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
 
     option(
         q{bcftools_merge} => (

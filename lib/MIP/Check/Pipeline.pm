@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1035,9 +1035,8 @@ sub check_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
-    use MIP::Check::Parameter qw{ check_salmon_compatibility
-      check_sample_id_in_hash_parameter
-      check_sample_id_in_hash_parameter_path };
+    use MIP::Check::Parameter
+      qw{ check_recipe_fastq_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
@@ -1172,16 +1171,22 @@ sub check_rd_rna {
         }
     );
 
-    ## Check salmon compability
-    check_salmon_compatibility(
-        {
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
-        }
-    );
+    ## Check recipe compability with fastq files
+    my @recipes_to_check = qw{ arriba_ar salmon_quant };
+
+  RECIPE:
+    foreach my $recipe (@recipes_to_check) {
+
+        check_recipe_fastq_compatibility(
+            {
+                active_parameter_href   => $active_parameter_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                parameter_href          => $parameter_href,
+                recipe_name             => q{salmon_quant},
+                sample_info_href        => $sample_info_href,
+            }
+        );
+    }
 
     return;
 }
