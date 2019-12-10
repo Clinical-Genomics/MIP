@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,6 +91,7 @@ my $is_ok = analysis_vt_core(
     {
         active_parameter_href   => \%active_parameter,
         bgzip                   => 1,
+        build_gatk_index        => 1,
         case_id                 => $case_id,
         contig                  => 1,
         gnu_sed                 => 1,
