@@ -31,24 +31,6 @@ expected_coverage:
   mandatory: no
   type: mip
 ## genomeAnalysisToolKitPath
-## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
-gatk_bundle_download_version:
-  associated_recipe:
-   - bwa_mem
-   - gatk_baserecalibration
-   - cnvnator_ar
-   - gatk_haplotypecaller
-   - gatk_genotypegvcfs
-   - gatk_gathervcfs
-   - bcftools_mpileup
-   - gatk_variantrecalibration
-   - gatk_variantevalall
-   - gatk_variantevalexome
-   - picardtools_collecthsmetrics
-   - picardtools_collectmultiplemetrics
-  data_type: SCALAR
-  default: 2.8
-  type: recipe_argument
 gatk_logging_level:
   associated_recipe:
    - bcftools_mpileup

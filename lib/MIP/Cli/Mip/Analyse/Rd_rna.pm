@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.20;
+our $VERSION = 1.21;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -202,16 +202,6 @@ sub _build_usage {
             documentation => q{Force ASE analysis on partially matching dna-rna samples},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{gatk_bundle_download_version} => (
-            cmd_aliases   => [qw{ gbdv }],
-            cmd_tags      => [q{Default: 2.8}],
-            documentation => q{GATK FTP bundle download version},
-            is            => q{rw},
-            isa           => Num,
         )
     );
 

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.35;
+our $VERSION = 1.36;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -215,16 +215,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{gatk_bundle_download_version} => (
-            cmd_aliases   => [qw{ gbdv }],
-            cmd_tags      => [q{Default: 2.8}],
-            documentation => q{GATK FTP bundle download version},
-            is            => q{rw},
-            isa           => Num,
         )
     );
 
