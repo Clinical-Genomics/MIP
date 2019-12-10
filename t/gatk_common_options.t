@@ -20,10 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,25 +34,23 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
     ### Check all internal dependency modules and imports
 
     ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Program::Gatk}  => [qw{ gatk_common_options }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Base::Gatk qw{ gatk_common_options };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_common_options };
 
-diag(   q{Test gatk_common_options from Base::Gatk.pm v}
-      . $MIP::Program::Base::Gatk::VERSION
+diag(   q{Test gatk_common_options from Gatk.pm v}
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -87,13 +87,13 @@ my %specific_argument = (
         expected_output => q{--reference }
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
-    verbosity => {
-        input           => q{INFO},
-        expected_output => q{--verbosity INFO},
-    },
     temp_directory => {
         input           => catdir(qw{ a dir }),
         expected_output => q{--tmp-dir } . catdir(qw{ a dir }),
+    },
+    verbosity => {
+        input           => q{INFO},
+        expected_output => q{--verbosity INFO},
     },
 );
 
@@ -108,10 +108,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

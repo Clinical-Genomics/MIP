@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_gathervcfs };
@@ -134,7 +134,7 @@ sub analysis_gatk_gathervcfs {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud gatk_selectvariants };
+    use MIP::Program::Gatk qw{ gatk_gathervcfscloud gatk_selectvariants };
     use MIP::Sample_info
       qw{ set_processing_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
