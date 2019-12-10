@@ -206,7 +206,7 @@ sub analysis_arriba {
             }
         )
     );
-    my $outfile_name = $io{out}{file_name};
+    my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = $io{out}{file_path};
 
     my %recipe_resource = get_recipe_resources(
@@ -295,6 +295,7 @@ sub analysis_arriba {
             genome_dir_path               => $referencefile_dir_path,
             infile_paths_ref              => \@fastq_files,
             out_bam_compression           => 0,
+            outfile_name_prefix           => => $outfile_path_prefix . $DOT,
             out_filter_mismatch_nmax      => $THREE,
             out_filter_multimap_nmax      => 1,
             out_sam_type                  => q{BAM Unsorted},
@@ -408,9 +409,9 @@ sub analysis_arriba {
         set_recipe_metafile_in_sample_info(
             {
                 infile           => $outfile_name,
+                metafile_tag     => q{report},
                 path             => $report_path,
                 recipe_name      => $recipe_name,
-                metafile_tag     => q{report},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
