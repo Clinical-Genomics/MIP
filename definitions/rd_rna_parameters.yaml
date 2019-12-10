@@ -53,15 +53,6 @@ library_type:
   data_type: SCALAR
   default: reverse_stranded
   type: recipe_argument
-## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
-gatk_bundle_download_version:
-  associated_recipe:
-    - gatk_asereadcounter
-    - gatk_baserecalibration
-    - gatk_haplotypecaller
-  data_type: SCALAR
-  default: 2.8
-  type: recipe_argument
 gatk_logging_level:
   associated_recipe:
     - gatk_asereadcounter
