@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -37,6 +37,7 @@ sub analysis_vt_core {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $bcftools_output_type    => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $bgzip                   => Compress output from vt using bgzip
+##          : $build_gatk_index        => Build gatk index (.idx) file
 ##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
@@ -74,6 +75,7 @@ sub analysis_vt_core {
     ## Default(s)
     my $bcftools_output_type;
     my $bgzip;
+    my $build_gatk_index;
     my $cmd_break;
     my $core_number;
     my $decompose;
@@ -109,9 +111,15 @@ sub analysis_vt_core {
             store       => \$bgzip,
             strict_type => 1,
         },
+        build_gatk_index => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$build_gatk_index,
+            strict_type => 1,
+        },
         cmd_break => { default => $NEWLINE x 2, store => \$cmd_break, strict_type => 1, },
         core_number => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr/ \A \d+ \z /xsm,
             default     => 1,
             store       => \$core_number,
             strict_type => 1,
@@ -203,6 +211,7 @@ sub analysis_vt_core {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Vt qw{ vt_decompose vt_normalize vt_uniq };
@@ -404,6 +413,19 @@ sub analysis_vt_core {
         }
     );
     print {$filehandle} $cmd_break;
+
+    if ($build_gatk_index) {
+
+        gatk_indexfeaturefile(
+            {
+                filehandle           => $filehandle,
+                infile_path          => $outfile_path,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                temp_directory       => $active_parameter_href->{temp_directory},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     close $filehandle;
 

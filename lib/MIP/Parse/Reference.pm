@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_reference_for_vt };
@@ -113,6 +113,7 @@ sub parse_reference_for_vt {
         analysis_vt_core(
             {
                 active_parameter_href   => $active_parameter_href,
+                build_gatk_index        => 1,
                 decompose               => 1,
                 normalize               => 1,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
