@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -321,15 +321,15 @@ sub analysis_arriba {
     push @arriba_commands,
       arriba(
         {
-            infile_path                => q{/dev/stdin},
-            outfile_path               => $outfile_path,
+            annotation_file_path       => $active_parameter_href->{transcript_annotation},
+            blacklist_file_path        => $active_parameter_href->{arriba_blacklist_path},
             discarded_fusion_file_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{discarded}
               . $outfile_suffix,
             genome_file_path        => $active_parameter_href->{human_genome_reference},
-            annotation_file_path    => $active_parameter_href->{transcript_annotation},
-            blacklist_file_path     => $active_parameter_href->{arriba_blacklist_path},
+            infile_path             => catfile( dirname( devnull() ), q{stdin} ),
+            outfile_path            => $outfile_path,
             print_fusion_peptide    => 1,
             print_fusion_transcript => 1,
         }

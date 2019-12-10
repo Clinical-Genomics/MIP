@@ -64,7 +64,6 @@ sub get_binary_version {
   BINARY:
     while ( my ( $binary, $binary_path ) = each %{$binary_info_href} ) {
 
-        say STDERR $binary;
         ## No information on how to get version for this binary - skip
         next BINARY if ( not exists $executable{$binary} );
 

@@ -1182,7 +1182,7 @@ sub check_rd_rna {
                 active_parameter_href   => $active_parameter_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 parameter_href          => $parameter_href,
-                recipe_name             => q{salmon_quant},
+                recipe_name             => $recipe,
                 sample_info_href        => $sample_info_href,
             }
         );

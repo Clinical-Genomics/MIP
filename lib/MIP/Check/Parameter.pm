@@ -1962,7 +1962,7 @@ sub check_recipe_fastq_compatibility {
     use MIP::Sample_info qw{ get_sequence_run_type };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
-    ## Check if program is gong to run
+    ## Check if program is going to run
     return if ( $active_parameter_href->{$recipe_name} == 0 );
 
     ## Retrieve logger object
@@ -1982,7 +1982,7 @@ sub check_recipe_fastq_compatibility {
             }
         );
 
-        ## Turn of Salmon if multiple sequence types are present
+        ## Turn of recipe if multiple sequence types are present
         if ( uniq( values %sequence_run_type ) > 1 ) {
             $is_compatible = 0;
         }
@@ -1990,7 +1990,7 @@ sub check_recipe_fastq_compatibility {
 
     if ( not $is_compatible ) {
 
-        ## Turn of salmon and downstream recipes
+        ## Turn of current recipe and downstream recipes
         $log->warn(q{Multiple sequence run types detected});
         $log->warn(qq{Turning off $recipe_name and downstream recipes});
 
