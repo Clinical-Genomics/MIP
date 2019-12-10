@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -116,7 +116,8 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
     use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
-    use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
+    use MIP::Recipes::Download::Sv_fqa_vcfanno_config
+      qw{ download_sv_fqa_vcfanno_config };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -155,7 +156,7 @@ sub pipeline_download_rd_dna {
         reduced_penetrance       => \&download_reduced_penetrance,
         scout_exons              => \&download_scout_exons,
         svrank_model             => \&download_svrank_model,
-        sv_vcfanno_config        => \&download_sv_vcfanno_config,
+        sv_fqa_vcfanno_config    => \&download_sv_fqa_vcfanno_config,
     );
 
     # Storing job_ids from SLURM, however currently all are independent

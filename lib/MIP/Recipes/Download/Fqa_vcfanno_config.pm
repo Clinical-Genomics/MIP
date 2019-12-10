@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -122,6 +123,7 @@ sub download_fqa_vcfanno_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_mv};
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -184,6 +186,29 @@ sub download_fqa_vcfanno_config {
         }
     );
 
+    my $reference_dir_path = catfile( $reference_dir, $EMPTY_STR );
+    my $outfile_path       = catfile( $reference_dir, $reference_href->{outfile} );
+    my $outfile_path_tmp   = $outfile_path . $DOT . q{tmp};
+
+    my $set_reference_path_regexp = _set_reference_dir_path(
+        {
+            infile_path        => $outfile_path,
+            outfile_path       => $outfile_path_tmp,
+            reference_dir_path => $reference_dir_path,
+        }
+    );
+
+    say {$filehandle} $set_reference_path_regexp, $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $outfile_path_tmp,
+            outfile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
@@ -200,6 +225,71 @@ sub download_fqa_vcfanno_config {
         );
     }
     return 1;
+}
+
+sub _set_reference_dir_path {
+
+## Function : Prepend the reference directory path to the reference file name in config
+## Returns  : $set_reference_path_regexp
+## Arguments: $infile_path        => Infile path
+##          : $outfile_path       => Outfile path
+##          : $reference_dir_path => Reference dir path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $reference_dir_path;
+
+    my $tmpl = {
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        reference_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Execute perl
+    my $set_reference_path_regexp = q?perl -nae '?;
+
+    ## Find "file" line  and catch file name between "
+    $set_reference_path_regexp .= q? my ($filename) = $_=~/file=["](\S+)["]/sxm;?;
+
+    ## If file name prepend reference dir to file name
+    $set_reference_path_regexp .=
+        q? if($filename) {say STDOUT q{?
+      . q{file=}
+      . $DOUBLE_QUOTE
+      . $reference_dir_path
+      . q?} . $filename . q{?
+      . $DOUBLE_QUOTE . q?}}?;
+
+    ## Else print other lines as is
+    $set_reference_path_regexp .= q? else {print STDOUT $_} ' ?;
+
+    ## Infile
+    $set_reference_path_regexp .= $infile_path;
+
+    ## Outfile
+    $set_reference_path_regexp .= q? > ? . $outfile_path;
+
+    return $set_reference_path_regexp;
 }
 
 1;
