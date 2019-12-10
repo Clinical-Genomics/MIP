@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -278,7 +278,7 @@ sub analysis_star_fusion {
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
+                dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $recipe_attribute{chain},
                 job_id_href             => $job_id_href,

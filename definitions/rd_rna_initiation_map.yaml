@@ -11,7 +11,9 @@ CHAIN_ALL:
     - salmon_quant
     - blobfish
   - CHAIN_FUSION:
-    - star_fusion
+    - PARALLEL:
+      - star_fusion
+      - arriba_ar
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles

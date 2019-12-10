@@ -103,6 +103,7 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 1
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
@@ -136,6 +137,7 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 3
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
@@ -158,6 +160,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 24
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
@@ -382,6 +385,35 @@ star_fusion_reference_genome:
   is_reference: 1
   mandatory: no
   reference: reference_dir
+  type: path
+## Arriba 
+arriba_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _arriba
+  outfile_suffix: ".tsv"
+  program_executables:
+    - arriba
+    - draw_fusions.R
+    - sambamba
+  type: recipe
+arriba_blacklist_path:
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_cytoband_path:
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_proteindomain_path: 
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
   type: path
 ## Merge bam files
 picardtools_mergesamfiles:
