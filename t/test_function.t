@@ -41,15 +41,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_view }],
-        q{MIP::Test::Commands}                    => [qw{ test_command test_function }],
-        q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
+        q{MIP::Program::Bcftools} => [qw{ bcftools_view }],
+        q{MIP::Test::Commands}    => [qw{ test_command test_function }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+use MIP::Program::Bcftools qw{ bcftools_view };
 use MIP::Test::Commands qw{ test_command test_function };
 
 diag(   q{Test test_function from Commands.pm v}

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -145,7 +145,7 @@ sub analysis_sv_combinevariantcallsets {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
+    use MIP::Program::Bcftools
       qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Vt qw{ vt_decompose };

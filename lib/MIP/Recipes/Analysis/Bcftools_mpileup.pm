@@ -149,7 +149,7 @@ sub analysis_bcftools_mpileup {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
+    use MIP::Program::Bcftools
       qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm bcftools_view };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Perl qw{ replace_iupac };

@@ -849,7 +849,7 @@ sub get_sample_ids_from_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Unix::System qw{ system_cmd_call };
 
     ## Retrieve logger object

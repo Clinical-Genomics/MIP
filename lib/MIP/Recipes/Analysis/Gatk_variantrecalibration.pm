@@ -140,9 +140,9 @@ sub analysis_gatk_variantrecalibration_wes {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
+    use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Gatk
-      qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
+      qw{ gatk_applyvqsr gatk_calculategenotypeposteriors gatk_selectvariants gatk_variantrecalibrator };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -622,9 +622,9 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
+    use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Gatk
-      qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
+      qw{ gatk_applyvqsr gatk_calculategenotypeposteriors gatk_selectvariants gatk_variantrecalibrator };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

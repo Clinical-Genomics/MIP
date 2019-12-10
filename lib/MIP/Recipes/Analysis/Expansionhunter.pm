@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -144,8 +144,7 @@ sub analysis_expansionhunter {
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_rename_vcf_samples bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Expansionhunter qw{ expansionhunter };
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
