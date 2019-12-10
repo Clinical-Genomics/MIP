@@ -267,8 +267,8 @@ sub _set_reference_dir_path {
     ## Execute perl
     my $set_reference_path_regexp = q?perl -nae '?;
 
-    ## Find "file" line  and catch file name
-    $set_reference_path_regexp .= q? my ($filename) = $_=~/file=(\S+)/sxm;?;
+    ## Find "file" line  and catch file name between "
+    $set_reference_path_regexp .= q? my ($filename) = $_=~/file=["](\S+)["]/sxm;?;
 
     ## If file name prepend reference dir to file name
     $set_reference_path_regexp .=
