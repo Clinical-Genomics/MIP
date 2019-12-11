@@ -190,3 +190,17 @@ my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
     );
 $is_interleaved_fastq = <boolean>;
 ```
+
+set_file_path_to_store:
+Set file path under store according to file type and file_tag
+```Perl
+set_file_path_to_store(
+    {
+        file_tag         => $file_tag,
+        file_type        => $file_type,
+        path             => $path,
+        sample_info_href => \%sample_info,
+    }
+);
+%sample_info = ( store => { $file_type => { $file_tag => $path, }, } );
+```

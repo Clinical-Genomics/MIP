@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -74,11 +71,11 @@ my $version          = q{1.0.1};
 ## Family level
 set_recipe_outfile_in_sample_info(
     {
-        sample_info_href => \%sample_info,
-        recipe_name      => $test_recipe_name,
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+        recipe_name      => $test_recipe_name,
+        sample_info_href => \%sample_info,
         version          => $version,
     }
 );
@@ -104,12 +101,12 @@ my $infile    = q{test_infile};
 
 set_recipe_outfile_in_sample_info(
     {
-        sample_info_href => \%sample_info,
-        sample_id        => $sample_id,
-        recipe_name      => $test_recipe_name,
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
+        recipe_name      => $test_recipe_name,
         version          => $version,
     }
 );
@@ -134,13 +131,13 @@ while ( my ( $parameter, $test_comment ) = each %test_no_infile ) {
 ## Sample level, with infile
 set_recipe_outfile_in_sample_info(
     {
-        sample_info_href => \%sample_info,
-        sample_id        => $sample_id,
         infile           => $infile,
         recipe_name      => $test_recipe_name,
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
         version          => $version,
     }
 );
