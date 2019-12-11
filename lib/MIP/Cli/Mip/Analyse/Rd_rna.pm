@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.21;
+our $VERSION = 1.22;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -457,6 +457,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Align reads using Star aln},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_ulimit_n} => (
+            cmd_aliases   => [qw{ sun }],
+            documentation => q{Set ulimit -n for star recipe},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

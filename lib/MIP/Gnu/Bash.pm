@@ -21,10 +21,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ gnu_cd gnu_export gnu_trap gnu_set gnu_unset gnu_wait };
+    our @EXPORT_OK =
+      qw{ gnu_cd gnu_export gnu_trap gnu_set gnu_ulimit gnu_unset gnu_wait };
 
 }
 
@@ -391,6 +392,77 @@ sub gnu_wait {
             commands_ref => \@commands,
             filehandle   => $filehandle,
             separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub gnu_ulimit {
+
+## Function : Perl wrapper for setting bash ulimit to already open $filehandle or return commands array. Based on GNU Bash 4.0
+## Returns  : @commands
+## Arguments: $filehandle             => Filehandle to write to
+##          : $max_open_files         => Set ulimit -n
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $max_open_files;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        max_open_files => {
+            allow       => [ undef, qr/\A \d+ \z/xms ],
+            store       => \$max_open_files,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ ulimit };
+
+    if ($max_open_files) {
+
+        push @commands, q{-n} . $SPACE . $max_open_files;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
         }
     );
     return @commands;

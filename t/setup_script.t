@@ -21,10 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,13 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA      => q{,};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -65,9 +59,12 @@ diag(   q{Test setup_script from Setup_script.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+Readonly my $TWO      => 2;
+Readonly my $ULIMIT_N => 4096;
 
 ## Create temp logger
+my $log = test_log( {} );
+
 my $test_dir = File::Temp->newdir();
 
 # Create anonymous filehandle
@@ -82,7 +79,7 @@ my %active_parameter = (
     bash_set_errexit                => 1,
     bash_set_nounset                => 1,
     bash_set_pipefail               => 1,
-    bwa_mem                         => 2,
+    bwa_mem                         => $TWO,
     email_types                     => [qw{ BEGIN FAIL }],
     outdata_dir                     => catfile( $test_dir, q{test_data_dir} ),
     outscript_dir                   => catfile( $test_dir, q{test_script_dir} ),
@@ -92,6 +89,7 @@ my %active_parameter = (
     source_environment_commands_ref => [qw{ conda activate test }],
     submission_profile              => q{slurm},
     temp_directory                  => $temp_dir,
+    ulimit_n                        => $ULIMIT_N,
 );
 my %job_id;
 
