@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -241,6 +241,7 @@ sub setup_script {
 ##          : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
 ##          : $temp_directory                  => Temporary directory for recipe {Optional}
+##          : $ulimit_n                        => Set ulimit -n for recipe {Optional}
 
     my ($arg_href) = @_;
 
@@ -255,6 +256,7 @@ sub setup_script {
     my $recipe_directory;
     my $recipe_name;
     my $source_environment_commands_ref;
+    my $ulimit_n;
 
     ## Default(s)
     my $core_number;
@@ -377,6 +379,12 @@ sub setup_script {
             store       => \$set_pipefail,
             strict_type => 1,
         },
+        set_pipefail => {
+            allow       => [ 0, 1 ],
+            default     => $arg_href->{active_parameter_href}{bash_set_pipefail},
+            store       => \$set_pipefail,
+            strict_type => 1,
+        },
         sleep => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -399,12 +407,17 @@ sub setup_script {
             store       => \$temp_directory,
             strict_type => 1,
         },
+        ulimit_n => {
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
+            store       => \$ulimit_n,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Path qw{ check_file_version_exist };
-    use MIP::Gnu::Bash qw{ gnu_set };
+    use MIP::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
     use MIP::Language::Shell
       qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
@@ -537,6 +550,15 @@ sub setup_script {
             set_pipefail => $set_pipefail,
         }
     );
+    if ($ulimit_n) {
+        gnu_ulimit(
+            {
+                filehandle     => $filehandle,
+                max_open_files => $ulimit_n,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     say {$filehandle} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
 

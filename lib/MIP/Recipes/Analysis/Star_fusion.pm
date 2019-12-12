@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -223,6 +223,7 @@ sub analysis_star_fusion {
             process_time                    => $recipe_resource{time},
             source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
+            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
         }
     );
 

@@ -333,6 +333,7 @@ pe_overlap_nbases_min:
   type: recipe_argument
 star_aln_reference_genome:
   associated_recipe:
+    - arriba_ar
     - star_aln
     - genebody_coverage
   build_file: 1
@@ -342,6 +343,14 @@ star_aln_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
+star_ulimit_n:
+  associated_recipe:
+    - star_aln
+    - star_fusion
+    - arriba_ar
+  data_type: SCALAR
+  default: 4096
+  type: recipe_argument
 two_pass_mode:
   associated_recipe:
     - star_aln
