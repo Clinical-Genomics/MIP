@@ -38,33 +38,33 @@ shell:
     url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
 singularity:
   arriba:
-    executable: 
+    executable:
       arriba: /arriba_v1.1.0/arriba
       draw_fusions.R: /arriba_v1.1.0/draw_fusions.R
     uri: docker://uhrigs/arriba:1.1.0
   fastqc:
     executable:
       fastqc:
-    uri: shub://Clinical-Genomics/MIP:fastqc-0.11.8
+    uri: docker://clinicalgenomics/fastqc:0.11.8
   gatk4:
     executable:
       gatk:
-    uri: shub://Clinical-Genomics/MIP:gatk-4.1.3.0
+    uri: docker://broadinstitute/gatk:4.1.3.0
   htslib:
     executable:
       bcftools:
       bgzip:
       samtools:
       tabix:
-    uri: shub://Clinical-Genomics/MIP:htslib-1.9
+    uri: docker://clinicalgenomics/htslib:1.9
   multiqc:
     executable:
       multiqc:
-    uri: shub://Clinical-Genomics/MIP:multiqc-v1.7
+    uri: docker://ewels/multiqc:v1.7
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: shub://Clinical-Genomics/MIP:picard-2.20.7
+    uri: docker://broadinstitute/picard:2.20.7
   rseqc:
     executable:
       bam2wig.py:
@@ -81,7 +81,7 @@ singularity:
   sambamba:
     executable:
       sambamba:
-    uri: shub://Clinical-Genomics/MIP:sambamba-0.6.8
+    uri: docker://clinicalgenomics/sambamba:0.6.8
   star:
     executable:
       STAR:
