@@ -142,7 +142,7 @@ singularity:
   vep:
     executable:
       vep:
-    uri: shub://Clinical-Genomics/MIP:vep-97.4
+    uri: docker://ensemblorg/ensembl-vep:release_97.4
   vcf2cytosure:
     executable:
       vcf2cytosure:
