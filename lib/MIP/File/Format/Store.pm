@@ -57,6 +57,10 @@ sub define_analysis_files_to_store {
             file_type => q{meta},
             path      => $active_parameter_href->{config_file},
         },
+        config_analysis => {
+            file_type => q{meta},
+            path      => $active_parameter_href->{config_file_analysis},
+        },
         log => {
             file_type => q{meta},
             path      => $active_parameter_href->{log_file},
