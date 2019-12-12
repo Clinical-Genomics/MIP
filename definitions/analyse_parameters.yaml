@@ -77,6 +77,12 @@ outscript_dir:
   data_type: SCALAR
   type: path
   update_path: absolute_path
+pedigree_fam_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 pedigree_file:
   associated_recipe:
    - mip
@@ -148,6 +154,12 @@ start_with_recipe:
   data_type: SCALAR
   mandatory: no
   type: mip
+store_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 submission_profile:
   associated_recipe:
    - mip

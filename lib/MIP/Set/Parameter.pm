@@ -210,6 +210,7 @@ sub set_custom_default_to_active_parameter {
         picardtools_path              => \&_set_dynamic_path,
         program_test_file             => \&_set_program_test_file,
         reference_dir                 => \&_set_reference_dir,
+        reference_info_file           => \&_set_reference_info_file,
         rtg_vcfeval_reference_genome  => \&_set_human_genome,
         salmon_quant_reference_genome => \&_set_human_genome,
         select_programs               => \&_set_uninitialized_parameter,
@@ -225,9 +226,8 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value to parameter and/or active parameter
     my %set_to_parameter = (
-        exome_target_bed    => \&_set_capture_kit,
-        reference_info_file => \&_set_reference_info_file,
-        sample_info_file    => \&_set_sample_info_file,
+        exome_target_bed => \&_set_capture_kit,
+        sample_info_file => \&_set_sample_info_file,
     );
 
     if ( exists $set_to_active_parameter{$parameter_name} ) {
@@ -1594,14 +1594,12 @@ sub _set_reference_info_file {
 ## Function : Set default reference_info_file
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_href        => Holds all parameters {REF}
 ##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_href;
     my $parameter_name;
 
     my $tmpl = {
@@ -1612,20 +1610,13 @@ sub _set_reference_info_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set reference info file
-    $parameter_href->{reference_info_file}{default} =
+    $active_parameter_href->{reference_info_file} =
       catfile( $active_parameter_href->{outdata_dir}, q{reference_info.yaml} );
     return;
 }

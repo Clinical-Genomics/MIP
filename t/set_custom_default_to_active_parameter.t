@@ -160,6 +160,10 @@ my %expected_default = (
         default    => cwd(),
         test_label => q{Set reference_dir default },
     },
+    reference_info_file => {
+        default    => catfile( $active_parameter{outdata_dir}, q{reference_info.yaml} ),
+        test_label => q{Set reference_info_file default },
+    },
     rtg_vcfeval_reference_genome => {
         default => $active_parameter{human_genome_reference},
         test_label =>
@@ -241,12 +245,6 @@ foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
         q{sample_1}, q{Set default capture kit for sample_1} );
 
 }
-
-my $reference_info_file =
-  catfile( $active_parameter{outdata_dir}, q{reference_info.yaml} );
-
-is( $parameter{reference_info_file}{default},
-    $reference_info_file, q{Set default reference_info_file} );
 
 my $sample_info_file = catfile(
     $active_parameter{outdata_dir},
