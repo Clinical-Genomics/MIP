@@ -113,6 +113,12 @@ reference_dir:
   exists_check: directory
   type: path
   update_path: absolute_path
+reference_info_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 sample_ids:
   associated_recipe:
    - mip
@@ -161,7 +167,7 @@ supported_capture_kit:
     agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
     agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
     agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed 
+    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed
     latest: genome_reference_source_version_twist_target_-1-.bed
   type: mip
 with_singularity:
@@ -221,4 +227,3 @@ version_collect_ar:
   file_tag: _vcol
   outfile_suffix: ".yaml"
   type: recipe
-

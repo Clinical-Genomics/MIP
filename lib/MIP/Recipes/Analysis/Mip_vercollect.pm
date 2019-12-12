@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -136,7 +136,7 @@ sub analysis_mip_vercollect {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_vercollect };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -233,6 +233,14 @@ sub analysis_mip_vercollect {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => q{executable_versions},
+                file_type        => q{meta},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
         submit_recipe(
             {
                 base_command         => $profile_base_command,

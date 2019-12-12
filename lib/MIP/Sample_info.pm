@@ -467,6 +467,7 @@ sub set_file_path_to_store {
             store       => \$file_tag,
         },
         file_type => {
+            allow       => [qw{ fastq bam meta vcf }],
             defined     => 1,
             required    => 1,
             strict_type => 1,

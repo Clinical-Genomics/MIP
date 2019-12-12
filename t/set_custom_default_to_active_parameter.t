@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
+use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
@@ -115,10 +115,13 @@ my @custom_default_parameters = qw{ analysis_type
   bwa_build_reference
   exome_target_bed
   infile_dirs
+  pedigree_fam_file
   reference_dir
+  reference_info_file
   rtg_vcfeval_reference_genome
   sample_info_file
   select_programs
+  store_file
   sv_vcfparser_select_file
   temp_directory
   vcfparser_select_file };
@@ -146,6 +149,13 @@ my %expected_default = (
         default    => $active_parameter{human_genome_reference},
         test_label => q{Set human_genome_reference default for bwa},
     },
+    pedigree_fam_file => {
+        default => catfile(
+            $active_parameter{outdata_dir}, $active_parameter{case_id},
+            $active_parameter{case_id} . $DOT . q{fam}
+        ),
+        test_label => q{Set pedigree_fam_file default},
+    },
     reference_dir => {
         default    => cwd(),
         test_label => q{Set reference_dir default },
@@ -154,6 +164,10 @@ my %expected_default = (
         default => $active_parameter{human_genome_reference},
         test_label =>
           q{Set human_genome_reference default for rtg vcfeval reference genome},
+    },
+    store_file => {
+        default    => catfile( $active_parameter{outdata_dir}, q{store_info.yaml} ),
+        test_label => q{Set store_file default },
     },
     sv_vcfparser_select_file => {
         default    => $vcfparser_select_file_path,
@@ -227,6 +241,12 @@ foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
         q{sample_1}, q{Set default capture kit for sample_1} );
 
 }
+
+my $reference_info_file =
+  catfile( $active_parameter{outdata_dir}, q{reference_info.yaml} );
+
+is( $parameter{reference_info_file}{default},
+    $reference_info_file, q{Set default reference_info_file} );
 
 my $sample_info_file = catfile(
     $active_parameter{outdata_dir},

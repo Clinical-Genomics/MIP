@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -234,9 +234,8 @@ sub check_dragen_rd_dna {
     write_references(
         {
             active_parameter_href => $active_parameter_href,
-            outfile_path =>
-              catfile( $active_parameter_href->{outdata_dir}, q{reference_version.yaml} ),
-            parameter_href => $parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
         }
     );
 

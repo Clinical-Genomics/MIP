@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $CLOSE_BRACE $CLOSE_BRACKET $GENOME_VERSION $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $CLOSE_BRACE $CLOSE_BRACKET $DOT $GENOME_VERSION $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -206,6 +206,7 @@ sub set_custom_default_to_active_parameter {
         bwa_build_reference           => \&_set_human_genome,
         gatk_path                     => \&_set_dynamic_path,
         infile_dirs                   => \&_set_infile_dirs,
+        pedigree_fam_file             => \&_set_pedigree_fam_file,
         picardtools_path              => \&_set_dynamic_path,
         program_test_file             => \&_set_program_test_file,
         reference_dir                 => \&_set_reference_dir,
@@ -216,6 +217,7 @@ sub set_custom_default_to_active_parameter {
         skip_programs                 => \&_set_uninitialized_parameter,
         star_aln_reference_genome     => \&_set_human_genome,
         star_fusion_reference_genome  => \&_set_human_genome,
+        store_file                    => \&_set_store_file,
         sv_vcfparser_select_file      => \&_set_vcfparser_select_file,
         temp_directory                => \&_set_temp_directory,
         vcfparser_select_file         => \&_set_vcfparser_select_file,
@@ -223,8 +225,9 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value to parameter and/or active parameter
     my %set_to_parameter = (
-        exome_target_bed => \&_set_capture_kit,
-        sample_info_file => \&_set_sample_info_file,
+        exome_target_bed    => \&_set_capture_kit,
+        reference_info_file => \&_set_reference_info_file,
+        sample_info_file    => \&_set_sample_info_file,
     );
 
     if ( exists $set_to_active_parameter{$parameter_name} ) {
@@ -242,7 +245,6 @@ sub set_custom_default_to_active_parameter {
         $set_to_parameter{$parameter_name}->(
             {
                 active_parameter_href => $active_parameter_href,
-                log                   => $log,
                 parameter_href        => $parameter_href,
                 parameter_name        => $parameter_name,
             }
@@ -1255,7 +1257,6 @@ sub _set_capture_kit {
 ## Function : Set default capture kit to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $log                   => Log object
 ##          : $parameter_href        => Holds all parameters {REF}
 ##          : $parameter_name        => Parameter name
 
@@ -1263,7 +1264,6 @@ sub _set_capture_kit {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $parameter_href;
     my $parameter_name;
 
@@ -1274,11 +1274,6 @@ sub _set_capture_kit {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
-        },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
         },
         parameter_href => {
             default     => {},
@@ -1293,6 +1288,9 @@ sub _set_capture_kit {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_capture_kit };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ### If capture kit is not set after cmd, config and reading pedigree
     ## Return a default capture kit as user supplied no info
@@ -1493,6 +1491,73 @@ sub _set_vcfparser_select_file {
     return;
 }
 
+sub _set_pedigree_fam_file {
+
+## Function : Set default pedigree_fam_file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set pedigree fam file
+    $active_parameter_href->{$parameter_name} = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id},
+        $active_parameter_href->{case_id} . $DOT . q{fam}
+    );
+    return;
+}
+
+sub _set_store_file {
+
+## Function : Set default store_file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set store file
+    $active_parameter_href->{$parameter_name} =
+      catfile( $active_parameter_href->{outdata_dir}, q{store_info.yaml} );
+    return;
+}
+
 sub _set_reference_dir {
 
 ## Function : Set default reference dir to active parameters
@@ -1519,16 +1584,16 @@ sub _set_reference_dir {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Set reference dir to current working dir
     $active_parameter_href->{$parameter_name} = cwd();
     return;
 }
 
-sub _set_sample_info_file {
+sub _set_reference_info_file {
 
-## Function : Set default sample_info_file and qccollect_sampleinfo_file to parameters
+## Function : Set default reference_info_file
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $log                   => Log object
 ##          : $parameter_href        => Holds all parameters {REF}
 ##          : $parameter_name        => Parameter name
 
@@ -1536,7 +1601,6 @@ sub _set_sample_info_file {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $parameter_href;
     my $parameter_name;
 
@@ -1548,8 +1612,46 @@ sub _set_sample_info_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        log => {
-            store => \$log
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set reference info file
+    $parameter_href->{reference_info_file}{default} =
+      catfile( $active_parameter_href->{outdata_dir}, q{reference_info.yaml} );
+    return;
+}
+
+sub _set_sample_info_file {
+
+## Function : Set default sample_info_file and qccollect_sampleinfo_file to parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
         },
         parameter_href => {
             default     => {},

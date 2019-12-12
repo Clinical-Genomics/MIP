@@ -19,11 +19,11 @@ use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+# MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -229,6 +229,16 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
             cmd_aliases   => [qw{ rd }],
             cmd_tags      => [q{Default: ""}],
             documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_info_file} => (
+            cmd_aliases   => [qw{ rif }],
+            cmd_tags      => [q{YAML}],
+            documentation => q{File for reference info used in the analysis},
             is            => q{rw},
             isa           => Str,
         )
