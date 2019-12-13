@@ -233,7 +233,11 @@ sub analysis_multiqc {
                 );
                 set_file_path_to_store(
                     {
-                        file_tag         => $report_id . $UNDERSCORE . $outfile_format,
+                        file_tag => q{multiqc}
+                          . $UNDERSCORE
+                          . $report_id
+                          . $UNDERSCORE
+                          . $outfile_format,
                         file_type        => q{meta},
                         path             => $path,
                         sample_info_href => $sample_info_href,
