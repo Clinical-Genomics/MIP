@@ -377,7 +377,7 @@ sub analysis_reformat_sv {
             );
             set_file_path_to_store(
                 {
-                    file_tag         => $metafile_tag,
+                    file_tag         => q{sv} . $UNDERSCORE . $metafile_tag,
                     file_type        => q{vcf},
                     path             => $outfile_paths[$infile_index] . $DOT . q{gz},
                     sample_info_href => $sample_info_href,
