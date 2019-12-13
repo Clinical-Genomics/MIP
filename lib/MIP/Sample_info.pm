@@ -463,21 +463,21 @@ sub set_file_path_to_store {
         file_tag => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$file_tag,
+            strict_type => 1,
         },
         file_type => {
             allow       => [qw{ fastq bam meta vcf }],
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$file_type,
+            strict_type => 1,
         },
         path => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$path,
+            strict_type => 1,
         },
         sample_info_href => {
             default     => {},

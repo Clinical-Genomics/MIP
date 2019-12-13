@@ -1547,7 +1547,8 @@ sub _set_store_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

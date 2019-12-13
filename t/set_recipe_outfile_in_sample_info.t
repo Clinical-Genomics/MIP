@@ -62,10 +62,10 @@ diag(   q{Test set_recipe_outfile_in_sample_info from Sample_info.pm v}
 my %sample_info;
 
 # Test variables
-my $test_recipe_name = q{test_recipe};
 my $directory        = q{test_directory};
 my $outfile          = q{test.yaml};
 my $path             = catfile( $directory, $outfile );
+my $test_recipe_name = q{test_recipe};
 my $version          = q{1.0.1};
 
 ## Family level
@@ -104,9 +104,9 @@ set_recipe_outfile_in_sample_info(
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+        recipe_name      => $test_recipe_name,
         sample_id        => $sample_id,
         sample_info_href => \%sample_info,
-        recipe_name      => $test_recipe_name,
         version          => $version,
     }
 );
@@ -132,17 +132,17 @@ while ( my ( $parameter, $test_comment ) = each %test_no_infile ) {
 set_recipe_outfile_in_sample_info(
     {
         infile           => $infile,
-        recipe_name      => $test_recipe_name,
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+        recipe_name      => $test_recipe_name,
         sample_id        => $sample_id,
         sample_info_href => \%sample_info,
         version          => $version,
     }
 );
 
-## Test
+## Test sample level
 is( exists $sample_info{sample}{$sample_id}{recipe}{$test_recipe_name}{$infile},
     1, q{Created sample level hash key} );
 
