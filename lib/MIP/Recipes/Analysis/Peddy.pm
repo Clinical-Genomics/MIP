@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -138,7 +138,7 @@ sub analysis_peddy {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Peddy qw{ peddy };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -287,6 +287,15 @@ sub analysis_peddy {
                     metafile_tag     => $outfile_tag,
                     path             => $outfile_path,
                     recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            set_file_path_to_store(
+                {
+                    file_tag         => $outfile_tag,
+                    file_type        => q{meta},
+                    path             => $outfile_path,
                     sample_info_href => $sample_info_href,
                 }
             );

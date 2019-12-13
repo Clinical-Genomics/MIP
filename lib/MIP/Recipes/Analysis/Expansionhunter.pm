@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -149,7 +149,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Vt qw{ vt_decompose };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -403,6 +403,15 @@ sub analysis_expansionhunter {
                 sample_info_href => $sample_info_href,
                 recipe_name      => $recipe_name,
                 path             => $outfile_path . $DOT . q{gz},
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => q{sv_str},
+                file_type        => q{vcf},
+                path             => $outfile_path . $DOT . q{gz},
+                sample_info_href => $sample_info_href,
             }
         );
 

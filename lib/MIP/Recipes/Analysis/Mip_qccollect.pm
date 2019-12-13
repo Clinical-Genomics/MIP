@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -134,7 +134,7 @@ sub analysis_mip_qccollect {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_qccollect };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -219,6 +219,15 @@ sub analysis_mip_qccollect {
                 sample_info_href => $sample_info_href,
                 recipe_name      => $recipe_name,
                 path             => $outfile_path,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => q{qc_metrics},
+                file_type        => q{meta},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
             }
         );
 

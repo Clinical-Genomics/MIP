@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
@@ -138,8 +138,9 @@ sub analysis_chanjo_sex_check {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Chanjo qw{ chanjo_sex };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -267,6 +268,14 @@ sub analysis_chanjo_sex_check {
                 path             => $log_file_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        set_file_path_to_store(
+            {
+                file_tag         => q{chanjo_sex_check},
+                file_type        => q{meta},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );

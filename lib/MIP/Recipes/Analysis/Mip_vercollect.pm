@@ -235,12 +235,13 @@ sub analysis_mip_vercollect {
 
         set_file_path_to_store(
             {
-                file_tag         => q{executable_versions},
+                file_tag         => q{binary_versions},
                 file_type        => q{meta},
                 path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
+
         submit_recipe(
             {
                 base_command         => $profile_base_command,

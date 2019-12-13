@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -147,7 +147,7 @@ sub analysis_vcf2cytosure {
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -383,6 +383,15 @@ sub analysis_vcf2cytosure {
                     path             => $outfile_path{$sample_id},
                     recipe_name      => q{vcf2cytosure},
                     sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            set_file_path_to_store(
+                {
+                    file_tag         => $sample_id . $UNDERSCORE . q{sv_cytosure},
+                    file_type        => q{meta},
+                    path             => $outfile_path{$sample_id},
                     sample_info_href => $sample_info_href,
                 }
             );
