@@ -62,12 +62,13 @@ diag(   q{Test set_analysis_files_to_store from Store.pm v}
 
 ## Given a path
 my %active_parameter = (
-    config_file         => catfile(qw{ a config_file }),
-    log_file            => catfile(qw{ a log_file }),
-    pedigree_file       => catfile(qw{ a pedigree_file }),
-    pedigree_fam_file   => catfile(qw{ a pedigree_fam_file }),
-    reference_info_file => catfile(qw{ a reference_info_file }),
-    sample_info_file    => catfile(qw{ a sample_info_file }),
+    config_file          => catfile(qw{ a config_file }),
+    config_file_analysis => catfile(qw{ a config_analysis_file }),
+    log_file             => catfile(qw{ a log_file }),
+    pedigree_file        => catfile(qw{ a pedigree_file }),
+    pedigree_fam_file    => catfile(qw{ a pedigree_fam_file }),
+    reference_info_file  => catfile(qw{ a reference_info_file }),
+    sample_info_file     => catfile(qw{ a sample_info_file }),
 );
 
 my %sample_info;
@@ -84,6 +85,7 @@ my %expected_sample_info = (
     store => {
         meta => {
             config          => $active_parameter{config_file},
+            config_analysis => $active_parameter{config_file_analysis},
             log             => $active_parameter{log_file},
             pedigree        => $active_parameter{pedigree_file},
             pedigree_fam    => $active_parameter{pedigree_fam_file},
