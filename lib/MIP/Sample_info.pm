@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,6 +37,7 @@ BEGIN {
       get_sample_info_sample_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
+      set_file_path_to_store
       set_gene_panel
       set_infile_info
       set_most_complete_vcf
@@ -439,6 +440,60 @@ sub get_sequence_run_type_is_interleaved {
     return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
       {sequence_run_type}{interleaved};
 
+}
+
+sub set_file_path_to_store {
+
+## Function : Set file to store in sample_info
+## Returns  :
+## Arguments: $file_tag         => Short description of file
+##          : $file_type        => File type
+##          : $path             => Path of file
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_tag;
+    my $file_type;
+    my $path;
+    my $sample_info_href;
+
+    my $tmpl = {
+        file_tag => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_tag,
+            strict_type => 1,
+        },
+        file_type => {
+            allow       => [qw{ fastq bam meta vcf }],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_type,
+            strict_type => 1,
+        },
+        path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$path,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set file path according to file type and tag
+    $sample_info_href->{store}{$file_type}{$file_tag} = $path;
+
+    return;
 }
 
 sub set_gene_panel {

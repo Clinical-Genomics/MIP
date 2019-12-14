@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -149,8 +149,9 @@ sub analysis_sv_combinevariantcallsets {
       qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Vt qw{ vt_decompose };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_recipe_outfile_in_sample_info
+      set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -378,6 +379,15 @@ sub analysis_sv_combinevariantcallsets {
                     metafile_tag     => q{sv_bcf_file},
                     path             => $sv_bcf_file_path,
                     recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            set_file_path_to_store(
+                {
+                    file_tag         => q{sv_combined},
+                    file_type        => q{vcf},
+                    path             => $sv_bcf_file_path,
                     sample_info_href => $sample_info_href,
                 }
             );

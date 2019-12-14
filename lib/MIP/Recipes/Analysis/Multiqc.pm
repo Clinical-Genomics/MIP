@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -129,7 +129,7 @@ sub analysis_multiqc {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
 
     ### PREPROCESSING:
 
@@ -214,24 +214,36 @@ sub analysis_multiqc {
 
         if ( $recipe_mode == 1 ) {
 
-            ## Collect QC metadata info for later use
-            set_recipe_metafile_in_sample_info(
-                {
-                    metafile_tag     => $report_id . $UNDERSCORE . q{html},
-                    path             => catfile( $outdir_path, q{multiqc_report.html} ),
-                    recipe_name      => q{multiqc},
-                    sample_info_href => $sample_info_href,
-                }
+            my %multiqc_outfile_format = (
+                html => catfile( $outdir_path, q{multiqc_report.html} ),
+                json => catfile( $outdir_path, q{multiqc_data}, q{multiqc_data.json} ),
             );
-            set_recipe_metafile_in_sample_info(
-                {
-                    metafile_tag => $report_id . $UNDERSCORE . q{json},
-                    path =>
-                      catfile( $outdir_path, q{multiqc_data}, q{multiqc_data.json} ),
-                    recipe_name      => q{multiqc},
-                    sample_info_href => $sample_info_href,
-                }
-            );
+
+          OUTFILE_FORMAT:
+            while ( my ( $outfile_format, $path ) = each %multiqc_outfile_format ) {
+
+                ## Collect QC metadata info for later use
+                set_recipe_metafile_in_sample_info(
+                    {
+                        metafile_tag     => $report_id . $UNDERSCORE . $outfile_format,
+                        path             => $path,
+                        recipe_name      => q{multiqc},
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+                set_file_path_to_store(
+                    {
+                        file_tag => q{multiqc}
+                          . $UNDERSCORE
+                          . $report_id
+                          . $UNDERSCORE
+                          . $outfile_format,
+                        file_type        => q{meta},
+                        path             => $path,
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+            }
         }
     }
     close $filehandle;

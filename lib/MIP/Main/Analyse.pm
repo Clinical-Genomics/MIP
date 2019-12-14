@@ -47,6 +47,7 @@ use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
@@ -74,6 +75,7 @@ use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
   qw{ pipeline_analyse_rd_dna_vcf_rerun };
+use MIP::Sample_info qw{ set_file_path_to_store };
 
 BEGIN {
 
@@ -81,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -322,12 +324,16 @@ sub mip_analyse {
           exome_target_bed
           gatk_path
           infile_dirs
+          pedigree_fam_file
           picardtools_path
+          reference_dir
+          reference_info_file
           rtg_vcfeval_reference_genome
           salmon_quant_reference_genome
           sample_info_file
           star_aln_reference_genome
           star_fusion_reference_genome
+          store_file
           sv_vcfparser_select_file
           temp_directory
           vcfparser_select_file
@@ -670,18 +676,15 @@ sub mip_analyse {
         }
     );
 
-## Create .fam file to be used in variant calling analyses
+    ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => \%active_parameter,
             execution_mode        => q{system},
-            fam_file_path         => catfile(
-                $active_parameter{outdata_dir}, $active_parameter{case_id},
-                $active_parameter{case_id} . $DOT . q{fam}
-            ),
-            log              => $log,
-            parameter_href   => \%parameter,
-            sample_info_href => \%sample_info,
+            fam_file_path         => $active_parameter{pedigree_fam_file},
+            log                   => $log,
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
         }
     );
 
@@ -727,7 +730,7 @@ sub mip_analyse {
         }
     );
 
-## Write QC for recipes used in analysis
+    ## Write QC for recipes used in analysis
     # Write sample info to yaml file
     if ( $active_parameter{sample_info_file} ) {
 
@@ -741,7 +744,7 @@ sub mip_analyse {
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
     }
 
-## Write job_ids to file
+    ## Write job_ids to file
     write_job_ids_to_file(
         {
             active_parameter_href => \%active_parameter,
@@ -750,6 +753,21 @@ sub mip_analyse {
         }
     );
 
+    set_analysis_files_to_store(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
+
+    ## Writes a YAML hash to file
+    write_yaml(
+        {
+            yaml_href      => \%{ $sample_info{store} },
+            yaml_file_path => $active_parameter{store_file},
+        }
+    );
+    $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
 
