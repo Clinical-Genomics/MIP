@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
@@ -154,8 +154,10 @@ sub analysis_arriba {
     use MIP::Program::Arriba qw{ arriba draw_fusions };
     use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
     use MIP::Program::Star qw{ star_aln };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      set_file_path_to_store
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -415,6 +417,24 @@ sub analysis_arriba {
                 path             => $report_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{arriba},
+                file_type        => q{meta},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{arriba_report},
+                file_type        => q{meta},
+                path             => $report_path,
                 sample_info_href => $sample_info_href,
             }
         );

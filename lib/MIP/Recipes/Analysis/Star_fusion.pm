@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -146,13 +146,13 @@ sub analysis_star_fusion {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
 
     ## Star fusion has a fixed sample_prefix
-    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions};
+    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions.abridged};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -271,6 +271,15 @@ sub analysis_star_fusion {
                 path             => $file_paths[0],
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{star_fusion},
+                file_type        => q{meta},
+                path             => $file_paths[0],
                 sample_info_href => $sample_info_href,
             }
         );

@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -157,8 +157,10 @@ sub analysis_vep {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      set_file_path_to_store
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -1415,6 +1417,15 @@ sub analysis_vep_rna {
                 infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $case_id . $UNDERSCORE . q{vep},
+                file_type        => q{vcf},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
