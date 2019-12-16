@@ -19,7 +19,7 @@ use Readonly;
 use List::MoreUtils qw{ each_array uniq };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_merge };
@@ -132,7 +132,7 @@ sub analysis_bcftools_merge {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_merge bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -279,6 +279,15 @@ sub analysis_bcftools_merge {
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $case_id . $UNDERSCORE . q{ase},
+                file_type        => q{vcf},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
