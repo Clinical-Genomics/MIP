@@ -37,7 +37,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -246,7 +246,7 @@ sub check_program_installations {
     print {$filehandle} $NEWLINE;
 
     ## Create success and fail case
-    my $installation_outcome = uc $env_name;
+    my $installation_outcome = q{SUCCESS};
     my $success_message =
       q{\n\tAll programs were succesfully installed in: } . $env_name . q{\n};
     my $fail_message =
@@ -267,7 +267,7 @@ sub check_program_installations {
         }
       );
 
-    my $success_case = qq?&& { $success_echo; $installation_outcome=success; }?;
+    my $success_case = qq?&& { $success_echo; $installation_outcome=1; }?;
     my $fail_case    = qq?|| { $fail_echo; }?;
 
     ## Enabling querying of $?
@@ -357,7 +357,7 @@ sub update_config {
     my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     ## Map installation to bash paramter
-    my $installation_outcome = q{$} . $env_name;
+    my $installation_outcome = q{$SUCCESS};
 
     ## Set config paths
     my $load_config_path;
@@ -465,8 +465,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
           );
 
         ## Check for success
-        my $success_check =
-          qq{if [[ "$installation_outcome" == "success" ]]; then} . $NEWLINE;
+        my $success_check = qq{if [[ "$installation_outcome" == "1" ]]; then} . $NEWLINE;
         $success_check .= $TAB . $update_config_command . $NEWLINE;
         $success_check .= $TAB . $success_echo . $NEWLINE;
         $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
