@@ -23,7 +23,7 @@ PMID:25495354
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
-MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout(https://github.com/Clinical-Genomics/scout) for visualization of identified variants.
+MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with [Scout](https://github.com/Clinical-Genomics/scout) for visualization of identified variants.
 
 MIP rare disease DNA analyses single nucleotide variants (SNVs), insertions and deletions (INDELs) and structural variants (SVs).
 
