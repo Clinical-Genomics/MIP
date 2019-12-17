@@ -29,16 +29,13 @@ You only need to install the dependencies that are required for the recipes that
 **Extra CPANM modules**
 You can speed up, for instance, the Readonly module by also installing the companion module Readonly::XS. No change to the code is required and the Readonly module will call the Readonly::XS module if available.  
 
-**CADD**
-MIP is currently unable to install the CADD binary for dynamic calculation of indels and there is also no support for downloading the CADD references file. If you want to use these features in MIP you have to install and download them manually.
-
 ### **Programs**
 
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
 - [Bcftools] (version: 1.9)
-- [BedTools] (version: 2.27.1)
+- [BedTools] (version: 2.29.0)
 - [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.15)
 - [CADD] (version: 1.4)
@@ -47,24 +44,26 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [Expansionhunter] (version 3.0.0)
 - [Delly] (version: 0.8.1)
 - [FastQC] (version: 0.11.8)
-- [GATK] (version: 3.8 and 4.1.0)
+- [GATK] (version: 3.8 and 4.1.3)
 - [GENMOD] (version: 3.7.3)
 - [Htslib] (version: 1.9)
-- [Manta] (version: 1.5.0)
+- [Manta] (version: 1.6.0)
 - [MultiQC] (version: 1.6)
 - [Peddy] (version: 0.4.2)
-- [PicardTools] (version: 2.18.14)
+- [PicardTools] (version: 2.20.7)
 - [PLINK] (version: 1.90b3x35)
+- [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.9)
-- [Stranger] (version: 0.5.4)
-- [Svdb] (version: 1.3.0)
+- [Stranger] (version: 0.5.5)
+- [Svdb] (version: 2.2.0)
 - [Tiddit] (version: 2.7.1)
+- [Upd] (version: 0.1)
 - [Variant_integrity] (version: 0.0.4)
 - [Vcf2cytosure] (version: 0.4.3)
-- [Vcfanno] (version: 0.3.1)
-- [VEP] (version: 94) with plugin "ExACpLI", "MaxEntScan, LoFtool"
+- [Vcfanno] (version: 0.3.2)
+- [VEP] (version: 97) with plugin "ExACpLI", "MaxEntScan, LoFtool"
 - [VT] (version: 20151110)
 
 The version number after the software name are tested for compatibility with MIP.
@@ -161,6 +160,7 @@ MIP will split the variants into two sets (clinical a.k.a "selected" and researc
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
+[Rhocall]: https://github.com/dnil/rhocall
 [rtg-tools]: https://github.com/RealTimeGenomics/rtg-tools
 [Sambamba]: http://lomereiter.github.io/sambamba/
 [Samtools]: http://www.htslib.org/
@@ -169,6 +169,7 @@ MIP will split the variants into two sets (clinical a.k.a "selected" and researc
 [Svdb]: https://github.com/J35P312/SVDB
 [Tabix]: http://samtools.sourceforge.net/tabix.shtml
 [Tiddit]: https://github.com/J35P312/TIDDIT
+[Upd]: https://github.com/bjhall/upd
 [Variant_integrity]: https://github.com/moonso/variant_integrity
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
