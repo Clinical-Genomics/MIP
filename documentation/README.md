@@ -192,7 +192,7 @@ You can always supply `mip [process] [pipeline] --help` to list all available pa
 
 Example usage:
 ```Bash
-$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
+$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U --star_with_recipe picardtools_mergesamfiles --config 3_config.yaml
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
