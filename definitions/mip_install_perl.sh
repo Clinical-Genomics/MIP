@@ -52,10 +52,15 @@ error() {
 ## Enable trap for signal(s) ERR
 trap '$(error "$previous_command" "$?")' ERR
 
+
 ## Create or install conda env
-if [ "$EXISTING_ENV" = true ]
+if [ "$EXISTING_ENV" = true ] && [ -d ${CONDA_PATH}/envs/${ENV_NAME} ]
 then
   conda install --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64
+elif [ -d ${CONDA_PATH}/envs/${ENV_NAME} ]
+then
+    echo "Environment already exists. Please supply flag -x to command"
+    exit 1
 else
   conda create --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64
 fi
