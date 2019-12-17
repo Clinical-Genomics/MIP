@@ -23,7 +23,7 @@ PMID:25495354
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
-MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout for visualization of identified variants.
+MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout(https://github.com/Clinical-Genomics/scout) for visualization of identified variants.
 
 MIP rare disease DNA analyses single nucleotide variants (SNVs), insertions and deletions (INDELs) and structural variants (SVs).
 
@@ -50,14 +50,12 @@ $ mip analyse rd_rna [case_id] --config_file [mip_config_rna.yaml] --pedigree_fi
 ## Features
 
 * Installation
-  * Simple automated install of all programs using conda/pip/SHELL via supplied install application
+  * Simple automated install of all programs using conda/docker/singularity via supplied install application
   * Downloads and prepares references in the installation process
-  * Handle conflicting tool dependencies
 * Autonomous
   * Checks that all dependencies are fulfilled before launching
   * Builds and prepares references and/or files missing before launching
   * Decompose and normalise reference\(s\) and variant VCF\(s\)
-  * Splits and merges files/contigs for samples and case when relevant
 * Automatic
   * A minimal amount of hands-on time
   * Tracks and executes all recipes without manual intervention
@@ -155,7 +153,7 @@ It is possible to specify the name of the environment using the ``--environment_
 ```Bash
 $ bash mip.sh
 ```
-A conda environment will be created where MIP with most of its dependencies will be installed.
+A conda environment will be created where MIP with all dependencies will be installed.
 
 ###### *Note:*
   Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
@@ -170,7 +168,7 @@ $ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
-  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environments and the [COND_PATH] part needs to be updated to point to your conda installation directory. If you are using the default environment names the load_env part of the config should look like this:
+  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environment. If you are using the default environment names the load_env part of the config should look like this:
 
   ```Yml
   load_env:
@@ -194,7 +192,7 @@ You can always supply `mip [process] [pipeline] --help` to list all available pa
 
 Example usage:
 ```Bash
-$ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
+$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
@@ -235,11 +233,11 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
-[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_config.yaml
+[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_rd_dna_config.yaml
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.23-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.5-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.19-.yaml
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.28-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.8-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.24-.yaml

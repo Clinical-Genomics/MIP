@@ -38,7 +38,7 @@ To add a build recipe switch follow these steps:
 
 To add a download recipe switch follow these steps:
  - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to `case`.
- - Add the reference and version tags to the reference hash in `template/mip_download_[Pipeline]_-[Version]-.yaml`. In the same file define what do download and how by adding the reference, genome_build, reference tags and then keys according to the [download API](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/download_references.md).
+ - Add the reference and version tags to the reference hash in `template/mip_download_[Pipeline]_-[Version]-.yaml`. In the same file define what to download and how by adding the reference, genome_build, reference tags and then keys according to the [download API](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/download_references.md).
  - Add the same reference info to the test fixture `t/data/test_data/download_active_parameters.yaml` for your download_[recipe_tag].t script.
  - Add the download_recipe coderef to the `download_recipe` hash in the corresponding pipeline `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
  - Fill your download_recipe with content.
