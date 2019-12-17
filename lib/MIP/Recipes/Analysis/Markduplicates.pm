@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates };
@@ -464,7 +464,7 @@ sub analysis_markduplicates {
     if ( not $active_parameter_href->{markduplicates_no_bam_to_cram} ) {
 
         $store_outfile_path   = $outfile_path_prefix . $DOT . q{cram};
-        $store_outfile_suffix = q{cram};
+        $store_outfile_suffix = $DOT . q{cram};
 
         ## Create BAM to CRAM for long term storage
         say {$filehandle} q{## BAM to CRAM for long term storage};
@@ -509,9 +509,9 @@ sub analysis_markduplicates {
 
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix . $DOT . $store_outfile_suffix,
+                infile           => $outfile_name_prefix . $store_outfile_suffix,
                 path             => $store_outfile_path,
-                recipe_name      => $recipe_name,
+                recipe_name      => $recipe_name . $UNDERSCORE . q{alignment},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
