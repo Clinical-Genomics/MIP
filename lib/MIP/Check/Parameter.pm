@@ -28,14 +28,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
       check_allowed_array_values
       check_allowed_temp_directory
-      check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
       check_load_env_packages
@@ -200,66 +199,6 @@ sub check_allowed_temp_directory {
 
     # All ok
     return 1;
-}
-
-sub check_cmd_config_vs_definition_file {
-
-## Function : Compare keys from config and cmd with definitions file
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @allowed_unique_keys =
-      ( q{vcfparser_outfile_count}, $active_parameter_href->{case_id} );
-    my @unique;
-
-  ACTIVE_PARAMETER:
-    foreach my $key ( keys %{$active_parameter_href} ) {
-
-        ## Parameters from definitions file
-        if ( not exists $parameter_href->{$key} ) {
-
-            push @unique, $key;
-        }
-    }
-  UNIQUE_KEYS:
-    foreach my $unique_key (@unique) {
-
-        ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
-        if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
-
-            say {*STDERR} q{Found illegal key: }
-              . $unique_key
-              . q{ in config file or command line that is not defined in define_parameters.yaml};
-            croak();
-        }
-    }
-    return;
 }
 
 sub check_email_address {
