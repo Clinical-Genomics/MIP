@@ -13,8 +13,8 @@ slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
-sv_vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panel.bed
-vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panel.bed
+sv_vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panels.bed
+vcfparser_select_file: cluster_constant_path!/case_id!/grch38_gene_panels.bed
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!

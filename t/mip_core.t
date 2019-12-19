@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 our $USAGE = build_usage( {} );
 
@@ -254,7 +254,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -321,7 +321,7 @@ sub mip_scripts {
         ],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
-              gene_panel.bed
+              gene_panels.bed
               grch38_mip_rd_dna_config.yaml
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml

@@ -30,7 +30,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 ## Constants
 Readonly my $SELECT_FEATURE_MATCHING_COLUMN => 3;
@@ -43,7 +43,7 @@ my $mip_path = catfile( dirname($Bin),          q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $pli_template_path =
   catfile( $test_reference_path, q{gnomad_pli_per_gene_-_r2.1.1-.txt} );
-my $select_feature_file = catfile( dirname($Bin), qw{ templates gene_panel.bed } );
+my $select_feature_file = catfile( dirname($Bin), qw{ templates gene_panels.bed } );
 my $select_outfile      = catfile( $cluster_constant_path,
     qw{ 643594-miptest test_data 643594-miptest vcfparser_select.vcf } );
 
@@ -93,12 +93,12 @@ my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
 ok( $success, q{Executed mip vcfparser} );
 
-ok( -f $select_outfile,   q{Checking for select file} );
+ok( -f $select_outfile, q{Checking for select file} );
 
 ## Clean-up
 unlink $select_outfile;
-unlink catfile(cwd(), q{vcfparser.log});
- 
+unlink catfile( cwd(), q{vcfparser.log} );
+
 done_testing();
 
 ######################

@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1484,7 +1484,7 @@ sub _set_vcfparser_select_file {
     my $path = catfile(
         $active_parameter_href->{cluster_constant_path},
         $active_parameter_href->{case_id},
-        q{gene_panel.bed}
+        q{gene_panels.bed}
     );
 
     $active_parameter_href->{$parameter_name} = $path;

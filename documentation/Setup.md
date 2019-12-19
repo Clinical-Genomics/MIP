@@ -137,7 +137,7 @@ Corresponding MIP references:
  - grch37_gatk_merged_reference_samples.txt
 
 ## Gene panel for the clinical test
-MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panel.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panel.bed`.  
+MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panels.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panels.bed`.  
 
 
 [Bcftools]: http://www.htslib.org/
