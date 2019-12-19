@@ -83,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -164,7 +164,6 @@ sub mip_analyse {
 
     # Catches script name and removes ending
     my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
-    chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
 
