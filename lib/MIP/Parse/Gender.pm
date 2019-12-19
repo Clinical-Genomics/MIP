@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -70,7 +70,7 @@ sub build_stream_file_cmd {
 
     ## Constants
     Readonly my $BYTE_START_POS => 10_000;
-    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 100;
+    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 300;
 
     my @bwa_infiles;
 
@@ -455,7 +455,7 @@ sub update_gender_info {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Constants
-    Readonly my $MALE_THRESHOLD => 25;
+    Readonly my $MALE_THRESHOLD => 36;
 
     if ( $y_read_count > $MALE_THRESHOLD ) {
 
