@@ -22,15 +22,16 @@ use Readonly;
 ## MIPs lib/
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
-  qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
+  qw{ check_email_address check_recipe_exists_in_hash check_recipe_mode };
 use MIP::Check::Path qw{ check_parameter_files };
 use MIP::Cluster qw{ check_max_core_number };
+use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
+  qw{ set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
@@ -41,7 +42,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };

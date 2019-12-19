@@ -21,14 +21,14 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Check::Parameter
-  qw{ check_active_installation_parameters check_cmd_config_vs_definition_file };
+use MIP::Check::Parameter qw{ check_active_installation_parameters };
+use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_conda_path set_custom_default_to_active_parameter set_default_to_active_parameter };
+  qw{ set_conda_path set_custom_default_to_active_parameter set_default_to_active_parameter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 
 ## Recipes
@@ -43,7 +43,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.05;
+    our $VERSION = 2.06;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
