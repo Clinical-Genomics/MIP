@@ -105,7 +105,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_path;
 my $verbose = 1;
-our $VERSION = 1.35;
+our $VERSION = 1.36;
 
 ###User Options
 GetOptions(
@@ -141,8 +141,7 @@ my %install_file = (
     rd_rna => q{Rd_rna.pm},
 );
 
-my @installation_modes =
-  ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode --write_config --update_config} );
+my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode } );
 
 PIPELINE:
 foreach my $pipeline ( keys %install_file ) {
@@ -172,11 +171,6 @@ foreach my $pipeline ( keys %install_file ) {
         }
 
         push @mode_cmds, $installation_mode;
-        if ( $installation_mode eq q{--update_config} ) {
-
-            push @mode_cmds,
-              catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
-        }
 
         my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
             command => \@mode_cmds,

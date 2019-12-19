@@ -30,7 +30,7 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
-use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
+use MIP::Recipes::Install::Post_installation qw{check_mip_installation };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 
 BEGIN {
@@ -39,7 +39,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -200,17 +200,6 @@ sub pipeline_install_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             filehandle            => $filehandle,
-        }
-    );
-
-    ## Update/create config
-    update_config(
-        {
-            env_name      => $active_parameter_href->{environment_name},
-            filehandle    => $filehandle,
-            pipeline      => $active_parameter_href->{process},
-            update_config => $active_parameter_href->{update_config},
-            write_config  => $active_parameter_href->{write_config},
         }
     );
 

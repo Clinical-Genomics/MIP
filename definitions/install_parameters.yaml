@@ -123,13 +123,6 @@ temp_directory:
   data_type: SCALAR
   mandatory: no
   type: path
-update_config:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
-  type: mip
 vep_assemblies:
   associated_recipe:
     - mip
@@ -165,11 +158,4 @@ vep_species:
   data_type: ARRAY
   default:
     - homo_sapiens_merged
-  type: mip
-write_config: 
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
   type: mip
