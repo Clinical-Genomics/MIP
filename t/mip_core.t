@@ -299,9 +299,9 @@ sub mip_scripts {
               download_rd_rna_parameters.yaml
               install_rd_dna_parameters.yaml
               install_rd_rna_parameters.yaml
-              mandatory_parameter_keys.yaml
+              mandatory_parameters.yaml
               mip_parameters.yaml
-              non_mandatory_parameter_keys.yaml
+              not_mandatory_parameters.yaml
               rd_dna_initiation_map.yaml
               rd_dna_parameters.yaml
               rd_rna_parameters.yaml

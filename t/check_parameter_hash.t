@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -73,7 +70,7 @@ my %parameter = load_yaml( { yaml_file => $definitions_file, } );
 my %mandatory_key = load_yaml(
     {
         yaml_file =>
-          catfile( dirname($Bin), qw{ definitions mandatory_parameter_keys.yaml } ),
+          catfile( dirname($Bin), qw{ definitions mandatory_parameters.yaml } ),
     }
 );
 
@@ -81,7 +78,7 @@ my %mandatory_key = load_yaml(
 my %non_mandatory_key = load_yaml(
     {
         yaml_file =>
-          catfile( dirname($Bin), qw{ definitions non_mandatory_parameter_keys.yaml } ),
+          catfile( dirname($Bin), qw{ definitions not_mandatory_parameters.yaml } ),
 
     }
 );

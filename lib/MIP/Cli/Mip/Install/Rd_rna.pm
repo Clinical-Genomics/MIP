@@ -22,11 +22,10 @@ use MooseX::Types::Structured qw{ Dict Optional };
 use Readonly;
 
 ## MIPs lib
-use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.11;
+our $VERSION = 2.12;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -48,25 +47,12 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    ## Mip analyse rd_rna parameters
-    ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions install_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions install_rd_rna_parameters.yaml } ),
-    );
+    use MIP::Definition qw{ get_parameter_hash_from_definition_files };
 
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
-
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ## %parameter holds all defined parameters for MIP
-    ## mip download rd_rna parameters
-    my %parameter;
+    ## %parameter holds all defined parameters for MIP install rd_rna
+    ## CLI commands inheritance level
+    my %parameter =
+      get_parameter_hash_from_definition_files( { level => q{install_rd_rna}, } );
 
     ## If no config from cmd
     if ( not $active_parameter{config_file} ) {
@@ -74,22 +60,6 @@ sub run {
         ## Use default
         $active_parameter{config_file} =
           catfile( $Bin, qw{ templates mip_install_rd_rna_config_-1.0-.yaml } );
-    }
-
-  DEFINITION_FILE:
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path        => $definition_file,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                }
-            ),
-        );
     }
 
     ## Print parameters from config file and exit
