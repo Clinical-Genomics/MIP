@@ -162,7 +162,6 @@ sub mip_analyse {
 
     # Catches script name and removes ending
     my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
-    chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
 
