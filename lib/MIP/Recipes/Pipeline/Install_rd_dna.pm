@@ -30,7 +30,7 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
-use MIP::Recipes::Install::Post_installation qw{check_mip_installation };
+use MIP::Recipes::Install::Post_installation qw{ check_mip_installation };
 use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
 
 BEGIN {
