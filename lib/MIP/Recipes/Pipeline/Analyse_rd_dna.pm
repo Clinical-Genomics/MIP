@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -230,6 +230,9 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
+    ## Set analysis constants
+    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -257,9 +260,6 @@ sub pipeline_analyse_rd_dna {
             parameter_href          => $parameter_href,
         }
     );
-
-    ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
@@ -315,7 +315,7 @@ sub pipeline_analyse_rd_dna {
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
-        varg_ar                => \&analysis_varg, 
+        varg_ar                => \&analysis_varg,
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,
