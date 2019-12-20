@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.36;
+our $VERSION = 1.37;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -42,51 +42,23 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::File::Format::Parameter qw{ parse_definition_file  };
+    use MIP::Definition
+      qw{ get_definition_file_paths get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
-    ## Mip analyse rd_dna parameters
-    ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions rd_dna_parameters.yaml } ),
-    );
+    ## %parameter holds all defined parameters for MIP analyse rd_dna
+    ## CLI commands inheritance level
+    my %parameter = get_parameter_from_definition_files( { level => q{rd_dna}, } );
 
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
-
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ## %parameter holds all defined parameters for MIP
-    ## mip analyse rd_dna parameters
-    my %parameter;
-
-  DEFINITION_FILE:
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path        => $definition_file,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                }
-            ),
-        );
-    }
+    my @rd_dna_definition_file_paths =
+      get_definition_file_paths( { level => q{rd_dna}, } );
 
     ## Print recipes if requested and exit
     print_recipe(
         {
-            define_parameters_files_ref => \@definition_files,
+            define_parameters_files_ref => \@rd_dna_definition_file_paths,
             parameter_href              => \%parameter,
             print_recipe                => $active_parameter{print_recipe},
             print_recipe_mode           => $active_parameter{print_recipe_mode},
@@ -123,7 +95,7 @@ sub run {
     my @order_parameters;
 
   DEFINITION_FILE:
-    foreach my $define_parameters_file (@definition_files) {
+    foreach my $define_parameters_file (@rd_dna_definition_file_paths) {
 
         push @order_parameters,
           order_parameter_names(

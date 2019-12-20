@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -49,43 +49,12 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::File::Format::Parameter qw{ parse_definition_file  };
+    use MIP::Definition qw{ get_parameter_from_definition_files };
 
-    ## Mip analyse rd_rna parameters
-    ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions download_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions download_rd_rna_parameters.yaml } ),
-    );
-
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
-
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ## %parameter holds all defined parameters for MIP
-    ## mip download rd_rna parameters
-    my %parameter;
-
-  DEFINITION_FILE:
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path        => $definition_file,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                }
-            ),
-        );
-    }
+    ## %parameter holds all defined parameters for MIP download rd_rna
+    ## CLI commands inheritance level
+    my %parameter =
+      get_parameter_from_definition_files( { level => q{download_rd_rna}, } );
 
     ## Print parameters from config file and exit
     print_parameter_defaults(
