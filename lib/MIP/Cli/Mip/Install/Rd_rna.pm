@@ -47,12 +47,12 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::Definition qw{ get_parameter_hash_from_definition_files };
+    use MIP::Definition qw{ get_parameter_from_definition_files };
 
     ## %parameter holds all defined parameters for MIP install rd_rna
     ## CLI commands inheritance level
     my %parameter =
-      get_parameter_hash_from_definition_files( { level => q{install_rd_rna}, } );
+      get_parameter_from_definition_files( { level => q{install_rd_rna}, } );
 
     ## If no config from cmd
     if ( not $active_parameter{config_file} ) {

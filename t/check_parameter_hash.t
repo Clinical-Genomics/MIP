@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,7 +67,7 @@ my $definitions_file = catfile( $Bin, qw{ data test_data define_parameters.yaml 
 my %parameter = load_yaml( { yaml_file => $definitions_file, } );
 
 ## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
+my %mandatory = load_yaml(
     {
         yaml_file =>
           catfile( dirname($Bin), qw{ definitions mandatory_parameters.yaml } ),
@@ -75,7 +75,7 @@ my %mandatory_key = load_yaml(
 );
 
 ## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
+my %not_mandatory = load_yaml(
     {
         yaml_file =>
           catfile( dirname($Bin), qw{ definitions not_mandatory_parameters.yaml } ),
@@ -86,10 +86,10 @@ my %non_mandatory_key = load_yaml(
 ## Given valid input
 my $is_ok = check_parameter_hash(
     {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
-        file_path              => $definitions_file,
+        parameter_href     => \%parameter,
+        mandatory_href     => \%mandatory,
+        not_mandatory_href => \%not_mandatory,
+        file_path          => $definitions_file,
     }
 );
 
@@ -102,10 +102,10 @@ $parameter{case_id}{data_type} = [q{wrong_data_type}];
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            parameter_href     => \%parameter,
+            mandatory_href     => \%mandatory,
+            not_mandatory_href => \%not_mandatory,
+            file_path          => $definitions_file,
         }
     )
 };
@@ -123,10 +123,10 @@ $parameter{case_id}{associated_recipe} = q{not_an_array};
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            parameter_href     => \%parameter,
+            mandatory_href     => \%mandatory,
+            not_mandatory_href => \%not_mandatory,
+            file_path          => $definitions_file,
         }
     )
 };
@@ -144,10 +144,10 @@ $parameter{case_id}{data_type} = q{not_valid_value};
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            parameter_href     => \%parameter,
+            mandatory_href     => \%mandatory,
+            not_mandatory_href => \%not_mandatory,
+            file_path          => $definitions_file,
         }
     )
 };
@@ -165,10 +165,10 @@ delete $parameter{case_id}{data_type};
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            parameter_href     => \%parameter,
+            mandatory_href     => \%mandatory,
+            not_mandatory_href => \%not_mandatory,
+            file_path          => $definitions_file,
         }
     )
 };

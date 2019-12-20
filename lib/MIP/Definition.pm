@@ -30,7 +30,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
       get_definition_file_paths
-      get_parameter_hash_from_definition_files
+      get_parameter_from_definition_files
     };
 }
 
@@ -38,16 +38,16 @@ sub check_definition_file {
 
 ## Function : Parse and check the definition parameters file
 ## Returns  : %parameter
-## Arguments: $define_parameters_path            => File defining the supported parameters
-##          : $non_mandatory_parameter_keys_path => Non mandatory keys
-##          : $mandatory_parameter_keys_path     => Mandatory keys
+## Arguments: $define_parameters_path             => File defining the supported parameters
+##          : $not_mandatory_definition_file_path => Not mandatory parameter keys
+##          : $mandatory_definition_file_path     => Mandatory parameter keys
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $define_parameters_path;
-    my $non_mandatory_parameter_keys_path;
-    my $mandatory_parameter_keys_path;
+    my $not_mandatory_definition_file_path;
+    my $mandatory_definition_file_path;
 
     my $tmpl = {
         define_parameters_path => {
@@ -56,16 +56,16 @@ sub check_definition_file {
             store       => \$define_parameters_path,
             strict_type => 1,
         },
-        non_mandatory_parameter_keys_path => {
+        not_mandatory_definition_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$non_mandatory_parameter_keys_path,
+            store       => \$not_mandatory_definition_file_path,
             strict_type => 1,
         },
-        mandatory_parameter_keys_path => {
+        mandatory_definition_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$mandatory_parameter_keys_path,
+            store       => \$mandatory_definition_file_path,
             strict_type => 1,
         },
     };
@@ -79,25 +79,25 @@ sub check_definition_file {
     my %parameter = load_yaml( { yaml_file => $define_parameters_path, } );
 
     ## Load mandatory keys and values for parameters
-    my %mandatory_key = load_yaml(
+    my %mandatory = load_yaml(
         {
-            yaml_file => $mandatory_parameter_keys_path,
+            yaml_file => $mandatory_definition_file_path,
         }
     );
 
     ## Load non mandatory keys and values for parameters
-    my %non_mandatory_key = load_yaml(
+    my %not_mandatory = load_yaml(
         {
-            yaml_file => $non_mandatory_parameter_keys_path,
+            yaml_file => $not_mandatory_definition_file_path,
         }
     );
 
     check_parameter_hash(
         {
-            file_path              => $define_parameters_path,
-            non_mandatory_key_href => \%non_mandatory_key,
-            mandatory_key_href     => \%mandatory_key,
-            parameter_href         => \%parameter,
+            file_path          => $define_parameters_path,
+            not_mandatory_href => \%not_mandatory,
+            mandatory_href     => \%mandatory,
+            parameter_href     => \%parameter,
         }
     );
     return %parameter;
@@ -172,7 +172,7 @@ sub get_definition_file_paths {
     return @definition_file_paths;
 }
 
-sub get_parameter_hash_from_definition_files {
+sub get_parameter_from_definition_files {
 
 ## Function : Get parameter hash from definition level
 ## Returns  : $definition_file_path or @definition_file_paths
@@ -208,8 +208,6 @@ sub get_parameter_hash_from_definition_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %parameter;
-
     my @definition_file_paths = get_definition_file_paths( { level => $level, } );
 
     ## Not mandatory parameter definition keys to check
@@ -220,6 +218,8 @@ sub get_parameter_hash_from_definition_files {
     my $mandatory_definition_file_path =
       get_definition_file_paths( { level => q{mandatory}, } );
 
+    my %parameter;
+
   DEFINITION_FILE:
     foreach my $definition_file (@definition_file_paths) {
 
@@ -227,9 +227,9 @@ sub get_parameter_hash_from_definition_files {
             %parameter,
             check_definition_file(
                 {
-                    define_parameters_path        => $definition_file,
-                    mandatory_parameter_keys_path => $mandatory_definition_file_path,
-                    non_mandatory_parameter_keys_path =>
+                    define_parameters_path         => $definition_file,
+                    mandatory_definition_file_path => $mandatory_definition_file_path,
+                    not_mandatory_definition_file_path =>
                       $not_mandatory_definition_file_path,
                 }
             ),

@@ -49,12 +49,12 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::Definition qw{ get_parameter_hash_from_definition_files };
+    use MIP::Definition qw{ get_parameter_from_definition_files };
 
     ## %parameter holds all defined parameters for MIP download rd_rna
     ## CLI commands inheritance level
     my %parameter =
-      get_parameter_hash_from_definition_files( { level => q{download_rd_rna}, } );
+      get_parameter_from_definition_files( { level => q{download_rd_rna}, } );
 
     ## Print parameters from config file and exit
     print_parameter_defaults(

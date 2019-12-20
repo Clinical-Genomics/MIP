@@ -42,14 +42,14 @@ sub run {
     my %active_parameter = %{$arg_href};
 
     use MIP::Definition
-      qw{ get_definition_file_paths get_parameter_hash_from_definition_files };
+      qw{ get_definition_file_paths get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse rd_rna
     ## CLI commands inheritance
-    my %parameter = get_parameter_hash_from_definition_files( { level => q{rd_rna}, } );
+    my %parameter = get_parameter_from_definition_files( { level => q{rd_rna}, } );
 
     my @rd_rna_definition_file_paths =
       get_definition_file_paths( { level => q{rd_rna}, } );

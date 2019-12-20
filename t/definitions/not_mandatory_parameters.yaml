@@ -1,0 +1,45 @@
+build_file:
+  key_data_type: SCALAR
+  values:
+    - 0
+    - 1
+mandatory:
+  key_data_type: SCALAR
+  values:
+    - no
+exists_check:
+  key_data_type: SCALAR
+  values:
+    - file
+    - directory
+chain:
+  key_data_type: SCALAR
+file_tag:
+  key_data_type: SCALAR
+infile_suffix:
+  key_data_type: SCALAR
+is_reference:
+  key_data_type: SCALAR
+  values:
+    - 1
+analysis_mode:
+  key_data_type: SCALAR
+  values:
+    - sample
+    - case
+outfile_suffix:
+  key_data_type: SCALAR
+program_executables:
+  key_data_type: ARRAY
+  key_data_type: SCALAR
+recipe_type:
+  key_data_type: SCALAR
+  values:
+    - aligners
+    - repeats_variant_callers
+    - structural_variant_callers
+    - variant_callers
+reference:
+  key_data_type: SCALAR
+  values:
+    - reference_dir
