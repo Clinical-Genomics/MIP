@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.17};
+    our $VERSION = q{1.2.18};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vcfparser };
@@ -673,7 +673,6 @@ sub _get_select_filehandle {
             strict_type => 1,
         },
         select_outfile_path => {
-            defined     => 1,
             required    => 1,
             store       => \$select_outfile_path,
             strict_type => 1,
