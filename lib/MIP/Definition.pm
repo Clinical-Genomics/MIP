@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -72,7 +72,7 @@ sub check_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{  check_parameter_hash };
+    use MIP::Parameter qw{  check_parameter_hash };
     use MIP::File::Format::Yaml qw{ load_yaml };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
