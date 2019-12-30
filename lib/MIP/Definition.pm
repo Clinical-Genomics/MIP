@@ -29,7 +29,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
-    get_dependency_tree_from_definition_file
+      get_dependency_tree_from_definition_file
       get_parameter_definition_file_paths
       get_parameter_from_definition_files
     };
@@ -120,10 +120,6 @@ sub get_dependency_tree_from_definition_file {
             allow => [
                 qw{
                   dragen_rd_dna
-                  download_rd_dna
-                  download_rd_rna
-                  install_rd_dna
-                  install_rd_rna
                   rd_dna
                   rd_dna_vcf_rerun
                   rd_rna }
@@ -135,10 +131,11 @@ sub get_dependency_tree_from_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::File::Format::Yaml qw{ load_yaml };
 
-  my $definition_map_file_path = catfile( $Bin, qw{ definitions }, $level . $UNDERSCORE . q{initiation_map.yaml} );
-  my %dependency_tree = load_yaml( { yaml_file => $definition_map_file_path, } );
+    my $definition_map_file_path =
+      catfile( $Bin, qw{ definitions }, $level . $UNDERSCORE . q{initiation_map.yaml} );
+    my %dependency_tree = load_yaml( { yaml_file => $definition_map_file_path, } );
 
     return %dependency_tree;
 }
@@ -248,7 +245,8 @@ sub get_parameter_from_definition_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @definition_file_paths = get_parameter_definition_file_paths( { level => $level, } );
+    my @definition_file_paths =
+      get_parameter_definition_file_paths( { level => $level, } );
 
     ## Not mandatory parameter definition keys to check
     my $not_mandatory_definition_file_path =
