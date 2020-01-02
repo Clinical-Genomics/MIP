@@ -48,7 +48,7 @@ use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
@@ -81,7 +81,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };

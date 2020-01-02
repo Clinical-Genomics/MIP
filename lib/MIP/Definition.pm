@@ -18,18 +18,19 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $UNDERSCORE };
+use MIP::Constants qw{ $COLON $DOT $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
       get_definition_file_paths
+      get_first_level_keys_order_from_definition_file
       get_parameter_from_definition_files
     };
 }
@@ -172,6 +173,49 @@ sub get_definition_file_paths {
     return @definition_file_paths;
 }
 
+sub get_first_level_keys_order_from_definition_file {
+
+## Function : Adds the order of first level keys from definition file to array
+## Returns  : @order_keys
+## Arguments: $file_path => File path to yaml file
+
+    my ($arg_href) = @_;
+
+    ##Flatten argument(s)
+    my $file_path;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Filehandles
+    my $filehandle = IO::Handle->new();
+
+    open $filehandle, q{<}, $file_path
+      or croak( q{Cannot open}
+          . $DOT
+          . $SINGLE_QUOTE
+          . $file_path
+          . $SINGLE_QUOTE
+          . $COLON
+          . $SPACE
+          . $OS_ERROR
+          . $NEWLINE );
+
+    my @order_keys =
+      _parse_definition_file_first_level_keys( { filehandle => $filehandle, } );
+
+    close $filehandle;
+    return @order_keys;
+}
+
 sub get_parameter_from_definition_files {
 
 ## Function : Get parameter hash from definition level
@@ -237,6 +281,47 @@ sub get_parameter_from_definition_files {
     }
 
     return %parameter;
+}
+
+sub _parse_definition_file_first_level_keys {
+
+## Function : Get order of first level keys from definition file
+## Returns  : @order_keys
+## Arguments: $filehandle => Filehandle to read
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+
+    my $tmpl = { filehandle => { store => \$filehandle, }, };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Hold the order of the first level keys from definition file
+    my @order_keys;
+
+  LINE:
+    while ( my $line = <$filehandle> ) {
+
+        chomp $line;
+
+        ## Next line if header
+        next LINE if ( $INPUT_LINE_NUMBER == 1 && $line =~ /\A [-]{3}/sxm );
+
+        ## Next line if commment
+        next LINE if ( $line =~ /\A [#]{1}/sxm );
+
+        ## First level key
+        my ($key) = $line =~ /\A (\w+):/sxm;
+
+        if ($key) {
+
+            push @order_keys, $key;
+            next LINE;
+        }
+    }
+    return @order_keys;
 }
 
 1;

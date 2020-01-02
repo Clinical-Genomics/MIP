@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.19;
+our $VERSION = 1.20;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -43,9 +43,10 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::Definition
-      qw{ get_definition_file_paths get_parameter_from_definition_files };
-    use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
+    use MIP::Definition qw{ get_definition_file_paths
+      get_first_level_keys_order_from_definition_file
+      get_parameter_from_definition_files };
+    use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
@@ -94,12 +95,13 @@ sub run {
 
     ### To write parameters and their values to log in logical order
     ### Actual order of parameters in definition parameters file(s) does not matter
-    ## Adds the order of first level keys from yaml files to array
+    ## Adds the order of first level keys from definition files to array
     my @order_parameters;
+  DEFINITION_FILE:
     foreach my $define_parameters_file (@rd_dna_vcf_rerun_definition_file_paths) {
 
         push @order_parameters,
-          order_parameter_names(
+          get_first_level_keys_order_from_definition_file(
             {
                 file_path => $define_parameters_file,
             }
