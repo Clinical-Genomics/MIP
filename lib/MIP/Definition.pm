@@ -72,7 +72,7 @@ sub check_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parameter qw{  check_parameter_hash };
+    use MIP::Parameter qw{ check_parameter_hash };
     use MIP::File::Format::Yaml qw{ load_yaml };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
