@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
 
@@ -60,7 +60,7 @@ BEGIN {
 ## Constants
 ## Set MIP version
 ## Constants
-Readonly our $MIP_VERSION => q{v7.1.11};
+Readonly our $MIP_VERSION => q{v7.1.12};
 
 ## Cli
 Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
