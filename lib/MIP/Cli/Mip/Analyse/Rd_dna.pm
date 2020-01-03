@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.37;
+our $VERSION = 1.38;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -43,17 +43,19 @@ sub run {
     my %active_parameter = %{$arg_href};
 
     use MIP::Definition
-      qw{ get_definition_file_paths get_parameter_from_definition_files };
+      qw{ get_dependency_tree_from_definition_file get_parameter_definition_file_paths get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse rd_dna
     ## CLI commands inheritance level
-    my %parameter = get_parameter_from_definition_files( { level => q{rd_dna}, } );
+    my $level = q{rd_dna};
+
+    my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
     my @rd_dna_definition_file_paths =
-      get_definition_file_paths( { level => q{rd_dna}, } );
+      get_parameter_definition_file_paths( { level => $level, } );
 
     ## Print recipes if requested and exit
     print_recipe(
@@ -66,17 +68,13 @@ sub run {
     );
 
     ## Get dependency tree and store in parameter hash
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file => catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } ),
-        }
-    );
-    $parameter{dependency_tree} = \%dependency_tree;
+    %{ $parameter{dependency_tree_href} } =
+      get_dependency_tree_from_definition_file( { level => $level, } );
 
     ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             parameter_href       => \%parameter,
         }
     );
@@ -84,7 +82,7 @@ sub run {
     ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );

@@ -1863,14 +1863,14 @@ sub check_recipe_fastq_compatibility {
         get_recipe_chain(
             {
                 recipe               => $recipe_name,
-                dependency_tree_href => $parameter_href->{dependency_tree},
+                dependency_tree_href => $parameter_href->{dependency_tree_href},
                 chain_id_ref         => \$recipe_chain,
             }
         );
 
         my @chain_recipes = get_chain_recipes(
             {
-                dependency_tree_href    => $parameter_href->{dependency_tree},
+                dependency_tree_href    => $parameter_href->{dependency_tree_href},
                 chain_initiation_point  => $recipe_chain,
                 recipe_initiation_point => $recipe_name,
             }

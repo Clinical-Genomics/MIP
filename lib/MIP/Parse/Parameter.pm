@@ -510,7 +510,7 @@ sub parse_start_with_recipe {
     ## Collects all downstream recipes from initation point
     get_dependency_tree(
         {
-            dependency_tree_href   => $parameter_href->{dependency_tree},
+            dependency_tree_href   => $parameter_href->{dependency_tree_href},
             is_recipe_found_ref    => \$is_recipe_found,
             is_chain_found_ref     => \$is_chain_found,
             recipe                 => $active_parameter_href->{start_with_recipe},

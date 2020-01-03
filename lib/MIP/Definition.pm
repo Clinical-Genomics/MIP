@@ -29,7 +29,8 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
-      get_definition_file_paths
+      get_dependency_tree_from_definition_file
+      get_parameter_definition_file_paths
       get_parameter_from_definition_files
     };
 }
@@ -103,7 +104,43 @@ sub check_definition_file {
     return %parameter;
 }
 
-sub get_definition_file_paths {
+sub get_dependency_tree_from_definition_file {
+
+## Function : Get dependency tree hash from definition file
+## Returns  : %dependency_tree
+## Arguments: $level => Level of definition to parse
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $level;
+
+    my $tmpl = {
+        level => {
+            allow => [
+                qw{
+                  dragen_rd_dna
+                  rd_dna
+                  rd_dna_vcf_rerun
+                  rd_rna }
+            ],
+            store       => \$level,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ load_yaml };
+
+    my $definition_map_file_path =
+      catfile( $Bin, qw{ definitions }, $level . $UNDERSCORE . q{initiation_map.yaml} );
+    my %dependency_tree = load_yaml( { yaml_file => $definition_map_file_path, } );
+
+    return %dependency_tree;
+}
+
+sub get_parameter_definition_file_paths {
 
 ## Function : Get definition file path(s) for definition level
 ## Returns  : $definition_file_path or @definition_file_paths
@@ -208,15 +245,16 @@ sub get_parameter_from_definition_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @definition_file_paths = get_definition_file_paths( { level => $level, } );
+    my @definition_file_paths =
+      get_parameter_definition_file_paths( { level => $level, } );
 
     ## Not mandatory parameter definition keys to check
     my $not_mandatory_definition_file_path =
-      get_definition_file_paths( { level => q{not_mandatory}, } );
+      get_parameter_definition_file_paths( { level => q{not_mandatory}, } );
 
     ## Mandatory parameter definition keys to check
     my $mandatory_definition_file_path =
-      get_definition_file_paths( { level => q{mandatory}, } );
+      get_parameter_definition_file_paths( { level => q{mandatory}, } );
 
     my %parameter;
 
@@ -235,7 +273,6 @@ sub get_parameter_from_definition_files {
             ),
         );
     }
-
     return %parameter;
 }
 
