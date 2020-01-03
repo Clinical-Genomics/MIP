@@ -529,7 +529,7 @@ sub print_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ order_parameter_names };
+    use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
     use MIP::Set::Parameter qw{ set_cache };
 
     ## Do not print
@@ -547,7 +547,7 @@ sub print_recipe {
     foreach my $define_parameters_file ( @{$define_parameters_files_ref} ) {
 
         push @order_parameters,
-          order_parameter_names(
+          get_first_level_keys_order_from_definition_file(
             {
                 file_path => $define_parameters_file,
             }
