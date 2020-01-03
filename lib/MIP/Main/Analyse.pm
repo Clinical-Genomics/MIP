@@ -50,7 +50,7 @@ use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
-use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ check_parameter_hash };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
@@ -81,7 +81,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -187,22 +187,14 @@ sub mip_analyse {
         }
     );
 
-## Set the default Log4perl file using supplied dynamic parameters.
-    $active_parameter{log_file} = set_default_log4perl_file(
+## Get log object and set log file in active parameters unless already set from cmd
+    my $log = get_log(
         {
-            cmd_input       => $active_parameter{log_file},
-            date            => $date,
-            date_time_stamp => $date_time_stamp,
-            outdata_dir     => $active_parameter{outdata_dir},
-            script          => $script,
-        }
-    );
-
-## Creates log object
-    my $log = initiate_logger(
-        {
-            file_path => $active_parameter{log_file},
-            log_name  => uc q{mip_analyse},
+            active_parameter_href => \%active_parameter,
+            date                  => $date,
+            date_time_stamp       => $date_time_stamp,
+            log_name              => uc q{mip_analyse},
+            script                => $script,
         }
     );
 

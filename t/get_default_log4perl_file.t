@@ -25,7 +25,7 @@ use MIP::Constants qw{ $DOT $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ set_default_log4perl_file }],
+        q{MIP::Log::MIP_log4perl} => [qw{ get_default_log4perl_file }],
         q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Log::MIP_log4perl qw{ set_default_log4perl_file };
+use MIP::Log::MIP_log4perl qw{ get_default_log4perl_file };
 
-diag(   q{Test set_default_log4perl_file from MIP_log4perl.pm v}
+diag(   q{Test get_default_log4perl_file from MIP_log4perl.pm v}
       . $MIP::Log::MIP_log4perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -73,8 +73,8 @@ my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{t} ) );
 
 my %active_parameter = ( log_file => undef, );
 
-## Set the default Log4perl file using supplied dynamic parameters.
-$active_parameter{log_file} = set_default_log4perl_file(
+## Given no log file from user
+$active_parameter{log_file} = get_default_log4perl_file(
     {
         cmd_input       => $active_parameter{log_file},
         date            => $date,
@@ -84,15 +84,13 @@ $active_parameter{log_file} = set_default_log4perl_file(
     }
 );
 
-## Test
+## Then get the default Log4perl file using supplied dynamic parameters
+ok( $active_parameter{log_file}, q{Got default log file} );
 
-ok( $active_parameter{log_file}, q{Set default log file} );
-
-## Reset for new test
+## Given a log file from user
 $active_parameter{log_file} = $test_log_path;
 
-## Set the default Log4perl file using supplied dynamic parameters.
-$active_parameter{log_file} = set_default_log4perl_file(
+$active_parameter{log_file} = get_default_log4perl_file(
     {
         cmd_input       => $active_parameter{log_file},
         script          => $script,
@@ -101,6 +99,7 @@ $active_parameter{log_file} = set_default_log4perl_file(
     }
 );
 
-is( $active_parameter{log_file}, $test_log_path, q{Did not set default} );
+## Then get the Log4perl file using cmd input
+is( $active_parameter{log_file}, $test_log_path, q{Got user log file} );
 
 done_testing();
