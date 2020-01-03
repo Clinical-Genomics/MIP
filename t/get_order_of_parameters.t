@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +40,6 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ print_recipe }],
         q{MIP::Parameter}      => [qw{ get_order_of_parameters }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
@@ -49,11 +47,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ print_recipe };
 use MIP::Parameter qw{ get_order_of_parameters };
 
-diag(   q{Test print_recipe from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_order_of_parameters from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,43 +58,18 @@ diag(   q{Test print_recipe from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given the option to not print recipes
-my %parameter = ( bwa_mem => { type => q{recipe} } );
+## Given a definition file
 my @define_parameters_file_paths =
   ( catfile( $Bin, qw{ data test_data define_parameters.yaml } ) );
 
 my @order_parameters = get_order_of_parameters(
     { define_parameters_files_ref => \@define_parameters_file_paths, } );
 
-my $return = print_recipe(
-    {
-        order_parameters_ref => \@order_parameters,
-        parameter_href       => \%parameter,
-        print_recipe_mode    => 1,
-    }
-);
+my @expected_order_parameters =
+  qw{ mip cluster_constant_path case_id email_types bwa_mem bwa_mem_rapid_db load_env supported_capture_kit };
 
-## Do not print
-is( $return, undef, q{Do not print} );
-
-## Given a recipe and to print
-my %active_parameter = ( print_recipe => 1 );
-
-trap {
-    print_recipe(
-        {
-            order_parameters_ref => \@order_parameters,
-            parameter_href       => \%parameter,
-            print_recipe         => $active_parameter{print_recipe},
-            print_recipe_mode    => 1,
-        }
-    )
-};
-
-## Then write bwa_mem recipe and mode
-my ( $recipe, $recipe_mode ) = $trap->stdout =~ qr{ (bwa_mem)\s+(1)}sxm;
-is( $recipe, q{bwa_mem}, q{Printed recipe} );
-
-is( $recipe_mode, 1, q{Printed correct recipe mode} );
+## Then the order of parameters as they appear in the definiton file should be added to the array
+is_deeply( \@order_parameters, \@expected_order_parameters,
+    q{Added order of parameters from definition file} );
 
 done_testing();

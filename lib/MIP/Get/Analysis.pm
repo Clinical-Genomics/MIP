@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -485,25 +485,27 @@ sub print_recipe {
 
 ## Function : Print all supported recipes in '-prm' mode if requested and then exit
 ## Returns  :
-## Arguments: $define_parameters_files_ref => MIPs define parameters file
-##          : $parameter_href              => Parameter hash {REF}
-##          : $print_recipe                => Print recipes switch
-##          : $print_recipe_mode           => Mode to run recipes in
+## Arguments: $order_parameters_ref => Order of addition to parameter array {REF}
+##          : $parameter_href       => Parameter hash {REF}
+##          : $print_recipe         => Print recipes switch
+##          : $print_recipe_mode    => Mode to run recipes in
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $order_parameters_ref;
     my $parameter_href;
     my $print_recipe;
 
     ## Default(s)
-    my $define_parameters_files_ref;
     my $print_recipe_mode;
 
     my $tmpl = {
-        define_parameters_files_ref => {
+        order_parameters_ref => {
             default     => [],
-            store       => \$define_parameters_files_ref,
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -529,7 +531,6 @@ sub print_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
     use MIP::Set::Parameter qw{ set_cache };
 
     ## Do not print
@@ -542,20 +543,8 @@ sub print_recipe {
         }
     );
 
-    ## Adds the order of first level keys from yaml file to array
-    my @order_parameters;
-    foreach my $define_parameters_file ( @{$define_parameters_files_ref} ) {
-
-        push @order_parameters,
-          get_first_level_keys_order_from_definition_file(
-            {
-                file_path => $define_parameters_file,
-            }
-          );
-    }
-
   PARAMETER:
-    foreach my $parameter (@order_parameters) {
+    foreach my $parameter ( @{$order_parameters_ref} ) {
 
         ## Only process recipes
         if (

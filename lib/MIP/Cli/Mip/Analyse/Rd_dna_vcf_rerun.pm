@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.20;
+our $VERSION = 1.22;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -43,14 +43,14 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::Definition
-      qw{ get_dependency_tree_from_definition_file
+    use MIP::Definition qw{ get_dependency_tree_from_definition_file
       get_first_level_keys_order_from_definition_file
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
+    use MIP::Parameter qw{ get_order_of_parameters };
 
     ## %parameter holds all defined parameters for MIP analyse rd_dna_vcf_rerun
     ## CLI commands inheritance
@@ -60,13 +60,18 @@ sub run {
     my @rd_dna_vcf_rerun_definition_file_paths =
       get_parameter_definition_file_paths( { level => $level, } );
 
+    ### To write parameters and their values to log in logical order
+    ## Adds the order of first level keys from definition files to array
+    my @order_parameters = get_order_of_parameters(
+        { define_parameters_files_ref => \@rd_dna_vcf_rerun_definition_file_paths, } );
+
     ## Print recipes if requested and exit
     print_recipe(
         {
-            define_parameters_files_ref => \@rd_dna_vcf_rerun_definition_file_paths,
-            parameter_href              => \%parameter,
-            print_recipe                => $active_parameter{print_recipe},
-            print_recipe_mode           => $active_parameter{print_recipe_mode},
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => $active_parameter{print_recipe_mode},
         }
     );
 
@@ -89,21 +94,6 @@ sub run {
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
-
-    ### To write parameters and their values to log in logical order
-    ### Actual order of parameters in definition parameters file(s) does not matter
-    ## Adds the order of first level keys from definition files to array
-    my @order_parameters;
-  DEFINITION_FILE:
-    foreach my $define_parameters_file (@rd_dna_vcf_rerun_definition_file_paths) {
-
-        push @order_parameters,
-          get_first_level_keys_order_from_definition_file(
-            {
-                file_path => $define_parameters_file,
-            }
-          );
-    }
 
     ## File info hash
     my %file_info = (
