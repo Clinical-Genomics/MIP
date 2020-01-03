@@ -135,7 +135,7 @@ sub get_default_log4perl_file {
             strict_type => 1,
         },
         outdata_dir => {
-            default     => getcwd(),
+            default     => $arg_href->{outdata_dir} ||= getcwd(),
             store       => \$outdata_dir,
             strict_type => 1,
         },
