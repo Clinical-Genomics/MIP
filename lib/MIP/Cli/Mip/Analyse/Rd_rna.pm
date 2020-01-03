@@ -41,8 +41,10 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::Definition qw{ get_definition_file_paths
+    use MIP::Definition
+      qw{ get_dependency_tree_from_definition_file
       get_first_level_keys_order_from_definition_file
+      get_parameter_definition_file_paths
       get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis
@@ -50,10 +52,11 @@ sub run {
 
     ## %parameter holds all defined parameters for MIP analyse rd_rna
     ## CLI commands inheritance
-    my %parameter = get_parameter_from_definition_files( { level => q{rd_rna}, } );
+    my $level     = q{rd_rna};
+    my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
     my @rd_rna_definition_file_paths =
-      get_definition_file_paths( { level => q{rd_rna}, } );
+      get_parameter_definition_file_paths( { level => $level, } );
 
     ## Print recipes if requested and exit
     print_recipe(
@@ -66,17 +69,13 @@ sub run {
     );
 
     ## Get dependency tree and store in parameter hash
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file => catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } ),
-        }
-    );
-    $parameter{dependency_tree} = \%dependency_tree;
+    %{ $parameter{dependency_tree_href} } =
+      get_dependency_tree_from_definition_file( { level => $level, } );
 
 ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             parameter_href       => \%parameter,
         }
     );
@@ -84,7 +83,7 @@ sub run {
 ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );

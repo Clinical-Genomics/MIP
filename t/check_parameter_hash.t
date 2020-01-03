@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter}   => [qw{ check_parameter_hash }],
+        q{MIP::Parameter}          => [qw{ check_parameter_hash }],
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
         q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
     );
@@ -49,11 +49,11 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_parameter_hash };
+use MIP::Parameter qw{ check_parameter_hash };
 use MIP::File::Format::Yaml qw{ load_yaml };
 
 diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

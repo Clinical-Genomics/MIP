@@ -33,7 +33,6 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_email_address
   check_load_env_packages
-  check_parameter_hash
   check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
@@ -52,6 +51,7 @@ use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Parameter qw{ check_parameter_hash };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
