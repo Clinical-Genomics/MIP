@@ -147,6 +147,9 @@ sub set_cache {
 ## Arguments: $aggregates_ref => Data to aggregate {REF}
 ##          : $parameter_href => Parameter hash {REF}
 
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
     my $aggregates_ref;
     my $parameter_href;
 
