@@ -17,17 +17,20 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SINGLE_QUOTE $TAB };
+use MIP::Constants qw{ $COLON $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_parameter_hash get_order_of_parameters set_cache };
+    our @EXPORT_OK = qw{ check_parameter_hash
+      get_order_of_parameters
+      print_recipe
+      set_cache };
 }
 
 sub check_parameter_hash {
@@ -140,6 +143,87 @@ sub get_order_of_parameters {
     return @order_of_parameters;
 }
 
+sub print_recipe {
+
+## Function : Print all supported recipes in '-prm' mode if requested and then exit
+## Returns  :
+## Arguments: $order_parameters_ref => Order of addition to parameter array {REF}
+##          : $parameter_href       => Parameter hash {REF}
+##          : $print_recipe         => Print recipes switch
+##          : $print_recipe_mode    => Mode to run recipes in
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $print_recipe;
+
+    ## Default(s)
+    my $print_recipe_mode;
+
+    my $tmpl = {
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        print_recipe => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$print_recipe,
+            strict_type => 1,
+        },
+        print_recipe_mode => {
+            allow       => [ undef, 0, 1, 2 ],
+            default     => $arg_href->{print_recipe_mode} //= 2,
+            store       => \$print_recipe_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
+    use MIP::Parameter qw{ set_cache };
+
+    ## Do not print
+    return if ( not $print_recipe );
+
+    set_cache(
+        {
+            aggregates_ref => [q{type:recipe}],
+            parameter_href => $parameter_href,
+        }
+    );
+
+  PARAMETER:
+    foreach my $parameter ( @{$order_parameters_ref} ) {
+
+        ## Only process recipes
+        if (
+            any { $_ eq $parameter }
+            @{ $parameter_href->{cache}{recipe} }
+          )
+        {
+
+            print {*STDOUT} q{--} . $parameter . $SPACE . $print_recipe_mode . $SPACE;
+
+        }
+    }
+    print {*STDOUT} $NEWLINE;
+    exit;
+}
+
 sub set_cache {
 
 ## Function : Set aggregate information from parameter hash to parameter cache
@@ -162,14 +246,14 @@ sub set_cache {
             strict_type => 1,
         },
         parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-          },
-      };
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_href,
+        },
+    };
 
-      check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Constants
     Readonly my $FIELD_COUNTER => 2;

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -47,9 +47,8 @@ sub run {
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
     use MIP::File::Format::Yaml qw{ load_yaml };
-    use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
-    use MIP::Parameter qw{ get_order_of_parameters };
+    use MIP::Get::Analysis qw{ get_dependency_tree_chain get_dependency_tree_order };
+    use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse dragen_rd_dna
     ## CLI commands inheritance

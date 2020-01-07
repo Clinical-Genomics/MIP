@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,19 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ print_recipe }],
-        q{MIP::Parameter}      => [qw{ get_order_of_parameters }],
+        q{MIP::Parameter}      => [qw{ get_order_of_parameters print_recipe }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ print_recipe };
-use MIP::Parameter qw{ get_order_of_parameters };
+use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
-diag(   q{Test print_recipe from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test print_recipe from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
