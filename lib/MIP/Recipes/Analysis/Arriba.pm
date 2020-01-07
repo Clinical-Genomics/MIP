@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
@@ -155,6 +155,7 @@ sub analysis_arriba {
     use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Sample_info qw{
+      get_read_group
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
@@ -249,6 +250,7 @@ sub analysis_arriba {
     my $paired_end_tracker = 0;
     my @forward_files;
     my @reverse_files;
+    my @read_groups;
 
     ## Perform per single-end or read pair
   INFILE_PREFIX:
@@ -276,10 +278,25 @@ sub analysis_arriba {
 
         ## Increment paired end tracker
         $paired_end_tracker++;
+
+        ## Construct RG
+        my %rg = get_read_group(
+            {
+                infile_prefix    => $infile_prefix,
+                platform         => $active_parameter_href->{platform},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Construct read group line;
+        my @rg_elements = map { uc $_ . $COLON . $rg{$_} } qw{ id lb pl pu sm };
+        push @read_groups, join $SPACE, @rg_elements;
     }
 
     my @fastq_files =
       ( ( join $COMMA, @forward_files ), ( join $COMMA, @reverse_files ) );
+    my $out_sam_attr_rgline = join $SPACE . $COMMA . $SPACE, @read_groups;
 
     my $referencefile_dir_path =
         $active_parameter_href->{star_aln_reference_genome}
@@ -302,6 +319,7 @@ sub analysis_arriba {
             outfile_name_prefix           => => $outfile_path_prefix . $DOT,
             out_filter_mismatch_nmax      => $THREE,
             out_filter_multimap_nmax      => 1,
+            out_sam_attr_rgline           => $out_sam_attr_rgline,
             out_sam_type                  => q{BAM Unsorted},
             out_sam_unmapped              => q{Within},
             pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},

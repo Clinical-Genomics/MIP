@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,6 +59,9 @@ diag(   q{Test picardtools_markduplicates from Picardtools.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+## Constants
+Readonly my $DISTANCE => 2500;
 
 ## Base arguments
 my @function_base_commands = qw{ picard MarkDuplicates };
@@ -105,6 +108,10 @@ my %specific_argument = (
     metrics_file => {
         input           => q{metric_file},
         expected_output => q{-METRICS_FILE} . $SPACE . q{metric_file},
+    },
+    optical_duplicate_distance => {
+        input           => $DISTANCE,
+        expected_output => q{-OPTICAL_DUPLICATE_PIXEL_DISTANCE} . $SPACE . $DISTANCE,
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),

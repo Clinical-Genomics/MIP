@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -54,6 +54,7 @@ sub star_aln {
 ##           : $out_bam_compression           => Compression level of BAM file
 ##           : $out_filter_mismatch_nmax      => Max number of missmatches allowed in alignment
 ##           : $out_filter_multimap_nmax      => Max number of loci a read is allowed to map to
+##           : $out_sam_attr_rgline           => SAM/BAM read group line
 ##           : $out_sam_strand_field          => Cufflinks-like strand field flag
 ##           : $out_sam_type                  => Format of the output aligned reads
 ##           : $out_sam_unmapped              => Write unmapped reads to main BAM file
@@ -89,6 +90,7 @@ sub star_aln {
     my $out_bam_compression;
     my $out_filter_mismatch_nmax;
     my $out_filter_multimap_nmax;
+    my $out_sam_attr_rgline;
     my $out_sam_unmapped;
     my $pe_overlap_nbases_min;
     my $stderrfile_path;
@@ -211,6 +213,10 @@ sub star_aln {
         out_filter_multimap_nmax => {
             allow       => qr/ \A \d+ \z /xms,
             store       => \$out_filter_multimap_nmax,
+            strict_type => 1,
+        },
+        out_sam_attr_rgline => {
+            store       => \$out_sam_attr_rgline,
             strict_type => 1,
         },
         out_sam_strand_field => {
@@ -356,6 +362,10 @@ sub star_aln {
     if ($out_filter_multimap_nmax) {
 
         push @commands, q{--outFilterMultimapNmax} . $SPACE . $out_filter_multimap_nmax;
+    }
+    if ($out_sam_attr_rgline) {
+
+        push @commands, q{--outSAMattrRGline} . $SPACE . $out_sam_attr_rgline;
     }
     if ($out_sam_strand_field) {
 

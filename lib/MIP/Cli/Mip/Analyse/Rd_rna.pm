@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.26;
+our $VERSION = 1.27;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -638,6 +638,17 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Markduplicates using Picardtools markduplicates},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{markduplicates_picardtools_opt_dup_dist} => (
+            cmd_aliases   => [qw{ mdpodd }],
+            cmd_flag      => q{picard_mdup_odd},
+            cmd_tags      => [q{Default: 2500}],
+            documentation => q{Picardtools markduplicates optical duplicate distance},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
