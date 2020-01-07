@@ -24,10 +24,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_parameter_hash };
+    our @EXPORT_OK = qw{ check_parameter_hash get_order_of_parameters };
 }
 
 sub check_parameter_hash {
@@ -100,6 +100,44 @@ sub check_parameter_hash {
         );
     }
     return 1;
+}
+
+sub get_order_of_parameters {
+
+## Function : Get order of parameters as they appear in definition file(s)
+## Returns  : @order_of_parameters
+## Arguments: $define_parameters_files_ref => MIPs define parameters file(s)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $define_parameters_files_ref;
+
+    my $tmpl = {
+        define_parameters_files_ref => {
+            default     => [],
+            store       => \$define_parameters_files_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
+
+    my @order_of_parameters;
+
+  DEFINITION_FILE:
+    foreach my $define_parameters_file ( @{$define_parameters_files_ref} ) {
+
+        push @order_of_parameters,
+          get_first_level_keys_order_from_definition_file(
+            {
+                file_path => $define_parameters_file,
+            }
+          );
+    }
+    return @order_of_parameters;
 }
 
 sub _check_parameter_mandatory_keys_exits {
