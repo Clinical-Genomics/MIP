@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ update_to_absolute_path };
@@ -60,7 +60,7 @@ sub update_to_absolute_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Set::File qw{ set_absolute_path };
-    use MIP::Set::Parameter qw{ set_cache };
+    use MIP::Parameter qw{ set_cache };
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     # Collect all path that should be made absolute
