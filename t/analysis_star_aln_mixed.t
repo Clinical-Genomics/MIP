@@ -110,9 +110,14 @@ my %sample_info = (
         $sample_id => {
             file => {
                 ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
-                    sequence_run_type   => q{single-end},
+                    sequence_run_type   => q{paired-end},
                     read_direction_file => {
                         ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{1},
+                            sample_barcode => q{GAGATTC},
+                        },
+                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_2 => {
                             flowcell       => q{TestFilev2},
                             lane           => q{1},
                             sample_barcode => q{GAGATTC},
