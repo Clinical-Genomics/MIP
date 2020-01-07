@@ -25,7 +25,7 @@ use MIP::Constants qw{ $DOT $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,7 +76,7 @@ my %active_parameter = ( log_file => undef, );
 ## Given no log file from user
 $active_parameter{log_file} = get_default_log4perl_file(
     {
-        cmd_input       => $active_parameter{log_file},
+        log_file        => $active_parameter{log_file},
         date            => $date,
         date_time_stamp => $date_time_stamp,
         outdata_dir     => catfile($test_dir),
@@ -92,7 +92,7 @@ $active_parameter{log_file} = $test_log_path;
 
 $active_parameter{log_file} = get_default_log4perl_file(
     {
-        cmd_input       => $active_parameter{log_file},
+        log_file        => $active_parameter{log_file},
         script          => $script,
         date            => $date,
         date_time_stamp => $date_time_stamp,

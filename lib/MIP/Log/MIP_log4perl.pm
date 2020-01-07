@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -95,9 +95,9 @@ EOF
 
 sub get_default_log4perl_file {
 
-## Function : Set the default Log4perl file using supplied dynamic parameters
+## Function : Get the default Log4perl file using supplied dynamic parameters
 ## Returns  : $log_file
-## Arguments: $cmd_input       => User supplied info on cmd for log_file option {REF}
+## Arguments: $log_file        => User supplied path on cmd for log_file option
 ##          : $date            => The date
 ##          : $date_time_stamp => The date and time
 ##          : $outdata_dir     => Outdata directory
@@ -106,7 +106,7 @@ sub get_default_log4perl_file {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $cmd_input;
+    my $log_file;
     my $date;
     my $date_time_stamp;
     my $script;
@@ -115,8 +115,8 @@ sub get_default_log4perl_file {
     my $outdata_dir;
 
     my $tmpl = {
-        cmd_input => { store => \$cmd_input, strict_type => 1, },
-        date      => {
+        log_file => { store => \$log_file, strict_type => 1, },
+        date     => {
             defined     => 1,
             required    => 1,
             store       => \$date,
@@ -143,13 +143,13 @@ sub get_default_log4perl_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return $cmd_input if ( defined $cmd_input );
+    return $log_file if ( defined $log_file );
 
-    ## No input from cmd i.e. create default logging directory and set default
+    ## No input from cmd i.e. create default logging directory and log file path
     make_path( catfile( $outdata_dir, q{mip_log}, $date ) );
 
     ## Build log filename
-    my $log_file = catfile( $outdata_dir, q{mip_log}, $date,
+    $log_file = catfile( $outdata_dir, q{mip_log}, $date,
         $script . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
 
     ## Return default log file
@@ -213,7 +213,7 @@ sub get_log {
 
     $active_parameter_href->{log_file} = get_default_log4perl_file(
         {
-            cmd_input       => $active_parameter_href->{log_file},
+            log_file        => $active_parameter_href->{log_file},
             date            => $date,
             date_time_stamp => $date_time_stamp,
             outdata_dir     => $active_parameter_href->{outdata_dir},
