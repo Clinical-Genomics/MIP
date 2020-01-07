@@ -28,14 +28,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
       set_custom_default_to_active_parameter
       set_default_to_active_parameter
-      set_cache
       set_human_genome_reference_features
       set_nist_file_name_path
       set_no_dry_run_parameters
@@ -304,71 +303,6 @@ sub set_default_to_active_parameter {
                   . q{' if you want to run }
                   . $associated_recipe );
             exit 1;
-        }
-    }
-    return;
-}
-
-sub set_cache {
-
-## Function : Sets dynamic aggregate information from definitions to parameter hash
-## Returns  :
-## Arguments: $aggregates_ref => The data to aggregate and add to parameter hash{REF}
-##          : $parameter_href => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $aggregates_ref;
-    my $parameter_href;
-
-    my $tmpl = {
-        aggregates_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$aggregates_ref,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Constants
-    Readonly my $RECORD_SEPARATOR => q{:};
-    Readonly my $FIELD_COUNTER    => 2;
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$parameter_href} ) {
-
-      KEY_AND_STRING_TO_MATCH:
-        foreach my $aggregate_element ( @{$aggregates_ref} ) {
-
-            ## Split into key and string to match
-            my ( $second_key, $string_to_match, $unexpected_data ) =
-              split $RECORD_SEPARATOR, $aggregate_element, $FIELD_COUNTER + 1;
-
-            ## Make sure that we get what we expect
-            if ( defined $unexpected_data ) {
-
-                carp q{Unexpected trailing garbage at end of aggregate_element '}
-                  . $aggregate_element
-                  . q{':}, $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
-            }
-
-            if ( defined $parameter_href->{$parameter_name}{$second_key}
-                && $parameter_href->{$parameter_name}{$second_key} eq $string_to_match )
-            {
-
-                push @{ $parameter_href->{cache}{$string_to_match} }, $parameter_name;
-            }
         }
     }
     return;

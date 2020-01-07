@@ -531,7 +531,8 @@ sub print_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Set::Parameter qw{ set_cache };
+    use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
+    use MIP::Parameter qw{ set_cache };
 
     ## Do not print
     return if ( not $print_recipe );

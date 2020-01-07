@@ -51,13 +51,12 @@ use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Parameter qw{ check_parameter_hash };
+use MIP::Parameter qw{ check_parameter_hash set_cache };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{ set_custom_default_to_active_parameter
   set_default_to_active_parameter
-  set_cache
   set_human_genome_reference_features
   set_no_dry_run_parameters
   set_parameter_reference_dir_path
@@ -81,7 +80,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
