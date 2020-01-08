@@ -124,6 +124,16 @@ my %sample_info = (
                         },
                     },
                 },
+                ADM1059A1_161011_TestFilev2_GAGATTCC_lane2 => {
+                    sequence_run_type   => q{single-end},
+                    read_direction_file => {
+                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane2_1 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{2},
+                            sample_barcode => q{GAGATTC},
+                        },
+                    },
+                },
             },
         },
     },

@@ -521,7 +521,7 @@ sub set_recipe_star_aln {
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln analysis_star_aln_mixed };
     use MIP::Sample_info qw{ get_sequence_run_type };
 
-    ## Get sequence run modes
+    ## Get sequence run types
   SAMPLE_ID:
     foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 

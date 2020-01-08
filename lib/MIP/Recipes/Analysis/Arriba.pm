@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -155,7 +155,8 @@ sub analysis_arriba {
     use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Sample_info qw{
-      get_read_group
+      get_rg_header_line
+      get_sequence_run_type
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
@@ -258,16 +259,20 @@ sub analysis_arriba {
         each @{ $infile_lane_prefix_href->{$sample_id} } )
     {
 
-        # Collect paired-end or single-end sequence run mode
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
+        # Collect paired-end or single-end sequence run type
+        my $sequence_run_type = get_sequence_run_type(
+            {
+                infile_lane_prefix => $infile_prefix,
+                sample_id          => $sample_id,
+                sample_info_href   => $sample_info_href,
+            }
+        );
 
         ## Add read one to file index array
         push @forward_files, $infile_paths[$paired_end_tracker];
 
         # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
+        if ( $sequence_run_type eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from infiles
             $paired_end_tracker++;
@@ -279,19 +284,17 @@ sub analysis_arriba {
         ## Increment paired end tracker
         $paired_end_tracker++;
 
-        ## Construct RG
-        my %rg = get_read_group(
+        ## Construct RG header line
+        my $rg_header_line = get_rg_header_line(
             {
                 infile_prefix    => $infile_prefix,
                 platform         => $active_parameter_href->{platform},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
+                separator        => $SPACE,
             }
         );
-
-        ## Construct read group line;
-        my @rg_elements = map { uc $_ . $COLON . $rg{$_} } qw{ id lb pl pu sm };
-        push @read_groups, join $SPACE, @rg_elements;
+        push @read_groups, $rg_header_line;
     }
 
     my @fastq_files =
@@ -316,7 +319,7 @@ sub analysis_arriba {
             genome_dir_path               => $referencefile_dir_path,
             infile_paths_ref              => \@fastq_files,
             out_bam_compression           => 0,
-            outfile_name_prefix           => => $outfile_path_prefix . $DOT,
+            outfile_name_prefix           => $outfile_path_prefix . $DOT,
             out_filter_mismatch_nmax      => $THREE,
             out_filter_multimap_nmax      => 1,
             out_sam_attr_rgline           => $out_sam_attr_rgline,
