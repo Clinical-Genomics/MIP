@@ -2,16 +2,14 @@ package MIP::Cli::Mip::Install::Rd_rna;
 
 use 5.026;
 use Carp;
-use Cwd qw{ abs_path };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
-use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use autodie qw{ :all };
@@ -19,13 +17,13 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ Str Int HashRef Bool ArrayRef };
 use MooseX::Types::Structured qw{ Dict Optional };
-use Readonly;
 
 ## MIPs lib
+use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.12;
+our $VERSION = 2.13;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -46,8 +44,6 @@ sub run {
 
     ## Input from Cli
     my %active_parameter = %{$arg_href};
-
-    use MIP::Definition qw{ get_parameter_from_definition_files };
 
     ## %parameter holds all defined parameters for MIP install rd_rna
     ## CLI commands inheritance level
