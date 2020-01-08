@@ -292,25 +292,23 @@ sub get_dependency_tree_chain {
     return;
 }
 
-sub get_recipes_for_dependency_tree_chain {
+sub get_dependency_subtree {
 
-## Function  : Collects all recipes downstream of initation point
-## Returns   : @chain_recipes
-## Arguments : $chain_initiation_point  => Chain to operate on
-##           : $dependency_tree_href    => Dependency hash {REF}
-##           : $recipe_initiation_point => Recipe to start with
+## Function : Get part of dependency tree
+## Returns  : %dependency_tree
+## Arguments: $chain_initiation_point  => Chain to operate on
+##          : $dependency_tree_href    => Dependency hash {REF}
+##          : $dependency_subtree_href => Dependency sub hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $chain_initiation_point;
     my $dependency_tree_href;
-    my $recipe_initiation_point;
+    my $dependency_subtree_href;
 
     my $tmpl = {
         chain_initiation_point => {
-            defined     => 1,
-            required    => 1,
             store       => \$chain_initiation_point,
             strict_type => 1,
         },
@@ -321,41 +319,52 @@ sub get_recipes_for_dependency_tree_chain {
             store       => \$dependency_tree_href,
             strict_type => 1,
         },
-        recipe_initiation_point => {
-            defined     => 1,
-            store       => \$recipe_initiation_point,
+        dependency_subtree_href => {
+            default     => {},
+            required    => 1,
+            store       => \$dependency_subtree_href,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Get the dependency subtree
-    my $dependency_subtree_href = {};
-    get_dependency_subtree(
-        {
-            dependency_subtree_href => $dependency_subtree_href,
-            dependency_tree_href    => $dependency_tree_href,
-            chain_initiation_point  => $chain_initiation_point,
+    ## Return if tree is found
+    return if ( defined $dependency_subtree_href->{$chain_initiation_point} );
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Save subtree if it matches chain
+        if ( $key eq $chain_initiation_point ) {
+            $dependency_subtree_href->{$chain_initiation_point} = $value;
         }
-    );
 
-    ## Get the recipes
-    my @recipes;
-    get_dependency_tree_order(
-        {
-            dependency_tree_href => $dependency_subtree_href,
-            recipes_ref          => \@recipes,
+        ## Inspect element
+        if ( ref $value eq q{ARRAY} ) {
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_dependency_subtree(
+                        {
+                            dependency_tree_href    => $element,
+                            dependency_subtree_href => $dependency_subtree_href,
+                            chain_initiation_point  => $chain_initiation_point,
+                        }
+                    );
+                }
+            }
+            delete $tree{$key};
         }
-    );
-
-    ## Slice if $recipe_initiation_point is defined
-    if ($recipe_initiation_point) {
-        my $initiation_idx = firstidx { $_ eq $recipe_initiation_point } @recipes;
-        @recipes = @recipes[ $initiation_idx .. $#recipes ];
-
     }
-    return @recipes;
+    return;
 }
 
 sub get_dependency_tree_order {
@@ -435,6 +444,72 @@ sub get_dependency_tree_order {
         delete $tree{$key};
     }
     return;
+}
+
+sub get_recipes_for_dependency_tree_chain {
+
+## Function  : Collects all recipes downstream of initation point
+## Returns   : @chain_recipes
+## Arguments : $chain_initiation_point  => Chain to operate on
+##           : $dependency_tree_href    => Dependency hash {REF}
+##           : $recipe_initiation_point => Recipe to start with
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_initiation_point;
+    my $dependency_tree_href;
+    my $recipe_initiation_point;
+
+    my $tmpl = {
+        chain_initiation_point => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_initiation_point,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+        recipe_initiation_point => {
+            defined     => 1,
+            store       => \$recipe_initiation_point,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get the dependency subtree
+    my $dependency_subtree_href = {};
+    get_dependency_subtree(
+        {
+            dependency_subtree_href => $dependency_subtree_href,
+            dependency_tree_href    => $dependency_tree_href,
+            chain_initiation_point  => $chain_initiation_point,
+        }
+    );
+
+    ## Get the recipes
+    my @recipes;
+    get_dependency_tree_order(
+        {
+            dependency_tree_href => $dependency_subtree_href,
+            recipes_ref          => \@recipes,
+        }
+    );
+
+    ## Slice if $recipe_initiation_point is defined
+    if ($recipe_initiation_point) {
+        my $initiation_idx = firstidx { $_ eq $recipe_initiation_point } @recipes;
+        @recipes = @recipes[ $initiation_idx .. $#recipes ];
+
+    }
+    return @recipes;
 }
 
 sub get_recipe_dependency_tree_chain {
@@ -532,81 +607,6 @@ sub get_recipe_dependency_tree_chain {
                     ${$chain_id_ref} = $current_chain;
 
                     last ELEMENT;
-                }
-            }
-            delete $tree{$key};
-        }
-    }
-    return;
-}
-
-sub get_dependency_subtree {
-
-## Function : Get part of dependency tree
-## Returns  : %dependency_tree
-## Arguments: $chain_initiation_point  => Chain to operate on
-##          : $dependency_tree_href    => Dependency hash {REF}
-##          : $dependency_subtree_href => Dependency sub hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $chain_initiation_point;
-    my $dependency_tree_href;
-    my $dependency_subtree_href;
-
-    my $tmpl = {
-        chain_initiation_point => {
-            store       => \$chain_initiation_point,
-            strict_type => 1,
-        },
-        dependency_tree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$dependency_tree_href,
-            strict_type => 1,
-        },
-        dependency_subtree_href => {
-            default     => {},
-            required    => 1,
-            store       => \$dependency_subtree_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Return if tree is found
-    return if ( defined $dependency_subtree_href->{$chain_initiation_point} );
-
-    ## Copy hash to enable recursive removal of keys
-    my %tree = %{$dependency_tree_href};
-
-  KEY_VALUE_PAIR:
-    while ( my ( $key, $value ) = each %tree ) {
-
-        ## Save subtree if it matches chain
-        if ( $key eq $chain_initiation_point ) {
-            $dependency_subtree_href->{$chain_initiation_point} = $value;
-        }
-
-        ## Inspect element
-        if ( ref $value eq q{ARRAY} ) {
-
-          ELEMENT:
-            foreach my $element ( @{$value} ) {
-
-                ## Call recursive
-                if ( ref $element eq q{HASH} ) {
-
-                    get_dependency_subtree(
-                        {
-                            dependency_tree_href    => $element,
-                            dependency_subtree_href => $dependency_subtree_href,
-                            chain_initiation_point  => $chain_initiation_point,
-                        }
-                    );
                 }
             }
             delete $tree{$key};
