@@ -29,9 +29,9 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_dependency_tree
       get_dependency_tree_chain
-      get_recipes_for_dependency_tree_chain
       get_dependency_tree_order
       get_dependency_subtree
+      get_recipes_for_dependency_tree_chain
       get_recipe_dependency_tree_chain
     };
 }
