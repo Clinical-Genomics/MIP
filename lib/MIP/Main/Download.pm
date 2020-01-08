@@ -20,6 +20,7 @@ use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
   qw{ check_email_address check_recipe_exists_in_hash check_recipe_mode };
@@ -36,14 +37,13 @@ use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 use MIP::Set::Parameter
   qw{ set_custom_default_to_active_parameter set_default_to_active_parameter };
-use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };

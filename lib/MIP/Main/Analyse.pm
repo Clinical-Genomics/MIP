@@ -29,6 +29,7 @@ use Path::Iterator::Rule;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_email_address
@@ -63,7 +64,6 @@ use MIP::Set::Parameter qw{ set_custom_default_to_active_parameter
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_reference_parameters
   update_vcfparser_outfile_counter };
-use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
@@ -80,7 +80,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
