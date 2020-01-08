@@ -62,8 +62,8 @@ sub update_to_absolute_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parameter qw{ set_cache };
     use MIP::File::Path qw{ get_absolute_path };
+    use MIP::Parameter qw{ set_cache };
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     # Collect all path that should be made absolute

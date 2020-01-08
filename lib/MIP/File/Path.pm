@@ -14,10 +14,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
-
-## MIPs lib/
-use MIP::Constants qw{ $SPACE };
 
 BEGIN {
     require Exporter;

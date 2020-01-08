@@ -71,7 +71,7 @@ my $is_ok = get_absolute_path(
 );
 
 ## Then
-ok( $is_ok, q{Set absolute path} );
+ok( $is_ok, q{Get absolute path} );
 
 ## Given an not existing path
 my $not_existing_path = catfile(qw{ data test_data qc_sample_info.yaml });
