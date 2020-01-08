@@ -40,18 +40,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ get_chain_recipes }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Dependency_tree} => [qw{ get_recipes_for_dependency_tree_chain }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ get_chain_recipes };
+use MIP::Dependency_tree qw{ get_recipes_for_dependency_tree_chain };
 use MIP::Test::Fixtures qw{ test_mip_hashes };
 
-diag(   q{Test get_chain_recipes from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_recipes_for_dependency_tree_chain from Dependency_tree.pm v}
+      . $MIP::Dependency_tree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,7 +69,7 @@ my $dependency_subtree_href = {};
 my $recipe_initiation_point = q{delly_reformat};
 
 ## Given request to get recipes in chain DELLY_CALL starting with delly_reformat
-my @recipes = get_chain_recipes(
+my @recipes = get_recipes_for_dependency_tree_chain(
     {
         chain_initiation_point  => $chain_initiation_point,
         dependency_tree_href    => \%dependency_tree,

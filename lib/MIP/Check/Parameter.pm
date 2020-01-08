@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1823,7 +1823,8 @@ sub check_recipe_fastq_compatibility {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Analysis qw{ get_recipe_chain get_chain_recipes };
+    use MIP::Dependency_tree
+      qw{ get_recipe_dependency_tree_chain get_recipes_for_dependency_tree_chain };
     use MIP::Sample_info qw{ get_sequence_run_type };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
@@ -1860,7 +1861,7 @@ sub check_recipe_fastq_compatibility {
         $log->warn(qq{Turning off $recipe_name and downstream recipes});
 
         my $recipe_chain;
-        get_recipe_chain(
+        get_recipe_dependency_tree_chain(
             {
                 recipe               => $recipe_name,
                 dependency_tree_href => $parameter_href->{dependency_tree_href},
@@ -1868,7 +1869,7 @@ sub check_recipe_fastq_compatibility {
             }
         );
 
-        my @chain_recipes = get_chain_recipes(
+        my @chain_recipes = get_recipes_for_dependency_tree_chain(
             {
                 dependency_tree_href    => $parameter_href->{dependency_tree_href},
                 chain_initiation_point  => $recipe_chain,
