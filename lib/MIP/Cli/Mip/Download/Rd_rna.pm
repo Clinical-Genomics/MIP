@@ -2,11 +2,6 @@ package MIP::Cli::Mip::Download::Rd_rna;
 
 use 5.026;
 use Carp;
-use Cwd qw{ abs_path };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
-use FindBin qw{ $Bin };
-use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -19,14 +14,13 @@ use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
-use Readonly;
 
 ## MIPs lib
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -48,8 +42,6 @@ sub run {
 
     ## Input from Cli
     my %active_parameter = %{$arg_href};
-
-    use MIP::Definition qw{ get_parameter_from_definition_files };
 
     ## %parameter holds all defined parameters for MIP download rd_rna
     ## CLI commands inheritance level

@@ -3,8 +3,6 @@ package MIP::Cli::Mip::Analyse;
 use 5.026;
 use Carp;
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -23,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip });
 
