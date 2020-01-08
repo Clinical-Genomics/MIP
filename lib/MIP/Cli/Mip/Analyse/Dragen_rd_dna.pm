@@ -43,8 +43,8 @@ sub run {
       get_first_level_keys_order_from_definition_file
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain get_dependency_tree_order };
     use MIP::File::Format::Yaml qw{ load_yaml };
-    use MIP::Get::Analysis qw{ get_dependency_tree_chain get_dependency_tree_order };
     use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse dragen_rd_dna
@@ -82,7 +82,7 @@ sub run {
         }
     );
 
-    ## Order recipes - Parsed from initiation file
+    ## Order recipes according to dependency tree
     get_dependency_tree_order(
         {
             dependency_tree_href => $parameter{dependency_tree_href},

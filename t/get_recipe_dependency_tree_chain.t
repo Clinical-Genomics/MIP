@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Dependency_tree} => [qw{ get_dependency_tree }],
+        q{MIP::Dependency_tree} => [qw{ get_recipe_dependency_tree_chain }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Dependency_tree qw{ get_dependency_tree_chain };
+use MIP::Dependency_tree qw{ get_recipe_dependency_tree_chain };
 
-diag(   q{Test get_dependency_tree_chain from Dependency_tree.pm v}
+diag(   q{Test get_recipe_dependency_tree_chain from Dependency_tree.pm v}
       . $MIP::Dependency_tree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,7 +58,8 @@ diag(   q{Test get_dependency_tree_chain from Dependency_tree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter;
+## Given a dependency tree and a recipe name when not on a PARALLEL chain
+my $recipe_name     = q{program_2};
 my %dependency_tree = (
     CHAIN_ALL => [
         q{program_0},
@@ -91,32 +92,54 @@ my %dependency_tree = (
     ],
 );
 
-get_dependency_tree_chain(
+my $recipe_chain;
+get_recipe_dependency_tree_chain(
     {
+        recipe               => $recipe_name,
         dependency_tree_href => \%dependency_tree,
-        parameter_href       => \%parameter,
+        chain_id_ref         => \$recipe_chain,
     }
 );
+my $expected_ordinary_chain = q{CHAIN_ALL};
 
-my %expected_chain = (
-    program_0          => { chain => q{ALL}, },
-    program_1          => { chain => q{ALL}, },
-    program_2          => { chain => q{ALL}, },
-    program_3          => { chain => q{ALL}, },
-    parallel_program_0 => { chain => q{PARALLEL_PROGRAM_0}, },
-    parallel_program_1 => { chain => q{PARALLEL_PROGRAM_1}, },
-    parallel_program_2 => { chain => q{PARALLEL_PROGRAM_2}, },
-    parallel_program_3 => { chain => q{PARALLEL_PROGRAM_2}, },
-    parallel_program_4 => { chain => q{PARALLEL_PROGRAM_4}, },
-    parallel_program_7 => { chain => q{MAIN}, },
+## Then recipe chain should be set
+is( $recipe_chain, $expected_ordinary_chain, q{Got chain which recipe belongs to} );
+
+## Given a recipe name within a parallel chain, but in a chain part
+$recipe_name  = q{parallel_program_7};
+$recipe_chain = undef;
+
+get_recipe_dependency_tree_chain(
+    {
+        recipe               => $recipe_name,
+        dependency_tree_href => \%dependency_tree,
+        chain_id_ref         => \$recipe_chain,
+    }
+);
+my $expected_within_parallel_block = q{CHAIN_MAIN};
+
+## Then recipe chain should be set
+is(
+    $recipe_chain,
+    $expected_within_parallel_block,
+    q{Got chain which recipe belongs to within parallel block}
 );
 
-foreach my $program ( keys %expected_chain ) {
+## Given a recipe name in a parallel chain
+$recipe_name  = q{parallel_program_1};
+$recipe_chain = undef;
 
-    is(
-        $parameter{$program}{chain},
-        $expected_chain{$program}{chain},
-        q{Chain - } . $program
-    );
-}
+get_recipe_dependency_tree_chain(
+    {
+        recipe               => $recipe_name,
+        dependency_tree_href => \%dependency_tree,
+        chain_id_ref         => \$recipe_chain,
+    }
+);
+my $expected_in_parallel_block = q{CHAIN_0};
+
+## Then recipe chain should upstream of parallel block should be set
+is( $recipe_chain, $expected_in_parallel_block,
+    q{Got upstream chain for recipe in parallel block} );
+
 done_testing();
