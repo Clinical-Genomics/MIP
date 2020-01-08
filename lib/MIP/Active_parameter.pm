@@ -63,7 +63,7 @@ sub update_to_absolute_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Parameter qw{ set_cache };
-    use MIP::Set::File qw{ set_absolute_path };
+    use MIP::File::Path qw{ get_absolute_path };
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     # Collect all path that should be made absolute
@@ -89,7 +89,7 @@ sub update_to_absolute_path {
             foreach my $parameter_value ( @{ $active_parameter_href->{$parameter_name} } )
             {
 
-                $parameter_value = set_absolute_path(
+                $parameter_value = get_absolute_path(
                     {
                         parameter_name => $parameter_name,
                         path           => $parameter_value,
@@ -108,7 +108,7 @@ sub update_to_absolute_path {
             foreach my $key ( keys %{$parameter_name_href} ) {
 
                 ## Return absolute path for supplied key path or croaks and exists if path does not exists
-                my $updated_key = set_absolute_path(
+                my $updated_key = get_absolute_path(
                     {
                         parameter_name => $parameter_name,
                         path           => $key,
@@ -122,7 +122,7 @@ sub update_to_absolute_path {
         }
         ## Scalar
 
-        $active_parameter_href->{$parameter_name} = set_absolute_path(
+        $active_parameter_href->{$parameter_name} = get_absolute_path(
             {
                 parameter_name => $parameter_name,
                 path           => $active_parameter_href->{$parameter_name},

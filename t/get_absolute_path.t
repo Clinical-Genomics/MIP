@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_absolute_path }],
+        q{MIP::File::Path}     => [qw{ get_absolute_path }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_absolute_path };
+use MIP::File::Path qw{ get_absolute_path };
 
-diag(   q{Test set_absolute_path from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test get_absolute_path from File.pm v}
+      . $MIP::File::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +63,7 @@ diag(   q{Test set_absolute_path from File.pm v}
 my $existing_path  = catfile( $Bin, qw{ data test_data qc_sample_info.yaml } );
 my $parameter_name = q{existing_path};
 
-my $is_ok = set_absolute_path(
+my $is_ok = get_absolute_path(
     {
         parameter_name => $parameter_name,
         path           => $existing_path,
@@ -80,7 +77,7 @@ ok( $is_ok, q{Set absolute path} );
 my $not_existing_path = catfile(qw{ data test_data qc_sample_info.yaml });
 
 trap {
-    set_absolute_path(
+    get_absolute_path(
         {
             parameter_name => $parameter_name,
             path           => $not_existing_path,

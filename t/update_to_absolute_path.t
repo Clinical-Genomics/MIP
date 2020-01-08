@@ -59,6 +59,7 @@ diag(   q{Test update_to_absolute_path from Active_parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given different type of parameters to update path for
 my %parameter = (
     hash   => { update_path => q{absolute_path}, },
     array  => { update_path => q{absolute_path}, },
@@ -73,9 +74,6 @@ my %active_parameter = (
     scalar => catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } ),
 );
 
-## Expected id for hash key after update_to_absolute_path
-my $hash_key_path = abs_path( catfile(q{file}) );
-
 update_to_absolute_path(
     {
         parameter_href        => \%parameter,
@@ -83,16 +81,23 @@ update_to_absolute_path(
     }
 );
 
-## NOTE: Update_to_absolute_path uppdated path for hash key and not value
+my $expected_absolute_path =
+  catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } );
+
+my $expeceted_hash_key_absolute_path = abs_path( catfile(q{file}) );
+
+## Then update_to_absolute_path uppdated path for hash key and not value
 foreach my $key ( keys %{ $active_parameter{hash} } ) {
 
-    is( $key, $hash_key_path, q{Set hash absolute path} );
+    is( $key, $expeceted_hash_key_absolute_path, q{Updated hash key to absolute path} );
 }
 
-my $expected_value =
-  catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } );
-is( $active_parameter{array}[0], $expected_value, q{Set array absolute path} );
+## Then elements path should now be absolute
+is( $active_parameter{array}[0],
+    $expected_absolute_path, q{Updated array element to absolute path} );
 
-is( $active_parameter{scalar}, $expected_value, q{Set scalar absolute path} );
+## Then scalar path should now be absolute
+is( $active_parameter{scalar},
+    $expected_absolute_path, q{Updated scalar to absolute path} );
 
 done_testing();
