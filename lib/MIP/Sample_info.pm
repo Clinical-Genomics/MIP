@@ -207,9 +207,9 @@ sub get_read_group {
 
 sub get_rg_header_line {
 
-## Function : Builds hash with read group headers
-## Returns  : %read_group
-## Arguments: $infile_prefix    => Name of Fastq file minus read direction information
+## Function : Builds line using read group headers
+## Returns  : $rg_header_line
+## Arguments: $infile_prefix    => Name of fastq file minus read direction information
 ##          : $platform         => Sequencing platform
 ##          : $sample_id        => Sample ID
 ##          : $sample_info_href => Sample info hash {REF}
