@@ -29,9 +29,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed cramtools
 - Removes cutadapt 
 - Supply wgs variantcalls for ASE analysis
+- STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
 
 **CLI**
 - Removes the noupdate option from the installation
+- New CLI option for picard markduplicates optical duplicate distance. Default: 2500
 
 **New references**
 - grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml

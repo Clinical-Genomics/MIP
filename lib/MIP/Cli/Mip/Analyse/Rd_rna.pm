@@ -639,6 +639,17 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{markduplicates_picardtools_opt_dup_dist} => (
+            cmd_aliases   => [qw{ mdpodd }],
+            cmd_flag      => q{picard_mdup_odd},
+            cmd_tags      => [q{Default: 2500}],
+            documentation => q{Picardtools markduplicates optical duplicate distance},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{markduplicates_sambamba_markdup} => (
             cmd_aliases   => [qw{ mdsmd }],
             cmd_flag      => q{sambamba_markdup},

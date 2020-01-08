@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
@@ -155,6 +155,8 @@ sub analysis_arriba {
     use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Sample_info qw{
+      get_rg_header_line
+      get_sequence_run_type
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
@@ -249,6 +251,7 @@ sub analysis_arriba {
     my $paired_end_tracker = 0;
     my @forward_files;
     my @reverse_files;
+    my @read_groups;
 
     ## Perform per single-end or read pair
   INFILE_PREFIX:
@@ -256,16 +259,20 @@ sub analysis_arriba {
         each @{ $infile_lane_prefix_href->{$sample_id} } )
     {
 
-        # Collect paired-end or single-end sequence run mode
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
+        # Collect paired-end or single-end sequence run type
+        my $sequence_run_type = get_sequence_run_type(
+            {
+                infile_lane_prefix => $infile_prefix,
+                sample_id          => $sample_id,
+                sample_info_href   => $sample_info_href,
+            }
+        );
 
         ## Add read one to file index array
         push @forward_files, $infile_paths[$paired_end_tracker];
 
         # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
+        if ( $sequence_run_type eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from infiles
             $paired_end_tracker++;
@@ -276,10 +283,23 @@ sub analysis_arriba {
 
         ## Increment paired end tracker
         $paired_end_tracker++;
+
+        ## Construct RG header line
+        my $rg_header_line = get_rg_header_line(
+            {
+                infile_prefix    => $infile_prefix,
+                platform         => $active_parameter_href->{platform},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+                separator        => $SPACE,
+            }
+        );
+        push @read_groups, $rg_header_line;
     }
 
     my @fastq_files =
       ( ( join $COMMA, @forward_files ), ( join $COMMA, @reverse_files ) );
+    my $out_sam_attr_rgline = join $SPACE . $COMMA . $SPACE, @read_groups;
 
     my $referencefile_dir_path =
         $active_parameter_href->{star_aln_reference_genome}
@@ -299,9 +319,10 @@ sub analysis_arriba {
             genome_dir_path               => $referencefile_dir_path,
             infile_paths_ref              => \@fastq_files,
             out_bam_compression           => 0,
-            outfile_name_prefix           => => $outfile_path_prefix . $DOT,
+            outfile_name_prefix           => $outfile_path_prefix . $DOT,
             out_filter_mismatch_nmax      => $THREE,
             out_filter_multimap_nmax      => 1,
+            out_sam_attr_rgline           => $out_sam_attr_rgline,
             out_sam_type                  => q{BAM Unsorted},
             out_sam_unmapped              => q{Within},
             pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
