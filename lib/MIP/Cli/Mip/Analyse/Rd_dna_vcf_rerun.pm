@@ -2,8 +2,6 @@ package MIP::Cli::Mip::Analyse::Rd_dna_vcf_rerun;
 
 use 5.026;
 use Carp;
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -12,7 +10,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
@@ -20,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.23;
+our $VERSION = 1.24;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 

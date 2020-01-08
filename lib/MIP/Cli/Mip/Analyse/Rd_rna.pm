@@ -2,8 +2,6 @@ package MIP::Cli::Mip::Analyse::Rd_rna;
 
 use 5.026;
 use Carp;
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
