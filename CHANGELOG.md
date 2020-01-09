@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.12]
+- Remove upper case in reference file name from test data
+
 ## [7.1.11]
 - Fixed bug that will casue select vcf files for snv/indel to not be produced if you turn off all SV programs
  
