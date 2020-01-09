@@ -42,7 +42,7 @@ sub git_clone {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $verbose                => Verbose output
 ##          : $quiet                  => Less chatty output
 
@@ -54,7 +54,7 @@ sub git_clone {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
     my $verbose;
@@ -83,8 +83,8 @@ sub git_clone {
             strict_type => 1,
             store       => \$stderrfile_path_append
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         verbose => {
             default     => 0,
@@ -133,7 +133,7 @@ sub git_clone {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 
@@ -148,7 +148,7 @@ sub git_checkout {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -157,7 +157,7 @@ sub git_checkout {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $filehandle;
 
     ## Default(s)
 
@@ -168,7 +168,7 @@ sub git_checkout {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        filehandle => { store => \$filehandle },
 
     };
 
@@ -192,7 +192,7 @@ sub git_checkout {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

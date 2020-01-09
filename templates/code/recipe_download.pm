@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -41,10 +41,10 @@ sub download_RECIPE_NAME {
 ##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
+##          : $quiet                 => Quiet (no output)
 ##          : $recipe_name           => Recipe name
 ##          : $reference_href        => Reference hash {REF}
 ##          : $reference_version     => Reference version
-##          : $quiet                 => Quiet (no output)
 ##          : $temp_directory        => Temporary directory for recipe
 ##          : $verbose               => Verbosity
 
@@ -88,6 +88,12 @@ sub download_RECIPE_NAME {
             store       => \$profile_base_command,
             strict_type => 1,
         },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -107,12 +113,6 @@ sub download_RECIPE_NAME {
             store       => \$reference_version,
             strict_type => 1,
         },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
         temp_directory => {
             store       => \$temp_directory,
             strict_type => 1,
@@ -130,7 +130,7 @@ sub download_RECIPE_NAME {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
@@ -147,7 +147,7 @@ sub download_RECIPE_NAME {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -155,7 +155,7 @@ sub download_RECIPE_NAME {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -171,11 +171,11 @@ sub download_RECIPE_NAME {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -184,8 +184,8 @@ sub download_RECIPE_NAME {
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

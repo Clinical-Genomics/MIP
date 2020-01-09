@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -40,7 +40,7 @@ sub get_reference {
 
 ## Function : Write get reference recipe (download, decompress and validate)
 ## Returns  :
-## Arguments: $FILEHANDLE     => Filehandle to write to
+## Arguments: $filehandle     => Filehandle to write to
 ##          : $recipe_name    => Recipe name
 ##          : $reference_dir  => Reference directory
 ##          : $reference_href => Reference hash {REF}
@@ -50,17 +50,23 @@ sub get_reference {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $recipe_name;
     my $reference_dir;
     my $reference_href;
 
     ## Default(s)
+    my $outdir_path;
     my $quiet;
     my $verbose;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
+        outdir_path => {
+            default     => $arg_href->{reference_dir},
+            store       => \$outdir_path,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -98,7 +104,7 @@ sub get_reference {
 
     use MIP::Check::File qw{ check_file_md5sum };
     use MIP::File::Decompression qw{ decompress_file };
-    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Program::Wget qw{ wget };
 
     ## Potential download files
     my @file_keys = qw{ file file_check
@@ -115,14 +121,15 @@ sub get_reference {
         my $outfile      = $reference_href->{ q{out} . $key };
         my $outfile_path = catfile( $reference_dir, $outfile );
         my $url          = $reference_href->{url_prefix} . $file;
+        my $user         = $reference_href->{user};
 
         ## Download
-        say {$FILEHANDLE} q{## Download } . $recipe_name . $NEWLINE;
+        say {$filehandle} q{## Download } . $recipe_name . $NEWLINE;
 
         wget(
             {
                 continue          => 1,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 outfile_path      => $outfile_path,
                 read_timeout      => $READ_TIMEOUT_SEC,
                 retry_connrefused => 1,
@@ -131,16 +138,17 @@ sub get_reference {
                 wait_retry        => $WAIT_RETRY_SEC,
                 quiet             => $quiet,
                 url               => $url,
+                user              => $user,
                 verbose           => $verbose,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Check if file needs to be decompress and write decompression if so
         decompress_file(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                outdir_path  => $reference_dir,
+                filehandle   => $filehandle,
+                outdir_path  => $outdir_path,
                 outfile_path => $outfile_path,
                 decompress_program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
@@ -150,7 +158,7 @@ sub get_reference {
         ## Check file integrity of file
         check_file_md5sum(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 md5_file_path => $outfile_path,
                 check_method =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },

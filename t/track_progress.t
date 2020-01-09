@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -63,29 +63,29 @@ diag(   q{Test track_progress from SHELL.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a job_id
-my @job_ids = (qw{job_id_test});
+my @job_ids       = (qw{job_id_test});
 my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
 
 track_progress(
     {
-        FILEHANDLE    => $FILEHANDLE,
+        filehandle    => $filehandle,
         job_ids_ref   => \@job_ids,
         log_file_path => $log_file_path,
     }
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then track progress cmd should be written to file
 my ($wrote_string) = $file_content =~ /(sacct \s+ --format=)/xms;

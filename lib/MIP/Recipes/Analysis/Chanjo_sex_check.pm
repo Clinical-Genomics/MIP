@@ -17,23 +17,21 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_chanjo_sex_check {
 
@@ -139,15 +137,16 @@ sub analysis_chanjo_sex_check {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Program::Chanjo qw{ chanjo_sex };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -205,7 +204,7 @@ sub analysis_chanjo_sex_check {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -213,7 +212,7 @@ sub analysis_chanjo_sex_check {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             job_id_href                     => $job_id_href,
@@ -227,7 +226,7 @@ sub analysis_chanjo_sex_check {
     ### SHELL:
 
     ## chanjo_sexcheck
-    say {$FILEHANDLE} q{## Predicting sex from alignment};
+    say {$filehandle} q{## Predicting sex from alignment};
 
     ## Get parameters
 
@@ -240,15 +239,15 @@ sub analysis_chanjo_sex_check {
     chanjo_sex(
         {
             chr_prefix    => $chr_prefix,
-            FILEHANDLE    => $FILEHANDLE,
+            filehandle    => $filehandle,
             infile_path   => $infile_path,
             log_level     => $active_parameter_href->{chanjo_sexcheck_log_level},
             log_file_path => $log_file_path,
             outfile_path  => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
-    close $FILEHANDLE;
+    say {$filehandle} $NEWLINE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -257,7 +256,7 @@ sub analysis_chanjo_sex_check {
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
-                recipe_name      => q{chanjo_sexcheck},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -267,8 +266,16 @@ sub analysis_chanjo_sex_check {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{log},
                 path             => $log_file_path,
-                recipe_name      => q{chanjo_sexcheck},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        set_file_path_to_store(
+            {
+                file_tag         => q{chanjo_sex_check},
+                file_type        => q{meta},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -279,9 +286,10 @@ sub analysis_chanjo_sex_check {
                 dependency_method       => q{sample_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

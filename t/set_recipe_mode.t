@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,7 @@ diag(   q{Test set_recipe_mode from Parameter.pm v}
 
 ## Given input to set recipe mode to dry_run
 Readonly my $TWO => 2;
-my $log = test_log( {} );
+my $log              = test_log( {} );
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
@@ -74,11 +74,10 @@ trap {
     set_recipe_mode(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             mode                  => $TWO,
             recipes_ref           => \@recipes,
         }
-      )
+    )
 };
 
 ## Then set salmon qunat mode to 2

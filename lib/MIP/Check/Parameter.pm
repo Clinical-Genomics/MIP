@@ -20,7 +20,7 @@ use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -28,10 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_active_installation_parameters
       check_allowed_array_values
       check_allowed_temp_directory
       check_cmd_config_vs_definition_file
@@ -49,17 +50,57 @@ BEGIN {
       check_parameter_hash
       check_prioritize_variant_callers
       check_recipe_exists_in_hash
+      check_recipe_fastq_compatibility
       check_recipe_mode
       check_recipe_name
-      check_salmon_compatibility
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_sample_id_in_parameter_value
-      check_snpsift_keys
+      check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories
+      check_vep_api_cache_versions
+      check_vep_plugin
     };
+}
+
+sub check_active_installation_parameters {
+
+## Function : Some active_parameter checks that are common to both installations. Returns "1" if all is OK
+## Returns  : 1 or exit
+## Arguments: $project_id => Project id
+##          : sbatch_mode => Sbatch mode boolean
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $project_id;
+    my $sbatch_mode;
+
+    my $tmpl = {
+        project_id => {
+            store       => \$project_id,
+            strict_type => 1,
+        },
+        sbatch_mode => {
+            store       => \$sbatch_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Check that a project id has been set if SBATCH mode
+    if ( $sbatch_mode
+        and not $project_id )
+    {
+        $log->fatal(
+q{The parameter "project_id" must be set when a sbatch installation has been requested}
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_allowed_array_values {
@@ -1576,31 +1617,27 @@ sub check_sample_id_in_hash_parameter_path {
     return 1;
 }
 
-sub check_sample_id_in_parameter_value {
+sub check_select_file_contigs {
 
-## Function : Check sample_id provided in hash parameter value is included in the analysis
+## Function : Check that select file contigs is a subset of primary contigs
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
+## Arguments: $contigs_ref             => Primary contigs of the human genome reference
+##          : $log                     => Log object to write to
+##          : $select_file_contigs_ref => Select file contigs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $contigs_ref;
     my $log;
-    my $parameter_names_ref;
-    my $parameter_href;
-    my $sample_ids_ref;
+    my $select_file_contigs_ref;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        contigs_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$contigs_ref,
             strict_type => 1,
         },
         log => {
@@ -1608,133 +1645,29 @@ sub check_sample_id_in_parameter_value {
             required => 1,
             store    => \$log,
         },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_names_ref => {
+        select_file_contigs_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$parameter_names_ref,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
+            store       => \$select_file_contigs_ref,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+    use Array::Utils qw{ array_minus };
 
-        ## Skip undef parameters in current analysis
-        next PARAMETER
-          if ( not defined $active_parameter_href->{$parameter_name} );
+    ## Check that select file contigs are a subset of primary contigs
+    my @unique_select_contigs =
+      array_minus( @{$select_file_contigs_ref}, @{$contigs_ref} );
+    if (@unique_select_contigs) {
 
-      SAMPLE_ID:
-        foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-            ## Unpack
-            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
-
-            ## Check that a value exists
-            if ( not defined $sample_id_value ) {
-
-                $log->fatal(
-                    q{Could not find value for }
-                      . $sample_id
-                      . q{ for parameter '--}
-                      . $parameter_name
-                      . $SINGLE_QUOTE
-                      . q{. Provided sample_ids for parameter are: }
-                      . join $COMMA
-                      . $SPACE,
-                    ( keys %{ $active_parameter_href->{$parameter_name} } )
-                );
-                exit 1;
-            }
-            ## Check that sample_ids match
-            if ( not any { $_ eq $sample_id_value } @{$sample_ids_ref} ) {
-
-                $log->fatal(
-                    q{Could not find matching sample_id in analysis for }
-                      . $sample_id_value
-                      . q{ for parameter '--}
-                      . $parameter_name
-                      . $SINGLE_QUOTE
-                      . q{. Provided sample_ids for analysis are: }
-                      . join $COMMA
-                      . $SPACE,
-                    @{$sample_ids_ref}
-                );
-                exit 1;
-            }
-        }
-    }
-    return 1;
-}
-
-sub check_snpsift_keys {
-
-## Function : Check that the supplied snpsift outinfo keys match annotation files
-## Returns  :
-## Arguments: $log                                 => Log object
-##          : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
-##          : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        snpsift_annotation_files_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_files_href,
-            strict_type => 1,
-        },
-        snpsift_annotation_outinfo_key_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_outinfo_key_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  FILE:
-    foreach my $file ( keys %{$snpsift_annotation_outinfo_key_href} ) {
-
-        ## Matching files
-        next FILE if ( exists $snpsift_annotation_files_href->{$file} );
-
-        ## Else croak and exist
-        $log->fatal( q{The supplied snpsift_annotation_outinfo_key file: }
-              . $file
-              . q{ does not match any file in '--snpsift_annotation_files'} );
+        $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
+            @unique_select_contigs );
         $log->fatal(
-            q{Supplied snpsift_annotation_files files:} . $NEWLINE . join $NEWLINE,
-            keys %{$snpsift_annotation_files_href} );
+            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
+            @{$contigs_ref} );
         exit 1;
     }
     return 1;
@@ -1805,31 +1738,26 @@ sub check_vep_custom_annotation {
     return 1;
 }
 
-sub check_vep_directories {
+sub check_vep_api_cache_versions {
 
-## Function : Compare VEP directory and VEP chache versions. Exit if non-match
+## Function : Compare VEP API and VEP chache versions. Exit if non-match
 ## Returns  :
-## Arguments: $log                 => Log object
-##          : $vep_directory_path  => VEP directory path {REF}
+## Arguments: $vep_binary_path     => VEP binary path {REF}
 ##          : $vep_directory_cache => VEP cache directory path {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
-    my $vep_directory_path;
     my $vep_directory_cache;
 
+    ## Default(s)
+    my $vep_binary_path;
+
     my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        vep_directory_path => {
+        vep_binary_path => {
+            default     => q{vep},
             defined     => 1,
-            required    => 1,
-            store       => \$vep_directory_path,
+            store       => \$vep_binary_path,
             strict_type => 1,
         },
         vep_directory_cache => {
@@ -1843,16 +1771,16 @@ sub check_vep_directories {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Find::Rule;
-    use Cwd qw{ abs_path };
+    use MIP::Get::Parameter qw{ get_vep_version };
 
-    ## Get VEP version from file
-    my $vep_version_file = catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
-    open my $vep_version_fh, q{<}, $vep_version_file;
-    my $vep_version_line = <$vep_version_fh>;
-    close $vep_version_fh;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Capture version number
-    my ($vep_version) = $vep_version_line =~ /( \d+ )/xms;
+    my $vep_version = get_vep_version(
+        {
+            vep_bin_path => $vep_binary_path,
+        }
+    );
 
     ## Check that a version number was picked up
     if ( not $vep_version ) {
@@ -1891,10 +1819,11 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
     }
 
     ## Check if the VEP api version and cache versions matches
-    if ( any { not /$vep_version/xms } @vep_cache_version_folders ) {
-        $log->fatal( q{Differing versions between '--vep_directory_path':}
+    if ( not any { /$vep_version/xms } @vep_cache_version_folders ) {
+
+        $log->fatal( q{Differing versions between 'VEP API':}
               . $SPACE
-              . $vep_directory_path
+              . $vep_version
               . $SPACE
               . q{and '--vep_directory_cache':}
               . $SPACE
@@ -1904,14 +1833,81 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
     return 1;
 }
 
-sub check_salmon_compatibility {
+sub check_vep_plugin {
 
-## Function : Check that Salmon is compatible with the fastq sequence modes. Turn of downstream applications otherwise
+## Function : Check VEP plugin options
+## Returns  : 0 or 1
+## Arguments: $log             => Log object
+##          : $parameter_name  => Parameter name
+##          : $vep_plugin_href => VEP plugin annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $parameter_name;
+    my $vep_plugin_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_name => {
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_name,
+        },
+        vep_plugin_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+
+    ## Nothing to check
+    return 0 if ( not keys %{$vep_plugin_href} );
+
+  PLUGIN:
+    while ( my ( $plugin, $value_href ) = each %{$vep_plugin_href} ) {
+
+        my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
+        croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        next PLUGIN if ( not exists $value_href->{path} );
+
+        next PLUGIN if ( not exists $value_href->{exists_check} );
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                log            => $log,
+                object_name    => $plugin,
+                object_type    => $value_href->{exists_check},
+                parameter_href => {},
+                parameter_name => $parameter_name,
+                path           => $value_href->{path},
+            }
+        );
+    }
+    return 1;
+}
+
+sub check_recipe_fastq_compatibility {
+
+## Function : Check that the recipe is compatible with the fastq sequence modes. Turn of downstream applications otherwise
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameter hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $log                     => Log
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $recipe_name             => Recipe name
 ##          : $sample_info_href        => Sample info hash {REF}
 
     my ($arg_href) = @_;
@@ -1919,8 +1915,8 @@ sub check_salmon_compatibility {
     ## Flatten arguments
     my $active_parameter_href;
     my $infile_lane_prefix_href;
-    my $log;
     my $parameter_href;
+    my $recipe_name;
     my $sample_info_href;
 
     my $tmpl = {
@@ -1938,16 +1934,17 @@ sub check_salmon_compatibility {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            required    => 1,
+            defined     => 1,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1965,10 +1962,13 @@ sub check_salmon_compatibility {
     use MIP::Sample_info qw{ get_sequence_run_type };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
-    ## Check if program is gong to run
-    return if ( $active_parameter_href->{salmon_quant} != 1 );
+    ## Check if program is going to run
+    return if ( $active_parameter_href->{$recipe_name} == 0 );
 
-    my $is_salmon_compatible = 1;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $is_compatible = 1;
 
     ## Get sequence run modes
   SAMPLE_ID:
@@ -1982,32 +1982,32 @@ sub check_salmon_compatibility {
             }
         );
 
-        ## Turn of Salmon if multiple sequence types are present
+        ## Turn of recipe if multiple sequence types are present
         if ( uniq( values %sequence_run_type ) > 1 ) {
-            $is_salmon_compatible = 0;
+            $is_compatible = 0;
         }
     }
 
-    if ( not $is_salmon_compatible ) {
+    if ( not $is_compatible ) {
 
-        ## Turn of salmon and downstream recipes
+        ## Turn of current recipe and downstream recipes
         $log->warn(q{Multiple sequence run types detected});
-        $log->warn(q{Turning off salmon_quant and downstream recipes});
+        $log->warn(qq{Turning off $recipe_name and downstream recipes});
 
-        my $salmon_chain;
+        my $recipe_chain;
         get_recipe_chain(
             {
-                recipe               => q{salmon_quant},
+                recipe               => $recipe_name,
                 dependency_tree_href => $parameter_href->{dependency_tree},
-                chain_id_ref         => \$salmon_chain,
+                chain_id_ref         => \$recipe_chain,
             }
         );
 
         my @chain_recipes = get_chain_recipes(
             {
                 dependency_tree_href    => $parameter_href->{dependency_tree},
-                chain_initiation_point  => $salmon_chain,
-                recipe_initiation_point => q{salmon_quant},
+                chain_initiation_point  => $recipe_chain,
+                recipe_initiation_point => $recipe_name,
             }
         );
 
@@ -2017,12 +2017,11 @@ sub check_salmon_compatibility {
                 active_parameter_href => $active_parameter_href,
                 recipes_ref           => \@chain_recipes,
                 mode                  => 0,
-                log                   => $log,
             }
         );
     }
 
-    return $is_salmon_compatible;
+    return $is_compatible;
 }
 
 sub _check_parameter_mandatory_keys_exits {
@@ -2398,6 +2397,8 @@ sub _check_vep_custom_annotation_options {
 
         next OPTION if ( $option eq q{path} );
 
+        next OPTION if ( $option eq q{vcf_fields} );
+
         next OPTION
           if (
             any { $_ eq $custom_ann_option_href->{$option} }
@@ -2440,6 +2441,8 @@ sub _get_vep_cache_species_dir_path {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
 
     my @vep_species_cache = qw{ homo_sapiens homo_sapiens_merged };
     my $vep_cache_species_dir_path;

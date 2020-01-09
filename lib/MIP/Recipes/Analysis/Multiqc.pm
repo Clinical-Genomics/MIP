@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -127,14 +127,14 @@ sub analysis_multiqc {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Multiqc qw{ multiqc };
+    use MIP::Program::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -154,7 +154,7 @@ sub analysis_multiqc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -162,10 +162,10 @@ sub analysis_multiqc {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $recipe_resource{memory_allocation},
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -175,7 +175,7 @@ sub analysis_multiqc {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Multiqc};
+    say {$filehandle} q{## Multiqc};
 
     ## Always analyse case
     my @report_ids = ($case_id);
@@ -204,50 +204,63 @@ sub analysis_multiqc {
 
         multiqc(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 indir_path  => $indir_path,
                 outdir_path => $outdir_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
-            ## Collect QC metadata info for later use
-            set_recipe_metafile_in_sample_info(
-                {
-                    metafile_tag     => $report_id . $UNDERSCORE . q{html},
-                    path             => catfile( $outdir_path, q{multiqc_report.html} ),
-                    recipe_name      => q{multiqc},
-                    sample_info_href => $sample_info_href,
-                }
+            my %multiqc_outfile_format = (
+                html => catfile( $outdir_path, q{multiqc_report.html} ),
+                json => catfile( $outdir_path, q{multiqc_data}, q{multiqc_data.json} ),
             );
-            set_recipe_metafile_in_sample_info(
-                {
-                    metafile_tag => $report_id . $UNDERSCORE . q{json},
-                    path =>
-                      catfile( $outdir_path, q{multiqc_data}, q{multiqc_data.json} ),
-                    recipe_name      => q{multiqc},
-                    sample_info_href => $sample_info_href,
-                }
-            );
+
+          OUTFILE_FORMAT:
+            while ( my ( $outfile_format, $path ) = each %multiqc_outfile_format ) {
+
+                ## Collect QC metadata info for later use
+                set_recipe_metafile_in_sample_info(
+                    {
+                        metafile_tag     => $report_id . $UNDERSCORE . $outfile_format,
+                        path             => $path,
+                        recipe_name      => q{multiqc},
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+                set_file_path_to_store(
+                    {
+                        file_tag => q{multiqc}
+                          . $UNDERSCORE
+                          . $report_id
+                          . $UNDERSCORE
+                          . $outfile_format,
+                        file_type        => q{meta},
+                        path             => $path,
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+            }
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                base_command        => $profile_base_command,
-                dependency_method   => q{add_to_all},
-                job_dependency_type => q{afterok},
-                job_id_href         => $job_id_href,
-                log                 => $log,
-                job_id_chain        => $job_id_chain,
-                recipe_file_path    => $recipe_file_path,
-                submission_profile  => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{add_to_all},
+                job_dependency_type  => q{afterok},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -100,7 +100,7 @@ diag(   q{Test check_founder_id from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -177,7 +177,7 @@ trap {
             pedigree_href         => \%pedigree,
             active_sample_ids_ref => [qw{ sample_2 }],
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

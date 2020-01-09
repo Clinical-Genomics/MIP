@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Cadd} => [qw{ cadd }],
-        q{MIP::Test::Fixtures}                => [qw{ test_standard_cli }],
+        q{MIP::Program::Cadd}  => [qw{ cadd }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Cadd qw{ cadd };
+use MIP::Program::Cadd qw{ cadd };
 
 diag(   q{Test cadd from Cadd.pm v}
-      . $MIP::Program::Variantcalling::Cadd::VERSION
+      . $MIP::Program::Cadd::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +63,7 @@ diag(   q{Test cadd from Cadd.pm v}
 my @function_base_commands = qw{ CADD.sh };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -95,6 +92,14 @@ my %required_argument = (
         input           => q{outfile.tsv.gz},
         expected_output => q{outfile.tsv.gz},
     },
+    temp_dir_path => {
+        input           => q{temp_dir},
+        expected_output => q{-t} . $SPACE . q{temp_dir},
+    },
+    version => {
+        input           => q{v1.5},
+        expected_output => q{-v} . $SPACE . q{v1.5},
+    },
 );
 
 my %specific_argument = (
@@ -109,6 +114,10 @@ my %specific_argument = (
     outfile_path => {
         input           => q{outfile.tsv.gz},
         expected_output => q{-o outfile.tsv.gz},
+    },
+    version => {
+        input           => q{v1.5},
+        expected_output => q{-v} . $SPACE . q{v1.5},
     },
 );
 

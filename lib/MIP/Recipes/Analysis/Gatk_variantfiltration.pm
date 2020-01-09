@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantfiltration };
@@ -144,7 +144,7 @@ sub analysis_gatk_variantfiltration {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_variantfiltration };
+    use MIP::Program::Gatk qw{ gatk_variantfiltration };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
@@ -154,7 +154,7 @@ sub analysis_gatk_variantfiltration {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -212,7 +212,7 @@ sub analysis_gatk_variantfiltration {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -220,7 +220,7 @@ sub analysis_gatk_variantfiltration {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -235,13 +235,13 @@ sub analysis_gatk_variantfiltration {
     ### SHELL
 
     ## GATK VariantFiltration
-    say {$FILEHANDLE} q{## GATK VariantFiltration};
+    say {$filehandle} q{## GATK VariantFiltration};
     gatk_variantfiltration(
         {
             cluster_size => $active_parameter_href->{gatk_variantfiltration_cluster_size},
             cluster_window_size =>
               $active_parameter_href->{gatk_variantfiltration_cluster_window_size},
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             filter_href => $active_parameter_href->{gatk_variantfiltration_filter},
             infile_path => $infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
@@ -252,9 +252,9 @@ sub analysis_gatk_variantfiltration {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -275,9 +275,10 @@ sub analysis_gatk_variantfiltration {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

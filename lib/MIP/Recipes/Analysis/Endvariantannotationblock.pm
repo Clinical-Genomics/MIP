@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $EMPTY_STR $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_endvariantannotationblock };
@@ -34,7 +34,7 @@ BEGIN {
 
 sub analysis_endvariantannotationblock {
 
-## Function : Concatenate ouput from variant annotation block.
+## Function : Concatenate ouput from variant annotation block
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -155,18 +155,20 @@ sub analysis_endvariantannotationblock {
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_most_complete_vcf
+      set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -231,15 +233,15 @@ sub analysis_endvariantannotationblock {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             directory_id                    => $case_id,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -274,7 +276,7 @@ sub analysis_endvariantannotationblock {
             {
                 active_parameter_href => $active_parameter_href,
                 elements_ref          => \@concat_contigs,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_prefix         => $infile_path_prefix,
                 infile_postfix        => $infile_postfix,
                 outfile_path_prefix   => $outfile_path_prefix,
@@ -290,7 +292,7 @@ sub analysis_endvariantannotationblock {
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
+                    filehandle       => $filehandle,
                     filter_file_path => catfile(
                         $reference_dir,
                         $active_parameter_href->{sv_reformat_remove_genes_file}
@@ -300,7 +302,7 @@ sub analysis_endvariantannotationblock {
                     invert_match    => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Save filtered file
             $sample_info_href->{recipe}{$recipe_name}
@@ -314,25 +316,25 @@ sub analysis_endvariantannotationblock {
             ## Compress or decompress original file or stream to outfile (if supplied)
             htslib_bgzip(
                 {
-                    FILEHANDLE      => $FILEHANDLE,
+                    filehandle      => $filehandle,
                     infile_path     => $outfile_paths[$analysis_suffix_index],
                     stdoutfile_path => $bgzip_outfile_path,
                     write_to_stdout => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Index file using tabix
             htslib_tabix(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     force       => 1,
                     infile_path => $bgzip_outfile_path,
                     preset      => substr $outfile_suffix,
                     1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
         ## Adds the most complete vcf file to sample_info
@@ -361,11 +363,20 @@ sub analysis_endvariantannotationblock {
 
                 $sample_info_href->{vcf_binary_file}{$metafile_tag}{path} =
                   $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
+
+                set_file_path_to_store(
+                    {
+                        file_tag  => $metafile_tag,
+                        file_type => q{vcf},
+                        path => $outfile_paths[$analysis_suffix_index] . $DOT . q{gz},
+                        sample_info_href => $sample_info_href,
+                    }
+                );
             }
         }
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -375,9 +386,10 @@ sub analysis_endvariantannotationblock {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

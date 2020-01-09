@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -69,44 +69,40 @@ my %pedigree = (
     case    => q{case_1},
     samples => [
         {
-            analysis_type  => q{wes},
-            father         => 0,
-            mother         => 0,
-            phenotype      => q{affected},
-            sample_id      => q{sample_1},
-            is_from_sample => q{sample_1},
-            sex            => q{female},
-            time_point     => 0,
+            analysis_type => q{wes},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{affected},
+            sample_id     => q{sample_1},
+            sex           => q{female},
+            time_point    => 0,
         },
         {
-            analysis_type  => q{wgs},
-            father         => 0,
-            mother         => 0,
-            phenotype      => q{unaffected},
-            sample_id      => q{sample_2},
-            is_from_sample => q{sample_1},
-            sex            => q{male},
-            time_point     => 1,
+            analysis_type => q{wgs},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unaffected},
+            sample_id     => q{sample_2},
+            sex           => q{male},
+            time_point    => 1,
         },
         {
-            analysis_type  => q{wts},
-            father         => 0,
-            mother         => 0,
-            phenotype      => q{unknown},
-            sample_id      => q{sample_3},
-            is_from_sample => q{sample_3},
-            sex            => q{other},
-            time_point     => 0,
+            analysis_type => q{wts},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unknown},
+            sample_id     => q{sample_3},
+            sex           => q{other},
+            time_point    => 0,
         },
         {
-            analysis_type  => q{wgs},
-            father         => q{sample_1},
-            mother         => q{sample_2},
-            phenotype      => q{unknown},
-            sample_id      => q{sample_4},
-            is_from_sample => q{sample_4},
-            sex            => q{unknown},
-            time_point     => 0,
+            analysis_type => q{wgs},
+            father        => q{sample_1},
+            mother        => q{sample_2},
+            phenotype     => q{unknown},
+            sample_id     => q{sample_4},
+            sex           => q{unknown},
+            time_point    => 0,
         },
     ],
 );
@@ -118,8 +114,7 @@ my %sample_info = (
             expected_coverage => 30,
         },
         sample_2 => {
-            is_from_sample => q{sample_1},
-            time_point     => 1,
+            time_point => 1,
         },
     },
 );
@@ -140,16 +135,10 @@ set_active_parameter_pedigree_keys(
 );
 my $set_analysis_type     = $active_parameter{analysis_type}{sample_1};
 my $set_expected_coverage = $sample_info{sample}{expected_coverage}{sample_1};
-my $set_is_from_sample    = $sample_info{sample}{sample_2}{is_from_sample};
 my $set_time_point        = $sample_info{sample}{sample_2}{time_point};
 
 is( $set_analysis_type,     q{wes}, q{Set analysis type} );
 is( $set_expected_coverage, undef,  q(Did not set expected coverage) );
-is(
-    $set_is_from_sample,
-    $active_parameter{is_from_sample}{sample_2},
-    q{Set sample origin}
-);
 is( $set_time_point, $active_parameter{time_point}{sample_2}, q{Set time point} );
 
 done_testing();

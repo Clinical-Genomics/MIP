@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $AMPERSAND $ASTERISK $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
@@ -142,15 +142,15 @@ sub analysis_tiddit {
       qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
-    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
+    use MIP::Program::Svdb qw{ svdb_merge };
+    use MIP::Program::Tiddit qw{ tiddit_sv };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -190,7 +190,7 @@ sub analysis_tiddit {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Update number of cores and memory depending on how many samples that are processed
     my $core_number = get_core_number(
@@ -214,7 +214,7 @@ sub analysis_tiddit {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -254,7 +254,7 @@ sub analysis_tiddit {
         $tiddit_sample_file_info{$sample_id}{out} =
           $outfile_path_prefix . $UNDERSCORE . $sample_id;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     # Start counter
     my $process_batches_count = 1;
@@ -267,7 +267,7 @@ sub analysis_tiddit {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $sample_id_index,
@@ -277,7 +277,7 @@ sub analysis_tiddit {
         ## Tiddit
         tiddit_sv(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $tiddit_sample_file_info{$sample_id}{in},
                 minimum_number_supporting_pairs =>
                   $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
@@ -285,9 +285,9 @@ sub analysis_tiddit {
                 referencefile_path  => $active_parameter_href->{human_genome_reference},
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
@@ -304,29 +304,29 @@ sub analysis_tiddit {
 
     write_source_environment_command(
         {
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             source_environment_commands_ref => \@program_source_commands,
         }
     );
 
     svdb_merge(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
             stdoutfile_path  => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{tiddit},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -339,6 +339,7 @@ sub analysis_tiddit {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

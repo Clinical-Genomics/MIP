@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.12;
+our $VERSION = 1.18;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -161,7 +161,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -250,6 +250,24 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{sv_fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ svfqav }],
+            documentation => q{Frequency vcfanno toml config},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{sv_fqa_annotations} => (
+            cmd_aliases   => [qw{ svfqaa }],
+            documentation => q{Frequency annotations to use when filtering },
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
         q{sv_frequency_filter} => (
             cmd_aliases   => [qw{ svcgmf }],
             documentation => q{Remove common structural variants from vcf},
@@ -294,16 +312,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds, uniprot, biotype, regulatory, tsl, canonical, per_gene, appris}
             ],
             documentation => q{VEP features},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
-        q{sv_vep_plugins} => (
-            cmd_aliases   => [qw{ svvepl }],
-            cmd_tags      => [q{Default: UpDownDistance, LoFtool}],
-            documentation => q{VEP plugins},
             is            => q{rw},
             isa           => ArrayRef [Str],
         )
@@ -592,6 +600,25 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
+        q{frequency_annotation} => (
+            cmd_aliases   => [qw{ fqa }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate vcf with allele frequencies},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqavac }],
+            documentation => q{Frequency vcfanno toml config},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{frequency_filter} => (
             cmd_aliases   => [qw{ fqf }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -602,11 +629,11 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{fqf_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqfcvac }],
-            documentation => q{Frequency vcfanno toml config},
+        q{fqf_annotations} => (
+            cmd_aliases   => [qw{ fqfa }],
+            documentation => q{Frequency annotations to use when filtering },
             is            => q{rw},
-            isa           => Str,
+            isa           => ArrayRef,
         )
     );
 
@@ -678,15 +705,6 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vep_directory_path} => (
-            cmd_aliases   => [qw{ vepp }],
-            documentation => q{Path to VEP script directory},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{vep_features} => (
             cmd_aliases => [qw{ vepf }],
             cmd_tags    => [
@@ -699,28 +717,9 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vep_plugins} => (
-            cmd_aliases   => [qw{ veppl }],
-            cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
-            documentation => q{VEP plugins},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{vep_plugins_dir_path} => (
             cmd_aliases   => [qw{ veppldp }],
             documentation => q{Path to directory with VEP plugins},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_plugin_pli_value_file_path} => (
-            cmd_aliases   => [qw{ vepplpli }],
-            documentation => q{VEP plugin pli file path},
             is            => q{rw},
             isa           => Str,
         )
@@ -805,92 +804,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Parse VEP transcript specific entries},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{snpeff} => (
-            cmd_aliases   => [qw{ sne }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant annotation using snpEff},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{snpeff_ann} => (
-            cmd_aliases   => [qw{ sneann }],
-            documentation => q{Annotate variants using snpeff},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_files} => (
-            cmd_aliases => [qw{ snesaf }],
-            cmd_tags    => [
-q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, grch37_exac_reheader_-r0.3.1-.vcf.gz=AF, grch37_anon-swegen_snp_-1000samples-.vcf.gz=AF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
-            ],
-            documentation => q{Annotation files to use with snpsift},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_outinfo_key} => (
-            cmd_aliases => [qw{ snesaoi }],
-            cmd_flag    => q{snpsift_ann_oik},
-            cmd_tags    => [
-q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, grch37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, grch37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
-            ],
-            documentation => q{Snpsift output INFO key},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_annotations} => (
-            cmd_aliases => [qw{ snesdbnsfpa }],
-            cmd_flag    => q{snpsift_dbnsfp_ann},
-            cmd_tags    => [
-q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP++_RS, phastCons100way_vertebrate}
-            ],
-            documentation => q{DbNSFP annotations to use with snpsift},
-            is            => q{rw},
-            isa           => ArrayRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_file} => (
-            cmd_aliases   => [qw{ snesdbnsfp }],
-            cmd_tags      => [q{Default: grch37_dbnsfp_-v2.9-.txt.gz}],
-            documentation => q{DbNSFP File},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_genome_build_version} => (
-            cmd_aliases   => [qw{ snegbv }],
-            cmd_tags      => [q{Default: GRCh37.75}],
-            documentation => q{Snpeff genome build version},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_path} => (
-            cmd_aliases   => [qw{ snep }],
-            documentation => q{Path to snpEff},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

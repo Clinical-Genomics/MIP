@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 # MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,10 +25,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_rhocall_annotate };
+    our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
 
 }
 
@@ -147,8 +147,8 @@ sub analysis_rhocall_annotate {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_roh };
-    use MIP::Program::Variantcalling::Rhocall qw{ rhocall_annotate };
+    use MIP::Program::Bcftools qw{ bcftools_roh };
+    use MIP::Program::Rhocall qw{ rhocall_annotate };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -156,7 +156,7 @@ sub analysis_rhocall_annotate {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -215,8 +215,8 @@ sub analysis_rhocall_annotate {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -224,7 +224,7 @@ sub analysis_rhocall_annotate {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -238,7 +238,7 @@ sub analysis_rhocall_annotate {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## bcftools rho calculation};
+    say {$filehandle} q{## bcftools rho calculation};
 
     my $xargs_file_path_prefix;
 
@@ -246,10 +246,10 @@ sub analysis_rhocall_annotate {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -274,19 +274,18 @@ sub analysis_rhocall_annotate {
         bcftools_roh(
             {
                 af_file_path => $active_parameter_href->{rhocall_frequency_file},
-                FILEHANDLE   => $XARGSFILEHANDLE,
+                filehandle   => $xargsfilehandle,
                 infile_path  => $infile_path{$contig},
                 outfile_path => $roh_outfile_path,
-
-                samples_ref => \@sample_ids,
+                samples_ref  => \@sample_ids,
                 skip_indels => 1, # Skip indels as their genotypes are enriched for errors
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         rhocall_annotate(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
+                filehandle   => $xargsfilehandle,
                 infile_path  => $infile_path{$contig},
                 outfile_path => $outfile_path{$contig},
                 rohfile_path => $roh_outfile_path,
@@ -294,12 +293,12 @@ sub analysis_rhocall_annotate {
 
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -317,11 +316,294 @@ sub analysis_rhocall_annotate {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
+            }
+        );
+    }
+    return 1;
+}
+
+sub analysis_rhocall_viz {
+
+## Function : Detect runs of homo/autozygosity and generate bed file for chromograph
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Recipe name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $parameter_href;
+    my $recipe_name;
+    my $sample_id;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $case_id;
+    my $profile_base_command;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Program::Gzip qw{ gzip };
+    use MIP::Program::Rhocall qw{ rhocall_viz };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Sample_info
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => q{frequency_annotation},
+            stream         => q{out},
+        }
+    );
+    my $infile_name_prefix = $io{out}{file_name_prefix};
+    my $infile_path_prefix = $io{out}{file_path_prefix};
+    my $infile_path        = $infile_path_prefix . q{.vcf.gz};
+
+    my $job_id_chain = get_recipe_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $sample_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => [$sample_id],
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
+            }
+        )
+    );
+    my $outdir_path         = $io{out}{dir_path};
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $filehandle = IO::Handle->new();
+
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $sample_id,
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
+        }
+    );
+
+    ### SHELL:
+
+    say {$filehandle} q{## } . $recipe_name;
+
+    my $sample_vcf = $outfile_path_prefix . $DOT . $sample_id . q{.vcf.gz};
+
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $infile_path,
+            min_ac       => 1,
+            outfile_path => $sample_vcf,
+            output_type  => q{z},
+            samples_ref  => [$sample_id],
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    bcftools_index(
+        {
+            filehandle  => $filehandle,
+            infile_path => $sample_vcf,
+            output_type => q{tbi},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    bcftools_roh(
+        {
+            af_tag       => q{GNOMADAF},
+            filehandle   => $filehandle,
+            infile_path  => $sample_vcf,
+            outfile_path => $outfile_path,
+            skip_indels => 1,    # Skip indels as their genotypes are enriched for errors
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gzip(
+        {
+            decompress   => 1,
+            filehandle   => $filehandle,
+            force        => 1,
+            infile_path  => $sample_vcf,
+            outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    rhocall_viz(
+        {
+            af_tag       => q{GNOMADAF},
+            filehandle   => $filehandle,
+            infile_path  => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            outdir_path  => $outdir_path,
+            rohfile_path => $outfile_path,
+            wig          => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+
+    if ( $recipe_mode == 1 ) {
+
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                infile           => $infile_path,
+                path             => catfile( $outdir_path, q{output.bed} ),
+                recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        submit_recipe(
+            {
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{case_to_sample},
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
+                recipe_file_path        => $recipe_file_path,
+                sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );

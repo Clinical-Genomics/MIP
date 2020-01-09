@@ -144,9 +144,9 @@ sub order_parameter_names {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    open $FILEHANDLE, q{<}, $file_path
+    open $filehandle, q{<}, $file_path
       or croak( q{Cannot open}
           . $DOT
           . $SINGLE_QUOTE
@@ -157,23 +157,23 @@ sub order_parameter_names {
           . $OS_ERROR
           . $NEWLINE );
 
-    my @order_parameters = _parse_yaml_file( { filehandle => $FILEHANDLE, } );
+    my @order_parameters = _parse_yaml_file( { filehandle => $filehandle, } );
 
-    close $FILEHANDLE;
+    close $filehandle;
     return @order_parameters;
 }
 
 sub _parse_yaml_file {
 
 ## Returns  : @order_parameters
-## Arguments: $FILEHANDLE  => Filehandle to read
+## Arguments: $filehandle  => Filehandle to read
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
 
-    my $tmpl = { filehandle => { store => \$FILEHANDLE, }, };
+    my $tmpl = { filehandle => { store => \$filehandle, }, };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
@@ -181,7 +181,7 @@ sub _parse_yaml_file {
     my @order_parameters;
 
   LINE:
-    while ( my $line = <$FILEHANDLE> ) {
+    while ( my $line = <$filehandle> ) {
 
         chomp $line;
 

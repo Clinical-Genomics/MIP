@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -141,15 +141,14 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
+    use MIP::Program::Gatk qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
@@ -199,7 +198,7 @@ sub analysis_gatk_genotypegvcfs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
@@ -208,7 +207,7 @@ sub analysis_gatk_genotypegvcfs {
             active_parameter_href => $active_parameter_href,
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -224,7 +223,7 @@ sub analysis_gatk_genotypegvcfs {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
                 directory_id                    => $case_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
                 memory_allocation               => $recipe_resource{memory},
@@ -275,19 +274,19 @@ sub analysis_gatk_genotypegvcfs {
 
         ## Remove potential GenomicsDB from previous analysis as this causes
         ## GenomicsDBImport to crash
-        say {$FILEHANDLE} q{## Remove potential GenomicsDB from previous analysis};
+        say {$filehandle} q{## Remove potential GenomicsDB from previous analysis};
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 infile_path => $genomicsdb_file_path,
                 recursive   => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## GATK GenomicsDBImport
-        say {$FILEHANDLE} q{## GATK GenomicsDBImport};
+        say {$filehandle} q{## GATK GenomicsDBImport};
 
         ## Files to import into GenomicsDB
         if ( $consensus_analysis_type eq q{wes} ) {
@@ -299,7 +298,7 @@ sub analysis_gatk_genotypegvcfs {
             _merge_sample_name_map_files(
                 {
                     echo_outfile_path => $echo_outfile_path,
-                    FILEHANDLE        => $FILEHANDLE,
+                    filehandle        => $filehandle,
                     gatk_genotypegvcfs_ref_gvcf =>
                       $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
                     outfile_path => $sample_name_map_path,
@@ -311,7 +310,7 @@ sub analysis_gatk_genotypegvcfs {
 
         gatk_genomicsdbimport(
             {
-                FILEHANDLE                => $FILEHANDLE,
+                filehandle                => $filehandle,
                 genomicsdb_workspace_path => $genomicsdb_file_path,
                 intervals_ref             => [$contig],
                 infile_paths_ref          => \@genotype_infile_paths,
@@ -323,16 +322,16 @@ sub analysis_gatk_genotypegvcfs {
                 verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## GATK GenoTypeGVCFs
-        say {$FILEHANDLE} q{## GATK GenoTypeGVCFs};
+        say {$filehandle} q{## GATK GenoTypeGVCFs};
 
         gatk_genotypegvcfs(
             {
                 dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 include_nonvariant_sites =>
                   $active_parameter_href->{gatk_genotypegvcfs_all_sites},
                 infile_path          => q{gendb://} . $genomicsdb_file_path,
@@ -348,9 +347,9 @@ sub analysis_gatk_genotypegvcfs {
                   $active_parameter_href->{gatk_use_new_qual_calculator},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
-        close $FILEHANDLE;
+        close $filehandle;
 
         if ( $recipe_mode == 1 ) {
 
@@ -362,11 +361,13 @@ sub analysis_gatk_genotypegvcfs {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
-                    log                     => $log,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $recipe_files_tracker,
-                    sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                    submission_profile => $active_parameter_href->{submission_profile},
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
+                    recipe_file_path     => $recipe_file_path,
+                    recipe_files_tracker => $recipe_files_tracker,
+                    sample_ids_ref       => \@{ $active_parameter_href->{sample_ids} },
+                    submission_profile   => $active_parameter_href->{submission_profile},
                 }
             );
         }
@@ -379,7 +380,7 @@ sub _merge_sample_name_map_files {
 
 ## Function : Merge sample_name_map files
 ## Returns  :
-## Arguments: $FILEHANDLE                  => Filehandle to write to
+## Arguments: $filehandle                  => Filehandle to write to
 ##          : $echo_outfile_path           => Echo outfile path for dynamic samples
 ##          : $gatk_genotypegvcfs_ref_gvcf => Merged reference sample name map file path
 ##          : $outfile_path                => Outfile path
@@ -388,15 +389,15 @@ sub _merge_sample_name_map_files {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $echo_outfile_path;
     my $gatk_genotypegvcfs_ref_gvcf;
     my $outfile_path;
     my $strings_ref;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         echo_outfile_path => {
             defined     => 1,
@@ -430,22 +431,22 @@ sub _merge_sample_name_map_files {
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             no_trailing_newline   => 1,
             outfile_path          => $echo_outfile_path,
             strings_ref           => $strings_ref,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     gnu_cat(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => [ $echo_outfile_path, $gatk_genotypegvcfs_ref_gvcf ],
             stdoutfile_path  => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     return;
 }
 

@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -45,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Unix}    => [qw{ check_binary_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli test_mip_hashes}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,23 +60,24 @@ diag(   q{Test check_binary_in_path from Unix.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given existing binary
-my %active_parameter =
-  ( conda_path =>
-      catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } ),
-  );
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+$active_parameter{conda_path} =
+  catdir( dirname($Bin), qw{ t data modules miniconda } );
 my $binary       = q{samtools};
 my $program_name = q{samtools};
 
-my $is_ok = check_binary_in_path(
-    {
-        active_parameter_href => \%active_parameter,
-        binary                => $binary,
-        program_name          => $program_name,
-    }
-);
+trap {
+    check_binary_in_path(
+        {
+            active_parameter_href => \%active_parameter,
+            binary                => $binary,
+            program_name          => $program_name,
+        }
+    )
+};
 
 ## Then return true
-ok( $is_ok, q{Binary is found} );
+ok( $trap->return, q{Binary is found} );
 
 ## Given no existing binary
 my $no_binary = q{Nothing to see here};
@@ -91,7 +89,7 @@ trap {
             binary                => $no_binary,
             program_name          => $program_name,
         }
-      )
+    );
 };
 
 ## Then exit and throw FATAL log message

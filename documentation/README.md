@@ -23,7 +23,7 @@ PMID:25495354
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
-MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout for visualization of identified variants.
+MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with [Scout](https://github.com/Clinical-Genomics/scout) for visualization of identified variants.
 
 MIP rare disease DNA analyses single nucleotide variants (SNVs), insertions and deletions (INDELs) and structural variants (SVs).
 
@@ -50,14 +50,12 @@ $ mip analyse rd_rna [case_id] --config_file [mip_config_rna.yaml] --pedigree_fi
 ## Features
 
 * Installation
-  * Simple automated install of all programs using conda/pip/SHELL via supplied install application
+  * Simple automated install of all programs using conda/docker/singularity via supplied install application
   * Downloads and prepares references in the installation process
-  * Handle conflicting tool dependencies
 * Autonomous
   * Checks that all dependencies are fulfilled before launching
   * Builds and prepares references and/or files missing before launching
   * Decompose and normalise reference\(s\) and variant VCF\(s\)
-  * Splits and merges files/contigs for samples and case when relevant
 * Automatic
   * A minimal amount of hands-on time
   * Tracks and executes all recipes without manual intervention
@@ -108,8 +106,10 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda] version 4.5.11
+* Singularity version 3.2.1
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
+We recommend miniconda for installing perl and cpanm libraries. However, perlbrew can also be used for installing and managing perl and cpanm libraries together with MIP.
+Installation instructions and setting up specific cpanm libraries using perlbrew can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline follows a similar syntax.
@@ -124,7 +124,7 @@ $ cd MIP
 
 ```Bash
 $ cd definitions
-$ cpanm --installdeps .
+$ bash mip_install_perl.sh -e [mip_rd-dna] -p [$HOME/miniconda3]
 $ cd -
 ```  
 
@@ -141,17 +141,9 @@ $ perl mip install rd_dna
 This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
-  The batch script will attempt to install the MIP dependencies in a conda environment called MIP_rare. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
-  * MIP's base environment (named MIP_rare in the example above)
-  * MIP_rare_ecnvnator
-  * MIP_rare_edelly
-  * MIP_rare_epeddy
-  * MIP_rare_eperl5
-  * MIP_rare_epy3
-  * MIP_rare_etiddit
-  * MIP_rare_evep
+By default the batch script will attempt to install the MIP dependencies in a conda environment called mip_rd-dna
 
-It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
+It is possible to specify the name of the environment using the ``--environment_name`` flag. E.g. --environment_name MIP``.   
 
   - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
   - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
@@ -161,7 +153,7 @@ It is possible to specify which environments to install using the ``--installati
 ```Bash
 $ bash mip.sh
 ```
-A conda environment will be created where MIP with most of its dependencies will be installed.
+A conda environment will be created where MIP with all dependencies will be installed.
 
 ###### *Note:*
   Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
@@ -176,35 +168,13 @@ $ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
-  In your config yaml file or on the command line you will have to supply the ``load_env`` parameter to activate the environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
+  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environment. If you are using the default environment names the load_env part of the config should look like this:
 
   ```Yml
   load_env:
-    MIP_rare:
-     mip:
-     method: conda
-    MIP_rare_epy3:
-     chanjo_sexcheck:
-     genmod:
-     method: conda
-     multiqc_ar:
-     rankvariant:
-     sv_rankvariant:
-     variant_integrity_ar:
-    MIP_rare_ecnvnator:
-     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_rare_ecnvnator/root/bin/thisroot.sh;"
-     method: conda
-    MIP_rare_edelly:
-     delly_call:
-     delly_reformat:
-     method: conda
-    MIP_rare_epeddy:
-     peddy_ar:
-     method: conda
-    MIP_rare_evep:
-     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-     method: conda
+    mip_rd-dna:
+      mip:
+      method: conda
   ```
 
 ### Usage
@@ -222,10 +192,20 @@ You can always supply `mip [process] [pipeline] --help` to list all available pa
 
 Example usage:
 ```Bash
-$ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
+$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U --star_with_recipe picardtools_mergesamfiles --config 3_config.yaml
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
+
+###### Running programs in singularity containers
+Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config. 
+
+In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
+  ```Yml
+  singularity_recipe_bind_path:
+    bwa_mem:
+      - <path_to_directory_with_fastq_files>
+  ```
 
 #### Input
 
@@ -253,11 +233,11 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
-[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_config.yaml
+[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_rd_dna_config.yaml
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.23-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.5-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.19-.yaml
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.28-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.8-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.24-.yaml

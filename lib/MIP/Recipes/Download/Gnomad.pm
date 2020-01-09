@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -122,6 +122,8 @@ sub download_gnomad {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -147,7 +149,7 @@ sub download_gnomad {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -155,7 +157,7 @@ sub download_gnomad {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -171,11 +173,11 @@ sub download_gnomad {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -184,8 +186,43 @@ sub download_gnomad {
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+## Map of key names to keep from reference vcf
+    my %info_key = (
+        q{r2.0.1} => [ qw{AF AF_POPMAX}, ],
+        q{r2.1.1} => [ qw{AF AF_popmax}, ],
+    );
+
+    my $reformated_outfile = join $UNDERSCORE,
+      (
+        $genome_version, $recipe_name, q{reformated},
+        $DASH . $reference_version . q{-.vcf.gz}
+      );
+    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+    my $rtg_memory              = $recipe_resource{memory} - 1 . q{G};
+
+    rtg_vcfsubset(
+        {
+            filehandle         => $filehandle,
+            infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
+            keep_info_keys_ref => $info_key{$reference_version},
+            memory             => $rtg_memory,
+            outfile_path       => $reformated_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $reformated_outfile_path,
+            preset      => q{vcf},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

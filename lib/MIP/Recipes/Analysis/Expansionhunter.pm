@@ -15,7 +15,8 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use List::MoreUtils qw{ each_array };
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 use Readonly;
 
 BEGIN {
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -140,23 +141,21 @@ sub analysis_expansionhunter {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
+      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_rename_vcf_samples bcftools_view };
-    use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
-    use MIP::Program::Variantcalling::Stranger qw{ stranger };
-    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
-    use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_environment write_source_environment_command };
+    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples bcftools_view };
+    use MIP::Program::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Stranger qw{ stranger };
+    use MIP::Program::Svdb qw{ svdb_merge };
+    use MIP::Program::Vt qw{ vt_decompose };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
@@ -201,7 +200,7 @@ sub analysis_expansionhunter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Update number of cores and memory depending on how many samples that are processed
     my $core_number = get_core_number(
@@ -225,7 +224,7 @@ sub analysis_expansionhunter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -240,7 +239,6 @@ sub analysis_expansionhunter {
     ### SHELL:
 
     my %exphun_sample_file_info;
-    my $process_batches_count = 1;
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
@@ -267,17 +265,18 @@ sub analysis_expansionhunter {
         $exphun_sample_file_info{$sample_id}{out} = $infile_path_prefix;
 
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Run Expansion Hunter
-    say {$FILEHANDLE} q{## Run ExpansionHunter};
+    say {$filehandle} q{## Run ExpansionHunter};
 
-    # Restart counter
-    $process_batches_count = 1;
+    # Counter
+    my $process_batches_count = 1;
 
     ## Expansion hunter calling per sample id
     # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my @svdb_infile_paths;
+    my @vt_infile_paths;
+    my @vt_outfile_paths;
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -286,7 +285,7 @@ sub analysis_expansionhunter {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $sample_id_index,
@@ -303,14 +302,12 @@ sub analysis_expansionhunter {
         );
 
         ## Special case for unknown sex
-        if ( $sample_id_sex eq q{unknown} ) {
+        $sample_id_sex = _update_sample_id_sex( { sample_id_sex => $sample_id_sex, } );
 
-            $sample_id_sex = undef;
-        }
         my $sample_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . $sample_id;
         expansionhunter(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_path           => $exphun_sample_file_info{$sample_id}{in},
                 outfile_path_prefix   => $sample_outfile_path_prefix,
                 reference_genome_path => $human_genome_reference,
@@ -323,94 +320,70 @@ sub analysis_expansionhunter {
                 variant_catalog_file_path => $variant_catalog_file_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
-        push @svdb_infile_paths, $sample_outfile_path_prefix . $outfile_suffix,;
+        say {$filehandle} $AMPERSAND, $NEWLINE;
+        push @vt_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
+        push @vt_outfile_paths,
+            $outfile_path_prefix
+          . $UNDERSCORE . q{vt}
+          . $UNDERSCORE
+          . $sample_id
+          . $outfile_suffix;
 
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
+
+    ## Split multiallelic variants
+    say {$filehandle} q{## Split multiallelic variants};
+    ## Create iterator object
+    my $vt_file_paths_iter = each_array( @vt_infile_paths, @vt_outfile_paths );
+
+  VT_FILES_ITER:
+    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths_iter->() ) {
+
+        vt_decompose(
+            {
+                filehandle          => $filehandle,
+                infile_path         => $vt_infile_path,
+                outfile_path        => $vt_outfile_path,
+                smart_decomposition => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
     my $svdb_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $outfile_suffix;
-
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{svdb},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
+      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
 
     svdb_merge(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@svdb_infile_paths,
+            filehandle       => $filehandle,
+            infile_paths_ref => \@vt_outfile_paths,
             notag            => 1,
             stdoutfile_path  => $svdb_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    write_return_to_environment(
-        {
-            active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
-        }
-    );
-    print {$FILEHANDLE} $NEWLINE;
-
-    ## Split multiallelic variants
-    say {$FILEHANDLE} q{## Split multiallelic variants};
-    my $vt_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $outfile_suffix;
-    vt_decompose(
-        {
-            FILEHANDLE          => $FILEHANDLE,
-            infile_path         => $svdb_outfile_path,
-            outfile_path        => $vt_outfile_path,
-            smart_decomposition => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{stranger},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
-    say {$FILEHANDLE} q{## Stranger annotation};
+    say {$filehandle} q{## Stranger annotation};
 
     my $stranger_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $vt_outfile_path,
+            filehandle      => $filehandle,
+            infile_path     => $svdb_outfile_path,
             stdoutfile_path => $stranger_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    say {$filehandle} q{## Adding sample id instead of file prefix};
 
     bcftools_rename_vcf_samples(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             index               => 1,
             index_type          => q{csi},
             infile              => $stranger_outfile_path,
@@ -421,15 +394,24 @@ sub analysis_expansionhunter {
         }
     );
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                recipe_name      => q{expansionhunter},
+                recipe_name      => $recipe_name,
                 path             => $outfile_path . $DOT . q{gz},
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => q{sv_str},
+                file_type        => q{vcf},
+                path             => $outfile_path . $DOT . q{gz},
+                sample_info_href => $sample_info_href,
             }
         );
 
@@ -441,6 +423,7 @@ sub analysis_expansionhunter {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -449,6 +432,33 @@ sub analysis_expansionhunter {
         );
     }
     return 1;
+}
+
+sub _update_sample_id_sex {
+
+    ## Function : If sample sex is unknown return undef otherwise return $sample_id_sex
+    ## Returns  : $sample_id_sex or undef
+    ## Arguments: $sample_id_sex => Sex of sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id_sex;
+
+    my $tmpl = {
+        sample_id_sex => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_sex,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $sample_id_sex eq q{unknown} );
+
+    return $sample_id_sex;
 }
 
 1;

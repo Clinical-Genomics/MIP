@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -63,25 +63,20 @@ diag(   q{Test clear_trap from SHELL.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+open $filehandle, q{>}, \$file_content
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle
-clear_trap( { FILEHANDLE => $FILEHANDLE } );
+clear_trap( { filehandle => $filehandle } );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then trap comment and trap should be written to file
 my ($clear_trap_command) = $file_content =~ /^(## Clear trap)/ms;

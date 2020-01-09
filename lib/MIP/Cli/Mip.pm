@@ -66,16 +66,6 @@ sub _build_usage {
     );
 
     option(
-        q{config_file} => (
-            cmd_aliases   => [qw{ config c }],
-            documentation => q{File with configuration parameters in YAML format},
-            is            => q{rw},
-            isa           => Str,
-            required      => 1,
-        )
-    );
-
-    option(
         q{conda_path} => (
             cmd_aliases   => [qw{ conp }],
             documentation => q{Conda path},
@@ -100,6 +90,15 @@ sub _build_usage {
             documentation => q{E-mail type},
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
+        )
+    );
+
+    option(
+        q{job_reservation_name} => (
+            cmd_aliases   => [qw{ job_res_name }],
+            documentation => q{Allocate node resources from named reservation},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -152,40 +151,11 @@ sub _build_usage {
     );
 
     option(
-        q{project_id} => (
-            cmd_aliases   => [qw{ pro }],
-            documentation => q{Project id},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Reference directory},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{slurm_quality_of_service} => (
             cmd_aliases   => [qw{ qos }],
             documentation => q{SLURM quality of service},
             is            => q{rw},
             isa           => enum( [qw{ low normal high }] ),
-        )
-    );
-
-    option(
-        q{temp_directory} => (
-            cmd_aliases   => [qw{ tmd }],
-            cmd_tags      => [q{Default: "/scratch/$SLURM_JOB_ID"}],
-            documentation => q{Set the temporary directory for all recipes},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

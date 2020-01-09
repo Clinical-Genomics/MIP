@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -83,7 +83,7 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},

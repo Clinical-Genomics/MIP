@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $AMPERSAND $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $AMPERSAND $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -135,8 +135,7 @@ sub analysis_trim_galore {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Trimming::Trim_galore qw{ trim_galore };
+    use MIP::Program::Trim_galore qw{ trim_galore };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ get_sequence_run_type set_recipe_outfile_in_sample_info };
@@ -145,7 +144,7 @@ sub analysis_trim_galore {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -207,7 +206,7 @@ sub analysis_trim_galore {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -233,7 +232,7 @@ sub analysis_trim_galore {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -247,18 +246,7 @@ sub analysis_trim_galore {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
-
-    my $pwd = cwd();
-
-    ## Move to outsample directory
-    gnu_cd(
-        {
-            directory_path => $outsample_directory,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} q{## } . $recipe_name;
 
     # Keep track of paired end files
     my $paired_end_tracker = 0;
@@ -290,34 +278,29 @@ sub analysis_trim_galore {
             push @fastq_files, $infile_paths[$paired_end_tracker];
         }
 
-        ## Store original working directory
+        my $stderrfile_path =
+          catfile( $recipe_info_path . $DOT . $infile_prefix . $DOT . q{stderr.txt} );
+
         ## Trim galore
         trim_galore(
             {
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@infile_paths,
+                cores            => $recipe_resource{core_number},
+                filehandle       => $filehandle,
+                infile_paths_ref => \@fastq_files,
+                outdir_path      => $outsample_directory,
                 paired_reads     => $paired_reads,
+                stderrfile_path  => $stderrfile_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
     }
+    say {$filehandle} q{wait};
 
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-    ## Move back to original directory
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -344,6 +327,7 @@ sub analysis_trim_galore {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,

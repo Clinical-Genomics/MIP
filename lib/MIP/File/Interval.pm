@@ -39,7 +39,7 @@ sub generate_contig_interval_file {
 ## Arguments: $contigs_ref           => Contigs to split in file
 ##          : $exome_target_bed_file => Interval file to split
 ##          : $file_ending           => File ending to add {Optional}
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $max_cores_per_node    => Maximum core per node
 ##          : $outdirectory          => Outdirectory
 ##          : $reference_dir         => MIP reference directory
@@ -50,7 +50,7 @@ sub generate_contig_interval_file {
     my $contigs_ref;
     my $exome_target_bed_file;
     my $file_ending;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outdirectory;
     my $reference_dir;
 
@@ -72,7 +72,7 @@ sub generate_contig_interval_file {
             strict_type => 1,
         },
         file_ending => { strict_type => 1, store => \$file_ending },
-        FILEHANDLE         => { store => \$FILEHANDLE, },
+        filehandle         => { store => \$filehandle, },
         max_cores_per_node => {
             allow       => qr/ ^\d+$ /sxm,
             default     => 1,
@@ -100,7 +100,7 @@ sub generate_contig_interval_file {
     my %bed_file_path;
     my $process_batches_count = 1;
 
-    say {$FILEHANDLE} q{## Generate contig specific interval_list}, $NEWLINE;
+    say {$filehandle} q{## Generate contig specific interval_list}, $NEWLINE;
 
   CONTIG:
     while ( my ( $contig_index, $contig ) = each @{$contigs_ref} ) {
@@ -110,14 +110,14 @@ sub generate_contig_interval_file {
                 process_counter       => $contig_index,
                 max_process_number    => $max_cores_per_node,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
             }
         );
 
         ## Splits a target file into new contig specific target file
         my $contig_bed_file_path = _split_interval_file_contigs(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 file_ending  => $file_ending,
                 contig       => $contig,
                 indirectory  => $reference_dir,
@@ -127,7 +127,7 @@ sub generate_contig_interval_file {
         );
         $bed_file_path{$contig} = [$contig_bed_file_path];
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     return %bed_file_path;
 }
@@ -141,7 +141,7 @@ sub _split_interval_file_contigs {
 ##          : $infile       => Target file
 ##          : $contig       => Contig to extract
 ##          : $file_ending  => File ending to add
-##          : $FILEHANDLE   => FILEHANDLE to write to
+##          : $filehandle   => filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -151,7 +151,7 @@ sub _split_interval_file_contigs {
     my $infile;
     my $contig;
     my $file_ending;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         indirectory => {
@@ -174,7 +174,7 @@ sub _split_interval_file_contigs {
         },
         contig      => { store       => \$contig },
         file_ending => { strict_type => 1, store => \$file_ending },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
+        filehandle => { required => 1, defined => 1, store => \$filehandle, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -186,22 +186,22 @@ sub _split_interval_file_contigs {
 
         ### Select header and contig
         ## Execute perl
-        print {$FILEHANDLE} q?perl -nae '?;
+        print {$filehandle} q?perl -nae '?;
 
         ## If header line
-        print {$FILEHANDLE} q?if($_=~/^\@/) { ?;
+        print {$filehandle} q?if($_=~/^\@/) { ?;
 
         ## Write to STDOUT
-        print {$FILEHANDLE} q?print $_;} ?;
+        print {$filehandle} q?print $_;} ?;
 
         ## If line begin with specific $contig
-        print {$FILEHANDLE} q?elsif($_=~/^? . $contig . q?\s+/) { ?;
+        print {$filehandle} q?elsif($_=~/^? . $contig . q?\s+/) { ?;
 
         ## Write to STDOUT
-        print {$FILEHANDLE} q?print $_;}' ?;
+        print {$filehandle} q?print $_;}' ?;
 
         ## Infile
-        print {$FILEHANDLE} catfile( $indirectory, $infile ) . $SPACE;
+        print {$filehandle} catfile( $indirectory, $infile ) . $SPACE;
 
         $outfile_path =
           catfile( $outdirectory, $contig . $UNDERSCORE . $infile );
@@ -212,7 +212,7 @@ sub _split_interval_file_contigs {
             ## Add supplied file ending
             $outfile_path .= $file_ending;
         }
-        say {$FILEHANDLE} q{>} . $SPACE . $outfile_path . $SPACE . $AMPERSAND;
+        say {$filehandle} q{>} . $SPACE . $outfile_path . $SPACE . $AMPERSAND;
     }
     return $outfile_path;
 }

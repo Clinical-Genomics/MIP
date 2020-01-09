@@ -18,7 +18,8 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $AMPERSAND $COLON $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $ASTERISK $AMPERSAND $COLON $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_blobfish };
@@ -136,18 +137,19 @@ sub analysis_blobfish {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Blobfish qw{ blobfish_allvsall };
+    use MIP::Program::Blobfish qw{ blobfish_allvsall };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Collect infiles for all sample_ids
     my @sample_indir_paths;
     my @sample_phenotypes;
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
@@ -189,7 +191,7 @@ sub analysis_blobfish {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -197,7 +199,7 @@ sub analysis_blobfish {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -211,29 +213,29 @@ sub analysis_blobfish {
 
     ### SHELL
 
-    say {$FILEHANDLE} q{## Generate tx2gene file};
+    say {$filehandle} q{## Generate tx2gene file};
     my $gtf_file_path     = $active_parameter_href->{transcript_annotation};
     my $tx2gene_file_path = catfile( $outdir_path, q{tx2gene.txt} );
     _generate_tx2gene_file(
         {
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             gtf_file_path     => $gtf_file_path,
             tx2gene_file_path => $tx2gene_file_path,
         }
     );
 
-    say {$FILEHANDLE} q{## BlobFish};
+    say {$filehandle} q{## BlobFish};
     blobfish_allvsall(
         {
             conditions_ref    => \@sample_phenotypes,
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             indir_paths_ref   => \@sample_indir_paths,
             outdir_path       => $outdir_path,
             tx2gene_file_path => $tx2gene_file_path,
         }
     );
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -252,9 +254,10 @@ sub analysis_blobfish {
                 dependency_method       => q{case_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
@@ -268,21 +271,21 @@ sub _generate_tx2gene_file {
 
 ## Function : Generate tx2gene file for Blobfish
 ## Returns  :
-## Arguments: $FILEHANDLE       => Filehandle
+## Arguments: $filehandle       => Filehandle
 ##          : $gtf_file_path    => Path to annotation file
 ##          : tx2gene_file_path => Outfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $gtf_file_path;
     my $tx2gene_file_path;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         gtf_file_path => {
             defined     => 1,
@@ -316,7 +319,7 @@ sub _generate_tx2gene_file {
     ## Store in hash
     $tx2gene_generator .= q? $txgene{$tx} = $gene;} else{next;}'?;
 
-    say {$FILEHANDLE} $tx2gene_generator
+    say {$filehandle} $tx2gene_generator
       . $SPACE
       . $gtf_file_path
       . $SPACE . q{>}

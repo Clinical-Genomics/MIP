@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -34,7 +34,7 @@ BEGIN {
 
 sub analysis_star_fusion {
 
-## Function : Analysis recipe for star-fusion v1.4.0
+## Function : Analysis recipe for star-fusion v1.8.0
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -144,18 +144,18 @@ sub analysis_star_fusion {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+    use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
 
     ## Star fusion has a fixed sample_prefix
-    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions};
+    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions.abridged};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -206,7 +206,7 @@ sub analysis_star_fusion {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
 # Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -214,7 +214,7 @@ sub analysis_star_fusion {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -223,19 +223,20 @@ sub analysis_star_fusion {
             process_time                    => $recipe_resource{time},
             source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
+            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
         }
     );
 
     ### SHELL
 
     ## Star-fusion
-    say {$FILEHANDLE} q{## Performing fusion transcript detections using } . $recipe_name;
+    say {$filehandle} q{## Performing fusion transcript detections using } . $recipe_name;
 
     ## Create sample file
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
     create_star_fusion_sample_file(
         {
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             infile_paths_ref        => \@infile_paths,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             samples_file_path       => $sample_files_path,
@@ -243,22 +244,25 @@ sub analysis_star_fusion {
             sample_info_href        => $sample_info_href,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     star_fusion(
         {
             cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
+            fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
+            min_junction_reads =>
+              $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
         ## Collect QC metadata info for later use
@@ -271,14 +275,24 @@ sub analysis_star_fusion {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{star_fusion},
+                file_type        => q{meta},
+                path             => $file_paths[0],
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
+                dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $recipe_attribute{chain},
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,

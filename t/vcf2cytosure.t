@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -46,18 +46,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Vcf2cytosure} => [qw{ vcf2cytosure_convert }],
-        q{MIP::Test::Fixtures}                        => [qw{ test_standard_cli }],
+        q{MIP::Program::Vcf2cytosure} => [qw{ vcf2cytosure_convert }],
+        q{MIP::Test::Fixtures}        => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
 
 diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
+      . $MIP::Program::Vcf2cytosure::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,7 +68,7 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
 my @function_base_commands = qw{ vcf2cytosure };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

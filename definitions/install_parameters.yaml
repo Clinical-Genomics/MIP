@@ -1,0 +1,175 @@
+---
+conda: 
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+config_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
+core_number:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  mandatory: no
+  type: mip
+pip: 
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+prefer_shell:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+prefer_singularity:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+program_test_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+process_time:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 2-00:00:00
+  mandatory: no
+  type: mip
+project_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+quiet:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: path
+  update_path: absolute_path
+sbatch_mode:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+shell: 
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+singularity: 
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+slurm_quality_of_service:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: low
+  mandatory: no
+  type: mip
+select_programs:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  mandatory: no
+  type: mip
+shell_install:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  mandatory: no
+  type: mip
+skip_programs: 
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  mandatory: no
+  type: mip
+temp_directory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+update_config:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+vep_assemblies:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - GRCh37
+    - GRCh38
+  type: mip
+vep_auto_flag:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: cf
+  type: mip
+vep_cache_dir: 
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+  update_path: absolute_path
+vep_plugins:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    -
+  mandatory: no
+  type: mip
+vep_species:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - homo_sapiens_merged
+  type: mip
+write_config: 
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip

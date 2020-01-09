@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,8 +35,6 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA       => q{,};
-Readonly my $SPACE       => q{ };
 Readonly my $VEP_VERSION => 91;
 
 BEGIN {
@@ -45,17 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Vep} => [qw{ variant_effect_predictor_install }],
-        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
+        q{MIP::Program::Vep}   => [qw{ variant_effect_predictor_install }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
+use MIP::Program::Vep qw{ variant_effect_predictor_install };
 
 diag(   q{Test variant_effect_predictor_install from Vep.pm v}
-      . $MIP::Program::Variantcalling::Vep::VERSION
+      . $MIP::Program::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,10 +63,10 @@ diag(   q{Test variant_effect_predictor_install from Vep.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ perl INSTALL.pl };
+my @function_base_commands = qw{ INSTALL.pl };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -88,7 +87,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -111,7 +110,7 @@ my %specific_argument = (
         input           => $VEP_VERSION,
         expected_output => q{--CACHE_VERSION} . $SPACE . $VEP_VERSION,
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -148,7 +147,6 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            base_commands_index        => 1,
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
@@ -158,39 +156,3 @@ foreach my $argument_href (@arguments) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## build_usage
-
-## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

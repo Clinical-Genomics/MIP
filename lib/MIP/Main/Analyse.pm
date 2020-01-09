@@ -13,7 +13,6 @@ use File::Copy qw{ copy };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use IPC::Cmd qw{ can_run run};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use POSIX;
@@ -25,12 +24,11 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ open close :all };
 use IPC::System::Simple;
 use List::MoreUtils qw { any uniq all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
 use Readonly;
 
 ## MIPs lib/
-# Add MIPs internal lib
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
@@ -49,25 +47,35 @@ use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Parse::Parameter qw{ parse_start_with_recipe };
+use MIP::Parse::Parameter qw{ parse_dynamic_config_parameters parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
-use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
+use MIP::Set::Parameter qw{ set_config_to_active_parameters
+  set_custom_default_to_active_parameter
+  set_default_config_dynamic_parameters
+  set_default_to_active_parameter
+  set_cache
+  set_human_genome_reference_features
+  set_no_dry_run_parameters
+  set_parameter_reference_dir_path
+  set_recipe_resource };
+use MIP::Update::Parameters qw{ update_reference_parameters
+  update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
+use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
   qw{ pipeline_analyse_rd_dna_vcf_rerun };
+use MIP::Sample_info qw{ set_file_path_to_store };
 
 BEGIN {
 
@@ -75,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -185,9 +193,8 @@ sub mip_analyse {
           load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
         ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-        my @remove_keys = (
-            qw{ found_female found_male found_other found_other_count log_file dry_run_all }
-        );
+        my @remove_keys =
+          qw{ found_female found_male found_other gender log_file dry_run_all };
 
       KEY:
         foreach my $key (@remove_keys) {
@@ -212,7 +219,8 @@ sub mip_analyse {
             }
         );
 
-        my @config_dynamic_parameters = qw{ analysis_constant_path };
+        my @config_dynamic_parameters =
+          qw{ cluster_constant_path analysis_constant_path };
 
         ## Replace config parameter with cmd info for config dynamic parameter
         set_default_config_dynamic_parameters(
@@ -223,18 +231,16 @@ sub mip_analyse {
             }
         );
 
-        ## Loop through all parameters and update info
-      PARAMETER:
-        foreach my $parameter_name ( keys %parameter ) {
+        ## Updates first the dynamic config parameters and then all other
+        ## parameters to particular user/cluster following specifications
+        parse_dynamic_config_parameters(
+            {
+                active_parameter_href         => \%active_parameter,
+                config_dynamic_parameters_ref => \@config_dynamic_parameters,
+                parameter_href                => \%parameter,
+            }
+        );
 
-            ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-            update_dynamic_config_parameters(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-        }
     }
 
 ## Set the default Log4perl file using supplied dynamic parameters.
@@ -316,17 +322,21 @@ sub mip_analyse {
           analysis_type
           bwa_build_reference
           exome_target_bed
-          fusion_filter_reference_genome
           gatk_path
           infile_dirs
+          pedigree_fam_file
           picardtools_path
+          reference_dir
+          reference_info_file
+          rtg_vcfeval_reference_genome
           salmon_quant_reference_genome
           sample_info_file
-          snpeff_path
           star_aln_reference_genome
-          rtg_vcfeval_reference_genome
+          star_fusion_reference_genome
+          store_file
+          sv_vcfparser_select_file
           temp_directory
-          vep_directory_path
+          vcfparser_select_file
         };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
@@ -347,7 +357,6 @@ sub mip_analyse {
                 active_parameter_href => \%active_parameter,
                 associated_recipes_ref =>
                   \@{ $parameter{$parameter_name}{associated_recipe} },
-                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }
@@ -468,7 +477,10 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number recipe_memory });
+    my @parameter_keys_to_check = (
+        qw{ recipe_time recipe_core_number recipe_memory
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    );
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -482,6 +494,9 @@ sub mip_analyse {
             }
         );
     }
+
+## Set recipe resource allocation for specific recipe(s)
+    set_recipe_resource( { active_parameter_href => \%active_parameter, } );
 
 ## Parameters with key(s) that have elements as MIP recipe names
     my @parameter_element_to_check = qw{ associated_recipe };
@@ -628,13 +643,12 @@ sub mip_analyse {
         }
     );
 
-## Detect the gender(s) included in current analysis
+    ## Detect the gender(s) included in current analysis
     (
 
         $active_parameter{found_male},
         $active_parameter{found_female},
         $active_parameter{found_other},
-        $active_parameter{found_other_count},
       )
       = detect_sample_id_gender(
         {
@@ -647,8 +661,8 @@ sub mip_analyse {
 ## Set contig prefix and contig names depending on reference used
     set_contigs(
         {
-            file_info_href         => \%file_info,
-            human_genome_reference => $active_parameter{human_genome_reference},
+            file_info_href => \%file_info,
+            version        => $file_info{human_genome_reference_version},
         }
     );
 
@@ -662,18 +676,15 @@ sub mip_analyse {
         }
     );
 
-## Create .fam file to be used in variant calling analyses
+    ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => \%active_parameter,
             execution_mode        => q{system},
-            fam_file_path         => catfile(
-                $active_parameter{outdata_dir}, $active_parameter{case_id},
-                $active_parameter{case_id} . $DOT . q{fam}
-            ),
-            log              => $log,
-            parameter_href   => \%parameter,
-            sample_info_href => \%sample_info,
+            fam_file_path         => $active_parameter{pedigree_fam_file},
+            log                   => $log,
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
         }
     );
 
@@ -694,11 +705,12 @@ sub mip_analyse {
 
     ## Create dispatch table of pipelines
     my %pipeline = (
-        mixed => \&pipeline_analyse_rd_dna,
-        vrn   => \&pipeline_analyse_rd_dna_vcf_rerun,
-        wes   => \&pipeline_analyse_rd_dna,
-        wgs   => \&pipeline_analyse_rd_dna,
-        wts   => \&pipeline_analyse_rd_rna,
+        dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
+        mixed         => \&pipeline_analyse_rd_dna,
+        vrn           => \&pipeline_analyse_rd_dna_vcf_rerun,
+        wes           => \&pipeline_analyse_rd_dna,
+        wgs           => \&pipeline_analyse_rd_dna,
+        wts           => \&pipeline_analyse_rd_rna,
     );
 
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
@@ -718,7 +730,7 @@ sub mip_analyse {
         }
     );
 
-## Write QC for recipes used in analysis
+    ## Write QC for recipes used in analysis
     # Write sample info to yaml file
     if ( $active_parameter{sample_info_file} ) {
 
@@ -732,7 +744,7 @@ sub mip_analyse {
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
     }
 
-## Write job_ids to file
+    ## Write job_ids to file
     write_job_ids_to_file(
         {
             active_parameter_href => \%active_parameter,
@@ -741,6 +753,21 @@ sub mip_analyse {
         }
     );
 
+    set_analysis_files_to_store(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
+
+    ## Writes a YAML hash to file
+    write_yaml(
+        {
+            yaml_href      => \%{ $sample_info{store} },
+            yaml_file_path => $active_parameter{store_file},
+        }
+    );
+    $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
 

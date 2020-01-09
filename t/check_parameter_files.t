@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -24,7 +24,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,8 +66,12 @@ diag(   q{Test check_parameter_files from Path.pm v}
 ## Creates log object
 my $log = test_log( {} );
 
-my @order_parameters =
-  qw{ gatk_baserecalibration_known_sites gatk_genotypegvcfs_ref_gvcf human_genome_reference snpsift_annotation_files sv_vcfparser_select_file vcfparser_select_file };
+my @order_parameters = qw{ gatk_baserecalibration_known_sites
+  gatk_genotypegvcfs_ref_gvcf
+  gatk_variantrecalibration_resource_indel
+  human_genome_reference
+  sv_vcfparser_select_file
+  vcfparser_select_file };
 
 my %active_parameter = (
 
@@ -79,16 +83,16 @@ my %active_parameter = (
     # To test scalar parameter
     human_genome_reference =>
       catfile( $Bin, qw{data references grch37_homo_sapiens_-d5-.fasta} ),
-    mip                    => 1,
-    gatk_baserecalibration => 1,
-    gatk_genotypegvcfs     => 1,
-    snpeff                 => 1,
-    sv_vcfparser           => 0,
+    mip                       => 1,
+    gatk_baserecalibration    => 1,
+    gatk_genotypegvcfs        => 1,
+    gatk_variantrecalibration => 1,
+    sv_vcfparser              => 0,
 
     # To test hash parameter
-    snpsift_annotation_files => {
-        catfile( $Bin,
-            qw{data references grch37_anon-swegen_snp_-1000samples-.vcf.gz} ) => q{AF},
+    gatk_variantrecalibration_resource_indel => {
+        catfile( $Bin, qw{data references grch37_dbsnp_-138-.vcf} ) =>
+          q{dbsnp,known=true,training=false,truth=false,prior=2.0},
     },
     sv_vcfparser_select_file => q{test_file},
 );

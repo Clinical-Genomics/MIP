@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -86,7 +86,6 @@ sub regexp_to_yaml {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $is_print_regexp;
     my $log;
     my $print_regexp_outfile;
 
@@ -112,67 +111,64 @@ sub regexp_to_yaml {
     my %regexp;
 
     ## Add to %regexp to enable print in YAML
-    # Return FastQC version
-    $regexp{fastqc}{version} =
-      q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?;
 
     # Return Encoding
-    $regexp{fastqc}{encoding} =
+    $regexp{fastqc_ar}{encoding} =
 q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?;
 
     # Return Sequence length
-    $regexp{fastqc}{sequence_length} =
+    $regexp{fastqc_ar}{sequence_length} =
       q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?;
 
     # Return Total sequences
-    $regexp{fastqc}{total_number_of_reads} =
+    $regexp{fastqc_ar}{total_number_of_reads} =
       q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?;
 
     # Return GC content
-    $regexp{fastqc}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;
+    $regexp{fastqc_ar}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;
 
     # Return Sequence duplication level
-    $regexp{fastqc}{sequence_duplication} =
+    $regexp{fastqc_ar}{sequence_duplication} =
       q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?;
 
     # Return Basic Statistics
-    $regexp{fastqc}{basic_statistics} =
+    $regexp{fastqc_ar}{basic_statistics} =
       q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base sequence quality
-    $regexp{fastqc}{per_base_sequence_quality} =
+    $regexp{fastqc_ar}{per_base_sequence_quality} =
       q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per sequence quality scores
-    $regexp{fastqc}{per_sequence_quality_scores} =
+    $regexp{fastqc_ar}{per_sequence_quality_scores} =
       q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base sequence content
-    $regexp{fastqc}{per_base_sequence_content} =
+    $regexp{fastqc_ar}{per_base_sequence_content} =
       q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base GC content
-    $regexp{fastqc}{per_base_gc_content} =
+    $regexp{fastqc_ar}{per_base_gc_content} =
       q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per sequence GC content
-    $regexp{fastqc}{per_sequence_gc_content} =
+    $regexp{fastqc_ar}{per_sequence_gc_content} =
       q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Per base N content
-    $regexp{fastqc}{per_base_n_content} =
+    $regexp{fastqc_ar}{per_base_n_content} =
       q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Sequence Duplication Levels
-    $regexp{fastqc}{sequence_duplication_levels} =
+    $regexp{fastqc_ar}{sequence_duplication_levels} =
       q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Overrepresented sequences
-    $regexp{fastqc}{overrepresented_sequences} =
+    $regexp{fastqc_ar}{overrepresented_sequences} =
       q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?;
 
     # Return Kmer Content
-    $regexp{fastqc}{kmer_content} =
+    $regexp{fastqc_ar}{kmer_content} =
       q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?;
 
     # Return % mapped reads from BAM alignment
@@ -354,14 +350,6 @@ q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 
-    # Return Genmod version
-    $regexp{genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return SnpEff version
-    $regexp{snpeff}{version} =
-q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?;
-
     # Return varianteffectpredictor version
     $regexp{varianteffectpredictor}{version} =
       q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?;
@@ -399,43 +387,8 @@ q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;prin
       q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?;
 
     # Return vcfparser version
-    $regexp{vcfparser}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return Bwa version
-    $regexp{bwa}{version} =
-      q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?;
-
-    # Return Chanjo version
-    $regexp{chanjo}{version} =
-      q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?;
-
-    # Return vt version
-    $regexp{vt}{version} = q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?;
-
-    # Return Samtools version
-    $regexp{samtools}{version} =
-      q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?;
-
-    # Return Bcftools version
-    $regexp{bcftools}{version} =
-      q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?;
-
-    # Return Freebayes version
-    $regexp{freebayes}{version} =
-      q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?;
-
-    # Return Delly version
-    $regexp{delly}{version} =
-      q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?;
-
-    # Return Manta version
-    $regexp{manta}{version} =
-      q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?;
-
-    # Return SVVCFAnno version
-    $regexp{sv_combinevariantcallsets}{vcfanno} =
-      q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?;
+    $regexp{vcfparser_ar}{version} =
+      q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?;
 
     # Return sv_varianteffectpredictor version
     $regexp{sv_varianteffectpredictor}{version} =
@@ -475,15 +428,7 @@ q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print 
 
     # Return sv_vcfparser version
     $regexp{sv_vcfparser}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?;
-
-    # Return SVGenmod version
-    $regexp{sv_genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?;
-
-    # Return Plink2 version
-    $regexp{plink2}{version} =
-q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?;
+q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?;
 
     # Return variant_integrity mendel fraction errors
     $regexp{variant_integrity_ar_mendel}{fraction_of_errors} =
@@ -500,18 +445,6 @@ q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\
     # Return variant_integrity father common_variants
     $regexp{variant_integrity_ar_father}{common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
-
-    # Return tiddit version
-    $regexp{tiddit}{version} =
-q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
-
-    # Return svdb version
-    $regexp{svdb}{version} =
-q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
-
-    # Return vcf2cytosure version
-    $regexp{vcf2cytosure_version}{version} =
-      q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
 
     ## Writes a YAML hash to file
     write_yaml(

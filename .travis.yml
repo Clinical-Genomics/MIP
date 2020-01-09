@@ -8,11 +8,6 @@ sudo: required
 before_install:
 ## Install SSL
   - sudo apt-get update
-#  - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
-#  - cd /lib/x86_64-linux-gnu
-#  - sudo ln -s libssl.so.1.0.0 libssl.so.10
-#  - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
-#  - cd -
 
 ## Install conda
 ##  - wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -36,22 +31,22 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk --skip snpeff
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --envn mip_travis --skip bwa bwakit bedtools cadd chanjo chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod  htslib  manta  multiqc  peddy  picard  plink  rhocall  rtg-tools  sambamba  stranger  svdb  tiddit  upd  variant_integrity  varg  vcfanno  vep  vcf2cytosure  vt
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba fastqc gatk4 htslib multiqc picard rseqc sambamba star star-fusion stringtie trim-galore vep
 ## Install MIP rna
   - bash mip.sh
+## Special case: Install bcftools since it is required by some tests
+  - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+  - conda install -n mip_rd-rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
 ## Test MIP rd_dna
   - conda activate mip_travis
-#  - cd /lib/x86_64-linux-gnu
-#  - sudo ln -s "$ROOTSYS"/lib/*so .
-#  - cd -
 ## Set-up test coverage for test directory "t"
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -j 9 t
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 9 t
 ### Download
 ## Set-up test coverage for mip_download_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
@@ -63,10 +58,14 @@ script:
 ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
 ## Set-up test coverage for mip qccollect
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip qccollect --log_file qc_metrics_qccollect.log --regexp_file t/data/references/qc_regexp_-v1.22-.yaml --sample_info_file t/data/test_data/643594-miptest_qc_sample_info_travis.yaml --evaluate_plink_gender --outfile qc_metrics.yaml
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
+## Set-up test coverage for mip vcfparser
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
+## Set-up test coverage for mip_analyse_vcf_rerun.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
 ## Set-up test coverage for mip_analyse_rna.test
-  - conda activate MIP_rd_rna
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test 
+  - conda activate mip_rd-rna
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
 ## Get some coverage statistics
   - cover
 

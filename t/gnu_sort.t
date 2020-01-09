@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -75,7 +75,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -102,6 +102,10 @@ my %specific_argument = (
     outfile_path => {
         input           => q{outfile.test},
         expected_output => q{> outfile.test},
+    },
+    temporary_directory => {
+        input           => q{temp_dir},
+        expected_output => q{--temporary-directory=temp_dir},
     },
 );
 

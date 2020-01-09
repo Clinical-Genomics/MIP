@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Analysis::MODULE} => [qw{ analysis_RECIPE }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Analysis::MODULE qw{ analysis_RECIPE };
 
-diag(   q{Test SUB_ROUTINE from MODULE.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test analysis_RECIPE from MODULE.pm v}
+      . $MIP::Recipes::Analysis::MODULE::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +100,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = SUB_ROUTINE(
+my $is_ok = analysis_RECIPE(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,

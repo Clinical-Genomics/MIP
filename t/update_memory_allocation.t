@@ -15,14 +15,14 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Cluster}        => [qw{ update_memory_allocation }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,6 +63,8 @@ diag(   q{Test update_memory_allocation from Cluster.pm v}
 Readonly my $NODE_RAM_MEMORY           => 180;
 Readonly my $PROCESS_MEMORY_ALLOCATION => 3;
 Readonly my $PARALLEL_PROCESSES        => 5;
+
+test_log( { no_screen => 1, } );
 
 my $memory_allocation = update_memory_allocation(
     {

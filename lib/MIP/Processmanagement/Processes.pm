@@ -18,7 +18,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $COLON $LOG $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $COLON $LOG_NAME $NEWLINE $UNDERSCORE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -1651,9 +1651,9 @@ sub limit_job_id_string {
 
 sub print_wait {
 
-## Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
+## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate.
 ## Returns  : $process_batches_count
-## Arguments: $FILEHANDLE            => FILEHANDLE to print "wait" statment to
+## Arguments: $filehandle            => filehandle to print "wait" statment to
 ##          : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
 ##          : $process_batches_count => Scales the number of $max_process_number processs used after each print "wait" statement
 ##          : $process_counter       => The number of started processes
@@ -1661,13 +1661,13 @@ sub print_wait {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $max_process_number;
     my $process_batches_count;
     my $process_counter;
 
     my $tmpl = {
-        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle         => { defined => 1, required => 1, store => \$filehandle, },
         max_process_number => {
             defined     => 1,
             required    => 1,
@@ -1696,8 +1696,8 @@ sub print_wait {
     if ( $process_counter == $process_batches_count * $max_process_number ) {
 
         # Print wait statement to filehandle
-        gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
-        say {$FILEHANDLE} $NEWLINE;
+        gnu_wait( { filehandle => $filehandle, } );
+        say {$filehandle} $NEWLINE;
 
 # Increase the maximum number of processs allowed to be used since "wait" was just printed
         $process_batches_count = $process_batches_count + 1;
@@ -1718,10 +1718,11 @@ sub submit_recipe {
 ##          : $job_dependency_type     => Job dependency type
 ##          : $log                     => Log object
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $sample_id               => Sample id
-##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $recipe_file_path        => Recipe file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
+##          : $job_reservation_name    => Allocate resources from named reservation
+##          : $sample_id               => Sample id
+##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $submission_profile      => Submission profile
 
     my ($arg_href) = @_;
@@ -1735,10 +1736,11 @@ sub submit_recipe {
     my $job_dependency_type;
     my $log;
     my $parallel_chains_ref;
-    my $sample_id;
-    my $sample_ids_ref;
     my $recipe_file_path;
     my $recipe_files_tracker;
+    my $job_reservation_name;
+    my $sample_id;
+    my $sample_ids_ref;
 
     ## Default(s)
     my $base_command;
@@ -1798,6 +1800,10 @@ sub submit_recipe {
             store       => \$recipe_files_tracker,
             strict_type => 1,
         },
+        job_reservation_name => {
+            store       => \$job_reservation_name,
+            strict_type => 1,
+        },
         sample_id => {
             store       => \$sample_id,
             strict_type => 1,
@@ -1831,11 +1837,11 @@ sub submit_recipe {
             job_id_href             => $job_id_href,
             log                     => $log,
             parallel_chains_ref     => $parallel_chains_ref,
-            sample_id               => $sample_id,
-            sample_ids_ref          => $sample_ids_ref,
             recipe_file_path        => $recipe_file_path,
             recipe_files_tracker    => $recipe_files_tracker,
-
+            reservation_name        => $job_reservation_name,
+            sample_id               => $sample_id,
+            sample_ids_ref          => $sample_ids_ref,
         }
     );
     return 1;
@@ -1886,7 +1892,7 @@ sub write_job_ids_to_file {
     ## Write job_ids file
     return if ( not keys %{$job_id_href} );
 
-    my $log = Log::Log4perl->get_logger($LOG);
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my $log_dir      = dirname( $active_parameter_href->{log_file} );
     my $job_ids_file = catfile( $log_dir,

@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Blobfish} => [qw{ blobfish_allvsall }],
-        q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
+        q{MIP::Program::Blobfish} => [qw{ blobfish_allvsall }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Blobfish qw{ blobfish_allvsall };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Blobfish qw{ blobfish_allvsall };
 
 diag(   q{Test blobfish_allvsall from Blobfish.pm v}
-      . $MIP::Program::Variantcalling::Blobfish::VERSION
+      . $MIP::Program::Blobfish::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,10 +60,10 @@ diag(   q{Test blobfish_allvsall from Blobfish.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = q{BlobFish.py --allvsall};
+my @function_base_commands = (q{BlobFish.py --allvsall});
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

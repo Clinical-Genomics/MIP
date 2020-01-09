@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -87,10 +87,9 @@ $active_parameter{vep_custom_annotation}{a_ref} = {
     force_report_coordinates => 0,
     annotation_type          => q{exact},
 };
-$active_parameter{sv_vep_plugins}                 = [qw{ LoF ExACpLI }];
-$active_parameter{vep_directory_cache}            = q{a_cache};
-$active_parameter{sv_vep_features}                = [qw{ refseq }];
-$active_parameter{vep_plugin_pli_value_file_path} = q{a_file_path};
+$active_parameter{vep_directory_cache} = q{a_cache};
+$active_parameter{sv_vep_plugin}{ExACpLI} = { path => q{a_path}, };
+$active_parameter{sv_vep_features} = [qw{ refseq }];
 
 my %file_info = test_mip_hashes(
     {

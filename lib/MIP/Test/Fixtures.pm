@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -182,7 +182,20 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter dependency_tree_dna dependency_tree_rna download_active_parameter file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
+                qw{ active_parameter
+                  define_parameter
+                  dependency_tree_dna
+                  dependency_tree_rna
+                  download_active_parameter
+                  file_info
+                  install_parameter
+                  install_rd_dna_active_parameter
+                  install_rd_rna_active_parameter
+                  io
+                  job_id
+                  pedigree
+                  recipe_parameter
+                  qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -216,8 +229,10 @@ sub test_mip_hashes {
         download_active_parameter =>
           catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
         file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
-        install_parameter =>
-          catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
+        install_rd_dna_active_parameter =>
+          catfile( $Bin, qw{ data test_data install_rd_dna_active_parameters.yaml } ),
+        install_rd_rna_active_parameter =>
+          catfile( $Bin, qw{ data test_data install_rd_rna_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
@@ -296,14 +311,12 @@ sub test_standard_cli {
 
         # Display help text
         q{h|help} => sub {
-            done_testing();
             say {*STDOUT} $USAGE;
             exit;
         },
 
         # Display version number
         q{v|version} => sub {
-            done_testing();
             say {*STDOUT} $NEWLINE
               . basename($PROGRAM_NAME)
               . $SPACE
@@ -314,7 +327,6 @@ sub test_standard_cli {
         q{vb|verbose} => $verbose,
       )
       or (
-        done_testing(),
         help(
             {
                 USAGE     => $USAGE,
@@ -322,7 +334,6 @@ sub test_standard_cli {
             }
         )
       );
-
     return $verbose;
 }
 

@@ -11,7 +11,9 @@ CHAIN_ALL:
     - salmon_quant
     - blobfish
   - CHAIN_FUSION:
-    - star_fusion
+    - PARALLEL:
+      - star_fusion
+      - arriba_ar
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles
@@ -29,10 +31,12 @@ CHAIN_ALL:
     - gatk_baserecalibration
     - gatk_haplotypecaller
     - gatk_variantfiltration
+    - dna_vcf_reformat
     - gatk_asereadcounter
     - bootstrapann
     - bcftools_merge
     - varianteffectpredictor
+  - version_collect_ar
   - multiqc_ar
   - analysisrunstatus
   - sacct

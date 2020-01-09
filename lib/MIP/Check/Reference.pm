@@ -17,12 +17,15 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EQUALS $NEWLINE $SPACE $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -31,12 +34,6 @@ BEGIN {
       check_parameter_metafiles
       check_references_for_vt };
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
 
 sub check_human_genome_file_endings {
 
@@ -190,6 +187,8 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+
     my %vt_regexp;
 
     $vt_regexp{vt_decompose}{vcf_key} = q{OLD_MULTIALLELIC};
@@ -221,8 +220,15 @@ sub check_if_processed_by_vt {
         ## If header is finished quit
         $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
+        ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
+        my $export_cmd = join $SPACE,
+          gnu_export( { bash_variable => q{MIP_BIND} . $EQUALS . $reference_file_path } );
+
+        ## Unset MIP_BIND after system parsing
+        my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
+
         ## Detect if vt program has processed reference
-        my $ret = `bcftools view $reference_file_path | $regexp`;
+        my $ret = `$export_cmd; bcftools view $reference_file_path | $regexp; $unset_cmd`;
 
         ## No trace of vt processing found
         if ( not $ret ) {
@@ -499,7 +505,10 @@ sub check_references_for_vt {
     my %seen;
 
     ## TOML parameters
-    my %toml = ( fqf_vcfanno_config => 1, );
+    my %toml = (
+        fqa_vcfanno_config    => 1,
+        sv_fqa_vcfanno_config => 1,
+    );
 
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {

@@ -15,18 +15,18 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $LOG $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,7 +60,7 @@ diag(   q{Test check_recipe_memory_allocation from Cluster.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => $LOG } );
+test_log( {} );
 
 ## Given a memory allocation that stays within the node ram memory
 Readonly my $NODE_RAM_MEMORY   => 180;

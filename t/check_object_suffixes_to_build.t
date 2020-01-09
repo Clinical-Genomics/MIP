@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -65,17 +65,15 @@ diag(   q{Test check_object_suffixes_to_build from Reference.pm v}
 
 my %parameter = load_yaml(
     {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
-        ),
+        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
 my %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
 );
 
@@ -120,8 +118,7 @@ is( $parameter{$parameter_name}{build_file},
 ## Given Hash entries where files do not exist
 %active_parameter = (
     exome_target_bed => {
-        catfile( $Bin, qw{ data references does_not_exists.bed } ) =>
-          q{sample1},
+        catfile( $Bin, qw{ data references does_not_exists.bed } ) => q{sample1},
     },
 );
 $parameter = $active_parameter{$parameter_name};

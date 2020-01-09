@@ -20,7 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
 BEGIN {
 
@@ -28,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -155,9 +156,11 @@ sub analysis_vep {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
+    use MIP::Sample_info qw{
+      set_file_path_to_store
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -167,7 +170,7 @@ sub analysis_vep {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -184,8 +187,9 @@ sub analysis_vep {
     my %infile_path        = %{ $io{in}{file_path_href} };
     my $infile_suffix      = $io{in}{file_suffix};
 
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+    my @contigs_size_ordered     = @{ $file_info_href->{contigs_size_ordered} };
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -218,15 +222,15 @@ sub analysis_vep {
             }
         )
     );
-
-    my %outfile_path   = %{ $io{out}{file_path_href} };
-    my @outfile_paths  = @{ $io{out}{file_paths} };
-    my $outfile_suffix = $io{out}{file_suffix};
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my %outfile_path       = %{ $io{out}{file_path_href} };
+    my @outfile_paths      = @{ $io{out}{file_paths} };
+    my $outfile_suffix     = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
@@ -255,7 +259,7 @@ sub analysis_vep {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -270,11 +274,20 @@ sub analysis_vep {
 
     ### SHELL:
 
-    ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    ## Varianteffectpredictor
+    say {$filehandle} q{## Varianteffectpredictor};
+
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version } );
@@ -283,10 +296,10 @@ sub analysis_vep {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -305,40 +318,8 @@ sub analysis_vep {
     }
 
     # VEP plugins
-    my @plugins;
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile( $active_parameter_href->{vep_directory_cache},
-                q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{MaxEntScan} ) {
-
-            my $max_ent_scan_dir_path =
-              catfile( $active_parameter_href->{vep_directory_cache},
-                qw{ Plugins fordownload } );
-            my @max_ent_scan_de_novos = qw{ SWA NCSS };
-
-            push @plugins, join $COMMA,
-              ( $plugin, $max_ent_scan_dir_path, @max_ent_scan_de_novos );
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{vep_plugin}, } );
 
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
@@ -378,7 +359,7 @@ sub analysis_vep {
                 cache_directory        => $active_parameter_href->{vep_directory_cache},
                 custom_annotations_ref => \@custom_annotations,
                 distance               => $distance,
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 fork                   => $VEP_FORK_NUMBER,
                 infile_format          => substr( $infile_suffix, 1 ),
                 infile_path            => $infile_path{$contig},
@@ -386,19 +367,20 @@ sub analysis_vep {
                 outfile_path           => $outfile_path{$contig},
                 plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
                 plugins_ref            => \@plugins,
-                reference_path   => $active_parameter_href->{human_genome_reference},
-                regions_ref      => [$contig],
-                stderrfile_path  => $stderrfile_path,
-                stdoutfile_path  => $stdoutfile_path,
-                vep_features_ref => \@vep_features_ref,
+                reference_path     => $active_parameter_href->{human_genome_reference},
+                regions_ref        => [$contig],
+                stderrfile_path    => $stderrfile_path,
+                stdoutfile_path    => $stdoutfile_path,
+                synonyms_file_path => $vep_synonyms_file_path,
+                vep_features_ref   => \@vep_features_ref,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -429,6 +411,7 @@ sub analysis_vep {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -445,7 +428,7 @@ sub analysis_vep_sv_wes {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -553,7 +536,7 @@ sub analysis_vep_sv_wes {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -564,7 +547,7 @@ sub analysis_vep_sv_wes {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -583,8 +566,9 @@ sub analysis_vep_sv_wes {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -624,7 +608,7 @@ sub analysis_vep_sv_wes {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
@@ -650,7 +634,7 @@ sub analysis_vep_sv_wes {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -671,17 +655,26 @@ sub analysis_vep_sv_wes {
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_suffix        => $infile_suffix,
             infile_path_prefix => $infile_path_prefix,
         }
     );
 
-    ## varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    ## Varianteffectpredictor
+    say {$filehandle} q{## Varianteffectpredictor};
+
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
@@ -699,33 +692,8 @@ sub analysis_vep_sv_wes {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## VEP features
     my @vep_features_ref;
@@ -743,26 +711,27 @@ sub analysis_vep_sv_wes {
     my $stdoutfile_path = $recipe_file_path . $DOT . q{stdout.txt};
     variant_effect_predictor(
         {
-            assembly         => $assembly_version,
-            buffer_size      => 100,
-            cache_directory  => $active_parameter_href->{vep_directory_cache},
-            FILEHANDLE       => $FILEHANDLE,
-            fork             => $VEP_FORK_NUMBER,
-            infile_format    => substr( $infile_suffix, 1 ),
-            infile_path      => $vep_infile_path,
-            outfile_format   => substr( $outfile_suffix, 1 ),
-            outfile_path     => $outfile_path,
-            plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
-            plugins_ref      => \@plugins,
-            reference_path   => $active_parameter_href->{human_genome_reference},
-            stderrfile_path  => $stderrfile_path,
-            stdoutfile_path  => $stdoutfile_path,
-            vep_features_ref => \@vep_features_ref,
+            assembly           => $assembly_version,
+            buffer_size        => 100,
+            cache_directory    => $active_parameter_href->{vep_directory_cache},
+            filehandle         => $filehandle,
+            fork               => $VEP_FORK_NUMBER,
+            infile_format      => substr( $infile_suffix, 1 ),
+            infile_path        => $vep_infile_path,
+            outfile_format     => substr( $outfile_suffix, 1 ),
+            outfile_path       => $outfile_path,
+            plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref        => \@plugins,
+            reference_path     => $active_parameter_href->{human_genome_reference},
+            stderrfile_path    => $stderrfile_path,
+            stdoutfile_path    => $stdoutfile_path,
+            synonyms_file_path => $vep_synonyms_file_path,
+            vep_features_ref   => \@vep_features_ref,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -782,6 +751,7 @@ sub analysis_vep_sv_wes {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -798,7 +768,7 @@ sub analysis_vep_sv_wgs {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -905,7 +875,7 @@ sub analysis_vep_sv_wgs {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -917,7 +887,7 @@ sub analysis_vep_sv_wgs {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -936,9 +906,11 @@ sub analysis_vep_sv_wgs {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $contigs_ref             = \@{ $file_info_href->{contigs} };
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $contigs_ref              = \@{ $file_info_href->{contigs} };
+    my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -978,8 +950,8 @@ sub analysis_vep_sv_wgs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -1008,7 +980,7 @@ sub analysis_vep_sv_wgs {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -1028,17 +1000,26 @@ sub analysis_vep_sv_wgs {
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_suffix        => $infile_suffix,
             infile_path_prefix => $infile_path_prefix,
         }
     );
 
-    ## varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    ## Varianteffectpredictor
+    say {$filehandle} q{## Varianteffectpredictor};
+
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
@@ -1059,42 +1040,17 @@ sub analysis_vep_sv_wgs {
     }
 
     ## VEP plugins
-    my @plugins;
-
-  PLUGIN:
-    foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-        if ( $plugin eq q{LoF} ) {
-
-            my $lof_parameter = q{,human_ancestor_fa:}
-              . catfile(
-                $active_parameter_href->{vep_directory_cache},
-                q{human_ancestor.fa,filter_position:0.05}
-              );
-            push @plugins, $plugin . $lof_parameter;
-        }
-        elsif ( $plugin eq q{ExACpLI}
-            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
-        {
-
-            my $pli_file_path =
-              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
-            push @plugins, $plugin . $pli_file_path;
-        }
-        else {
-
-            push @plugins, $plugin;
-        }
-    }
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -1148,34 +1104,35 @@ sub analysis_vep_sv_wgs {
         my $stdoutfile_path = $vep_xargs_file_path_prefix . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
-                assembly         => $assembly_version,
-                buffer_size      => 100,
-                cache_directory  => $active_parameter_href->{vep_directory_cache},
-                distance         => $distance,
-                FILEHANDLE       => $XARGSFILEHANDLE,
-                fork             => $VEP_FORK_NUMBER,
-                infile_format    => substr( $infile_suffix, 1 ),
-                infile_path      => $vep_infile_path,
-                outfile_format   => substr( $outfile_suffix, 1 ),
-                outfile_path     => $outfile_path{$contig},
-                plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
-                plugins_ref      => \@plugins,
-                regions_ref      => \@regions,
-                reference_path   => $active_parameter_href->{human_genome_reference},
-                stderrfile_path  => $stderrfile_path,
-                stdoutfile_path  => $stdoutfile_path,
-                vep_features_ref => \@vep_features_ref,
+                assembly           => $assembly_version,
+                buffer_size        => 100,
+                cache_directory    => $active_parameter_href->{vep_directory_cache},
+                distance           => $distance,
+                filehandle         => $xargsfilehandle,
+                fork               => $VEP_FORK_NUMBER,
+                infile_format      => substr( $infile_suffix, 1 ),
+                infile_path        => $vep_infile_path,
+                outfile_format     => substr( $outfile_suffix, 1 ),
+                outfile_path       => $outfile_path{$contig},
+                plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref        => \@plugins,
+                regions_ref        => \@regions,
+                reference_path     => $active_parameter_href->{human_genome_reference},
+                stderrfile_path    => $stderrfile_path,
+                stdoutfile_path    => $stdoutfile_path,
+                synonyms_file_path => $vep_synonyms_file_path,
+                vep_features_ref   => \@vep_features_ref,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
 
         ## Filter out the MT annotations from the combined chr21 chrM call
         if ($mt_name) {
 
-            say {$FILEHANDLE} q{## Filter out MT annotations};
+            say {$filehandle} q{## Filter out MT annotations};
             _subset_vcf(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
+                    filehandle   => $filehandle,
                     infile_path  => $outfile_path{$contig},
                     outfile_path => $outfile_path{$contig},
                     regions_ref  => [qw{ chrM MT }],
@@ -1184,8 +1141,8 @@ sub analysis_vep_sv_wgs {
         }
     }
 
-    close $XARGSFILEHANDLE;
-    close $FILEHANDLE;
+    close $xargsfilehandle;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -1205,6 +1162,7 @@ sub analysis_vep_sv_wgs {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -1316,7 +1274,7 @@ sub analysis_vep_rna {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -1326,7 +1284,7 @@ sub analysis_vep_rna {
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -1378,7 +1336,7 @@ sub analysis_vep_rna {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -1386,7 +1344,7 @@ sub analysis_vep_rna {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -1400,7 +1358,7 @@ sub analysis_vep_rna {
     ### SHELL:
 
     ## Varianteffectpredictor
-    say {$FILEHANDLE} q{## Varianteffectpredictor};
+    say {$filehandle} q{## Varianteffectpredictor};
 
     my $assembly_version = $file_info_href->{human_genome_reference_source}
       . $file_info_href->{human_genome_reference_version};
@@ -1437,7 +1395,7 @@ sub analysis_vep_rna {
             cache_directory        => $active_parameter_href->{vep_directory_cache},
             custom_annotations_ref => \@custom_annotations,
             distance               => $ANNOTATION_DISTANCE,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             fork                   => $VEP_FORK_NUMBER,
             infile_format          => substr( $infile_suffix, 1 ),
             infile_path            => $infile_path,
@@ -1447,9 +1405,9 @@ sub analysis_vep_rna {
             vep_features_ref       => \@vep_features_ref,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -1463,6 +1421,15 @@ sub analysis_vep_rna {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => $case_id . $UNDERSCORE . q{vep},
+                file_type        => q{vcf},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
                 base_command            => $profile_base_command,
@@ -1471,6 +1438,7 @@ sub analysis_vep_rna {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -1506,12 +1474,14 @@ sub _get_custom_annotation_cmds {
 
     my @custom_annotations;
     my @order_custom_options =
-      qw{ path key file_type annotation_type force_report_coordinates };
+      qw{ path key file_type annotation_type force_report_coordinates vcf_fields};
 
   ANNOTATION:
     foreach my $annotation_href ( values %{$vep_custom_annotation_href} ) {
 
-        my $cmd = join $COMMA, @{$annotation_href}{@order_custom_options};
+        ## Remove all undef elements and then join
+        my $cmd = join $COMMA,
+          grep { defined } @{$annotation_href}{@order_custom_options};
         push @custom_annotations, $cmd;
     }
     return @custom_annotations;
@@ -1562,23 +1532,62 @@ sub _get_assembly_name {
     return $assembly_version;
 }
 
+sub _get_plugin_cmds {
+
+## Function : Build plugin command per plugin
+## Returns  : @plugins
+## Arguments: $vep_plugin_href => Plugin info {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_plugin_href;
+
+    my $tmpl = {
+        vep_plugin_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @plugins;
+
+  PLUGIN:
+    while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugin_href} ) {
+
+        my $cmd = $plugin_name . $COMMA . $plugin_href->{path};
+
+        if ( exists $plugin_href->{parameters} ) {
+
+            $cmd .= $COMMA . join $COMMA, @{ $plugin_href->{parameters} };
+        }
+        push @plugins, $cmd;
+    }
+    return @plugins;
+}
+
 sub _reformat_sv_with_no_length {
 
 ## Function : Reformat SV with no length as these will fail in the annotation with VEP
 ## Returns  :
-## Arguments: $FILEHANDLE         => Filehandle to write to
+## Arguments: $filehandle         => Filehandle to write to
 ##          : $file_suffix        => File suffix
 ##          : $infile_path_prefix => Infile path prefix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_suffix;
     my $infile_path_prefix;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
+        filehandle  => { required => 1, store => \$filehandle, },
         file_suffix => {
             defined     => 1,
             required    => 1,
@@ -1627,9 +1636,9 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     # All other lines - print
     $perl_fix_sv_nolengths .= q?else {print $_}' ?;
 
-    print {$FILEHANDLE} $perl_fix_sv_nolengths . $SPACE;
-    print {$FILEHANDLE} $infile_path_prefix . $file_suffix . $SPACE;
-    say   {$FILEHANDLE} q{>}
+    print {$filehandle} $perl_fix_sv_nolengths . $SPACE;
+    print {$filehandle} $infile_path_prefix . $file_suffix . $SPACE;
+    say   {$filehandle} q{>}
       . $SPACE
       . $infile_path_prefix
       . $UNDERSCORE
@@ -1643,7 +1652,7 @@ sub _subset_vcf {
 
 ## Function : Subsets the input vcf to only contain a subset, defined in the regions variable
 ## Returns  :
-## Arguments: $FILEHANDLE   => Filehandle
+## Arguments: $filehandle   => Filehandle
 ##          : $infile_path  => Path to infile
 ##          : $outfile_path => Path to outfile
 ##          : $regions_ref  => Array with regions to be included in the subset {REF}
@@ -1651,15 +1660,15 @@ sub _subset_vcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $outfile_path;
     my $regions_ref;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -1684,34 +1693,34 @@ sub _subset_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_index bcftools_view };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
 
     ## Prepare for bcftools_view
     htslib_bgzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $infile_path,
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
     bcftools_index(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $infile_path . q{.gz},
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    print {$filehandle} $NEWLINE;
     bcftools_view(
         {
             regions_ref  => $regions_ref,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path . q{.gz},
             outfile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     return;
 }

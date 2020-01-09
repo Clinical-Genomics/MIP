@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -70,17 +70,17 @@ diag(   q{Test create_housekeeping_function from Shell.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # Create housekeeping function test sbatch file
 my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
-my $log_file_path = catdir( cwd(), q{test_create_housekeeping_function} );
+my $log_file_path  = catdir( cwd(), q{test_create_housekeeping_function} );
 
 # Temporary directory
 my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
 
 # Open filehandle for bash file
-open $FILEHANDLE, q{>}, $bash_file_path
+open $filehandle, q{>}, $bash_file_path
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Open filehandle for log file
@@ -94,12 +94,12 @@ say {$LOG_FH} q{Logging};
 _build_test_file_recipe(
     {
         recipe_bash_file_path => $bash_file_path,
-        RECIPE_FILEHANDLE     => $FILEHANDLE,
+        recipe_filehandle     => $filehandle,
         recipe_log_file_path  => $log_file_path,
         recipe_temp_dir       => $temp_dir,
     }
 );
-close $FILEHANDLE;
+close $filehandle;
 close $LOG_FH;
 
 ## Testing write to file
@@ -127,7 +127,7 @@ sub _build_test_file_recipe {
 ##Function : Builds the test file for testing the housekeeping function
 ##Returns  : ""
 ##Arguments: $recipe_bash_file_path => Test file to write recipe to
-##         : $RECIPE_FILEHANDLE     => FILEHANDLE to write to
+##         : $recipe_filehandle     => filehandle to write to
 ##         : $recipe_log_file_path  => Log file path
 ##         : $recipe_temp_dir       => Temporary directory to use for test
 
@@ -135,13 +135,13 @@ sub _build_test_file_recipe {
 
     ## Flatten argument(s)
     my $recipe_bash_file_path;
-    my $RECIPE_FILEHANDLE;
+    my $recipe_filehandle;
     my $recipe_log_file_path;
     my $recipe_temp_dir;
 
     my $tmpl = {
         recipe_bash_file_path => { required => 1, store => \$recipe_bash_file_path, },
-        RECIPE_FILEHANDLE     => { required => 1, store => \$RECIPE_FILEHANDLE, },
+        recipe_filehandle     => { required => 1, store => \$recipe_filehandle, },
         recipe_log_file_path  => { required => 1, store => \$recipe_log_file_path, },
         recipe_temp_dir       => { required => 1, store => \$recipe_temp_dir, },
     };
@@ -151,14 +151,14 @@ sub _build_test_file_recipe {
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE => $RECIPE_FILEHANDLE,
+            filehandle => $recipe_filehandle,
         }
     );
 
     ## Set shell attributes
     gnu_set(
         {
-            FILEHANDLE  => $RECIPE_FILEHANDLE,
+            filehandle  => $recipe_filehandle,
             set_errexit => 1,
             set_nounset => 1,
         }
@@ -167,17 +167,17 @@ sub _build_test_file_recipe {
     # Create dir to test removal later
     gnu_mkdir(
         {
-            FILEHANDLE       => $RECIPE_FILEHANDLE,
+            filehandle       => $recipe_filehandle,
             indirectory_path => $recipe_temp_dir,
             parents          => 1,
         }
     );
-    say {$RECIPE_FILEHANDLE} $NEWLINE;
+    say {$recipe_filehandle} $NEWLINE;
 
     # Create housekeeping fucntion to remove temp_dir
     create_housekeeping_function(
         {
-            FILEHANDLE         => $RECIPE_FILEHANDLE,
+            filehandle         => $recipe_filehandle,
             job_ids_ref        => [qw{job_id_test}],
             log_file_path      => $recipe_log_file_path,
             remove_dir         => $recipe_temp_dir,

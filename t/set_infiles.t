@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -76,9 +76,8 @@ set_infiles(
         sample_id        => $sample_id,
     }
 );
-my %expected_indir_path =
-  ( q{sample-1} => { mip_infiles_dir => $infile_directory, }, );
-my %expected_infile = ( q{sample-1} => { mip_infiles => [@infiles], }, );
+my %expected_indir_path = ( q{sample-1} => { mip_infiles_dir => $infile_directory, }, );
+my %expected_infile     = ( q{sample-1} => { mip_infiles     => [@infiles], }, );
 
 ## Then set it in the infile and indir hash
 is(

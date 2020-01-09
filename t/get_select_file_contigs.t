@@ -17,7 +17,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -105,7 +101,7 @@ diag(   q{Test get_select_file_contigs from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -134,8 +130,7 @@ is_deeply( \@{ $file_info{select_file_contigs} },
     \@expected_contigs, q{Got select file contigs} );
 
 ## Given inproper file path
-my $wrong_file =
-  catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
+my $wrong_file = catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
 
 trap {
     get_select_file_contigs(
@@ -143,7 +138,7 @@ trap {
             select_file_path => $wrong_file,
             log              => $log,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

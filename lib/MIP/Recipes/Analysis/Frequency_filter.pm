@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE };
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter };
@@ -35,7 +36,7 @@ BEGIN {
 
 sub analysis_frequency_filter {
 
-## Function : Performs frequency annotation and filtering of variants
+## Function : Performs frequency filtering of variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -147,9 +148,7 @@ sub analysis_frequency_filter {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -157,10 +156,10 @@ sub analysis_frequency_filter {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -213,8 +212,8 @@ sub analysis_frequency_filter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -222,7 +221,7 @@ sub analysis_frequency_filter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -236,7 +235,7 @@ sub analysis_frequency_filter {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Vcfannotate frequency and bcftools filter};
+    say {$filehandle} q{## Bcftools filter};
 
     my $xargs_file_path_prefix;
 
@@ -244,10 +243,10 @@ sub analysis_frequency_filter {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $recipe_resource{core_number},
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -259,41 +258,32 @@ sub analysis_frequency_filter {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
-        vcfanno(
-            {
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $infile_path{$contig},
-                stderrfile_path      => $stderrfile_path,
-                toml_configfile_path => $active_parameter_href->{fqf_vcfanno_config},
-            }
-        );
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                vcfanno_file_toml => $active_parameter_href->{fqf_vcfanno_config},
+                fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
+                vcfanno_file_toml => $active_parameter_href->{fqa_vcfanno_config},
             }
         );
 
         bcftools_view(
             {
-                FILEHANDLE             => $XARGSFILEHANDLE,
-                infile_path            => $DASH,
+                filehandle             => $xargsfilehandle,
+                infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{v},
                 stderrfile_path_append => $stderrfile_path,
                 exclude                => $exclude_filter,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -311,9 +301,10 @@ sub analysis_frequency_filter {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
@@ -327,16 +318,25 @@ sub _build_bcftools_filter {
 
 ## Function : Build the exclude filter command
 ## Returns  :
-## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+## Arguments: $fqf_annotations_ref           => Frequency annotation to use in filtering
+##          : $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
 ##          : $vcfanno_file_toml             => Toml config file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $fqf_annotations_ref;
     my $fqf_bcftools_filter_threshold;
     my $vcfanno_file_toml;
 
     my $tmpl = {
+        fqf_annotations_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_annotations_ref,
+            strict_type => 1,
+        },
         fqf_bcftools_filter_threshold => {
             defined     => 1,
             required    => 1,
@@ -353,25 +353,39 @@ sub _build_bcftools_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
     use MIP::File::Format::Toml qw{ load_toml };
+
+    ## Skip if there are no frequncy annotations to use in filtering
+    return if ( not @{$fqf_annotations_ref} );
 
     my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
 
-    my $exclude_filter;
-    my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
+    my $exclude_filter = $BACKWARD_SLASH . $DOUBLE_QUOTE;
+    my $threshold      = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
 
   ANNOTATION:
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+    while ( my ( $annotation_index, $annotation_href ) =
+        each @{ $vcfanno_config{annotation} } )
+    {
 
-        $exclude_filter =
-            $BACKWARD_SLASH
-          . $DOUBLE_QUOTE
-          . q{INFO/}
-          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
-          . $threshold
-          . $BACKWARD_SLASH
-          . $DOUBLE_QUOTE;
+        ## Limit to requested frequency annotations
+        my @frequency_annotations =
+          intersect( @{$fqf_annotations_ref}, @{ $annotation_href->{names} } );
+
+        next ANNOTATION if ( not @frequency_annotations );
+
+        ## Add "|" for next annotation
+        if ($annotation_index) {
+
+            $exclude_filter .= $SPACE . $PIPE . $SPACE;
+        }
+        $exclude_filter .=
+            q{INFO/}
+          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @frequency_annotations )
+          . $threshold;
     }
+    $exclude_filter .= $BACKWARD_SLASH . $DOUBLE_QUOTE;
     return $exclude_filter;
 }
 

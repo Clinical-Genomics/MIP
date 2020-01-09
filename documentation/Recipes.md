@@ -12,7 +12,7 @@ Recipes templates for `install`, `download` and `analysis` can be found [here](h
 
 The recipe parameter is also know as the analysis recipe switch. It turns on and off the recipe module.
 
-To decide when and where the analysis recipe will be executed you the name of the analysis recipe parameter to the initiation map file for the corresponding pipeline you are working on. The initiation map file is located in the `definition` folder in the MIP directory. The order of the initiation map and the chain you place the parameter on will decide when the recipe will execute and its upstream dependencies.
+To decide when and where the analysis recipe will be executed you add the name of the analysis recipe parameter to the initiation map file for the corresponding pipeline you are working on. The initiation map file is located in the `definition` folder in the MIP directory. The order of the initiation map and the chain you place the parameter on will decide when the recipe will execute and its upstream dependencies.
 
 To add an analysis recipe or build recipe switch see [Parameters](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/Parameters.md):
 

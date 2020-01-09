@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA    => q{,};
 Readonly my $COVERAGE => 90;
-Readonly my $SPACE    => q{ };
 
 BEGIN {
 
@@ -45,18 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Gatk} => [qw{ gatk_combinevariants }],
-        q{MIP::Test::Fixtures}                => [qw{ test_standard_cli }],
+        q{MIP::Program::Gatk}  => [qw{ gatk_combinevariants }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_combinevariants };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_combinevariants };
 
 diag(   q{Test gatk_combinevariants from Gatk v}
-      . $MIP::Program::Variantcalling::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,10 +63,10 @@ diag(   q{Test gatk_combinevariants from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ --analysis_type CombineVariants };
+my @function_base_commands = qw{ gatk3 };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -153,4 +151,29 @@ foreach my $argument_href (@arguments) {
     );
 }
 
+## Base arguments
+@function_base_commands = qw{ gatk3 java };
+
+my %specific_java_argument = (
+    java_jar => {
+        input           => q{gatk.jar},
+        expected_output => q{-jar gatk.jar},
+    },
+);
+
+## Test both base and function specific arguments
+@arguments = ( \%specific_java_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
+        }
+    );
+}
 done_testing();

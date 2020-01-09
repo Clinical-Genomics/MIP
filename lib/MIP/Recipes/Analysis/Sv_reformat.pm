@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 # MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -41,7 +41,7 @@ sub analysis_reformat_sv {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -148,15 +148,18 @@ sub analysis_reformat_sv {
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
-    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Picardtools qw{ picardtools_sortvcf };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_most_complete_vcf
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -222,7 +225,7 @@ sub analysis_reformat_sv {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -230,7 +233,7 @@ sub analysis_reformat_sv {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -264,7 +267,7 @@ sub analysis_reformat_sv {
         ## Sort variants in vcf format
         picardtools_sortvcf(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => [$infile_path],
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -276,7 +279,7 @@ sub analysis_reformat_sv {
                 temp_directory       => $active_parameter_href->{temp_directory},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
@@ -299,14 +302,14 @@ sub analysis_reformat_sv {
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
+                    filehandle       => $filehandle,
                     filter_file_path => $filter_file_path,
                     infile_path      => $outfile_paths[$infile_index],
                     invert_match     => 1,
                     stdoutfile_path  => $filter_outfile_path,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             if ( $recipe_mode == 1 ) {
 
@@ -322,11 +325,11 @@ sub analysis_reformat_sv {
             }
         }
 
-        say {$FILEHANDLE} q{## Compress};
+        say {$filehandle} q{## Compress};
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $outfile_paths[$infile_index],
                 outfile_path_prefix => $outfile_path_prefix . $bcftools_suffix,
                 output_type         => q{z},
@@ -372,11 +375,19 @@ sub analysis_reformat_sv {
                     sample_info_href => $sample_info_href,
                 }
             );
+            set_file_path_to_store(
+                {
+                    file_tag         => q{sv} . $UNDERSCORE . $metafile_tag,
+                    file_type        => q{vcf},
+                    path             => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    sample_info_href => $sample_info_href,
+                }
+            );
         }
     }
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -388,6 +399,7 @@ sub analysis_reformat_sv {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

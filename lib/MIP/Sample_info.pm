@@ -27,15 +27,17 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_family_member_id
       get_read_group
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
+      set_file_path_to_store
       set_gene_panel
       set_infile_info
       set_most_complete_vcf
@@ -46,6 +48,87 @@ BEGIN {
       set_in_sample_info
     };
 
+}
+
+sub get_family_member_id {
+
+## Function : Get the sample IDs of the family members
+## Returns  : %family_member_id
+## Arguments: $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    my %family_member_id = (
+        father            => 0,
+        mother            => 0,
+        children          => [],
+        affected          => [],
+        unknown_phenotype => [],
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my $mother = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{mother},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $father = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{father},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( $phenotype eq q{affected} ) {
+
+            push @{ $family_member_id{affected} }, $sample_id;
+        }
+        elsif ( $phenotype eq q{unknown} ) {
+
+            push @{ $family_member_id{unknown_phenotype} }, $sample_id;
+        }
+
+        next if ( not $father or not $mother );
+
+        ## Append child
+        push @{ $family_member_id{children} }, $sample_id;
+
+        $family_member_id{father} = $father;
+        $family_member_id{mother} = $mother;
+    }
+
+    return %family_member_id;
 }
 
 sub get_read_group {
@@ -228,9 +311,19 @@ sub get_sample_info_sample_recipe_attributes {
         return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
           {$infile}{$attribute};
     }
+    if (
+        ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq
+        q{HASH} )
+    {
 
-    ## Get recipe attribute hash
-    return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} };
+## Get recipe attribute for infile hash
+        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}
+        };
+    }
+
+    ## No infile level
+    ## Get recipe attribute for recipe hash
+    return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name} };
 }
 
 sub get_sequence_run_type {
@@ -347,6 +440,60 @@ sub get_sequence_run_type_is_interleaved {
     return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
       {sequence_run_type}{interleaved};
 
+}
+
+sub set_file_path_to_store {
+
+## Function : Set file to store in sample_info
+## Returns  :
+## Arguments: $file_tag         => Short description of file
+##          : $file_type        => File type
+##          : $path             => Path of file
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_tag;
+    my $file_type;
+    my $path;
+    my $sample_info_href;
+
+    my $tmpl = {
+        file_tag => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_tag,
+            strict_type => 1,
+        },
+        file_type => {
+            allow       => [qw{ fastq bam meta vcf }],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_type,
+            strict_type => 1,
+        },
+        path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$path,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set file path according to file type and tag
+    $sample_info_href->{store}{$file_type}{$file_tag} = $path;
+
+    return;
 }
 
 sub set_gene_panel {
@@ -1203,7 +1350,7 @@ sub set_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_program_version };
+    use MIP::File::Format::Pedigree qw{ has_trio };
 
     ## Add parameter key to sample info
     my @add_keys = qw{ analysis_type expected_coverage };
@@ -1216,33 +1363,6 @@ sub set_in_sample_info {
                 active_parameter_href => $active_parameter_href,
                 key_to_add            => $key_to_add,
                 sample_info_href      => $sample_info_href,
-            }
-        );
-    }
-
-    ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
-    my %program_feature =
-      _define_program_features( { active_parameter_href => $active_parameter_href, } );
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %program_feature ) {
-
-        ## Get program version
-        my $version = get_program_version(
-            {
-                active_parameter_href => $active_parameter_href,
-                cmd                   => $program_feature{$parameter_name}{cmd},
-                parameter_name        => $parameter_name,
-                regexp                => $program_feature{$parameter_name}{regexp},
-                sample_info_href      => $sample_info_href,
-            }
-        );
-
-        set_recipe_outfile_in_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                recipe_name      => $program_feature{$parameter_name}{program_name},
-                version          => $version,
             }
         );
     }
@@ -1272,6 +1392,14 @@ sub set_in_sample_info {
         $sample_info_href->{log_file_dir}       = $path;
         $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
     }
+    ## Check for trio and set
+    $sample_info_href->{has_trio} = has_trio(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
     return;
 }
 
@@ -1362,77 +1490,6 @@ sub _file_name_formats {
       $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
-}
-
-sub _define_program_features {
-
-## Function : Define program features to find version of program
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define program features
-    my $gatk_cmd   = $EMPTY_STR;
-    my $picard_cmd = $EMPTY_STR;
-
-    if ( exists $active_parameter_href->{gatk_path} ) {
-
-        $gatk_cmd =
-            q{java -jar }
-          . catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
-          . $SPACE
-          . q{--version 2>&1};
-    }
-    if ( exists $active_parameter_href->{picardtools_path} ) {
-        $picard_cmd =
-            q{java -jar }
-          . catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} )
-          . $SPACE
-          . q{CreateSequenceDictionary --version 2>&1};
-    }
-    my $sambamba_cmd =
-      q?sambamba 2>&1 | perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-
-    my %program_feature = (
-        gatk_path => {
-            cmd          => $gatk_cmd,
-            regexp       => q?gatk-([^,]+)?,
-            program_name => q{gatk},
-        },
-        picardtools_path => {
-            cmd          => $picard_cmd,
-            regexp       => q?picard-tools-([^,]+)?,
-            program_name => q{picardtools},
-        },
-        bwa_mem => {
-            cmd          => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
-            regexp       => q?Not relevant?,
-            program_name => q{sambamba},
-        },
-        sambamba_depth => {
-            cmd          => $sambamba_cmd,
-            regexp       => q?Not relevant?,
-            program_name => q{sambamba},
-        },
-    );
-
-    return %program_feature;
 }
 
 1;

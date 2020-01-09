@@ -15,17 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Download::Wget} => [qw{ wget }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Program::Wget}  => [qw{ wget }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Wget qw{ wget };
 
 diag(   q{Test wget from Wget.pm v}
-      . $MIP::Program::Download::Wget::VERSION
+      . $MIP::Program::Wget::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,7 +63,7 @@ diag(   q{Test wget from Wget.pm v}
 my @function_base_commands = qw{ wget };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -84,7 +84,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -109,7 +109,7 @@ my %specific_argument = (
     },
     read_timeout => {
         input           => 1,
-        expected_output => q{--read-timeout=1},
+        expected_output => q{--read-timeout} . $EQUALS . q{1},
     },
     retry_connrefused => {
         input           => 1,
@@ -117,15 +117,19 @@ my %specific_argument = (
     },
     timeout => {
         input           => 1,
-        expected_output => q{--timeout=1},
+        expected_output => q{--timeout} . $EQUALS . q{1},
     },
     tries => {
         input           => 1,
-        expected_output => q{--tries=1},
+        expected_output => q{--tries} . $EQUALS . q{1},
     },
     url => {
         input           => q{https://www.gnu.org/software/wget},
         expected_output => q{https://www.gnu.org/software/wget},
+    },
+    user => {
+        input           => q{superman},
+        expected_output => q{--user} . $EQUALS . q{superman},
     },
     verbose => {
         input           => 1,
@@ -133,7 +137,7 @@ my %specific_argument = (
     },
     wait_retry => {
         input           => 1,
-        expected_output => q{--waitretry=1},
+        expected_output => q{--waitretry} . $EQUALS . q{1},
     },
 );
 

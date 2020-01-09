@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Picardtools} => [qw{ picardtools_mergesamfiles }],
-        q{MIP::Test::Fixtures}                  => [qw{ test_standard_cli }],
+        q{MIP::Program::Picardtools} => [qw{ picardtools_mergesamfiles }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
+use MIP::Program::Picardtools qw{ picardtools_mergesamfiles };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test picardtools_mergesamfiles from Picardtools.pm v}
-      . $MIP::Program::Alignment::Picardtools::VERSION
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,10 +61,10 @@ diag(   q{Test picardtools_mergesamfiles from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ MergeSamFiles };
+my @function_base_commands = qw{ picard MergeSamFiles };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -78,15 +75,16 @@ my %base_argument = (
 my %required_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+        expected_output => q{-INPUT infile_1 -INPUT infile_2},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
         input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{R=}
+        expected_output => q{-R}
+          . $SPACE
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
@@ -94,23 +92,25 @@ my %required_argument = (
 my %specific_argument = (
     create_index => {
         input           => q{true},
-        expected_output => q{CREATE_INDEX=true},
+        expected_output => q{-CREATE_INDEX true},
     },
     infile_paths_ref => {
         inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+        expected_output => q{-INPUT infile_1 -INPUT infile_2},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     regionsfile_path => {
         input           => catfile(qw{ reference_directory regionsfile }),
-        expected_output => q{INTERVALS=} . catfile(qw{ reference_directory regionsfile }),
+        expected_output => q{-INTERVALS}
+          . $SPACE
+          . catfile(qw{ reference_directory regionsfile }),
     },
     threading => {
         input           => q{true},
-        expected_output => q{USE_THREADING=true},
+        expected_output => q{-USE_THREADING true},
     },
 );
 
@@ -134,7 +134,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ picard java };
 
 my %specific_java_argument = (
     java_jar => {

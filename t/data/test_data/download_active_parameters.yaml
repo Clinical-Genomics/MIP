@@ -26,6 +26,9 @@ reference:
     - v1.5
   cadd_gnomad_genomes:
     - v1.4
+  cadd_offline_annotations:
+    - v1.4
+    - v1.5
   cadd_to_vcf_header:
     - 1.0
   cadd_whole_genome_snvs:
@@ -49,6 +52,8 @@ reference:
     - 20150915
   expansionhunter:
     - 3.0.0
+  fqa_vcfanno_config:
+    - v1.2
   gatk_mitochondrial_ref:
     - v0_m_amb
     - v0_m_ann
@@ -87,11 +92,15 @@ reference:
     - na24631_v3.3.2_wgs
   gnomad:
     - r2.0.1
+  gnomad_pli_per_gene:
+    - r2.1.1
   hapmap:
     - '3.3'
   human_reference:
     - decoy_5
-    - decoy_hla
+    - assembly38
+  manta_call_regions:
+    - 1.0
   mills_and_1000g_indels:
     - gold_standard_indels
   rank_model:
@@ -102,8 +111,8 @@ reference:
     - 201701 
   svrank_model:
     - v1.8
-  sv_vcfanno_config:
-    - v1.1
+  sv_fqa_vcfanno_config:
+    - v1.2
 reference_feature:
   1000g_all_sv:
     grch37:
@@ -113,7 +122,7 @@ reference_feature:
         outfile: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz
         outfile_index: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz.tbi
         url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
-    hg38: {}
+    grch38: {}
   1000g_all_wgs:
     grch37:
       phase3_v5b.20130502:
@@ -122,7 +131,7 @@ reference_feature:
         outfile: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
         outfile_index: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
         url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
-    hg38: {}
+    grch38: {}
   1000g_indels:
     grch37:
       phase1:
@@ -139,7 +148,7 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38: {}
+    grch38: {}
   1000g_omni:
     grch37:
       '2.5':
@@ -156,13 +165,13 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+    grch38:
       '2.5':
         file: 1000G_omni2.5.hg38.vcf.gz
         file_index: 1000G_omni2.5.hg38.vcf.gz.tbi
-        outfile: hg38_1000g_omni_-2.5-.vcf.gz
+        outfile: grch38_1000g_omni_-2.5-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_1000g_omni_-2.5-.vcf.gz.tbi
+        outfile_index: grch38_1000g_omni_-2.5-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
   1000g_sites:
     grch37:
@@ -173,7 +182,7 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38: {}
+    grch38: {}
   1000g_snps:
     grch37:
       phase1:
@@ -190,21 +199,21 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+    grch38:
       phase1:
         file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
         file_index: 1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi
-        outfile: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz
+        outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
+        outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
   cadd_bravo_topmed:
-    hg38:
+    grch38:
       v1.5:
         file: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz
         file_index: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz.tbi
-        outfile: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
-        outfile_index: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz.tbi
+        outfile: grch38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
+        outfile_index: grch38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   cadd_gnomad_genomes:
     grch37:
@@ -214,6 +223,17 @@ reference_feature:
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_offline_annotations:
+    grch37:
+      v1.4:
+        file: annotationsGRCh37.tar.gz
+        outfile: annotationsGRCh37.tar.gz
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+    grch38:
+      v1.5:
+        file: annotationsGRCh38.tar.gz
+        outfile: annotationsGRCh38.tar.gz
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   cadd_to_vcf_header:
     grch37:
       1.0:
@@ -260,16 +280,16 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index: grch37_clinvar_-2018-10-28-.vcf.gz.tbi
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
-    hg38:
+    grch38:
       '20171029':
         file: clinvar_20171029.vcf.gz
         file_check: clinvar_20171029.vcf.gz.md5
         file_index: clinvar_20171029.vcf.gz.tbi
-        outfile: hg38_clinvar_-2017-10-29-.vcf.gz
-        outfile_check: hg38_clinvar_-2017-10-29-.vcf.gz.md5
+        outfile: grch38_clinvar_-2017-10-29-.vcf.gz
+        outfile_check: grch38_clinvar_-2017-10-29-.vcf.gz.md5
         outfile_check_method: md5sum
         outfile_decompress: gzip
-        outfile_index: hg38_clinvar_-2017-10-29-.vcf.gz.tbi
+        outfile_index: grch38_clinvar_-2017-10-29-.vcf.gz.tbi
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2017/
   ctat_resource_lib:
     grch37:
@@ -293,10 +313,10 @@ reference_feature:
         outfile: grch37_dbnsfp_-v3.5a-.zip
         outfile_decompress: unzp
         url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
-    hg38:
+    grch38:
       3.2a:
         file: dbNSFPv3.2a.zip
-        outfile: hg38_dbnsfp_-v3.2a-.zip
+        outfile: grch38_dbnsfp_-v3.2a-.zip
         outfile_decompress: unzip
         url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
   dbsnp:
@@ -329,20 +349,20 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+    grch38:
       '146':
         file: dbsnp_146.hg38.vcf.gz
         file_index: dbsnp_146.hg38.vcf.gz.tbi
-        outfile: hg38_dbsnp_-146-.vcf.gz
+        outfile: grch38_dbsnp_-146-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_dbsnp_-146-.vcf.gz.tbi
+        outfile_index: grch38_dbsnp_-146-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
       gold_standard_dbsnp:
         file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
         file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
-        outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
+        outfile: grch38_variant_-gold_standard_dbsnp-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
+        outfile_index: grch38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
   delly_exclude:
     grch37:
@@ -350,10 +370,10 @@ reference_feature:
         file: human.hg19.excl.tsv
         outfile: hg19_human_excl_-20150227-.tsv
         url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
-    hg38:
+    grch38:
       20150915: #latest commit for file on master branch
         file: human.hg38.excl.tsv
-        outfile: hg38_human_excl_-20150915-.tsv
+        outfile: grch38_human_excl_-20150915-.tsv
         url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
   expansionhunter:
     grch37:
@@ -361,96 +381,105 @@ reference_feature:
         file: variant_catalog_grch37.json
         outfile: grch37_expansionhunter_variant_catalog_-3.0.0-.json
         url_prefix: https://github.com/Clinical-Genomics/reference-files/blob/master/ExpansionHunter-v3.0.0/
+  fqa_vcfanno_config:
+    grch37:
+      v1.2:
+        file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   gatk_mitochondrial_ref:
     grch37: {}
-    hg38:
+    grch38:
       v0_m_amb:
         file: Homo_sapiens_assembly38.chrM.fasta.amb
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.amb
+        outfile: grch38_homo_sapiens_-v0_m-.fasta.amb
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_ann:
         file: Homo_sapiens_assembly38.chrM.fasta.ann
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.ann
+        outfile: grch38_homo_sapiens_-v0_m-.fasta.ann
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_blacklist:
         file: blacklist_sites.hg38.chrM.bed
         file_index: blacklist_sites.hg38.chrM.bed.idx
-        outfile: hg38_homo_sapiens_blacklist_sites_-v0_m-.bed
-        outfile_index: hg38_homo_sapiens_blacklist_sites_-v0_m-.bed.idx
+        outfile: grch38_homo_sapiens_blacklist_sites_-v0_m-.bed
+        outfile_index: grch38_homo_sapiens_blacklist_sites_-v0_m-.bed.idx
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_blacklist_shifted:
         file: blacklist_sites.hg38.chrM.shifted_by_8000_bases.fixed.bed
         file_index: blacklist_sites.hg38.chrM.shifted_by_8000_bases.fixed.bed.idx
-        outfile: hg38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed
-        outfile_index: hg38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed.idx
+        outfile: grch38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed
+        outfile_index: grch38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed.idx
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_bwt:
         file: Homo_sapiens_assembly38.chrM.fasta.bwt
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.bwt
+        outfile: grch38_homo_sapiens_-v0_m-.fasta.bwt
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_control_shifted_interval_list:
         file: control_region_shifted.chrM.interval_list
-        outfile: hg38_homo_sapiens_control_shifted_-v0_m-.interval_list
+        outfile: grch38_homo_sapiens_control_shifted_-v0_m-.interval_list
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_dict:
         file: Homo_sapiens_assembly38.chrM.dict
-        outfile: hg38_homo_sapiens_-v0_m-.dict
+        outfile: grch38_homo_sapiens_-v0_m-.dict
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_fasta:
         file: Homo_sapiens_assembly38.chrM.fasta
         file_index: Homo_sapiens_assembly38.chrM.fasta.fai
-        outfile: hg38_homo_sapiens_-v0_m-.fasta
-        outfile_index: hg38_homo_sapiens_-v0_m-.fasta.fai
+        outfile: grch38_homo_sapiens_-v0_m-.fasta
+        outfile_index: grch38_homo_sapiens_-v0_m-.fasta.fai
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_non_control_interval_list:
         file: non_control_region.chrM.interval_list
-        outfile: hg38_homo_sapiens_non_control_-v0_m-.interval_list
+        outfile: grch38_homo_sapiens_non_control_-v0_m-.interval_list
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_numt_interval_list:
         file: chrMWithFinalNuMTs.hg38.interval_list
-        outfile: hg38_homo_sapiens_numt_-v0_m-.interval_list
+        outfile: grch38_homo_sapiens_numt_-v0_m-.interval_list
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_pac:
         file: Homo_sapiens_assembly38.chrM.fasta.pac
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.pac
+        outfile: grch38_homo_sapiens_-v0_m-.fasta.pac
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_sa:
         file: Homo_sapiens_assembly38.chrM.fasta.sa
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.sa
+        outfile: grch38_homo_sapiens_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shiftback:
         file: ShiftBack.chain
-        outfile: hg38_homo_sapiens_shiftback_-v0_m-.chain
+        outfile: grch38_homo_sapiens_shiftback_-v0_m-.chain
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_amb:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.amb
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.amb
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta.amb
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_ann:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.ann
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.ann
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta.ann
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_bwt:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.bwt
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.bwt
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta.bwt
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_dict:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.dict
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.dict
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.dict
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_fasta:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta
         file_index: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.fai
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta
-        outfile_index: hg38_homo_sapiens_shifted_-v0_m-.fasta.fai
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta
+        outfile_index: grch38_homo_sapiens_shifted_-v0_m-.fasta.fai
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_pac:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.pac
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.pac
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta.pac
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shifted_sa:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
+        outfile: grch38_homo_sapiens_shifted_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/se_29/GRCh37_mapping/
   genbank_haplogroup:
     grch37:
@@ -475,7 +504,7 @@ reference_feature:
         outfile: grch37_genomics_super_dups_-20181009.txt.gz
         outfile_decompress: gzip
         url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
-    hg38: {}
+    grch38: {}
   giab:
     grch37:
       na12878_v2.19_bed:
@@ -515,7 +544,7 @@ reference_feature:
         outfile: grch37_nist_hg005_-na24631_v3.3.2-.vcf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
-    hg38: {}
+    grch38: {}
   gnomad:
     grch37:
       r2.0.1:
@@ -524,7 +553,14 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
         url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
-    hg38: {}
+    grch38: {}
+  gnomad_pli_per_gene:
+    grch37:
+      r2.1.1:
+        file: gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz
+        outfile: gnomad_lof_metrics_per_gene_-r2.1.1-.txt.gz
+        outfile_decompress: gzip
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/
   hapmap:
     grch37:
       '3.3':
@@ -541,13 +577,13 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+    grch38:
       '3.3':
         file: hapmap_3.3.hg38.vcf.gz
         file_index: hapmap_3.3.hg38.vcf.gz.tbi
-        outfile: hg38_hapmap_-3.3-.vcf.gz
+        outfile: grch38_hapmap_-3.3-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_hapmap_-3.3-.vcf.gz.tbi
+        outfile_index: grch38_hapmap_-3.3-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
   human_reference:
     grch37:
@@ -565,13 +601,27 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
-      decoy_hla:
-        file: GRCh38_full_analysis_set_plus_decoy_hla.fa
-        file_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
-        outfile: hg38_homo_sapiens_-decoy_hla-.fasta
-        outfile_index: hg38_homo_sapiens_-decoy_hla-.fasta.fai
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
+    grch38:
+      assembly38:
+        file: Homo_sapiens_assembly38.fasta
+        file_index: Homo_sapiens_assembly38.fasta.fai
+        outfile: grch38_homo_sapiens_-assembly-.fasta
+        outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
+  manta_call_regions:
+    grch38:
+      1.0:
+        file: grch38_manta_call_regions_-1.0-.bed.gz
+        file_check: grch38_manta_call_regions_-1.0-.bed.gz.md5
+        file_index: grch38_manta_call_regions_-1.0-.bed.gz.tbi
+        file_index_check: grch38_manta_call_regions_-1.0-.bed.gz.tbi.md5
+        outfile: grch38_manta_call_regions_-1.0-.bed.gz
+        outfile_check: grch38_manta_call_regions_-1.0-.bed.gz.md5
+        outfile_check_method: md5sum
+        outfile_index: grch38_manta_call_regions_-1.0-.bed.gz.tbi
+        outfile_index_check: grch38_manta_call_regions_-1.0-.bed.gz.tbi.md5
+        outfile_index_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   mills_and_1000g_indels:
     grch37:
       gold_standard_indels:
@@ -588,13 +638,13 @@ reference_feature:
         outfile_index_check_method: md5sum
         outfile_index_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+    grch38:
       gold_standard_indels:
         file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
         file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
-        outfile: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz
+        outfile: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
         outfile_decompress: gzip
-        outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
+        outfile_index: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
   rank_model:
     grch37:
@@ -630,18 +680,18 @@ reference_feature:
         outfile_check: svrank_model_cmms_-v1.8-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
-  sv_vcfanno_config:
+  sv_fqa_vcfanno_config:
     grch37:
-      v1.1:
-        file: grch37_frequency_vcfanno_filter_config_-v1.1-.toml
-        file_check: grch37_frequency_vcfanno_filter_config_-v1.1-.toml.md5
-        outfile: grch37_frequency_vcfanno_filter_config_-v1.1-.toml
-        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.1-.toml.md5
+      v1.2:
+        file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
 reference_genome_versions:
   - grch37
-  - hg38
+  - grch38
 sacct_format_fields:
   - jobid
   - jobname%50

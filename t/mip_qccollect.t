@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -76,7 +76,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -104,11 +104,27 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    infile_path => {
+        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
+        expected_output => q{--sample_info_file}
+          . $SPACE
+          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
+    },
     log_file_path => {
         input           => catfile(qw{ outcase_directory case_id _qccollect.log }),
         expected_output => q{--log_file}
           . $SPACE
           . catfile(qw{ outcase_directory case_id _qccollect.log }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
+        expected_output => q{--outfile}
+          . $SPACE
+          . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
+    },
+    regexp_file_path => {
+        input           => q{qc_regexp_-v1.13-.yaml},
+        expected_output => q{--regexp_file qc_regexp_-v1.13-.yaml},
     },
     skip_evaluation => {
         input           => 1,

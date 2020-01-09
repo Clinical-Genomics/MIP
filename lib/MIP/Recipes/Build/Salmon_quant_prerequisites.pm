@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -158,8 +158,8 @@ sub build_salmon_quant_prerequisites {
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Utility::Fusion_filter qw{ fusion_filter_gtf_file_to_feature_seqs };
-    use MIP::Program::Variantcalling::Salmon qw{ salmon_index };
+    use MIP::Program::Star_fusion qw{ star_fusion_gtf_file_to_feature_seqs };
+    use MIP::Program::Salmon qw{ salmon_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script
@@ -182,9 +182,9 @@ sub build_salmon_quant_prerequisites {
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -195,7 +195,7 @@ sub build_salmon_quant_prerequisites {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $NUMBER_OF_CORES,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -209,7 +209,7 @@ sub build_salmon_quant_prerequisites {
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -230,7 +230,7 @@ sub build_salmon_quant_prerequisites {
               . q{ Salmon files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building Salmon dir files};
+        say {$filehandle} q{## Building Salmon dir files};
         ## Get parameters
         my $salmon_quant_directory_tmp =
             $active_parameter_href->{salmon_quant_reference_genome}
@@ -240,12 +240,12 @@ sub build_salmon_quant_prerequisites {
         # Create temp dir
         gnu_mkdir(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 indirectory_path => $salmon_quant_directory_tmp,
                 parents          => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Soure program specific env - required by STAR-fusion
         my @program_source_commands = get_package_source_env_cmds(
@@ -257,15 +257,15 @@ sub build_salmon_quant_prerequisites {
 
         write_source_environment_command(
             {
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 source_environment_commands_ref => \@program_source_commands,
             }
         );
 
         ## Build cDNA sequence file
-        fusion_filter_gtf_file_to_feature_seqs(
+        star_fusion_gtf_file_to_feature_seqs(
             {
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 gtf_path           => $active_parameter_href->{transcript_annotation},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
@@ -273,25 +273,25 @@ sub build_salmon_quant_prerequisites {
                   catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         write_return_to_environment(
             {
                 active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
 
         ## Build Salmon index file
         salmon_index(
             {
                 fasta_path   => catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 outfile_path => $salmon_quant_directory_tmp,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ:
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
@@ -302,7 +302,7 @@ sub build_salmon_quant_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $salmon_quant_directory_tmp,
                 }
@@ -313,7 +313,7 @@ sub build_salmon_quant_prerequisites {
         $parameter_href->{star_aln_reference_genome}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

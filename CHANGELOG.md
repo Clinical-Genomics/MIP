@@ -2,6 +2,72 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [8.0.0]
+
+- Added BAM contigs set to allow for single ladies to get a proper check sex (no pun intended:). Actually it is for all female only analyses.
+- Add new recipe to get executable version dynamically and in separate file
+- Remove Snpeff and snpsift from MIP
+- Add clinvar annotation as vep custom file: CLINVAR_CLNSIG,CLINVAR_CLNVID,CLINVAR_CLNREVSTAT now in CSQ field
+- Move frequency annotations from Snpsift to frequency_annotation recipe
+- Moves frequency annotation to separate recipe
+- Adds upd for trios
+- Adds rhocall viz
+- Adds chromograph for chromosome visualization
+- Moves CNVnator to singularity container
+- Moves Manta to singularity container
+- Moves VEP to singularity container
+- Moves Svdb to singularity container and update version to 2.2.0
+- Moves delly to singularity container
+- Moved dbNSFP processing from snpsift to VEP as plugin: GERP++_NR,GERP++_RS,REVEL_rankscore,phastCons100way_vertebrate,phyloP100way_vertebrate is now part of VEP CSQ Schema instead of separate keys in the VCF INFO field 
+- Install CADD via MIPs installer
+- Moves STAR to singularity container
+- Moves STAR-Fusion to singularity container
+- Moves RSeQC to singularity container
+- Moves Trim Galore to singularity container
+- Removes the py3 and perl5 conda environment for the RNA pipeline
+- Moves stringtie to singularity container
+- Removed cramtools
+- Removes cutadapt 
+- Supply wgs variantcalls for ASE analysis
+
+**CLI**
+- Removes the noupdate option from the installation
+
+**New references**
+- grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml
+- grch37_frequency_vcfanno_filter_config_-v1.3-.toml
+
+**Reference**
+- clinvar: 20191013
+- gnomad: r2.0.1 -> r2.1.1
+- loqusdb: 2018-12-18 -> 2019-11-04
+- expansionhunter: 3.0.0 -> 3.1.2
+
+**Tools**
+- bedtools: 2.27.1-he941832_2 -> 2.29.0=h6ed99ea_1
+- chromograph:
+- expansionhunter: 3.0.0 -> 3.1.2
+- GATK: 4.1.2.0-1 -> 4.1.3.0-0 
+- gffcompare: 0.10.6 -> 0.11.2
+- manta: 1.5.0-py27_0 -> 1.6.0-py27_0 
+- multiqc: 1.6 -> 1.7
+- picard: 2.18.14-0 -> 2.20.7-0
+- rseqc: 3.0.0 -> 3.0.1
+- rhocall: 0.4 -> 0.5.1
+- rtg-tools: 3.9.1-1 -> 3.10.1-0
+- star: 2.6.1d -> 2.7.3a
+- star-fusion: 1.5.0 -> 1.7.0
+- stranger: 0.5.4 -> 0.5.5
+- stringtie: 1.3.4 -> 2.0.3
+- svdb: 2.0.0 -> 2.2.0
+- trim-galore: 0.5.0 -> 0.6.4
+- upd: 0.1
+- vcfanno: 0.3.1-0 -> 0.3.2-0
+- VEP: 95 -> 97
+
+## [7.1.12]
+- Remove upper case in reference file name from test data
+
 ## [7.1.11]
 - Fixed bug that will casue select vcf files for snv/indel to not be produced if you turn off all SV programs
  
@@ -22,6 +88,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [7.1.5]
 - Increased sv_varianteffectpredictor memory parameter 9 -> 18 Gb
+>>>>>>> master
 
 ## [7.1.4]
 - Fix bug in outfile_path when mitochondria contig is not part of gene panel
@@ -46,6 +113,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - bioconductor-tximport: 1.8.0=r341_0 -> 1.12.0=r351_0 
 - GATK: 4.1.0.0-0 -> 4.1.2.0-1
 - samtools: 1.9-h8ee4bcc_1 -> 1.9=h8571acd_11 
+
+## [7.0.10]
+- option: tiddit_bin_size -> tiddit_coverage_bin_size
+- Added generation of wig coverage data file using tiddit_coverage
+- Added set_recipe_resource options for setting core_number, time, memory on CLI per recipe(s)
+
+**New recipes**
+*Rd_dna*
+- tiddit_coverage
 
 ## [7.0.9]
 - Removed plink memory allocation from rd_dna_vcf_rerun

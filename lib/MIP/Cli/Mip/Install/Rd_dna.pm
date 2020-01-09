@@ -22,12 +22,13 @@ use MooseX::Types::Structured qw{ Dict Optional };
 use Readonly;
 
 ## MIPs lib
+use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::File::Format::Yaml qw{ load_yaml };
-use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
-use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
+use MIP::Main::Install qw{ mip_install };
+use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.05;
+our $VERSION = 2.14;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -46,56 +47,69 @@ sub run {
     ## Remove Moose::App extra variable
     delete $arg_href->{extra_argv};
 
-    ## Load default parameters from config file
-    my $install_parameters_path = abs_path( $arg_href->config_file );
-    my %parameter               = load_yaml(
-        {
-            yaml_file => $install_parameters_path
-        }
+    ## Input from Cli
+    my %active_parameter = %{$arg_href};
+
+    ## Mip analyse rd_dna parameters
+    ## CLI commands inheritance
+    my @definition_files = (
+        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions install_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions install_rd_dna_parameters.yaml } ),
     );
 
-    ## Print parameters from config file and exit
-    if ( $arg_href->{print_parameter_default} ) {
+    ## Non mandatory parameter definition keys to check
+    my $non_mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
 
-        ## Set default for vep cache dir
-        if ( $parameter{shell}{vep} ) {
-            $parameter{shell}{vep}{vep_cache_dir} = catdir( qw{ PATH TO CONDA },
-                q{ensembl-tools-release-} . $parameter{shell}{vep}{version}, q{cache} );
-        }
+    ## Mandatory parameter definition keys to check
+    my $mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
-        print_parameter_defaults(
-            {
-                parameter_href => \%parameter,
-            }
+    ## %parameter holds all defined parameters for MIP
+    ## mip install rd_dna parameters
+    my %parameter;
+
+    ## If no config from cmd
+    if ( not $active_parameter{config_file} ) {
+
+        ## Use default
+        $active_parameter{config_file} =
+          catfile( $Bin, qw{ templates mip_install_rd_dna_config_-1.0-.yaml } );
+    }
+
+  DEFINITION_FILE:
+    foreach my $definition_file (@definition_files) {
+
+        %parameter = (
+            %parameter,
+            parse_definition_file(
+                {
+                    define_parameters_path        => $definition_file,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
+                    non_mandatory_parameter_keys_path =>
+                      $non_mandatory_parameter_keys_path,
+                }
+            ),
         );
     }
 
-    ## Merge arrays and overwrite flat values in config YAML with command line
-    @parameter{ keys %{$arg_href} } = values %{$arg_href};
-
-    ## Make sure that the cnvnator environment is installed last
-    if ( any { $_ eq q{ecnvnator} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } =
-          grep { !m/ecnvnator/xms } @{ $parameter{installations} };
-        push @{ $parameter{installations} }, q{ecnvnator};
-    }
-
-    ## Nest the command line parameters and overwrite the default
-    nest_hash( { cmd_href => \%parameter } );
-
-    ## Update the program versions with the user input
-    update_program_versions(
+    ## Print parameters from config file and exit
+    print_parameter_defaults(
         {
-            parameter_href => \%parameter,
+            parameter_href          => \%parameter,
+            print_parameter_default => $arg_href->{print_parameter_default},
         }
     );
 
     ## Start generating the installation script
     mip_install(
         {
-            parameter_href => \%parameter,
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
     );
+
     return;
 }
 
@@ -106,130 +120,22 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{environment_name} => (
-            cmd_aliases   => [qw{ envn }],
-            cmd_flag      => q{environment_name},
-            documentation => q{Set environment names},
-            is            => q{rw},
-            isa           => Dict [
-                emip      => Optional [Str],
-                ecnvnator => Optional [Str],
-                edelly    => Optional [Str],
-                epeddy    => Optional [Str],
-                eperl5    => Optional [Str],
-                epy3      => Optional [Str],
-                esvdb     => Optional [Str],
-                etiddit   => Optional [Str],
-                evep      => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
         q{config_file} => (
             cmd_aliases   => [qw{ config c }],
             documentation => q{File with configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,
-            default => catfile( $Bin, qw{ definitions install_rd_dna_parameters.yaml } ),
         )
     );
 
     option(
-        q{installations} => (
-            cmd_aliases => [qw{ install }],
-            cmd_flag    => q{installations},
-            cmd_tags =>
-              [q{Default: emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit evep}],
-            documentation => q{Environments to install},
-            is            => q{rw},
-            isa           => ArrayRef [
-                enum(
-                    [qw{ emip ecnvnator edelly epeddy eperl5 epy3 esvdb etiddit evep }]
-                ),
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{program_versions} => (
-            cmd_aliases   => [qw{ pv }],
-            cmd_flag      => q{program_versions},
-            documentation => q{Set program versions},
-            is            => q{rw},
-            isa           => Dict [
-                bcftools          => Optional [Str],
-                bedtools          => Optional [Str],
-                bwa               => Optional [Str],
-                bwakit            => Optional [Str],
-                chanjo            => Optional [Str],
-                cmake             => Optional [Str],
-                cnvnator          => Optional [Str],
-                cramtools         => Optional [Str],
-                cutadapt          => Optional [Str],
-                delly             => Optional [Str],
-                expansionhunter   => Optional [Str],
-                fastqc            => Optional [Str],
-                freebayes         => Optional [Str],
-                gatk              => Optional [Str],
-                gatk4             => Optional [Str],
-                gcc               => Optional [Str],
-                genmod            => Optional [Str],
-                htslib            => Optional [Str],
-                libxml2           => Optional [Str],
-                libxslt           => Optional [Str],
-                manta             => Optional [Str],
-                multiqc           => Optional [Str],
-                numpy             => Optional [Str],
-                peddy             => Optional [Str],
-                picard            => Optional [Str],
-                pip               => Optional [Str],
-                plink2            => Optional [Str],
-                python            => Optional [Str],
-                q{rtg-tools}      => Optional [Str],
-                q{scikit-learn}   => Optional [Str],
-                rhocall           => Optional [Str],
-                sambamba          => Optional [Str],
-                samtools          => Optional [Str],
-                snpeff            => Optional [Str],
-                snpeff            => Optional [Str],
-                snpsift           => Optional [Str],
-                stranger          => Optional [Str],
-                svdb              => Optional [Str],
-                tiddit            => Optional [Str],
-                variant_integrity => Optional [Str],
-                vcf2cytosure      => Optional [Str],
-                vcfanno           => Optional [Str],
-                vep               => Optional [Str],
-                vt                => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{shell:cnvnator:cnvnator_root_binary} => (
-            cmd_aliases   => [qw{ cnvnr }],
-            cmd_flag      => q{cnvnator_root_binary},
-            cmd_tags      => [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
-            documentation => q{Set the cnvnator root binary},
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: MIP_rd-dna}],
+            documentation => q{Set environment names},
             is            => q{rw},
             isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
-            cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Reference genomes to download},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
         ),
     );
 
@@ -242,27 +148,16 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
-                          cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
+                        qw{ bedtools bwa bwakit cadd chanjo chromograph
+                          cnvnator delly expansionhunter fastqc
+                          gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
-                          plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift stranger svdb tiddit
+                          plink python rhocall rtg-tools sambamba
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
-            required => 0,
-        ),
-    );
-    option(
-        q{shell_install} => (
-            cmd_aliases   => [qw{ si }],
-            cmd_flag      => q{shell_install},
-            documentation => q{Install supplied programs via shell instead of via conda},
-            is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ), ],
             required => 0,
         ),
     );
@@ -276,89 +171,16 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
-                          cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
+                        qw{ bedtools bwa bwakit cadd chanjo chromograph
+                          cnvnator delly expansionhunter fastqc
+                          gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
-                          plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift stranger svdb tiddit
+                          plink python rhocall rtg-tools sambamba
+                          scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{shell:snpeff:snpeff_genome_versions} => (
-            cmd_aliases   => [qw{ snpg }],
-            cmd_flag      => q{snpeff_genome_versions},
-            cmd_tags      => [q{Default: GRCh37.75, GRCh38.86}],
-            documentation => q{Set the SnpEff genome versions},
-            is            => q{rw},
-            isa           => ArrayRef,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_auto_flag} => (
-            cmd_aliases   => [qw{ vepf }],
-            cmd_flag      => q{vep_auto_flag},
-            cmd_tags      => [q{Default: acfp}],
-            documentation => q{Set the vep auto installer flags},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_assemblies} => (
-            cmd_aliases   => [qw{ vepa }],
-            cmd_flag      => q{vep_assemblies},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Select the assembly version},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_cache_dir} => (
-            cmd_aliases => [qw{ vepc }],
-            cmd_flag    => q{vep_cache_dir},
-            cmd_tags =>
-              [q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}],
-            documentation => q{Specify the cache directory to use},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_plugins} => (
-            cmd_aliases   => [qw{ vepp }],
-            cmd_flag      => q{vep_plugins},
-            cmd_tags      => [q{Default: MaxEntScan, LoFtool}],
-            documentation => q{Select the vep plugins to install},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_species} => (
-            cmd_aliases   => [qw{ vepsp }],
-            cmd_flag      => q{vep_species},
-            cmd_tags      => [q{Default: homo_sapiens_merged}],
-            documentation => q{Select the vep species to install},
-            is            => q{rw},
-            isa      => ArrayRef [ enum( [qw{ homo_sapiens homo_sapiens_merged }] ), ],
             required => 0,
         ),
     );

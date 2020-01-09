@@ -1,0 +1,174 @@
+---
+## Program tests
+# execution: the command and evaluate exit status, a non-zero exit status will fail the test
+# path: the program is executable and has been added to PATH
+  arriba:
+    execution: 'arriba -h'
+    path: 'arriba'
+  bcftools:
+    execution: 'bcftools --version'
+    path: 'bcftools'
+  bedtools:
+    execution: 'bedtools'
+    path: 'bedtools'
+  bioconductor-deseq2:
+    execution: 'R -e "library(DESeq2)"'
+    path:
+  bioconductor-tximport:
+    execution: 'R -e "library(tximport)"'
+    path:
+  blast:
+    execution: 'blastn -version'
+    path: 'blastn'
+  blobfish:
+    execution: 'BlobFish.py'
+    path: 'BlobFish.py'
+  bootstrapann:
+    execution: 'BootstrapAnn.py --help'
+    path: 'BootstrapAnn.py'
+  bwa:
+    execution:
+    path: 'bwa'
+  bwakit:
+    execution:
+    path: 'run-bwamem'
+  cadd:
+    execution: 'CADD.sh -h'
+    path: 'CADD.sh'
+  chanjo:
+    execution: 'chanjo'
+    path: 'chanjo'
+  chromograph:
+    execution: 'chromograph'
+    path: 'chromograph'
+  cnvnator:
+    execution:
+    path: 'cnvnator'
+  cython:
+    execution: 'python -c "import cython"'
+    path:
+  delly:
+    execution: 'delly'
+    path: 'delly'
+  expansionhunter:
+    execution: 'ExpansionHunter --version'
+    path: 'ExpansionHunter'
+  fastqc:
+    execution: 'fastqc --version'
+    path: 'fastqc'
+  fusion-filter:
+    execution:
+    path: 'gtf_file_to_feature_seqs.pl'
+  gatk4:
+    execution: 'gatk'
+    path: 'gatk'
+  gatk:
+    execution: 'gatk3 java -jar /opt/conda/opt/gatk-3.8/GenomeAnalysisTK.jar --version'
+    path: 'gatk3'
+  genmod:
+    execution: 'genmod'
+    path: 'genmod'
+  gffcompare:
+    execution: 'gffcompare --version'
+    path: 'gffcompare'
+  htslib:
+    execution: 'bgzip --version'
+    path: 'bgzip'
+  manta:
+    execution: 'configManta.py --version'
+    path: 'configManta.py'
+  mip_scripts:
+    execution: 'mip --help'
+    path: 'mip'
+  multiqc:
+    execution: 'multiqc --version'
+    path: 'multiqc'
+  numpy:
+    execution: 'python -c "import numpy"'
+    path:
+  peddy:
+    execution: 'peddy --version'
+    path: 'peddy'
+  picard:
+    execution:
+    path: 'picard'
+  pigz:
+    execution: 'pigz'
+    path: 'pigz'
+  plink:
+    execution: 'plink2 --version'
+    path: 'plink2'
+  preseq:
+    execution: 'preseq'
+    path: 'preseq'
+  r-optparse:
+    execution: 'R -e "library(tximport)"'
+    path:
+  r-readr:
+    execution: 'R -e "library(readr)"'
+    path:
+  rhocall:
+    execution: 'rhocall'
+    path: 'rhocall'
+  rseqc:
+    execution: 'inner_distance.py'
+    path: 'inner_distance.py'
+  rtg-tools:
+    execution: 'rtg --version'
+    path: 'rtg'
+  salmon:
+    execution: 'salmon --version'
+    path: 'salmon'
+  sambamba:
+    execution: 'sambamba --version'
+    path: 'sambamba'
+  samtools:
+    execution: 'samtools --version'
+    path: 'samtools'
+  scipy:
+    execution: 'python -c "import scipy"'
+    path:
+  star:
+    execution: 'STAR'
+    path: 'STAR'
+  star-fusion:
+    execution: 'STAR-Fusion --version'
+    path: 'STAR-Fusion'
+  stranger:
+    execution: 'stranger --version'
+    path: 'stranger'
+  stringtie:
+    execution: 'stringtie --version'
+    path: 'stringtie'
+  svdb:
+    execution: 'svdb'
+    path: 'svdb'
+  tiddit:
+    execution: 'TIDDIT.py'
+    path: 'TIDDIT.py'
+  trim-galore:
+    execution: 'trim_galore --version'
+    path: 'trim_galore'
+  ucsc-wigtobigwig:
+    path: 'wigToBigWig'
+  upd:
+    execution: 'upd'
+    path: 'upd'
+  varg:
+    execution: 'varg --version'
+    path: 'varg'
+  variant_integrity:
+    execution: 'variant_integrity'
+    path: 'variant_integrity'
+  vcf2cytosure:
+    execution: 'vcf2cytosure --version'
+    path: 'vcf2cytosure'
+  vcfanno:
+    execution: 'vcfanno'
+    path: 'vcfanno'
+  vep:
+    execution: 'vep'
+    path: 'vep'
+  vt:
+    execution: 'vt'
+    path: 'vt'

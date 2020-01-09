@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -89,7 +89,7 @@ trap {
             parameter_href => \%parameter,
             aggregates_ref => [q{update_path:absolute_path:trailing_garbage}],
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

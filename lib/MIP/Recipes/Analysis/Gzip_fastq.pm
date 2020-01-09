@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -137,14 +137,14 @@ sub analysis_gzip_fastq {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## No uncompressed fastq infiles
     return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -204,7 +204,7 @@ sub analysis_gzip_fastq {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -234,7 +234,7 @@ sub analysis_gzip_fastq {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -251,7 +251,7 @@ sub analysis_gzip_fastq {
     my $uncompressed_file_counter = 0;
 
     ## Gzip
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
   INFILE:
     while ( my ( $infile_index, $infile ) = each @infile_names ) {
@@ -264,37 +264,38 @@ sub analysis_gzip_fastq {
                 $process_batches_count * $active_parameter_href->{max_cores_per_node} )
             {
 
-                say {$FILEHANDLE} q{wait}, $NEWLINE;
+                say {$filehandle} q{wait}, $NEWLINE;
                 $process_batches_count = $process_batches_count + 1;
             }
 
-            ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+            ## Perl wrapper for writing gzip recipe to $filehandle
             gzip(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     infile_path => $infile_paths[$infile_index],
                 }
             );
-            say {$FILEHANDLE} q{&};
+            say {$filehandle} q{&};
             $uncompressed_file_counter++;
         }
     }
-    print {$FILEHANDLE} $NEWLINE;
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    print {$filehandle} $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                base_command       => $profile_base_command,
-                case_id            => $case_id,
-                dependency_method  => q{island_to_sample},
-                job_id_href        => $job_id_href,
-                log                => $log,
-                job_id_chain       => $job_id_chain,
-                recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
-                submission_profile => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{island_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                sample_id            => $sample_id,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -18,7 +18,7 @@ use List::MoreUtils qw{ first_value };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKTICK $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $BACKTICK $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -141,16 +141,16 @@ sub analysis_samtools_subsample_mt {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Samtools qw{ samtools_index samtools_view };
-    use MIP::Program::Alignment::Bedtools qw{ bedtools_genomecov };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Bedtools qw{ bedtools_genomecov };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -168,7 +168,7 @@ sub analysis_samtools_subsample_mt {
     my @infile_paths         = @{ $io{in}{file_paths} };
 
     ## Find Mitochondrial contig infile_path
-    my $infile_path = first_value { / $infile_name_prefix [.]M /sxm } @infile_paths;
+    my $infile_path = first_value { / $infile_name_prefix [.]M|chrM /sxm } @infile_paths;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -208,7 +208,7 @@ sub analysis_samtools_subsample_mt {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -216,7 +216,7 @@ sub analysis_samtools_subsample_mt {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -230,41 +230,41 @@ sub analysis_samtools_subsample_mt {
     ### SHELL:
 
     ## Set up seed and fraction combination
-    say {$FILEHANDLE} q{## Creating subsample filter for samtools view};
+    say {$filehandle} q{## Creating subsample filter for samtools view};
 
     ## Get average coverage over MT bases
-    print {$FILEHANDLE} q{MT_COVERAGE=} . $BACKTICK;
+    print {$filehandle} q{MT_COVERAGE=} . $BACKTICK;
 
     # Get depth per base
     bedtools_genomecov(
         {
             depth_each_position => 1,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             bam_infile_path     => $infile_path,
         }
     );
 
     # Pipe to AWK
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     # Add AWK statment for calculation of avgerage coverage
     my $awk_statment = _awk_calculate_average_coverage();
     awk(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             statement  => $awk_statment,
         }
     );
 
     # Close statment
-    say {$FILEHANDLE} $BACKTICK;
+    say {$filehandle} $BACKTICK;
 
     ## Get random seed
     my $seed = int rand $MAX_LIMIT_SEED;
 
     ## Add seed to fraction for ~100x
     # Create bash variable
-    say {$FILEHANDLE} q{SEED_FRACTION=}
+    say {$filehandle} q{SEED_FRACTION=}
 
       # Open statment
       . $BACKTICK
@@ -285,32 +285,32 @@ sub analysis_samtools_subsample_mt {
       . $BACKTICK . $NEWLINE;
 
     ## Filter the bam file to only include a subset of reads that maps to the MT
-    say {$FILEHANDLE} q{## Filter the BAM file};
+    say {$filehandle} q{## Filter the BAM file};
     samtools_view(
         {
             exclude_reads_with_these_flags => $SAMTOOLS_UNMAPPED_READ_FLAG,
-            FILEHANDLE                     => $FILEHANDLE,
+            filehandle                     => $filehandle,
             fraction                       => q{"$SEED_FRACTION"},
             infile_path                    => $infile_path,
             outfile_path                   => $outfile_path,
             with_header                    => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index new bam file
-    say {$FILEHANDLE} q{## Index the subsampled BAM file};
+    say {$filehandle} q{## Index the subsampled BAM file};
     samtools_index(
         {
             bai_format  => 1,
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -319,8 +319,17 @@ sub analysis_samtools_subsample_mt {
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
-                recipe_name      => q{samtools_subsample_mt},
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{subsampled_mt},
+                file_type        => q{bam},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -331,11 +340,12 @@ sub analysis_samtools_subsample_mt {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
-                sample_id               => $sample_id,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
+                sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );

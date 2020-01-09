@@ -14,17 +14,26 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $NEWLINE $SPACE };
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
+use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Wget qw{ wget };
+use MIP::Program::Zip qw{ unzip };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_gtf2bed };
@@ -36,8 +45,7 @@ sub install_gtf2bed {
 ## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
+##          : $filehandle              => Filehandle to write to
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -47,8 +55,7 @@ sub install_gtf2bed {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
-    my $noupdate;
+    my $filehandle;
     my $gtf2bed_parameters_href;
     my $quiet;
     my $verbose;
@@ -64,14 +71,10 @@ sub install_gtf2bed {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
+            store    => \$filehandle,
         },
         program_parameters_href => {
             default     => {},
@@ -93,16 +96,6 @@ sub install_gtf2bed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
-
     ## Unpack parameters
     my $program_version = $gtf2bed_parameters_href->{version};
 
@@ -119,67 +112,58 @@ sub install_gtf2bed {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_gtf2bed},
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }
     );
 
-    say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
+    say {$filehandle} q{### Install} . $SPACE . $program_name;
+    $log->info(qq{Writing instructions for $program_name  installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $program_directory_path,
             program_name           => $program_name,
         }
     );
 
-    ## Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$filehandle} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            filehandle => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Download
-    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    say {$filehandle} q{## Download} . $SPACE . $program_name;
     my $program_zip_path =
       catfile( $conda_prefix_path, q{share},
         $program_name . $DASH . $program_version . $DOT . q{zip} );
     wget(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $program_zip_path,
             quiet        => $quiet,
             url          => $program_url,
             verbose      => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Extract
-    say {$FILEHANDLE} q{## Extract};
+    say {$filehandle} q{## Extract};
     unzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $program_zip_path,
             outdir_path => $program_directory_path,
@@ -187,58 +171,54 @@ sub install_gtf2bed {
             verbose     => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Make available from conda environment
-    say {$FILEHANDLE} q{## Make available from conda environment};
+    say {$filehandle} q{## Make available from conda environment};
     my $file_path =
       catfile( $program_directory_path, q{ea-utils} . $DASH . $program_version,
         q{clipper}, $executable );
     my $link_path = catfile( $conda_prefix_path, q{bin}, $executable );
     gnu_ln(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             link_path   => $link_path,
             symbolic    => 1,
             target_path => $file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Clean-up
-    say {$FILEHANDLE} q{## Clean up};
+    say {$filehandle} q{## Clean up};
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $program_zip_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Go back to starting directoriy
-    say {$FILEHANDLE} q{## Go back to starting directory};
+    say {$filehandle} q{## Go back to starting directory};
     gnu_cd(
         {
             directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    say {$filehandle} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            filehandle => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
-    print {$FILEHANDLE} $NEWLINE;
     return;
 }
 

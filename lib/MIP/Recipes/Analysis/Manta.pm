@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -143,15 +143,15 @@ sub analysis_manta {
     use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
-    use MIP::Program::Variantcalling::Manta qw{ manta_config manta_workflow };
+    use MIP::Program::Gzip qw{ gzip };
+    use MIP::Program::Manta qw{ manta_config manta_workflow };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
@@ -190,7 +190,7 @@ sub analysis_manta {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -198,7 +198,7 @@ sub analysis_manta {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -212,6 +212,7 @@ sub analysis_manta {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my @manta_infile_paths;
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -236,20 +237,20 @@ sub analysis_manta {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Remove potential previous Manta runWorkflow};
+    say {$filehandle} q{## Remove potential previous Manta runWorkflow};
     my $manta_workflow_file_path = catfile( $outdir_path, q{runWorkflow.py} . $ASTERISK );
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $manta_workflow_file_path,
             recursive   => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Manta
-    say {$FILEHANDLE} q{## Manta};
+    say {$filehandle} q{## Manta};
 
     ## Get parameters
     my $is_exome_analysis;
@@ -260,49 +261,51 @@ sub analysis_manta {
 
     manta_config(
         {
+            call_regions_file_path =>
+              $active_parameter_href->{manta_call_regions_file_path},
             exome_analysis     => $is_exome_analysis,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             infile_paths_ref   => \@manta_infile_paths,
             outdirectory_path  => $outdir_path,
             referencefile_path => $referencefile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Manta workflow};
+    say {$filehandle} q{## Manta workflow};
     manta_workflow(
         {
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             core_number       => $core_number,
             mode              => q{local},
             outdirectory_path => $outdir_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     my $manta_temp_outfile_path =
       catfile( $outdir_path, qw{ results variants diploidSV.vcf.gz } );
 
-    ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+    ## Perl wrapper for writing gzip recipe to $filehandle
     gzip(
         {
             decompress   => 1,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $manta_temp_outfile_path,
             outfile_path => $outfile_path,
             stdout       => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{manta},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -314,6 +317,7 @@ sub analysis_manta {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

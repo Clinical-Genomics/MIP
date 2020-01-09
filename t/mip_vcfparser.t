@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.04;
 
 ## Constants
 Readonly my $PADDING => 50;
@@ -64,10 +64,10 @@ diag(   q{Test mip_vcfparser from Mip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ vcfparser };
+my @function_base_commands = qw{ mip vcfparser };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -97,6 +97,12 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    log_file_path => {
+        input           => catfile(qw{ a dir vcfparser_contig.log}),
+        expected_output => q{--log_file}
+          . $SPACE
+          . catfile(qw{ a dir vcfparser_contig.log}),
+    },
     padding => {
         input           => $PADDING,
         expected_output => q{--padding} . $SPACE . $PADDING,

@@ -16,6 +16,8 @@ CHAIN_ALL:
          - chanjo_sexcheck
       - CHAIN_STSUBSMT:
          - samtools_subsample_mt
+      - CHAIN_TCOV:
+         - tiddit_coverage
       - CHAIN_SBCOV:
          - sambamba_depth
       - CHAIN_PTMME:
@@ -41,8 +43,7 @@ CHAIN_ALL:
          - vcf2cytosure_ar
    - CHAIN_MAIN:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
-      - PARALLEL: 
-         - freebayes_ar
+      - PARALLEL:
          - bcftools_mpileup
          - GATK_HAPLOTYPECALLER:
             - gatk_haplotypecaller
@@ -59,24 +60,28 @@ CHAIN_ALL:
          - variant_integrity_ar
       - CHAIN_RTEVAL:
          - rtg_vcfeval
-      - CHAIN_PTEVAL:
-         - evaluation
       - CHAIN_GATKEVALALL:
          - gatk_variantevalall
    - CHAIN_MAIN:
       - prepareforvariantannotationblock
       - rhocall_ar
       - vt_ar
+      - frequency_annotation
+      - CHAIN_RHOCALL_VIZ:
+        - rhocall_viz
+      - CHAIN_CHROMOGRAPH:
+        - chromograph_ar
       - frequency_filter
       - cadd_ar
       - varianteffectpredictor
       - vcfparser_ar
-      - snpeff
       - rankvariant
       - endvariantannotationblock
       - CHAIN_GATKEVALEXO:
          - gatk_variantevalexome
    - qccollect_ar
+   - version_collect_ar
    - multiqc_ar
+   - varg_ar
    - analysisrunstatus
-   - sacct 
+   - sacct

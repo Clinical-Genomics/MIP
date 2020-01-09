@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -65,13 +65,13 @@ diag(   q{Test get_gatk_intervals from Parameter.pm v}
 my $log = test_log( {} );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 my %expected_output = (
@@ -99,7 +99,7 @@ foreach my $analysis_type ( keys %expected_output ) {
         {
             analysis_type         => $analysis_type,
             contigs_ref           => [qw{ 1 2 }],
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             outdirectory          => catdir(qw{ a dir }),
             reference_dir         => catdir(qw{ a dir reference_dir}),
             exome_target_bed_href => \%exome_target_bed,
@@ -117,6 +117,6 @@ foreach my $analysis_type ( keys %expected_output ) {
     );
 }
 
-close $FILEHANDLE;
+close $filehandle;
 
 done_testing();

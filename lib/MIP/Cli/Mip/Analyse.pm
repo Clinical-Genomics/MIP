@@ -19,11 +19,11 @@ use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+# MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.08;
+our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -216,6 +216,35 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
+        q{project_id} => (
+            cmd_aliases   => [qw{ pro }],
+            documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_info_file} => (
+            cmd_aliases   => [qw{ rif }],
+            cmd_tags      => [q{YAML}],
+            documentation => q{File for reference info used in the analysis},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{sacct} => (
             cmd_aliases => [qw{ sac }],
             cmd_tags    => [q{Analysis recipe switch}],
@@ -282,6 +311,36 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the capture kit acronym shortcut in pedigree file},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{temp_directory} => (
+            cmd_aliases   => [qw{ tmd }],
+            cmd_tags      => [q{Default: "$outdata_dir/$SLURM_JOB_ID"}],
+            documentation => q{Set the temporary directory for all recipes},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{version_collect} => (
+            cmd_aliases   => [qw{ verc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collects executable versions across the analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{with_singularity} => (
+            cmd_aliases => [qw{ wsi }],
+            documentation =>
+              q{Run programs inside a singularity container where available},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 

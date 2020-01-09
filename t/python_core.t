@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -67,7 +67,7 @@ diag(   q{Test python_core from Python.pm v}
 my @function_base_commands = qw{ python };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -110,7 +110,7 @@ my $is_ok = trap {
             command_mode => 1,
             module_mode  => 1,
         }
-      )
+    )
 };
 
 ## Then Croak and exit

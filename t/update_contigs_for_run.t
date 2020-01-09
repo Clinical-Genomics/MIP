@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -95,11 +95,12 @@ update_contigs_for_run(
 my %expected_result = (
     bam_contigs              => [qw{ 5 6 Y }],
     bam_contigs_size_ordered => [qw{ 5 6 Y }],
-    contigs                  => [qw{ 5 6}],
-    contigs_size_ordered     => [qw{ 5 6}],
+    contigs                  => [qw{ 5 6 }],
+    contigs_size_ordered     => [qw{ 5 6 }],
     select_file_contigs      => [qw{ 5 6 }],
 );
-## Then only keep contig 5 and 6  for all except bam contigs
+
+## Then only keep contig 5 and 6 for all except bam contigs
 is_deeply( \%file_info, \%expected_result, q{Updated contigs} );
 
 done_testing();

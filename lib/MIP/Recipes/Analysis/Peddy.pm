@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -136,15 +136,15 @@ sub analysis_peddy {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Peddy qw{ peddy };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Peddy qw{ peddy };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -162,7 +162,8 @@ sub analysis_peddy {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
-    my $job_id_chain = get_recipe_attributes(
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -207,7 +208,7 @@ sub analysis_peddy {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -215,7 +216,7 @@ sub analysis_peddy {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -229,10 +230,6 @@ sub analysis_peddy {
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
 
-    # To enable submission to &sample_info_qc later
-    my $stderr_file_path =
-      catfile( $directory, $recipe_info_file . $DOT . q{stderr.txt} );
-
     ### SHELL:
 
     my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
@@ -242,7 +239,7 @@ sub analysis_peddy {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -255,7 +252,7 @@ sub analysis_peddy {
     ## Reformat variant calling file and index
     bcftools_view_and_index_vcf(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $infile_path,
             index               => 1,
             index_type          => q{tbi},
@@ -265,17 +262,19 @@ sub analysis_peddy {
     );
 
     ## Peddy
+    my $genome_site = _get_genome_site( { version => $genome_reference_version } );
     peddy(
         {
             case_file_path      => $case_file_path,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
+            genome_site         => $genome_site,
             infile_path         => $outfile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -291,17 +290,16 @@ sub analysis_peddy {
                     sample_info_href => $sample_info_href,
                 }
             );
-        }
 
-        ## Collect QC metadata info for later use
-        set_recipe_metafile_in_sample_info(
-            {
-                metafile_tag     => q{stderr},
-                path             => $stderr_file_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+            set_file_path_to_store(
+                {
+                    file_tag         => $outfile_tag,
+                    file_type        => q{meta},
+                    path             => $outfile_path,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {
@@ -311,6 +309,7 @@ sub analysis_peddy {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -321,4 +320,30 @@ sub analysis_peddy {
     return 1;
 }
 
+sub _get_genome_site {
+
+## Function : Get the genomic site for peddy if using grch38
+## Returns  : hg38
+## Arguments: $version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $version;
+
+    my $tmpl = {
+        version => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 1,
+            store       => \$version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $version eq q{38} );
+
+    return q{hg38};
+}
 1;

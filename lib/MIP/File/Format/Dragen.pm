@@ -82,27 +82,27 @@ sub create_dragen_fastq_list_sample_id {
     my @fastq_list_headers = qw{ RGID RGSM RGLB Lane Read1File Read2File };
 
     # Create anonymous filehandle
-    my $FILEHANDLE_SYS = IO::Handle->new();
+    my $filehandle_SYS = IO::Handle->new();
 
     ## Create dir if it does not exists
     make_path( dirname($fastq_list_file_path) );
 
-    open $FILEHANDLE_SYS, q{>}, $fastq_list_file_path
+    open $filehandle_SYS, q{>}, $fastq_list_file_path
       or $log->logdie(qq{Can't open $fastq_list_file_path: $ERRNO });
 
     ## Adds the information from the samples in pedigree_lines, separated by \n
     ## Add @fastq_list_headers
     if ($include_header) {
 
-        say {$FILEHANDLE_SYS} join $COMMA, @fastq_list_headers;
+        say {$filehandle_SYS} join $COMMA, @fastq_list_headers;
     }
   LINE:
     foreach my $line ( @{$fastq_list_lines_ref} ) {
 
-        say {$FILEHANDLE_SYS} $line;
+        say {$filehandle_SYS} $line;
     }
     $log->info( q{Wrote: } . $fastq_list_file_path, $NEWLINE );
-    close $FILEHANDLE_SYS;
+    close $filehandle_SYS;
     return;
 }
 

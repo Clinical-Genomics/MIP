@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,7 +99,7 @@ diag(   q{Test check_infiles from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -130,7 +126,7 @@ trap {
             log              => $log,
             sample_id        => $sample_id,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -148,17 +144,15 @@ trap {
             log              => $log,
             sample_id        => $wrong_sample_id,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if wrong sample id} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if wrong sample id} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if wrong sample id} );
 
 ## Given wrong sample_id in infile name
-my @wrong_infiles =
-  qw{file_1_wrong_sample_id.fastq.gz file_2_sample-1.fastq.gz};
+my @wrong_infiles = qw{file_1_wrong_sample_id.fastq.gz file_2_sample-1.fastq.gz};
 
 trap {
     check_infiles(
@@ -168,7 +162,7 @@ trap {
             log              => $log,
             sample_id        => $sample_id,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

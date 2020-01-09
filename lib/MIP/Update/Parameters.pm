@@ -19,27 +19,28 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
+    our @EXPORT_OK = qw{ update_dynamic_config_parameters
+      update_exome_target_bed
+      update_reference_parameters
+      update_vcfparser_outfile_counter };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub update_dynamic_config_parameters {
 
 ## Function : Updates the config file to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => MIP Parameter to update
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $dynamic_parameter_href => Map of dynamic parameters
+##          : $parameter_name         => MIP Parameter to update
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $dynamic_parameter_href;
     my $parameter_name;
 
     my $tmpl = {
@@ -48,6 +49,13 @@ sub update_dynamic_config_parameters {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        dynamic_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dynamic_parameter_href,
             strict_type => 1,
         },
         parameter_name => {
@@ -62,14 +70,41 @@ sub update_dynamic_config_parameters {
 
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
-    my @caches = qw{ cluster_constant_path analysis_constant_path case_id };
+    if ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
+
+      KEY:
+        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } ) {
+
+          DYNAMIC_PARAMETER:
+            while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
+                each %{$dynamic_parameter_href} )
+            {
+
+                next KEY if ( not $active_parameter_href->{$parameter_name}{$key} );
+
+                ## Replace dynamic config parameters with actual value that is now set from cmd or config
+                $active_parameter_href->{$parameter_name}{$key} =~
+                  s/$dynamic_parameter_value!/$dynamic_parameter_value/smgi;
+            }
+
+            update_dynamic_config_parameters(
+                {
+                    active_parameter_href  => $active_parameter_href->{$parameter_name},
+                    dynamic_parameter_href => $dynamic_parameter_href,
+                    parameter_name         => $key,
+                }
+            );
+        }
+    }
 
   DYNAMIC_PARAMETER:
-    foreach my $cache (@caches) {
+    while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
+        each %{$dynamic_parameter_href} )
+    {
 
         ## Replace dynamic config parameters with actual value that is now set from cmd or config
         $active_parameter_href->{$parameter_name} =~
-          s/$cache!/$active_parameter_href->{$cache}/smgi;
+          s/$dynamic_parameter_name!/$dynamic_parameter_value/smgi;
     }
     return;
 }

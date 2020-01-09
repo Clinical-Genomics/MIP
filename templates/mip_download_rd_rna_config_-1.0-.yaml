@@ -5,10 +5,11 @@ load_env:
 project_id: development
 reference:
   ctat_resource_lib:
-    - v19_ctat_lib_feb092018
+    - gencode_v19_ctat_lib_oct012019
+    - gencode_v31_ctat_lib_oct012019
   human_reference:
     - decoy_5
-    - decoy_hla
+    - assembly38
   1000g_indels:
     - phase1
   mills_and_1000g_indels:
@@ -19,25 +20,40 @@ reference:
     - gold_standard_dbsnp
     - 146
   gencode_annotation:
-    - v29
+    - v31
 reference_feature:
   gencode_annotation:
     grch37:
-      v29:
-        file: gencode.v29lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v29-.gtf.gz
+      v31:
+        file: gencode.v31lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v31-.gtf.gz
         outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/GRCh37_mapping/
+    grch38:
+      v31:
+        file: gencode.v31.annotation.gtf.gz
+        outfile: grch38_gencode_annotation_-v31-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/
   ctat_resource_lib:
     grch37:
-      v19_ctat_lib_feb092018:
-        file: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz
-        file_check: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz.md5
-        outfile: grch37_ctat_lib_plug-n-play_-feb092018-.tar.gz
-        outfile_check: grch37_ctat_lib_plug-n-play_-feb092018-.tar.gz.md5
+      gencode_v19_ctat_lib_oct012019:
+        file: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz
+        file_check: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5
+        outfile: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz
+        outfile_check: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
         outfile_decompress: tar
         outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
+    grch38:
+      gencode_v31_ctat_lib_oct012019:
+        file: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz
+        file_check: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5
+        outfile: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz
+        outfile_check: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
+        outfile_decompress: tar
+        outfile_check_method: md5sum
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
   human_reference:
     grch37:
       decoy_5:
@@ -49,18 +65,18 @@ reference_feature:
         outfile_check: grch37_homo_sapiens_-d5-.fasta.gz.md5
         outfile_index: grch37_homo_sapiens_-d5-.fasta.fai.gz
         outfile_index_check: grch37_homo_sapiens_-d5-.fasta.fai.gz.md5
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
-      decoy_hla:
-        file: GRCh38_full_analysis_set_plus_decoy_hla.fa
-        file_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
-        outfile: hg38_homo_sapiens_-decoy_hla-.fasta
-        outfile_index: hg38_homo_sapiens_-decoy_hla-.fasta.fai
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
+    grch38:
+      assembly38:
+        file: Homo_sapiens_assembly38.fasta
+        file_index: Homo_sapiens_assembly38.fasta.fai
+        outfile: grch38_homo_sapiens_-assembly-.fasta
+        outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_indels:
     grch37:
       phase1:
@@ -76,7 +92,14 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
+    grch38:
+      phase1:
+        file: Homo_sapiens_assembly38.known_indels.vcf.gz
+        file_index: Homo_sapiens_assembly38.known_indels.vcf.gz.tbi
+        outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
+        outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   mills_and_1000g_indels:
     grch37:
       gold_standard_indels:
@@ -92,20 +115,19 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
+    grch38:
       gold_standard_indels:
         file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
         file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
-        outfile: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz
-        outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
-        outfile_decompress: gzip
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+        outfile: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
+        outfile_index: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   dbsnp:
     grch37:
       138_esa_129:
         file: dbsnp_138.b37.excluding_sites_after_129.vcf.gz
-        file_check: dbsnp_138.b37.excluding_sites_after_129.vcf.gz.md5 
+        file_check: dbsnp_138.b37.excluding_sites_after_129.vcf.gz.md5
         file_index: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz
         file_index_check: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz.md5
         outfile: grch37_dbsnp_-138_esa_129-.vcf.gz
@@ -116,7 +138,7 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
       138:
         file: dbsnp_138.b37.vcf.gz
         file_check: dbsnp_138.b37.vcf.gz.md5
@@ -130,19 +152,21 @@ reference_feature:
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    hg38:
+        url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
+    grch38:
       gold_standard_dbsnp:
         file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
         file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
-        outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
-        outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+        outfile: grch38_variant_-gold_standard_dbsnp-.vcf.gz
         outfile_decompress: gzip
+        outfile_index: grch38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
+        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+        user: gsapubftp-anonymous
       146:
         file: dbsnp_146.hg38.vcf.gz
         file_index: dbsnp_146.hg38.vcf.gz.tbi
-        outfile: hg38_dbsnp_-146-.vcf.gz
-        outfile_index: hg38_dbsnp_-146-.vcf.gz.tbi
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+        outfile: grch38_dbsnp_-146-.vcf.gz
         outfile_decompress: gzip
+        outfile_index: grch38_dbsnp_-146-.vcf.gz.tbi
+        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle//hg38/
+        user: gsapubftp-anonymous

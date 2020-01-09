@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -72,12 +72,12 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqf_vcfanno_config =
+my $fqa_vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqf_vcfanno_config = catfile( $test_reference_dir,
+my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_parse_toml_-v1.0-.toml  } );
 
 my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
@@ -90,14 +90,14 @@ my $parse_path =
 
 ## Parse original file and create new config for test
 my $command_string = join $SPACE,
-  ( $parse_path, $fqf_vcfanno_config, q{>}, $test_fqf_vcfanno_config );
+  ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
 
 my %return = system_cmd_call( { command_string => $command_string, } );
 
 ## Given a toml config file
 my %active_parameter = (
     frequency_filter   => 1,
-    fqf_vcfanno_config => $test_fqf_vcfanno_config,
+    fqa_vcfanno_config => $test_fqa_vcfanno_config,
 );
 
 my $is_ok = parse_toml_config_parameters(
@@ -111,6 +111,6 @@ my $is_ok = parse_toml_config_parameters(
 ok( $is_ok, q{Passed parsing for toml file} );
 
 ## Clean-up
-rmtree($test_fqf_vcfanno_config);
+rmtree($test_fqa_vcfanno_config);
 
 done_testing();

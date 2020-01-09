@@ -14,21 +14,304 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
+    our @EXPORT_OK =
+      qw{ check_dragen_rd_dna check_rd_dna check_rd_dna_vcf_rerun check_rd_rna };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
+sub check_dragen_rd_dna {
+
+## Function : Dragen rare disease DNA pipeline specific checks and parsing
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $log                             => Log object to write to
+##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
+##          : $parameter_href                  => Parameter hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $infile_both_strands_prefix_href;
+    my $infile_lane_prefix_href;
+    my $log;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_both_strands_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
+      check_select_file_contigs
+      check_vep_custom_annotation
+      check_vep_api_cache_versions
+      check_vep_plugin };
+    use MIP::Check::Reference qw{ check_parameter_metafiles };
+    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
+    use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::Parse::Parameter qw{ parse_infiles };
+    use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
+    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
+    use MIP::Sample_info qw{ set_in_sample_info };
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update the expected number of outfiles after vcfparser
+    update_vcfparser_outfile_counter(
+        { active_parameter_href => $active_parameter_href, } );
+
+    ## Collect select file contigs to loop over downstream
+    if ( $active_parameter_href->{vcfparser_select_file} ) {
+
+        ## Collects sequences contigs used in select file
+        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
+            {
+                log => $log,
+                select_file_path =>
+                  catfile( $active_parameter_href->{vcfparser_select_file} ),
+            }
+        );
+
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
+            }
+        );
+    }
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
+
+    if ( $active_parameter_href->{verbose} ) {
+
+        set_parameter_to_broadcast(
+            {
+                active_parameter_href => $active_parameter_href,
+                broadcasts_ref        => $broadcasts_ref,
+                order_parameters_ref  => $order_parameters_ref,
+            }
+        );
+    }
+
+    ## Broadcast set parameters info
+    foreach my $parameter_info ( @{$broadcasts_ref} ) {
+
+        $log->info($parameter_info);
+    }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            remove_keys_ref       => [qw{ associated_recipe }],
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
+        }
+    );
+
+    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
+        {
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            file_info_href          => $file_info_href,
+            hash_key_sort_reference => q{contigs_size_ordered},
+            hash_key_to_sort        => q{select_file_contigs},
+            log                     => $log,
+        }
+    );
+
+    ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            log                   => $log,
+        }
+    );
+
+    ## Reformat file names to MIP format, get file name info and add info to sample_info
+    parse_fastq_infiles(
+        {
+            active_parameter_href           => $active_parameter_href,
+            file_info_href                  => $file_info_href,
+            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
+            infile_lane_prefix_href         => $infile_lane_prefix_href,
+            log                             => $log,
+            sample_info_href                => $sample_info_href,
+        }
+    );
+
+    parse_fastq_for_gender(
+        {
+            active_parameter_href   => $active_parameter_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Add to sample info
+    set_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
+}
 
 sub check_rd_dna {
 
@@ -125,16 +408,20 @@ sub check_rd_dna {
     use MIP::Check::Parameter qw{ check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_snpsift_keys
+      check_select_file_contigs
       check_vep_custom_annotation
-      check_vep_directories };
+      check_vep_api_cache_versions
+      check_vep_plugin
+    };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters
       qw{  update_exome_target_bed update_vcfparser_outfile_counter };
@@ -165,9 +452,9 @@ sub check_rd_dna {
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -194,19 +481,26 @@ sub check_rd_dna {
 ## Collects sequences contigs used in select file
         @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
             {
+                log => $log,
                 select_file_path =>
                   catfile( $active_parameter_href->{vcfparser_select_file} ),
-                log => $log,
+            }
+        );
+
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
             }
         );
     }
 
     ## Check that VEP directory and VEP cache match
-    check_vep_directories(
+    check_vep_api_cache_versions(
         {
-            log                 => $log,
             vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 
@@ -217,6 +511,19 @@ sub check_rd_dna {
             vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
         }
     );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -255,16 +562,6 @@ sub check_rd_dna {
         }
     );
 
-    check_snpsift_keys(
-        {
-            log => $log,
-            snpsift_annotation_files_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_files} },
-            snpsift_annotation_outinfo_key_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-        }
-    );
-
     parse_nist_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -279,7 +576,6 @@ sub check_rd_dna {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }
@@ -289,6 +585,15 @@ sub check_rd_dna {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
 
     ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
     parse_prioritize_variant_callers(
@@ -370,6 +675,255 @@ sub check_rd_dna {
             infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
+        }
+    );
+
+    parse_fastq_for_gender(
+        {
+            active_parameter_href   => $active_parameter_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Add to sample info
+    set_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
+}
+
+sub check_rd_dna_vcf_rerun {
+
+## Function : Rare disease DNA vcf rerun pipeline specific checks and parsing
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $log                     => Log object to write to
+##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $log;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
+      check_select_file_contigs
+      check_vep_custom_annotation
+      check_vep_api_cache_versions
+      check_vep_plugin };
+    use MIP::Check::Reference qw{ check_parameter_metafiles };
+    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
+    use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
+    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update the expected number of outfiles after vcfparser
+    update_vcfparser_outfile_counter(
+        { active_parameter_href => $active_parameter_href, } );
+
+## Collect select file contigs to loop over downstream
+    if ( $active_parameter_href->{vcfparser_select_file} ) {
+
+## Collects sequences contigs used in select file
+        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
+            {
+                log => $log,
+                select_file_path =>
+                  catfile( $active_parameter_href->{vcfparser_select_file} ),
+            }
+        );
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
+            }
+        );
+    }
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
+  PLUGIN_PARAM:
+    foreach my $parameter_name (@mip_plugin_parameters) {
+
+        check_vep_plugin(
+            {
+                log             => $log,
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
+
+    if ( $active_parameter_href->{verbose} ) {
+
+        set_parameter_to_broadcast(
+            {
+                active_parameter_href => $active_parameter_href,
+                broadcasts_ref        => $broadcasts_ref,
+                order_parameters_ref  => $order_parameters_ref,
+            }
+        );
+    }
+
+    ## Broadcast set parameters info
+    foreach my $parameter_info ( @{$broadcasts_ref} ) {
+
+        $log->info($parameter_info);
+    }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            remove_keys_ref       => [qw{ associated_recipe }],
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
+        }
+    );
+
+    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
+        {
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            file_info_href          => $file_info_href,
+            hash_key_sort_reference => q{contigs_size_ordered},
+            hash_key_to_sort        => q{select_file_contigs},
+            log                     => $log,
         }
     );
 
@@ -477,22 +1031,25 @@ sub check_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter
-      qw{ check_salmon_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
+      qw{ check_recipe_fastq_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::Sample_info qw{ set_in_sample_info };
 
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -517,14 +1074,19 @@ sub check_rd_rna {
         }
     );
 
-    ## Check sample_id provided in hash parameter is included in the analysis
-    check_sample_id_in_parameter_value(
+    ## Check dna vcf
+    check_ids_in_dna_vcf(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_names_ref   => [qw{ is_from_sample }],
-            parameter_href        => $parameter_href,
-            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+            dna_vcf_file          => $active_parameter_href->{dna_vcf_file},
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Set ASE recipes depending on previous check
+    set_ase_chain_recipes(
+        {
+            active_parameter_href => $active_parameter_href,
         }
     );
 
@@ -535,7 +1097,6 @@ sub check_rd_rna {
                 active_parameter_href => $active_parameter_href,
                 broadcasts_ref        => $broadcasts_ref,
                 order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
             }
         );
     }
@@ -545,6 +1106,15 @@ sub check_rd_rna {
 
         $log->info($parameter_info);
     }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
 
     ## Write config file for case
     write_mip_config(
@@ -597,235 +1167,22 @@ sub check_rd_rna {
         }
     );
 
-    ## Check salmon compability
-    check_salmon_compatibility(
-        {
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
-        }
-    );
+    ## Check recipe compability with fastq files
+    my @recipes_to_check = qw{ arriba_ar salmon_quant };
 
-    return;
-}
+  RECIPE:
+    foreach my $recipe (@recipes_to_check) {
 
-sub check_rd_dna_vcf_rerun {
-
-## Function : Rare disease DNA vcf rerun pipeline specific checks and parsing
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
-##          : $file_info_href                  => File info hash {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $log                             => Log object to write to
-##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $broadcasts_ref;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $log;
-    my $order_parameters_ref;
-    my $parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        broadcasts_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$broadcasts_ref,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        order_parameters_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$order_parameters_ref,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_snpsift_keys check_vep_directories };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
-    use MIP::File::Format::Config qw{ write_mip_config };
-    use MIP::Get::File qw{ get_select_file_contigs };
-    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
-    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::Sample_info qw{ set_in_sample_info };
-
-    ## Check sample_id provided in hash parameter is included in the analysis
-    check_sample_id_in_hash_parameter(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_names_ref   => [qw{ analysis_type }],
-            parameter_href        => $parameter_href,
-            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
-        }
-    );
-
-    ## Checks parameter metafile exists and set build_file parameter
-    check_parameter_metafiles(
-        {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            file_info_href        => $file_info_href,
-        }
-    );
-
-    ## Update the expected number of outfiles after vcfparser
-    update_vcfparser_outfile_counter(
-        { active_parameter_href => $active_parameter_href, } );
-
-## Collect select file contigs to loop over downstream
-    if ( $active_parameter_href->{vcfparser_select_file} ) {
-
-## Collects sequences contigs used in select file
-        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
+        check_recipe_fastq_compatibility(
             {
-                select_file_path =>
-                  catfile( $active_parameter_href->{vcfparser_select_file} ),
-                log => $log,
+                active_parameter_href   => $active_parameter_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                parameter_href          => $parameter_href,
+                recipe_name             => $recipe,
+                sample_info_href        => $sample_info_href,
             }
         );
     }
-
-    ## Check that VEP directory and VEP cache match
-    check_vep_directories(
-        {
-            log                 => $log,
-            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-            vep_directory_path  => $active_parameter_href->{vep_directory_path},
-        }
-    );
-
-    ## Check VEP custom annotations options
-    check_vep_custom_annotation(
-        {
-            log                 => $log,
-            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
-        }
-    );
-
-    check_snpsift_keys(
-        {
-            log => $log,
-            snpsift_annotation_files_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_files} },
-            snpsift_annotation_outinfo_key_href =>
-              \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-        }
-    );
-
-    if ( $active_parameter_href->{verbose} ) {
-
-        set_parameter_to_broadcast(
-            {
-                active_parameter_href => $active_parameter_href,
-                broadcasts_ref        => $broadcasts_ref,
-                order_parameters_ref  => $order_parameters_ref,
-                parameter_href        => $parameter_href,
-            }
-        );
-    }
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
-
-    ## Write config file for case
-    write_mip_config(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
-            sample_info_href      => $sample_info_href,
-        }
-    );
-
-    ## Update contigs depending on settings in run (wes or if only male samples)
-    update_contigs_for_run(
-        {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
-        }
-    );
-
-    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-        {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            file_info_href          => $file_info_href,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
-            log                     => $log,
-        }
-    );
-
-    ## Add to sample info
-    set_in_sample_info(
-        {
-            active_parameter_href => $active_parameter_href,
-            file_info_href        => $file_info_href,
-            sample_info_href      => $sample_info_href,
-        }
-    );
 
     return;
 }

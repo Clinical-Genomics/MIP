@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,7 @@ diag(   q{Test analysis_frequency_filter from Frequency_filter.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{frequency_filter};
+my $recipe_name    = q{frequency_filter};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,8 +75,9 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{fqf_vcfanno_config} = catfile( $Bin,
+$active_parameter{fqa_vcfanno_config} = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
+$active_parameter{fqf_annotations}               = [qw{ GNOMADAF }];
 $active_parameter{fqf_bcftools_filter_threshold} = 1;
 
 my %file_info = test_mip_hashes(

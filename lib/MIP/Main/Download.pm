@@ -41,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -196,7 +196,6 @@ sub mip_download {
                 active_parameter_href => \%active_parameter,
                 associated_recipes_ref =>
                   \@{ $parameter{$parameter_name}{associated_recipe} },
-                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }

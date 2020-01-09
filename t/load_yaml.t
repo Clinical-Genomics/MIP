@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -64,8 +64,7 @@ diag(   q{Test load_yaml from Yaml.pm v}
 ## Given a yaml file to load
 my %hash_to_return = load_yaml(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+        yaml_file => catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
     }
 );
 

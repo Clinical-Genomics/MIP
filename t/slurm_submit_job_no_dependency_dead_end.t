@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -64,7 +64,7 @@ diag(   q{Test slurm_submit_job_no_dependency_dead_end from Slurm_processes.pm v
       . $EXECUTABLE_NAME );
 
 ## Given a mock slurm and script
-my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id         = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );

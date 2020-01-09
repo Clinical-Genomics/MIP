@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_cadd_whole_genome_snvs };
@@ -122,6 +122,7 @@ sub download_cadd_whole_genome_snvs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -147,7 +148,7 @@ sub download_cadd_whole_genome_snvs {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -155,7 +156,7 @@ sub download_cadd_whole_genome_snvs {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -171,21 +172,52 @@ sub download_cadd_whole_genome_snvs {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
+
+    ## Construct outdir path
+    my $outdir_path =
+      catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh38_v1.5 no_anno } );
+    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
+
+        $outdir_path =
+          catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh37_v1.4 no_anno } );
+    }
+
+    if ( not -d $outdir_path ) {
+        gnu_mkdir(
+            {
+                filehandle       => $filehandle,
+                indirectory_path => $outdir_path,
+                parents          => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
-            reference_dir  => $reference_dir,
+            reference_dir  => $outdir_path,
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
         }
     );
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Create a mock file for the later download processes to recognize
+    my $file_path    = catfile( $reference_dir, $reference_href->{outfile} );
+    my $echo_message = q{File downloaded to} . $SPACE . $outdir_path;
+    gnu_echo(
+        {
+            outfile_path => $file_path,
+            filehandle   => $filehandle,
+            strings_ref  => [$echo_message],
+        }
+    );
+
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

@@ -1,5 +1,6 @@
 package MIP::Recipes::Install::Blobfish;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -13,7 +14,17 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Versionmanager::Git qw{ git_clone };
 
 BEGIN {
 
@@ -21,15 +32,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_blobfish };
 }
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub install_blobfish {
 
@@ -37,8 +44,7 @@ sub install_blobfish {
 ## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $noupdate                => Do not update
+##          : $filehandle              => Filehandle to write to
 ##          : $program_parameters_href => Hash with Program specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
@@ -48,8 +54,7 @@ sub install_blobfish {
     ## Flatten argument(s)
     my $conda_environment;
     my $conda_prefix_path;
-    my $FILEHANDLE;
-    my $noupdate;
+    my $filehandle;
     my $quiet;
     my $blobfish_parameters_href;
     my $verbose;
@@ -65,14 +70,10 @@ sub install_blobfish {
             store       => \$conda_prefix_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
-        },
-        noupdate => {
-            store       => \$noupdate,
-            strict_type => 1,
+            store    => \$filehandle,
         },
         program_parameters_href => {
             default     => {},
@@ -94,14 +95,6 @@ sub install_blobfish {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Versionmanager::Git qw{ git_clone };
-
     ## Unpack parameters
     my $program_url     = $blobfish_parameters_href->{url};
     my $program_version = $blobfish_parameters_href->{version};
@@ -114,93 +107,81 @@ sub install_blobfish {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_blobfish},
+            log_name => $LOG_NAME,
             quiet    => $quiet,
             verbose  => $verbose,
         }
     );
 
-    say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
+    say {$filehandle} q{### Install} . $SPACE . $program_name;
+    $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $install_check = check_existing_installation(
+    ## Check if installation exists and remove directory
+    check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
+            filehandle             => $filehandle,
             log                    => $log,
-            noupdate               => $noupdate,
             program_directory_path => $program_directory_path,
             program_name           => $program_name,
         }
     );
 
-    ## Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_environment) {
-
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_activate(
-            {
-                env_name   => $conda_environment,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Activate conda environment
+    say {$filehandle} q{## Activate conda environment};
+    conda_activate(
+        {
+            env_name   => $conda_environment,
+            filehandle => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Download
-    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    say {$filehandle} q{## Download} . $SPACE . $program_name;
     git_clone(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             outdir_path => $program_directory_path,
             quiet       => $quiet,
             url         => $program_url,
             verbose     => $verbose,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Change mode
-    say {$FILEHANDLE} q{## Make file executable};
+    say {$filehandle} q{## Make file executable};
     gnu_chmod(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
             file_path  => catfile( $program_directory_path, $executable ),
             permission => q{a+x},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Place symlink in bin
-    say {$FILEHANDLE} q{## Linking executable};
+    say {$filehandle} q{## Linking executable};
     gnu_ln(
         {
-            FILEHANDLE => $FILEHANDLE,
-            link_path  => catfile( $conda_prefix_path, q{bin}, $executable ),
+            filehandle  => $filehandle,
+            link_path   => catfile( $conda_prefix_path, q{bin}, $executable ),
             target_path => catfile( $program_directory_path, $executable ),
             symbolic    => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_environment) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    say {$filehandle} q{## Deactivate conda environment};
+    conda_deactivate(
+        {
+            filehandle => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     return;
 }
 

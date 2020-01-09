@@ -17,20 +17,20 @@ use warnings qw{ FATAL utf8 };
 
 ## Cpanm
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use autodie qw{open close :all};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-## MIPs lib/
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
+use MIP::Test::Writefile qw{ write_toml_config };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.10;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -75,11 +75,14 @@ GetOptions(
 
 ok( can_run(q{mip}), q{Checking can run mip} );
 
+Readonly my $DRY_RUN_MODE => 2;
+
 ## Update path in toml config
-_write_toml_config(
+write_toml_config(
     {
-        toml_config_path   => $toml_config_path,
-        toml_template_path => $toml_template_path,
+        test_reference_path => $test_reference_path,
+        toml_config_path    => $toml_config_path,
+        toml_template_path  => $toml_template_path,
     }
 );
 
@@ -108,8 +111,15 @@ my $cmds_ref = [
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
     qw{ --dra --svv 0 --vb },
-    q{--fqf_vcfanno_config},
+    q{--fqa_vcfanno_config},
     $toml_config_path,
+    q{--varg_ar},
+    $DRY_RUN_MODE,
+    q{--varg_truth_set_vcf},
+    catfile(
+        $cluster_constant_path,
+        qw{ test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf }
+    ),
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
@@ -158,48 +168,4 @@ sub build_usage {
     -h/--help        Display this help message
     -v/--version     Display version
 END_USAGE
-}
-
-sub _write_toml_config {
-
-## Function : Copy toml template and update to system specific path
-## Returns  :
-## Arguments: $toml_config_path   => Path to new toml config
-##          : $toml_template_path => Path to toml template
-
-    my ($arg_href) = @_;
-
-    my $tmpl = {
-        toml_config_path => {
-            store       => \$toml_config_path,
-            strict_type => 1,
-        },
-        toml_template_path => {
-            store       => \$toml_template_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use File::Copy qw{ cp };
-    use Path::Tiny qw{ path };
-
-    ## Create copy of template
-    cp $toml_template_path, $toml_config_path;
-
-    ## Create Path::Tiny object
-    $toml_config_path = path($toml_config_path);
-
-    ## Read into memory
-    my $toml_config = $toml_config_path->slurp_utf8;
-
-    ## Replace with system specific path
-    $toml_config =~ s/TEST_REFERENCES!/$test_reference_path/xms;
-
-    ## Write to file
-    $toml_config_path->spew_utf8($toml_config);
-
-    return;
-
 }

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -141,10 +141,12 @@ sub pipeline_analyse_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_rna };
+    use MIP::Constants qw{ set_analysis_constants };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Arriba qw{ analysis_arriba };
     use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
@@ -160,8 +162,9 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-    use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
+    use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
@@ -172,6 +175,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
+    use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
     use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
 
@@ -189,6 +193,9 @@ sub pipeline_analyse_rd_rna {
             sample_info_href                => $sample_info_href,
         }
     );
+
+    ## Set analysis constants
+    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -208,9 +215,11 @@ sub pipeline_analyse_rd_rna {
     ## Dispatch table
     my %analysis_recipe = (
         analysisrunstatus         => \&analysis_analysisrunstatus,
+        arriba_ar                 => \&analysis_arriba,
         bcftools_merge            => \&analysis_bcftools_merge,
         blobfish                  => \&analysis_blobfish,
         bootstrapann              => \&analysis_bootstrapann,
+        dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
@@ -231,6 +240,7 @@ sub pipeline_analyse_rd_rna {
         stringtie_ar              => \&analysis_stringtie,
         trim_galore_ar            => \&analysis_trim_galore,
         varianteffectpredictor    => \&analysis_vep_rna,
+        version_collect_ar        => \&analysis_mip_vercollect,
     );
 
   RECIPE:

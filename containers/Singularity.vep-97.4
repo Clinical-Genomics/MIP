@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: ensemblorg/ensembl-vep:release_97.4
+
+%help
+    Ensembl-vep release 97.4
+
+%labels
+    Maintainer Clinical-Genomics/MIP
+    Version 0.1
+
+%environment
+    SHELL=/bin/bash
+    LC_ALL=C.UTF-8
+
+%runscript
+    "$@"
+
+%post

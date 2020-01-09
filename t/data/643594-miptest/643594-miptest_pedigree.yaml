@@ -11,7 +11,6 @@ samples:
     phenotype: affected
     sample_id: ADM1059A2
     sample_name: NA12882
-    is_from_sample: ADM1059A2
     sex: male
     time_point: 0
   - analysis_type: wes
@@ -22,7 +21,6 @@ samples:
     phenotype: unaffected
     sample_id: ADM1059A1
     sample_name: NA12877
-    is_from_sample: ADM1059A1
     sex: male
     time_point: 0
   - analysis_type: wes
@@ -33,6 +31,5 @@ samples:
     phenotype: unaffected
     sample_id: ADM1059A3
     sample_name: NA12878
-    is_from_sample: ADM1059A3
     sex: female
     time_point: 0

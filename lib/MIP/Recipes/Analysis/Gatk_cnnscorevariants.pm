@@ -18,7 +18,7 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DASH $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DASH $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_cnnscorevariants };
@@ -138,15 +138,15 @@ sub analysis_gatk_cnnscorevariants {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_cnnscorevariants };
+    use MIP::Program::Bcftools qw{ bcftools_norm };
+    use MIP::Program::Gatk qw{ gatk_cnnscorevariants };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
 ## Unpack parameters
     my %io = get_io_files(
@@ -201,7 +201,7 @@ sub analysis_gatk_cnnscorevariants {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -209,7 +209,7 @@ sub analysis_gatk_cnnscorevariants {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -254,7 +254,7 @@ sub analysis_gatk_cnnscorevariants {
             push @bam_infiles_paths, $infile_path_bam;
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
@@ -263,7 +263,7 @@ sub analysis_gatk_cnnscorevariants {
             active_parameter_href => $active_parameter_href,
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -278,14 +278,14 @@ sub analysis_gatk_cnnscorevariants {
     );
 
     ## GATK CNNScoreVariants
-    say {$FILEHANDLE} q{## GATK CNNScoreVariants};
+    say {$filehandle} q{## GATK CNNScoreVariants};
 
     my $cnn_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{cnn} . $outfile_suffix;
     my $mv_infile_path   = $cnn_outfile_path;
     gatk_cnnscorevariants(
         {
             alignment_infile_paths_ref => \@bam_infiles_paths,
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             infile_path                => $infile_path,
             outfile_path               => $cnn_outfile_path,
             referencefile_path         => $referencefile_path,
@@ -293,7 +293,7 @@ sub analysis_gatk_cnnscorevariants {
             verbosity                  => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
 
@@ -303,7 +303,7 @@ sub analysis_gatk_cnnscorevariants {
         $mv_infile_path = $norm_outfile_path;
         bcftools_norm(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 infile_path     => $cnn_outfile_path,
                 multiallelic    => $DASH,
                 outfile_path    => $norm_outfile_path,
@@ -314,20 +314,20 @@ sub analysis_gatk_cnnscorevariants {
                   . q{normalized.stderr},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Change name of file to accomodate downstream
     gnu_mv(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $mv_infile_path,
             outfile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -355,9 +355,10 @@ sub analysis_gatk_cnnscorevariants {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

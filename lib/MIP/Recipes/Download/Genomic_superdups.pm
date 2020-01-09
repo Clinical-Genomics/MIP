@@ -27,12 +27,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
 
 }
+
+## Constants
+Readonly my $GENOME_BUILD_VERSION_37 => q{grch37};
 
 sub download_genomic_superdups {
 
@@ -126,7 +129,7 @@ sub download_genomic_superdups {
     use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_file_suffix };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -152,7 +155,7 @@ sub download_genomic_superdups {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -160,7 +163,7 @@ sub download_genomic_superdups {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -176,11 +179,11 @@ sub download_genomic_superdups {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -204,89 +207,94 @@ sub download_genomic_superdups {
         $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.bed}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-    ## Repeat inline replace due to three chr entries  in file and use if "$1"
-    say {$FILEHANDLE}
-      q{## Repeat inline replace due to three chr entries  in file and use if "$1"};
-    say   {$FILEHANDLE} q?for nr_chr_in_line in {1..3}?;
-    say   {$FILEHANDLE} q{do};
-    print {$FILEHANDLE} $TAB;
+
+    if ( $genome_version eq $GENOME_BUILD_VERSION_37 ) {
+
+        ## Repeat inline replace due to three chr entries  in file and use if "$1"
+        say {$filehandle}
+          q{## Repeat inline replace due to three chr entries  in file and use if "$1"};
+        say   {$filehandle} q?for nr_chr_in_line in {1..3}?;
+        say   {$filehandle} q{do};
+        print {$filehandle} $TAB;
 ## Remove chr prefix in file
-    _remove_chr_prefix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_no_suffix,
-        }
-    );
-    say {$FILEHANDLE} $SEMICOLON;
-    say {$FILEHANDLE} q{done} . $NEWLINE;
+        _remove_chr_prefix(
+            {
+                filehandle  => $filehandle,
+                infile_path => $outfile_path_no_suffix,
+            }
+        );
+        say {$filehandle} $SEMICOLON;
+        say {$filehandle} q{done} . $NEWLINE;
+
+    }
 
     ## Reformat to bed
-    say {$FILEHANDLE} q{## Reformat to bed};
+    say {$filehandle} q{## Reformat to bed};
     gnu_grep(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $outfile_path_no_suffix,
             invert_match => 1,
             pattern      => q{^#chr},
         }
     );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## Sort nummerical on column 2 and 3
     gnu_sort(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $DASH,
             keys_ref    => [ q{2,2}, q{3,3n} ],
         }
     );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## Keep chr, start, stop and fraction match
     gnu_cut(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $DASH,
             list        => q{2-4,27},
         }
     );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## Keep uniq entries only
     gnu_uniq(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $DASH,
             stdoutfile_path => $reformated_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Compress and index file};
+    say {$filehandle} q{## Compress and index file};
     ## Compress file
     htslib_bgzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $reformated_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index file using tabix
     htslib_tabix(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $reformated_outfile_path . q{.gz},
             preset      => q{bed},
             zero_based  => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -307,17 +315,17 @@ sub _remove_chr_prefix {
 
 ## Function : Remove chr prefix in file
 ## Returns  :
-## Arguments: $FILEHANDLE  => Filehandle to write to
+## Arguments: $filehandle  => Filehandle to write to
 ##          : $infile_path => Infile path
 
     my ($arg_href) = @_;
 
 ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         infile_path => {
             default     => 1,
             required    => 1,
@@ -330,13 +338,13 @@ sub _remove_chr_prefix {
 
 ## Remove chr prefix
     # Execute perl and modify file inline
-    print {$FILEHANDLE} q{perl -i -p -e ' };
+    print {$filehandle} q{perl -i -p -e ' };
 
     # Unless header - remove prefix
-    print {$FILEHANDLE} q?if($_!~/^#/) {s/chr(.+)/$1/g}' ?;
+    print {$filehandle} q?if($_!~/^#/) {s/chr(.+)/$1/g}' ?;
 
     # Infile to modify
-    print {$FILEHANDLE} $infile_path;
+    print {$filehandle} $infile_path;
 
     return;
 }

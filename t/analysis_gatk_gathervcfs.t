@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -62,7 +62,7 @@ diag(   q{Test analysis_gatk_gathervcfs from Gatk_gathervcfs.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gatk_gathervcfs};
+my $recipe_name    = q{gatk_gathervcfs};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -88,6 +88,7 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -98,6 +99,7 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{cache}{consensus_analysis_type} = q{wes};
 
 my %sample_info;
 

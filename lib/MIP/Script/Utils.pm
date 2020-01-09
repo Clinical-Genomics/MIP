@@ -18,23 +18,15 @@ use warnings;
 use Readonly;
 use autodie;
 
-## MIPs lib/
-use MIP::Constants qw{ $COLON $DOT $NEWLINE $SPACE $UNDERSCORE };
-
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{
-      create_temp_dir
-      help
-      nest_hash
-      print_parameter_defaults
-      update_program_versions };
+    our @EXPORT_OK = qw{ help print_parameter_defaults };
 }
 
 sub help {
@@ -42,15 +34,15 @@ sub help {
 ## Function : Print help text and exit with supplied exit code
 ## Returns  :
 ## Arguments: $exit_code => Exit code
-##          : $USAGE     => Help text
+##          : $usage     => Help text
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $usage;
+
     ## Default(s)
     my $exit_code;
-
-    ## Flatten argument(s)
-    my $USAGE;
 
     my $tmpl = {
         exit_code => {
@@ -59,80 +51,18 @@ sub help {
             store       => \$exit_code,
             strict_type => 1,
         },
-        USAGE => {
+        usage => {
             defined     => 1,
             required    => 1,
-            store       => \$USAGE,
+            store       => \$usage,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    say {*STDOUT} $USAGE;
+    say {*STDOUT} $usage;
     exit $exit_code;
-}
-
-sub create_temp_dir {
-
-## Function : Create a temporary directory and returns the path to it
-## Returns  : $temp_dir_path
-## Arguments: $directory_base_name  => Base name of directroy
-##          : $directory_path       => Where to create the temporary directory
-##          : $FILEHANDLE           => Filehandle to write to
-##          : $max_expression_value => Max integrer to add to directory_name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $directory_base_name;
-    my $directory_path;
-    my $FILEHANDLE;
-    my $max_expression_value;
-
-    my $tmpl = {
-        directory_base_name => {
-            default     => q{temp_dir},
-            defined     => 1,
-            store       => \$directory_base_name,
-            strict_type => 1,
-        },
-        directory_path => {
-            default     => cwd(),
-            defined     => 1,
-            store       => \$directory_path,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-        max_expression_value => {
-            default     => 1000,
-            defined     => 1,
-            store       => \$max_expression_value,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-
-    my $temp_dir_path = catdir( $directory_path,
-        $directory_base_name . $UNDERSCORE . int rand $max_expression_value );
-
-    if ($FILEHANDLE) {
-
-        gnu_mkdir(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $temp_dir_path,
-                parents          => 1,
-            }
-        );
-    }
-
-    return $temp_dir_path;
 }
 
 sub print_parameter_defaults {
@@ -215,164 +145,6 @@ sub print_parameter_defaults {
 
         exit 0;
     }
-    return;
-}
-
-sub nest_hash {
-## Function : If necessary, nests the command line hash to fit the structure used in mip_install.
-##          : Splits the key string on ":" and creates nested keys from the split.
-## Returns  :
-## Arguments: $cmd_ref => Arguments from command line {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $cmd_href;
-
-    my $tmpl = {
-        cmd_href => {
-            defined  => 1,
-            required => 1,
-            store    => \$cmd_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Nest the shell parameters
-    my @installations = @{ $cmd_href->{installations} };
-    my @colon_keys    = grep { /:/xms } keys %{$cmd_href};
-  PARAMETER:
-    foreach my $parameter (@colon_keys) {
-
-        my $final_value = $cmd_href->{$parameter};
-        foreach my $installation (@installations) {
-            _recursive_nesting(
-                {
-                    array_to_shift_ref    => [ ( split /:/xms, $parameter ) ],
-                    final_value           => $final_value,
-                    hash_to_populate_href => $cmd_href->{$installation},
-                }
-            );
-        }
-        delete $cmd_href->{$parameter};
-    }
-    return;
-}
-
-sub update_program_versions {
-## Function : Set program versions in parameter hash
-## Returns  :
-## Arguments: $parameter_href => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @programs = keys %{ $parameter_href->{program_versions} };
-
-    ## Check if any versions needs to be updated
-    if ( scalar @programs == 0 ) {
-        delete $parameter_href->{program_versions};
-        return;
-    }
-
-  INSTALLATION:
-    foreach my $installation ( @{ $parameter_href->{installations} } ) {
-
-      PROGRAM:
-        foreach my $program (@programs) {
-
-          INSTALL_MODE:
-            foreach my $install_mode ( keys %{ $parameter_href->{$installation} } ) {
-                if ( $install_mode eq q{shell} ) {
-                    if ( $parameter_href->{$installation}{$install_mode}{$program} ) {
-                        $parameter_href->{$installation}{$install_mode}{$program}{version}
-                          = $parameter_href->{program_versions}{$program};
-                    }
-                }
-                else {
-                    if ( $parameter_href->{$installation}{$install_mode}{$program} ) {
-                        $parameter_href->{$installation}{$install_mode}{$program} =
-                          $parameter_href->{program_versions}{$program};
-                    }
-                }
-            }
-        }
-    }
-    delete $parameter_href->{program_versions};
-    return;
-}
-
-sub _recursive_nesting {
-
-## Function  : Recursive sub to nest values into a hash from an array
-## Returns   :
-## Arguments : $array_to_shift_ref    => Array of keys
-##           : $final_value           => Value to be stored
-##           : $hash_to_populate_href => Shift array values to this hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $array_to_shift_ref;
-    my $final_value;
-    my $hash_to_populate_href;
-
-    my $tmpl = {
-        final_value => {
-            required => 1,
-            store    => \$final_value,
-        },
-        hash_to_populate_href => {
-            defined  => 1,
-            required => 1,
-            store    => \$hash_to_populate_href,
-        },
-        array_to_shift_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$array_to_shift_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Assign and remove the first value from the array
-    my $value = shift @{$array_to_shift_ref};
-
-    if ( not $hash_to_populate_href->{$value} ) {
-        return;
-    }
-
-    ## If the array is empty, give the last hash key the final value and return
-    if ( scalar @{$array_to_shift_ref} == 0 ) {
-        return $hash_to_populate_href->{$value} = $final_value;
-    }
-
-    ## Call same subroutine but increment the hash_ref to include the value as a key
-    _recursive_nesting(
-        {
-            hash_to_populate_href => \%{ $hash_to_populate_href->{$value} },
-            final_value           => $final_value,
-            array_to_shift_ref    => $array_to_shift_ref,
-        }
-    );
     return;
 }
 

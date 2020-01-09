@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Manta} => [qw{ manta_workflow }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Manta} => [qw{ manta_workflow }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Manta qw{ manta_workflow };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Manta qw{ manta_workflow };
 
 diag(   q{Test manta_workflow from Manta v}
-      . $MIP::Program::Variantcalling::Manta::VERSION
+      . $MIP::Program::Manta::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,9 +60,13 @@ diag(   q{Test manta_workflow from Manta v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{runWorkflow.py};
+my @function_base_commands = qw{ runWorkflow.py };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -72,10 +75,6 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -83,18 +82,18 @@ my %base_argument = (
 my %required_argument = (
     outdirectory_path => {
         input           => q{outdirectory_path},
-        expected_output => q{outdirectory_path},
+        expected_output => catfile( q{outdirectory_path}, q{runWorkflow.py} ),
     },
 );
 
 my %specific_argument = (
-    mode => {
-        input           => q{local},
-        expected_output => q{--mode local},
-    },
     core_number => {
         input           => 1,
         expected_output => q{-j 1},
+    },
+    mode => {
+        input           => q{local},
+        expected_output => q{--mode local},
     },
 );
 
@@ -110,14 +109,9 @@ foreach my $argument_href (@arguments) {
         {
             argument_href              => $argument_href,
             do_test_base_command       => 1,
-            function_base_commands_ref => [
-                catfile(
-                    $required_argument{outdirectory_path}{expected_output},
-                    $function_base_command
-                )
-            ],
-            module_function_cref   => $module_function_cref,
-            required_argument_href => \%required_argument,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

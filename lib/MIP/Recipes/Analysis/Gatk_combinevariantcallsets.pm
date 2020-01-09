@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -137,13 +137,16 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_combinevariants };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Gatk qw{ gatk_combinevariants };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Stores callers that have been executed
     my @variant_callers;
@@ -159,9 +162,6 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my $gatk_jar =
@@ -201,7 +201,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -209,7 +209,7 @@ sub analysis_gatk_combinevariantcallsets {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -263,12 +263,12 @@ sub analysis_gatk_combinevariantcallsets {
     if ( scalar @variant_callers > 1 ) {
 
         ## GATK CombineVariants
-        say {$FILEHANDLE} q{## GATK CombineVariants};
+        say {$filehandle} q{## GATK CombineVariants};
 
         gatk_combinevariants(
             {
                 exclude_nonvariants => 1,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 genotype_merge_option =>
                   $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
                 infile_paths_ref     => \@combine_infile_paths,
@@ -283,20 +283,20 @@ sub analysis_gatk_combinevariantcallsets {
                 temp_directory     => $temp_directory,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     else {
 
-        say {$FILEHANDLE} q{## Renaming case to facilitate downstream processing};
+        say {$filehandle} q{## Renaming case to facilitate downstream processing};
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $file_path{infile_path},
                 outfile_path => $outfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
@@ -304,7 +304,7 @@ sub analysis_gatk_combinevariantcallsets {
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $outfile_path,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
@@ -312,7 +312,7 @@ sub analysis_gatk_combinevariantcallsets {
         );
     }
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -358,6 +358,7 @@ sub analysis_gatk_combinevariantcallsets {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 parallel_chains_ref     => \@parallel_chains,
                 recipe_file_path        => $recipe_file_path,

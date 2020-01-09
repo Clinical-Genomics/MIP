@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_clinvar };
@@ -124,8 +124,8 @@ sub download_clinvar {
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Bcftools qw{ bcftools_annotate };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -152,7 +152,7 @@ sub download_clinvar {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -160,7 +160,7 @@ sub download_clinvar {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -177,11 +177,11 @@ sub download_clinvar {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -190,27 +190,27 @@ sub download_clinvar {
         }
     );
 
-    say {$FILEHANDLE} q{## Build clinvar variation ID header file};
+    say {$filehandle} q{## Build clinvar variation ID header file};
     my $header_file_path =
       catfile( $reference_dir, $reference_version . $UNDERSCORE . q{clnvid_header.txt} );
     ## Build clinvar variation ID header file
     _build_clnvid_head_file(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             header_file_path => $header_file_path,
         }
     );
 
-    say {$FILEHANDLE} q{## Annotate vcf with new header};
+    say {$filehandle} q{## Annotate vcf with new header};
     bcftools_annotate(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             headerfile_path => $header_file_path,
             infile_path     => catfile( $reference_dir, $reference_href->{outfile} ),
             output_type     => q{v},
         }
     );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     my $reformated_outfile = join $UNDERSCORE,
       (
@@ -221,44 +221,44 @@ sub download_clinvar {
     ## Add clinvar variation ID to vcf info file
     _add_clnvid_to_vcf_info(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $reformated_outfile_path,
         }
     );
 
-    say {$FILEHANDLE} q{## Compress and index file};
+    say {$filehandle} q{## Compress and index file};
     ## Compress file
     htslib_bgzip(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $reformated_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index file using tabix
     htslib_tabix(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $reformated_outfile_path . q{.gz},
             preset      => q{vcf},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Clean-up
     gnu_rm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $header_file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -279,17 +279,17 @@ sub _build_clnvid_head_file {
 
     ## Function : Build clinvar variation ID header file
     ## Returns  :
-    ## Arguments: $FILEHANDLE       => Filehandle to write to
+    ## Arguments: $filehandle       => Filehandle to write to
     ##          : $header_file_path => VCF header file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $header_file_path;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        filehandle       => { store => \$filehandle, },
         header_file_path => {
             defined     => 1,
             required    => 1,
@@ -301,14 +301,14 @@ sub _build_clnvid_head_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Execute perl
-    print {$FILEHANDLE} q{perl -e '};
+    print {$filehandle} q{perl -e '};
 
     ## Print header line for Clinvar variation ID
-    print {$FILEHANDLE}
+    print {$filehandle}
 q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description="ClinVar Variation ID">} '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $header_file_path . $NEWLINE;
+    say {$filehandle} q{ > } . $header_file_path . $NEWLINE;
 
     return;
 }
@@ -317,17 +317,17 @@ sub _add_clnvid_to_vcf_info {
 
     ## Function : Add clinvar variation ID to vcf info file
     ## Returns  :
-    ## Arguments: $FILEHANDLE   => Filehandle to write to
+    ## Arguments: $filehandle   => Filehandle to write to
     ##          : $outfile_path => VCF header file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store => \$FILEHANDLE, },
+        filehandle   => { store => \$filehandle, },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -339,17 +339,17 @@ sub _add_clnvid_to_vcf_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Execute perl
-    print {$FILEHANDLE} q{perl -nae ' };
+    print {$filehandle} q{perl -nae ' };
 
     ## Skip header lines
-    print {$FILEHANDLE} q?if($_=~/^#/) { print $_;} ?;
+    print {$filehandle} q?if($_=~/^#/) { print $_;} ?;
 
     ## Else add CLVID to INFO
-    print {$FILEHANDLE}
+    print {$filehandle}
       q?else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] } '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $outfile_path . $NEWLINE;
+    say {$filehandle} q{ > } . $outfile_path . $NEWLINE;
 
     return;
 }

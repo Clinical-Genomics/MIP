@@ -33,9 +33,10 @@ BEGIN {
 
 sub gnu_grep {
 
-##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on grep 2.6.3
+##Function : Perl wrapper for writing grep recipe to already open $filehandle or return commands array. Based on grep 2.6.3
 ##Returns  : @commands
-##Arguments:$FILEHANDLE              => Filehandle to write to
+##Arguments: $count                  => Count
+##         : $filehandle             => Filehandle to write to
 ##         : $filter_file_path       => Obtain patterns from file, one per line
 ##         : $infile_path            => Infile path
 ##         : $invert_match           => Invert the sense of matching, to select non-matching lines
@@ -43,11 +44,13 @@ sub gnu_grep {
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 ##         : $stdoutfile_path        => Stdoutfile path
+##         : $word_regexp            => Select only those lines containing matches that form whole words
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $count;
+    my $filehandle;
     my $filter_file_path;
     my $infile_path;
     my $pattern;
@@ -57,9 +60,16 @@ sub gnu_grep {
 
     ## Default(s)
     my $invert_match;
+    my $word_regexp;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE, },
+        count => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$count,
+            strict_type => 1,
+        },
+        filehandle       => { store => \$filehandle, },
         filter_file_path => { store => \$filter_file_path, strict_type => 1, },
         infile_path => {
             store       => \$infile_path,
@@ -79,6 +89,12 @@ sub gnu_grep {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        word_regexp => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$word_regexp,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -88,9 +104,17 @@ sub gnu_grep {
     my @commands = qw{ grep };
 
     ## Options
+    if ($count) {
+
+        push @commands, q{--count};
+    }
     if ($invert_match) {
 
         push @commands, q{--invert-match};
+    }
+    if ($word_regexp) {
+
+        push @commands, q{--word-regexp};
     }
     if ($filter_file_path) {
 
@@ -120,7 +144,7 @@ sub gnu_grep {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );

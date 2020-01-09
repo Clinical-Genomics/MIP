@@ -1,0 +1,4 @@
+VERSION
+    mip version v7.1.4
+    MooseX::App version 1.39
+    Perl version 5.26.0

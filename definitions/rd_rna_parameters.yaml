@@ -10,9 +10,11 @@ human_genome_reference:
     - gatk_splitncigarreads
     - gatk_variantfiltration
     - star_aln
+    - star_fusion
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
@@ -23,6 +25,7 @@ human_genome_reference_file_endings:
     - gatk_splitncigarreads
     - gatk_variantfiltration
     - star_aln
+    - star_fusion
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -32,14 +35,15 @@ human_genome_reference_file_endings:
 transcript_annotation:
   associated_recipe:
     - blobfish
+    - gffcompare_ar
     - salmon_quant
     - star_aln
     - star_fusion
     - stringtie_ar
-    - gffcompare_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v30-.gtf
+  default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 library_type:
@@ -48,15 +52,6 @@ library_type:
     - genebody_coverage
   data_type: SCALAR
   default: reverse_stranded
-  type: recipe_argument
-## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
-gatk_bundle_download_version:
-  associated_recipe:
-    - gatk_asereadcounter
-    - gatk_baserecalibration
-    - gatk_haplotypecaller
-  data_type: SCALAR
-  default: 2.8
   type: recipe_argument
 gatk_logging_level:
   associated_recipe:
@@ -68,6 +63,15 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: recipe_argument
+gatk_path:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_splitncigarreads
+    - gatk_variantfiltration
+  data_type: SCALAR
+  type: path
 gatk_use_new_qual_calculator:
   associated_recipe:
     - gatk_haplotypecaller
@@ -99,13 +103,15 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 1
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
+    dna_vcf_reformat: 1
     fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
-    gatk_haplotypecaller: 2
+    gatk_haplotypecaller: 4
     gatk_splitncigarreads: 8
     gatk_variantfiltration: 1
     genebody_coverage: 3
@@ -121,8 +127,9 @@ recipe_time:
     star_aln: 6
     star_fusion: 8
     stringtie_ar: 2
-    trim_galore_ar: 8
+    trim_galore_ar: 6
     varianteffectpredictor: 2
+    version_collect_ar: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -130,18 +137,22 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 3
+    dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
     genebody_coverage: 8
-    multiqc_ar: 2
-    picardtools_mergesamfiles: 3
+    multiqc_ar: 10
+    picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25
     salmon_quant: 2
     star_aln: 3
     star_fusion: 3
     stringtie_ar: 2
-    varianteffectpredictor: 8
+    trim_galore_ar: 5
+    varianteffectpredictor: 12
+    version_collect_ar: 8
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -149,13 +160,15 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    arriba_ar: 24
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
+    dna_vcf_reformat: 1
     fastqc_ar: 0
     gatk_asereadcounter: 1
-    gatk_baserecalibration: 16
-    gatk_haplotypecaller: 16
+    gatk_baserecalibration: 13
+    gatk_haplotypecaller: 13
     gatk_splitncigarreads: 12
     gatk_variantfiltration: 1
     genebody_coverage: 1
@@ -163,7 +176,7 @@ recipe_core_number:
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
-    picardtools_mergesamfiles: 16
+    picardtools_mergesamfiles: 13
     preseq_ar: 1
     rseqc: 1
     sacct: 1
@@ -171,8 +184,8 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 24
     stringtie_ar: 36
-    trim_galore_ar: 1
     varianteffectpredictor: 1
+    version_collect_ar: 1
   type: mip
 picardtools_path:
   associated_recipe:
@@ -180,20 +193,18 @@ picardtools_path:
     - picardtools_mergesamfiles
     - star_aln
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
-is_from_sample:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 time_point:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
+  type: mip
+force_dna_ase:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
   type: mip
 ### Programs
 ## Gzip
@@ -250,6 +261,7 @@ salmon_quant_reference_genome:
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -281,19 +293,19 @@ align_intron_max:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 100000
+  mandatory: no
   type: recipe_argument
 align_mates_gap_max:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 100000
+  mandatory: no
   type: recipe_argument
 align_sjdb_overhang_min:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 10
+  mandatory: no
   type: recipe_argument
 chim_junction_overhang_min:
   associated_recipe:
@@ -311,7 +323,7 @@ chim_out_type:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: WithinBAM
+  default: WithinBAM SoftClip
   type: recipe_argument
 pe_overlap_nbases_min:
   associated_recipe:
@@ -321,14 +333,24 @@ pe_overlap_nbases_min:
   type: recipe_argument
 star_aln_reference_genome:
   associated_recipe:
+    - arriba_ar
     - star_aln
     - genebody_coverage
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
+star_ulimit_n:
+  associated_recipe:
+    - star_aln
+    - star_fusion
+    - arriba_ar
+  data_type: SCALAR
+  default: 4096
+  type: recipe_argument
 two_pass_mode:
   associated_recipe:
     - star_aln
@@ -348,25 +370,59 @@ star_fusion:
     - gtf_file_to_feature_seqs.pl
     - prep_genome_lib.pl
     - samtools
-    - STAR
     - STAR-Fusion
   type: recipe
 star_fusion_genome_lib_dir:
   associated_recipe:
     - star_fusion
   data_type: SCALAR
-  default: grch37_v19_CTAT_lib_Feb092018
   exists_check: directory
-  reference: reference_dir
+  is_reference: 1
   type: path
-fusion_filter_reference_genome:
+star_fusion_min_junction_reads:
+  associated_recipe:
+    - star_fusion
+  data_type: SCALAR
+  mandatory: no
+  type: recipe_argument
+star_fusion_reference_genome:
   associated_recipe:
     - star_fusion
   build_file: 1
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   mandatory: no
   reference: reference_dir
+  type: path
+## Arriba 
+arriba_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _arriba
+  outfile_suffix: ".tsv"
+  program_executables:
+    - arriba
+    - draw_fusions.R
+    - sambamba
+  type: recipe
+arriba_blacklist_path:
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_cytoband_path:
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_proteindomain_path: 
+  associated_recipe: 
+    - arriba_ar
+  data_type: SCALAR
   type: path
 ## Merge bam files
 picardtools_mergesamfiles:
@@ -429,6 +485,12 @@ markduplicates:
     - picard
     - sambamba
   type: recipe
+markduplicates_no_bam_to_cram:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 markduplicates_picardtools_markduplicates:
   associated_recipe:
     - markduplicates
@@ -483,22 +545,27 @@ gatk_baserecalibration:
   program_executables:
     - gatk
   type: recipe
+gatk_baserecalibration_no_bam_to_cram:
+  associated_recipe:
+   - gatk_baserecalibration
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 gatk_baserecalibration_known_sites:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
     - grch37_1000g_indels_-phase1-.vcf
     - grch37_dbsnp_-138-.vcf
     - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_baserecalibration_read_filters:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
     - OverclippedReadFilter
@@ -506,7 +573,6 @@ gatk_baserecalibration_read_filters:
 gatk_baserecalibration_static_quantized_quals:
   associated_recipe:
     - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   default:
@@ -538,8 +604,9 @@ rseqc_transcripts_file:
     - genebody_coverage
     - rseqc
   data_type: SCALAR
-  default: grch37_gencode_-v28-.bed
+  default: grch37_gencode_annotation_reformated_-v31-.bed
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 genebody_coverage:
@@ -582,7 +649,6 @@ gatk_haplotypecaller:
 gatk_haplotypecaller_annotation:
   associated_recipe:
     - gatk_haplotypecaller
-  element_separator: ,
   data_type: ARRAY
   default:
     - BaseQualityRankSumTest
@@ -630,6 +696,7 @@ gatk_haplotypecaller_snp_known_set:
   data_type: SCALAR
   default: grch37_dbsnp_-138-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ## GATK ASE
@@ -700,6 +767,26 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+## Reformat dna vcf
+dna_vcf_reformat:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+  type: recipe
+dna_vcf_file:
+  associated_recipe:
+    - dna_vcf_reformat
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  type: path
+  update_path: absolute_path
 ## VEP
 varianteffectpredictor:
   analysis_mode: case
@@ -716,6 +803,7 @@ vep_custom_annotation:
   associated_recipe:
     - varianteffectpredictor
   data_type: HASH
+  is_reference: 1
   mandatory: no
   type: path
 vep_directory_cache:
@@ -723,19 +811,12 @@ vep_directory_cache:
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
-  type: path
-  update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 vep_features:
   associated_recipe:
     - varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
     - appris

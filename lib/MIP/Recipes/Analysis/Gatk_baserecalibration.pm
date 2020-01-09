@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_baserecalibration };
@@ -160,18 +160,21 @@ sub analysis_gatk_baserecalibration {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk
+    use MIP::Program::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store
+      set_recipe_outfile_in_sample_info
+      set_recipe_metafile_in_sample_info
+      set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -252,8 +255,8 @@ sub analysis_gatk_baserecalibration {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -261,7 +264,7 @@ sub analysis_gatk_baserecalibration {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -281,7 +284,7 @@ sub analysis_gatk_baserecalibration {
             analysis_type         => $analysis_type,
             contigs_ref           => \@{ $file_info_href->{bam_contigs_size_ordered} },
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
             log                   => $log,
@@ -303,16 +306,16 @@ sub analysis_gatk_baserecalibration {
     );
 
     ## GATK BaseRecalibrator
-    say {$FILEHANDLE} q{## GATK BaseRecalibrator};
+    say {$filehandle} q{## GATK BaseRecalibrator};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -331,7 +334,7 @@ sub analysis_gatk_baserecalibration {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
-                FILEHANDLE           => $XARGSFILEHANDLE,
+                filehandle           => $xargsfilehandle,
                 infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
@@ -346,34 +349,34 @@ sub analysis_gatk_baserecalibration {
                 xargs_mode         => 1,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## GATK GatherBQSRReports
-    say {$FILEHANDLE} q{## GATK GatherBQSRReports};
+    say {$filehandle} q{## GATK GatherBQSRReports};
     my $gatk_gatherbqsr_outfile_path =
       $outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
     gatk_gatherbqsrreports(
         {
             base_quality_score_recalibration_files_ref =>
               \@base_quality_score_recalibration_files,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $gatk_gatherbqsr_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK ApplyBQSR
-    say {$FILEHANDLE} q{## GATK ApplyBQSR};
+    say {$filehandle} q{## GATK ApplyBQSR};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $parallel_processes,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -386,7 +389,7 @@ sub analysis_gatk_baserecalibration {
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file => $gatk_gatherbqsr_outfile_path,
-                FILEHANDLE                            => $XARGSFILEHANDLE,
+                filehandle                            => $xargsfilehandle,
                 infile_path                           => $infile_path{$contig},
                 intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
@@ -406,20 +409,21 @@ sub analysis_gatk_baserecalibration {
                 xargs_mode         => 1,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## Gather BAM files
-    say {$FILEHANDLE} q{## Gather BAM files};
+    say {$filehandle} q{## Gather BAM files};
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
       map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
+    my $store_outfile_path = $outfile_path_prefix . $outfile_suffix;
 
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -430,35 +434,59 @@ sub analysis_gatk_baserecalibration {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Rename the bam file index file so that Expansion Hunter can find it
-    say {$FILEHANDLE}
+    say {$filehandle}
       q{## Copy index file to ".bam.bai" so that Expansionhunter can find it downstream};
 
     gnu_cp(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             force        => 1,
             infile_path  => $outfile_path_prefix . q{.bai},
             outfile_path => $outfile_path_prefix . $outfile_suffix . q{.bai},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $XARGSFILEHANDLE;
-    close $FILEHANDLE;
+    ## Create BAM to CRAM for long term storage
+    if ( not $active_parameter_href->{gatk_baserecalibration_no_bam_to_cram} ) {
+
+        $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
+
+        say {$filehandle} q{## Convert BAM to CRAM for long term storage};
+        samtools_view(
+            {
+                filehandle         => $filehandle,
+                infile_path        => $outfile_path_prefix . $outfile_suffix,
+                outfile_path       => $store_outfile_path,
+                output_format      => q{cram},
+                referencefile_path => $referencefile_path,
+                thread_number      => $parallel_processes,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        ## Index CRAM
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $store_outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+    close $xargsfilehandle;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
-
-        my $gathered_outfile_path =
-          catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $gathered_outfile_path,
+                path             => $store_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -469,11 +497,23 @@ sub analysis_gatk_baserecalibration {
         set_processing_metafile_in_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
-                path             => $gathered_outfile_path,
+                path             => $store_outfile_path,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
+
+        if ( not $analysis_type eq q{wts} ) {
+
+            set_file_path_to_store(
+                {
+                    file_tag         => $sample_id . $UNDERSCORE . q{recalibrated},
+                    file_type        => q{bam},
+                    path             => $store_outfile_path,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {
@@ -483,6 +523,7 @@ sub analysis_gatk_baserecalibration {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,

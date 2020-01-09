@@ -15,16 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Get::Parameter} => [qw{ get_recipe_resources }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -58,6 +58,8 @@ diag(   q{Test get_recipe_resources from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+test_log( {} );
+
 ## Given a recipe name and active parameter hash
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 my $recipe_name      = q{bwa_mem};
@@ -71,10 +73,10 @@ my %recipe_resource = get_recipe_resources(
 
 ## Then return recipe resource hash
 my %expected = (
-    core_number => 30,
-    memory      => 120,
-    time        => 30,
-    load_env_ref    => [qw{conda activate test }],
+    core_number  => 30,
+    memory       => 120,
+    time         => 30,
+    load_env_ref => [qw{conda activate test }],
 );
 is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );
 

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -59,10 +59,12 @@ diag(   q{Test analysis_peddy from Peddy.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $GENOME_VERSION => 38;
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{peddy_ar};
+my $recipe_name    = q{peddy_ar};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -87,6 +89,7 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+$file_info{human_genome_reference_version} = $GENOME_VERSION;
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(

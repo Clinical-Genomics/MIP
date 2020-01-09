@@ -16,23 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
 
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub build_rtg_prerequisites {
 
@@ -156,9 +154,10 @@ sub build_rtg_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Rtg qw{ rtg_format };
+    use MIP::Program::Rtg qw{ rtg_format };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -168,12 +167,18 @@ sub build_rtg_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
+    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => q{mip},
+        }
+    );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -182,20 +187,22 @@ sub build_rtg_prerequisites {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $active_parameter_href->{max_cores_per_node},
+            filehandle            => $filehandle,
             directory_id          => $case_id,
             job_id_href           => $job_id_href,
             log                   => $log,
+            process_time          => $PROCESSING_TIME,
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $PROCESSING_TIME,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -216,7 +223,7 @@ sub build_rtg_prerequisites {
               . q{ sdf files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building SDF dir files};
+        say {$filehandle} q{## Building SDF dir files};
         ## Get parameters
         my $sdf_directory_tmp =
             $active_parameter_href->{rtg_vcfeval_reference_genome}
@@ -224,13 +231,13 @@ sub build_rtg_prerequisites {
           . $random_integer;
         rtg_format(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 input_format          => q{fasta},
                 reference_genome_path => $human_genome_reference,
                 sdf_output_directory  => $sdf_directory_tmp,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ:
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
@@ -241,7 +248,7 @@ sub build_rtg_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $sdf_directory_tmp,
                 }
@@ -252,7 +259,7 @@ sub build_rtg_prerequisites {
         $parameter_href->{rtg_vcfeval_reference_genome}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

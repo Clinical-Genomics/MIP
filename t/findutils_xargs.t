@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -72,7 +72,7 @@ Readonly my $MAX_ARGUMENTS => 1;
 my @function_base_commands = qw{ xargs };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -85,7 +85,7 @@ my %required_argument = (
         inputs_ref      => [qw{java -jar}],
         expected_output => q{java -jar},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $SPACE $TAB };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,12 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA        => q{,};
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => q{\t};
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Bwa} => [qw{ bwa_mem }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Program::Bwa}   => [qw{ bwa_mem }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Bwa qw{ bwa_mem };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Bwa qw{ bwa_mem };
 
 diag(   q{Test bwa_mem from Bwa.pm v}
-      . $MIP::Program::Alignment::Bwa::VERSION
+      . $MIP::Program::Bwa::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -77,9 +71,9 @@ my @read_group_headers = (
 );
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{test_outfile.bam},
-        expected_output => q{1> test_outfile.bam},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -89,33 +83,29 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{test_outfile.bam},
+        expected_output => q{1> test_outfile.bam},
     },
 );
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
-    },
-    infile_path => {
-        input           => q{test_infile.fastq},
-        expected_output => q{test_infile.fastq},
     },
     idxbase => {
         input           => q{grch37_homo_sapiens_-d5-.fasta},
         expected_output => q{grch37_homo_sapiens_-d5-.fasta},
     },
+    infile_path => {
+        input           => q{test_infile.fastq},
+        expected_output => q{test_infile.fastq},
+    },
 );
 
 my %specific_argument = (
-    thread_number => {
-        input           => 2,
-        expected_output => q{-t 2},
-    },
     infile_path => {
         input           => q{test_infile_1.fastq},
         expected_output => q{test_infile_1.fastq},
@@ -140,10 +130,6 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{-Y},
     },
-    stdoutfile_path => {
-        input           => q{test_outfile.bam},
-        expected_output => q{1> test_outfile.bam},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -151,6 +137,14 @@ my %specific_argument = (
     stderrfile_path_append => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{test_outfile.bam},
+        expected_output => q{1> test_outfile.bam},
+    },
+    thread_number => {
+        input           => 2,
+        expected_output => q{-t 2},
     },
 );
 

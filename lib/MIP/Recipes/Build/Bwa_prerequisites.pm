@@ -6,7 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
@@ -16,23 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_bwa_prerequisites };
 
 }
-
-##Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub build_bwa_prerequisites {
 
@@ -156,9 +154,10 @@ sub build_bwa_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Bwa qw{ bwa_index };
+    use MIP::Program::Bwa qw{ bwa_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -168,12 +167,18 @@ sub build_bwa_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
+    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => q{bwa_mem},
+        }
+    );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -181,21 +186,22 @@ sub build_bwa_prerequisites {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            directory_id          => $case_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            recipe_directory      => $recipe_name,
-            recipe_name           => $recipe_name,
-            process_time          => $PROCESSING_TIME,
+            active_parameter_href           => $active_parameter_href,
+            directory_id                    => $case_id,
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $PROCESSING_TIME,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
     build_human_genome_prerequisites(
         {
             active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
+            filehandle              => $filehandle,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
@@ -216,19 +222,19 @@ sub build_bwa_prerequisites {
               . q{ index files before executing }
               . $recipe_name );
 
-        say {$FILEHANDLE} q{## Building BWA index};
+        say {$filehandle} q{## Building BWA index};
 
         ## Get parameters
         my $prefix = $human_genome_reference . $UNDERSCORE . $random_integer;
         bwa_index(
             {
                 construction_algorithm => q{bwtsw},
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 prefix                 => $prefix,
                 reference_genome       => $human_genome_reference,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
       PREREQ_FILE:
         foreach my $file ( @{$parameter_build_suffixes_ref} ) {
@@ -240,7 +246,7 @@ sub build_bwa_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     intended_file_path  => $intended_file_path,
                     temporary_file_path => $temporary_file_path,
                 }
@@ -251,7 +257,7 @@ sub build_bwa_prerequisites {
         $parameter_href->{bwa_build_reference}{build_file} = 0;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 

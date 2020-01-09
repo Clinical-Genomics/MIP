@@ -23,9 +23,13 @@ use List::MoreUtils qw{ natatime };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants
+  qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
+use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -33,31 +37,77 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_perl_program_check_command
+      check_mip_installation
       check_program_installations
       update_config
     };
 }
 
-## Constants
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
+sub check_mip_installation {
+
+## Function : Write installation check oneliner to open filehandle
+## Returns  :
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $filehandle            => Open filehandle
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $filehandle;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %program_test_cmds = load_yaml(
+        {
+            yaml_file => $active_parameter_href->{program_test_file},
+        }
+    );
+
+    ## Get the programs that mip has tried to install
+    my @programs_to_test = (
+        keys %{ $active_parameter_href->{conda} },
+        keys %{ $active_parameter_href->{pip} },
+        keys %{ $active_parameter_href->{shell} },
+        keys %{ $active_parameter_href->{singularity} },
+    );
+
+    check_program_installations(
+        {
+            env_name                  => $active_parameter_href->{environment_name},
+            filehandle                => $filehandle,
+            programs_ref              => \@programs_to_test,
+            program_test_command_href => \%program_test_cmds,
+        }
+    );
+    return;
+}
 
 sub check_program_installations {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
 ## Arguments: $env_name                   => Program environment name
-##          : $FILEHANDLE                 => open filehandle
-##          : $installation               => installation
-##          : $log                        => Log
+##          : $filehandle                 => open filehandle
 ##          : $programs_ref               => Programs to check {REF}
 ##          : $program_test_command_href  => Hash with test commands {REF}
 
@@ -65,9 +115,7 @@ sub check_program_installations {
 
     ## Flatten argument(s)
     my $env_name;
-    my $FILEHANDLE;
-    my $installation;
-    my $log;
+    my $filehandle;
     my $programs_ref;
     my $program_test_command_href;
 
@@ -78,19 +126,9 @@ sub check_program_installations {
             store       => \$env_name,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
-        },
-        installation => {
-            defined     => 1,
-            required    => 1,
-            store       => \$installation,
-            strict_type => 1,
-        },
-        log => {
-            required => 1,
-            store    => \$log,
+            store    => \$filehandle,
         },
         programs_ref => {
             default     => [],
@@ -113,6 +151,9 @@ sub check_program_installations {
     Readonly my $COLUMNS      => 4;
     Readonly my $COLUMN_WIDTH => 25;
     Readonly my $HASH_SIGN    => q{#};
+
+    ## Retrieve logger object
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     $log->info(qq{Writing tests for programs installed in environment: $env_name});
 
@@ -150,7 +191,7 @@ sub check_program_installations {
         return;
     }
 
-    say {$FILEHANDLE} qq{## Testing programs installed in $env_name};
+    say {$filehandle} qq{## Testing programs installed in $env_name};
 
     ## Build header string to echo
     my @header = ( q{\n} . ( $HASH_SIGN x $COLUMN_WIDTH x $COLUMNS ) . q{\n\n} );
@@ -160,11 +201,11 @@ sub check_program_installations {
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             strings_ref           => \@header,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Print programs selected for installation in sets
     my $program_iterator = natatime $COLUMNS, @sorted_programs;
@@ -183,29 +224,29 @@ sub check_program_installations {
           . $DOUBLE_QUOTE;
         gnu_printf(
             {
-                FILEHANDLE    => $FILEHANDLE,
+                filehandle    => $filehandle,
                 format_string => $format_string,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
+        print {$filehandle} $NEWLINE;
     }
 
     gnu_echo(
         {
             enable_interpretation => 1,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             strings_ref           => [q{\n\tTesting installation\n}],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Load env
-    say   {$FILEHANDLE} qq{## Load environment: $env_name};
-    say   {$FILEHANDLE} join $SPACE, @env_method_load_cmds;
-    print {$FILEHANDLE} $NEWLINE;
+    say   {$filehandle} qq{## Load environment: $env_name};
+    say   {$filehandle} join $SPACE, @env_method_load_cmds;
+    print {$filehandle} $NEWLINE;
 
     ## Create success and fail case
-    my $installation_outcome = uc $installation;
+    my $installation_outcome = q{SUCCESS};
     my $success_message =
       q{\n\tAll programs were succesfully installed in: } . $env_name . q{\n};
     my $fail_message =
@@ -226,67 +267,69 @@ sub check_program_installations {
         }
       );
 
-    my $success_case = qq?&& { $success_echo; $installation_outcome=success; }?;
+    my $success_case = qq?&& { $success_echo; $installation_outcome=1; }?;
     my $fail_case    = qq?|| { $fail_echo; }?;
 
+    ## Enabling querying of $?
+    gnu_set(
+        {
+            filehandle    => $filehandle,
+            unset_errexit => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     ## Write test oneliner
-    say {$FILEHANDLE} q{## Test programs and capture outcome in bash variable};
-    print {$FILEHANDLE} join $SPACE, @perl_commands;
-    say {$FILEHANDLE} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
+    say {$filehandle} q{## Test programs and capture outcome in bash variable};
+    print {$filehandle} join $SPACE, @perl_commands;
+    say {$filehandle} $SPACE . $success_case . $SPACE . $fail_case . $NEWLINE;
+
+    ## Restore errexit
+    gnu_set(
+        {
+            filehandle  => $filehandle,
+            set_errexit => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Unload env
-    say   {$FILEHANDLE} qq{## Unload environment: $env_name};
-    say   {$FILEHANDLE} join $SPACE, @env_method_unload_cmds;
-    print {$FILEHANDLE} $NEWLINE;
+    say   {$filehandle} qq{## Unload environment: $env_name};
+    say   {$filehandle} join $SPACE, @env_method_unload_cmds;
+    print {$filehandle} $NEWLINE;
 
-    return;
+    return 1;
 }
 
 sub update_config {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $env_name_href      => Program environment name hash {REF}
-##          : $FILEHANDLE         => open filehandle
-##          : $installations_ref  => Array with installations {REF}
-##          : $log                => Log
-##          : $pipeline           => Pipeline
-##          : $update_config      => Path to config to update
-##          : $write_config       => Create new config from template
+## Arguments: $env_name      => Program environment name hash
+##          : $filehandle    => open filehandle
+##          : $pipeline      => Pipeline
+##          : $update_config => Path to config to update
+##          : $write_config  => Create new config from template
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $env_name_href;
-    my $FILEHANDLE;
-    my $installations_ref;
-    my $log;
+    my $env_name;
+    my $filehandle;
     my $pipeline;
     my $update_config;
     my $write_config;
 
     my $tmpl = {
-        env_name_href => {
-            defined     => 1,
-            default     => {},
-            required    => 1,
-            store       => \$env_name_href,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        installations_ref => {
-            default     => [],
+        env_name => {
             defined     => 1,
             required    => 1,
-            store       => \$installations_ref,
+            store       => \$env_name,
             strict_type => 1,
         },
-        log => {
+        filehandle => {
             required => 1,
-            store    => \$log,
+            store    => \$filehandle,
         },
         pipeline => {
             defined     => 1,
@@ -308,19 +351,23 @@ sub update_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Return if no config options
-    return if ( not $update_config ) and ( not $write_config );
+    return if ( not $update_config and not $write_config );
 
-    ## map installation to bash paramter
-    my %installation_outcome = map { $_ => q{$} . uc $_ } @{$installations_ref};
+    ## Retrieve logger object
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
+
+    ## Map installation to bash paramter
+    my $installation_outcome = q{$SUCCESS};
 
     ## Set config paths
     my $load_config_path;
     my $save_config_path;
     my $date_time  = localtime;
     my $time_stamp = $date_time->datetime;
+
     if ($update_config) {
 
-        ## get absolute path
+        ## Get absolute path
         $update_config = abs_path($update_config);
 
         ## Check that file exists
@@ -338,7 +385,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
         my $date_regex = qr{
 			(?:\d\d\d?\d?\d?\d?) # match YYYY | YY | YYMMDD
 			-?                   # optionally match -
-			(?:\d?\d?)           # optionally match MM 
+			(?:\d?\d?)           # optionally match MM
 			.*                   # match any remaining part
 		}xms;
 
@@ -361,106 +408,78 @@ q{MIP will not attempt to update config as the specified path does not exist.}
     ## Copy the config
     gnu_cp(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             force        => 1,
             infile_path  => $load_config_path,
             outfile_path => $save_config_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Load config
-    my %config = load_yaml( { yaml_file => $load_config_path, } );
+    my %config             = load_yaml( { yaml_file => $load_config_path, } );
     my %config_environment = %{ $config{load_env} };
 
     ## Broadcast message
     my $status_message = q{## Updating/writing config if the installation was succesful};
-    say {$FILEHANDLE} q{## Updating/writing config if the installation was succesful};
+    say {$filehandle} q{## Updating/writing config if the installation was succesful};
     gnu_echo(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             strings_ref => [$status_message],
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{SUCCESS_COUNTER=0};
+    say {$filehandle} q{SUCCESS_COUNTER=0};
   CONFIG_ENV_NAME:
     foreach my $config_env_name ( keys %config_environment ) {
-        if (
-            any { $_ eq $config_environment{$config_env_name}{installation} }
-            @{$installations_ref}
-          )
-        {
 
-            my $installation = $config_environment{$config_env_name}{installation};
-            my $old_env_name = $config_env_name;
-            my $new_env_name =
-              $env_name_href->{ $config_environment{$config_env_name}{installation} };
+        ## Build update_config_command
+        my $update_config_command = build_update_config_command(
+            {
+                new_env_name     => $env_name,
+                old_env_name     => $config_env_name,
+                save_config_path => $save_config_path,
+            }
+        );
 
-            ## Build update_config_command
-            my $update_config_command = build_update_config_command(
-                {
-                    new_env_name     => $new_env_name,
-                    old_env_name     => $old_env_name,
-                    save_config_path => $save_config_path,
-                }
-            );
+        ## Create status messages
+        my $success_message = qq{Updated config ($save_config_path) with $env_name};
+        my $fail_message =
+          q{\nFailed one or more installation tests in environment: } . $env_name . q{\n};
+        $fail_message .= q{Config won't be updated/written for this environment\n};
+        my $success_echo = join $SPACE,
+          gnu_echo(
+            {
+                enable_interpretation => 1,
+                strings_ref           => [$success_message],
+            }
+          );
+        my $fail_echo = join $SPACE,
+          gnu_echo(
+            {
+                enable_interpretation => 1,
+                strings_ref           => [$fail_message],
+            }
+          );
 
-            ## Create status messages
-            my $success_message =
-              qq{Updated config ($save_config_path) with $new_env_name};
-            my $fail_message = q{\nFailed one or more installation tests in environment: }
-              . $new_env_name . q{\n};
-            $fail_message .= q{Config won't be updated/written for this environment\n};
-            my $success_echo = join $SPACE,
-              gnu_echo(
-                {
-                    enable_interpretation => 1,
-                    strings_ref           => [$success_message],
-                }
-              );
-            my $fail_echo = join $SPACE,
-              gnu_echo(
-                {
-                    enable_interpretation => 1,
-                    strings_ref           => [$fail_message],
-                }
-              );
+        ## Check for success
+        my $success_check = qq{if [[ "$installation_outcome" == "1" ]]; then} . $NEWLINE;
+        $success_check .= $TAB . $update_config_command . $NEWLINE;
+        $success_check .= $TAB . $success_echo . $NEWLINE;
+        $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
+        $success_check .= q{else} . $NEWLINE;
+        $success_check .= $TAB . $fail_echo . $NEWLINE;
+        $success_check .= q{fi};
 
-            ## Check for success
-            my $success_check =
-              qq{if [[ "$installation_outcome{$installation}" == "success" ]]; then}
-              . $NEWLINE;
-            $success_check .= $TAB . $update_config_command . $NEWLINE;
-            $success_check .= $TAB . $success_echo . $NEWLINE;
-            $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
-            $success_check .= q{else} . $NEWLINE;
-            $success_check .= $TAB . $fail_echo . $NEWLINE;
-            $success_check .= q{fi};
-
-            say {$FILEHANDLE} $success_check . $NEWLINE;
-        }
-        if ( not $config_environment{$config_env_name}{installation} ) {
-            $log->warn(
-qq{Automatic update of $load_config_path not possible. The config lacks information linking it to a MIP installation.}
-            );
-            gnu_rm(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    force       => 1,
-                    infile_path => $save_config_path,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-            return;
-        }
+        say {$filehandle} $success_check . $NEWLINE;
     }
 
     ## Rm temporary config if no installation was free from errors
     if ($write_config) {
-        say {$FILEHANDLE}
-          q{## Remove copied template config if no installation was succesful};
+        say {$filehandle}
+          q{## Remove copied template config if the installation wasn't succesful};
 
         # build_cleanup_check
         my $rm_temp_config = join $SPACE,
@@ -473,7 +492,7 @@ qq{Automatic update of $load_config_path not possible. The config lacks informat
         my $cleanup_check = q{if [[ "$SUCCESS_COUNTER" -eq 0 ]]; then} . $NEWLINE;
         $cleanup_check .= $TAB . $rm_temp_config . $NEWLINE;
         $cleanup_check .= q{fi};
-        say {$FILEHANDLE} $cleanup_check;
+        say {$filehandle} $cleanup_check;
     }
     return;
 }
@@ -511,7 +530,6 @@ sub build_perl_program_check_command {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Constants
-    Readonly my $SEMICOLON    => q{;};
     Readonly my $OPEN_STRING  => q/q{/;
     Readonly my $CLOSE_STRING => q/}/;
     Readonly my $TIMEOUT      => 20;

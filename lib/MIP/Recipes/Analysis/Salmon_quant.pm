@@ -18,7 +18,7 @@ use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -143,7 +143,7 @@ sub analysis_salmon_quant {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
+    use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ get_sequence_run_type set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -151,7 +151,7 @@ sub analysis_salmon_quant {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -210,7 +210,7 @@ sub analysis_salmon_quant {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get sequence run type
     my %sequence_run_type = get_sequence_run_type(
@@ -231,7 +231,7 @@ sub analysis_salmon_quant {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -246,7 +246,7 @@ sub analysis_salmon_quant {
     ### SHELL
 
     ## Salmon quant
-    say {$FILEHANDLE} q{## Quantifying transcripts using } . $recipe_name;
+    say {$filehandle} q{## Quantifying transcripts using } . $recipe_name;
 
     ## For paired end
     if ( $sequence_run_mode eq q{paired-end} ) {
@@ -261,7 +261,7 @@ sub analysis_salmon_quant {
 
         salmon_quant(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 gc_bias                => 1,
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
@@ -269,25 +269,25 @@ sub analysis_salmon_quant {
                 read_2_fastq_paths_ref => \@read_2_fastq_paths,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     ## For single end
     else {
 
         salmon_quant(
             {
-                FILEHANDLE             => $FILEHANDLE,
+                filehandle             => $filehandle,
                 gc_bias                => 1,
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
                 read_1_fastq_paths_ref => \@infile_paths,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -308,9 +308,10 @@ sub analysis_salmon_quant {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

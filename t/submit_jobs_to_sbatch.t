@@ -3,8 +3,10 @@
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
+use File::Find;
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -15,16 +17,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $COLON $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +35,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA     => q{,};
-Readonly my $EMPTY_STR => q{};
-Readonly my $SPACE     => q{ };
 
 BEGIN {
 
@@ -119,5 +117,26 @@ trap {
 
 ## Then exit and throw FATAL log message
 is( $trap->leaveby, q{die}, q{Exit if faulty sbatch script} );
+
+## Clean-up
+# Needed to let slurm have time to fail
+sleep 2 or croak( q{Cannot sleep } . $COLON . $OS_ERROR, $NEWLINE );
+
+## Find file names in current working dir defined by code ref wanted
+find( \&_wanted, cwd() );
+
+sub _wanted {
+
+    my $file_name = $_;    # Filename from find sub
+
+    # It is not a file
+    return if ( not -f $file_name );
+
+    ## Only unlink slurm outfiles
+    return if ( not $file_name =~ /slurm-\d+.out/sxm );
+
+    unlink $file_name;
+    return;
+}
 
 done_testing();

@@ -17,22 +17,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{:all};
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_fastqc {
 
@@ -147,14 +146,14 @@ sub analysis_fastqc {
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Qc::Fastqc qw{ fastqc };
+    use MIP::Program::Fastqc qw{ fastqc };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -217,7 +216,7 @@ sub analysis_fastqc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -256,7 +255,7 @@ sub analysis_fastqc {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $memory_allocation,
@@ -271,25 +270,26 @@ sub analysis_fastqc {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Create output dir};
+    say {$filehandle} q{## Create output dir};
     gnu_mkdir(
         {
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
             indirectory_path => $outsample_directory,
             parents          => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     my $process_batches_count = 1;
 
+  INFILE:
     while ( my ( $index, $infile_path ) = each @infile_paths ) {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $index,
@@ -299,12 +299,12 @@ sub analysis_fastqc {
         fastqc(
             {
                 extract           => 1,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 infile_path       => $infile_path,
                 outdirectory_path => $outsample_directory,
             }
         );
-        say {$FILEHANDLE} q{&}, $NEWLINE;
+        say {$filehandle} q{&}, $NEWLINE;
 
         ## Collect QC metadata info for active recipe for later use
         if ( $recipe_mode == 1 ) {
@@ -321,9 +321,9 @@ sub analysis_fastqc {
             );
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -333,9 +333,10 @@ sub analysis_fastqc {
                 dependency_method       => q{sample_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

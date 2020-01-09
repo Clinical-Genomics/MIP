@@ -1,85 +1,50 @@
 #!/usr/bin/env perl
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
-use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.026;
 
 ## CPANM
-use autodie;
-use Modern::Perl qw{ 2014 };
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.02;
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Update::Parameters} => [qw{ update_dynamic_config_parameters }],
+        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Update::Parameters});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
@@ -94,17 +59,59 @@ diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
       . $EXECUTABLE_NAME );
 
 my %active_parameter = (
-    cluster_constant_path  => catfile(qw{ root dir_1 dir_2 }),
+    cluster_constant_path  => catfile(qw{ root dir_1 dir_2 case_id! }),
     analysis_constant_path => q{analysis},
     case_id                => q{case_1},
-    pedigree_file =>
-      catfile(qw{ cluster_constant_path! case_id! case_id!_pedigree.yaml }),
+    pedigree_file    => catfile(qw{ cluster_constant_path! case_id!_pedigree.yaml }),
     sample_info_file => catfile(
-        qw{ cluster_constant_path! case_id! analysis_constant_path! case_id!_qc_sample_info.yaml }
+        qw{ cluster_constant_path! analysis_constant_path! case_id!_qc_sample_info.yaml }
     ),
+    sv_vep_plugin => {
+        ExACpLI => {
+            exists_check => q{file},
+            path => catfile(qw{ cluster_constant_path! analysis_constant_path! pli.txt }),
+        },
+        LofTool => {
+            exists_check => q{file},
+            path =>
+              catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }),
+        },
+    },
 );
 
-my @order_parameters = qw{ pedigree_file sample_info_file };
+## Given a cluster_constant_path when containing case_id!
+my @dynamic_parameters = qw{ cluster_constant_path analysis_constant_path };
+
+## Loop through all dynamic parameters and update info
+PARAMETER:
+foreach my $parameter_name (@dynamic_parameters) {
+
+    ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+    update_dynamic_config_parameters(
+        {
+            active_parameter_href  => \%active_parameter,
+            dynamic_parameter_href => { case_id => $active_parameter{case_id}, },
+            parameter_name         => $parameter_name,
+        }
+    );
+}
+
+## Then cluster constant path should be updated with supplied case id
+my $updated_cluster_constant_path = catdir(qw{ root dir_1 dir_2 case_1 });
+is(
+    $active_parameter{cluster_constant_path},
+    $updated_cluster_constant_path,
+    q{Updated cluster constant path with case_id}
+);
+
+## Given parameters with dynamic parameters
+my @order_parameters = qw{ pedigree_file sample_info_file sv_vep_plugin };
+
+my %dynamic_parameter = (
+    cluster_constant_path  => $active_parameter{cluster_constant_path},
+    analysis_constant_path => $active_parameter{analysis_constant_path},
+    case_id                => $active_parameter{case_id},
+);
 
 ## Loop through all parameters and update info
 PARAMETER:
@@ -113,11 +120,14 @@ foreach my $parameter_name (@order_parameters) {
     ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
     update_dynamic_config_parameters(
         {
-            active_parameter_href => \%active_parameter,
-            parameter_name        => $parameter_name,
+            active_parameter_href  => \%active_parameter,
+            dynamic_parameter_href => \%dynamic_parameter,
+            parameter_name         => $parameter_name,
         }
     );
 }
+
+## Then all parameters containing dynamic parameters should have been updated
 my $updated_pedigree_file = catfile(qw{ root dir_1 dir_2 case_1 case_1_pedigree.yaml });
 is( $active_parameter{pedigree_file},
     $updated_pedigree_file, q{Updated pedigree file path} );
@@ -127,37 +137,12 @@ my $updated_sample_info_file =
 is( $active_parameter{sample_info_file},
     $updated_sample_info_file, q{Updated sample_info_file path} );
 
+my $updated_sv_vep_pli = catfile(qw{ root dir_1 dir_2 case_1 analysis pli.txt });
+is( $active_parameter{sv_vep_plugin}{ExACpLI}{path},
+    $updated_sv_vep_pli, q{Updated sv_vep_plugin pli path} );
+
+my $updated_sv_vep_loftool = catfile(qw{ root dir_1 dir_2 case_1 analysis loftool.txt });
+is( $active_parameter{sv_vep_plugin}{LofTool}{path},
+    $updated_sv_vep_loftool, q{Updated sv_vep_plugin loftool path} );
+
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

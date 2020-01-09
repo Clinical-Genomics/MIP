@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -14,11 +14,9 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::Util qw{ any };
-use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,12 +24,100 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ parse_download_reference_parameter parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
+    our @EXPORT_OK = qw{
+      parse_conda_env_name
+      parse_download_reference_parameter
+      parse_dynamic_config_parameters
+      parse_infiles
+      parse_nist_parameters
+      parse_prioritize_variant_callers
+      parse_start_with_recipe
+      parse_toml_config_parameters
+    };
 
+}
+
+sub parse_conda_env_name {
+
+## Function : Build conda environment names depending on input parameters
+## Returns  : $conda_environment_name
+## Arguments: $base_name     => Degfault base environment name
+##          : $date          => Date
+##          : $environment   => Installation environment
+##          : parameter_href => Parmeter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $base_name;
+    my $date;
+    my $environment;
+    my $parameter_href;
+
+    my $tmpl = {
+        base_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$base_name,
+            strict_type => 1,
+        },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
+        environment => {
+            defined     => 1,
+            required    => 1,
+            store       => \$environment,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $environment_name = $parameter_href->{environment_name}{$environment};
+
+    ## Give the env a default name if not given
+    if ( not $environment_name ) {
+
+        ## Strip the first character, i.e. 'e' from the environment string
+        my $env_postfix = substr $environment, 1;
+        $environment_name = $base_name . $UNDERSCORE . $env_postfix;
+    }
+
+    ## Prepend environemnt prefix
+    if ( $parameter_href->{environment_prefix} ) {
+
+        $environment_name =
+          $parameter_href->{environment_prefix} . $UNDERSCORE . $environment_name;
+    }
+
+    ## Add environment date
+    if ( $parameter_href->{add_environment_date} ) {
+
+        $environment_name = $environment_name . $UNDERSCORE . $date;
+    }
+
+    ## Append environment suffix
+    if ( $parameter_href->{environment_suffix} ) {
+
+        $environment_name =
+          $environment_name . $UNDERSCORE . $parameter_href->{environment_suffix};
+    }
+
+    return $environment_name;
 }
 
 sub parse_download_reference_parameter {
@@ -68,6 +154,87 @@ sub parse_download_reference_parameter {
     }
 
     return;
+}
+
+sub parse_dynamic_config_parameters {
+
+## Function : Updates first the dynamic config parameters and then all other parameters to particular user/cluster following specifications
+## Returns  :
+## Arguments: $active_parameter_href         => Active parameters for this analysis hash {REF}
+##          : $config_dynamic_parameters_ref => Config dynamic parameters
+##          : $parameter_href                => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $config_dynamic_parameters_ref;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        config_dynamic_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$config_dynamic_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
+
+    ## Loop through all config dynamic parameters and update value
+  DYNAMIC_PARAM:
+    foreach my $dynamic_param_name ( @{$config_dynamic_parameters_ref} ) {
+
+        ## Updates the dynamic config parameters using supplied $case_id
+        update_dynamic_config_parameters(
+            {
+                active_parameter_href => $active_parameter_href,
+                dynamic_parameter_href =>
+                  { case_id => $active_parameter_href->{case_id}, },
+                parameter_name => $dynamic_param_name,
+            }
+        );
+    }
+
+    ## Map of dynamic parameters to update all other parameters
+    my %dynamic_parameter = (
+        cluster_constant_path  => $active_parameter_href->{cluster_constant_path},
+        analysis_constant_path => $active_parameter_href->{analysis_constant_path},
+        case_id                => $active_parameter_href->{case_id},
+    );
+
+    ## Loop through all parameters and update info
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$parameter_href} ) {
+
+        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+        update_dynamic_config_parameters(
+            {
+                active_parameter_href  => $active_parameter_href,
+                dynamic_parameter_href => \%dynamic_parameter,
+                parameter_name         => $parameter_name,
+            }
+        );
+    }
+    return 1;
 }
 
 sub parse_infiles {
@@ -123,6 +290,13 @@ sub parse_infiles {
                 active_parameter_href => $active_parameter_href,
                 parameter_name        => q{infile_dirs},
                 query_value           => $sample_id,
+            }
+        );
+
+        _check_infile_directory(
+            {
+                infile_directory => $infile_directory,
+                sample_id        => $sample_id,
             }
         );
 
@@ -210,8 +384,7 @@ sub parse_nist_parameters {
     use MIP::Set::Parameter qw{ set_nist_file_name_path };
 
     return
-      if (  not $active_parameter_href->{rtg_vcfeval}
-        and not $active_parameter_href->{evaluation} );
+      if ( not $active_parameter_href->{rtg_vcfeval} );
 
     # Unpack
     my %nist_id         = %{ $active_parameter_href->{nist_id} };
@@ -471,7 +644,7 @@ sub parse_toml_config_parameters {
     use MIP::Check::Path qw{ check_vcfanno_toml };
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-    my %toml_config_parameter = ( frequency_filter => q{fqf_vcfanno_config}, );
+    my %toml_config_parameter = ( frequency_filter => q{fqa_vcfanno_config}, );
   CONFIG_FILE:
     while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
 
@@ -487,6 +660,45 @@ sub parse_toml_config_parameters {
         }
     }
     return 1;
+}
+
+sub _check_infile_directory {
+
+## Function : Check if infile directory exists per sample id
+## Returns  :
+## Arguments: $infile_directory => Infile directory
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_directory;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_directory => {
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
+
+    return if ( defined $infile_directory );
+
+    $log->fatal(
+        q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
+    exit 1;
 }
 
 1;

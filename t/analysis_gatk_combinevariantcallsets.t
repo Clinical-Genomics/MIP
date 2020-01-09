@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -79,15 +74,15 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
-$active_parameter{freebayes_ar}                     = 1;
 $active_parameter{gatk_variantrecalibration}        = 1;
+$active_parameter{bcftools_mpielup}                 = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ freebayes_ar gatk_variantrecalibration};
+my @variant_callers = qw{ gatk_variantrecalibration bcftools_mpielup };
 
 my %file_info = test_mip_hashes(
     {
@@ -119,7 +114,7 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ freebayes_ar gatk_variantrecalibration }, $recipe_name );
+  ( qw{ gatk_variantrecalibration }, $recipe_name );
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 CALLER:

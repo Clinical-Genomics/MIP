@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -151,14 +151,14 @@ sub analysis_gffcompare {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gffcompare qw{ gffcompare };
+    use MIP::Program::Gffcompare qw{ gffcompare };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -222,7 +222,7 @@ sub analysis_gffcompare {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -230,7 +230,7 @@ sub analysis_gffcompare {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -245,10 +245,10 @@ sub analysis_gffcompare {
     ### SHELL:
 
     ## GFFcompare
-    say {$FILEHANDLE} q{## GffCompare};
+    say {$filehandle} q{## GffCompare};
     gffcompare(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             genome_sequence_path => $active_parameter_href->{human_genome_reference},
             gtf_reference_path   => $active_parameter_href->{transcript_annotation},
             ignore_non_overlapping_ref => 1,
@@ -256,10 +256,10 @@ sub analysis_gffcompare {
             outfile_path_prefix        => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Rename output files
-    say {$FILEHANDLE} q{## Rename and move GFFCompare output};
+    say {$filehandle} q{## Rename and move GFFCompare output};
     my $gff_output_path    = $outfile_path_prefix . $DOT . q{annotated.gtf};
     my $refmap_infile_path = catfile( $indir_path,
         $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
@@ -275,16 +275,16 @@ sub analysis_gffcompare {
     foreach my $files_ref (@file_names) {
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $files_ref->[0],
                 outfile_path => $files_ref->[1],
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE;
+    ## Close filehandle
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -299,6 +299,15 @@ sub analysis_gffcompare {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{gffcompare},
+                file_type        => q{meta},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
                 base_command            => $profile_base_command,
@@ -307,6 +316,7 @@ sub analysis_gffcompare {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,

@@ -16,6 +16,7 @@ use utf8;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $AMPERSAND $DOT $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 
 BEGIN {
@@ -29,20 +30,12 @@ BEGIN {
     our @EXPORT_OK = qw{ delete_contig_files delete_files };
 }
 
-## Constants
-Readonly my $AMPERSAND  => q{&};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub delete_contig_files {
 
 ## Function : Delete contig files dictated by supplied array index and element.
 ## Returns  :
 ## Arguments: $core_number       => Number of cores to use
-##          : $FILEHANDLE        => Sbatch filehandle to write to
+##          : $filehandle        => Sbatch filehandle to write to
 ##          : $file_elements_ref => Array to use for file iteration {REF}
 ##          : $file_ending       => File ending
 ##          : $file_name         => File name without ending attached
@@ -52,7 +45,7 @@ sub delete_contig_files {
 
     ## Flatten argument(s)
     my $core_number;
-    my $FILEHANDLE;
+    my $filehandle;
     my $file_elements_ref;
     my $file_ending;
     my $file_name;
@@ -65,7 +58,7 @@ sub delete_contig_files {
             store       => \$core_number,
             strict_type => 1,
         },
-        FILEHANDLE        => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle        => { defined => 1, required => 1, store => \$filehandle, },
         file_elements_ref => {
             default     => [],
             defined     => 1,
@@ -101,13 +94,13 @@ sub delete_contig_files {
     my $process_batches_count = 1;
 
     ## Remove infile at indirectory
-    say {$FILEHANDLE} q{## Remove file at directory};
+    say {$filehandle} q{## Remove file at directory};
 
     while ( my ( $index, $element ) = each @{$file_elements_ref} ) {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $index,
@@ -116,24 +109,24 @@ sub delete_contig_files {
 
         gnu_rm(
             {
-                FILEHANDLE => $FILEHANDLE,
+                filehandle => $filehandle,
                 force      => 1,
                 infile_path =>
                   catfile( $indirectory, $file_name . $DOT . $element . $file_ending ),
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE;
+        say {$filehandle} $AMPERSAND . $SPACE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
     return;
 }
 
 sub delete_files {
 
-## Function : Delete files.
+## Function : Delete files
 ## Returns  :
 ## Arguments: $core_number => Number of cores that can be used
-##          : $FILEHANDLE  => Filehandle to write to
+##          : $filehandle  => Filehandle to write to
 ##          : $file_ending => File ending for infiles. {Optional}
 ##          : $indirectory => The directory for the files to be copied
 ##          : $infiles_ref => The array of files to copy
@@ -142,7 +135,7 @@ sub delete_files {
 
     ## Flatten argument(s)
     my $infiles_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $indirectory;
     my $core_number;
 
@@ -156,7 +149,7 @@ sub delete_files {
             store       => \$core_number,
             strict_type => 1,
         },
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         file_ending => {
             default     => $EMPTY_STR,
             store       => \$file_ending,
@@ -183,13 +176,13 @@ sub delete_files {
 
     my $process_batches_count = 1;
 
-    say {$FILEHANDLE} q{## Remove file(s)};
+    say {$filehandle} q{## Remove file(s)};
   FILE:
     while ( my ( $file_index, $file ) = each @{$infiles_ref} ) {
 
         $process_batches_count = print_wait(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $file_index,
@@ -199,14 +192,14 @@ sub delete_files {
         ## Remove file
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 force       => 1,
                 infile_path => catfile( $indirectory, $file . $file_ending ),
             }
         );
-        say {$FILEHANDLE} $AMPERSAND;
+        say {$filehandle} $AMPERSAND;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
     return;
 }
 

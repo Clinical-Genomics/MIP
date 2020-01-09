@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -65,9 +65,7 @@ diag(   q{Test check_parameter_metafiles from Reference.pm v}
 
 my %parameter = load_yaml(
     {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
-        ),
+        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
@@ -92,8 +90,8 @@ my $parameter_name = q{exome_target_bed};
 my %active_parameter = (
     not_correct_key => {
         catfile( $Bin,
-            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
 );
 
@@ -107,15 +105,15 @@ check_parameter_metafiles(
 
 ## Then set build switch should not be set to zero i.e. default of "1" is kept
 ## as this will not be evaluated in sub or downstream
-is( $parameter{$parameter_name}{build_file},
-    1, q{No active parameter and existing file} );
+is( $parameter{$parameter_name}{build_file}, 1,
+    q{No active parameter and existing file} );
 
 ## Given hash entries with active parameter, existing files, and no active associated programs
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
 );
 
@@ -130,15 +128,14 @@ check_parameter_metafiles(
 ## Then set build switch should not be set to zero i.e. default of "1" is kept
 ## as this will not be evaluated in sub or downstream
 is( $parameter{$parameter_name}{build_file},
-    1,
-    q{Active parameter and existing file, and no active associated program} );
+    1, q{Active parameter and existing file, and no active associated program} );
 
 ## Given hash entries with active parameter, files exists, and active associated programs
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
     picardtools_collecthsmetrics => 1,
 );
@@ -169,9 +166,8 @@ check_parameter_metafiles(
 );
 
 ## Then set build file to true to rebuild for all parameter keys
-is( $parameter{exome_target_bed}{build_file}, 1,
-q{Set build file switch for hash parameter reference with mixed existence to 1}
-);
+is( $parameter{exome_target_bed}{build_file},
+    1, q{Set build file switch for hash parameter reference with mixed existence to 1} );
 
 ## Given scalar entries with active parameter, files exists, and active associated programs
 $active_parameter{bwa_build_reference} = 1;

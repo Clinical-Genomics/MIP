@@ -16,7 +16,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -118,12 +114,11 @@ my @returns = trap {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
-like( $trap->stderr, qr/FATAL/xms,
-    q{Could not find module - croaked and exited} );
+like( $trap->stderr, qr/FATAL/xms, q{Could not find module - croaked and exited} );
 
 done_testing();
 

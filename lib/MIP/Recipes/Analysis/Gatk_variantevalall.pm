@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalall };
@@ -144,14 +144,14 @@ sub analysis_gatk_variantevalall {
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval gatk_selectvariants };
+    use MIP::Program::Gatk qw{ gatk_varianteval gatk_selectvariants };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -209,7 +209,7 @@ sub analysis_gatk_variantevalall {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -217,7 +217,7 @@ sub analysis_gatk_variantevalall {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -234,13 +234,13 @@ sub analysis_gatk_variantevalall {
     ### Select sample id from case id vcf file
 
     ## GATK SelectVariants
-    say {$FILEHANDLE} q{## GATK SelectVariants};
+    say {$filehandle} q{## GATK SelectVariants};
 
     my $select_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{select} . $infile_suffix;
     gatk_selectvariants(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
@@ -251,14 +251,14 @@ sub analysis_gatk_variantevalall {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK varianteval
-    say {$FILEHANDLE} q{## GATK varianteval};
+    say {$filehandle} q{## GATK varianteval};
 
     gatk_varianteval(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
@@ -271,9 +271,9 @@ sub analysis_gatk_variantevalall {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -293,9 +293,10 @@ sub analysis_gatk_variantevalall {
                 case_id                 => $case_id,
                 dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

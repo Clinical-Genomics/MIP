@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_gathervcfs };
@@ -133,8 +133,8 @@ sub analysis_gatk_gathervcfs {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud gatk_selectvariants };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Gatk qw{ gatk_gathervcfscloud gatk_selectvariants };
     use MIP::Sample_info
       qw{ set_processing_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -142,7 +142,7 @@ sub analysis_gatk_gathervcfs {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -195,7 +195,7 @@ sub analysis_gatk_gathervcfs {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -203,7 +203,7 @@ sub analysis_gatk_gathervcfs {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -222,7 +222,7 @@ sub analysis_gatk_gathervcfs {
     ## GATK GatherVcfsCloud
     gatk_gathervcfscloud(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             ignore_safety_checks => 0,
             infile_paths_ref     => \@gatk_infile_paths,
             memory_allocation    => q{Xmx4G},
@@ -231,7 +231,7 @@ sub analysis_gatk_gathervcfs {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Produce a bcf compressed and index from vcf
     if ( $active_parameter_href->{gatk_gathervcfs_bcf_file} ) {
@@ -239,11 +239,11 @@ sub analysis_gatk_gathervcfs {
         # Exome analysis
         if ( $consensus_analysis_type eq q{wes} ) {
 
-            say {$FILEHANDLE} q{### Remove extra reference samples};
-            say {$FILEHANDLE} q{## GATK SelectVariants};
+            say {$filehandle} q{### Remove extra reference samples};
+            say {$filehandle} q{## GATK SelectVariants};
             gatk_selectvariants(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     infile_path => $outfile_path,
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
@@ -258,12 +258,12 @@ sub analysis_gatk_gathervcfs {
                     verbosity          => $active_parameter_href->{gatk_logging_level},
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
             ## Move to original filename
             gnu_mv(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
+                    filehandle  => $filehandle,
                     infile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . q{incnonvariantloci}
@@ -271,13 +271,13 @@ sub analysis_gatk_gathervcfs {
                     outfile_path => $outfile_path,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
 
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $outfile_path,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
@@ -285,7 +285,7 @@ sub analysis_gatk_gathervcfs {
         );
     }
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -319,6 +319,7 @@ sub analysis_gatk_gathervcfs {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

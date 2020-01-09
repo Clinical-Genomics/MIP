@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -35,7 +35,7 @@ BEGIN {
 
 sub analysis_gatk_asereadcounter {
 
-## Function : Gatk asereadcounter analysis for rna recipe
+## Function : Gatk asereadcounter analysis for RNA recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -144,9 +144,9 @@ sub analysis_gatk_asereadcounter {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+    use MIP::Program::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
@@ -157,7 +157,14 @@ sub analysis_gatk_asereadcounter {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Return if ASE has been turned off for this sample
+    if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+
+        $log->warn(qq{No ASE analysis for $sample_id});
+        return 0;
+    }
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -181,7 +188,7 @@ sub analysis_gatk_asereadcounter {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_baserecalibration},
+            recipe_name    => q{markduplicates},
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -233,7 +240,7 @@ sub analysis_gatk_asereadcounter {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -241,7 +248,7 @@ sub analysis_gatk_asereadcounter {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -256,10 +263,10 @@ sub analysis_gatk_asereadcounter {
     ### SHELL
 
     ## Restrict analysis to biallelic, heterogenous SNPs
-    say {$FILEHANDLE} q{## Bcftools view};
+    say {$filehandle} q{## Bcftools view};
     bcftools_view(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             genotype     => q{het},
             infile_path  => $variant_infile_path,
             max_alleles  => $ALLELES,
@@ -268,23 +275,23 @@ sub analysis_gatk_asereadcounter {
             types        => q{snps},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $variant_file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    say {$filehandle} q{## GATK ASEReadCounter};
     gatk_asereadcounter(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $alignment_file_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -295,9 +302,9 @@ sub analysis_gatk_asereadcounter {
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -318,9 +325,10 @@ sub analysis_gatk_asereadcounter {
                 dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
@@ -329,4 +337,5 @@ sub analysis_gatk_asereadcounter {
     }
     return 1;
 }
+
 1;

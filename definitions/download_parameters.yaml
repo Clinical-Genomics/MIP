@@ -1,3 +1,11 @@
+---
+config_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 dry_run_all:
   associated_recipe:
    - mip
@@ -17,19 +25,30 @@ print_parameter_default:
   default: 0
   mandatory: no
   type: mip
+project_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: mip
 reference:
   associated_recipe:
    - mip
   data_type: HASH
   type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 reference_genome_versions:
   associated_recipe:
    - mip
   data_type: ARRAY
   default:
    - grch37
-   - hg38
-  element_separator: ,
+   - grch38
   type: recipe_argument
 sacct_format_fields:
   associated_recipe:
@@ -47,7 +66,6 @@ sacct_format_fields:
    - end
    - state
    - exitcode
-  element_separator: ,
   type: recipe_argument
 submission_profile:
   associated_recipe:
@@ -55,3 +73,8 @@ submission_profile:
   data_type: SCALAR
   default: slurm
   type: mip
+temp_directory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path

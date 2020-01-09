@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -134,13 +134,13 @@ sub analysis_mip_qccollect {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_qccollect };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -175,7 +175,7 @@ sub analysis_mip_qccollect {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
@@ -183,7 +183,7 @@ sub analysis_mip_qccollect {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -205,12 +205,12 @@ sub analysis_mip_qccollect {
             log_file_path    => $log_file_path,
             regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
             skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
-            FILEHANDLE       => $FILEHANDLE,
+            filehandle       => $filehandle,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -222,16 +222,26 @@ sub analysis_mip_qccollect {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => q{qc_metrics},
+                file_type        => q{meta},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
-                base_command        => $profile_base_command,
-                dependency_method   => q{add_to_all},
-                job_dependency_type => q{afterok},
-                job_id_href         => $job_id_href,
-                log                 => $log,
-                job_id_chain        => $job_id_chain,
-                recipe_file_path    => $recipe_file_path,
-                submission_profile  => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{add_to_all},
+                job_dependency_type  => q{afterok},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }

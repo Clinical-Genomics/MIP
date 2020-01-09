@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $COLON $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $COLON $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -142,24 +142,23 @@ sub analysis_sv_annotate {
 
     use MIP::File::Format::Toml qw{ load_toml };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
+    use MIP::Program::Bcftools
       qw{ bcftools_annotate bcftools_filter bcftools_view bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
-    use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
+    use MIP::Program::Genmod qw{ genmod_annotate };
+    use MIP::Program::Picardtools qw{ sort_vcf };
+    use MIP::Program::Svdb qw{ svdb_query };
+    use MIP::Program::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -216,7 +215,7 @@ sub analysis_sv_annotate {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -224,7 +223,7 @@ sub analysis_sv_annotate {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -299,7 +298,7 @@ sub analysis_sv_annotate {
                 {
                     bnd_distance         => 25_000,
                     dbfile_path          => $query_db_file,
-                    FILEHANDLE           => $FILEHANDLE,
+                    filehandle           => $filehandle,
                     infile_path          => $svdb_infile_path,
                     in_frequency_tag     => $in_frequency_tag,
                     in_allele_count_tag  => $in_allele_count_tag,
@@ -313,14 +312,14 @@ sub analysis_sv_annotate {
                     overlap => 0.8,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$filehandle} $NEWLINE;
             $annotation_file_counter++;
         }
 
         ## Rename to remove outfile_tracker
         gnu_mv(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix
@@ -329,22 +328,8 @@ sub analysis_sv_annotate {
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
-
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{picard},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            FILEHANDLE                      => $FILEHANDLE,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
 
     ## Alternative file tag
     my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};
@@ -353,14 +338,14 @@ sub analysis_sv_annotate {
     sort_vcf(
         {
             active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
             outfile => $outfile_path_prefix . $outfile_alt_file_tag . $outfile_suffix,
             sequence_dict_file => $sequence_dict_file,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     $alt_file_tag = $outfile_alt_file_tag;
 
@@ -376,12 +361,12 @@ sub analysis_sv_annotate {
             }
         );
 
-        say {$FILEHANDLE} q{## Remove FILTER ne PASS and frequency over threshold};
+        say {$filehandle} q{## Remove FILTER ne PASS and frequency over threshold};
         bcftools_view(
             {
                 apply_filters_ref => [qw{ PASS }],
                 exclude           => $exclude_filter,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 outfile_path => $outfile_path_prefix
                   . $alt_file_tag
@@ -390,7 +375,7 @@ sub analysis_sv_annotate {
                 output_type => q{v},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Update file tag
         $alt_file_tag .= $UNDERSCORE . q{filt};
@@ -399,22 +384,22 @@ sub analysis_sv_annotate {
     ## Remove common variants
     if ( $active_parameter_href->{sv_frequency_filter} ) {
 
-        say {$FILEHANDLE} q{## Remove common variants};
+        say {$filehandle} q{## Remove common variants};
         vcfanno(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 stderrfile_path_append => $stderrfile_path,
-                toml_configfile_path   => $active_parameter_href->{fqf_vcfanno_config},
+                toml_configfile_path   => $active_parameter_href->{sv_fqa_vcfanno_config},
             }
         );
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Update file tag
         $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
         my %vcfanno_config = load_toml(
-            { toml_file_path => $active_parameter_href->{fqf_vcfanno_config}, } );
+            { toml_file_path => $active_parameter_href->{sv_fqa_vcfanno_config}, } );
 ## Store vcf anno annotations
         my @vcf_anno_annotations;
 
@@ -435,14 +420,14 @@ sub analysis_sv_annotate {
         bcftools_filter(
             {
                 exclude      => $exclude_filter,
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $DASH,
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 output_type  => q{v},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     ## Then we have something to rename
@@ -452,17 +437,17 @@ sub analysis_sv_annotate {
         sort_vcf(
             {
                 active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 infile_paths_ref =>
                   [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
                 outfile            => $outfile_path,
                 sequence_dict_file => $sequence_dict_file,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -482,6 +467,7 @@ sub analysis_sv_annotate {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

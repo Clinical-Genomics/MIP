@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Utility::Htslib} => [qw{ htslib_bgzip }],
-        q{MIP::Test::Fixtures}           => [qw{ test_standard_cli }],
+        q{MIP::Program::Htslib} => [qw{ htslib_bgzip }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Htslib qw{ htslib_bgzip };
 
 diag(   q{Test htslib_bgzip from Htslib.pm v}
-      . $MIP::Program::Utility::Htslib::VERSION
+      . $MIP::Program::Htslib::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +63,7 @@ diag(   q{Test htslib_bgzip from Htslib.pm v}
 my @function_base_commands = qw{ bgzip };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -79,12 +76,11 @@ my %base_argument = (
         expected_output => q{2>> stderrfile.test},
     },
     stdoutfile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+        input =>
+          catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
         expected_output => q{1>}
           . $SPACE
-          . catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+          . catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
     },
 );
 
@@ -102,10 +98,9 @@ my %specific_argument = (
         expected_output => q{--force},
     },
     infile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
-        expected_output => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+        input => catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+        expected_output =>
+          catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
     },
     write_to_stdout => {
         input           => 1,

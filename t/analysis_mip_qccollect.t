@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -51,7 +51,7 @@ BEGIN {
 use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
 
 diag(   q{Test analysis_mip_qccollect from Mip_qccollect.pm v}
-      . $MIP::Recipes::Analysis::Qccollect::VERSION
+      . $MIP::Recipes::Analysis::Mip_qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

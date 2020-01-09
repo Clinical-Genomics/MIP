@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -111,9 +107,8 @@ my %sample_info = (
         outdirectory => catfile(qw{a test}),
         outfile      => q{file_2},
     },
-    program => { second_level_key => { path => catfile(qw{a test file_3}) }, },
-    program =>
-      { second_level_key_2 => { path => catfile(qw{a test file_3}) }, },
+    program => { second_level_key   => { path => catfile(qw{a test file_3}) }, },
+    program => { second_level_key_2 => { path => catfile(qw{a test file_3}) }, },
 );
 
 ## Collects all programs file path(s) created by MIP located in %sample_info

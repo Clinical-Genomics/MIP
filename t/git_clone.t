@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -45,11 +45,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -115,7 +111,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -128,14 +124,14 @@ my %required_argument = (
         input           => q{https://github.com/Clinical-Genomics/MIP.git},
         expected_output => q{https://github.com/Clinical-Genomics/MIP.git},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
 );
 
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

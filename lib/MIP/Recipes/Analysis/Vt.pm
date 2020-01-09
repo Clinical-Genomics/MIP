@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DASH $DOT $EMPTY_STR $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $DASH $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt };
@@ -157,10 +157,10 @@ sub analysis_vt {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -215,8 +215,8 @@ sub analysis_vt {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -224,7 +224,7 @@ sub analysis_vt {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -242,7 +242,7 @@ sub analysis_vt {
 
     ### SHELL:
 
-    say {$FILEHANDLE}
+    say {$filehandle}
 q{## vt - Decompose (split multi allelic records into single records) and/or normalize variants};
 
     my $xargs_file_path_prefix;
@@ -251,10 +251,10 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -270,7 +270,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                 cmd_break              => $SEMICOLON,
                 contig                 => $contig,
                 decompose              => $active_parameter_href->{vt_decompose},
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 gnu_sed                => 1,
                 infile_path            => $infile_path{$contig},
                 instream               => 0,
@@ -315,27 +315,27 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                     contig                 => $contig,
                     infile_path            => $outfile_path{$contig},
                     outfile_path           => $removed_outfile_path,
-                    XARGSFILEHANDLE        => $XARGSFILEHANDLE,
+                    xargsfilehandle        => $xargsfilehandle,
                     xargs_file_path_prefix => $xargs_file_path_prefix,
                 }
             );
 
             gnu_mv(
                 {
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    filehandle   => $xargsfilehandle,
                     infile_path  => $removed_outfile_path,
                     outfile_path => $outfile_path{$contig},
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
 
         }
     }
 
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    say {$filehandle} q{wait}, $NEWLINE;
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -347,6 +347,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -364,7 +365,7 @@ sub _remove_decomposed_asterisk_entries {
 ## Arguments: $contig                 => Contig
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
-##          : $XARGSFILEHANDLE        => XARGS file handle
+##          : $xargsfilehandle        => XARGS file handle
 ##          : $xargs_file_path_prefix => Xargs file path prefix
 
     my ($arg_href) = @_;
@@ -373,7 +374,7 @@ sub _remove_decomposed_asterisk_entries {
     my $contig;
     my $infile_path;
     my $outfile_path;
-    my $XARGSFILEHANDLE;
+    my $xargsfilehandle;
     my $xargs_file_path_prefix;
 
     my $tmpl = {
@@ -392,10 +393,10 @@ sub _remove_decomposed_asterisk_entries {
             required => 1,
             store    => \$outfile_path,
         },
-        XARGSFILEHANDLE => {
+        xargsfilehandle => {
             defined  => 1,
             required => 1,
-            store    => \$XARGSFILEHANDLE,
+            store    => \$xargsfilehandle,
         },
         xargs_file_path_prefix => {
             defined  => 1,
@@ -413,16 +414,16 @@ sub _remove_decomposed_asterisk_entries {
     $remove_star_regexp .= q?unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;
 
     ## Print regexp
-    print {$XARGSFILEHANDLE} $remove_star_regexp;
+    print {$xargsfilehandle} $remove_star_regexp;
 
     ## Print infile
-    print {$XARGSFILEHANDLE} $infile_path . $SPACE;
+    print {$xargsfilehandle} $infile_path . $SPACE;
 
     ## Print outfile
-    print {$XARGSFILEHANDLE} q{>} . $SPACE . $outfile_path . $SPACE;
+    print {$xargsfilehandle} q{>} . $SPACE . $outfile_path . $SPACE;
 
     ## Print stderr file
-    print {$XARGSFILEHANDLE} q{2>>}
+    print {$xargsfilehandle} q{2>>}
       . $SPACE
       . $xargs_file_path_prefix
       . $DOT
@@ -432,7 +433,7 @@ sub _remove_decomposed_asterisk_entries {
       . $SPACE;
 
     # Redirect xargs output to recipe specific stderr file
-    print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+    print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
     return;
 }

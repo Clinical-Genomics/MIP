@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ decompress_file };
@@ -36,7 +36,7 @@ sub decompress_file {
 ## Function : Check if file needs to be decompress and write decompression if so
 ## Returns  :
 ## Arguments: $decompress_program => Decompress the downloaded file using program supplied
-##          : $FILEHANDLE         => Filehandle to write to
+##          : $filehandle         => Filehandle to write to
 ##          : $outdir_path        => Outdirectory path
 ##          : $outfile_path       => Outfile path
 
@@ -44,13 +44,13 @@ sub decompress_file {
 
     ## Flatten argument(s)
     my $decompress_program;
-    my $FILEHANDLE;
+    my $filehandle;
     my $outdir_path;
     my $outfile_path;
 
     my $tmpl = {
         decompress_program => { store => \$decompress_program, strict_type => 1, },
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         outdir_path => {
             default     => cwd(),
             store       => \$outdir_path,
@@ -67,9 +67,9 @@ sub decompress_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Parse::File qw{ parse_file_suffix };
-    use MIP::Program::Compression::Gzip qw{ gzip };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Gzip qw{ gzip };
+    use MIP::Program::Tar qw{ tar };
+    use MIP::Program::Zip qw{ unzip };
 
     return if ( not defined $decompress_program );
 
@@ -87,7 +87,7 @@ sub decompress_file {
         gzip(
             {
                 decompress   => 1,
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 force        => 1,
                 infile_path  => $outfile_path,
                 outfile_path => $outfile_path_no_suffix,
@@ -95,19 +95,20 @@ sub decompress_file {
                 stdout       => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( $decompress_program eq q{unzip} ) {
 
         unzip(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
+                force       => 1,
                 infile_path => $outfile_path,
                 outdir_path => $outdir_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     if ( $decompress_program eq q{tar} ) {
@@ -115,13 +116,13 @@ sub decompress_file {
         tar(
             {
                 extract           => 1,
-                FILEHANDLE        => $FILEHANDLE,
+                filehandle        => $filehandle,
                 file_path         => $outfile_path,
                 filter_gzip       => 1,
                 outdirectory_path => $outdir_path,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     return 1;
 }

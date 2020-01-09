@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -66,24 +66,24 @@ diag(   q{Test write_return_to_conda_environment from Setup_script.pm v}
 my $source_main_environment_commands_ref = [q{conda activate test}];
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 # Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 write_return_to_conda_environment(
     {
         source_main_environment_commands_ref => $source_main_environment_commands_ref,
-        FILEHANDLE                           => $FILEHANDLE,
+        filehandle                           => $filehandle,
     }
 );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then env load command shoudl be written to file
 my ($load_command) = $file_content =~ /conda\sactivate\stest/xms;
@@ -93,24 +93,24 @@ ok( $load_command, q{Wrote env load command} );
 $source_main_environment_commands_ref = [];
 
 # Create anonymous filehandle
-$FILEHANDLE = IO::Handle->new();
+$filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content_2;
 
 # Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content_2
+open $filehandle, q{>}, \$file_content_2
   or croak q{Cannot write to} . $SPACE . $file_content_2 . $COLON . $SPACE . $OS_ERROR;
 
 write_return_to_conda_environment(
     {
         source_main_environment_commands_ref => $source_main_environment_commands_ref,
-        FILEHANDLE                           => $FILEHANDLE,
+        filehandle                           => $filehandle,
     }
 );
 
 # Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then env load command shoudl be written to file
 my ($load_command_2) = $file_content_2 =~ /conda\sdeactivate/xms;

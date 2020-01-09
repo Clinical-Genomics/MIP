@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -62,13 +62,13 @@ diag(   q{Test analysis_vt_core_rio from Vt_core.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
@@ -92,7 +92,7 @@ my $is_ok = analysis_vt_core_rio(
         active_parameter_href => \%active_parameter,
         bgzip                 => 1,
         case_id               => $case_id,
-        FILEHANDLE            => $FILEHANDLE,
+        filehandle            => $filehandle,
         gnu_sed               => 1,
         decompose             => 1,
         normalize             => 1,
@@ -105,7 +105,7 @@ my $is_ok = analysis_vt_core_rio(
 );
 
 ## Close the filehandle
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );

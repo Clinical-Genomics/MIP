@@ -6,6 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Path qw{ make_path };
+use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error};
 use strict;
@@ -27,15 +28,82 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
+    our @EXPORT_OK = qw{
+      create_fam_file
+      detect_founders
+      detect_sample_id_gender
+      detect_trio
+      gatk_pedigree_flag
+      has_trio
+      is_sample_proband_in_trio
+      parse_yaml_pedigree_file
+      reload_previous_pedigree_info };
 }
 
 ## Constants
 Readonly my $TRIO_MEMBERS_COUNT => 3;
+
+sub is_sample_proband_in_trio {
+
+## Function : Check if sample id has an affected or unknown phenotype and is child in trio
+## Returns  : 0 | 1
+## Arguments: $sample_id        => Sample id
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Sample_info qw{ get_family_member_id };
+
+    ## There has to be a trio
+    return 0 if ( not $sample_info_href->{has_trio} );
+
+    ## Get phenotype
+    my $phenotype = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{phenotype},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    ## Sample_id needs to be affected
+    return 0 if ( $phenotype eq q{unaffected} );
+
+    ## Get family hash
+    my %family_member_id =
+      get_family_member_id( { sample_info_href => $sample_info_href } );
+
+    ## Check if the sample is an affected child
+    return 0 if ( none { $_ eq $sample_id } @{ $family_member_id{children} } );
+
+    return 1;
+}
 
 sub create_fam_file {
 
@@ -45,7 +113,7 @@ sub create_fam_file {
 ##          : $case_id               => Case_id
 ##          : $execution_mode        => Either system (direct) or via sbatch
 ##          : $fam_file_path         => Case file path
-##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $filehandle            => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $include_header        => Include header ("1") or not ("0")
 ##          : $log                   => Log object
 ##          : $parameter_href        => Hash with paremters from yaml file {REF}
@@ -56,7 +124,7 @@ sub create_fam_file {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $fam_file_path;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log;
     my $parameter_href;
     my $sample_info_href;
@@ -91,8 +159,8 @@ sub create_fam_file {
             store       => \$fam_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         include_header => {
             allow       => [ 0, 1 ],
@@ -158,22 +226,22 @@ sub create_fam_file {
     if ( $execution_mode eq q{system} ) {
 
         # Create anonymous filehandle
-        my $FILEHANDLE_SYS = IO::Handle->new();
+        my $filehandle_sys = IO::Handle->new();
 
         ## Create dir if it does not exists
         make_path( dirname($fam_file_path) );
 
-        open $FILEHANDLE_SYS, q{>}, $fam_file_path
+        open $filehandle_sys, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
         ## Adds the information from the samples in pedigree_lines, separated by \n
       LINE:
         foreach my $line (@pedigree_lines) {
 
-            say {$FILEHANDLE_SYS} $line;
+            say {$filehandle_sys} $line;
         }
         $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
-        close $FILEHANDLE_SYS;
+        close $filehandle_sys;
     }
 
     if ( $execution_mode eq q{sbatch} ) {
@@ -181,22 +249,22 @@ sub create_fam_file {
         ## Check to see if file already exists
         if ( not -f $fam_file_path ) {
 
-            if ($FILEHANDLE) {
+            if ($filehandle) {
 
-                say {$FILEHANDLE} q{#Generating '.fam' file};
+                say {$filehandle} q{#Generating '.fam' file};
 
                 ## Get parameters
                 my @strings = map { $_ . q{\n} } @pedigree_lines;
                 gnu_echo(
                     {
                         enable_interpretation => 1,
-                        FILEHANDLE            => $FILEHANDLE,
+                        filehandle            => $filehandle,
                         no_trailing_newline   => 1,
                         outfile_path          => $fam_file_path,
                         strings_ref           => \@strings,
                     }
                 );
-                say {$FILEHANDLE} $NEWLINE;
+                say {$filehandle} $NEWLINE;
             }
             else {
 
@@ -286,7 +354,7 @@ sub detect_founders {
 sub detect_sample_id_gender {
 
 ## Function : Detect gender of the current analysis
-## Returns  : "$found_male $found_female $found_other $found_other_count"
+## Returns  : "$found_male $found_female $found_other"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
 
@@ -316,10 +384,9 @@ sub detect_sample_id_gender {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Initialize
-    my $found_male        = 0;
-    my $found_female      = 0;
-    my $found_other       = 0;
-    my $found_other_count = 0;
+    my $found_male   = 0;
+    my $found_female = 0;
+    my $found_other  = 0;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -327,25 +394,28 @@ sub detect_sample_id_gender {
         ## If male
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 1 | ^male/sxm ) {
 
-            $found_male = 1;
+            $found_male++;
+            push @{ $active_parameter_href->{gender}{males} }, $sample_id;
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm ) {
             ## If female
 
-            $found_female = 1;
+            $found_female++;
+            push @{ $active_parameter_href->{gender}{females} }, $sample_id;
         }
         else {
             ## Must be other
 
-            ## Include since it might be male to enable analysis of Y.
-            $found_male = 1;
+            ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
+            ## will be performed from fastq reads
+            $found_male++;
 
             # "Other" metrics
-            $found_other = 1;
-            $found_other_count++;
+            $found_other++;
+            push @{ $active_parameter_href->{gender}{others} }, $sample_id;
         }
     }
-    return $found_male, $found_female, $found_other, $found_other_count;
+    return $found_male, $found_female, $found_other;
 }
 
 sub detect_trio {
@@ -418,6 +488,78 @@ sub detect_trio {
         }
     }
     return;
+}
+
+sub has_trio {
+
+## Function  : Check if case has trio
+## Returns   : 0 | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    ## At least three samples
+    return 0
+      if ( scalar @{ $active_parameter_href->{sample_ids} } < $TRIO_MEMBERS_COUNT );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $mother = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{mother},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        my $father = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{father},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Find a child
+        next SAMPLE_ID if ( not $father or not $mother );
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        return 1 if ( $phenotype eq q{affected} );
+    }
+    return 0;
 }
 
 sub gatk_pedigree_flag {
@@ -564,9 +706,9 @@ sub parse_yaml_pedigree_file {
     ## Check pedigree mandatory keys
     check_pedigree_mandatory_key(
         {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => $pedigree_href,
+            active_parameter_href => $active_parameter_href,
+            file_path             => $file_path,
+            pedigree_href         => $pedigree_href,
         }
     );
 

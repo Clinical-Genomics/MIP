@@ -5,14 +5,13 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - fqf_vcfanno_config
+   - fqa_vcfanno_config
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_indel
    - gatk_varianteval_gold
    - gatk_varianteval_dbsnp
-   - snpsift_annotation_files
-  element_separator: ,
+   - sv_fqa_vcfanno_config
   type: mip
 exome_target_bed:
   associated_recipe:
@@ -22,6 +21,7 @@ exome_target_bed:
   build_file: 1
   data_type: HASH
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 expected_coverage:
@@ -31,24 +31,6 @@ expected_coverage:
   mandatory: no
   type: mip
 ## genomeAnalysisToolKitPath
-## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
-gatk_bundle_download_version:
-  associated_recipe:
-   - bwa_mem
-   - gatk_baserecalibration
-   - cnvnator_ar
-   - gatk_haplotypecaller
-   - gatk_genotypegvcfs
-   - gatk_gathervcfs
-   - bcftools_mpileup
-   - gatk_variantrecalibration
-   - gatk_variantevalall
-   - gatk_variantevalexome
-   - picardtools_collecthsmetrics
-   - picardtools_collectmultiplemetrics
-  data_type: SCALAR
-  default: 2.8
-  type: recipe_argument
 gatk_logging_level:
   associated_recipe:
    - bcftools_mpileup
@@ -71,9 +53,7 @@ gatk_path:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 gatk_use_new_qual_calculator:
   associated_recipe:
    - gatk_haplotypecaller
@@ -86,6 +66,7 @@ genomic_set:
    - mip
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -97,7 +78,6 @@ human_genome_reference:
    - cnvnator_ar
    - delly_call
    - expansionhunter
-   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -113,6 +93,7 @@ human_genome_reference:
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
@@ -122,7 +103,6 @@ human_genome_reference_file_endings:
    - cnvnator_ar
    - delly_call
    - expansionhunter
-   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -150,19 +130,19 @@ recipe_core_number:
     bcftools_mpileup: 16
     bwa_mem: 36
     chanjo_sexcheck: 1
+    chromograph_ar: 1
     cnvnator_ar: 13
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
-    evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
-    freebayes_ar: 13
+    frequency_annotation: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 1
     gatk_gathervcfs: 1
+    gatk_genotypegvcfs: 1
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
@@ -178,11 +158,11 @@ recipe_core_number:
     plink: 1
     qccollect_ar: 1
     rhocall_ar: 13
+    rhocall_viz: 1
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
-    snpeff: 13
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -190,9 +170,20 @@ recipe_core_number:
     sv_reformat: 1
     sv_varianteffectpredictor: 0
     sv_vcfparser: 13
+    tiddit_coverage: 1
+    upd_ar: 1
+    varg_ar: 1
     variant_integrity_ar: 1
+    version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
+    vt_core: 1
+  type: mip
+set_recipe_core_number:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
   type: mip
 ## Memory per parallel process/core
 recipe_memory:
@@ -202,27 +193,37 @@ recipe_memory:
   default:
     cadd_ar: 4
     chanjo_sexcheck: 2
+    chromograph_ar: 5
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
+    frequency_annotation: 3
+    gatk_baserecalibration: 10
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
-    gatk_baserecalibration: 10
     gatk_variantrecalibration: 30
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
     rhocall_ar: 2
+    rhocall_viz: 2
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
-    sv_varianteffectpredictor: 18
+    sv_varianteffectpredictor: 9
     tiddit: 8
+    upd_ar: 3
     vcf2cytosure_ar: 6
     varianteffectpredictor: 7
+  type: mip
+set_recipe_memory:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
   type: mip
 recipe_time:
   associated_recipe:
@@ -234,14 +235,14 @@ recipe_time:
     bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
-    cnvnator_ar: 5
+    chromograph_ar: 1
+    cnvnator_ar: 1
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    evaluation: 3
     expansionhunter: 2
     fastqc_ar: 10
-    freebayes_ar: 30
+    frequency_annotation: 1
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
@@ -264,12 +265,12 @@ recipe_time:
     qccollect_ar: 1
     rankvariant: 10
     rhocall_ar: 5
+    rhocall_viz: 1
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 10
     samtools_subsample_mt: 1
     split_fastq_file: 10
-    snpeff: 10
     sv_annotate: 2
     sv_combinevariantcallsets: 2
     sv_rankvariant: 10
@@ -277,11 +278,22 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
     tiddit: 20
+    tiddit_coverage: 5
+    upd_ar: 1
+    varg_ar: 1
     varianteffectpredictor: 10
     variant_integrity_ar: 1
+    version_collect_ar: 1
     vcfparser_ar: 5
     vt_ar: 10
+    vt_core: 10
     vcf2cytosure_ar: 20
+  type: mip
+set_recipe_time:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
   type: mip
 infile_dirs:
   associated_recipe:
@@ -293,16 +305,14 @@ infile_dirs:
 picardtools_path:
   associated_recipe:
    - bwa_mem
-   - picardtools_mergesamfiles
+   - delly_reformat
    - markduplicates
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
-   - prepareforvariantannotationblock
-   - delly_reformat
+   - picardtools_mergesamfiles
+   - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 replace_iupac:
   associated_recipe:
    - mip
@@ -426,6 +436,12 @@ markduplicates:
    - picard
    - sambamba
   type: recipe
+markduplicates_no_bam_to_cram:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 markduplicates_picardtools_markduplicates:
   associated_recipe:
    - markduplicates
@@ -467,23 +483,29 @@ gatk_baserecalibration:
   outfile_suffix: ".bam"
   program_executables:
    - gatk
+   - samtools
   type: recipe
+gatk_baserecalibration_no_bam_to_cram:
+  associated_recipe:
+   - gatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 gatk_baserecalibration_known_sites:
   associated_recipe:
    - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
    - grch37_dbsnp_-138-.vcf
    - grch37_1000g_indels_-phase1-.vcf
    - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_baserecalibration_read_filters:
   associated_recipe:
    - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
    - OverclippedReadFilter
@@ -491,7 +513,6 @@ gatk_baserecalibration_read_filters:
 gatk_baserecalibration_static_quantized_quals:
   associated_recipe:
    - gatk_baserecalibration
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   default:
@@ -563,7 +584,6 @@ sambamba_depth_bed:
 sambamba_depth_cutoffs:
   associated_recipe:
    - sambamba_depth
-  element_separator: ,
   data_type: ARRAY
   default:
    - 10
@@ -596,6 +616,17 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+tiddit_coverage:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _tcov
+  outfile_suffix: ".wig"
+  program_executables:
+   - TIDDIT.py
+  type: recipe
 picardtools_collectmultiplemetrics:
   analysis_mode: sample
   associated_recipe:
@@ -624,6 +655,7 @@ cnvnator_ar:
   program_executables:
    - bcftools
    - cnvnator
+   - cnvnator2VCF.pl
    - samtools
   recipe_type: structural_variant_callers
   type: recipe
@@ -638,7 +670,7 @@ delly_call:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellycall
   program_executables:
    - delly
@@ -649,7 +681,7 @@ delly_reformat:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellyreformat
   program_executables:
    - delly
@@ -664,13 +696,13 @@ delly_exclude_file:
   data_type: SCALAR
   default: hg19_human_excl_-20150227-.tsv
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 delly_types:
   associated_recipe:
    - delly_call
    - delly_reformat
-  element_separator: ,
   data_type: ARRAY
   default:
    - DEL
@@ -695,8 +727,9 @@ expansionhunter_variant_catalog_file_path:
   associated_recipe:
    - expansionhunter
   data_type: SCALAR
-  default: grch37_expansionhunter_variant_catalog_-3.0.0-.json 
+  default: grch37_expansionhunter_variant_catalog_-3.1.2-.json
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
   update_path: absolute_path
@@ -712,6 +745,15 @@ manta:
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
+manta_call_regions_file_path:
+  associated_recipe:
+   - manta
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 tiddit:
   analysis_mode: case
   associated_recipe:
@@ -725,9 +767,10 @@ tiddit:
    - TIDDIT.py
   recipe_type: structural_variant_callers
   type: recipe
-tiddit_bin_size:
+tiddit_coverage_bin_size:
   associated_recipe:
    - tiddit
+   - tiddit_coverage
    - vcf2cytosure_ar
   data_type: SCALAR
   default: 500
@@ -754,19 +797,19 @@ sv_combinevariantcallsets_bcf_file:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_merge_prioritize:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  mandatory: no
+  default: tiddit,cnvnator,manta
   type: recipe_argument
 sv_vt_decompose:
   associated_recipe:
    - sv_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_annotate:
   analysis_mode: case
@@ -780,29 +823,46 @@ sv_annotate:
    - bcftools
    - svdb
   type: recipe
+sv_fqa_vcfanno_config:
+  associated_recipe:
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+sv_fqa_annotations:
+  associated_recipe:
+   - sv_annotate
+  data_type: ARRAY
+  default:
+   - GNOMADAF
+   - GNOMADAF_POPMAX
+  type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_frequency_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_svdb_query_db_files:
   associated_recipe:
    - sv_annotate
   data_type: HASH
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 vcf2cytosure_ar:
@@ -868,7 +928,6 @@ sv_varianteffectpredictor:
 sv_vep_features:
   associated_recipe:
    - sv_varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
    - appris
@@ -888,19 +947,15 @@ sv_vep_features:
    - offline
    - per_gene
    - protein
-   - regulatory
    - symbol
    - tsl
    - uniprot
   type: recipe_argument
-sv_vep_plugins:
+sv_vep_plugin:
   associated_recipe:
-   - sv_varianteffectpredictor
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ExACpLI
-   - LoFtool
+   - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
   type: recipe_argument
 sv_vcfparser:
   analysis_mode: case
@@ -920,7 +975,6 @@ sv_vcfparser_add_all_mt_var:
 sv_vcfparser_range_feature_annotation_columns:
   associated_recipe:
    - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -929,6 +983,7 @@ sv_vcfparser_range_feature_file:
    - sv_vcfparser
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -943,12 +998,11 @@ sv_vcfparser_per_gene:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_vcfparser_select_feature_annotation_columns:
   associated_recipe:
    - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -963,12 +1017,13 @@ sv_vcfparser_select_file_matching_column:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 sv_vcfparser_vep_transcripts:
   associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_rankvariant:
   analysis_mode: case
@@ -983,7 +1038,7 @@ sv_genmod_annotate_regions:
   associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sv_genmod_models_case_type:
   associated_recipe:
@@ -996,6 +1051,7 @@ sv_genmod_models_reduced_penetrance_file:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 sv_genmod_models_whole_gene:
@@ -1009,6 +1065,7 @@ sv_rank_model_file:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##Sv_reformat
@@ -1028,6 +1085,7 @@ sv_reformat_remove_genes_file:
    - sv_reformat
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -1037,7 +1095,7 @@ bcftools_mpileup:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _mpileup
   program_executables:
    - bcftools
@@ -1062,32 +1120,6 @@ bcftools_mpileup_keep_unnormalised:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-## Freebayes
-freebayes_ar:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _freebayes
-  program_executables:
-   - freebayes
-   - bcftools
-  recipe_type: variant_callers
-  outfile_suffix: ".vcf"
-  type: recipe
-freebayes_filter_variant:
-  associated_recipe:
-   - freebayes_ar
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-freebayes_keep_unnormalised:
-  associated_recipe:
-   - freebayes_ar
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -1103,7 +1135,6 @@ gatk_haplotypecaller:
 gatk_haplotypecaller_annotation:
   associated_recipe:
    - gatk_haplotypecaller
-  element_separator: ,
   data_type: ARRAY
   default:
    - BaseQualityRankSumTest
@@ -1137,7 +1168,7 @@ gatk_haplotypecaller_no_soft_clipped_bases:
   associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_haplotypecaller_pcr_indel_model:
   associated_recipe:
@@ -1151,6 +1182,7 @@ gatk_haplotypecaller_snp_known_set:
   data_type: SCALAR
   default: grch37_dbsnp_-138-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ## GATK Genotype Calibration
@@ -1170,6 +1202,7 @@ gatk_genotypegvcfs_ref_gvcf:
    - gatk_genotypegvcfs
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_genotypegvcfs_all_sites:
@@ -1236,12 +1269,12 @@ gatk_calculate_genotype_call_set:
   data_type: SCALAR
   default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_variantrecalibration_annotations:
   associated_recipe:
    - gatk_variantrecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
    - QD
@@ -1256,13 +1289,13 @@ gatk_variantrecalibration_dp_annotation:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_variantrecalibration_indel_max_gaussians:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_variantrecalibration_indel_tsfilter_level:
   associated_recipe:
@@ -1284,6 +1317,7 @@ gatk_variantrecalibration_resource_indel:
      grch37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
      grch37_mills_and_1000g_-gold_standard_indels-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_variantrecalibration_resource_snv:
@@ -1296,6 +1330,7 @@ gatk_variantrecalibration_resource_snv:
      grch37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=truth,prior=12.0"
      grch37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_variantrecalibration_snv_max_gaussians:
@@ -1313,7 +1348,6 @@ gatk_variantrecalibration_snv_tsfilter_level:
 gatk_variantrecalibration_ts_tranches:
   associated_recipe:
    - gatk_variantrecalibration
-  element_separator: ,
   data_type: ARRAY
   default:
    - 100
@@ -1341,7 +1375,7 @@ gatk_combinevariantcallsets_bcf_file:
   associated_recipe:
    - gatk_combinevariantcallsets
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 gatk_combinevariants_genotype_merge_option:
   associated_recipe:
@@ -1381,9 +1415,11 @@ rhocall_ar:
 rhocall_frequency_file:
   associated_recipe:
    - rhocall_ar
+   - frequency_annotation
   data_type: SCALAR
-  default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz
+  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##VT
@@ -1404,27 +1440,97 @@ vt_ar:
 vt_decompose:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_normalize:
   associated_recipe:
    - vt_ar
+   - vt_core
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_missing_alt_allele:
   associated_recipe:
    - vt_ar
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 vt_uniq:
   associated_recipe:
    - vt_ar
+   - vt_core
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+vt_core:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vt
+  program_executables:
+   - vt
+   - sed
+   - bgzip
+   - tabix
+  type: recipe
+frequency_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _af
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - vcfanno
+  type: recipe
+fqa_vcfanno_config:
+  associated_recipe:
+   - frequency_annotation
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+rhocall_viz:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
   data_type: SCALAR
   default: 0
-  type: recipe_argument
+  file_tag: ""
+  outfile_suffix: ".roh"
+  program_executables:
+   - bcftools
+   - rhocall
+  type: recipe
+upd_ar:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: _upd
+  outfile_suffix: ".bed"
+  program_executables:
+   - upd
+  type: recipe
+chromograph_ar:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: "_chromograph"
+  outfile_suffix: ".tar.gz"
+  program_executables:
+   - chromograph
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -1435,16 +1541,16 @@ frequency_filter:
   outfile_suffix: ".vcf"
   program_executables:
    - bcftools
-   - vcfanno
   type: recipe
-fqf_vcfanno_config:
+fqf_annotations:
   associated_recipe:
    - frequency_filter
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
+  data_type: ARRAY
+  default:
+   - GNOMADAF
+   - GNOMADAF_popmax
+   - SWEGENAF
+  type: recipe_argument
 fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter
@@ -1466,9 +1572,8 @@ cadd_ar:
 cadd_column_names:
   associated_recipe:
    - cadd_ar
-  element_separator: ,
   data_type: ARRAY
-  default: 
+  default:
    - Chrom
    - Pos
    - Ref
@@ -1480,8 +1585,9 @@ cadd_vcf_header_file:
   associated_recipe:
    - cadd_ar
   data_type: SCALAR
-  default: grch37_cadd_to_vcf_header_-1.0-.txt
+  default: cadd_to_vcf_header_-1.0-.txt
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_variantevalall:
@@ -1511,6 +1617,7 @@ gatk_varianteval_dbsnp:
   data_type: SCALAR
   default: grch37_dbsnp_-138_esa_129-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 gatk_varianteval_gold:
@@ -1520,6 +1627,7 @@ gatk_varianteval_gold:
   data_type: SCALAR
   default: grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ## VEP
@@ -1538,6 +1646,7 @@ vep_custom_annotation:
   associated_recipe:
    - varianteffectpredictor
   data_type: HASH
+  is_reference: 1
   mandatory: no
   type: path
 vep_directory_cache:
@@ -1545,19 +1654,12 @@ vep_directory_cache:
    - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
-  type: path
-  update_path: absolute_path
-vep_directory_path:
-  associated_recipe:
-   - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 vep_features:
   associated_recipe:
    - varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
    - appris
@@ -1583,29 +1685,20 @@ vep_features:
    - tsl
    - uniprot
   type: recipe_argument
-vep_plugins:
+vep_plugin:
   associated_recipe:
    - varianteffectpredictor
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ExACpLI
-   - LoFtool
-   - MaxEntScan
-  type: recipe_argument
-vep_plugin_pli_value_file_path:
-  associated_recipe:
-    - varianteffectpredictor
-  data_type: SCALAR
-  exists_check: file
+  data_type: HASH
+  is_reference: 1
   mandatory: no
-  reference: reference_dir
-  type: path
+  type: recipe_argument
 vep_plugins_dir_path:
   associated_recipe:
+    - sv_varianteffectpredictor
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
+  is_reference: 1
   type: path
   update_path: absolute_path
 ## VCFParser
@@ -1634,7 +1727,6 @@ vcfparser_outfile_count:
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
    - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -1643,13 +1735,13 @@ vcfparser_range_feature_file:
    - vcfparser_ar
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
 vcfparser_select_feature_annotation_columns:
   associated_recipe:
    - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -1664,86 +1756,14 @@ vcfparser_select_file_matching_column:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
+  default: 3
   type: recipe_argument
 vcfparser_vep_transcripts:
   associated_recipe:
    - vcfparser_ar
   data_type: SCALAR
-  default: 0
-  type: recipe_argument
-## SnpEFF
-snpeff:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
   default: 1
-  file_tag: _snpeff
-  outfile_suffix: ".vcf"
-  type: recipe
-snpeff_ann:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: 0
   type: recipe_argument
-snpsift_annotation_files:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: AF
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: AF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: AF
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_annotation_outinfo_key:
-  associated_recipe:
-   - snpeff
-  data_type: HASH
-  default:
-     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
-     grch37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
-     grch37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
-     grch37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpsift_dbnsfp_annotations:
-  associated_recipe:
-   - snpeff
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - GERP++_RS
-   - GERP++_NR
-   - phyloP100way_vertebrate
-   - phastCons100way_vertebrate
-   - REVEL_rankscore
-  type: path
-snpsift_dbnsfp_file:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: grch37_dbnsfp_-v3.5a-.txt.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-snpeff_genome_build_version:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  default: GRCh37.75
-  type: recipe_argument
-snpeff_path:
-  associated_recipe:
-   - snpeff
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 ## Case_check
 peddy_ar:
   analysis_mode: case
@@ -1793,33 +1813,12 @@ rtg_vcfeval_reference_genome:
   build_file: 1
   data_type: SCALAR
   exists_check: directory
-  reference: reference_dir
-  type: path
-evaluation:
-  analysis_mode: sample
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _genotypeconc
-  outfile_suffix: ".vcf"
-  program_executables:
-   - gzip
-   - bcftools
-  type: recipe
-nist_high_confidence_call_set:
-  associated_recipe:
-   - rtg_vcfeval
-   - evaluation
-  default: grch37_nist_hg001_-na12878_v2.19-.vcf
-  data_type: SCALAR
-  exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 nist_call_set_vcf:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   default:
    2.19:
     NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
@@ -1828,35 +1827,33 @@ nist_call_set_vcf:
     NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
     NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
   data_type: HASH
+  is_reference: 1
   type: recipe_argument
 nist_call_set_bed:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
-  default: 
-   2.19: 
+  default:
+   2.19:
     NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
    3.3.2:
     NA12878: grch37_nist_hg001_-na12878_v3.3.2-.bed
     NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
     NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
   data_type: HASH
+  is_reference: 1
   type: recipe_argument
 nist_id:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: HASH
   type: recipe_argument
 nist_versions:
   associated_recipe:
    - rtg_vcfeval
-   - evaluation
   data_type: ARRAY
   default:
    - 2.19
    - 3.3.2
-  element_separator: ,
   type: recipe_argument
 ## RankVariant
 rankvariant:
@@ -1874,8 +1871,8 @@ genmod_annotate_cadd_files:
   associated_recipe:
    - rankvariant
   data_type: ARRAY
-  element_separator: ,
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -1883,13 +1880,15 @@ genmod_annotate_regions:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 genmod_annotate_spidex_file:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
+  mandatory: no
   reference: reference_dir
   type: path
 genmod_models_case_type:
@@ -1904,19 +1903,21 @@ genmod_models_reduced_penetrance_file:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 genmod_models_whole_gene:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 rank_model_file:
   associated_recipe:
    - rankvariant
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 ##Endvariantannotationblock
@@ -1935,13 +1936,14 @@ rankvariant_binary_file:
   associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 endvariantannotationblock_remove_genes_file:
   associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
   exists_check: file
+  is_reference: 1
   mandatory: no
   reference: reference_dir
   type: path
@@ -1961,6 +1963,7 @@ qccollect_regexp_file:
   data_type: SCALAR
   default: qc_regexp_v1.18.yaml
   exists_check: file
+  is_reference: 1
   reference: reference_dir
   type: path
 qccollect_sampleinfo_file:
@@ -1992,3 +1995,20 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+varg_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: ""
+  outfile_suffix: ".txt"
+  program_executables:
+    - varg
+  type: recipe
+varg_truth_set_vcf:
+  associated_recipe:
+    - varg_ar
+  data_type: SCALAR
+  exists_check: file
+  type: path

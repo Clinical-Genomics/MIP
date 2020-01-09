@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.6;
+our $VERSION = 1.08;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -99,7 +95,6 @@ foreach my $parameter_name (@order_parameters) {
             active_parameter_href => \%active_parameter,
             associated_recipes_ref =>
               \@{ $parameter{$parameter_name}{associated_recipe} },
-            log            => $log,
             parameter_href => \%parameter,
             parameter_name => $parameter_name,
         }
@@ -136,7 +131,6 @@ trap {
             active_parameter_href => \%active_parameter,
             associated_recipes_ref =>
               \@{ $parameter{sv_vcfparser_select_file}{associated_recipe} },
-            log            => $log,
             parameter_href => \%parameter,
             parameter_name => q{sv_vcfparser_select_file},
         }

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Stringtie} => [qw{ stringtie }],
-        q{MIP::Test::Fixtures}                     => [qw{ test_standard_cli }],
+        q{MIP::Program::Stringtie} => [qw{ stringtie }],
+        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Stringtie qw{ stringtie };
+use MIP::Program::Stringtie qw{ stringtie };
 
 diag(   q{Test stringtie from Stringtie.pm v}
-      . $MIP::Program::Variantcalling::Stringtie::VERSION
+      . $MIP::Program::Stringtie::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,7 +67,7 @@ Readonly my $THREADS      => 16;
 my @function_base_commands = qw{ stringtie };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

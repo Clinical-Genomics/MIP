@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -71,9 +71,8 @@ diag(   q{Test write_yaml from Yaml.pm v}
 my $test_dir = File::Temp->newdir();
 
 ## Given a hash
-my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my $yaml_file_path = catfile( $test_dir, q{ap_test.yaml} );
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+my $yaml_file_path   = catfile( $test_dir, q{ap_test.yaml} );
 
 write_yaml(
     {

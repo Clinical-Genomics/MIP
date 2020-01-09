@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Bwa} => [qw{ bwa_index }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Program::Bwa}   => [qw{ bwa_index }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Bwa qw{ bwa_index };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Bwa qw{ bwa_index };
 
 diag(   q{Test bwa_index from Bwa.pm v}
-      . $MIP::Program::Alignment::Bwa::VERSION
+      . $MIP::Program::Bwa::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,9 +63,9 @@ diag(   q{Test bwa_index from Bwa.pm v}
 my @function_base_commands = qw{ bwa index };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -79,9 +75,9 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -99,6 +95,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    construction_algorithm => {
+        input           => q{bwtsw},
+        expected_output => q{-a bwtsw},
+    },
     prefix => {
         input           => q{test_file},
         expected_output => q{-p test_file},
@@ -106,10 +106,6 @@ my %specific_argument = (
     reference_genome => {
         input           => q{test_file.fasta},
         expected_output => q{test_file.fasta},
-    },
-    construction_algorithm => {
-        input           => q{bwtsw},
-        expected_output => q{-a bwtsw},
     },
 );
 

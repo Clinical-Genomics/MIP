@@ -19,12 +19,13 @@ use utf8;
 
 ## CPANM
 use autodie qw{ open close :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use List::Util qw{ any };
 use Readonly;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SEMICOLON $SPACE $TAB };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -51,15 +52,8 @@ BEGIN {
     );
 }
 
-## Constants
-Readonly my $COMMA     => q{,};
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $SEMICOLON => q{;};
-Readonly my $SPACE     => q{ };
-Readonly my $TAB       => qq{\t};
-
-my ( $infile, $config_file );
-my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
+my ( $config_file, $infile );
+my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
 our $VERSION = 2.05;
 
@@ -187,7 +181,7 @@ if ( $infile =~ /\/sv_\w+\//sxm ) {
 }
 else {
 
-##Snv/indel files
+## Snv/indel files
 
 ## Reads infile in vcf format and parses annotations
     read_infile_vcf(
@@ -359,36 +353,36 @@ sub read_infile_vcf {
     my %vep_format_field;
 
     # Catch vcf header #CHROM line
-    my @vcf_format_columns;
     my %meta_data;
+    my @vcf_format_columns;
     my %vcf_header;
     my %vcf_info_key;
     my %vcf_info_csq_key;
 
     $log->info( q{Testing vcf header in file: } . $infile_vcf, $NEWLINE x 2 );
 
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
     ## Read file
-    open $FILEHANDLE, q{<}, $infile_vcf
+    open my $filehandle, q{<}, $infile_vcf
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
+
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
         ## Quit reading
         last LINE if ( $INPUT_LINE_NUMBER > $MAX_LINE_TO_READ );
 
-        # Avoid blank lines
-        next LINE if (m/ ^\s+$ /sxm);
+        ## Unpack line
+        my $line = $_;
+
+        ## Skip blank lines
+        next LINE if ( $line =~ /^\s+$/sxm );
 
         # If meta data
-        if (/ ^\#\#\S+= /sxm) {
+        if ( $line =~ /\A [#]{2}/sxm ) {
 
-            my $line = $_;
             parse_meta_data(
                 {
                     meta_data_href   => \%meta_data,
@@ -417,7 +411,7 @@ sub read_infile_vcf {
             }
             next LINE;
         }
-        if (/ ^\#CHROM /xsm) {
+        if ( $line =~ /\A [#]{1}CHROM/sxm ) {
 
             # Split vcf format line
             @vcf_format_columns = split $TAB;
@@ -437,9 +431,10 @@ sub read_infile_vcf {
             ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    recipe_mode     => $active_parameter_href->{frequency_filter},
-                    toml_file_path  => $active_parameter_href->{fqf_vcfanno_config},
-                    vcf_header_href => \%vcf_header,
+                    fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
+                    recipe_mode         => $active_parameter_href->{frequency_filter},
+                    toml_file_path      => $active_parameter_href->{fqa_vcfanno_config},
+                    vcf_header_href     => \%vcf_header,
                 }
             );
 
@@ -449,20 +444,6 @@ sub read_infile_vcf {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
                     vcfparser_mode      => $active_parameter_href->{vcfparser_ar},
-                }
-            );
-
-            ## Test snpeff
-            _test_snpeff_in_vcf_header(
-                {
-                    snpeff_mode => $active_parameter_href->{snpeff},
-                    snpsift_annotation_files_href =>
-                      \%{ $active_parameter_href->{snpsift_annotation_files} },
-                    snpsift_annotation_outinfo_key_href =>
-                      \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
-                    snpsift_dbnsfp_annotations_ref =>
-                      \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
-                    vcf_header_href => \%vcf_header,
                 }
             );
 
@@ -519,7 +500,7 @@ sub read_infile_vcf {
             }
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     ## Check keys found in INFO field
     $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
@@ -643,14 +624,14 @@ sub read_sv_infile_vcf {
     $log->info( q{Testing vcf header in file: } . $infile_vcf, $NEWLINE x 2 );
 
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Read file
-    open $FILEHANDLE, q{<}, $infile_vcf
+    open $filehandle, q{<}, $infile_vcf
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
@@ -721,8 +702,9 @@ sub read_sv_infile_vcf {
             ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    recipe_mode     => $active_parameter_href->{sv_annotate},
-                    toml_file_path  => $active_parameter_href->{fqf_vcfanno_config},
+                    fqf_annotations_ref => $active_parameter_href->{sv_fqa_annotations},
+                    recipe_mode         => $active_parameter_href->{sv_annotate},
+                    toml_file_path  => $active_parameter_href->{sv_fqa_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -786,7 +768,7 @@ sub read_sv_infile_vcf {
             }
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
 
     ## Check keys found in INFO field
     $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
@@ -952,23 +934,28 @@ sub read_range_file {
     my @headers;
 
     ## Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Read file
-    open $FILEHANDLE, q{<}, $infile_path
+    open $filehandle, q{<}, $infile_path
       or
       $log->logdie( q{Cannot open} . $SPACE . $infile_path . q{:} . $OS_ERROR, $NEWLINE );
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         chomp;
 
-        next LINE if (m/ ^\s+$ /sxm);
+        ## Unpack line
+        my $line = $_;
 
-        next LINE if (/^\#\#/sxm);
+        ## Skip blank lines
+        next LINE if ( $line =~ /^\s+$/sxm );
 
-        if (/^\#/xsm) {
+        ## Header meta data
+        next LINE if ( $line =~ /\A [#]{2}/sxm );
+
+        if ( $line =~ /\A [#]{1}CHROM/sxm ) {
 
             @headers = split $TAB;
 
@@ -985,7 +972,7 @@ sub read_range_file {
             next LINE;
         }
     }
-    close $FILEHANDLE;
+    close $filehandle;
     $log->info( q{Finished reading } . $range_file_key . q{ file: } . $infile_path,
         $NEWLINE );
     return;
@@ -1108,9 +1095,9 @@ sub _test_sv_annotate_in_vcf_header {
 
 ## Function : Test if sv_annotate info keys are present in vcf header
 ## Returns  :
-## Arguments: $sv_annotate_mode       => sv_annotate has been used or not
-##          : $sv_frequency_filter    => Frequency filter has been used or not
-##          : $vcf_header_href        => Vcf header info
+## Arguments: $sv_annotate_mode    => sv_annotate has been used or not
+##          : $sv_frequency_filter => Frequency filter has been used or not
+##          : $vcf_header_href     => Vcf header info
 
     my ($arg_href) = @_;
 
@@ -1145,13 +1132,12 @@ sub _test_sv_annotate_in_vcf_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## sv_annotate has been used
-    if ($sv_annotate_mode) {
+    return if ( not $sv_annotate_mode );
 
-        return if ( not $sv_frequency_filter );
+    return if ( not $sv_frequency_filter );
 
-        ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
-            q{Vcfanno filter: 1000GAF key} );
-    }
+    ok( defined $vcf_header_href->{INFO}{q{clinical_genomics_mipAF}},
+        q{Svdb filter: clinical_genomics_mipAF key} );
     return;
 }
 
@@ -1195,13 +1181,13 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## sv_combinevariantcallset has been used
-    if ($sv_combinevariantcallsets_mode) {
+    return if ( not $sv_combinevariantcallsets_mode );
 
-        return if ( not $sv_vt_decompose_mode );
+    return if ( not $sv_vt_decompose_mode );
 
-        ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-            q{VTDecompose key: OLD_MULTIALLELIC} );
-    }
+    ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
+        q{VTDecompose key: OLD_MULTIALLELIC} );
+
     return;
 }
 
@@ -1256,18 +1242,17 @@ sub _test_vt_in_vcf_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## VT has been used
-    if ($vt_mode) {
+    return if ( not $vt_mode );
 
-        if ($vt_decompose_mode) {
+    if ($vt_decompose_mode) {
 
-            ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-                q{VTDecompose key: OLD_MULTIALLELIC} );
-        }
-        if ($vt_normalize_mode) {
+        ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
+            q{VTDecompose key: OLD_MULTIALLELIC} );
+    }
+    if ($vt_normalize_mode) {
 
-            ok( exists $vcf_header_href->{INFO}{OLD_VARIANT},
-                q{VTNormalize key: OLD_VARIANT} );
-        }
+        ok( exists $vcf_header_href->{INFO}{OLD_VARIANT},
+            q{VTNormalize key: OLD_VARIANT} );
     }
     return;
 }
@@ -1276,18 +1261,27 @@ sub _test_frequency_filter_in_vcf_header {
 
 ## Function : Test if freuqency filter info keys are present in vcf header
 ## Returns  :
-## Arguments: $recipe_mode     => Frequency filter has been used or not for recipe
-##          : $toml_file_path  => Toml config file path
-##          : $vcf_header_href => Vcf header info
+## Arguments: $fqf_annotations_ref => Frequency annotation to use in filtering
+##          : $recipe_mode         => Frequency filter has been used or not for recipe
+##          : $toml_file_path      => Toml config file path
+##          : $vcf_header_href     => Vcf header info
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $fqf_annotations_ref;
     my $recipe_mode;
     my $toml_file_path;
     my $vcf_header_href;
 
     my $tmpl = {
+        fqf_annotations_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_annotations_ref,
+            strict_type => 1,
+        },
         recipe_mode => {
             allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
@@ -1311,27 +1305,32 @@ sub _test_frequency_filter_in_vcf_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
     use MIP::File::Format::Toml qw{ load_toml };
 
     my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
 
     ## Frequency filter has been used for recipe
-    if ($recipe_mode) {
+    return if ( not $recipe_mode );
 
-      ANNOTATION:
-        foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-          VCF_KEY:
-            foreach my $names ( @{ $annotation_href->{names} } ) {
+        ## Limit to requested frequency annotations
+        my @frequency_annotations =
+          intersect( @{$fqf_annotations_ref}, @{ $annotation_href->{names} } );
 
-                ok(
-                    defined $vcf_header_href->{INFO}{$names},
-                    q{Frequency filter: } . $names . q{ key}
-                );
-            }
+        next ANNOTATION if ( not @frequency_annotations );
+
+      VCF_KEY:
+        foreach my $vcf_annotation (@frequency_annotations) {
+
+            ok(
+                defined $vcf_header_href->{INFO}{$vcf_annotation},
+                q{Frequency filter: } . $vcf_annotation . q{ key}
+            );
         }
     }
-
     return;
 }
 
@@ -1376,143 +1375,25 @@ sub _test_vcfparser_in_vcf_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ($vcfparser_mode) {
+    return if ( not $vcfparser_mode );
 
-      VCFPARSER_KEY:
-        for my $vcfparser_key ( keys %{$vcfparser_data_href} ) {
+  VCFPARSER_KEY:
+    for my $vcfparser_key ( keys %{$vcfparser_data_href} ) {
 
-            ok( defined $vcf_header_href->{INFO}{$vcfparser_key},
-                q{Vcfparser key: } . $vcfparser_key );
-        }
-
-        ## Keys from vcfparser.pl that are dynamically created from parsing the data
-        my @vcfparser_dynamic_keys = qw{ most_severe_consequence };
-
-      DYNAMIC_KEY:
-        foreach my $dynamic_key (@vcfparser_dynamic_keys) {
-
-            ok(
-                defined $vcf_header_href->{INFO}{$dynamic_key},
-                q{Vcfparser dynamic keys: } . $dynamic_key
-            );
-        }
+        ok( defined $vcf_header_href->{INFO}{$vcfparser_key},
+            q{Vcfparser key: } . $vcfparser_key );
     }
-    return;
-}
 
-sub _test_snpeff_in_vcf_header {
+    ## Keys from vcfparser.pl that are dynamically created from parsing the data
+    my @vcfparser_dynamic_keys = qw{ most_severe_consequence };
 
-## Function : Test if snpeff info keys are present in vcf header
-## Returns  :
-## Arguments: $snpeff_mode                         => Snpeff_Mode description
-##          : $snpsift_dbnsfp_annotations_ref      => SnpSift dbnsfp annotations {REF}
-##          : $snpsift_annotation_outinfo_key_href => Snp sift annotation keys {REF}
-##          : $vcf_header_href                     => Vcf header info {REF}
-##          : $snpsift_annotation_files_href       => Snp sift annotation files {REF}
+  DYNAMIC_KEY:
+    foreach my $dynamic_key (@vcfparser_dynamic_keys) {
 
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-    my $snpsift_dbnsfp_annotations_ref;
-    my $vcf_header_href;
-
-    ## Default(s)
-    my $snpeff_mode;
-
-    my $tmpl = {
-        snpeff_mode => {
-            allow       => qr{ \A\d+\z }sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$snpeff_mode,
-            strict_type => 1,
-        },
-        snpsift_annotation_files_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_files_href,
-            strict_type => 1,
-        },
-        snpsift_annotation_outinfo_key_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_annotation_outinfo_key_href,
-            strict_type => 1,
-        },
-        snpsift_dbnsfp_annotations_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$snpsift_dbnsfp_annotations_ref,
-            strict_type => 1,
-        },
-        vcf_header_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$vcf_header_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Snpeff
-    if ($snpeff_mode) {
-
-        my @reformated_keys;
-
-      ANNOTATION_FILE:
-        for my $annotation_file ( keys %{$snpsift_annotation_files_href} ) {
-
-            ## Alias
-            my $annotation_file_info_key_string =
-              $snpsift_annotation_files_href->{$annotation_file};
-            if ( exists $snpsift_annotation_outinfo_key_href->{$annotation_file} ) {
-
-                ## Alias
-                my $annotation_outinfo_key_string =
-                  $snpsift_annotation_outinfo_key_href->{$annotation_file};
-
-                @reformated_keys = split $COMMA, $annotation_outinfo_key_string;
-
-                my @original_vcf_keys = split $COMMA, $annotation_file_info_key_string;
-
-                ## Modify list elements in place to produce -names flag from SnpEff
-              ELEMENT:
-                foreach my $elements (@reformated_keys) {
-
-                    $elements .= shift @original_vcf_keys;
-                }
-            }
-            else {
-
-                @reformated_keys = split $COMMA, $annotation_file_info_key_string;
-            }
-          SNPSIFT_KEY:
-            foreach my $snpsift_key (@reformated_keys) {
-
-                ok(
-                    defined $vcf_header_href->{INFO}{$snpsift_key},
-                    q{Snpsift annotation key: } . $snpsift_key
-                );
-            }
-        }
-      DBNSFP_KEY:
-        for my $dbnsfp_key ( @{$snpsift_dbnsfp_annotations_ref} ) {
-
-            ## Special case due to the fact that snpEff v4.2 transforms + to _ for some reason
-            $dbnsfp_key =~ s/[+]/_/gsxm;
-            $dbnsfp_key = q{dbNSFP_} . $dbnsfp_key;
-            ok(
-                defined $vcf_header_href->{INFO}{$dbnsfp_key},
-                q{Snpsift dbNSFP_key: } . $dbnsfp_key
-            );
-        }
+        ok(
+            defined $vcf_header_href->{INFO}{$dynamic_key},
+            q{Vcfparser dynamic keys: } . $dynamic_key
+        );
     }
     return;
 }
@@ -1580,40 +1461,34 @@ sub _test_rankvariants_in_vcf_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ($rankvariant_mode) {
+    return if ( not $rankvariant_mode );
 
-        ## Keys from genmod
-        my @genmod_keys;
+    ## Keys from genmod
+    my @genmod_keys = qw{ Compounds RankScore ModelScore
+      GeneticModels };
 
-        ## Only unaffected - do nothing
-        if (   @{$unaffected_samples_ref}
-            && @{$unaffected_samples_ref} eq @{$sample_ids_ref} )
-        {
-        }
-        else {
+    ## Only unaffected - undef genmod keys
+    if (   @{$unaffected_samples_ref}
+        && @{$unaffected_samples_ref} eq @{$sample_ids_ref} )
+    {
+        undef @genmod_keys;
+    }
 
-            @genmod_keys = qw{ Compounds RankScore ModelScore
-              GeneticModels };
-        }
+  GENMOD_KEY:
+    foreach my $genmod_key (@genmod_keys) {
 
-      GENMOD_KEY:
-        foreach my $genmod_key (@genmod_keys) {
+        ok( defined $vcf_header_href->{INFO}{$genmod_key}, q{Genmod: } . $genmod_key );
+    }
 
-            ok( defined $vcf_header_href->{INFO}{$genmod_key},
-                q{Genmod: } . $genmod_key );
-        }
+    ## Spidex key from genmodAnnotate
+    if ($spidex_file) {
 
-        ## Spidex key from genmodAnnotate
-        if ($spidex_file) {
+        ok( defined $vcf_header_href->{INFO}{SPIDEX}, q{Genmod annotate: SPIDEX key} );
+    }
+    ## CADD key from genmodAnnotate
+    if ( @{$genmod_annotate_cadd_files_ref} ) {
 
-            ok( defined $vcf_header_href->{INFO}{SPIDEX},
-                q{Genmod annotate: SPIDEX key} );
-        }
-        ## CADD key from genmodAnnotate
-        if ( @{$genmod_annotate_cadd_files_ref} ) {
-
-            ok( defined $vcf_header_href->{INFO}{CADD}, q{Genmod annotate: CADD key} );
-        }
+        ok( defined $vcf_header_href->{INFO}{CADD}, q{Genmod annotate: CADD key} );
     }
     return;
 }
@@ -1659,34 +1534,32 @@ sub parse_vep_csq_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( exists $vcf_record_href->{INFO_key_value}{CSQ} ) {
+    return if ( not exists $vcf_record_href->{INFO_key_value}{CSQ} );
 
-        my %csq_transcript_effect;
+    my %csq_transcript_effect;
 
-        ## VEP map
-        my %vep_format_field_index = reverse %{$vep_format_field_href};
+    ## VEP map
+    my %vep_format_field_index = reverse %{$vep_format_field_href};
 
-        ## Split into transcripts
-        my @transcripts = split $COMMA, $vcf_record_href->{INFO_key_value}{CSQ};
+    ## Split into transcripts
+    my @transcripts = split $COMMA, $vcf_record_href->{INFO_key_value}{CSQ};
 
-      CSQ_TRANSCRIPT:
-        while ( my ( $transcript_index, $transcript ) = each @transcripts ) {
+  CSQ_TRANSCRIPT:
+    while ( my ( $transcript_index, $transcript ) = each @transcripts ) {
 
-            my @transcript_effects = split /[|]/sxm, $transcript;
+        my @transcript_effects = split /[|]/sxm, $transcript;
 
-          TRANCRIP_EFFECT:
-            while ( my ( $effect_index, $effect ) = each @transcript_effects ) {
+      TRANCRIP_EFFECT:
+        while ( my ( $effect_index, $effect ) = each @transcript_effects ) {
 
-                if ( exists $vep_format_field_index{$effect_index} ) {
+            if ( exists $vep_format_field_index{$effect_index} ) {
 
-                    ## Alias
-                    my $vep_format_key_ref = \$vep_format_field_index{$effect_index};
-                    $csq_transcript_effect{$transcript_index}{ ${$vep_format_key_ref} } =
-                      $effect;
-                }
+                ## Alias
+                my $vep_format_key_ref = \$vep_format_field_index{$effect_index};
+                $csq_transcript_effect{$transcript_index}{ ${$vep_format_key_ref} } =
+                  $effect;
             }
         }
-        return %csq_transcript_effect;
     }
-    return;
+    return %csq_transcript_effect;
 }

@@ -35,7 +35,7 @@ sub awk {
 
 ## Function : Perl wrapper for generic commands module for awk.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $filehandle             => Filehandle to write to
 ##          : $statement              => Scan for set of patterns specified literally
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -45,7 +45,7 @@ sub awk {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $statement;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -55,8 +55,8 @@ sub awk {
     ## Default(s)
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         statement => {
             defined     => 1,
@@ -100,7 +100,7 @@ sub awk {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

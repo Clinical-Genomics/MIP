@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.16;
+our $VERSION = 1.22;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -131,10 +131,10 @@ sub run {
 ## File info hash
     my %file_info = (
 
-        fusion_filter_reference_genome      => [qw{ _fusion_filter_genome_dir }],
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
+        star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
     );
 
     mip_analyse(
@@ -154,6 +154,46 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{arriba_ar} => (
+            cmd_aliases   => [qw{ arriba }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Detect and visualize fusions using Arriba},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{arriba_blacklist_path} => (
+            cmd_aliases   => [qw{ abp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba blacklist file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_cytoband_path} => (
+            cmd_aliases   => [qw{ acbp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba cytoband file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_proteindomain_path} => (
+            cmd_aliases   => [qw{ apdp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba protein domain file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
 
     option(
         q{bcftools_merge} => (
@@ -186,12 +226,22 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_bundle_download_version} => (
-            cmd_aliases   => [qw{ gbdv }],
-            cmd_tags      => [q{Default: 2.8}],
-            documentation => q{GATK FTP bundle download version},
+        q{dna_vcf_file} => (
+            cmd_aliases   => [qw{ dvf }],
+            cmd_flag      => q{dna_vcf_file},
+            cmd_tags      => [q{Format: vcf | bcf}],
+            documentation => q{Variantcalls made on wgs or wes data },
             is            => q{rw},
-            isa           => Num,
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{force_dna_ase} => (
+            cmd_aliases   => [qw{ fda }],
+            documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -202,16 +252,6 @@ sub _build_usage {
             documentation => q{Disable auto index creation and locking when reading rods},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{gatk_downsample_to_coverage} => (
-            cmd_aliases   => [qw{ gdco }],
-            cmd_tags      => [q{Default: 1000}],
-            documentation => q{Coverage to downsample to at any given locus},
-            is            => q{rw},
-            isa           => Int,
         )
     );
 
@@ -251,16 +291,6 @@ sub _build_usage {
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{is_from_sample} => (
-            cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=is_from_sample}],
-            documentation => q{Sample origin of replicate},
-            is            => q{rw},
-            isa           => HashRef,
         )
     );
 
@@ -333,6 +363,16 @@ sub _build_usage {
               q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ gbrnbtc }],
+            cmd_flag      => q{gatk_baserecal_nbtc},
+            documentation => q{Generate CRAM from BAM},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -417,6 +457,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Align reads using Star aln},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_ulimit_n} => (
+            cmd_aliases   => [qw{ sun }],
+            documentation => q{Set ulimit -n for star recipe},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -511,6 +560,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{star_fusion_min_junction_reads} => (
+            cmd_tags      => [q{Star-Fusion parameter}],
+            documentation => q{STAR-Fusion: Minimum junction spanning reads},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{rseq} => (
             cmd_aliases   => [qw{ rseq }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -595,6 +653,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Markduplicate reads},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{markduplicates_no_bam_to_cram} => (
+            cmd_aliases   => [qw{ mdnbtc }],
+            cmd_flag      => q{markduplicates_nbtc},
+            documentation => q{Generate CRAM from BAM},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -926,15 +994,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         q{vep_directory_cache} => (
             cmd_aliases   => [qw{ vepc }],
             documentation => q{Specify the cache directory to use},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{vep_directory_path} => (
-            cmd_aliases   => [qw{ vepp }],
-            documentation => q{Path to VEP script directory},
             is            => q{rw},
             isa           => Str,
         )

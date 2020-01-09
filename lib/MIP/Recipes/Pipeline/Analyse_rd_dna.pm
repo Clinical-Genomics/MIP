@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -143,13 +143,19 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_dna };
+    use MIP::Constants qw{ set_analysis_constants };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Parse::Reference qw{ parse_reference_for_vt };
+    use MIP::Set::Analysis
+      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+    use MIP::Recipes::Analysis::Chromograph
+      qw{ analysis_chromograph analysis_chromograph_proband };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -157,7 +163,7 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
+    use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
@@ -172,24 +178,24 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
+    use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
-    use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
-      qw{ analysis_picardtools_genotypeconcordance };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
-    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rhocall
+      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
@@ -198,17 +204,16 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
-    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
+    use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
+    use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
-    use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna(
@@ -225,6 +230,9 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
+    ## Set analysis constants
+    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -240,22 +248,35 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
+    ## Check if vt has processed references
+    ## If not try to reprocesses them before launching recipes
+    $log->info(q{[Reference check - Reference processed by VT]});
+    parse_reference_for_vt(
+        {
+            active_parameter_href   => $active_parameter_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            parameter_href          => $parameter_href,
+        }
+    );
+
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus => \&analysis_analysisrunstatus,
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                          # Depends on genome build
-        cadd_ar           => \&analysis_cadd,
-        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-        cnvnator_ar       => \&analysis_cnvnator,
-        delly_call        => \&analysis_delly_call,
-        delly_reformat    => \&analysis_delly_reformat,
+        cadd_ar => undef,    # Depends on human reference version
+        chanjo_sexcheck => \&analysis_chanjo_sex_check,
+        chromograph_ar  => undef,                         # Depends on pedigree
+        cnvnator_ar     => \&analysis_cnvnator,
+        delly_call      => \&analysis_delly_call,
+        delly_reformat  => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
-        evaluation                  => \&analysis_picardtools_genotypeconcordance,
         fastqc_ar                   => \&analysis_fastqc,
-        freebayes_ar                => \&analysis_freebayes_calling,
+        frequency_annotation        => \&analysis_frequency_annotation,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
         gatk_gathervcfs             => \&analysis_gatk_gathervcfs,
@@ -280,11 +301,11 @@ sub pipeline_analyse_rd_dna {
         qccollect_ar                     => \&analysis_mip_qccollect,
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
+        rhocall_viz    => \&analysis_rhocall_viz,
         rtg_vcfeval    => \&analysis_rtg_vcfeval,
         sacct          => \&analysis_sacct,
         sambamba_depth => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
-        snpeff                    => \&analysis_snpeff,
         split_fastq_file          => \&analysis_split_fastq_file,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
@@ -293,11 +314,14 @@ sub pipeline_analyse_rd_dna {
         sv_varianteffectpredictor => undef,                   # Depends on analysis type
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
-        varianteffectpredictor    => \&analysis_vep,
-        variant_integrity_ar => \&analysis_variant_integrity,
-        vcfparser_ar         => \&analysis_mip_vcfparser,
-        vcf2cytosure_ar      => \&analysis_vcf2cytosure,
-        vt_ar                => \&analysis_vt,
+        tiddit_coverage        => \&analysis_tiddit_coverage,
+        varg_ar                => \&analysis_varg,
+        varianteffectpredictor => \&analysis_vep,
+        variant_integrity_ar   => \&analysis_variant_integrity,
+        version_collect_ar     => \&analysis_mip_vercollect,
+        vcfparser_ar           => \&analysis_mip_vcfparser,
+        vcf2cytosure_ar        => \&analysis_vcf2cytosure,
+        vt_ar                  => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe
@@ -324,6 +348,15 @@ sub pipeline_analyse_rd_dna {
             analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_source =>
               $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
+        }
+    );
+
+    ## Set correct cadd recipe depending on version of the human_genome_reference
+    set_recipe_cadd(
+        {
+            analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }
@@ -361,6 +394,15 @@ sub pipeline_analyse_rd_dna {
 
           SAMPLE_ID:
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+                ## Set chromograph recipe depending on pedigree and proband
+                set_recipe_chromograph(
+                    {
+                        analysis_recipe_href => \%analysis_recipe,
+                        sample_id            => $sample_id,
+                        sample_info_href     => $sample_info_href,
+                    }
+                );
 
                 $analysis_recipe{$recipe}->(
                     {

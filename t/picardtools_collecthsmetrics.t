@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,19 +40,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Picardtools} =>
-          [qw{ picardtools_collecthsmetrics }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Picardtools} => [qw{ picardtools_collecthsmetrics }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Picardtools qw{ picardtools_collecthsmetrics };
+use MIP::Program::Picardtools qw{ picardtools_collecthsmetrics };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm v}
-      . $MIP::Program::Alignment::Picardtools::VERSION
+      . $MIP::Program::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,10 +60,10 @@ diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ CollectHsMetrics };
+my @function_base_commands = qw{ picard CollectHsMetrics };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -77,27 +73,29 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     bait_interval_file_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
-        expected_output => q{BAIT_INTERVALS=}
+        inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
+        expected_output => q{-BAIT_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },
     target_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_interval_list_1 }) ],
-        expected_output => q{TARGET_INTERVALS=}
+        expected_output => q{-TARGET_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_interval_list_1 }),
     },
     infile_path => {
         input           => catfile(qw{ indirectory infile_1 }),
-        expected_output => q{INPUT=} . catfile(qw{ indirectory infile_1 }),
+        expected_output => q{-INPUT} . $SPACE . catfile(qw{ indirectory infile_1 }),
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
-        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{R=}
+        input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        expected_output => q{-R}
+          . $SPACE
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
@@ -105,26 +103,27 @@ my %required_argument = (
 my %specific_argument = (
     create_index => {
         input           => q{true},
-        expected_output => q{CREATE_INDEX=true},
+        expected_output => q{-CREATE_INDEX true},
     },
     bait_interval_file_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
-        expected_output => q{BAIT_INTERVALS=}
+        inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
+        expected_output => q{-BAIT_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },
     target_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_interval_list_1 }) ],
-        expected_output => q{TARGET_INTERVALS=}
+        expected_output => q{-TARGET_INTERVALS}
+          . $SPACE
           . catfile(qw{ indirectory exome_interval_list_1 }),
     },
     infile_path => {
         input           => q{infile_1},
-        expected_output => q{INPUT=infile_1},
+        expected_output => q{-INPUT infile_1},
     },
     outfile_path => {
         input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+        expected_output => q{-OUTPUT} . $SPACE . catfile(qw{ out_directory outfile }),
     },
 );
 
@@ -139,10 +138,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

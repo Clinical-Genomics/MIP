@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -99,7 +99,7 @@ diag(   q{Test check_sample_ids from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -120,7 +120,7 @@ trap {
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -140,7 +140,7 @@ trap {
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -160,7 +160,7 @@ trap {
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -180,7 +180,7 @@ trap {
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

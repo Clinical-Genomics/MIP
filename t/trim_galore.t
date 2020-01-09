@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Trimming::Trim_galore} => [qw{ trim_galore }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Trim_galore} => [qw{ trim_galore }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Trimming::Trim_galore qw{ trim_galore };
+use MIP::Program::Trim_galore qw{ trim_galore };
 
 diag(   q{Test trim_galore from Trim_galore.pm v}
-      . $MIP::Program::Trimming::Trim_galore::VERSION
+      . $MIP::Program::Trim_galore::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,11 +59,13 @@ diag(   q{Test trim_galore from Trim_galore.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $CORES => 12;
+
 ## Base arguments
 my @function_base_commands = qw{ trim_galore };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -91,6 +93,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    cores => {
+        input           => $CORES,
+        expected_output => q{--cores} . $SPACE . $CORES,
+    },
     fastqc => {
         input           => 1,
         expected_output => q{--fastqc},
@@ -102,6 +108,10 @@ my %specific_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ file_1.fastq file_2.fastq }],
         expected_output => q{file_1.fastq} . $SPACE . q{file_2.fastq},
+    },
+    outdir_path => {
+        input           => catdir(qw{ output dir }),
+        expected_output => q{--output_dir} . $SPACE . catdir(qw{ output dir }),
     },
     paired_reads => {
         input           => 1,

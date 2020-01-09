@@ -16,6 +16,13 @@ cluster_constant_path:
    - mip
   data_type: SCALAR
   type: path
+config_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 config_file_analysis:
   associated_recipe:
    - mip
@@ -29,25 +36,9 @@ dry_run_all:
   data_type: SCALAR
   mandatory: no
   type: mip
-email:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_types:
-  associated_recipe:
-   - mip
-  element_separator: ","
-  data_type: ARRAY
-  mandatory: no
-  default:
-   - FAIL
-  type: mip
 exclude_contigs:
   associated_recipe:
    - mip
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: mip
@@ -56,14 +47,18 @@ case_id:
    - mip
   data_type: SCALAR
   type: mip
-## java large pages - affects all modules using java
 java_use_large_pages:
   associated_recipe:
    - varianteffectpredictor
-   - snpeff
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 node_ram_memory:
   associated_recipe:
    - mip
@@ -77,6 +72,12 @@ outdata_dir:
   type: path
   update_path: absolute_path
 outscript_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+pedigree_fam_file:
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -106,16 +107,27 @@ print_recipe_mode:
   data_type: SCALAR
   default: 2
   type: mip
-load_env:
+project_id:
   associated_recipe:
    - mip
-  data_type: HASH
-  mandatory: no
+  data_type: SCALAR
   type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+reference_info_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 sample_ids:
   associated_recipe:
    - mip
-  element_separator: ,
   data_type: ARRAY
   type: mip
 sample_info_file:
@@ -124,6 +136,12 @@ sample_info_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
+singularity_recipe_bind_path:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 slurm_quality_of_service:
   associated_recipe:
    - mip
@@ -136,6 +154,12 @@ start_with_recipe:
   data_type: SCALAR
   mandatory: no
   type: mip
+store_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 submission_profile:
   associated_recipe:
    - mip
@@ -155,8 +179,14 @@ supported_capture_kit:
     agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
     agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
     agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed 
+    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed
     latest: genome_reference_source_version_twist_target_-1-.bed
+  type: mip
+with_singularity:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
   type: mip
 ### Programs
 ## AnalysisRunStatus
@@ -193,5 +223,19 @@ sacct_format_fields:
    - end
    - state
    - exitcode
-  element_separator: ,
   type: recipe_argument
+temp_directory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+## Version collecting
+version_collect_ar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vcol
+  outfile_suffix: ".yaml"
+  type: recipe

@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -60,13 +60,13 @@ diag(   q{Test get_reference from Get_reference.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 my $test_dir = File::Temp->newdir();
@@ -89,7 +89,7 @@ my $reference_href =
 
 my $is_ok = get_reference(
     {
-        FILEHANDLE     => $FILEHANDLE,
+        filehandle     => $filehandle,
         recipe_name    => $recipe_name,
         reference_dir  => $active_parameter{reference_dir},
         reference_href => $reference_href,
@@ -99,5 +99,5 @@ my $is_ok = get_reference(
 ## Then
 ok( $is_ok, q{ Executed download recipe } . $recipe_name );
 
-close $FILEHANDLE;
+close $filehandle;
 done_testing();

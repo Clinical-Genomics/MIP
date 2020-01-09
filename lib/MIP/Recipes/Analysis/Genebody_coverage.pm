@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_genebody_coverage };
@@ -135,7 +135,7 @@ sub analysis_genebody_coverage {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm };
-    use MIP::Program::Qc::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
+    use MIP::Program::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -144,7 +144,7 @@ sub analysis_genebody_coverage {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -199,7 +199,7 @@ sub analysis_genebody_coverage {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -207,7 +207,7 @@ sub analysis_genebody_coverage {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -220,20 +220,20 @@ sub analysis_genebody_coverage {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Rename .bai to .bam.bai
-    say {$FILEHANDLE} q{## Rename .bai to .bam.bai};
+    say {$filehandle} q{## Rename .bai to .bam.bai};
     gnu_cp(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $infile_path_prefix . $DOT . q{bai},
             outfile_path => $infile_path_prefix . $infile_suffix . $DOT . q{bai},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
     ## Convert bam to bigwig
-    say {$FILEHANDLE} q{## Convert bam to bigwig};
+    say {$filehandle} q{## Convert bam to bigwig};
     my $chrom_size_file_path = catfile(
         $active_parameter_href->{star_aln_reference_genome}
           . $file_info_href->{star_aln_reference_genome}[0],
@@ -242,28 +242,28 @@ sub analysis_genebody_coverage {
     rseqc_bam2wig(
         {
             chrom_size_file_path => $chrom_size_file_path,
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfile_path_prefix  => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Calculate genebody coverage
-    say {$FILEHANDLE} q{## Calculate genebody coverage};
+    say {$filehandle} q{## Calculate genebody coverage};
     my $bigwig_infile_path = $outfile_path_prefix . $DOT . q{bw};
     rseqc_genebody_coverage2(
         {
             bed_file_path       => $active_parameter_href->{rseqc_transcripts_file},
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $bigwig_infile_path,
             outfile_path_prefix => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Cleanup
-    say {$FILEHANDLE} q{## Cleanup};
+    say {$filehandle} q{## Cleanup};
     my @temp_files = (
         $infile_path_prefix . $infile_suffix . $DOT . q{bai},
         $outfile_path_prefix . $DOT . q{wig}
@@ -272,15 +272,15 @@ sub analysis_genebody_coverage {
     foreach my $temp_file (@temp_files) {
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
+                filehandle  => $filehandle,
                 infile_path => $temp_file,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -303,9 +303,10 @@ sub analysis_genebody_coverage {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

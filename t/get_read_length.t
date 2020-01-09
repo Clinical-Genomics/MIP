@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,8 +95,7 @@ diag(   q{Test get_read_length from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a compressed fastq file
-my $directory =
-  catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
+my $directory = catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
 
 my $file = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
 

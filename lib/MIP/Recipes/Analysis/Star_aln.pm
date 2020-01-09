@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -142,8 +142,8 @@ sub analysis_star_aln {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
-    use MIP::Program::Alignment::Star qw{ star_aln };
+    use MIP::Program::Picardtools qw{ picardtools_addorreplacereadgroups };
+    use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
       qw{ get_read_group get_sequence_run_type set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
@@ -152,7 +152,7 @@ sub analysis_star_aln {
     ## PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -206,7 +206,7 @@ sub analysis_star_aln {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
@@ -237,7 +237,7 @@ sub analysis_star_aln {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $recipe_resource{core_number},
                 directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
+                filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
                 memory_allocation               => $recipe_resource{memory},
@@ -247,13 +247,14 @@ sub analysis_star_aln {
                 sleep                           => 1,
                 source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
+                ulimit_n => $active_parameter_href->{star_ulimit_n},
             }
         );
 
         ### SHELL
 
         ## Star aln
-        say {$FILEHANDLE} q{## Aligning reads with } . $recipe_name;
+        say {$filehandle} q{## Aligning reads with } . $recipe_name;
 
         ### Get parameters
         ## Infile(s)
@@ -272,23 +273,24 @@ sub analysis_star_aln {
 
         star_aln(
             {
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 align_intron_max    => $active_parameter_href->{align_intron_max},
                 align_mates_gap_max => $active_parameter_href->{align_mates_gap_max},
                 align_sjdb_overhang_min =>
                   $active_parameter_href->{align_sjdb_overhang_min},
                 chim_junction_overhang_min =>
                   $active_parameter_href->{chim_junction_overhang_min},
-                chim_out_type       => $active_parameter_href->{chim_out_type},
-                chim_segment_min    => $active_parameter_href->{chim_segment_min},
-                genome_dir_path     => $referencefile_dir_path,
-                infile_paths_ref    => \@fastq_files,
-                outfile_name_prefix => $outfile_path_prefix . $DOT,
-                thread_number       => $recipe_resource{core_number},
-                two_pass_mode       => $active_parameter_href->{two_pass_mode},
+                chim_out_type         => $active_parameter_href->{chim_out_type},
+                chim_segment_min      => $active_parameter_href->{chim_segment_min},
+                genome_dir_path       => $referencefile_dir_path,
+                infile_paths_ref      => \@fastq_files,
+                outfile_name_prefix   => $outfile_path_prefix . $DOT,
+                pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
+                thread_number         => $recipe_resource{core_number},
+                two_pass_mode         => $active_parameter_href->{two_pass_mode},
             },
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -305,7 +307,7 @@ sub analysis_star_aln {
         picardtools_addorreplacereadgroups(
             {
                 create_index => q{true},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $outfile_path_prefix
                   . $DOT
                   . q{Aligned.sortedByCoord.out}
@@ -323,10 +325,10 @@ sub analysis_star_aln {
             },
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
-        ## Close FILEHANDLES
-        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+        ## Close filehandleS
+        close $filehandle or $log->logcroak(q{Could not close filehandle});
 
         if ( $recipe_mode == 1 ) {
 
@@ -370,13 +372,15 @@ sub analysis_star_aln {
                     case_id                 => $case_id,
                     dependency_method       => q{sample_to_sample_parallel},
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
                     job_id_chain            => $job_id_chain,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $infile_index,
-                    sample_id               => $sample_id,
-                    submission_profile => $active_parameter_href->{submission_profile},
+                    job_id_href             => $job_id_href,
+                    job_reservation_name =>
+                      $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
+                    recipe_file_path     => $recipe_file_path,
+                    recipe_files_tracker => $infile_index,
+                    sample_id            => $sample_id,
+                    submission_profile   => $active_parameter_href->{submission_profile},
                 }
             );
         }

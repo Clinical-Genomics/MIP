@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -102,10 +102,15 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 my %sample_info;
 
 SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+while ( my ( $sample_index, $sample_id ) = each @{ $active_parameter{sample_ids} } ) {
 
+    ## Add one unknown sex
+    if ( $sample_index == 0 ) {
+
+        $sample_info{sample}{$sample_id}{sex} = q{unknown};
+        next SAMPLE_ID;
+    }
     $sample_info{sample}{$sample_id}{sex} = q{male};
-
 }
 
 my $is_ok = analysis_expansionhunter(

@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -144,14 +144,21 @@ sub analysis_bootstrapann {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
+    use MIP::Program::BootstrapAnn qw{ bootstrapann };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Return if ASE has been turned off for this sample
+    if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+
+        $log->warn(qq{No ASE analysis for $sample_id});
+        return 0;
+    }
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -168,20 +175,24 @@ sub analysis_bootstrapann {
     my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
 
-    ## Get bam infile from gatk_variantfiltration
+    ## Get vcf file
+    my $vcf_generator_recipe = q{gatk_variantfiltration};
+    if ( $active_parameter_href->{dna_vcf_file} ) {
+
+        $vcf_generator_recipe = q{dna_vcf_reformat};
+    }
+
     my %variant_io = get_io_files(
         {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_variantfiltration},
-            stream         => q{in},
+            recipe_name    => $vcf_generator_recipe,
+            stream         => q{out},
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
-    my $variant_suffix             = $variant_io{out}{file_suffix};
-    my $variant_infile_path        = $variant_infile_path_prefix . $variant_suffix;
+    my $variant_infile_path = $variant_io{out}{file_path};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -223,7 +234,7 @@ sub analysis_bootstrapann {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -231,7 +242,7 @@ sub analysis_bootstrapann {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -246,18 +257,18 @@ sub analysis_bootstrapann {
     ### SHELL
 
     ## BootstrapAnn
-    say {$FILEHANDLE} q{## BootstrapAnn};
+    say {$filehandle} q{## BootstrapAnn};
     bootstrapann(
         {
             ase_file_path   => $ase_infile_path,
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             stdoutfile_path => $outfile_path,
             vcf_infile_path => $variant_infile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -278,9 +289,10 @@ sub analysis_bootstrapann {
                 dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

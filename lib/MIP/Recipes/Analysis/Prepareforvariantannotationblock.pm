@@ -17,7 +17,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DOT $EMPTY_STR $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_prepareforvariantannotationblock };
@@ -150,12 +150,12 @@ sub analysis_prepareforvariantannotationblock {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw(setup_script);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ### PREPROCESSING:
 
@@ -212,8 +212,8 @@ sub analysis_prepareforvariantannotationblock {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -237,7 +237,7 @@ sub analysis_prepareforvariantannotationblock {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             directory_id                    => $case_id,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -256,32 +256,32 @@ sub analysis_prepareforvariantannotationblock {
     my $bgzip_outfile_path = $infile_path . $DOT . q{gz};
     htslib_bgzip(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $bgzip_outfile_path,
             write_to_stdout => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index file using tabix
     htslib_tabix(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             force       => 1,
             infile_path => $bgzip_outfile_path,
             preset      => q{vcf},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -292,39 +292,39 @@ sub analysis_prepareforvariantannotationblock {
 
         htslib_tabix(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
+                filehandle  => $xargsfilehandle,
                 infile_path => $bgzip_outfile_path,
                 regions_ref => [$contig],
                 with_header => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Compress or decompress original file or stream to outfile (if supplied)
         htslib_bgzip(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 stdoutfile_path => $outfile_path{$contig},
                 write_to_stdout => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         ## Index file using tabix
         htslib_tabix(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
+                filehandle  => $xargsfilehandle,
                 force       => 1,
                 infile_path => $outfile_path{$contig},
                 preset      => q{vcf},
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        print {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -336,6 +336,7 @@ sub analysis_prepareforvariantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

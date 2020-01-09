@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,11 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA       => q{,};
 Readonly my $MAX_SV_SIZE => 50_000_000;
 Readonly my $MIN_SV_SIZE => 15;
-Readonly my $SPACE       => q{ };
-Readonly my $UNDERSCORE  => q{_};
 
 BEGIN {
 
@@ -47,18 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Delly} => [qw{ delly_filter }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Delly} => [qw{ delly_filter }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Delly qw{ delly_filter };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Delly qw{ delly_filter };
 
 diag(   q{Test delly_filter from Delly.pm v}
-      . $MIP::Program::Variantcalling::Delly::VERSION
+      . $MIP::Program::Delly::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -70,7 +67,7 @@ diag(   q{Test delly_filter from Delly.pm v}
 my @function_base_commands = qw{ delly filter };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -106,12 +103,6 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    outfile_path => {
-        input           => catfile(qw{ outfile_path_prefix SV_type.txt }),
-        expected_output => q{--outfile}
-          . $SPACE
-          . catfile(qw{ outfile_path_prefix SV_type.txt }),
-    },
     max_size => {
         input           => $MAX_SV_SIZE,
         expected_output => q{--maxsize} . $SPACE . $MAX_SV_SIZE,
@@ -119,6 +110,12 @@ my %specific_argument = (
     min_size => {
         input           => $MIN_SV_SIZE,
         expected_output => q{--minsize} . $SPACE . $MIN_SV_SIZE,
+    },
+    outfile_path => {
+        input           => catfile(qw{ outfile_path_prefix SV_type.txt }),
+        expected_output => q{--outfile}
+          . $SPACE
+          . catfile(qw{ outfile_path_prefix SV_type.txt }),
     },
 );
 

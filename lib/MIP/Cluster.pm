@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG $SPACE };
+use MIP::Constants qw{ $COLON $LOG_NAME $SPACE };
 
 BEGIN {
 
@@ -289,7 +289,7 @@ sub check_recipe_memory_allocation {
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
     ## Retrieves the log instead of importing it
-    my $log = retrieve_log( { log_name => $LOG, } );
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
     ## Check if memory is available
     if ( $recipe_memory_allocation > $node_ram_memory ) {

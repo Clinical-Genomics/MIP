@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA              => q{,};
 Readonly my $MAX_DEPTH_TRESHOLD => 100_000;
-Readonly my $SPACE              => q{ };
 
 BEGIN {
 
@@ -45,18 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Samtools} => [qw{ samtools_depth }],
-        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
+        q{MIP::Program::Samtools} => [qw{ samtools_depth }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Samtools qw{ samtools_depth };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Samtools qw{ samtools_depth };
 
 diag(   q{Test samtools_depth from Samtools.pm v}
-      . $MIP::Program::Alignment::Samtools::VERSION
+      . $MIP::Program::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,7 +66,7 @@ diag(   q{Test samtools_depth from Samtools.pm v}
 my @function_base_commands = qw{ samtools depth };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -88,7 +86,7 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -100,7 +98,7 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },

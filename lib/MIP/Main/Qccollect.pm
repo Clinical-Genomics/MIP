@@ -18,12 +18,13 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ open close :all };
-use Modern::Perl qw{ 2017 };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Qccollect
   qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
+use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
 BEGIN {
 
@@ -93,11 +94,6 @@ sub mip_qccollect {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
-    use MIP::Qccollect
-      qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
-    use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
     ## Save final output data
     my %qc_data;

@@ -22,7 +22,6 @@ case_id:
 email_types:
   associated_recipe:
    - mip
-  element_separator: ","
   data_type: ARRAY
   mandatory: no
   default:

@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -51,11 +51,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -107,7 +103,7 @@ diag(   q{Test write_mip_config from Config.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -133,15 +129,14 @@ trap {
             remove_keys_ref       => [qw{ associated_program }],
             sample_info_href      => \%sample_info,
         }
-      )
+    )
 };
 
 ## Then we should broadcast an INFO message
 like( $trap->stderr, qr/INFO/xms, q{Send info log message} );
 
 ## Then some keys should be removed
-is( $active_parameter{associated_program},
-    undef, q{Removed keys from active parameter} );
+is( $active_parameter{associated_program}, undef, q{Removed keys from active parameter} );
 
 ## Then the file should have been writen to disc and be reloaded
 my %config_parameter =

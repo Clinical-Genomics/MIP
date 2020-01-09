@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -65,7 +65,7 @@ my $file_path = catfile( $test_dir, q{recipe_script.sh} );
 my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given download parameters for recipe
-my $genome_version    = q{hg38};
+my $genome_version    = q{grch38};
 my $recipe_name       = q{cadd_bravo_topmed};
 my $reference_version = q{v1.5};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );

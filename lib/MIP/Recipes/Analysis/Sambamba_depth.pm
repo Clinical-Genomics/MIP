@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
@@ -143,14 +143,14 @@ sub analysis_sambamba_depth {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
+    use MIP::Program::Sambamba qw{ sambamba_depth };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script};
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -203,15 +203,15 @@ sub analysis_sambamba_depth {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ($recipe_file_path) = setup_script(
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -226,7 +226,7 @@ sub analysis_sambamba_depth {
     ### SHELL:
 
     ## sambamba_depth
-    say {$FILEHANDLE} q{## Annotating bed from alignment};
+    say {$filehandle} q{## Annotating bed from alignment};
 
     ## Get parameters
     my $sambamba_filter =
@@ -252,7 +252,7 @@ sub analysis_sambamba_depth {
     sambamba_depth(
         {
             depth_cutoffs_ref => \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             filter            => $sambamba_filter,
             fix_mate_overlap  => 1,
             infile_path       => $infile_path,
@@ -262,9 +262,9 @@ sub analysis_sambamba_depth {
             region            => $active_parameter_href->{sambamba_depth_bed},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
@@ -284,9 +284,10 @@ sub analysis_sambamba_depth {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

@@ -16,10 +16,10 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Readonly;
-use List::MoreUtils qw{ each_array };
+use List::MoreUtils qw{ each_array uniq };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_merge };
@@ -130,16 +130,15 @@ sub analysis_bcftools_merge {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_merge bcftools_view_and_index_vcf };
+    use MIP::Program::Bcftools qw{ bcftools_merge bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -150,6 +149,11 @@ sub analysis_bcftools_merge {
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Case when some samples have ASE turned off
+        if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+            next SAMPLE_ID;
+        }
 
         my %io = get_io_files(
             {
@@ -196,7 +200,7 @@ sub analysis_bcftools_merge {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -204,7 +208,7 @@ sub analysis_bcftools_merge {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -217,7 +221,7 @@ sub analysis_bcftools_merge {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     ## Test if the case has samples to merge
     if ( scalar @infile_paths > 1 ) {
@@ -229,7 +233,7 @@ sub analysis_bcftools_merge {
             ## Index files before merging
             bcftools_view_and_index_vcf(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
+                    filehandle          => $filehandle,
                     infile_path         => $infile_path,
                     outfile_path_prefix => $infile_path_prefix,
                     output_type         => q{b},
@@ -238,35 +242,35 @@ sub analysis_bcftools_merge {
         }
 
         ## Merge sample VCFs
-        say {$FILEHANDLE} q{## Merge bcf files};
+        say {$filehandle} q{## Merge bcf files};
         @infile_paths = map { $_ . q{.bcf} } @infile_path_prefixes;
         bcftools_merge(
             {
-                FILEHANDLE       => $FILEHANDLE,
+                filehandle       => $filehandle,
                 infile_paths_ref => \@infile_paths,
                 outfile_path     => $outfile_path,
                 output_type      => q{v},
             }
         );
 
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
     ## Otherwise just rename the sample
     else {
-        say {$FILEHANDLE}
+        say {$filehandle}
           q{## Renaming single sample case to facilitate downstream processing};
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_paths[0],
                 outfile_path => $outfile_path,
             }
         );
     }
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -279,15 +283,25 @@ sub analysis_bcftools_merge {
             }
         );
 
+        set_file_path_to_store(
+            {
+                file_tag         => $case_id . $UNDERSCORE . q{ase},
+                file_type        => q{vcf},
+                path             => $outfile_path,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
                 base_command            => $profile_base_command,
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

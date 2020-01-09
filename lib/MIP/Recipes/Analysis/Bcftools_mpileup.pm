@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DASH $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -149,16 +149,16 @@ sub analysis_bcftools_mpileup {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools
+    use MIP::Program::Bcftools
       qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm bcftools_view };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
+    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
+    use MIP::Program::Perl qw{ replace_iupac };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -200,8 +200,8 @@ sub analysis_bcftools_mpileup {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -209,7 +209,7 @@ sub analysis_bcftools_mpileup {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
             memory_allocation               => $recipe_resource{memory},
@@ -227,7 +227,7 @@ sub analysis_bcftools_mpileup {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             include_header        => 0,
             log                   => $log,
             parameter_href        => $parameter_href,
@@ -239,6 +239,7 @@ sub analysis_bcftools_mpileup {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my %mpileup_infile_path;
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -263,16 +264,16 @@ sub analysis_bcftools_mpileup {
     }
 
     ## Bcftools mpileup
-    say {$FILEHANDLE} q{## Bcftools mpileup};
+    say {$filehandle} q{## Bcftools mpileup};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -291,7 +292,7 @@ sub analysis_bcftools_mpileup {
         bcftools_mpileup(
             {
                 adjust_mq                        => $ADJUST_MQ,
-                FILEHANDLE                       => $XARGSFILEHANDLE,
+                filehandle                       => $xargsfilehandle,
                 infile_paths_ref                 => \@mpileup_file_paths,
                 output_tags_ref                  => [qw{ DV AD }],
                 output_type                      => $output_type,
@@ -303,7 +304,7 @@ sub analysis_bcftools_mpileup {
         );
 
         # Print pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Get parameter
         my $samples_file;
@@ -319,7 +320,7 @@ sub analysis_bcftools_mpileup {
         bcftools_call(
             {
                 constrain           => $constrain,
-                FILEHANDLE          => $XARGSFILEHANDLE,
+                filehandle          => $xargsfilehandle,
                 form_fields_ref     => [qw{ GQ }],
                 multiallelic_caller => 1,
                 output_type         => $output_type,
@@ -334,11 +335,11 @@ sub analysis_bcftools_mpileup {
         if ( $active_parameter_href->{bcftools_mpileup_filter_variant} ) {
 
             # Print pipe
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+            print {$xargsfilehandle} $PIPE . $SPACE;
 
             bcftools_filter(
                 {
-                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    filehandle      => $xargsfilehandle,
                     exclude         => _build_bcftools_filter_expr(),
                     indel_gap       => $INDEL_GAP,
                     output_type     => $output_type,
@@ -354,11 +355,11 @@ sub analysis_bcftools_mpileup {
         if ( not $active_parameter_href->{bcftools_mpileup_keep_unnormalised} ) {
 
             # Print pipe
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+            print {$xargsfilehandle} $PIPE . $SPACE;
 
             bcftools_norm(
                 {
-                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    filehandle      => $xargsfilehandle,
                     multiallelic    => $DASH,
                     output_type     => $output_type,
                     reference_path  => $reference_path,
@@ -370,7 +371,7 @@ sub analysis_bcftools_mpileup {
         }
 
         # Print pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         my $bcftools_outfile_path;
 
@@ -382,7 +383,7 @@ sub analysis_bcftools_mpileup {
         }
         bcftools_view(
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
+                filehandle      => $xargsfilehandle,
                 outfile_path    => $bcftools_outfile_path,
                 output_type     => q{v},
                 stderrfile_path => $stderrfile_path_prefix
@@ -392,7 +393,7 @@ sub analysis_bcftools_mpileup {
         );
         if ( $active_parameter_href->{replace_iupac} ) {
 
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+            print {$xargsfilehandle} $PIPE . $SPACE;
 
             ## End stream and write to disc
             $bcftools_outfile_path =
@@ -400,7 +401,7 @@ sub analysis_bcftools_mpileup {
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    filehandle      => $xargsfilehandle,
                     stderrfile_path => $stderrfile_path_prefix
                       . $UNDERSCORE
                       . q{replace_iupac.stderr.txt},
@@ -409,7 +410,7 @@ sub analysis_bcftools_mpileup {
             );
         }
 
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
@@ -417,7 +418,7 @@ sub analysis_bcftools_mpileup {
     gatk_concatenate_variants(
         {
             active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             elements_ref          => \@{ $file_info_href->{contigs} },
             infile_postfix        => $outfile_suffix,
             infile_prefix         => $outfile_path_prefix,
@@ -426,26 +427,16 @@ sub analysis_bcftools_mpileup {
         }
     );
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
-        ## Collect bcftools version in qccollect
         set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{bcftools},
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        ## Locating bcftools_mpileup file
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => q{bcftools_mpileup},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -456,9 +447,10 @@ sub analysis_bcftools_mpileup {
                 dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

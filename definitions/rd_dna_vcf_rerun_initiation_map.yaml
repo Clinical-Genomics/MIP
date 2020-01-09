@@ -13,12 +13,13 @@ CHAIN_ALL:
       - prepareforvariantannotationblock
       - rhocall_ar
       - vt_ar
+      - frequency_annotation
       - frequency_filter
       - cadd_ar
       - varianteffectpredictor
       - vcfparser_ar
-      - snpeff
       - rankvariant
       - endvariantannotationblock
+   - version_collect_ar
    - analysisrunstatus
    - sacct 

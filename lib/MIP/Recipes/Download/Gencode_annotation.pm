@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gencode_annotation };
@@ -122,7 +122,7 @@ sub download_gencode_annotation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Utility::Gtf2bed qw{ gtf2bed };
+    use MIP::Program::Gtf2bed qw{ gtf2bed };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -148,7 +148,7 @@ sub download_gencode_annotation {
 
     ## Filehandle(s)
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -156,7 +156,7 @@ sub download_gencode_annotation {
             active_parameter_href      => $active_parameter_href,
             core_number                => $recipe_resource{core_number},
             directory_id               => q{mip_download},
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
             log                        => $log,
             memory_allocation          => $recipe_resource{memory},
@@ -172,11 +172,11 @@ sub download_gencode_annotation {
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
     get_reference(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             recipe_name    => $recipe_name,
             reference_dir  => $reference_dir,
             reference_href => $reference_href,
@@ -199,33 +199,33 @@ sub download_gencode_annotation {
 
     _remove_chr_prefix_rename_chrm(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             infile_path => $outfile_path,
         }
     );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     _remove_chr_prefix(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             outfile_path => $reformated_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Reformat gtf to bed
     my $bed_outfile_path = $reformated_outfile_path =~ s/gtf$/bed/rxms;
     gtf2bed(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $reformated_outfile_path,
             stdoutfile_path => $bed_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -246,17 +246,17 @@ sub _remove_chr_prefix_rename_chrm {
 
 ## Function : Remove chr prefix in file
 ## Returns  :
-## Arguments: $FILEHANDLE  => Filehandle to write to
+## Arguments: $filehandle  => Filehandle to write to
 ##          : $infile_path => Infile path
 
     my ($arg_href) = @_;
 
 ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
 
     my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
         infile_path => {
             default     => 1,
             required    => 1,
@@ -268,16 +268,16 @@ sub _remove_chr_prefix_rename_chrm {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Execute perl
-    print {$FILEHANDLE} q{perl -nae ' };
+    print {$filehandle} q{perl -nae ' };
 
     # Print header
-    print {$FILEHANDLE} q?if($_=~/^#/) { print $_;} ?;
+    print {$filehandle} q?if($_=~/^#/) { print $_;} ?;
 
     ## Remove prefix and rename mitochondria prefix
-    print {$FILEHANDLE} q?else { $_ =~ s/^(chrM)/MT/g; print $_;}' ?;
+    print {$filehandle} q?else { $_ =~ s/^(chrM)/MT/g; print $_;}' ?;
 
     # Infile
-    print {$FILEHANDLE} $infile_path . $SPACE;
+    print {$filehandle} $infile_path . $SPACE;
 
     return;
 }
@@ -286,17 +286,17 @@ sub _remove_chr_prefix {
 
 ## Function : Remove chr prefix in file
 ## Returns  :
-## Arguments: $FILEHANDLE   => Filehandle to write to
+## Arguments: $filehandle   => Filehandle to write to
 ##          : $outfile_path => Outfile path
 
     my ($arg_href) = @_;
 
 ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $outfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        filehandle   => { defined => 1, required => 1, store => \$filehandle, },
         outfile_path => {
             default     => 1,
             required    => 1,
@@ -309,19 +309,19 @@ sub _remove_chr_prefix {
 
     ## Remove chr prefix
     # Execute perl
-    print {$FILEHANDLE} q{perl -nae ' };
+    print {$filehandle} q{perl -nae ' };
 
     # Print header
-    print {$FILEHANDLE} q?if($_=~/^#/) { print $_; } ?;
+    print {$filehandle} q?if($_=~/^#/) { print $_; } ?;
 
     # Remove prefix
-    print {$FILEHANDLE} q?else {$_ =~ s/^chr(.+)/$1/g; print $_; }' ?;
+    print {$filehandle} q?else {$_ =~ s/^chr(.+)/$1/g; print $_; }' ?;
 
     # Infile
-    print {$FILEHANDLE} $DASH . $SPACE;
+    print {$filehandle} $DASH . $SPACE;
 
     # Outfile
-    print {$FILEHANDLE} q{> } . $outfile_path;
+    print {$filehandle} q{> } . $outfile_path;
 
     return;
 }
