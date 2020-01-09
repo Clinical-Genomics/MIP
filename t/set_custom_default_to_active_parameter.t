@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 $VERBOSE = test_standard_cli(
     {
@@ -141,7 +141,7 @@ foreach my $parameter_name (@custom_default_parameters) {
 my $vcfparser_select_file_path = catfile(
     $active_parameter{cluster_constant_path},
     $active_parameter{case_id},
-    q{gene_panel.bed}
+    q{gene_panels.bed}
 );
 
 my %expected_default = (

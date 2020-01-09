@@ -194,6 +194,9 @@ sub pipeline_analyse_rd_rna {
         }
     );
 
+    ## Set analysis constants
+    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -208,9 +211,6 @@ sub pipeline_analyse_rd_rna {
             sample_info_href        => $sample_info_href,
         }
     );
-
-    ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
 
     ## Dispatch table
     my %analysis_recipe = (

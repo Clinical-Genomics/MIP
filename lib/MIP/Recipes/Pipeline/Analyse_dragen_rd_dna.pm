@@ -26,7 +26,7 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -191,6 +191,9 @@ sub pipeline_analyse_dragen_rd_dna {
         }
     );
 
+    ## Set analysis constants
+    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -218,9 +221,6 @@ sub pipeline_analyse_dragen_rd_dna {
             parameter_href          => $parameter_href,
         }
     );
-
-    ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
