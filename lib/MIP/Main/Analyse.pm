@@ -56,6 +56,7 @@ use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ check_parameter_hash set_cache };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
+use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{ set_custom_default_to_active_parameter
