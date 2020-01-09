@@ -1,4 +1,4 @@
-package MIP::File::Format::Pedigree;
+package MIP::Pedigree;
 
 use 5.026;
 use Carp;
@@ -8,7 +8,7 @@ use File::Basename qw{ dirname };
 use File::Path qw{ make_path };
 use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error};
+use Params::Check qw{ allow check last_error};
 use strict;
 use utf8;
 use warnings;
@@ -20,15 +20,15 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 use MIP::Gnu::Coreutils qw{ gnu_echo };
-use MIP::Constants qw{ $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,6 +39,7 @@ BEGIN {
       gatk_pedigree_flag
       has_trio
       is_sample_proband_in_trio
+      parse_pedigree
       parse_yaml_pedigree_file
       reload_previous_pedigree_info };
 }
@@ -626,13 +627,91 @@ sub gatk_pedigree_flag {
     return %command;
 }
 
+sub parse_pedigree {
+
+## Function : Parse pedigree info pedigree file and updates pedigree parameters
+##            with user supplied info
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $pedigree_file_path    => Pedigree file path from cmd or sample_info
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $pedigree_file_path;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        pedigree_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_file_path,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ load_yaml };
+
+    return if ( not defined $pedigree_file_path );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Load parameters for this run or if not provided on cmd - load
+    ## previous run from sample_info_file
+    my %pedigree = load_yaml( { yaml_file => $pedigree_file_path, } );
+
+    $log->info( q{Loaded: } . $pedigree_file_path );
+
+    ## Check pedigree data for allowed entries and correct format
+    ## Add data to sample_info depending on user info
+    parse_yaml_pedigree_file(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_path             => $pedigree_file_path,
+            parameter_href        => $parameter_href,
+            pedigree_href         => \%pedigree,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+    return 1;
+}
+
 sub parse_yaml_pedigree_file {
 
-## Function : Parse case info in YAML pedigree file. Check pedigree data for allowed entries and correct format. Add data to sample_info and active_parameter depending on user info.
+## Function : Parse case info in YAML pedigree file. Check pedigree data for
+##            allowed entries and correct format. Add data to sample_info and
+##            active_parameter depending on user info.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_path             => Pedigree file path
-##          : $log                   => Log object
 ##          : $parameter_href        => Parameter hash {REF}
 ##          : $pedigree_href         => Pedigree hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
@@ -642,7 +721,6 @@ sub parse_yaml_pedigree_file {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_path;
-    my $log;
     my $parameter_href;
     my $pedigree_href;
     my $sample_info_href;
@@ -660,11 +738,6 @@ sub parse_yaml_pedigree_file {
             required    => 1,
             store       => \$file_path,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         parameter_href => {
             default     => {},
@@ -696,6 +769,9 @@ sub parse_yaml_pedigree_file {
     use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
     use MIP::Set::Pedigree
       qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_case_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Use to collect which sample_ids have used a certain capture_kit
     my $case_id = $pedigree_href->{case};

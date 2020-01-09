@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -205,7 +205,7 @@ sub set_recipe_chromograph {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
+    use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph analysis_chromograph_proband };
 
