@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -679,31 +679,30 @@ sub parse_pedigree {
 
     use MIP::File::Format::Yaml qw{ load_yaml };
 
-        return if ( not defined $pedigree_file_path );
+    return if ( not defined $pedigree_file_path );
 
-        ## Retrieve logger object
-        my $log = Log::Log4perl->get_logger($LOG_NAME);
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-            ## Load parameters for this run or if not provided on cmd - load
-            ## previous run from sample_info_file
-            my %pedigree =
-              load_yaml( { yaml_file => $pedigree_file_path, } );
+    ## Load parameters for this run or if not provided on cmd - load
+    ## previous run from sample_info_file
+    my %pedigree = load_yaml( { yaml_file => $pedigree_file_path, } );
 
-            $log->info( q{Loaded: } . $pedigree_file_path );
+    $log->info( q{Loaded: } . $pedigree_file_path );
 
-            ## Check pedigree data for allowed entries and correct format
-            ## Add data to sample_info depending on user info
-            parse_yaml_pedigree_file(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    file_path             => $pedigree_file_path,
-                    parameter_href        => $parameter_href,
-                    pedigree_href         => \%pedigree,
-                    sample_info_href      => $sample_info_href,
-                }
-            );
+    ## Check pedigree data for allowed entries and correct format
+    ## Add data to sample_info depending on user info
+    parse_yaml_pedigree_file(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_path             => $pedigree_file_path,
+            parameter_href        => $parameter_href,
+            pedigree_href         => \%pedigree,
+            sample_info_href      => $sample_info_href,
+        }
+    );
     return 1;
-  }
+}
 
 sub parse_yaml_pedigree_file {
 
@@ -771,8 +770,8 @@ sub parse_yaml_pedigree_file {
     use MIP::Set::Pedigree
       qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_case_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
 
-      ## Retrieve logger object
-      my $log = Log::Log4perl->get_logger($LOG_NAME);
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Use to collect which sample_ids have used a certain capture_kit
     my $case_id = $pedigree_href->{case};
