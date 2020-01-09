@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Pedigree} => [qw{ detect_sample_id_gender }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Pedigree}       => [qw{ detect_sample_id_gender }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ detect_sample_id_gender };
+use MIP::Pedigree qw{ detect_sample_id_gender };
 
 diag(   q{Test detect_sample_id_gender from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -44,10 +44,13 @@ use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::File::Format::Pedigree
-  qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+use MIP::Pedigree qw{ create_fam_file
+  detect_founders
+  detect_sample_id_gender
+  detect_trio
+  reload_previous_pedigree_info };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
@@ -80,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -202,28 +205,15 @@ sub mip_analyse {
     $log->info( q{Script parameters and info from are saved in file: }
           . $active_parameter{log_file} );
 
-## Parse pedigree file
-## Reads case_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-    # Meta data in YAML format
-    if ( defined $active_parameter{pedigree_file} ) {
-
-        ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-        my %pedigree =
-          load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
-
-        $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
-
-        parse_yaml_pedigree_file(
-            {
-                active_parameter_href => \%active_parameter,
-                file_path             => $active_parameter{pedigree_file},
-                log                   => $log,
-                parameter_href        => \%parameter,
-                pedigree_href         => \%pedigree,
-                sample_info_href      => \%sample_info,
-            }
-        );
-    }
+## Pedigree
+    parse_pedigree(
+        {
+            active_parameter_href => \%active_parameter,
+            pedigree_file_path    => $active_parameter{pedigree_file},
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
 
     # Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(

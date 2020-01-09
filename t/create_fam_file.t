@@ -16,16 +16,16 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,11 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-Readonly my $TAB   => qq{\t};
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Pedigree} => [qw{ create_fam_file }],
-        q{MIP::Test::Fixtures}         => [qw{ test_log test_standard_cli }],
+        q{MIP::Pedigree}       => [qw{ create_fam_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ create_fam_file };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Pedigree qw{ create_fam_file };
 
 diag(   q{Test create_fam_file from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

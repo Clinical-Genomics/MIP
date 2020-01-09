@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1422,7 +1422,7 @@ sub set_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ has_trio };
+    use MIP::Pedigree qw{ has_trio };
 
     ## Add parameter key to sample info
     my @add_keys = qw{ analysis_type expected_coverage };
