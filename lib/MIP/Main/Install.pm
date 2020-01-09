@@ -21,6 +21,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Check::Parameter qw{ check_active_installation_parameters };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
@@ -29,7 +30,6 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Set::Parameter
   qw{ set_conda_path set_custom_default_to_active_parameter set_default_to_active_parameter };
-use MIP::Update::Path qw{ update_to_absolute_path };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
@@ -43,7 +43,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.07;
+    our $VERSION = 2.08;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
