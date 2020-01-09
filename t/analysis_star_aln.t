@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -85,7 +85,9 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$file_info{star_aln_reference_genome} = [q{reference_genome}];
+$file_info{star_aln_reference_genome}          = [q{reference_genome}];
+$file_info{$sample_id}{lanes}                  = [1];
+$file_info{$sample_id}{$recipe_name}{file_tag} = q{star_sorted};
 %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},

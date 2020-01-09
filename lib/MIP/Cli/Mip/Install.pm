@@ -2,9 +2,6 @@ package MIP::Cli::Mip::Install;
 
 use 5.026;
 use Carp;
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -18,10 +15,9 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.14;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -174,17 +170,6 @@ sub _build_usage {
     );
 
     option(
-        q{update_config} => (
-            cmd_aliases   => [qw{ uc }],
-            cmd_flag      => q{update_config},
-            documentation => q{Path to existing config},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{vep_assemblies} => (
             cmd_aliases   => [qw{ vea }],
             cmd_tags      => [q{Default: GRCh37, GRCh38}],
@@ -240,17 +225,6 @@ sub _build_usage {
             documentation => q{VEP species},
             is            => q{rw},
             isa           => ArrayRef,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{write_config} => (
-            cmd_aliases   => [qw{ wc }],
-            cmd_flag      => q{write_config},
-            documentation => q{Generate config from template},
-            is            => q{rw},
-            isa           => Bool,
             required      => 0,
         ),
     );

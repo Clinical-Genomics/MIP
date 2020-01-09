@@ -20,28 +20,30 @@ use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
-  qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
+  qw{ check_email_address check_recipe_exists_in_hash check_recipe_mode };
 use MIP::Check::Path qw{ check_parameter_files };
 use MIP::Cluster qw{ check_max_core_number };
+use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
-use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
+use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Parameter qw{ set_cache };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
-use MIP::Update::Path qw{ update_to_absolute_path };
+use MIP::Set::Parameter
+  qw{ set_custom_default_to_active_parameter set_default_to_active_parameter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -134,23 +136,17 @@ sub mip_download {
         );
     }
 
-    ## Set the default Log4perl file using supplied dynamic parameters.
-    $active_parameter{log_file} = set_default_log4perl_file(
+## Get log object and set log file in active parameters unless already set from cmd
+    my $log = get_log(
         {
-            cmd_input       => $active_parameter{log_file},
-            date            => $date,
-            date_time_stamp => $date_time_stamp,
-            script          => $script,
+            active_parameter_href => \%active_parameter,
+            date                  => $date,
+            date_time_stamp       => $date_time_stamp,
+            log_name              => uc q{mip_download},
+            script                => $script,
         }
     );
 
-    ## Initiate logger
-    my $log = initiate_logger(
-        {
-            file_path => $active_parameter{log_file},
-            log_name  => uc q{mip_download},
-        }
-    );
     $log->info( q{MIP Version: } . $MIP_VERSION );
     $log->info(
         q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );

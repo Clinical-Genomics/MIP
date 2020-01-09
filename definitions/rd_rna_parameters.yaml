@@ -117,7 +117,7 @@ recipe_time:
     genebody_coverage: 3
     gffcompare_ar: 1
     gzip_fastq: 2
-    markduplicates: 2
+    markduplicates: 8
     multiqc_ar: 1
     picardtools_mergesamfiles: 2
     preseq_ar: 2
@@ -395,7 +395,7 @@ star_fusion_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
-## Arriba 
+## Arriba
 arriba_ar:
   analysis_mode: sample
   associated_recipe:
@@ -410,17 +410,17 @@ arriba_ar:
     - sambamba
   type: recipe
 arriba_blacklist_path:
-  associated_recipe: 
+  associated_recipe:
     - arriba_ar
   data_type: SCALAR
   type: path
 arriba_cytoband_path:
-  associated_recipe: 
+  associated_recipe:
     - arriba_ar
   data_type: SCALAR
   type: path
-arriba_proteindomain_path: 
-  associated_recipe: 
+arriba_proteindomain_path:
+  associated_recipe:
     - arriba_ar
   data_type: SCALAR
   type: path
@@ -449,17 +449,17 @@ stringtie_ar:
     - stringtie
   type: recipe
 stringtie_junction_reads:
-    associated_recipe:
-      - stringtie_ar
-    data_type: SCALAR
-    default: 2
-    type: recipe_argument
+  associated_recipe:
+    - stringtie_ar
+  data_type: SCALAR
+  default: 2
+  type: recipe_argument
 stringtie_minimum_coverage:
-    associated_recipe:
-      - stringtie_ar
-    data_type: SCALAR
-    default: 5
-    type: recipe_argument
+  associated_recipe:
+    - stringtie_ar
+  data_type: SCALAR
+  default: 5
+  type: recipe_argument
 ## GffCompare
 gffcompare_ar:
   analysis_mode: sample
@@ -496,6 +496,12 @@ markduplicates_picardtools_markduplicates:
     - markduplicates
   data_type: SCALAR
   default: 1
+  type: recipe_argument
+markduplicates_picardtools_opt_dup_dist:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 2500
   type: recipe_argument
 markduplicates_sambamba_markdup:
   associated_recipe:
@@ -547,7 +553,7 @@ gatk_baserecalibration:
   type: recipe
 gatk_baserecalibration_no_bam_to_cram:
   associated_recipe:
-   - gatk_baserecalibration
+    - gatk_baserecalibration
   data_type: SCALAR
   default: 1
   type: recipe_argument

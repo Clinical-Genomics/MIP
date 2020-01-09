@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -714,18 +714,19 @@ sub picardtools_markduplicates {
 
 ## Function : Perl wrapper for writing picardtools markduplicates recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
-## Arguments: $create_index           => Create index
-##          : $filehandle             => Sbatch filehandle to write to
-##          : $infile_paths_ref       => Infile paths {REF}
-##          : $java_jar               => Java jar
-##          : $java_use_large_pages   => Use java large pages
-##          : $memory_allocation      => Memory allocation for java
-##          : $metrics_file           => File to write duplication metrics to
-##          : $outfile_path           => Outfile path
-##          : $referencefile_path     => Genome reference file
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $temp_directory         => Redirect tmp files to java temp
+## Arguments: $create_index               => Create index
+##          : $filehandle                 => Sbatch filehandle to write to
+##          : $infile_paths_ref           => Infile paths {REF}
+##          : $java_jar                   => Java jar
+##          : $java_use_large_pages       => Use java large pages
+##          : $memory_allocation          => Memory allocation for java
+##          : $metrics_file               => File to write duplication metrics to
+##          : $optical_duplicate_distance => Max distance between optical duplicates
+##          : $outfile_path               => Outfile path
+##          : $referencefile_path         => Genome reference file
+##          : $stderrfile_path            => Stderrfile path
+##          : $stderrfile_path_append     => Append stderr info to file path
+##          : $temp_directory             => Redirect tmp files to java temp
 
     my ($arg_href) = @_;
 
@@ -735,6 +736,7 @@ sub picardtools_markduplicates {
     my $metrics_file;
     my $infile_paths_ref;
     my $java_jar;
+    my $optical_duplicate_distance;
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
@@ -772,6 +774,11 @@ sub picardtools_markduplicates {
             defined     => 1,
             required    => 1,
             store       => \$metrics_file,
+            strict_type => 1,
+        },
+        optical_duplicate_distance => {
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
+            store       => \$optical_duplicate_distance,
             strict_type => 1,
         },
         outfile_path => {
@@ -825,8 +832,12 @@ sub picardtools_markduplicates {
 
     if ($metrics_file) {
 
-        # File to write duplication metrics to
         push @commands, q{-METRICS_FILE} . $SPACE . $metrics_file;
+    }
+    if ($optical_duplicate_distance) {
+
+        push @commands,
+          q{-OPTICAL_DUPLICATE_PIXEL_DISTANCE} . $SPACE . $optical_duplicate_distance;
     }
 
     ## Infile

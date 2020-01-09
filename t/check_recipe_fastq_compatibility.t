@@ -76,7 +76,7 @@ my %active_parameter = test_mip_hashes(
     }
 );
 
-$parameter{dependency_tree} = \%dependency_tree;
+$parameter{dependency_tree_href} = \%dependency_tree;
 
 my $log = test_log( {} );
 

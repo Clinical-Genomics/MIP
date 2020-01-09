@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates };
@@ -336,8 +336,10 @@ sub analysis_markduplicates {
                     ),
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
-                    memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                    metrics_file       => $metrics_file,
+                    memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                    metrics_file      => $metrics_file,
+                    optical_duplicate_distance =>
+                      $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
                     outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,

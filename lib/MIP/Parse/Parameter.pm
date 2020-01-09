@@ -24,13 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       parse_conda_env_name
       parse_download_reference_parameter
-      parse_dynamic_config_parameters
       parse_infiles
       parse_nist_parameters
       parse_prioritize_variant_callers
@@ -154,87 +153,6 @@ sub parse_download_reference_parameter {
     }
 
     return;
-}
-
-sub parse_dynamic_config_parameters {
-
-## Function : Updates first the dynamic config parameters and then all other parameters to particular user/cluster following specifications
-## Returns  :
-## Arguments: $active_parameter_href         => Active parameters for this analysis hash {REF}
-##          : $config_dynamic_parameters_ref => Config dynamic parameters
-##          : $parameter_href                => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $config_dynamic_parameters_ref;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        config_dynamic_parameters_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$config_dynamic_parameters_ref,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
-
-    ## Loop through all config dynamic parameters and update value
-  DYNAMIC_PARAM:
-    foreach my $dynamic_param_name ( @{$config_dynamic_parameters_ref} ) {
-
-        ## Updates the dynamic config parameters using supplied $case_id
-        update_dynamic_config_parameters(
-            {
-                active_parameter_href => $active_parameter_href,
-                dynamic_parameter_href =>
-                  { case_id => $active_parameter_href->{case_id}, },
-                parameter_name => $dynamic_param_name,
-            }
-        );
-    }
-
-    ## Map of dynamic parameters to update all other parameters
-    my %dynamic_parameter = (
-        cluster_constant_path  => $active_parameter_href->{cluster_constant_path},
-        analysis_constant_path => $active_parameter_href->{analysis_constant_path},
-        case_id                => $active_parameter_href->{case_id},
-    );
-
-    ## Loop through all parameters and update info
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$parameter_href} ) {
-
-        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-        update_dynamic_config_parameters(
-            {
-                active_parameter_href  => $active_parameter_href,
-                dynamic_parameter_href => \%dynamic_parameter,
-                parameter_name         => $parameter_name,
-            }
-        );
-    }
-    return 1;
 }
 
 sub parse_infiles {
@@ -571,7 +489,7 @@ sub parse_start_with_recipe {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
-    use MIP::Get::Analysis qw{ get_dependency_tree };
+    use MIP::Dependency_tree qw{ get_dependency_tree };
     use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
 
     return if ( not defined $active_parameter_href->{start_with_recipe} );
@@ -592,7 +510,7 @@ sub parse_start_with_recipe {
     ## Collects all downstream recipes from initation point
     get_dependency_tree(
         {
-            dependency_tree_href   => $parameter_href->{dependency_tree},
+            dependency_tree_href   => $parameter_href->{dependency_tree_href},
             is_recipe_found_ref    => \$is_recipe_found,
             is_chain_found_ref     => \$is_chain_found,
             recipe                 => $active_parameter_href->{start_with_recipe},

@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -148,8 +148,13 @@ sub analysis_bwa_mem {
     use MIP::Program::Bwa qw{ bwa_mem };
     use MIP::Program::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Sambamba qw{ sambamba_sort };
-    use MIP::Sample_info
-      qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      get_rg_header_line
+      get_sequence_run_type
+      get_sequence_run_type_is_interleaved
+      set_processing_metafile_in_sample_info
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -303,24 +308,19 @@ sub analysis_bwa_mem {
             $second_fastq_file_path = $infile_paths[$paired_end_tracker];
         }
 
-        ## Read group header line
-        my %read_group = get_read_group(
+        ## Construct RG header line
+        my $rg_header_line = get_rg_header_line(
             {
                 infile_prefix    => $infile_prefix,
                 platform         => $active_parameter_href->{platform},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
+                separator        => q{\t},
             }
         );
-
-        my @read_group_headers = (
-            $DOUBLE_QUOTE . q{@RG} . q{\t},
-            q{ID:} . $read_group{id} . q{\t},
-            q{SM:} . $read_group{sm} . q{\t},
-            q{PL:} . $read_group{pl} . q{\t},
-            q{PU:} . $read_group{pu} . q{\t},
-            q{LB:} . $read_group{lb} . $DOUBLE_QUOTE,
-        );
+        ## Add missing "@RG"
+        $rg_header_line =
+          $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
         ## Prepare for downstream processing
         # Can be either infile or instream
@@ -334,7 +334,7 @@ sub analysis_bwa_mem {
                 infile_path             => $fastq_file_path,
                 interleaved_fastq_file  => $is_interleaved_fastq,
                 mark_split_as_secondary => 1,
-                read_group_header       => join( $EMPTY_STR, @read_group_headers ),
+                read_group_header       => $rg_header_line,
                 soft_clip_sup_align => $active_parameter_href->{bwa_soft_clip_sup_align},
                 second_infile_path  => $second_fastq_file_path,
                 thread_number       => $recipe_resource{core_number},
@@ -487,8 +487,8 @@ sub analysis_bwa_mem {
                     log                  => $log,
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $infile_index,
-                    sample_id          => $sample_id,
-                    submission_profile => $active_parameter_href->{submission_profile},
+                    sample_id            => $sample_id,
+                    submission_profile   => $active_parameter_href->{submission_profile},
                 }
             );
         }
@@ -610,8 +610,12 @@ sub analysis_run_bwa_mem {
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Sambamba qw{ sambamba_sort };
-    use MIP::Sample_info
-      qw{ get_read_group get_sequence_run_type set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      get_rg_header_line
+      get_sequence_run_type
+      set_processing_metafile_in_sample_info
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -758,24 +762,19 @@ sub analysis_run_bwa_mem {
             $second_fastq_file_path = $infile_paths[$paired_end_tracker];
         }
 
-        ## Read group header line
-        my %read_group = get_read_group(
+        ## Construct RG header line
+        my $rg_header_line = get_rg_header_line(
             {
                 infile_prefix    => $infile_prefix,
                 platform         => $active_parameter_href->{platform},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
+                separator        => q{\t},
             }
         );
-
-        my @read_group_headers = (
-            $DOUBLE_QUOTE . q{@RG} . q{\t},
-            q{ID:} . $read_group{id} . q{\t},
-            q{SM:} . $read_group{sm} . q{\t},
-            q{PL:} . $read_group{pl} . q{\t},
-            q{PU:} . $read_group{pu} . q{\t},
-            q{LB:} . $read_group{lb} . $DOUBLE_QUOTE,
-        );
+        ## Add missing "@RG"
+        $rg_header_line =
+          $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
         ## Prepare for downstream processing
         # Can be either infile or instream
@@ -789,7 +788,7 @@ sub analysis_run_bwa_mem {
                 infile_path          => $fastq_file_path,
                 idxbase              => $referencefile_path,
                 outfiles_prefix_path => $outfile_path_prefix,
-                read_group_header    => join( $EMPTY_STR, @read_group_headers ),
+                read_group_header    => $rg_header_line,
                 second_infile_path   => $second_fastq_file_path,
                 thread_number        => $recipe_resource{core_number},
             }

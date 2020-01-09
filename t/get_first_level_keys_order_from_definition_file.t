@@ -17,14 +17,14 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_absolute_path }],
+        q{MIP::Definition}     => [qw{ get_first_level_keys_order_from_definition_file }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_absolute_path };
+use MIP::Definition qw{ get_first_level_keys_order_from_definition_file };
 
-diag(   q{Test set_absolute_path from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test get_first_level_keys_order_from_definition_file from Definition.pm v}
+      . $MIP::Definition::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,34 +58,21 @@ diag(   q{Test set_absolute_path from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given an existing path
-my $existing_path  = catfile( $Bin, qw{ data test_data qc_sample_info.yaml } );
-my $parameter_name = q{existing_path};
+my $yaml_file = catfile( $Bin, qw{ data test_data define_parameters.yaml } );
 
-my $is_ok = set_absolute_path(
+my @order_parameters = get_first_level_keys_order_from_definition_file(
     {
-        parameter_name => $parameter_name,
-        path           => $existing_path,
+        file_path => $yaml_file
     }
 );
 
-## Then
-ok( $is_ok, q{Set absolute path} );
+my $first_key             = $order_parameters[0];
+my $cluster_constant_path = $order_parameters[1];
 
-## Given an not existing path
-my $not_existing_path = catfile(qw{ data test_data qc_sample_info.yaml });
+isnt( $first_key, q{---}, q{Skipped header and comments} );
 
-trap {
-    set_absolute_path(
-        {
-            parameter_name => $parameter_name,
-            path           => $not_existing_path,
-        }
-    )
-};
+is( $first_key, q{mip}, q{Found first key} );
 
-## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if the path cannot be found} );
-like( $trap->die, qr/Could \s+ not \s+ find \s+ absolute \s+ path/xms, q{Throw error} );
+is( $cluster_constant_path, q{cluster_constant_path}, q{Found second key} );
 
 done_testing();

@@ -28,16 +28,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
-      set_config_to_active_parameters
       set_custom_default_to_active_parameter
-      set_default_config_dynamic_parameters
       set_default_to_active_parameter
-      set_cache
       set_human_genome_reference_features
       set_nist_file_name_path
       set_no_dry_run_parameters
@@ -101,64 +98,6 @@ sub set_conda_path {
     $active_parameter_href->{conda_prefix_path} =
       catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
 
-    return;
-}
-
-sub set_config_to_active_parameters {
-
-## Function : Add contig parameters to active_parameters if not already initilized from command line
-## Returns  :
-## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
-##          : $config_parameter_href => Config parameters hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $config_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        config_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$config_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parmeter_name ( keys %{$config_parameter_href} ) {
-
-        ## Cmd initilized HASH
-        next PARAMETER
-          if ( ref $active_parameter_href->{$parmeter_name} eq qw{HASH}
-            && keys %{ $active_parameter_href->{$parmeter_name} } );
-
-        ## Cmd initilized ARRAY
-        next PARAMETER
-          if ( ref $active_parameter_href->{$parmeter_name} eq qw{ARRAY}
-            && @{ $active_parameter_href->{$parmeter_name} } );
-
-        ## Cmd initilized scalar
-        next PARAMETER
-          if ( defined $active_parameter_href->{$parmeter_name}
-            and not ref $active_parameter_href->{$parmeter_name} );
-
-        ### No input from cmd
-        ## Add to active_parameter
-        $active_parameter_href->{$parmeter_name} =
-          $config_parameter_href->{$parmeter_name};
-    }
     return;
 }
 
@@ -249,62 +188,6 @@ sub set_custom_default_to_active_parameter {
                 parameter_name        => $parameter_name,
             }
         );
-    }
-    return;
-}
-
-sub set_default_config_dynamic_parameters {
-
-## Function : Set default for config dynamic parameter using default definitions
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-##          : $parameter_names_ref   => MIP activate parameter names {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-    my $parameter_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_names_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        if ( exists $parameter_href->{$parameter_name}{default}
-            and not defined $active_parameter_href->{$parameter_name} )
-        {
-
-            ## Transfer to active parameter
-            $active_parameter_href->{$parameter_name} =
-              $parameter_href->{$parameter_name}{default};
-        }
     }
     return;
 }
@@ -420,71 +303,6 @@ sub set_default_to_active_parameter {
                   . q{' if you want to run }
                   . $associated_recipe );
             exit 1;
-        }
-    }
-    return;
-}
-
-sub set_cache {
-
-## Function : Sets dynamic aggregate information from definitions to parameter hash
-## Returns  :
-## Arguments: $aggregates_ref => The data to aggregate and add to parameter hash{REF}
-##          : $parameter_href => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $aggregates_ref;
-    my $parameter_href;
-
-    my $tmpl = {
-        aggregates_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$aggregates_ref,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Constants
-    Readonly my $RECORD_SEPARATOR => q{:};
-    Readonly my $FIELD_COUNTER    => 2;
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$parameter_href} ) {
-
-      KEY_AND_STRING_TO_MATCH:
-        foreach my $aggregate_element ( @{$aggregates_ref} ) {
-
-            ## Split into key and string to match
-            my ( $second_key, $string_to_match, $unexpected_data ) =
-              split $RECORD_SEPARATOR, $aggregate_element, $FIELD_COUNTER + 1;
-
-            ## Make sure that we get what we expect
-            if ( defined $unexpected_data ) {
-
-                carp q{Unexpected trailing garbage at end of aggregate_element '}
-                  . $aggregate_element
-                  . q{':}, $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
-            }
-
-            if ( defined $parameter_href->{$parameter_name}{$second_key}
-                && $parameter_href->{$parameter_name}{$second_key} eq $string_to_match )
-            {
-
-                push @{ $parameter_href->{cache}{$string_to_match} }, $parameter_name;
-            }
         }
     }
     return;

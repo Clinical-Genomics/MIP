@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -17,6 +17,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ get_chain_recipes }],
+        q{MIP::File::Path}     => [qw{ get_absolute_path }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ get_chain_recipes };
-use MIP::Test::Fixtures qw{ test_mip_hashes };
+use MIP::File::Path qw{ get_absolute_path };
 
-diag(   q{Test get_chain_recipes from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_absolute_path from File.pm v}
+      . $MIP::File::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,26 +59,34 @@ diag(   q{Test get_chain_recipes from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %dependency_tree = test_mip_hashes(
-    {
-        mip_hash_name => q{dependency_tree_dna},
-    }
-);
-my $chain_initiation_point  = q{DELLY_CALL};
-my $dependency_subtree_href = {};
-my $recipe_initiation_point = q{delly_reformat};
+## Given an existing path
+my $existing_path  = catfile( $Bin, qw{ data test_data qc_sample_info.yaml } );
+my $parameter_name = q{existing_path};
 
-## Given request to get recipes in chain DELLY_CALL starting with delly_reformat
-my @recipes = get_chain_recipes(
+my $is_ok = get_absolute_path(
     {
-        chain_initiation_point  => $chain_initiation_point,
-        dependency_tree_href    => \%dependency_tree,
-        recipe_initiation_point => $recipe_initiation_point,
+        parameter_name => $parameter_name,
+        path           => $existing_path,
     }
 );
 
-## Then get it
-my @expected_recipes = qw{ delly_reformat };
-is_deeply( \@recipes, \@expected_recipes, q{Get recipes} );
+## Then
+ok( $is_ok, q{Get absolute path} );
+
+## Given an not existing path
+my $not_existing_path = catfile(qw{ data test_data qc_sample_info.yaml });
+
+trap {
+    get_absolute_path(
+        {
+            parameter_name => $parameter_name,
+            path           => $not_existing_path,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if the path cannot be found} );
+like( $trap->die, qr/Could \s+ not \s+ find \s+ absolute \s+ path/xms, q{Throw error} );
 
 done_testing();

@@ -171,13 +171,13 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
-    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
     use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
-    use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
+    use MIP::Recipes::Build::Rd_rna qw{ build_rd_rna_meta_files };
+    use MIP::Set::Analysis qw{ set_recipe_star_aln };
 
     ### Pipeline specific checks
     check_rd_rna(
@@ -235,12 +235,21 @@ sub pipeline_analyse_rd_rna {
         rseqc                     => \&analysis_rseqc,
         sacct                     => \&analysis_sacct,
         salmon_quant              => \&analysis_salmon_quant,
-        star_aln                  => \&analysis_star_aln,
+        star_aln                  => undef,
         star_fusion               => \&analysis_star_fusion,
         stringtie_ar              => \&analysis_stringtie,
         trim_galore_ar            => \&analysis_trim_galore,
         varianteffectpredictor    => \&analysis_vep_rna,
         version_collect_ar        => \&analysis_mip_vercollect,
+    );
+
+    ## Update which star recipe to use depending on fastq infile mix
+    set_recipe_star_aln(
+        {
+            analysis_recipe_href    => \%analysis_recipe,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
+        }
     );
 
   RECIPE:
