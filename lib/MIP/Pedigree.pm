@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -695,7 +695,7 @@ sub parse_pedigree {
     parse_yaml_pedigree_file(
         {
             active_parameter_href => $active_parameter_href,
-            file_path             => $pedigree_file_path,
+            pedigree_file_path    => $pedigree_file_path,
             parameter_href        => $parameter_href,
             pedigree_href         => \%pedigree,
             sample_info_href      => $sample_info_href,
@@ -711,7 +711,7 @@ sub parse_yaml_pedigree_file {
 ##            active_parameter depending on user info.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_path             => Pedigree file path
+##          : $pedigree_file_path    => Pedigree file path
 ##          : $parameter_href        => Parameter hash {REF}
 ##          : $pedigree_href         => Pedigree hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
@@ -720,7 +720,7 @@ sub parse_yaml_pedigree_file {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $file_path;
+    my $pedigree_file_path;
     my $parameter_href;
     my $pedigree_href;
     my $sample_info_href;
@@ -733,10 +733,10 @@ sub parse_yaml_pedigree_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        file_path => {
+        pedigree_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$file_path,
+            store       => \$pedigree_file_path,
             strict_type => 1,
         },
         parameter_href => {
@@ -783,7 +783,7 @@ sub parse_yaml_pedigree_file {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => $active_parameter_href,
-            file_path             => $file_path,
+            file_path             => $pedigree_file_path,
             pedigree_href         => $pedigree_href,
         }
     );
@@ -792,7 +792,7 @@ sub parse_yaml_pedigree_file {
     if ( $pedigree_href->{case} ne $active_parameter_href->{case_id} ) {
 
         $log->fatal( q{Pedigree file: }
-              . $file_path
+              . $pedigree_file_path
               . q{ for  pedigree case_id: '}
               . $pedigree_href->{case}
               . q{' and supplied case: '}
@@ -804,7 +804,7 @@ sub parse_yaml_pedigree_file {
     ### Check sample keys values
     check_pedigree_sample_allowed_values(
         {
-            file_path     => $file_path,
+            file_path     => $pedigree_file_path,
             log           => $log,
             pedigree_href => $pedigree_href,
         }
@@ -897,7 +897,7 @@ sub parse_yaml_pedigree_file {
         ## Check that CLI supplied sample_id exists in pedigree
         check_pedigree_vs_user_input_sample_ids(
             {
-                file_path                 => $file_path,
+                file_path                 => $pedigree_file_path,
                 log                       => $log,
                 pedigree_sample_ids_ref   => \@pedigree_sample_ids,
                 user_input_sample_ids_ref => \@user_input_sample_ids,
