@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+- STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
+
+**CLI**
+- New CLI option for picard markduplicates optical duplicate distance. Default: 2500
+
 ## [8.0.0]
 
 - Added BAM contigs set to allow for single ladies to get a proper check sex (no pun intended:). Actually it is for all female only analyses.
@@ -29,11 +35,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed cramtools
 - Removes cutadapt 
 - Supply wgs variantcalls for ASE analysis
-- STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
-
-**CLI**
-- Removes the noupdate option from the installation
-- New CLI option for picard markduplicates optical duplicate distance. Default: 2500
 
 **New references**
 - grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml
