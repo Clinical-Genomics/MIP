@@ -86,6 +86,15 @@ $family_member_id{father} = <father_id>;
 $family_member_id{mother} = <mother_id>;
 ```
 
+get_pedigree_sample_id_attributes:
+Return the value of for a supplied sample id with a given attribute (e.g. 'sex')
+```Perl
+my $sample_id_sex = get_pedigree_sample_id_attributes({ attribute => q{sex},
+							sample_id => $sample_id,
+							sample_info_href => $sample_info_href,
+						      });
+```
+
 get_read_group:
 Return hash with read group headers.
 ```Perl

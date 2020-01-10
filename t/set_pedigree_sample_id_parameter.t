@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -40,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ set_pedigree_case_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ set_pedigree_sample_id_parameter }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ set_pedigree_case_info };
+use MIP::Active_parameter qw{ set_pedigree_sample_id_parameter };
 
-diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test set_pedigree_sample_id_parameter from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,16 +57,22 @@ diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %sample_info;
-my %pedigree = ( case => q{case_1}, );
+## Given a pedigree parameter
+my %active_parameter;
+my $pedigree_key   = q{phenotype};
+my $pedigree_value = q{affected};
+my $sample_id      = q{sample_1};
 
-set_pedigree_case_info(
+set_pedigree_sample_id_parameter(
     {
-        pedigree_href    => \%pedigree,
-        sample_info_href => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        pedigree_key          => $pedigree_key,
+        pedigree_value        => $pedigree_value,
+        sample_id             => $sample_id,
     }
 );
 
-is( $sample_info{case}, q{case_1}, q{Got case key and value} );
+## Then pedigree parameter should be set in active_parameter
+is( $active_parameter{phenotype}{$sample_id}, q{affected}, q{Set pedigree parameter} );
 
 done_testing();

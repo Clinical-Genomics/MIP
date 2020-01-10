@@ -38,13 +38,11 @@ BEGIN {
       get_install_parameter_attribute
       get_package_env_attributes
       get_package_source_env_cmds
-      get_pedigree_sample_id_attributes
       get_program_executables
       get_program_version
       get_programs_for_shell_installation
       get_recipe_resources
       get_recipe_attributes
-      get_user_supplied_info
       get_vep_version
     };
 }
@@ -665,65 +663,6 @@ sub get_package_source_env_cmds {
     return @source_environment_cmds;
 }
 
-sub get_pedigree_sample_id_attributes {
-
-## Function : Get pedigree sample id attribute
-## Returns  : $attribute
-## Arguments: $attribute        => Attribute key
-##          : $sample_id        => Sample id to get attribute for
-##          : $sample_info_href => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $attribute;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        attribute => {
-            allow => [
-                qw{ analysis_type capture_kit dna_sample_id expected_coverage father mother phenotype sample_id sample_name sex }
-            ],
-            defined     => 1,
-            required    => 1,
-            store       => \$attribute,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define mandatory attributes
-    my %mandatory_attribute = map { $_ => 0 }
-      qw{ analysis_type capture_kit father mother phenotype sample_id sex };
-
-    ## Get attribute
-    my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
-
-    ## Make sure that the supplied key exists for mandatory attributes
-    if ( not defined $stored_attribute
-        and exists $mandatory_attribute{$attribute} )
-    {
-        croak(qq{Could not find sample_info_name key: '$attribute' in hash});
-    }
-
-    return $stored_attribute;
-}
-
 sub get_program_executables {
 
 ## Function : Get the parameter file program executables per recipe
@@ -989,73 +928,6 @@ sub get_recipe_resources {
     ## Return recipe resource hash
     return %recipe_resource;
 
-}
-
-sub get_user_supplied_info {
-
-## Function : Detect if user supplied info on parameters otherwise collected from pedigree
-## Returns  : %user_supply_switch - Hash where 1=user input and 0=no user input
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define what should be checked
-    my %user_supply_switch = (
-        analysis_type         => 0,
-        dna_sample_id         => 0,
-        exome_target_bed      => 0,
-        expected_coverage     => 0,
-        sample_ids            => 0,
-        supported_capture_kit => 0,
-        time_point            => 0,
-    );
-
-    ## Detect user supplied info
-  USER_PARAMETER:
-    foreach my $parameter ( keys %user_supply_switch ) {
-
-        ## If hash and supplied
-        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
-            && keys %{ $active_parameter_href->{$parameter} } )
-        {
-
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
-            && @{ $active_parameter_href->{$parameter} } )
-        {
-            ## If array and supplied
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( defined $active_parameter_href->{$parameter}
-            and not ref $active_parameter_href->{$parameter} )
-        {
-
-            ## If scalar and supplied
-            $user_supply_switch{$parameter} = 1;
-        }
-        else {
-
-            ## No user defined input for parameter
-            $user_supply_switch{$parameter} = 0;
-        }
-    }
-    return %user_supply_switch;
 }
 
 sub get_vep_version {

@@ -27,13 +27,14 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_family_member_id
       get_read_group
       get_rg_header_line
+      get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
       get_sequence_run_type
@@ -73,8 +74,6 @@ sub get_family_member_id {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     my %family_member_id = (
         father            => 0,
@@ -130,6 +129,65 @@ sub get_family_member_id {
     }
 
     return %family_member_id;
+}
+
+sub get_pedigree_sample_id_attributes {
+
+## Function : Get pedigree sample id attribute
+## Returns  : $attribute
+## Arguments: $attribute        => Attribute key
+##          : $sample_id        => Sample id to get attribute for
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        attribute => {
+            allow => [
+                qw{ analysis_type
+                  capture_kit
+                  dna_sample_id
+                  expected_coverage
+                  father
+                  mother
+                  phenotype
+                  sample_id
+                  sample_name
+                  sex
+                  time_point
+                  }
+            ],
+            defined     => 1,
+            required    => 1,
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get attribute
+    my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
+
+    return $stored_attribute;
 }
 
 sub get_read_group {
