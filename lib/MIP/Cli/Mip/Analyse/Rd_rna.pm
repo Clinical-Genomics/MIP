@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.27;
+our $VERSION = 1.28;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -619,75 +619,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{markduplicates_no_bam_to_cram} => (
-            cmd_aliases   => [qw{ mdnbtc }],
-            cmd_flag      => q{markduplicates_nbtc},
-            documentation => q{Generate CRAM from BAM},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{markduplicates_picardtools_markduplicates} => (
-            cmd_aliases   => [qw{ mdpmd }],
-            cmd_flag      => q{picard_markduplicates},
-            documentation => q{Markduplicates using Picardtools markduplicates},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{markduplicates_picardtools_opt_dup_dist} => (
             cmd_aliases   => [qw{ mdpodd }],
             cmd_flag      => q{picard_mdup_odd},
             cmd_tags      => [q{Default: 2500}],
             documentation => q{Picardtools markduplicates optical duplicate distance},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup} => (
-            cmd_aliases   => [qw{ mdsmd }],
-            cmd_flag      => q{sambamba_markdup},
-            documentation => q{Markduplicates using Sambamba markduplicates},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_hash_table_size} => (
-            cmd_aliases   => [qw{ mdshts }],
-            cmd_flag      => q{sba_mdup_hts},
-            cmd_tags      => [q{Default: 262144}],
-            documentation => q{Sambamba size of hash table for finding read pairs},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_io_buffer_size} => (
-            cmd_aliases => [qw{ mdsibs }],
-            cmd_flag    => q{sba_mdup_ibs},
-            cmd_tags    => [q{Default: 2048}],
-            documentation =>
-q{Sambamba size of the io buffer for reading and writing BAM during the second pass},
-            is  => q{rw},
-            isa => Int,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_overflow_list_size} => (
-            cmd_aliases   => [qw{ mdsols }],
-            cmd_flag      => q{sba_mdup_ols},
-            cmd_tags      => [q{Default: 200000}],
-            documentation => q{Sambamba size of the overflow list},
             is            => q{rw},
             isa           => Int,
         )

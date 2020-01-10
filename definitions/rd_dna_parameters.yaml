@@ -436,12 +436,6 @@ markduplicates:
    - picard
    - sambamba
   type: recipe
-markduplicates_no_bam_to_cram:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 markduplicates_picardtools_markduplicates:
   associated_recipe:
    - markduplicates
