@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.28;
+our $VERSION = 1.29;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -325,16 +325,6 @@ sub _build_usage {
               q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{gatk_baserecalibration_no_bam_to_cram} => (
-            cmd_aliases   => [qw{ gbrnbtc }],
-            cmd_flag      => q{gatk_baserecal_nbtc},
-            documentation => q{Generate CRAM from BAM},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
