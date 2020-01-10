@@ -532,7 +532,8 @@ sub analysis_gatk_baserecalibration {
 
 sub analysis_gatk_baserecalibration_rna {
 
-## Function : GATK baserecalibrator/GatherBQSRReports/ApplyBQSR to recalibrate bases before variant calling. BaseRecalibrator/GatherBQSRReports/ApplyBQSR will be executed within the same sbatch script.
+## Function : GATK baserecalibrator/GatherBQSRReports/ApplyBQSR to recalibrate bases before variant calling.
+##          : BaseRecalibrator/GatherBQSRReports/ApplyBQSR will be executed within the same sbatch script.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
