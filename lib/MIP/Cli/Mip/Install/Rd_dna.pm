@@ -24,7 +24,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.16;
+our $VERSION = 2.17;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -118,7 +118,7 @@ sub _build_usage {
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba
-                          scikit-learn stranger svdb tiddit upd varg
+                          smncopynumbercaller scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
@@ -141,7 +141,7 @@ sub _build_usage {
                           gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba
-                          scikit-learn stranger svdb tiddit upd varg
+                          smncopynumbercaller scikit-learn stranger svdb tiddit upd varg
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),

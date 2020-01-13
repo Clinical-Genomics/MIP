@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.42;
+our $VERSION = 1.43;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -662,6 +662,16 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Do not include reads with failed quality control},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{smncopynumbercaller} => (
+            cmd_aliases   => [qw{ smncnc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{SMN copy number analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
