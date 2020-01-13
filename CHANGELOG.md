@@ -4,9 +4,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Develop]
 - STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
+- Dropped option to run sambamba markduplicates for RNA
 
 **CLI**
 - New CLI option for picard markduplicates optical duplicate distance. Default: 2500
+- Removed sambamba markduplicates CLI options from RNA
+- Removed CLI optono markduplicates_no_bam_to_cram
 
 ## [8.0.0]
 
