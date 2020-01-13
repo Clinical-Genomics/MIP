@@ -158,11 +158,10 @@ sub analysis_smncopynumbercaller {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path        = $io{in}{file_path};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -194,7 +193,7 @@ sub analysis_smncopynumbercaller {
         )
     );
 
-    my $outdir_path         = $io{out}{dir_path};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -226,7 +225,7 @@ sub analysis_smncopynumbercaller {
     say {$filehandle} q{## } . $recipe_name;
 
 ## Create manifest file
-    my $manifest_file_path = catfile( $outdir_path, q{manifest.txt} );
+    my $manifest_file_path = catfile( $outdir_path_prefix, q{manifest.txt} );
 
     gnu_echo(
         {
@@ -245,10 +244,11 @@ sub analysis_smncopynumbercaller {
             manifest_file_path => $manifest_file_path,
             genome_version     => $GENOME_VERSION,
             outfile_prefix     => $outfile_name_prefix,
-            outdir_path        => $outdir_path,
+            outdir_path        => $outdir_path_prefix,
             thread_number      => $recipe_resource{core_number},
         }
     );
+    say {$filehandle} $NEWLINE;
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});

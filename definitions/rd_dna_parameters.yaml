@@ -163,7 +163,7 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
-    smncopynumbercaller: 36
+    smncopynumbercaller: 4
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
