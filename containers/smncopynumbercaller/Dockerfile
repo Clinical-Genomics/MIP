@@ -27,4 +27,6 @@ RUN cd /opt/conda/share/SMNCopyNumberCaller && \
 
 RUN ln --symbolic --force /opt/conda/share/SMNCopyNumberCaller/smn_caller.py /opt/conda/bin/smn_caller.py
 
+RUN ln --symbolic --force /opt/conda/share/SMNCopyNumberCaller/data /opt/conda/bin/data
+
 WORKDIR /data/
