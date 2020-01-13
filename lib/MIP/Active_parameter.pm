@@ -26,7 +26,9 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_user_supplied_pedigree_parameter
+    our @EXPORT_OK = qw{
+      get_user_supplied_pedigree_parameter
+      set_exome_target_bed
       set_pedigree_sample_id_parameter
       update_to_absolute_path };
 }
@@ -91,6 +93,52 @@ sub get_user_supplied_pedigree_parameter {
         }
     }
     return %is_user_supplied;
+}
+
+sub set_exome_target_bed {
+
+## Function : Set exome target bed parameter in active_parameter hash
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $exome_target_bed_file => Exome target bed file to set
+##          : $sample_id_string      => Sample id string to attach to exome bed file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $exome_target_bed_file;
+    my $sample_id_string;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        exome_target_bed_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$exome_target_bed_file,
+            strict_type => 1,
+        },
+        sample_id_string => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_string,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add sample_ids as string to exome_target_bed_file
+    $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} =
+      $sample_id_string;
+
+    return;
 }
 
 sub set_pedigree_sample_id_parameter {

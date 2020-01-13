@@ -1406,6 +1406,7 @@ sub set_pedigree_capture_kit_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ set_exome_target_bed };
     use MIP::Parameter qw{ get_capture_kit };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
@@ -1448,9 +1449,16 @@ sub set_pedigree_capture_kit_info {
 
         ## We have read capture kits from pedigree and
         ## need to transfer to active_parameters
-        $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
-          = join $COMMA,
+        my $sample_id_string = join $COMMA,
           @{ $exom_target_bed_file_sample_id_map{$exome_target_bed_file} };
+
+        set_exome_target_bed(
+            {
+                active_parameter_href => $active_parameter_href,
+                exome_target_bed_file => $exome_target_bed_file,
+                sample_id_string      => $sample_id_string,
+            }
+        );
     }
     return;
 }
