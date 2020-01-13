@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -153,7 +153,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
+      qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
@@ -162,7 +162,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rna };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
@@ -222,13 +222,13 @@ sub pipeline_analyse_rd_rna {
         dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rna,
         gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         genebody_coverage         => \&analysis_genebody_coverage,
         gffcompare_ar             => \&analysis_gffcompare,
-        markduplicates            => \&analysis_markduplicates,
+        markduplicates            => \&analysis_markduplicates_rna,
         multiqc_ar                => \&analysis_multiqc,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
         preseq_ar                 => \&analysis_preseq,

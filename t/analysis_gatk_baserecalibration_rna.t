@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Markduplicates} => [qw{ analysis_markduplicates }],
+        q{MIP::Recipes::Analysis::Gatk_baserecalibration} =>
+          [qw{ analysis_gatk_baserecalibration_rna }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+use MIP::Recipes::Analysis::Gatk_baserecalibration
+  qw{ analysis_gatk_baserecalibration_rna };
 
-diag(   q{Test analysis_markduplicates from Markduplicates.pm v}
-      . $MIP::Recipes::Analysis::Markduplicates::VERSION
+diag(   q{Test analysis_gatk_baserecalibration_rna from Gatk_baserecalibration.pm v}
+      . $MIP::Recipes::Analysis::Gatk_baserecalibration::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +64,7 @@ diag(   q{Test analysis_markduplicates from Markduplicates.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{markduplicates};
+my $recipe_name    = q{gatk_baserecalibration_rna};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,7 +77,6 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{markduplicates_picardtools_markduplicates} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -83,20 +84,22 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+
 %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
-CONTIG:
 
+CONTIG:
 foreach my $contig ( @{ $file_info{contigs} } ) {
 
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =
+    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_path_href}{$contig} =
       q{a_file.bam};
 }
+
 $file_info{$sample_id}{merged_infile} = q{a_prefix};
-$file_info{$sample_id}{$recipe_name}{file_tag} = q{mdup};
+$file_info{$sample_id}{$recipe_name}{file_tag} = q{brecal};
 
 my %infile_lane_prefix;
 my %job_id;
@@ -111,7 +114,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.bam};
 
 my %sample_info;
 
-my $is_ok = analysis_markduplicates(
+my $is_ok = analysis_gatk_baserecalibration_rna(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,
@@ -126,29 +129,6 @@ my $is_ok = analysis_markduplicates(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using picardtools} );
-
-## Given sambamba_markdup
-$active_parameter{markduplicates_sambamba_markdup}                    = 1;
-$active_parameter{markduplicates_sambamba_markdup_hash_table_size}    = 1;
-$active_parameter{markduplicates_sambamba_markdup_io_buffer_size}     = 1;
-$active_parameter{markduplicates_sambamba_markdup_overflow_list_size} = 1;
-
-$is_ok = analysis_markduplicates(
-    {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using sambamba} );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();
