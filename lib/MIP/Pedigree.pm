@@ -1093,8 +1093,8 @@ sub parse_yaml_pedigree_file {
     ### Check sample keys values
     check_pedigree_sample_allowed_values(
         {
-            file_path     => $pedigree_file_path,
-            pedigree_href => $pedigree_href,
+            pedigree_file_path => $pedigree_file_path,
+            pedigree_href      => $pedigree_href,
         }
     );
 
@@ -1184,7 +1184,7 @@ sub parse_yaml_pedigree_file {
         ## Check that CLI supplied sample_id exists in pedigree
         check_pedigree_vs_user_input_sample_ids(
             {
-                file_path                 => $pedigree_file_path,
+                pedigree_file_path        => $pedigree_file_path,
                 pedigree_sample_ids_ref   => \@pedigree_sample_ids,
                 user_input_sample_ids_ref => \@user_input_sample_ids,
             }
