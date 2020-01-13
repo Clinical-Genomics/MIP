@@ -163,6 +163,7 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
+    smncopynumbercaller: 36
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -270,6 +271,7 @@ recipe_time:
     sacct: 1
     sambamba_depth: 10
     samtools_subsample_mt: 1
+    smncopynumbercaller: 10
     split_fastq_file: 10
     sv_annotate: 2
     sv_combinevariantcallsets: 2
@@ -622,6 +624,17 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+smncopynumbercaller:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _coverage
+  outfile_suffix: ".bed"
+  program_executables:
+   - smn_caller.py
+  type: recipe
 tiddit_coverage:
   analysis_mode: sample
   associated_recipe:
