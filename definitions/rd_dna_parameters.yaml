@@ -630,7 +630,7 @@ smncopynumbercaller:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _coverage
+  file_tag: _smn
   outfile_suffix: ".tsv"
   program_executables:
    - smn_caller.py
