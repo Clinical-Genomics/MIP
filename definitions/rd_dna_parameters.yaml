@@ -271,7 +271,7 @@ recipe_time:
     sacct: 1
     sambamba_depth: 10
     samtools_subsample_mt: 1
-    smncopynumbercaller: 10
+    smncopynumbercaller: 1
     split_fastq_file: 10
     sv_annotate: 2
     sv_combinevariantcallsets: 2
