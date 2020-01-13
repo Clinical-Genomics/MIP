@@ -88,8 +88,8 @@ my %pedigree = (
 ## Given allowed values in pedigree file
 my $is_ok = check_pedigree_sample_allowed_values(
     {
-        file_path     => $Bin,
-        pedigree_href => \%pedigree,
+        pedigree_file_path => $Bin,
+        pedigree_href      => \%pedigree,
     }
 );
 
@@ -102,8 +102,8 @@ $pedigree{samples}[0]{analysis_type} = q{How rude};
 trap {
     check_pedigree_sample_allowed_values(
         {
-            file_path     => $Bin,
-            pedigree_href => \%pedigree,
+            pedigree_file_path => $Bin,
+            pedigree_href      => \%pedigree,
         }
     )
 };

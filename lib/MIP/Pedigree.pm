@@ -32,8 +32,10 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_founder_id
       check_pedigree_mandatory_key
       check_pedigree_sample_allowed_values
+      check_pedigree_vs_user_input_sample_ids
       create_fam_file
       detect_founders
       detect_sample_id_gender
@@ -56,19 +58,79 @@ BEGIN {
 ## Constants
 Readonly my $TRIO_MEMBERS_COUNT => 3;
 
+sub check_founder_id {
+
+## Function : Check that founder_ids are included in the pedigree info
+## Returns  :
+## Arguments: $active_sample_ids_ref => Array of pedigree samples {REF}
+##          : $pedigree_href         => Pedigree info {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_sample_ids_ref;
+    my $pedigree_href;
+
+    my $tmpl = {
+        active_sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$active_sample_ids_ref,
+            strict_type => 1,
+        },
+        pedigree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  SAMPLE:
+    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
+
+        my @founders =
+          ( $pedigree_sample_href->{father}, $pedigree_sample_href->{mother} );
+
+      FOUNDER:
+        foreach my $founder (@founders) {
+
+            ## No founder info
+            next FOUNDER if ( not $founder );
+
+            ## If founder is part of analysis
+            next FOUNDER
+              if ( any { $_ eq $founder } @{$active_sample_ids_ref} );
+
+            $log->fatal( q{Could not find founder sample_id: }
+                  . $founder
+                  . q{ from pedigree file in current analysis} );
+            exit 1;
+        }
+    }
+    return 1;
+}
+
 sub check_pedigree_mandatory_key {
 
 ## Function : Check that the pedigree case mandatory keys are present
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $file_path             => Pedigree file path
+##          : $pedigree_file_path    => Pedigree file path
 ##          : $pedigree_href         => YAML pedigree info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $file_path;
+    my $pedigree_file_path;
     my $pedigree_href;
 
     my $tmpl = {
@@ -79,10 +141,10 @@ sub check_pedigree_mandatory_key {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        file_path => {
+        pedigree_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$file_path,
+            store       => \$pedigree_file_path,
             strict_type => 1,
         },
         pedigree_href => {
@@ -116,7 +178,7 @@ sub check_pedigree_mandatory_key {
         next MANDATORY_KEY if ( exists $pedigree_href->{$key} );
 
         $log->fatal( q{Pedigree file: }
-              . $file_path
+              . $pedigree_file_path
               . q{ cannot find mandatory key: }
               . $key
               . q{ in file} );
@@ -135,7 +197,7 @@ sub check_pedigree_mandatory_key {
             next MANDATORY_KEY if ( exists $pedigree_sample_href->{$key} );
 
             $log->fatal( q{Pedigree file: }
-                  . $file_path
+                  . $pedigree_file_path
                   . q{ cannot find mandatory sample key: }
                   . $key
                   . q{ in file} );
@@ -149,20 +211,20 @@ sub check_pedigree_sample_allowed_values {
 
 ## Function : Check that the pedigree sample key values are allowed
 ## Returns  :
-## Arguments: $file_path     => Pedigree file path
-##          : $pedigree_href => YAML pedigree info hash {REF}
+## Arguments: $pedigree_file_path => Pedigree file path
+##          : $pedigree_href      => YAML pedigree info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_path;
+    my $pedigree_file_path;
     my $pedigree_href;
 
     my $tmpl = {
-        file_path => {
+        pedigree_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$file_path,
+            store       => \$pedigree_file_path,
             strict_type => 1,
         },
         pedigree_href => {
@@ -202,7 +264,7 @@ sub check_pedigree_sample_allowed_values {
                 @{ $allowed_values{$key} }
               );
 
-            $log->fatal( q{Pedigree file: } . $file_path );
+            $log->fatal( q{Pedigree file: } . $pedigree_file_path );
             $log->fatal( q{For key: }
                   . $key
                   . q{ found illegal value: '}
@@ -212,6 +274,66 @@ sub check_pedigree_sample_allowed_values {
                   . q{'} );
             $log->fatal(q{Please correct the entry before analysis});
             $log->fatal(q{Aborting run});
+            exit 1;
+        }
+    }
+    return 1;
+}
+
+sub check_pedigree_vs_user_input_sample_ids {
+
+## Function : Check pedigree sample ids and user input sample ids match
+## Returns  :
+## Arguments: $pedigree_file_path        => Pedigree file path
+##          : $pedigree_sample_ids_ref   => Pedigree sample ids
+##          : $user_input_sample_ids_ref => user input sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $pedigree_file_path;
+    my $pedigree_sample_ids_ref;
+    my $user_input_sample_ids_ref;
+
+    my $tmpl = {
+        pedigree_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_file_path,
+            strict_type => 1,
+        },
+        pedigree_sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_sample_ids_ref,
+            strict_type => 1,
+        },
+        user_input_sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$user_input_sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$user_input_sample_ids_ref} ) {
+
+        ## If element is not part of array
+        if ( not any { $_ eq $sample_id } @{$pedigree_sample_ids_ref} ) {
+
+            $log->fatal( q{File: }
+                  . $pedigree_file_path
+                  . q{ provided sample_id: }
+                  . $sample_id
+                  . q{ is not present in pedigree file} );
             exit 1;
         }
     }
@@ -935,8 +1057,6 @@ sub parse_yaml_pedigree_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
-    use MIP::Check::Pedigree
-      qw{ check_founder_id check_pedigree_vs_user_input_sample_ids };
     use MIP::Parameter qw{ get_capture_kit };
 
     ## Retrieve logger object
@@ -952,7 +1072,7 @@ sub parse_yaml_pedigree_file {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => $active_parameter_href,
-            file_path             => $pedigree_file_path,
+            pedigree_file_path    => $pedigree_file_path,
             pedigree_href         => $pedigree_href,
         }
     );
@@ -1049,7 +1169,6 @@ sub parse_yaml_pedigree_file {
     check_founder_id(
         {
             active_sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
-            log                   => $log,
             pedigree_href         => $pedigree_href,
         }
     );
@@ -1066,7 +1185,6 @@ sub parse_yaml_pedigree_file {
         check_pedigree_vs_user_input_sample_ids(
             {
                 file_path                 => $pedigree_file_path,
-                log                       => $log,
                 pedigree_sample_ids_ref   => \@pedigree_sample_ids,
                 user_input_sample_ids_ref => \@user_input_sample_ids,
             }

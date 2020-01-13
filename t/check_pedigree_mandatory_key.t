@@ -110,7 +110,7 @@ my %pedigree = (
 my $is_ok = check_pedigree_mandatory_key(
     {
         active_parameter_href => \%active_parameter,
-        file_path             => catfile(qw{ path to pedigree.yaml }),
+        pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
         pedigree_href         => \%pedigree,
     }
 );
@@ -125,7 +125,7 @@ trap {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => \%active_parameter,
-            file_path             => catfile(qw{ path to pedigree.yaml }),
+            pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
     )
@@ -146,7 +146,7 @@ trap {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => \%active_parameter,
-            file_path             => catfile(qw{ path to pedigree.yaml }),
+            pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
     )
