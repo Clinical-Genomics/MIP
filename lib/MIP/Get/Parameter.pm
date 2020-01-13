@@ -30,7 +30,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_bin_file_path
-      get_capture_kit
       get_conda_path
       get_dynamic_conda_path
       get_env_method_cmds
@@ -102,67 +101,6 @@ sub get_bin_file_path {
 
     ## Return absolute path
     return ( abs_path($bin_file_path), $environment );
-}
-
-sub get_capture_kit {
-
-## Function : Return a capture kit depending on user info. If arg->{user_supplied_parameter_switchRef} is set, go a head and add capture kit no matter what the switch was.
-## Returns  : "$capture kit", "supported capture kit" or "undef"
-## Arguments: $capture_kit                    => Capture kit to add
-##          : $supported_capture_kit_href     => The supported capture kits hash {REF}
-##          : $user_supplied_parameter_switch => Has user supplied parameter {OPTIONAL}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $capture_kit;
-    my $user_supplied_parameter_switch;
-    my $supported_capture_kit_href;
-
-    my $tmpl = {
-        capture_kit                => { store => \$capture_kit, strict_type => 1, },
-        supported_capture_kit_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$supported_capture_kit_href,
-            strict_type => 1,
-        },
-        user_supplied_parameter_switch =>
-          { store => \$user_supplied_parameter_switch, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set default or return supplied capture kit
-    if ( not defined $user_supplied_parameter_switch ) {
-
-        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
-
-            return $supported_capture_kit_href->{$capture_kit};
-        }
-        else {
-            ## Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-    ## Only add if user supplied no info on parameter
-    if ( defined $user_supplied_parameter_switch
-        and not $user_supplied_parameter_switch )
-    {
-
-        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
-
-            return $supported_capture_kit_href->{$capture_kit};
-        }
-        else {
-            #Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-    return;
 }
 
 sub get_conda_path {

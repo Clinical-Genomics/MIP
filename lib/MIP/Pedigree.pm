@@ -45,6 +45,7 @@ BEGIN {
       parse_yaml_pedigree_file
       reload_previous_pedigree_info
       set_active_parameter_pedigree_keys
+      set_pedigree_capture_kit_info
       set_pedigree_case_info
       set_pedigree_sample_info
       set_pedigree_sex_info
@@ -936,8 +937,7 @@ sub parse_yaml_pedigree_file {
     use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
     use MIP::Check::Pedigree
       qw{ check_founder_id check_pedigree_vs_user_input_sample_ids };
-    use MIP::Get::Parameter qw{ get_capture_kit };
-    use MIP::Set::Pedigree qw{ set_pedigree_capture_kit_info };
+    use MIP::Parameter qw{ get_capture_kit };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -1037,11 +1037,11 @@ sub parse_yaml_pedigree_file {
 
     set_pedigree_capture_kit_info(
         {
-            active_parameter_href   => $active_parameter_href,
-            parameter_href          => $parameter_href,
-            pedigree_href           => $pedigree_href,
-            sample_info_href        => $sample_info_href,
-            user_supply_switch_href => \%is_user_supplied,
+            active_parameter_href => $active_parameter_href,
+            is_user_supplied_href => \%is_user_supplied,
+            parameter_href        => $parameter_href,
+            pedigree_href         => $pedigree_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -1224,6 +1224,114 @@ sub set_active_parameter_pedigree_keys {
                 }
             );
         }
+    }
+    return;
+}
+
+sub set_pedigree_capture_kit_info {
+
+## Function : Add and set capture kit for each individual
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $pedigree_href         => YAML pedigree info hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+##          : $is_user_supplied_href => User supplied info switch {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $pedigree_href;
+    my $sample_info_href;
+    my $is_user_supplied_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        pedigree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        is_user_supplied_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$is_user_supplied_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_capture_kit };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    my %exom_target_bed_file_tracker;
+
+  SAMPLE_HREF:
+    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
+
+        ## Unpack
+        my $sample_id   = $pedigree_sample_href->{sample_id};
+        my $capture_kit = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{capture_kit},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## No recorded capture kit from pedigree or previous run
+        next SAMPLE_HREF if ( not $capture_kit );
+
+        ## Return a capture kit depending on user info
+        my $exome_target_bed_file = get_capture_kit(
+            {
+                capture_kit => $capture_kit,
+                supported_capture_kit_href =>
+                  $parameter_href->{supported_capture_kit}{default},
+                is_set_by_user => $is_user_supplied_href->{exome_target_bed},
+            }
+        );
+
+        ## No capture kit returned
+        next SAMPLE_HREF if ( not $exome_target_bed_file );
+
+        push @{ $exom_target_bed_file_tracker{$exome_target_bed_file} }, $sample_id;
+    }
+
+  BED_FILE:
+    foreach my $exome_target_bed_file ( keys %exom_target_bed_file_tracker ) {
+
+        ## We have read capture kits from pedigree and
+        ## need to transfer to active_parameters
+        $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
+          = join q{,},
+          @{ $exom_target_bed_file_tracker{$exome_target_bed_file} };
     }
     return;
 }

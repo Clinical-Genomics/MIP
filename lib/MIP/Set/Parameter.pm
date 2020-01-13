@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1105,7 +1105,7 @@ sub _set_capture_kit {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_capture_kit };
+    use MIP::Parameter qw{ get_capture_kit };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);

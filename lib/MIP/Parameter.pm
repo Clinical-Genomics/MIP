@@ -24,10 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_parameter_hash
+      get_capture_kit
       get_order_of_parameters
       print_recipe
       set_cache };
@@ -103,6 +104,60 @@ sub check_parameter_hash {
         );
     }
     return 1;
+}
+
+sub get_capture_kit {
+
+## Function : Return a capture kit depending on user info. If $is_set_by_user is
+##          : true, go a head and add capture kit no matter what the switch was.
+## Returns  : $capture kit, "supported capture kit" or "undef"
+## Arguments: $capture_kit                => Capture kit to add
+##          : $is_set_by_user             => Has user supplied parameter {OPTIONAL}
+##          : $supported_capture_kit_href => Supported capture kits hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $capture_kit;
+    my $is_set_by_user;
+    my $supported_capture_kit_href;
+
+    my $tmpl = {
+        capture_kit                => { store => \$capture_kit,    strict_type => 1, },
+        is_set_by_user             => { store => \$is_set_by_user, strict_type => 1, },
+        supported_capture_kit_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$supported_capture_kit_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Unpack
+    my $supported_capture_kit = $supported_capture_kit_href->{$capture_kit};
+
+    ## Set default or return supplied capture kit
+    if ( not defined $is_set_by_user ) {
+
+        return $supported_capture_kit if ( defined $supported_capture_kit );
+
+        ## Return unchanged capture_kit string
+        return $capture_kit;
+    }
+    ## Only add if user supplied no info on parameter
+    if ( defined $is_set_by_user
+        and not $is_set_by_user )
+    {
+
+        return $supported_capture_kit if ( defined $supported_capture_kit );
+
+        ## Return unchanged capture_kit string
+        return $capture_kit;
+    }
+    return;
 }
 
 sub get_order_of_parameters {
