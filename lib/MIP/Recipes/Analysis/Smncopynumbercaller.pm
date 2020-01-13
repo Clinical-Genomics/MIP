@@ -160,9 +160,9 @@ sub analysis_smncopynumbercaller {
     );
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path        = $io{in}{file_path};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -249,6 +249,7 @@ sub analysis_smncopynumbercaller {
             thread_number      => $recipe_resource{core_number},
         }
     );
+    say {$filehandle} $NEWLINE;
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
