@@ -20,7 +20,7 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 use MIP::Gnu::Coreutils qw{ gnu_echo };
 
 BEGIN {
@@ -1409,7 +1409,7 @@ sub set_pedigree_capture_kit_info {
     use MIP::Parameter qw{ get_capture_kit };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
-    my %exom_target_bed_file_tracker;
+    my %exom_target_bed_file_sample_id_map;
 
   SAMPLE_HREF:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
@@ -1440,17 +1440,17 @@ sub set_pedigree_capture_kit_info {
         ## No capture kit returned
         next SAMPLE_HREF if ( not $exome_target_bed_file );
 
-        push @{ $exom_target_bed_file_tracker{$exome_target_bed_file} }, $sample_id;
+        push @{ $exom_target_bed_file_sample_id_map{$exome_target_bed_file} }, $sample_id;
     }
 
   BED_FILE:
-    foreach my $exome_target_bed_file ( keys %exom_target_bed_file_tracker ) {
+    foreach my $exome_target_bed_file ( keys %exom_target_bed_file_sample_id_map ) {
 
         ## We have read capture kits from pedigree and
         ## need to transfer to active_parameters
         $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
-          = join q{,},
-          @{ $exom_target_bed_file_tracker{$exome_target_bed_file} };
+          = join $COMMA,
+          @{ $exom_target_bed_file_sample_id_map{$exome_target_bed_file} };
     }
     return;
 }
