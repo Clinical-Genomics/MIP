@@ -20,6 +20,8 @@ CHAIN_ALL:
          - tiddit_coverage
       - CHAIN_SBCOV:
          - sambamba_depth
+      - CHAIN_SMN:
+         - smncopynumbercaller
       - CHAIN_PTMME:
          - picardtools_collectmultiplemetrics
       - CHAIN_PTCHSM:
