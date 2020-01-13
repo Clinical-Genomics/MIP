@@ -286,7 +286,7 @@ sub check_pedigree_vs_user_input_sample_ids {
 ## Returns  :
 ## Arguments: $pedigree_file_path        => Pedigree file path
 ##          : $pedigree_sample_ids_ref   => Pedigree sample ids
-##          : $user_input_sample_ids_ref => user input sample ids
+##          : $user_input_sample_ids_ref => User input sample ids
 
     my ($arg_href) = @_;
 
@@ -1501,7 +1501,7 @@ sub set_pedigree_case_info {
 
 sub set_pedigree_sample_info {
 
-## Function : Get the pedigree sample keys and values
+## Function : Set the pedigree sample keys and values
 ## Returns  :
 ## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
 ##          : $pedigree_href             => YAML pedigree info hash {REF}
