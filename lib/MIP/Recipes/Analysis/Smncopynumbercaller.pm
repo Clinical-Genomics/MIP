@@ -139,7 +139,7 @@ sub analysis_smncopynumbercaller {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Smncopynumbercaller qw{ smn_caller };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -196,7 +196,6 @@ sub analysis_smncopynumbercaller {
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
@@ -262,6 +261,15 @@ sub analysis_smncopynumbercaller {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                file_tag         => $sample_id . $UNDERSCORE . q{smncopynumbercaller},
+                file_type        => q{meta},
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
