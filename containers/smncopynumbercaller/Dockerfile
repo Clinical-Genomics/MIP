@@ -21,6 +21,8 @@ RUN /opt/conda/bin/conda clean -tipsy
 ## Clone git repository
 RUN git clone https://github.com/Illumina/SMNCopyNumberCaller.git /opt/conda/share/SMNCopyNumberCaller
 
+RUN cd /opt/conda/share/SMNCopyNumberCaller && git checkout 4b2c1ad
+
 ## Move to smn_caller directory
 RUN cd /opt/conda/share/SMNCopyNumberCaller && \
     chmod a+x smn_caller.py
