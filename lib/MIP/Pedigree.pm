@@ -1090,6 +1090,13 @@ sub parse_yaml_pedigree_file {
         exit 1;
     }
 
+    set_pedigree_case_info(
+        {
+            pedigree_href    => $pedigree_href,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
     ### Check sample keys values
     check_pedigree_sample_allowed_values(
         {
@@ -1113,13 +1120,6 @@ sub parse_yaml_pedigree_file {
         @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
 
-    set_pedigree_case_info(
-        {
-            pedigree_href    => $pedigree_href,
-            sample_info_href => $sample_info_href,
-        }
-    );
-
     my @pedigree_sample_ids = set_pedigree_sample_info(
         {
             active_parameter_href     => $active_parameter_href,
@@ -1129,6 +1129,24 @@ sub parse_yaml_pedigree_file {
             user_input_sample_ids_ref => \@user_input_sample_ids,
         }
     );
+
+    if ( not $is_user_supplied{sample_ids} ) {
+
+        ## Lexiographical sort to determine the correct order of ids indata
+        @{ $active_parameter_href->{sample_ids} } =
+          sort @{ $active_parameter_href->{sample_ids} };
+    }
+    else {
+
+        ## Check that CLI supplied sample_id exists in pedigree
+        check_pedigree_vs_user_input_sample_ids(
+            {
+                pedigree_file_path        => $pedigree_file_path,
+                pedigree_sample_ids_ref   => \@pedigree_sample_ids,
+                user_input_sample_ids_ref => \@user_input_sample_ids,
+            }
+        );
+    }
 
     ## Add sex and plink sex to dynamic parameters
     set_pedigree_sex_info(
@@ -1173,23 +1191,6 @@ sub parse_yaml_pedigree_file {
         }
     );
 
-    if ( not $is_user_supplied{sample_ids} ) {
-
-        ## Lexiographical sort to determine the correct order of ids indata
-        @{ $active_parameter_href->{sample_ids} } =
-          sort @{ $active_parameter_href->{sample_ids} };
-    }
-    else {
-
-        ## Check that CLI supplied sample_id exists in pedigree
-        check_pedigree_vs_user_input_sample_ids(
-            {
-                pedigree_file_path        => $pedigree_file_path,
-                pedigree_sample_ids_ref   => \@pedigree_sample_ids,
-                user_input_sample_ids_ref => \@user_input_sample_ids,
-            }
-        );
-    }
     return 1;
 }
 
