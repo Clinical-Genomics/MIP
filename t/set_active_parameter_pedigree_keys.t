@@ -124,9 +124,9 @@ my %is_user_supplied = get_user_supplied_pedigree_parameter(
 set_active_parameter_pedigree_keys(
     {
         active_parameter_href => \%active_parameter,
+        is_user_supplied_href => \%is_user_supplied,
         pedigree_href         => \%pedigree,
         sample_info_href      => \%sample_info,
-        is_user_supplied_href => \%is_user_supplied,
     }
 );
 my $set_analysis_type     = $active_parameter{analysis_type}{sample_1};

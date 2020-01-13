@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_user_supplied_pedigree_parameter
@@ -88,11 +88,6 @@ sub get_user_supplied_pedigree_parameter {
 
             ## If scalar and supplied
             $is_user_supplied{$parameter} = 1;
-        }
-        else {
-
-            ## No user defined input for parameter
-            $is_user_supplied{$parameter} = 0;
         }
     }
     return %is_user_supplied;

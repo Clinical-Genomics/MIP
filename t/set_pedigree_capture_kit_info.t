@@ -135,10 +135,10 @@ my %user_supply_switch = ( exome_target_bed => 0, );
 set_pedigree_capture_kit_info(
     {
         active_parameter_href => \%active_parameter,
+        is_user_supplied_href => \%user_supply_switch,
         parameter_href        => \%parameter,
         pedigree_href         => \%pedigree,
         sample_info_href      => \%sample_info,
-        is_user_supplied_href => \%user_supply_switch,
     }
 );
 
@@ -165,10 +165,10 @@ is( $capture_kit_string, q{sample_2}, q{Set sample_ids for capture kit 2} );
 set_pedigree_capture_kit_info(
     {
         active_parameter_href => \%active_parameter,
+        is_user_supplied_href => \%user_supply_switch,
         parameter_href        => \%parameter,
         pedigree_href         => \%pedigree,
         sample_info_href      => \%sample_info,
-        is_user_supplied_href => \%user_supply_switch,
     }
 );
 $capture_kit_string = $active_parameter{exome_target_bed}{q{unknown_capture_kit}};
@@ -181,10 +181,10 @@ is( $capture_kit_string, q{sample_1}, q(Unknown capture kit) );
 set_pedigree_capture_kit_info(
     {
         active_parameter_href => \%active_parameter,
+        is_user_supplied_href => \%user_supply_switch,
         parameter_href        => \%parameter,
         pedigree_href         => \%pedigree,
         sample_info_href      => \%sample_info,
-        is_user_supplied_href => \%user_supply_switch,
     }
 );
 

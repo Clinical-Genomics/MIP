@@ -170,7 +170,7 @@ sub check_pedigree_mandatory_key {
         push @mandatory_sample_keys, q{dna_sample_id};
     }
 
-    ### Family
+    ### Case
     ## Check mandatory case keys
   MANDATORY_KEY:
     foreach my $key (@mandatory_case_keys) {
@@ -247,7 +247,7 @@ sub check_pedigree_sample_allowed_values {
         sex           => [qw{ female male other unknown }],
     );
 
-    ## Check input to sample_info hash for at sample level
+    ## Check input to sample_info hash at sample level
   SAMPLE_HREF:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
