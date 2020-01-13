@@ -631,7 +631,7 @@ smncopynumbercaller:
   data_type: SCALAR
   default: 1
   file_tag: _coverage
-  outfile_suffix: ".bed"
+  outfile_suffix: ".tsv"
   program_executables:
    - smn_caller.py
   type: recipe
