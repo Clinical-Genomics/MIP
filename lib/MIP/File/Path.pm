@@ -20,10 +20,74 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_absolute_path };
+    our @EXPORT_OK = qw{ check_filesystem_objects_existance get_absolute_path };
+}
+
+sub check_filesystem_objects_existance {
+
+## Function : Checks if a file or directory file exists
+## Returns  : (0 | 1, $error_msg)
+## Arguments: $object_name    => Object to check for existance
+##          : $object_type    => Type of item to check
+##          : $parameter_name => MIP parameter name {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $object_name;
+    my $object_type;
+    my $parameter_name;
+
+    my $tmpl = {
+        object_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$object_name,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        object_type => {
+            allow       => [qw{ directory file }],
+            defined     => 1,
+            required    => 1,
+            store       => \$object_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## For potential error messages
+    my $error_msg;
+
+    ## Check existance of directory
+    if ( $object_type eq q{directory} ) {
+
+        ## Check existence of supplied directory
+        ## Directory was found
+        return 1 if ( -d $object_name );    # {
+
+        $error_msg =
+          q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
+        return ( 0, $error_msg );
+    }
+    ## Then object type must be file
+
+    ## Check existence of supplied file
+    ## File was found
+    return 1 if ( -f $object_name );    # {
+
+    $error_msg =
+      q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
+    return 0, $error_msg;
 }
 
 sub get_absolute_path {
