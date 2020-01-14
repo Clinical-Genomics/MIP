@@ -621,7 +621,7 @@ sub check_rd_dna {
             log                     => $log,
             recipes_ref             => [
                 qw{ cnvnator_ar delly_call delly_reformat expansionhunter
-                  tiddit samtools_subsample_mt smncopynumbercaller }
+                  samtools_subsample_mt smncopynumbercaller tiddit }
             ],
         }
     );
