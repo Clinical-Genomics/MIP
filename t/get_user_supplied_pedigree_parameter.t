@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,9 +34,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA             => q{,};
 Readonly my $EXPECTED_COVERAGE => 30;
-Readonly my $SPACE             => q{ };
 
 BEGIN {
 
@@ -44,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_user_supplied_info }],
+        q{MIP::Active_parameter} => [qw{ get_user_supplied_pedigree_parameter }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_user_supplied_info };
+use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
 
-diag(   q{Test get_user_supplied_info from Parameter.pm v}
-      . $MIP::Get::Parameter::VERSION
+diag(   q{Test get_user_supplied_pedigree_parameter from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,20 +68,20 @@ my %active_parameter = (
     expected_coverage => $EXPECTED_COVERAGE,
 );
 
-my %user_supply_switch = get_user_supplied_info(
+my %is_user_supplied = get_user_supplied_pedigree_parameter(
     {
         active_parameter_href => \%active_parameter,
     }
 );
 
 ## Then return 1 for user supplied parameters
-is( $user_supply_switch{analysis_type}, 1, q{Got set HASH parameter} );
+is( $is_user_supplied{analysis_type}, 1, q{Got set HASH parameter} );
 
-is( $user_supply_switch{sample_ids}, 1, q{Got set ARRAY parameter} );
+is( $is_user_supplied{sample_ids}, 1, q{Got set ARRAY parameter} );
 
-is( $user_supply_switch{expected_coverage}, 1, q{Got set SCALAR parameter} );
+is( $is_user_supplied{expected_coverage}, 1, q{Got set SCALAR parameter} );
 
 ## and 0 for parameter which was not supplied by user
-is( $user_supply_switch{exome_target_bed}, 0, q{No user defined input for parameter} );
+is( $is_user_supplied{exome_target_bed}, 0, q{No user defined input for parameter} );
 
 done_testing();

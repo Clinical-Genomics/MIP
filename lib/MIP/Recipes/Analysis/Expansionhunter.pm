@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -140,8 +140,7 @@ sub analysis_expansionhunter {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples bcftools_view };
@@ -149,7 +148,8 @@ sub analysis_expansionhunter {
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Vt qw{ vt_decompose };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

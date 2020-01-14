@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -40,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ set_pedigree_case_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ set_exome_target_bed }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ set_pedigree_case_info };
+use MIP::Active_parameter qw{ set_exome_target_bed };
 
-diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test set_exome_target_bed from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,16 +57,21 @@ diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %sample_info;
-my %pedigree = ( case => q{case_1}, );
+## Given a bed file and a sample_id string
+my %active_parameter      = ();
+my $exome_target_bed_file = q{a_bed_file};
+my $sample_id_string      = join $COMMA, qw{ sample_1 sample_2};
 
-set_pedigree_case_info(
+set_exome_target_bed(
     {
-        pedigree_href    => \%pedigree,
-        sample_info_href => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        exome_target_bed_file => $exome_target_bed_file,
+        sample_id_string      => $sample_id_string,
     }
 );
 
-is( $sample_info{case}, q{case_1}, q{Got case key and value} );
+## Then sample_ids string should be attached to exome target bed
+is( $active_parameter{exome_target_bed}{$exome_target_bed_file},
+    q{sample_1,sample_2}, q{Added sample_ids string to exome target bed} );
 
 done_testing();

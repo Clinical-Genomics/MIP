@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,19 +39,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_user_supplied_info }],
-        q{MIP::Set::Pedigree}  => [qw{ set_active_parameter_pedigree_keys }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ get_user_supplied_pedigree_parameter }],
+        q{MIP::Pedigree}         => [qw{ set_active_parameter_pedigree_keys }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Pedigree qw{ set_active_parameter_pedigree_keys };
-use MIP::Get::Parameter qw{ get_user_supplied_info };
+use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
+use MIP::Pedigree qw{ set_active_parameter_pedigree_keys };
 
 diag(   q{Test set_active_parameter_pedigree_keys from Pedigree.pm v}
-      . $MIP::Set::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,7 +59,7 @@ diag(   q{Test set_active_parameter_pedigree_keys from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %active_parameter = ( expected_coverage => { sample_1 => 30 }, );
+my %active_parameter = ( expected_coverage => { sample_1 => 30, }, );
 
 my %pedigree = (
     case    => q{case_1},
@@ -119,7 +115,7 @@ my %sample_info = (
     },
 );
 
-my %user_supply_switch = get_user_supplied_info(
+my %is_user_supplied = get_user_supplied_pedigree_parameter(
     {
         active_parameter_href => \%active_parameter,
     }
@@ -127,10 +123,10 @@ my %user_supply_switch = get_user_supplied_info(
 
 set_active_parameter_pedigree_keys(
     {
-        active_parameter_href   => \%active_parameter,
-        pedigree_href           => \%pedigree,
-        sample_info_href        => \%sample_info,
-        user_supply_switch_href => \%user_supply_switch,
+        active_parameter_href => \%active_parameter,
+        is_user_supplied_href => \%is_user_supplied,
+        pedigree_href         => \%pedigree,
+        sample_info_href      => \%sample_info,
     }
 );
 my $set_analysis_type     = $active_parameter{analysis_type}{sample_1};

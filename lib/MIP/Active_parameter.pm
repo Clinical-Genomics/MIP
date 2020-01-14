@@ -23,10 +23,175 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ update_to_absolute_path };
+    our @EXPORT_OK = qw{
+      get_user_supplied_pedigree_parameter
+      set_exome_target_bed
+      set_pedigree_sample_id_parameter
+      update_to_absolute_path };
+}
+
+sub get_user_supplied_pedigree_parameter {
+
+## Function : Detect if user supplied info on parameters otherwise collected from pedigree
+## Returns  : %is_user_supplied - Hash where 1=user input and 0=no user input
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define what should be checked
+    my %is_user_supplied = (
+        analysis_type         => 0,
+        dna_sample_id         => 0,
+        exome_target_bed      => 0,
+        expected_coverage     => 0,
+        sample_ids            => 0,
+        supported_capture_kit => 0,
+        time_point            => 0,
+    );
+
+    ## Detect user supplied info
+  USER_PARAMETER:
+    foreach my $parameter ( keys %is_user_supplied ) {
+
+        ## If hash and supplied
+        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
+            && keys %{ $active_parameter_href->{$parameter} } )
+        {
+
+            $is_user_supplied{$parameter} = 1;
+        }
+        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
+            && @{ $active_parameter_href->{$parameter} } )
+        {
+            ## If array and supplied
+            $is_user_supplied{$parameter} = 1;
+        }
+        elsif ( defined $active_parameter_href->{$parameter}
+            and not ref $active_parameter_href->{$parameter} )
+        {
+
+            ## If scalar and supplied
+            $is_user_supplied{$parameter} = 1;
+        }
+    }
+    return %is_user_supplied;
+}
+
+sub set_exome_target_bed {
+
+## Function : Set exome target bed parameter in active_parameter hash
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $exome_target_bed_file => Exome target bed file to set
+##          : $sample_id_string      => Sample id string to attach to exome bed file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $exome_target_bed_file;
+    my $sample_id_string;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        exome_target_bed_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$exome_target_bed_file,
+            strict_type => 1,
+        },
+        sample_id_string => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_string,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add sample_ids as string to exome_target_bed_file
+    $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} =
+      $sample_id_string;
+
+    return;
+}
+
+sub set_pedigree_sample_id_parameter {
+
+## Function : Set pedigree parameter in active_parameter hash
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $pedigree_key          => Pedigree key to set
+##          : $pedigree_value        => Pedigree value to set
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $pedigree_key;
+    my $pedigree_value;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        pedigree_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_key,
+            strict_type => 1,
+        },
+        pedigree_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_value,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add value for sample_id using pedigree info
+    $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
+
+    return;
 }
 
 sub update_to_absolute_path {

@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -40,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ set_pedigree_case_info }],
+        q{MIP::Parameter}      => [qw{ set_cache_sample_id_parameter }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ set_pedigree_case_info };
+use MIP::Parameter qw{ set_cache_sample_id_parameter };
 
-diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test set_cache_sample_id_parameter from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,16 +57,23 @@ diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %sample_info;
-my %pedigree = ( case => q{case_1}, );
+## Given a parameter and sample_id
+my %parameter;
+my $parameter_name  = q{plink_phenotype};
+my $parameter_value = q{other};
+my $sample_id       = q{sample_1};
 
-set_pedigree_case_info(
+set_cache_sample_id_parameter(
     {
-        pedigree_href    => \%pedigree,
-        sample_info_href => \%sample_info,
+        parameter_href  => \%parameter,
+        parameter_name  => $parameter_name,
+        parameter_value => $parameter_value,
+        sample_id       => $sample_id,
     }
 );
 
-is( $sample_info{case}, q{case_1}, q{Got case key and value} );
+## Then set cache at sample level for parameter
+is( $parameter{cache}{$sample_id}{$parameter_name},
+    $parameter_value, q{Set parameter at sample level in cache} );
 
 done_testing();

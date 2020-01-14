@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,7 +73,7 @@ $active_parameter{pedigree_file} = catfile( $Bin, qw{ data test_data pedigree.ya
 my $is_ok = parse_yaml_pedigree_file(
     {
         active_parameter_href => \%active_parameter,
-        file_path             => $active_parameter{pedigree_file},
+        pedigree_file_path    => $active_parameter{pedigree_file},
         parameter_href        => \%parameter,
         pedigree_href         => \%pedigree,
         sample_info_href      => \%sample_info,
@@ -90,7 +90,7 @@ trap {
     parse_yaml_pedigree_file(
         {
             active_parameter_href => \%active_parameter,
-            file_path             => $active_parameter{pedigree_file},
+            pedigree_file_path    => $active_parameter{pedigree_file},
             parameter_href        => \%parameter,
             pedigree_href         => \%pedigree,
             sample_info_href      => \%sample_info,
