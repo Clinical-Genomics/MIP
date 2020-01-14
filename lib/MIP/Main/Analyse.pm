@@ -30,6 +30,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{ update_to_absolute_path };
+use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_email_address
@@ -52,7 +53,6 @@ use MIP::Pedigree qw{ create_fam_file
   reload_previous_pedigree_info };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ check_parameter_hash set_cache };
@@ -84,7 +84,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -220,7 +220,6 @@ sub mip_analyse {
     $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
         {
             analysis_type_href => \%{ $active_parameter{analysis_type} },
-            log                => $log,
         }
     );
 
