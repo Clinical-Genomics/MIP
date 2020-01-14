@@ -73,7 +73,7 @@ sub check_filesystem_objects_existance {
 
         ## Check existence of supplied directory
         ## Directory was found
-        return 1 if ( -d $object_name );    # {
+        return 1 if ( -d $object_name );
 
         $error_msg =
           q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
@@ -83,7 +83,7 @@ sub check_filesystem_objects_existance {
 
     ## Check existence of supplied file
     ## File was found
-    return 1 if ( -f $object_name );    # {
+    return 1 if ( -f $object_name );
 
     $error_msg =
       q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
