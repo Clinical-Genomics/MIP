@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,17 +42,16 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Parameter}          => [qw{ get_capture_kit }],
-        q{MIP::Set::Parameter}     => [qw{ set_custom_default_to_active_parameter }],
-        q{MIP::Test::Fixtures}     => [qw{ test_log test_standard_cli }],
+        q{MIP::Parameter} =>
+          [qw{ get_capture_kit set_custom_default_to_active_parameter }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File::Format::Yaml qw{ load_yaml };
-use MIP::Parameter qw{ get_capture_kit };
-use MIP::Set::Parameter qw{ set_custom_default_to_active_parameter };
+use MIP::Parameter qw{ get_capture_kit set_custom_default_to_active_parameter };
 
 diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
       . $MIP::Set::Parameter::VERSION
