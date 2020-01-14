@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -620,7 +620,8 @@ sub check_rd_dna {
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
             log                     => $log,
             recipes_ref             => [
-                qw{ cnvnator_ar delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
+                qw{ cnvnator_ar delly_call delly_reformat expansionhunter
+                  tiddit samtools_subsample_mt smncopynumbercaller }
             ],
         }
     );
