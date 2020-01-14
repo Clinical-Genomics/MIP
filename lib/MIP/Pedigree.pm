@@ -1645,6 +1645,8 @@ sub set_pedigree_sex_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parameter qw{ set_cache_sample_id_parameter };
+
     ## Conversion map to plink sex
     my %plink_sex = (
         female  => 2,
@@ -1666,8 +1668,14 @@ sub set_pedigree_sex_info {
 
         next SAMPLE_HREF if ( not exists $plink_sex{$sex} );
 
-        $parameter_href->{cache}{$sample_id}{plink_sex} =
-          $plink_sex{$sex};
+        set_cache_sample_id_parameter(
+            {
+                parameter_href  => $parameter_href,
+                parameter_name  => q{plink_sex},
+                parameter_value => $plink_sex{$sex},
+                sample_id       => $sample_id,
+            }
+        );
     }
     return;
 }
@@ -1705,6 +1713,8 @@ sub set_pedigree_phenotype_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parameter qw{ set_cache_sample_id_parameter };
+
     ## Conversion map to plink phenotype
     my %plink_phenotype = (
         affected   => 2,
@@ -1726,11 +1736,16 @@ sub set_pedigree_phenotype_info {
           @{ $parameter_href->{cache}{$phenotype} },
           $sample_id;
 
-        if ( exists $plink_phenotype{$phenotype} ) {
+        next SAMPLE_HREF if ( not exists $plink_phenotype{$phenotype} );
 
-            $parameter_href->{cache}{$sample_id}{plink_phenotype} =
-              $plink_phenotype{$phenotype};
-        }
+        set_cache_sample_id_parameter(
+            {
+                parameter_href  => $parameter_href,
+                parameter_name  => q{plink_phenotype},
+                parameter_value => $plink_phenotype{$phenotype},
+                sample_id       => $sample_id,
+            }
+        );
     }
     return;
 }

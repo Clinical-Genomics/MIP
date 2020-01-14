@@ -27,11 +27,14 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_parameter_hash
+    our @EXPORT_OK = qw{
+      check_parameter_hash
       get_capture_kit
       get_order_of_parameters
       print_recipe
-      set_cache };
+      set_cache
+      set_cache_sample_id_parameter
+    };
 }
 
 sub check_parameter_hash {
@@ -340,6 +343,56 @@ sub set_cache {
             push @{ $parameter_href->{cache}{$string_to_match} }, $parameter_name;
         }
     }
+    return;
+}
+
+sub set_cache_sample_id_parameter {
+
+## Function : Set parameter information to parameter cache at sample level
+## Returns  :
+## Arguments: $parameter_href  => Parameter hash {REF}
+##          : $parameter_name  => Parameter to set
+##          : $parameter_value => Parmeter value
+##          : $sample_id       => Sample id to set parameter cache for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $parameter_name;
+    my $parameter_value;
+    my $sample_id;
+
+    my $tmpl = {
+        parameter_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_href,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        parameter_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_value,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $parameter_href->{cache}{$sample_id}{$parameter_name} = $parameter_value;
     return;
 }
 
