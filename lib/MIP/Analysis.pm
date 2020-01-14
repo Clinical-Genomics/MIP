@@ -21,7 +21,7 @@ use Log::Log4perl;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $EMPTY_STR $SINGLE_QUOTE };
+use MIP::Constants qw{ $EMPTY_STR $LOG_NAME $SINGLE_QUOTE };
 
 BEGIN {
     require Exporter;
@@ -80,15 +80,16 @@ sub get_overall_analysis_type {
 
         if ( not any { $_ eq $user_analysis_type } @analysis_types ) {
 
-            $log->fatal(
-                qq{' $user_analysis_type ' is not a supported analysis_type} );
-            $log->fatal( q{Supported analysis types are } . $SINGLE_QUOTE
+            $log->fatal(qq{' $user_analysis_type ' is not a supported analysis_type});
+            $log->fatal( q{Supported analysis types are }
+                  . $SINGLE_QUOTE
                   . join( q{', '}, @analysis_types )
                   . $SINGLE_QUOTE );
             $log->fatal(q{Aborting run});
             exit 1;
         }
     }
+
     # No consensus, then it must be mixed
     return q{mixed};
 }
