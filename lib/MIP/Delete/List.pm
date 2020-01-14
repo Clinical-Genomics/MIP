@@ -216,7 +216,6 @@ sub delete_non_wes_contig {
     my $consensus_analysis_type = get_overall_analysis_type(
         {
             analysis_type_href => $analysis_type_href,
-            log                => $log,
         }
     );
 
