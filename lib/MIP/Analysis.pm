@@ -1,4 +1,4 @@
-package MIP::Get::Analysis;
+package MIP::Analysis;
 
 use 5.026;
 use Carp;
@@ -21,14 +21,14 @@ use Log::Log4perl;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $EMPTY_STR $NEWLINE };
+use MIP::Constants qw{ $LOG_NAME $EMPTY_STR $SINGLE_QUOTE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,16 +39,14 @@ BEGIN {
 
 sub get_overall_analysis_type {
 
-## Function : Detect if all samples has the same sequencing type and return consensus or mixed
+## Function : Detect if all samples has the same analysis type and return consensus or mixed
 ## Returns  : q{consensus} | q{mixed} - analysis_type
 ## Arguments: $analysis_type_href => Analysis_type hash {REF}
-##          : $log                => Log Object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_type_href;
-    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -58,15 +56,14 @@ sub get_overall_analysis_type {
             store       => \$analysis_type_href,
             strict_type => 1,
         },
-        log => {
-            required => 1,
-            store    => \$log,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @analysis_types = (qw{ dragen_rd_dna vrn wes wgs wts });
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @analysis_types = qw{ dragen_rd_dna vrn wes wgs wts };
 
   ANALYSIS:
     foreach my $analysis_type (@analysis_types) {
@@ -84,15 +81,14 @@ sub get_overall_analysis_type {
         if ( not any { $_ eq $user_analysis_type } @analysis_types ) {
 
             $log->fatal(
-                q{'} . $user_analysis_type . q{' is not a supported analysis_type} );
-            $log->fatal( q{Supported analysis types are '}
+                qq{' $user_analysis_type ' is not a supported analysis_type} );
+            $log->fatal( q{Supported analysis types are } . $SINGLE_QUOTE
                   . join( q{', '}, @analysis_types )
-                  . q(') );
+                  . $SINGLE_QUOTE );
             $log->fatal(q{Aborting run});
             exit 1;
         }
     }
-
     # No consensus, then it must be mixed
     return q{mixed};
 }

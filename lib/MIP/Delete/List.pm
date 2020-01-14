@@ -13,14 +13,13 @@ use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use autodie qw { :all };
-use Readonly;
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -211,7 +210,7 @@ sub delete_non_wes_contig {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
-    use MIP::Get::Analysis qw{ get_overall_analysis_type };
+    use MIP::Analysis qw{ get_overall_analysis_type };
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
