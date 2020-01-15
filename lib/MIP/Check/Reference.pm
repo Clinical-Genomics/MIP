@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -98,7 +98,7 @@ sub check_human_genome_file_endings {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
     use MIP::Get::File qw{ get_seq_dict_contigs };
 
     ## Count the number of files that exists
@@ -314,7 +314,7 @@ sub check_object_suffixes_to_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
 
     ## Count the number of files that exists
     my $existence_check_counter = 0;
