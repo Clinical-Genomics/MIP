@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 our $USAGE = build_usage( {} );
 
@@ -254,7 +254,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -299,9 +299,9 @@ sub mip_scripts {
               download_rd_rna_parameters.yaml
               install_rd_dna_parameters.yaml
               install_rd_rna_parameters.yaml
-              mandatory_parameters.yaml
+              required_parameters.yaml
               mip_parameters.yaml
-              not_mandatory_parameters.yaml
+              not_required_parameters.yaml
               rd_dna_initiation_map.yaml
               rd_dna_parameters.yaml
               rd_rna_parameters.yaml

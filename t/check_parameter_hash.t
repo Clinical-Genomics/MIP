@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,19 +66,18 @@ my $definitions_file = catfile( $Bin, qw{ data test_data define_parameters.yaml 
 ## Loads a YAML file into an arbitrary hash and returns it.
 my %parameter = load_yaml( { yaml_file => $definitions_file, } );
 
-## Load mandatory keys and values for parameters
-my %mandatory = load_yaml(
+## Load required keys and values for parameters
+my %required = load_yaml(
     {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions mandatory_parameters.yaml } ),
+        yaml_file => catfile( dirname($Bin), qw{ definitions required_parameters.yaml } ),
     }
 );
 
-## Load non mandatory keys and values for parameters
-my %not_mandatory = load_yaml(
+## Load non required keys and values for parameters
+my %not_required = load_yaml(
     {
         yaml_file =>
-          catfile( dirname($Bin), qw{ definitions not_mandatory_parameters.yaml } ),
+          catfile( dirname($Bin), qw{ definitions not_required_parameters.yaml } ),
 
     }
 );
@@ -86,10 +85,10 @@ my %not_mandatory = load_yaml(
 ## Given valid input
 my $is_ok = check_parameter_hash(
     {
-        parameter_href     => \%parameter,
-        mandatory_href     => \%mandatory,
-        not_mandatory_href => \%not_mandatory,
-        file_path          => $definitions_file,
+        file_path         => $definitions_file,
+        not_required_href => \%not_required,
+        parameter_href    => \%parameter,
+        required_href     => \%required,
     }
 );
 
@@ -102,10 +101,10 @@ $parameter{case_id}{data_type} = [q{wrong_data_type}];
 trap {
     check_parameter_hash(
         {
-            parameter_href     => \%parameter,
-            mandatory_href     => \%mandatory,
-            not_mandatory_href => \%not_mandatory,
-            file_path          => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
     )
 };
@@ -123,10 +122,10 @@ $parameter{case_id}{associated_recipe} = q{not_an_array};
 trap {
     check_parameter_hash(
         {
-            parameter_href     => \%parameter,
-            mandatory_href     => \%mandatory,
-            not_mandatory_href => \%not_mandatory,
-            file_path          => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
     )
 };
@@ -144,10 +143,10 @@ $parameter{case_id}{data_type} = q{not_valid_value};
 trap {
     check_parameter_hash(
         {
-            parameter_href     => \%parameter,
-            mandatory_href     => \%mandatory,
-            not_mandatory_href => \%not_mandatory,
-            file_path          => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
     )
 };
@@ -159,16 +158,16 @@ like(
     q{Throw fatal log message for illegal value}
 );
 
-## Given a missing mandatory key
+## Given a missing required key
 delete $parameter{case_id}{data_type};
 
 trap {
     check_parameter_hash(
         {
-            parameter_href     => \%parameter,
-            mandatory_href     => \%mandatory,
-            not_mandatory_href => \%not_mandatory,
-            file_path          => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
     )
 };
@@ -176,8 +175,8 @@ trap {
 ## Then throw FATAL log message and croak
 like(
     $trap->stderr,
-    qr/Missing\s+mandatory\s+key/xms,
-    q{Throw fatal log message for missing mandatory key}
+    qr/Missing\s+required\s+key/xms,
+    q{Throw fatal log message for missing required key}
 );
 
 done_testing();
