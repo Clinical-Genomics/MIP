@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -44,18 +44,18 @@ sub check_parameter_hash {
 
 ## Function : Evaluate parameters in parameters hash
 ## Returns  :
-## Arguments: $file_path          => Path to yaml file
-##          : $mandatory_href     => Hash with mandatory key {REF}
-##          : $not_mandatory_href => Hash with non mandatory key {REF}
-##          : $parameter_href     => Hash with parameters from yaml file {REF}
+## Arguments: $file_path         => Path to yaml file
+##          : $not_required_href => Hash with non required key {REF}
+##          : $parameter_href    => Hash with parameters from yaml file {REF}
+##          : $required_href     => Hash with required key {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
     my $file_path;
-    my $mandatory_href;
-    my $not_mandatory_href;
+    my $not_required_href;
     my $parameter_href;
+    my $required_href;
 
     my $tmpl = {
         file_path => {
@@ -64,16 +64,10 @@ sub check_parameter_hash {
             store       => \$file_path,
             strict_type => 1,
         },
-        mandatory_href => {
+        not_required_href => {
             default     => {},
             required    => 1,
-            store       => \$mandatory_href,
-            strict_type => 1,
-        },
-        not_mandatory_href => {
-            default     => {},
-            required    => 1,
-            store       => \$not_mandatory_href,
+            store       => \$not_required_href,
             strict_type => 1,
         },
         parameter_href => {
@@ -82,21 +76,27 @@ sub check_parameter_hash {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        required_href => {
+            default     => {},
+            required    => 1,
+            store       => \$required_href,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Check that mandatory keys exists for each parameter
-    _check_parameter_mandatory_keys_exits(
+    ## Check that required keys exists for each parameter
+    _check_parameter_required_keys_exits(
         {
             file_path      => $file_path,
-            mandatory_href => $mandatory_href,
             parameter_href => $parameter_href,
+            required_href  => $required_href,
         }
     );
 
-    ## Test parameter for both mandatory and not_mandatory keys data type and values
-    my @keys = ( \%{$mandatory_href}, \%{$not_mandatory_href} );
+    ## Test parameter for both required and not_required keys data type and values
+    my @keys = ( \%{$required_href}, \%{$not_required_href} );
 
   KEY_HASH_REF:
     foreach my $key_href (@keys) {
@@ -504,18 +504,19 @@ sub set_custom_default_to_active_parameter {
 
 sub _check_parameter_mandatory_keys_exits {
 
-## Function : Check that mandatory keys exists
+
+## Function : Check that required keys exists
 ## Returns  :
 ## Arguments: $file_path      => Path to yaml file
-##          : $mandatory_href => Hash with mandatory key {REF}
 ##          : $parameter_href => Hash with parameters from yaml file {REF}
+##          : $required_href  => Hash with required key {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
     my $file_path;
-    my $mandatory_href;
     my $parameter_href;
+    my $required_href;
 
     my $tmpl = {
         file_path => {
@@ -524,16 +525,16 @@ sub _check_parameter_mandatory_keys_exits {
             store       => \$file_path,
             strict_type => 1,
         },
-        mandatory_href => {
-            default     => {},
-            required    => 1,
-            store       => \$mandatory_href,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        required_href => {
+            default     => {},
+            required    => 1,
+            store       => \$required_href,
             strict_type => 1,
         },
     };
@@ -543,14 +544,14 @@ sub _check_parameter_mandatory_keys_exits {
   PARAMETER:
     foreach my $parameter ( keys %{$parameter_href} ) {
 
-      MANDATORY_KEY:
-        foreach my $mandatory_key ( keys %{$mandatory_href} ) {
+      REQUIRED_KEY:
+        foreach my $required_key ( keys %{$required_href} ) {
 
-            next MANDATORY_KEY
-              if ( exists $parameter_href->{$parameter}{$mandatory_key} );
+            next REQUIRED_KEY
+              if ( exists $parameter_href->{$parameter}{$required_key} );
 
-            say {*STDERR} q{Missing mandatory key: '}
-              . $mandatory_key
+            say {*STDERR} q{Missing required key: '}
+              . $required_key
               . q{' for parameter: '}
               . $parameter
               . q{' in file: '}

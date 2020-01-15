@@ -17,7 +17,8 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $DOT $NEWLINE $OPEN_BRACKET $SPACE $TAB };
+use MIP::Constants
+  qw{ $AMPERSAND $CLOSE_BRACKET $DOT $NEWLINE $OPEN_BRACKET $SPACE $TAB };
 
 BEGIN {
 
@@ -25,12 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_executable_in_path
-      check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_file_version_exist
       check_future_filesystem_for_directory
@@ -116,78 +116,6 @@ sub check_executable_in_path {
     return;
 }
 
-sub check_filesystem_objects_existance {
-
-## Function : Checks if a file or directory file exists
-## Returns  : (0 | 1, $error_msg)
-## Arguments: $object_name    => Object to check for existance
-##          : $object_type    => Type of item to check
-##          : $parameter_name => MIP parameter name {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $object_name;
-    my $object_type;
-    my $parameter_name;
-
-    my $tmpl = {
-        object_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$object_name,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        object_type => {
-            allow       => [qw{ directory file }],
-            defined     => 1,
-            required    => 1,
-            store       => \$object_type,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## For potential error messages
-    my $error_msg;
-
-    ## Check existance of directory
-    if ( $object_type eq q{directory} ) {
-
-        ## Check existence of supplied directory
-        if ( not -d $object_name ) {
-
-            $error_msg =
-                q{Could not find intended }
-              . $parameter_name
-              . q{ directory: }
-              . $object_name;
-            return ( 0, $error_msg );
-        }
-        ## File was found
-        return 1;
-    }
-    ## Then object type must be file
-
-    ## Check existence of supplied file
-    if ( not -f $object_name ) {
-
-        $error_msg =
-          q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
-
-        return 0, $error_msg;
-    }
-    ## File was found
-    return 1;
-}
-
 sub check_filesystem_objects_and_index_existance {
 
 ## Function : Checks if a file or directory file exists as well as index file. Croak if object or index file does not exist.
@@ -256,6 +184,8 @@ sub check_filesystem_objects_and_index_existance {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
 
     ## Special case for file with "build_file" in config
     ## These are handled downstream
@@ -342,7 +272,7 @@ sub check_file_version_exist {
 sub check_future_filesystem_for_directory {
 
 ## Function : Build bash script to check if a directory exists and otherwise create it
-## Returns  : 
+## Returns  :
 ## Arguments: $directory_path => Path to check / create
 
     my ($arg_href) = @_;
@@ -363,16 +293,26 @@ sub check_future_filesystem_for_directory {
 
     use MIP::Gnu::Coreutils qw{gnu_mkdir};
 
-    my $dir_check_command = $OPEN_BRACKET . $SPACE . q{! -d} . $SPACE . $directory_path . $SPACE . $CLOSE_BRACKET . $SPACE . $AMPERSAND . $AMPERSAND . $SPACE;
+    my $dir_check_command =
+        $OPEN_BRACKET
+      . $SPACE . q{! -d}
+      . $SPACE
+      . $directory_path
+      . $SPACE
+      . $CLOSE_BRACKET
+      . $SPACE
+      . $AMPERSAND
+      . $AMPERSAND
+      . $SPACE;
     my @mkdir_commands = gnu_mkdir(
         {
             indirectory_path => $directory_path,
-            parents => 1,
+            parents          => 1,
         }
     );
 
     $dir_check_command .= join $SPACE, @mkdir_commands;
-    
+
     return $dir_check_command;
 }
 
@@ -517,8 +457,8 @@ sub check_parameter_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path
-      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance };
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
+    use MIP::Check::Path qw{ check_filesystem_objects_and_index_existance };
 
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
