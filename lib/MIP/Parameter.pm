@@ -440,7 +440,7 @@ sub _check_parameter_required_keys_exits {
       REQUIRED_KEY:
         foreach my $required_key ( keys %{$required_href} ) {
 
-            next required_KEY
+            next REQUIRED_KEY
               if ( exists $parameter_href->{$parameter}{$required_key} );
 
             say {*STDERR} q{Missing required key: '}
