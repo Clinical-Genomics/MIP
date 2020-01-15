@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -17,7 +18,8 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Constants
+  qw{ $COMMA $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -34,6 +36,7 @@ BEGIN {
       print_recipe
       set_cache
       set_cache_sample_id_parameter
+      set_custom_default_to_active_parameter
     };
 }
 
@@ -396,6 +399,109 @@ sub set_cache_sample_id_parameter {
     return;
 }
 
+sub set_custom_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{
+      set_default_analysis_type
+      set_default_human_genome
+      set_default_infile_dirs
+      set_default_pedigree_fam_file
+      set_default_program_test_file
+      set_default_reference_dir
+      set_default_reference_info_file
+      set_default_store_file
+      set_default_temp_directory
+      set_default_uninitialized_parameter
+      set_default_vcfparser_select_file
+    };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Set default value only to active_parameter
+    my %set_to_active_parameter = (
+        analysis_type                 => \&set_default_analysis_type,
+        bwa_build_reference           => \&set_default_human_genome,
+        infile_dirs                   => \&set_default_infile_dirs,
+        pedigree_fam_file             => \&set_default_pedigree_fam_file,
+        program_test_file             => \&set_default_program_test_file,
+        reference_dir                 => \&set_default_reference_dir,
+        reference_info_file           => \&set_default_reference_info_file,
+        rtg_vcfeval_reference_genome  => \&set_default_human_genome,
+        salmon_quant_reference_genome => \&set_default_human_genome,
+        select_programs               => \&set_default_uninitialized_parameter,
+        shell_install                 => \&set_default_uninitialized_parameter,
+        skip_programs                 => \&set_default_uninitialized_parameter,
+        star_aln_reference_genome     => \&set_default_human_genome,
+        star_fusion_reference_genome  => \&set_default_human_genome,
+        store_file                    => \&set_default_store_file,
+        sv_vcfparser_select_file      => \&set_default_vcfparser_select_file,
+        temp_directory                => \&set_default_temp_directory,
+        vcfparser_select_file         => \&set_default_vcfparser_select_file,
+    );
+
+    ## Set default value to parameter and/or active parameter
+    my %set_to_parameter = (
+        exome_target_bed => \&_set_default_capture_kit,
+        sample_info_file => \&_set_default_sample_info_file,
+    );
+
+    if ( exists $set_to_active_parameter{$parameter_name} ) {
+
+        $set_to_active_parameter{$parameter_name}->(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            }
+        );
+    }
+
+    if ( exists $set_to_parameter{$parameter_name} ) {
+
+        $set_to_parameter{$parameter_name}->(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_href        => $parameter_href,
+                parameter_name        => $parameter_name,
+            }
+        );
+    }
+    return;
+}
+
 sub _check_parameter_required_keys_exits {
 
 ## Function : Check that required keys exists
@@ -692,6 +798,121 @@ sub _check_parameter_values {
             croak();
         }
     }
+    return;
+}
+
+sub _set_default_capture_kit {
+
+## Function : Set default capture kit to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_exome_target_bed };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ### If capture kit is not set after cmd, config and reading pedigree
+    ## Return a default capture kit as user supplied no info
+    my $capture_kit = get_capture_kit(
+        {
+            capture_kit => q{latest},
+            supported_capture_kit_href =>
+              $parameter_href->{supported_capture_kit}{default},
+        }
+    );
+
+    ## Set default
+    my $sample_id_string = join $COMMA, @{ $active_parameter_href->{sample_ids} };
+
+    set_exome_target_bed(
+        {
+            active_parameter_href => $active_parameter_href,
+            exome_target_bed_file => $capture_kit,
+            sample_id_string      => $sample_id_string,
+        }
+    );
+
+    $log->warn(
+        q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
+          . $capture_kit );
+    return;
+}
+
+sub _set_default_sample_info_file {
+
+## Function : Set default sample_info_file and qccollect_sampleinfo_file to parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set sample info file
+    $parameter_href->{sample_info_file}{default} = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id},
+        $active_parameter_href->{case_id} . $UNDERSCORE . q{qc_sample_info.yaml}
+    );
+
+    ## Set qccollect sampleinfo file input
+    $parameter_href->{qccollect_sampleinfo_file}{default} =
+      $parameter_href->{sample_info_file}{default};
     return;
 }
 

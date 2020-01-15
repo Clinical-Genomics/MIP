@@ -55,12 +55,13 @@ use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Parameter qw{ check_parameter_hash set_cache };
+use MIP::Parameter
+  qw{ check_parameter_hash set_cache set_custom_default_to_active_parameter };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter qw{ set_custom_default_to_active_parameter
+use MIP::Set::Parameter qw{
   set_default_to_active_parameter
   set_human_genome_reference_features
   set_no_dry_run_parameters

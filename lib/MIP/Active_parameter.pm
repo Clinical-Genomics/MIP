@@ -3,7 +3,10 @@ package MIP::Active_parameter;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $COMMA $DOT $SPACE };
 
 BEGIN {
     require Exporter;
@@ -28,9 +31,21 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_user_supplied_pedigree_parameter
+      set_default_analysis_type
+      set_default_human_genome
+      set_default_infile_dirs
+      set_default_pedigree_fam_file
+      set_default_program_test_file
+      set_default_reference_dir
+      set_default_reference_info_file
+      set_default_store_file
+      set_default_temp_directory
+      set_default_uninitialized_parameter
+      set_default_vcfparser_select_file
       set_exome_target_bed
       set_pedigree_sample_id_parameter
-      update_to_absolute_path };
+      update_to_absolute_path
+    };
 }
 
 sub get_user_supplied_pedigree_parameter {
@@ -93,6 +108,398 @@ sub get_user_supplied_pedigree_parameter {
         }
     }
     return %is_user_supplied;
+}
+
+sub set_default_analysis_type {
+
+## Function : Set default analysis type to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    map { $active_parameter_href->{$parameter_name}{$_} = q{wgs} }
+      @{ $active_parameter_href->{sample_ids} };
+    return;
+}
+
+sub set_default_human_genome {
+
+## Function : Set default human genome reference to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Now we now what human genome reference to build from
+    $active_parameter_href->{$parameter_name} =
+      $active_parameter_href->{human_genome_reference};
+
+    return;
+}
+
+sub set_default_infile_dirs {
+
+## Function : Set default infile dirs to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for infile_dirs
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        if ( not exists $active_parameter_href->{analysis_type}{$sample_id} ) {
+
+            set_default_analysis_type(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_name        => q{analysis_type},
+                }
+            );
+        }
+        my $path = catfile(
+            $active_parameter_href->{cluster_constant_path},
+            $active_parameter_href->{case_id},
+            $active_parameter_href->{analysis_type}{$sample_id},
+            $sample_id,
+            q{fastq}
+        );
+
+        $active_parameter_href->{$parameter_name}{$path} = $sample_id;
+    }
+    return;
+}
+
+sub set_default_pedigree_fam_file {
+
+## Function : Set default pedigree_fam_file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set pedigree fam file
+    $active_parameter_href->{$parameter_name} = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id},
+        $active_parameter_href->{case_id} . $DOT . q{fam}
+    );
+    return;
+}
+
+sub set_default_program_test_file {
+
+## Function : Set default path to file with program test commands
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $active_parameter_href->{$parameter_name} );
+
+    $active_parameter_href->{$parameter_name} =
+      catfile( $Bin, qw{templates program_test_cmds.yaml } );
+
+    return;
+}
+
+sub set_default_reference_dir {
+
+## Function : Set default reference dir to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set reference dir to current working dir
+    $active_parameter_href->{$parameter_name} = cwd();
+    return;
+}
+
+sub set_default_reference_info_file {
+
+## Function : Set default reference_info_file
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set reference info file
+    $active_parameter_href->{reference_info_file} =
+      catfile( $active_parameter_href->{outdata_dir}, q{reference_info.yaml} );
+    return;
+}
+
+sub set_default_store_file {
+
+## Function : Set default store_file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set store file
+    $active_parameter_href->{$parameter_name} =
+      catfile( $active_parameter_href->{outdata_dir}, q{store_info.yaml} );
+    return;
+}
+
+sub set_default_temp_directory {
+
+## Function : Set default temp directory to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Mip download
+    if ( exists $active_parameter_href->{download_pipeline_type} ) {
+
+        $active_parameter_href->{temp_directory} =
+          catfile( cwd(), qw{ mip_download $SLURM_JOB_ID } );
+        return;
+    }
+
+    ## Mip analyse
+    $active_parameter_href->{temp_directory} =
+      catfile( $active_parameter_href->{outdata_dir}, q{$SLURM_JOB_ID} );
+
+    return;
+}
+
+sub set_default_uninitialized_parameter {
+
+## Function : Initiate hash keys for install
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( exists $active_parameter_href->{$parameter_name} );
+
+    $active_parameter_href->{$parameter_name} = [];
+
+    return;
+}
+
+sub set_default_vcfparser_select_file {
+
+## Function : Set default vcfparser select file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for vcfparser select file
+    my $path = catfile(
+        $active_parameter_href->{cluster_constant_path},
+        $active_parameter_href->{case_id},
+        q{gene_panels.bed}
+    );
+
+    $active_parameter_href->{$parameter_name} = $path;
+    return;
 }
 
 sub set_exome_target_bed {
