@@ -551,7 +551,7 @@ samtools_subsample_mt_depth:
   associated_recipe:
    - samtools_subsample_mt
   data_type: SCALAR
-  default: 60
+  default: 150
   type: recipe_argument
 sambamba_depth:
   analysis_mode: sample
