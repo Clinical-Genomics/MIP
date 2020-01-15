@@ -21,11 +21,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants
-  qw{ $COMMA $DOUBLE_QUOTE $EQUALS $SEMICOLON set_analysis_constants @SINGULARITY_BIND_PATHS $SPACE };
+  qw{ $COMMA $DOUBLE_QUOTE $EQUALS $SEMICOLON set_singularity_constants @SINGULARITY_BIND_PATHS $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,7 +69,7 @@ my %active_parameter = (
 );
 
 my @source_environment_cmds = qw{ conda activate test };
-set_analysis_constants( { active_parameter_href => \%active_parameter, } );
+set_singularity_constants( { active_parameter_href => \%active_parameter, } );
 
 parse_sing_bind_paths(
     {

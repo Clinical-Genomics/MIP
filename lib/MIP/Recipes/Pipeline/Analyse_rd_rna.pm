@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -141,7 +141,7 @@ sub pipeline_analyse_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_rna };
-    use MIP::Constants qw{ set_analysis_constants };
+    use MIP::Constants qw{ set_singularity_constants };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -195,7 +195,7 @@ sub pipeline_analyse_rd_rna {
     );
 
     ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
