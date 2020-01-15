@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -102,6 +102,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    blacklist_file_path => {
+        input           => q{a_file_path},
+        expected_output => q{--blacklist} . $SPACE . q{a_file_path},
+    },
     frequency => {
         input           => $MAX_FREQUENCY,
         expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,

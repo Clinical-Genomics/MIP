@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -33,9 +33,10 @@ BEGIN {
 
 sub vcf2cytosure_convert {
 
-## Function : Perl wrapper for Vcf2cytosure 0.4.3.
+## Function : Perl wrapper for Vcf2cytosure 0.5.0.
 ## Returns  : @commands
-## Arguments: $coverage_file          => Path to coverage file
+## Arguments: $blacklist_file_path    => List of regions to exclude file path
+##          : $coverage_file          => Path to coverage file
 ##          : $filehandle             => Filehandle to write to
 ##          : $frequency              => Maximum frequency
 ##          : $frequency_tag          => Frequency tag of the info field
@@ -53,6 +54,7 @@ sub vcf2cytosure_convert {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $blacklist_file_path;
     my $coverage_file;
     my $filehandle;
     my $maxbnd;
@@ -71,6 +73,10 @@ sub vcf2cytosure_convert {
     my $version;
 
     my $tmpl = {
+        blacklist_file_path => {
+            store       => \$blacklist_file_path,
+            strict_type => 1,
+        },
         coverage_file => {
             defined     => 1,
             required    => 1,
@@ -156,6 +162,10 @@ sub vcf2cytosure_convert {
         push @commands, q{--version};
     }
 
+    if ($blacklist_file_path) {
+
+        push @commands, q{--blacklist} . $SPACE . $blacklist_file_path;
+    }
     if ($variant_size) {
 
         push @commands, q{--size} . $SPACE . $variant_size;
