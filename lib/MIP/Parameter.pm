@@ -436,7 +436,6 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
-      set_default_dynamic_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_pedigree_fam_file
@@ -456,10 +455,8 @@ sub set_custom_default_to_active_parameter {
     my %set_to_active_parameter = (
         analysis_type                 => \&set_default_analysis_type,
         bwa_build_reference           => \&set_default_human_genome,
-        gatk_path                     => \&set_default_dynamic_path,
         infile_dirs                   => \&set_default_infile_dirs,
         pedigree_fam_file             => \&set_default_pedigree_fam_file,
-        picardtools_path              => \&set_default_dynamic_path,
         program_test_file             => \&set_default_program_test_file,
         reference_dir                 => \&set_default_reference_dir,
         reference_info_file           => \&set_default_reference_info_file,

@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.16;
+our $VERSION = 1.17;
 
 $VERBOSE = test_standard_cli(
     {
@@ -54,7 +54,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Parameter qw{ get_capture_kit set_custom_default_to_active_parameter };
 
 diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -264,28 +264,5 @@ my $path = catfile(
     q{sample_1}, q{fastq}
 );
 is( $active_parameter{infile_dirs}{$path}, q{sample_1}, q{Set default infile_dirs} );
-
-## Test setting custom paths
-my %test_hash = (
-    gatk_path        => catdir( $Bin, qw{ data modules GenomeAnalysisTK-3.7 } ),
-    picardtools_path => catdir(
-        $active_parameter{conda_path}, qw{ envs test_env_1 share picard-2.14.1-0 }
-    ),
-);
-
-TEST_PATH:
-foreach my $test_path ( keys %test_hash ) {
-
-    set_custom_default_to_active_parameter(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-            parameter_name        => $test_path,
-        }
-    );
-
-    is( $active_parameter{$test_path},
-        $test_hash{$test_path}, q{Set default} . $SPACE . $test_path );
-}
 
 done_testing();

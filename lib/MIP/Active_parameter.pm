@@ -32,7 +32,6 @@ BEGIN {
     our @EXPORT_OK = qw{
       get_user_supplied_pedigree_parameter
       set_default_analysis_type
-      set_default_dynamic_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_pedigree_fam_file
@@ -139,62 +138,6 @@ sub set_default_analysis_type {
 
     map { $active_parameter_href->{$parameter_name}{$_} = q{wgs} }
       @{ $active_parameter_href->{sample_ids} };
-    return;
-}
-
-sub set_default_dynamic_path {
-
-## Function : Set default dynamic paths to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
-
-    ## Already has a path set
-    return if ( $active_parameter_href->{$parameter_name} );
-
-    ## Set default dynamic path if needed
-    my %dynamic_path = (
-        gatk_path => {
-            bin_file        => q{gatk3},
-            environment_key => q{gatk},
-        },
-        picardtools_path => {
-            bin_file        => q{picard.jar},
-            environment_key => q{picard},
-        },
-    );
-
-    ## No defined bin_file or environment key
-    return if ( not exists $dynamic_path{$parameter_name} );
-
-    $active_parameter_href->{$parameter_name} = get_dynamic_conda_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            bin_file              => $dynamic_path{$parameter_name}{bin_file},
-            environment_key       => $dynamic_path{$parameter_name}{environment_key},
-        }
-    );
     return;
 }
 
