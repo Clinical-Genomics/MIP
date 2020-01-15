@@ -15,6 +15,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New analysis recipe option for smncopynumbercaller
 - New option for vcf2cytosure "--vcf2cytosure_blacklist"
 
+**Tools**
+- vcf2cytosure: 0.4.3 -> 0.5.0
+
 ## [8.0.0]
 
 - Added BAM contigs set to allow for single ladies to get a proper check sex (no pun intended:). Actually it is for all female only analyses.
