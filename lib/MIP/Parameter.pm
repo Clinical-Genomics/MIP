@@ -435,18 +435,18 @@ sub set_custom_default_to_active_parameter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{
-      set_analysis_type
-      set_dynamic_path
-      set_human_genome
-      set_infile_dirs
-      set_pedigree_fam_file
-      set_program_test_file
-      set_reference_dir
-      set_reference_info_file
-      set_store_file
-      set_uninitialized_parameter
-      set_vcfparser_select_file
-      set_temp_directory
+      set_default_analysis_type
+      set_default_dynamic_path
+      set_default_human_genome
+      set_default_infile_dirs
+      set_default_pedigree_fam_file
+      set_default_program_test_file
+      set_default_reference_dir
+      set_default_reference_info_file
+      set_default_store_file
+      set_default_temp_directory
+      set_default_uninitialized_parameter
+      set_default_vcfparser_select_file
     };
 
     ## Retrieve logger object
@@ -454,32 +454,32 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
-        analysis_type                 => \&set_analysis_type,
-        bwa_build_reference           => \&set_human_genome,
-        gatk_path                     => \&set_dynamic_path,
-        infile_dirs                   => \&set_infile_dirs,
-        pedigree_fam_file             => \&set_pedigree_fam_file,
-        picardtools_path              => \&set_dynamic_path,
-        program_test_file             => \&set_program_test_file,
-        reference_dir                 => \&set_reference_dir,
-        reference_info_file           => \&set_reference_info_file,
-        rtg_vcfeval_reference_genome  => \&set_human_genome,
-        salmon_quant_reference_genome => \&set_human_genome,
-        select_programs               => \&set_uninitialized_parameter,
-        shell_install                 => \&set_uninitialized_parameter,
-        skip_programs                 => \&set_uninitialized_parameter,
-        star_aln_reference_genome     => \&set_human_genome,
-        star_fusion_reference_genome  => \&set_human_genome,
-        store_file                    => \&set_store_file,
-        sv_vcfparser_select_file      => \&set_vcfparser_select_file,
-        temp_directory                => \&set_temp_directory,
-        vcfparser_select_file         => \&set_vcfparser_select_file,
+        analysis_type                 => \&set_default_analysis_type,
+        bwa_build_reference           => \&set_default_human_genome,
+        gatk_path                     => \&set_default_dynamic_path,
+        infile_dirs                   => \&set_default_infile_dirs,
+        pedigree_fam_file             => \&set_default_pedigree_fam_file,
+        picardtools_path              => \&set_default_dynamic_path,
+        program_test_file             => \&set_default_program_test_file,
+        reference_dir                 => \&set_default_reference_dir,
+        reference_info_file           => \&set_default_reference_info_file,
+        rtg_vcfeval_reference_genome  => \&set_default_human_genome,
+        salmon_quant_reference_genome => \&set_default_human_genome,
+        select_programs               => \&set_default_uninitialized_parameter,
+        shell_install                 => \&set_default_uninitialized_parameter,
+        skip_programs                 => \&set_default_uninitialized_parameter,
+        star_aln_reference_genome     => \&set_default_human_genome,
+        star_fusion_reference_genome  => \&set_default_human_genome,
+        store_file                    => \&set_default_store_file,
+        sv_vcfparser_select_file      => \&set_default_vcfparser_select_file,
+        temp_directory                => \&set_default_temp_directory,
+        vcfparser_select_file         => \&set_default_vcfparser_select_file,
     );
 
     ## Set default value to parameter and/or active parameter
     my %set_to_parameter = (
-        exome_target_bed => \&_set_capture_kit,
-        sample_info_file => \&_set_sample_info_file,
+        exome_target_bed => \&_set_default_capture_kit,
+        sample_info_file => \&_set_default_sample_info_file,
     );
 
     if ( exists $set_to_active_parameter{$parameter_name} ) {
@@ -804,7 +804,7 @@ sub _check_parameter_values {
     return;
 }
 
-sub _set_capture_kit {
+sub _set_default_capture_kit {
 
 ## Function : Set default capture kit to active parameters
 ## Returns  :
@@ -871,7 +871,7 @@ sub _set_capture_kit {
     return;
 }
 
-sub _set_sample_info_file {
+sub _set_default_sample_info_file {
 
 ## Function : Set default sample_info_file and qccollect_sampleinfo_file to parameters
 ## Returns  :
