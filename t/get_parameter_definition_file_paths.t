@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,19 +59,21 @@ diag(   q{Test get_parameter_definition_file_paths from Definition.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a first level definition
-my $level                          = q{mandatory};
-my $mandatory_definition_file_path = get_parameter_definition_file_paths( { level => $level, } );
+my $level = q{required};
+my $required_definition_file_path =
+  get_parameter_definition_file_paths( { level => $level, } );
 
-my $expected_mandatory_file_path =
-  catfile( dirname($Bin), qw{ t definitions mandatory_parameters.yaml } );
+my $expected_required_file_path =
+  catfile( dirname($Bin), qw{ t definitions required_parameters.yaml } );
 
 ## Then get the definition file paths
-is( $mandatory_definition_file_path,
-    $expected_mandatory_file_path, q{Got mandatory definition file} );
+is( $required_definition_file_path,
+    $expected_required_file_path, q{Got required definition file} );
 
 ## Given a third level definition
 $level = q{rd_dna};
-my @rd_dna_definition_file_paths = get_parameter_definition_file_paths( { level => $level, } );
+my @rd_dna_definition_file_paths =
+  get_parameter_definition_file_paths( { level => $level, } );
 
 my @expected_rd_dna_file_paths = (
     catfile( dirname($Bin), qw{ t definitions mip_parameters.yaml } ),

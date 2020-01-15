@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,19 +64,19 @@ my $level = q{mip};
 my $definition_file_path =
   catfile( dirname($Bin), qw{ definitions mip_parameters.yaml } );
 
-## Not mandatory parameter definition keys to check
-my $not_mandatory_definition_file_path =
-  catfile( dirname($Bin), qw{ definitions not_mandatory_parameters.yaml } );
+## Not required parameter definition keys to check
+my $not_required_definition_file_path =
+  catfile( dirname($Bin), qw{ definitions not_required_parameters.yaml } );
 
-## Mandatory parameter definition keys to check
-my $mandatory_definition_file_path =
-  catfile( dirname($Bin), qw{ definitions mandatory_parameters.yaml } );
+## required parameter definition keys to check
+my $required_definition_file_path =
+  catfile( dirname($Bin), qw{ definitions required_parameters.yaml } );
 
 my %parameter = check_definition_file(
     {
-        define_parameters_path             => $definition_file_path,
-        mandatory_definition_file_path     => $mandatory_definition_file_path,
-        not_mandatory_definition_file_path => $not_mandatory_definition_file_path,
+        define_parameters_path            => $definition_file_path,
+        required_definition_file_path     => $required_definition_file_path,
+        not_required_definition_file_path => $not_required_definition_file_path,
     }
 );
 

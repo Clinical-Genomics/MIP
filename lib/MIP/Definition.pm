@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -40,16 +40,16 @@ sub check_definition_file {
 
 ## Function : Parse and check the definition parameters file
 ## Returns  : %parameter
-## Arguments: $define_parameters_path             => File defining the supported parameters
-##          : $not_mandatory_definition_file_path => Not mandatory parameter keys
-##          : $mandatory_definition_file_path     => Mandatory parameter keys
+## Arguments: $define_parameters_path            => File defining the supported parameters
+##          : $not_required_definition_file_path => Not required parameter keys
+##          : $required_definition_file_path     => Required parameter keys
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $define_parameters_path;
-    my $not_mandatory_definition_file_path;
-    my $mandatory_definition_file_path;
+    my $not_required_definition_file_path;
+    my $required_definition_file_path;
 
     my $tmpl = {
         define_parameters_path => {
@@ -58,16 +58,16 @@ sub check_definition_file {
             store       => \$define_parameters_path,
             strict_type => 1,
         },
-        not_mandatory_definition_file_path => {
+        not_required_definition_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$not_mandatory_definition_file_path,
+            store       => \$not_required_definition_file_path,
             strict_type => 1,
         },
-        mandatory_definition_file_path => {
+        required_definition_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$mandatory_definition_file_path,
+            store       => \$required_definition_file_path,
             strict_type => 1,
         },
     };
@@ -80,26 +80,26 @@ sub check_definition_file {
     ## Loads a YAML file into an arbitrary hash and returns it.
     my %parameter = load_yaml( { yaml_file => $define_parameters_path, } );
 
-    ## Load mandatory keys and values for parameters
-    my %mandatory = load_yaml(
+    ## Load required keys and values for parameters
+    my %required = load_yaml(
         {
-            yaml_file => $mandatory_definition_file_path,
+            yaml_file => $required_definition_file_path,
         }
     );
 
-    ## Load non mandatory keys and values for parameters
-    my %not_mandatory = load_yaml(
+    ## Load non required keys and values for parameters
+    my %not_required = load_yaml(
         {
-            yaml_file => $not_mandatory_definition_file_path,
+            yaml_file => $not_required_definition_file_path,
         }
     );
 
     check_parameter_hash(
         {
-            file_path          => $define_parameters_path,
-            not_mandatory_href => \%not_mandatory,
-            mandatory_href     => \%mandatory,
-            parameter_href     => \%parameter,
+            file_path         => $define_parameters_path,
+            not_required_href => \%not_required,
+            required_href     => \%required,
+            parameter_href    => \%parameter,
         }
     );
     return %parameter;
@@ -163,9 +163,9 @@ sub get_parameter_definition_file_paths {
                   install
                   install_rd_dna
                   install_rd_rna
-                  mandatory
+                  required
                   mip
-                  not_mandatory
+                  not_required
                   rd_dna
                   rd_dna_vcf_rerun
                   rd_rna }
@@ -185,8 +185,8 @@ sub get_parameter_definition_file_paths {
         download_rd_rna  => [qw{ mip download download_rd_rna }],
         install_rd_dna   => [qw{ mip install install_rd_dna }],
         install_rd_rna   => [qw{ mip install install_rd_rna }],
-        mandatory        => [qw { mandatory }],
-        not_mandatory    => [qw { not_mandatory }],
+        required         => [qw { required }],
+        not_required     => [qw { not_required }],
         mip              => [qw{ mip }],
         rd_dna           => [qw{ mip analyse rd_dna }],
         rd_dna_vcf_rerun => [qw{ mip analyse rd_dna_vcf_rerun }],
@@ -275,9 +275,9 @@ sub get_parameter_from_definition_files {
                   install
                   install_rd_dna
                   install_rd_rna
-                  mandatory
+                  required
                   mip
-                  not_mandatory
+                  not_required
                   rd_dna
                   rd_dna_vcf_rerun
                   rd_rna }
@@ -292,13 +292,13 @@ sub get_parameter_from_definition_files {
     my @definition_file_paths =
       get_parameter_definition_file_paths( { level => $level, } );
 
-    ## Not mandatory parameter definition keys to check
-    my $not_mandatory_definition_file_path =
-      get_parameter_definition_file_paths( { level => q{not_mandatory}, } );
+    ## Not required parameter definition keys to check
+    my $not_required_definition_file_path =
+      get_parameter_definition_file_paths( { level => q{not_required}, } );
 
-    ## Mandatory parameter definition keys to check
-    my $mandatory_definition_file_path =
-      get_parameter_definition_file_paths( { level => q{mandatory}, } );
+    ## required parameter definition keys to check
+    my $required_definition_file_path =
+      get_parameter_definition_file_paths( { level => q{required}, } );
 
     my %parameter;
 
@@ -309,10 +309,10 @@ sub get_parameter_from_definition_files {
             %parameter,
             check_definition_file(
                 {
-                    define_parameters_path         => $definition_file,
-                    mandatory_definition_file_path => $mandatory_definition_file_path,
-                    not_mandatory_definition_file_path =>
-                      $not_mandatory_definition_file_path,
+                    define_parameters_path        => $definition_file,
+                    required_definition_file_path => $required_definition_file_path,
+                    not_required_definition_file_path =>
+                      $not_required_definition_file_path,
                 }
             ),
         );
