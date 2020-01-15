@@ -241,6 +241,7 @@ recipe_core_number:
     scout_exons: 1
     svrank_model: 1
     sv_fqa_vcfanno_config: 1
+    vcf2cytosure_blacklist_regions: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -288,6 +289,7 @@ recipe_time:
     scout_exons: 1
     svrank_model: 1
     sv_fqa_vcfanno_config: 1
+    vcf2cytosure_blacklist_regions: 1
   type: mip
 reduced_penetrance:
   analysis_mode: case
@@ -329,7 +331,7 @@ sv_fqa_vcfanno_config:
   data_type: SCALAR
   default: 1
   type: recipe
-vcf2cytosure_blacklist:
+vcf2cytosure_blacklist_regions:
   analysis_mode: case
   associated_recipe:
    - mip

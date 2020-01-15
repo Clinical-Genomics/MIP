@@ -885,6 +885,15 @@ vcf2cytosure_ar:
     - TIDDIT.py
     - vcf2cytosure
   type: recipe
+vcf2cytosure_blacklist:
+  associated_recipe:
+   - vcf2cytosure_ar
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 vcf2cytosure_exclude_filter:
   associated_recipe:
    - vcf2cytosure_ar
