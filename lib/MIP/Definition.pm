@@ -98,8 +98,8 @@ sub check_definition_file {
         {
             file_path         => $define_parameters_path,
             not_required_href => \%not_required,
-            required_href     => \%required,
             parameter_href    => \%parameter,
+            required_href     => \%required,
         }
     );
     return %parameter;
@@ -163,12 +163,13 @@ sub get_parameter_definition_file_paths {
                   install
                   install_rd_dna
                   install_rd_rna
-                  required
                   mip
                   not_required
                   rd_dna
                   rd_dna_vcf_rerun
-                  rd_rna }
+                  rd_rna
+                  required
+                  }
             ],
             store       => \$level,
             strict_type => 1,
@@ -185,12 +186,12 @@ sub get_parameter_definition_file_paths {
         download_rd_rna  => [qw{ mip download download_rd_rna }],
         install_rd_dna   => [qw{ mip install install_rd_dna }],
         install_rd_rna   => [qw{ mip install install_rd_rna }],
-        required         => [qw { required }],
-        not_required     => [qw { not_required }],
         mip              => [qw{ mip }],
+        not_required     => [qw { not_required }],
         rd_dna           => [qw{ mip analyse rd_dna }],
         rd_dna_vcf_rerun => [qw{ mip analyse rd_dna_vcf_rerun }],
         rd_rna           => [qw{ mip analyse rd_rna }],
+        required         => [qw { required }],
     );
 
     my @definition_file_paths;
@@ -275,12 +276,13 @@ sub get_parameter_from_definition_files {
                   install
                   install_rd_dna
                   install_rd_rna
-                  required
                   mip
                   not_required
                   rd_dna
                   rd_dna_vcf_rerun
-                  rd_rna }
+                  rd_rna
+                  required
+                  }
             ],
             store       => \$level,
             strict_type => 1,
@@ -309,10 +311,10 @@ sub get_parameter_from_definition_files {
             %parameter,
             check_definition_file(
                 {
-                    define_parameters_path        => $definition_file,
-                    required_definition_file_path => $required_definition_file_path,
+                    define_parameters_path => $definition_file,
                     not_required_definition_file_path =>
                       $not_required_definition_file_path,
+                    required_definition_file_path => $required_definition_file_path,
                 }
             ),
         );

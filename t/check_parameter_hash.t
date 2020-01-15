@@ -85,10 +85,10 @@ my %not_required = load_yaml(
 ## Given valid input
 my $is_ok = check_parameter_hash(
     {
+        file_path         => $definitions_file,
+        not_required_href => \%not_required,
         parameter_href    => \%parameter,
         required_href     => \%required,
-        not_required_href => \%not_required,
-        file_path         => $definitions_file,
     }
 );
 
@@ -101,10 +101,10 @@ $parameter{case_id}{data_type} = [q{wrong_data_type}];
 trap {
     check_parameter_hash(
         {
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
             parameter_href    => \%parameter,
             required_href     => \%required,
-            not_required_href => \%not_required,
-            file_path         => $definitions_file,
         }
     )
 };
@@ -122,10 +122,10 @@ $parameter{case_id}{associated_recipe} = q{not_an_array};
 trap {
     check_parameter_hash(
         {
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
             parameter_href    => \%parameter,
             required_href     => \%required,
-            not_required_href => \%not_required,
-            file_path         => $definitions_file,
         }
     )
 };
@@ -143,10 +143,10 @@ $parameter{case_id}{data_type} = q{not_valid_value};
 trap {
     check_parameter_hash(
         {
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
             parameter_href    => \%parameter,
             required_href     => \%required,
-            not_required_href => \%not_required,
-            file_path         => $definitions_file,
         }
     )
 };
@@ -164,10 +164,10 @@ delete $parameter{case_id}{data_type};
 trap {
     check_parameter_hash(
         {
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
             parameter_href    => \%parameter,
             required_href     => \%required,
-            not_required_href => \%not_required,
-            file_path         => $definitions_file,
         }
     )
 };

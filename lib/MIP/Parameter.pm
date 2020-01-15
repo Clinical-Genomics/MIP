@@ -42,29 +42,23 @@ sub check_parameter_hash {
 ## Function : Evaluate parameters in parameters hash
 ## Returns  :
 ## Arguments: $file_path         => Path to yaml file
-##          : $required_href     => Hash with required key {REF}
 ##          : $not_required_href => Hash with non required key {REF}
 ##          : $parameter_href    => Hash with parameters from yaml file {REF}
+##          : $required_href     => Hash with required key {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
     my $file_path;
-    my $required_href;
     my $not_required_href;
     my $parameter_href;
+    my $required_href;
 
     my $tmpl = {
         file_path => {
             defined     => 1,
             required    => 1,
             store       => \$file_path,
-            strict_type => 1,
-        },
-        required_href => {
-            default     => {},
-            required    => 1,
-            store       => \$required_href,
             strict_type => 1,
         },
         not_required_href => {
@@ -79,6 +73,12 @@ sub check_parameter_hash {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        required_href => {
+            default     => {},
+            required    => 1,
+            store       => \$required_href,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -87,8 +87,8 @@ sub check_parameter_hash {
     _check_parameter_required_keys_exits(
         {
             file_path      => $file_path,
-            required_href  => $required_href,
             parameter_href => $parameter_href,
+            required_href  => $required_href,
         }
     );
 
@@ -401,15 +401,15 @@ sub _check_parameter_required_keys_exits {
 ## Function : Check that required keys exists
 ## Returns  :
 ## Arguments: $file_path      => Path to yaml file
-##          : $required_href  => Hash with required key {REF}
 ##          : $parameter_href => Hash with parameters from yaml file {REF}
+##          : $required_href  => Hash with required key {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
     my $file_path;
-    my $required_href;
     my $parameter_href;
+    my $required_href;
 
     my $tmpl = {
         file_path => {
@@ -418,16 +418,16 @@ sub _check_parameter_required_keys_exits {
             store       => \$file_path,
             strict_type => 1,
         },
-        required_href => {
-            default     => {},
-            required    => 1,
-            store       => \$required_href,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        required_href => {
+            default     => {},
+            required    => 1,
+            store       => \$required_href,
             strict_type => 1,
         },
     };

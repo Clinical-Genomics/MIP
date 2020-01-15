@@ -75,8 +75,8 @@ my $required_definition_file_path =
 my %parameter = check_definition_file(
     {
         define_parameters_path            => $definition_file_path,
-        required_definition_file_path     => $required_definition_file_path,
         not_required_definition_file_path => $not_required_definition_file_path,
+        required_definition_file_path     => $required_definition_file_path,
     }
 );
 
