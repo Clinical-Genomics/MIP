@@ -329,3 +329,10 @@ sv_fqa_vcfanno_config:
   data_type: SCALAR
   default: 1
   type: recipe
+vcf2cytosure_blacklist:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
