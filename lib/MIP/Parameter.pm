@@ -502,8 +502,7 @@ sub set_custom_default_to_active_parameter {
     return;
 }
 
-sub _check_parameter_mandatory_keys_exits {
-
+sub _check_parameter_required_keys_exits {
 
 ## Function : Check that required keys exists
 ## Returns  :
