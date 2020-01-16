@@ -20,11 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA set_analysis_constants $SPACE $WITH_SINGULARITY  };
+use MIP::Constants qw{ $COMMA set_singularity_constants $SPACE $WITH_SINGULARITY  };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,7 +79,7 @@ my %active_parameter = (
     with_singularity => 1
 );
 
-set_analysis_constants( { active_parameter_href => \%active_parameter, } );
+set_singularity_constants( { active_parameter_href => \%active_parameter, } );
 
 @commands = ( q{commands_ref}, [qw{ test per-line }] );
 test_write_to_file(

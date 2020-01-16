@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -141,7 +141,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
-    use MIP::Constants qw{ set_analysis_constants };
+    use MIP::Constants qw{ set_singularity_constants };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis
       qw{ set_recipe_cadd set_recipe_on_analysis_type set_rankvariants_ar };
@@ -189,7 +189,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     );
 
     ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
+    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});

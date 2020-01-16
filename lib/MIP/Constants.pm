@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
 
@@ -64,7 +64,7 @@ BEGIN {
       $TAB
       $WITH_SINGULARITY
       $UNDERSCORE
-      set_analysis_constants
+      set_singularity_constants
       set_genome_build_constants
       set_log_name_constant
     };
@@ -349,7 +349,7 @@ Readonly our $SPACE             => q{ };
 Readonly our $TAB               => qq{\t};
 Readonly our $UNDERSCORE        => q{_};
 
-sub set_analysis_constants {
+sub set_singularity_constants {
 
 ## Function : Set analysis constants
 ## Returns  :
