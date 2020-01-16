@@ -37,6 +37,7 @@ BEGIN {
       set_cache
       set_cache_sample_id_parameter
       set_custom_default_to_active_parameter
+      set_default_to_active_parameter
     };
 }
 
@@ -498,6 +499,103 @@ sub set_custom_default_to_active_parameter {
                 parameter_name        => $parameter_name,
             }
         );
+    }
+    return;
+}
+
+sub set_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href  => Holds all set parameter for analysis {REF}
+##          : $associated_recipes_ref => The parameters recipe {REF}
+##          : $parameter_href         => Holds all parameters {REF}
+##          : $parameter_name         => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $associated_recipes_ref;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        associated_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_recipes_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_default_parameter };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Alias
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all recipes that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
+
+        ## Default exists
+        if ( exists $parameter_href->{$parameter_name}{default} ) {
+
+            ## Scalar or array or hash default
+            set_default_parameter(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_name        => $parameter_name,
+                    parameter_default     => $parameter_href->{$parameter_name}{default},
+                }
+            );
+
+            ## Set default - no use in continuing
+            return;
+        }
+        ## No parameter default
+
+        ## Not mandatory paramater - skip
+        return
+          if ( exists $parameter_href->{$parameter_name}{mandatory}
+            && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
+
+        next ASSOCIATED_RECIPE
+          if ( not $active_parameter_href->{$associated_recipe} );
+
+        ## Mandatory parameter not supplied
+        $log->fatal( q{Supply '-}
+              . $parameter_name
+              . q{' if you want to run }
+              . $associated_recipe );
+        exit 1;
     }
     return;
 }

@@ -31,18 +31,21 @@ use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Parameter qw{ set_cache set_custom_default_to_active_parameter };
+use MIP::Parameter qw{
+  set_cache
+  set_custom_default_to_active_parameter
+  set_default_to_active_parameter
+};
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
-use MIP::Set::Parameter qw{ set_default_to_active_parameter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };

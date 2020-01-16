@@ -28,8 +28,9 @@ use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Parameter qw{ set_custom_default_to_active_parameter };
-use MIP::Set::Parameter qw{ set_conda_path set_default_to_active_parameter };
+use MIP::Parameter
+  qw{ set_custom_default_to_active_parameter set_default_to_active_parameter };
+use MIP::Set::Parameter qw{ set_conda_path };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
@@ -43,7 +44,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.09;
+    our $VERSION = 2.10;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };

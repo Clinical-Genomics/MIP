@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Parameter} => [qw{ set_default_to_active_parameter }],
+        q{MIP::Parameter}      => [qw{ set_default_to_active_parameter }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Parameter qw{ set_default_to_active_parameter };
+use MIP::Parameter qw{ set_default_to_active_parameter };
 use MIP::File::Format::Yaml qw{ load_yaml };
 
-diag(   q{Test set_default_to_active_parameter from Set::Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_default_to_active_parameter from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,7 +64,9 @@ diag(   q{Test set_default_to_active_parameter from Set::Parameter.pm v}
 my $log = test_log( {} );
 
 my @order_parameters =
-  qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates sv_vcfparser_range_feature_file };
+  qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats decompose_normalize_references
+  gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates
+  sv_vcfparser_range_feature_file };
 
 my %active_parameter = (
     bwa_mem_bamstats                          => 0,
@@ -113,13 +115,28 @@ is( $active_parameter{markduplicates_picardtools_markduplicates},
 is( $active_parameter{bcftools_mpileup_filter_variant},
     0, q{Set default for scalar parameter} );
 
+my @expected_decompose_normalize_references = qw{
+  fqa_vcfanno_config
+  gatk_baserecalibration_known_sites
+  gatk_haplotypecaller_snp_known_set
+  gatk_variantrecalibration_resource_indel
+  gatk_varianteval_gold
+  gatk_varianteval_dbsnp
+  sv_fqa_vcfanno_config
+};
+is_deeply(
+    \@{ $active_parameter{decompose_normalize_references} },
+    \@expected_decompose_normalize_references,
+    q{Set default for array parameter}
+);
+
 my %expected_resource_indel = (
     q{grch37_dbsnp_-138-.vcf} => q{dbsnp,known=true,training=false,truth=false,prior=2.0},
     q{grch37_mills_and_1000g_-gold_standard_indels-.vcf} =>
       q{mills,known=false,training=true,truth=true,prior=12.0},
 );
 is_deeply( \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
-    \%expected_resource_indel, 'Set default for hash parameter' );
+    \%expected_resource_indel, q{Set default for hash parameter} );
 
 is( $active_parameter{sv_vcfparser_range_feature_file},
     undef, q{Skipped no default and not mandatory parameter} );

@@ -31,7 +31,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
-      set_default_to_active_parameter
       set_human_genome_reference_features
       set_nist_file_name_path
       set_no_dry_run_parameters
@@ -95,122 +94,6 @@ sub set_conda_path {
     $active_parameter_href->{conda_prefix_path} =
       catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
 
-    return;
-}
-
-sub set_default_to_active_parameter {
-
-## Function : Checks and sets user input or default values to active_parameters.
-## Returns  :
-## Arguments: $active_parameter_href  => Holds all set parameter for analysis
-##          : $associated_recipes_ref => The parameters recipe {REF}
-##          : $parameter_href         => Holds all parameters
-##          : $parameter_name         => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $associated_recipes_ref;
-    my $parameter_href;
-    my $parameter_name;
-
-    ## Default(s)
-    my $case_id;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        associated_recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$associated_recipes_ref,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-        case_id        => {
-            default     => $arg_href->{active_parameter_href}{case_id},
-            store       => \$case_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
-
-    ## Alias
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-
-    ## Do nothing since parameter is not required unless exome mode is enabled
-    return
-      if ( exists $only_wgs{$parameter_name}
-        && $consensus_analysis_type =~ / wgs /xsm );
-
-    ## Check all recipes that use parameter
-  ASSOCIATED_RECIPE:
-    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
-
-        ## Default exists
-        if ( exists $parameter_href->{$parameter_name}{default} ) {
-
-            ## Array reference
-            if ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
-
-                push
-                  @{ $active_parameter_href->{$parameter_name} },
-                  @{ $parameter_href->{$parameter_name}{default} };
-            }
-            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
-                ## Hash reference
-
-                $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{default};
-            }
-            else {
-                ## Scalar
-
-                $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{default};
-            }
-
-            ## Set default - no use in continuing
-            return;
-        }
-        else {
-            ## No default
-
-            ## Not mandatory - skip
-            return
-              if ( exists $parameter_href->{$parameter_name}{mandatory}
-                && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
-
-            next ASSOCIATED_RECIPE
-              if ( not $active_parameter_href->{$associated_recipe} );
-
-            ## Mandatory parameter not supplied
-            $log->fatal( q{Supply '-}
-                  . $parameter_name
-                  . q{' if you want to run }
-                  . $associated_recipe );
-            exit 1;
-        }
-    }
     return;
 }
 
