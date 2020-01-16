@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,6 +35,7 @@ BEGIN {
       set_recipe_chromograph
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
+      set_recipe_star_aln
     };
 }
 
@@ -203,7 +205,7 @@ sub set_recipe_chromograph {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ is_sample_proband_in_trio };
+    use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph analysis_chromograph_proband };
 
@@ -472,6 +474,75 @@ sub set_ase_chain_recipes {
         $active_parameter_href->{gatk_variantfiltration} = 0;
     }
 
+    return;
+}
+
+sub set_recipe_star_aln {
+
+## Function : Set star_aln analysis recipe depending on mix of fastq files
+## Returns  :
+## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $sample_info_href        => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten arguments
+    my $analysis_recipe_href;
+    my $infile_lane_prefix_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln analysis_star_aln_mixed };
+    use MIP::Sample_info qw{ get_sequence_run_type };
+
+    ## Get sequence run types
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my %sequence_run_type = get_sequence_run_type(
+            {
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                sample_id               => $sample_id,
+                sample_info_href        => $sample_info_href,
+            }
+        );
+
+        ## Use regular star_aln_mixed recipe if multiple sequence types are present
+        if ( uniq( values %sequence_run_type ) > 1 ) {
+
+            $analysis_recipe_href->{star_aln} = \&analysis_star_aln_mixed;
+            return;
+        }
+    }
+
+    ## The fastq files are either all single or paired end
+    $analysis_recipe_href->{star_aln} = \&analysis_star_aln;
     return;
 }
 

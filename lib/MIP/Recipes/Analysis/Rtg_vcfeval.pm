@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -140,8 +140,7 @@ sub analysis_rtg_vcfeval {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
@@ -149,7 +148,8 @@ sub analysis_rtg_vcfeval {
     use MIP::Program::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Return if not a nist_id sample

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,6 +33,9 @@ $VERBOSE = test_standard_cli(
     }
 );
 
+## Constants
+Readonly my $EXPECTED_COVERAGE => 30;
+
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -40,18 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ get_chain_recipes }],
+        q{MIP::Active_parameter} => [qw{ get_user_supplied_pedigree_parameter }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ get_chain_recipes };
-use MIP::Test::Fixtures qw{ test_mip_hashes };
+use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
 
-diag(   q{Test get_chain_recipes from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_user_supplied_pedigree_parameter from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,26 +61,27 @@ diag(   q{Test get_chain_recipes from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %dependency_tree = test_mip_hashes(
-    {
-        mip_hash_name => q{dependency_tree_dna},
-    }
+## Given user supplied parameters
+my %active_parameter = (
+    analysis_type     => { sample_id => q{wgs}, },
+    sample_ids        => [qw{ sample_1 sample_2 }],
+    expected_coverage => $EXPECTED_COVERAGE,
 );
-my $chain_initiation_point  = q{DELLY_CALL};
-my $dependency_subtree_href = {};
-my $recipe_initiation_point = q{delly_reformat};
 
-## Given request to get recipes in chain DELLY_CALL starting with delly_reformat
-my @recipes = get_chain_recipes(
+my %is_user_supplied = get_user_supplied_pedigree_parameter(
     {
-        chain_initiation_point  => $chain_initiation_point,
-        dependency_tree_href    => \%dependency_tree,
-        recipe_initiation_point => $recipe_initiation_point,
+        active_parameter_href => \%active_parameter,
     }
 );
 
-## Then get it
-my @expected_recipes = qw{ delly_reformat };
-is_deeply( \@recipes, \@expected_recipes, q{Get recipes} );
+## Then return 1 for user supplied parameters
+is( $is_user_supplied{analysis_type}, 1, q{Got set HASH parameter} );
+
+is( $is_user_supplied{sample_ids}, 1, q{Got set ARRAY parameter} );
+
+is( $is_user_supplied{expected_coverage}, 1, q{Got set SCALAR parameter} );
+
+## and 0 for parameter which was not supplied by user
+is( $is_user_supplied{exome_target_bed}, 0, q{No user defined input for parameter} );
 
 done_testing();

@@ -37,14 +37,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_perl_program_check_command
       check_mip_installation
       check_program_installations
-      update_config
     };
 }
 
@@ -246,7 +245,6 @@ sub check_program_installations {
     print {$filehandle} $NEWLINE;
 
     ## Create success and fail case
-    my $installation_outcome = uc $env_name;
     my $success_message =
       q{\n\tAll programs were succesfully installed in: } . $env_name . q{\n};
     my $fail_message =
@@ -267,7 +265,7 @@ sub check_program_installations {
         }
       );
 
-    my $success_case = qq?&& { $success_echo; $installation_outcome=success; }?;
+    my $success_case = qq?&& { $success_echo; }?;
     my $fail_case    = qq?|| { $fail_echo; }?;
 
     ## Enabling querying of $?
@@ -299,203 +297,6 @@ sub check_program_installations {
     print {$filehandle} $NEWLINE;
 
     return 1;
-}
-
-sub update_config {
-
-## Function : Write installation check oneliner to open filehandle
-## Returns  :
-## Arguments: $env_name      => Program environment name hash
-##          : $filehandle    => open filehandle
-##          : $pipeline      => Pipeline
-##          : $update_config => Path to config to update
-##          : $write_config  => Create new config from template
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $env_name;
-    my $filehandle;
-    my $pipeline;
-    my $update_config;
-    my $write_config;
-
-    my $tmpl = {
-        env_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$env_name,
-            strict_type => 1,
-        },
-        filehandle => {
-            required => 1,
-            store    => \$filehandle,
-        },
-        pipeline => {
-            defined     => 1,
-            required    => 1,
-            store       => \$pipeline,
-            strict_type => 1,
-        },
-        update_config => {
-            store       => \$update_config,
-            strict_type => 1,
-        },
-        write_config => {
-            store       => \$write_config,
-            strict_type => 1,
-        },
-
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Return if no config options
-    return if ( not $update_config and not $write_config );
-
-    ## Retrieve logger object
-    my $log = retrieve_log( { log_name => $LOG_NAME, } );
-
-    ## Map installation to bash paramter
-    my $installation_outcome = q{$} . $env_name;
-
-    ## Set config paths
-    my $load_config_path;
-    my $save_config_path;
-    my $date_time  = localtime;
-    my $time_stamp = $date_time->datetime;
-
-    if ($update_config) {
-
-        ## Get absolute path
-        $update_config = abs_path($update_config);
-
-        ## Check that file exists
-        if ( not -e $update_config ) {
-            $log->warn(
-q{MIP will not attempt to update config as the specified path does not exist.}
-            );
-            return;
-        }
-
-        ## Isolate filename
-        my ( $filename, $dirs, $suffix ) = fileparse( $update_config, qr/\.y[a?]ml/xms );
-
-        ## Match date format YYYY-MM... | YY-MM... | YYMMDD...
-        my $date_regex = qr{
-			(?:\d\d\d?\d?\d?\d?) # match YYYY | YY | YYMMDD
-			-?                   # optionally match -
-			(?:\d?\d?)           # optionally match MM
-			.*                   # match any remaining part
-		}xms;
-
-        ## Replace potential dates
-        $filename =~ s/_$date_regex/_$time_stamp/xms;
-        $load_config_path = $update_config;
-        $save_config_path = catfile( $dirs, $filename . $suffix );
-        $log->info( q{Writing instructions to update config: } . $save_config_path );
-    }
-    else {
-
-        ## Copy template and add time stamp
-        $load_config_path =
-          catfile( $Bin, q{templates}, q{mip_} . $pipeline . q{_config.yaml} );
-        $save_config_path =
-          catfile( $Bin, q{mip_} . $pipeline . q{_config_} . $time_stamp . q{.yaml} );
-        $log->info( q{Writing instructions to create config: } . $save_config_path );
-    }
-
-    ## Copy the config
-    gnu_cp(
-        {
-            filehandle   => $filehandle,
-            force        => 1,
-            infile_path  => $load_config_path,
-            outfile_path => $save_config_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Load config
-    my %config             = load_yaml( { yaml_file => $load_config_path, } );
-    my %config_environment = %{ $config{load_env} };
-
-    ## Broadcast message
-    my $status_message = q{## Updating/writing config if the installation was succesful};
-    say {$filehandle} q{## Updating/writing config if the installation was succesful};
-    gnu_echo(
-        {
-            filehandle  => $filehandle,
-            strings_ref => [$status_message],
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    say {$filehandle} q{SUCCESS_COUNTER=0};
-  CONFIG_ENV_NAME:
-    foreach my $config_env_name ( keys %config_environment ) {
-
-        ## Build update_config_command
-        my $update_config_command = build_update_config_command(
-            {
-                new_env_name     => $env_name,
-                old_env_name     => $config_env_name,
-                save_config_path => $save_config_path,
-            }
-        );
-
-        ## Create status messages
-        my $success_message = qq{Updated config ($save_config_path) with $env_name};
-        my $fail_message =
-          q{\nFailed one or more installation tests in environment: } . $env_name . q{\n};
-        $fail_message .= q{Config won't be updated/written for this environment\n};
-        my $success_echo = join $SPACE,
-          gnu_echo(
-            {
-                enable_interpretation => 1,
-                strings_ref           => [$success_message],
-            }
-          );
-        my $fail_echo = join $SPACE,
-          gnu_echo(
-            {
-                enable_interpretation => 1,
-                strings_ref           => [$fail_message],
-            }
-          );
-
-        ## Check for success
-        my $success_check =
-          qq{if [[ "$installation_outcome" == "success" ]]; then} . $NEWLINE;
-        $success_check .= $TAB . $update_config_command . $NEWLINE;
-        $success_check .= $TAB . $success_echo . $NEWLINE;
-        $success_check .= $TAB . q{let "SUCCESS_COUNTER+=1"} . $NEWLINE;
-        $success_check .= q{else} . $NEWLINE;
-        $success_check .= $TAB . $fail_echo . $NEWLINE;
-        $success_check .= q{fi};
-
-        say {$filehandle} $success_check . $NEWLINE;
-    }
-
-    ## Rm temporary config if no installation was free from errors
-    if ($write_config) {
-        say {$filehandle}
-          q{## Remove copied template config if the installation wasn't succesful};
-
-        # build_cleanup_check
-        my $rm_temp_config = join $SPACE,
-          gnu_rm(
-            {
-                force       => 1,
-                infile_path => $save_config_path,
-            }
-          );
-        my $cleanup_check = q{if [[ "$SUCCESS_COUNTER" -eq 0 ]]; then} . $NEWLINE;
-        $cleanup_check .= $TAB . $rm_temp_config . $NEWLINE;
-        $cleanup_check .= q{fi};
-        say {$filehandle} $cleanup_check;
-    }
-    return;
 }
 
 sub build_perl_program_check_command {
@@ -594,59 +395,6 @@ qq{ok(run(command => $execution_test, timeout => $TIMEOUT), $execution_test_name
     push @perl_commands, $SINGLE_QUOTE;
 
     return @perl_commands;
-}
-
-sub build_update_config_command {
-
-## Function : Build perl oneliner for updating the config with new environment names
-## Returns  : $update_config_command
-## Arguments: $new_env_name     => New environment name
-##          : $old_env_name     => Old environment name
-##          : $save_config_path => Path to config that will be updated
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $new_env_name;
-    my $old_env_name;
-    my $save_config_path;
-
-    my $tmpl = {
-        new_env_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$new_env_name,
-            strict_type => 1,
-        },
-        old_env_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$old_env_name,
-            strict_type => 1,
-        },
-        save_config_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$save_config_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Start perl oneliner
-    my $perl_replace = q{perl -pi -e };
-
-    ## Substitute occurences of old_name followed by ":" or "/"
-    $perl_replace .= q{'s/} . $old_env_name . q{(?=[\/:])};
-
-    ## with new_name
-    $perl_replace .= q{/} . $new_env_name . q{/xms'};
-
-    ## Add config to update
-    my $update_config_command = $perl_replace . $SPACE . $save_config_path;
-
-    return $update_config_command;
 }
 
 1;

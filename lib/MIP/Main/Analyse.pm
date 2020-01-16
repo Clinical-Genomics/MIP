@@ -29,12 +29,12 @@ use Path::Iterator::Rule;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Active_parameter qw{ update_to_absolute_path };
+use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
-  check_cmd_config_vs_definition_file
   check_email_address
   check_load_env_packages
-  check_parameter_hash
   check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
@@ -42,31 +42,33 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
 };
 use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::File::Format::Pedigree
-  qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+use MIP::Pedigree qw{ create_fam_file
+  detect_founders
+  detect_sample_id_gender
+  detect_trio
+  reload_previous_pedigree_info };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Parameter qw{ get_program_executables };
-use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Parse::Parameter qw{ parse_dynamic_config_parameters parse_start_with_recipe };
+use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Parameter
+  qw{ check_parameter_hash set_cache set_custom_default_to_active_parameter };
+use MIP::Parse::Parameter qw{ parse_start_with_recipe };
+use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter qw{ set_config_to_active_parameters
-  set_custom_default_to_active_parameter
-  set_default_config_dynamic_parameters
+use MIP::Set::Parameter qw{
   set_default_to_active_parameter
-  set_cache
   set_human_genome_reference_features
   set_no_dry_run_parameters
   set_parameter_reference_dir_path
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_reference_parameters
   update_vcfparser_outfile_counter };
-use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
@@ -83,7 +85,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -164,7 +166,6 @@ sub mip_analyse {
 
     # Catches script name and removes ending
     my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
-    chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
 
@@ -182,83 +183,22 @@ sub mip_analyse {
         }
     );
 
-### Config file
-## If config from cmd
-    if ( exists $active_parameter{config_file}
-        && defined $active_parameter{config_file} )
-    {
-
-        ## Loads a YAML file into an arbitrary hash and returns it.
-        my %config_parameter =
-          load_yaml( { yaml_file => $active_parameter{config_file}, } );
-
-        ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-        my @remove_keys =
-          qw{ found_female found_male found_other gender log_file dry_run_all };
-
-      KEY:
-        foreach my $key (@remove_keys) {
-
-            delete $config_parameter{$key};
-        }
-
-## Set config parameters into %active_parameter unless $parameter
-## has been supplied on the command line
-        set_config_to_active_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                config_parameter_href => \%config_parameter,
-            }
-        );
-
-        ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
-        check_cmd_config_vs_definition_file(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_href        => \%parameter,
-            }
-        );
-
-        my @config_dynamic_parameters =
-          qw{ cluster_constant_path analysis_constant_path };
-
-        ## Replace config parameter with cmd info for config dynamic parameter
-        set_default_config_dynamic_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_href        => \%parameter,
-                parameter_names_ref   => \@config_dynamic_parameters,
-            }
-        );
-
-        ## Updates first the dynamic config parameters and then all other
-        ## parameters to particular user/cluster following specifications
-        parse_dynamic_config_parameters(
-            {
-                active_parameter_href         => \%active_parameter,
-                config_dynamic_parameters_ref => \@config_dynamic_parameters,
-                parameter_href                => \%parameter,
-            }
-        );
-
-    }
-
-## Set the default Log4perl file using supplied dynamic parameters.
-    $active_parameter{log_file} = set_default_log4perl_file(
+### Config
+    parse_config(
         {
-            cmd_input       => $active_parameter{log_file},
-            date            => $date,
-            date_time_stamp => $date_time_stamp,
-            outdata_dir     => $active_parameter{outdata_dir},
-            script          => $script,
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
     );
 
-## Creates log object
-    my $log = initiate_logger(
+## Get log object and set log file in active parameters unless already set from cmd
+    my $log = get_log(
         {
-            file_path => $active_parameter{log_file},
-            log_name  => uc q{mip_analyse},
+            active_parameter_href => \%active_parameter,
+            date                  => $date,
+            date_time_stamp       => $date_time_stamp,
+            log_name              => uc q{mip_analyse},
+            script                => $script,
         }
     );
 
@@ -267,34 +207,20 @@ sub mip_analyse {
     $log->info( q{Script parameters and info from are saved in file: }
           . $active_parameter{log_file} );
 
-## Parse pedigree file
-## Reads case_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-    # Meta data in YAML format
-    if ( defined $active_parameter{pedigree_file} ) {
-
-        ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-        my %pedigree =
-          load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
-
-        $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
-
-        parse_yaml_pedigree_file(
-            {
-                active_parameter_href => \%active_parameter,
-                file_path             => $active_parameter{pedigree_file},
-                log                   => $log,
-                parameter_href        => \%parameter,
-                pedigree_href         => \%pedigree,
-                sample_info_href      => \%sample_info,
-            }
-        );
-    }
+## Pedigree
+    parse_pedigree(
+        {
+            active_parameter_href => \%active_parameter,
+            pedigree_file_path    => $active_parameter{pedigree_file},
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
 
     # Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
         {
             analysis_type_href => \%{ $active_parameter{analysis_type} },
-            log                => $log,
         }
     );
 

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ print_recipe }],
+        q{MIP::Parameter}      => [qw{ get_order_of_parameters print_recipe }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ print_recipe };
+use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
-diag(   q{Test print_recipe from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test print_recipe from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,12 +61,17 @@ diag(   q{Test print_recipe from Analysis.pm v}
 
 ## Given the option to not print recipes
 my %parameter = ( bwa_mem => { type => q{recipe} } );
-my $return    = print_recipe(
+my @define_parameters_file_paths =
+  ( catfile( $Bin, qw{ data test_data define_parameters.yaml } ) );
+
+my @order_parameters = get_order_of_parameters(
+    { define_parameters_files_ref => \@define_parameters_file_paths, } );
+
+my $return = print_recipe(
     {
-        define_parameters_files_ref =>
-          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
-        parameter_href    => \%parameter,
-        print_recipe_mode => 1,
+        order_parameters_ref => \@order_parameters,
+        parameter_href       => \%parameter,
+        print_recipe_mode    => 1,
     }
 );
 
@@ -79,11 +84,10 @@ my %active_parameter = ( print_recipe => 1 );
 trap {
     print_recipe(
         {
-            define_parameters_files_ref =>
-              [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
-            parameter_href    => \%parameter,
-            print_recipe      => $active_parameter{print_recipe},
-            print_recipe_mode => 1,
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => 1,
         }
     )
 };

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -141,7 +141,7 @@ sub pipeline_analyse_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_rna };
-    use MIP::Constants qw{ set_analysis_constants };
+    use MIP::Constants qw{ set_singularity_constants };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -153,7 +153,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
+      qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
@@ -162,7 +162,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rna };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
@@ -171,13 +171,13 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
-    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
     use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
-    use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
+    use MIP::Recipes::Build::Rd_rna qw{ build_rd_rna_meta_files };
+    use MIP::Set::Analysis qw{ set_recipe_star_aln };
 
     ### Pipeline specific checks
     check_rd_rna(
@@ -194,6 +194,9 @@ sub pipeline_analyse_rd_rna {
         }
     );
 
+    ## Set analysis constants
+    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -209,9 +212,6 @@ sub pipeline_analyse_rd_rna {
         }
     );
 
-    ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
-
     ## Dispatch table
     my %analysis_recipe = (
         analysisrunstatus         => \&analysis_analysisrunstatus,
@@ -222,25 +222,34 @@ sub pipeline_analyse_rd_rna {
         dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
         fastqc_ar                 => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rna,
         gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         genebody_coverage         => \&analysis_genebody_coverage,
         gffcompare_ar             => \&analysis_gffcompare,
-        markduplicates            => \&analysis_markduplicates,
+        markduplicates            => \&analysis_markduplicates_rna,
         multiqc_ar                => \&analysis_multiqc,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
         preseq_ar                 => \&analysis_preseq,
         rseqc                     => \&analysis_rseqc,
         sacct                     => \&analysis_sacct,
         salmon_quant              => \&analysis_salmon_quant,
-        star_aln                  => \&analysis_star_aln,
+        star_aln                  => undef,
         star_fusion               => \&analysis_star_fusion,
         stringtie_ar              => \&analysis_stringtie,
         trim_galore_ar            => \&analysis_trim_galore,
         varianteffectpredictor    => \&analysis_vep_rna,
         version_collect_ar        => \&analysis_mip_vercollect,
+    );
+
+    ## Update which star recipe to use depending on fastq infile mix
+    set_recipe_star_aln(
+        {
+            analysis_recipe_href    => \%analysis_recipe,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_info_href        => $sample_info_href,
+        }
     );
 
   RECIPE:

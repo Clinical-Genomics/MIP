@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,7 +61,7 @@ diag(   q{Test update_gender_info from Gender.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Constants
-Readonly my $MALE_THRESHOLD   => 25;
+Readonly my $MALE_THRESHOLD   => 36;
 Readonly my $FEMALE_THRESHOLD => 24;
 
 ## Given a y read count when male

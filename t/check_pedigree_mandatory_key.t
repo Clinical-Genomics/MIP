@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Pedigree} => [qw{ check_pedigree_mandatory_key }],
-        q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
+        q{MIP::Pedigree}       => [qw{ check_pedigree_mandatory_key }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Pedigree qw{ check_pedigree_mandatory_key };
+use MIP::Pedigree qw{ check_pedigree_mandatory_key };
 
 diag(   q{Test check_pedigree_mandatory_key from Pedigree.pm v}
-      . $MIP::Check::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -105,11 +105,12 @@ my %pedigree = (
         },
     ],
 );
-##Given all mandatory keys
+
+## Given all mandatory keys
 my $is_ok = check_pedigree_mandatory_key(
     {
         active_parameter_href => \%active_parameter,
-        file_path             => catfile(qw{ path to pedigree.yaml }),
+        pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
         pedigree_href         => \%pedigree,
     }
 );
@@ -124,7 +125,7 @@ trap {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => \%active_parameter,
-            file_path             => catfile(qw{ path to pedigree.yaml }),
+            pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
     )
@@ -145,7 +146,7 @@ trap {
     check_pedigree_mandatory_key(
         {
             active_parameter_href => \%active_parameter,
-            file_path             => catfile(qw{ path to pedigree.yaml }),
+            pedigree_file_path    => catfile(qw{ path to pedigree.yaml }),
             pedigree_href         => \%pedigree,
         }
     )

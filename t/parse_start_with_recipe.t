@@ -62,9 +62,9 @@ my $log = test_log( {} );
 
 ## Given no defined start_with_recipe parameter
 my %active_parameter;
-my %parameter = ( bwa_mem => { default => 0, }, );
+my %parameter       = ( bwa_mem => { default => 0, }, );
 my %dependency_tree = test_mip_hashes( { mip_hash_name => q{dependency_tree_dna} } );
-$parameter{dependency_tree} = \%dependency_tree;
+$parameter{dependency_tree_href} = \%dependency_tree;
 
 my $return = parse_start_with_recipe(
     {

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -182,8 +182,8 @@ sub chanjo_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
     use MIP::Qc_data qw{ get_qc_data_sample_recipe_attributes set_qc_data_recipe_info };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     ## Get chanjo estimated gender
     my $chanjo_sexcheck_gender = get_qc_data_sample_recipe_attributes(
@@ -400,7 +400,7 @@ sub define_evaluate_metric {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     ## Constants
     Readonly my $FRACTION_DUPLICATES         => 0.2;
@@ -601,7 +601,7 @@ sub get_parent_ids {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
   SAMPLE_ID:
     for my $sample_id ( keys %{$case_href} ) {
@@ -842,7 +842,7 @@ sub plink_gender_check {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qc_data qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes };
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     ## Constants
     Readonly my $FIELD_COUNTER => 2;
@@ -970,9 +970,9 @@ sub relation_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
     use MIP::Qccollect qw{ get_parent_ids };
     use MIP::Qc_data qw{ set_qc_data_recipe_info };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     ## Constants
     Readonly my $RELATIONSHIP_CUTOFF => 0.70;

@@ -163,6 +163,7 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
+    smncopynumbercaller: 4
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -270,6 +271,7 @@ recipe_time:
     sacct: 1
     sambamba_depth: 10
     samtools_subsample_mt: 1
+    smncopynumbercaller: 1
     split_fastq_file: 10
     sv_annotate: 2
     sv_combinevariantcallsets: 2
@@ -436,17 +438,17 @@ markduplicates:
    - picard
    - sambamba
   type: recipe
-markduplicates_no_bam_to_cram:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 markduplicates_picardtools_markduplicates:
   associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 1
+  type: recipe_argument
+markduplicates_picardtools_opt_dup_dist:
+  associated_recipe:
+   - markduplicates
+  data_type: SCALAR
+  default: 2500
   type: recipe_argument
 markduplicates_sambamba_markdup:
   associated_recipe:
@@ -485,12 +487,6 @@ gatk_baserecalibration:
    - gatk
    - samtools
   type: recipe
-gatk_baserecalibration_no_bam_to_cram:
-  associated_recipe:
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 gatk_baserecalibration_known_sites:
   associated_recipe:
    - gatk_baserecalibration
@@ -555,7 +551,7 @@ samtools_subsample_mt_depth:
   associated_recipe:
    - samtools_subsample_mt
   data_type: SCALAR
-  default: 60
+  default: 150
   type: recipe_argument
 sambamba_depth:
   analysis_mode: sample
@@ -616,6 +612,17 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+smncopynumbercaller:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _smn
+  outfile_suffix: ".tsv"
+  program_executables:
+   - smn_caller.py
+  type: recipe
 tiddit_coverage:
   analysis_mode: sample
   associated_recipe:

@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -119,7 +119,7 @@ sub install_mip_scripts {
           [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
-              gene_panel.bed
+              gene_panels.bed
               grch38_mip_rd_dna_config.yaml
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml

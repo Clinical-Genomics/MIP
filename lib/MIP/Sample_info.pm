@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,12 +27,14 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_family_member_id
       get_read_group
+      get_rg_header_line
+      get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
       get_sequence_run_type
@@ -72,8 +74,6 @@ sub get_family_member_id {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     my %family_member_id = (
         father            => 0,
@@ -129,6 +129,65 @@ sub get_family_member_id {
     }
 
     return %family_member_id;
+}
+
+sub get_pedigree_sample_id_attributes {
+
+## Function : Get pedigree sample id attribute
+## Returns  : $attribute
+## Arguments: $attribute        => Attribute key
+##          : $sample_id        => Sample id to get attribute for
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        attribute => {
+            allow => [
+                qw{ analysis_type
+                  capture_kit
+                  dna_sample_id
+                  expected_coverage
+                  father
+                  mother
+                  phenotype
+                  sample_id
+                  sample_name
+                  sex
+                  time_point
+                  }
+            ],
+            defined     => 1,
+            required    => 1,
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get attribute
+    my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
+
+    return $stored_attribute;
 }
 
 sub get_read_group {
@@ -202,6 +261,77 @@ sub get_read_group {
     );
 
     return %rg;
+}
+
+sub get_rg_header_line {
+
+## Function : Builds line using read group headers
+## Returns  : $rg_header_line
+## Arguments: $infile_prefix    => Name of fastq file minus read direction information
+##          : $platform         => Sequencing platform
+##          : $sample_id        => Sample ID
+##          : $sample_info_href => Sample info hash {REF}
+##          : $separator        => Separator of the read group elements
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_prefix;
+    my $platform;
+    my $sample_id;
+    my $sample_info_href;
+    my $separator;
+
+    my $tmpl = {
+        infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_prefix,
+            strict_type => 1,
+        },
+        platform => {
+            defined     => 1,
+            required    => 1,
+            store       => \$platform,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        separator => {
+            defined     => 1,
+            required    => 1,
+            store       => \$separator,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %rg = get_read_group(
+        {
+            infile_prefix    => $infile_prefix,
+            platform         => $platform,
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    ## Construct read group line;
+    my @rg_elements    = map { uc($_) . $COLON . $rg{$_} } qw{ id lb pl pu sm };
+    my $rg_header_line = join $separator, @rg_elements;
+
+    return $rg_header_line;
 }
 
 sub get_sample_info_case_recipe_attributes {
@@ -1350,7 +1480,7 @@ sub set_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ has_trio };
+    use MIP::Pedigree qw{ has_trio };
 
     ## Add parameter key to sample info
     my @add_keys = qw{ analysis_type expected_coverage };

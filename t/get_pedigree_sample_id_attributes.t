@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_pedigree_sample_id_attributes }],
+        q{MIP::Sample_info}    => [qw{ get_pedigree_sample_id_attributes }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
 diag(   q{Test get_pedigree_sample_id_attributes from Parameter.pm v}
-      . $MIP::Get::Parameter::VERSION
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -109,7 +109,7 @@ while ( my ( $attribute, $attribute_value ) = each %attribute ) {
           . $attribute_value );
 }
 
-## Given a undefined attibute, when not mandatory
+## Given a undefined attibute
 delete $sample_info{sample}{$sample_id}{expected_coverage};
 
 my $got_attribute = get_pedigree_sample_id_attributes(
@@ -121,23 +121,6 @@ my $got_attribute = get_pedigree_sample_id_attributes(
 );
 
 ## Then return false
-is( $got_attribute, undef, q{Returned undef for not mandatory pedigree attribute} );
-
-## Given a undefined attibute, when mandatory
-delete $sample_info{sample}{$sample_id}{sex};
-
-trap {
-    $got_attribute = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{sex},
-            sample_id        => $sample_id,
-            sample_info_href => \%sample_info,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if the attibute is undef} );
-like( $trap->die, qr/Could\s+not\s+find\s+sample_info_name/xms, q{Throw error} );
+is( $got_attribute, undef, q{Returned undef for undefined pedigree attribute} );
 
 done_testing();

@@ -98,7 +98,7 @@ singularity:
   plink:
     executable:
       plink2:
-    uri: docker://Clinical-Genomics/MIP:plink-1.90b3.35
+    uri: docker://clinicalgenomics/plink:1.90b3.35
   rhocall:
     executable:
       rhocall:
@@ -111,6 +111,10 @@ singularity:
     executable:
       sambamba:
     uri: docker://clinicalgenomics/sambamba:0.6.8
+  smncopynumbercaller:
+    executable:
+      smn_caller.py:
+    uri: docker://clinicalgenomics/smncopynumbercaller:4b2c1ad
   stranger:
     executable:
       stranger:
@@ -134,7 +138,7 @@ singularity:
   variant_integrity:
     executable:
       variant_integrity:
-    uri: docker://Clinical-Genomics/MIP:variant_integrity-0.0.4
+    uri: docker://clinicalgenomics/variant_integrity:0.0.4
   vcfanno:
     executable:
       vcfanno:

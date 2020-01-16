@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -143,7 +143,7 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_dna };
-    use MIP::Constants qw{ set_analysis_constants };
+    use MIP::Constants qw{ set_singularity_constants };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis
@@ -199,6 +199,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+    use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Samtools_subsample_mt
       qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -230,6 +231,9 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
+    ## Set analysis constants
+    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -257,9 +261,6 @@ sub pipeline_analyse_rd_dna {
             parameter_href          => $parameter_href,
         }
     );
-
-    ## Set analysis constants
-    set_analysis_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
@@ -306,6 +307,7 @@ sub pipeline_analyse_rd_dna {
         sacct          => \&analysis_sacct,
         sambamba_depth => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
+        smncopynumbercaller       => \&analysis_smncopynumbercaller,
         split_fastq_file          => \&analysis_split_fastq_file,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
@@ -315,7 +317,7 @@ sub pipeline_analyse_rd_dna {
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
-        varg_ar                => \&analysis_varg, 
+        varg_ar                => \&analysis_varg,
         varianteffectpredictor => \&analysis_vep,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,

@@ -26,7 +26,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -198,6 +198,10 @@ my %specific_argument = (
     out_filter_multimap_nmax => {
         input           => 1,
         expected_output => q{--outFilterMultimapNmax 1},
+    },
+    out_sam_attr_rgline => {
+        input           => q{ID:xxx},
+        expected_output => q{--outSAMattrRGline ID:xxx},
     },
     out_sam_strand_field => {
         input           => q{intronMotif},

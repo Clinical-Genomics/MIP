@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -142,7 +142,7 @@ sub analysis_reformat_sv {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
+    use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };

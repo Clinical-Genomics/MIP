@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ get_overall_analysis_type }],
+        q{MIP::Analysis}       => [qw{ get_overall_analysis_type }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Analysis qw{ get_overall_analysis_type };
 
-diag(   q{Test get_overall_analysis_type from Get.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_overall_analysis_type from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -87,7 +84,6 @@ my %analysis_type_faulty = (
 my $consensus_analysis_type = get_overall_analysis_type(
     {
         analysis_type_href => \%analysis_type_consensus,
-        log                => $log,
     }
 );
 
@@ -98,7 +94,6 @@ is( $consensus_analysis_type, q{wgs}, q{Correct return of consensus analysis typ
 my $mixed_analysis_type = get_overall_analysis_type(
     {
         analysis_type_href => \%analysis_type_mixed,
-        log                => $log,
     }
 );
 
@@ -110,7 +105,6 @@ trap {
     get_overall_analysis_type(
         {
             analysis_type_href => \%analysis_type_faulty,
-            log                => $log,
         }
     )
 };

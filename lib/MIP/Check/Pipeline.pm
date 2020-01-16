@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -128,7 +128,7 @@ sub check_dragen_rd_dna {
       check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
-    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
@@ -415,7 +415,7 @@ sub check_rd_dna {
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
-    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter
@@ -620,7 +620,8 @@ sub check_rd_dna {
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
             log                     => $log,
             recipes_ref             => [
-                qw{ cnvnator_ar delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
+                qw{ cnvnator_ar delly_call delly_reformat expansionhunter
+                  samtools_subsample_mt smncopynumbercaller tiddit }
             ],
         }
     );
@@ -788,7 +789,7 @@ sub check_rd_dna_vcf_rerun {
       check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
-    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_in_sample_info };
@@ -1035,7 +1036,7 @@ sub check_rd_rna {
     use MIP::Check::Parameter
       qw{ check_recipe_fastq_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
-    use MIP::File::Format::Config qw{ write_mip_config };
+    use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };

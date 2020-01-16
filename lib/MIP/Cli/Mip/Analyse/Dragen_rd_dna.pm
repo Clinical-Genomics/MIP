@@ -2,8 +2,6 @@ package MIP::Cli::Mip::Analyse::Dragen_rd_dna;
 
 use 5.026;
 use Carp;
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -12,7 +10,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
@@ -20,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.06;
+our $VERSION = 1.10;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -42,93 +39,56 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::File::Format::Parameter qw{ parse_definition_file  };
-    use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
-    use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
+    use MIP::Definition qw{ get_dependency_tree_from_definition_file
+      get_first_level_keys_order_from_definition_file
+      get_parameter_definition_file_paths
+      get_parameter_from_definition_files };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain get_dependency_tree_order };
+    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
-    ## Mip analyse rare_disease parameters
+    ## %parameter holds all defined parameters for MIP analyse dragen_rd_dna
     ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions dragen_rd_dna_parameters.yaml } ),
-    );
+    my $level     = q{dragen_rd_dna};
+    my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
+    my @dragen_rd_dna_definition_file_paths =
+      get_parameter_definition_file_paths( { level => $level, } );
 
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ## %parameter holds all defined parameters for MIP
-    ## mip analyse rare_disease parameters
-    my %parameter;
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path => $definition_file,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                }
-            ),
-        );
-    }
+    ### To write parameters and their values to log in logical order
+    ## Adds the order of first level keys from definition files to array
+    my @order_parameters = get_order_of_parameters(
+        { define_parameters_files_ref => \@dragen_rd_dna_definition_file_paths, } );
 
     ## Print recipes if requested and exit
     print_recipe(
         {
-            define_parameters_files_ref => \@definition_files,
-            parameter_href              => \%parameter,
-            print_recipe                => $active_parameter{print_recipe},
-            print_recipe_mode           => $active_parameter{print_recipe_mode},
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => $active_parameter{print_recipe_mode},
         }
     );
 
     ## Get dependency tree and store in parameter hash
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file =>
-              catfile( $Bin, qw{ definitions dragen_rd_dna_initiation_map.yaml } ),
-        }
-    );
-    $parameter{dependency_tree} = \%dependency_tree;
+    %{ $parameter{dependency_tree_href} } =
+      get_dependency_tree_from_definition_file( { level => $level, } );
 
     ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             parameter_href       => \%parameter,
         }
     );
 
-    ## Order recipes - Parsed from initiation file
+    ## Order recipes according to dependency tree
     get_dependency_tree_order(
         {
-            dependency_tree_href => $parameter{dependency_tree},
+            dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
-
-    ### To write parameters and their values to log in logical order
-    ### Actual order of parameters in definition parameters file(s) does not matter
-    ## Adds the order of first level keys from yaml files to array
-    my @order_parameters;
-    foreach my $define_parameters_file (@definition_files) {
-
-        push @order_parameters,
-          order_parameter_names(
-            {
-                file_path => $define_parameters_file,
-            }
-          );
-    }
 
     ## File info hash
     my %file_info = (

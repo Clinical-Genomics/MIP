@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.09;
 
 our $USAGE = build_usage( {} );
 
@@ -299,9 +299,9 @@ sub mip_scripts {
               download_rd_rna_parameters.yaml
               install_rd_dna_parameters.yaml
               install_rd_rna_parameters.yaml
-              mandatory_parameter_keys.yaml
+              required_parameters.yaml
               mip_parameters.yaml
-              non_mandatory_parameter_keys.yaml
+              not_required_parameters.yaml
               rd_dna_initiation_map.yaml
               rd_dna_parameters.yaml
               rd_rna_parameters.yaml
@@ -321,7 +321,7 @@ sub mip_scripts {
         ],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
-              gene_panel.bed
+              gene_panels.bed
               grch38_mip_rd_dna_config.yaml
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml

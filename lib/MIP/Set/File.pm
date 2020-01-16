@@ -2,7 +2,6 @@ package MIP::Set::File;
 
 use Carp;
 use charnames qw{ :full :short };
-use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };
@@ -24,56 +23,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_infiles set_io_files set_merged_infile_prefix };
-}
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-
-sub set_absolute_path {
-
-## Function : Find aboslute path for supplied path or croaks and exists if path does not exists
-## Returns  : $path (absolute path)
-## Arguments: $parameter_name => Parameter to be evaluated
-##          : $path           => Supplied path to be updated/evaluated
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_name;
-    my $path;
-
-    my $tmpl = {
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        path => { defined => 1, required => 1, store => \$path, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## For broadcasting later
-    my $original_path = $path;
-
-    ## Reformat to absolute path
-    $path = abs_path($path);
-
-    ## Something went wrong
-    if ( not defined $path ) {
-
-        croak(  q{Could not find absolute path for }
-              . $parameter_name . q{: }
-              . $original_path
-              . q{. Please check the supplied path!} );
-    }
-    return $path;
+      qw{ set_file_compression_features set_file_prefix_tag set_infiles set_io_files set_merged_infile_prefix };
 }
 
 sub set_file_compression_features {

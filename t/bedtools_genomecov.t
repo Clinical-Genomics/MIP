@@ -27,13 +27,6 @@ use MIP::Test::Fixtures qw{ test_standard_cli };
 my $VERBOSE = 1;
 our $VERSION = 1.00;
 
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -61,7 +54,7 @@ diag(   q{Test bedtools_genomecov from Bedtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ bedtools };
+my @function_base_commands = qw{ bedtools genomecov };
 
 my %base_argument = (
     filehandle => {
