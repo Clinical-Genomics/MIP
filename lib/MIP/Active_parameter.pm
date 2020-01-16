@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,6 +34,7 @@ BEGIN {
       set_default_analysis_type
       set_default_human_genome
       set_default_infile_dirs
+      set_default_parameter
       set_default_pedigree_fam_file
       set_default_program_test_file
       set_default_reference_dir
@@ -544,6 +545,51 @@ sub set_exome_target_bed {
     ## Add sample_ids as string to exome_target_bed_file
     $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} =
       $sample_id_string;
+
+    return;
+}
+
+sub set_default_parameter {
+
+## Function : Set default parameter in active_parameter hash
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => Parameter name to set default for
+##          : $parameter_default     => Parameter default value to set (scalar|array_ref|hash_ref)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+    my $parameter_default;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        parameter_default => {
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_default,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add default value for parameter
+    ## Can be scalar|array_ref|hash_ref
+    $active_parameter_href->{$parameter_name} = $parameter_default;
 
     return;
 }
