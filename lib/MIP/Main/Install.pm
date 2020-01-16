@@ -8,7 +8,6 @@ use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use Getopt::Long;
 use IO::Handle;
-use List::Util qw{ any uniq };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -28,8 +27,7 @@ use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Parameter
-  qw{ set_custom_default_to_active_parameter set_default_to_active_parameter };
+use MIP::Parameter qw{ set_default };
 use MIP::Set::Parameter qw{ set_conda_path };
 
 ## Recipes
@@ -44,7 +42,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.10;
+    our $VERSION = 2.11;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -147,52 +145,15 @@ sub mip_install {
     $log->info(
         q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );
 
-    ### Populate uninitilized active_parameters{parameter_name} with default from parameter
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## If hash and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
-            && keys %{ $active_parameter{$parameter_name} } );
-
-        ## If array and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
-            && @{ $active_parameter{$parameter_name} } );
-
-        ## If scalar and set - skip
-        next PARAMETER
-          if ( defined $active_parameter{$parameter_name}
-            and not ref $active_parameter{$parameter_name} );
-
-        ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters =
-          qw{ program_test_file select_programs shell_install skip_programs };
-
-        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
-
-            set_custom_default_to_active_parameter(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_href        => \%parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-            next PARAMETER;
+    ## Set default from parameter hash to active_parameter for uninitilized parameters
+    set_default(
+        {
+            active_parameter_href => \%active_parameter,
+            custom_default_parameters_ref =>
+              \@{ $parameter{custom_default_parameters}{default} },
+            parameter_href => \%parameter,
         }
-
-        ## Checks and sets user input or default values to active_parameters
-        set_default_to_active_parameter(
-            {
-                active_parameter_href => \%active_parameter,
-                associated_recipes_ref =>
-                  \@{ $parameter{$parameter_name}{associated_recipe} },
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-    }
+    );
 
     ## Installation specific checks of active_parameter hash
     check_active_installation_parameters(

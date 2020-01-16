@@ -19,6 +19,16 @@ core_number:
   default: 1
   mandatory: no
   type: mip
+custom_default_parameters:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+   - program_test_file
+   - select_programs
+   - shell_install
+   - skip_programs
+  type: mip
 pip: 
   associated_recipe:
    - mip

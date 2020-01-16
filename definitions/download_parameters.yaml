@@ -6,6 +6,14 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+custom_default_parameters:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+   - reference_dir
+   - temp_directory
+  type: mip
 dry_run_all:
   associated_recipe:
    - mip

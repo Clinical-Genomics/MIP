@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.17;
+our $VERSION = 1.18;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,23 +110,9 @@ foreach my $definition_file (@definition_files) {
 }
 
 ## Given custom default parameters
-my @custom_default_parameters = qw{ analysis_type
-  bwa_build_reference
-  exome_target_bed
-  infile_dirs
-  pedigree_fam_file
-  reference_dir
-  reference_info_file
-  rtg_vcfeval_reference_genome
-  sample_info_file
-  select_programs
-  store_file
-  sv_vcfparser_select_file
-  temp_directory
-  vcfparser_select_file };
 
 PARAMETER_NAME:
-foreach my $parameter_name (@custom_default_parameters) {
+foreach my $parameter_name ( @{ $parameter{custom_default_parameters}{default} } ) {
 
     set_custom_default_to_active_parameter(
         {
