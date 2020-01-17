@@ -30,30 +30,6 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
-custom_default_parameters:
-  associated_recipe:
-   - mip
-  data_type: ARRAY
-  default:
-   - analysis_type
-   - bwa_build_reference
-   - exome_target_bed
-   - gatk_path
-   - infile_dirs
-   - pedigree_fam_file
-   - picardtools_path
-   - reference_dir
-   - reference_info_file
-   - rtg_vcfeval_reference_genome
-   - salmon_quant_reference_genome
-   - sample_info_file
-   - star_aln_reference_genome
-   - star_fusion_reference_genome
-   - store_file
-   - sv_vcfparser_select_file
-   - temp_directory
-   - vcfparser_select_file
-  type: mip
 dry_run_all:
   associated_recipe:
    - mip
