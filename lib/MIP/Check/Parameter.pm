@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -582,7 +582,7 @@ sub check_nist_file_exists {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+    use MIP::File::Path qw { check_filesystem_objects_and_index_existance };
 
   NIST_PARAMETER:
     foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
@@ -599,10 +599,8 @@ sub check_nist_file_exists {
                 ## Check path object exists
                 check_filesystem_objects_and_index_existance(
                     {
-                        log            => $log,
                         object_name    => ( join q{=>}, ( $nist_version, $nist_id ) ),
                         object_type    => q{file},
-                        parameter_href => {},
                         parameter_name => $nist_parameter,
                         path           => $file_path,
                     }
@@ -1568,7 +1566,7 @@ sub check_vep_custom_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+    use MIP::File::Path qw { check_filesystem_objects_and_index_existance };
 
     ## Nothing to check
     return 0 if ( not keys %{$vep_custom_ann_href} );
@@ -1591,10 +1589,8 @@ sub check_vep_custom_annotation {
         ## Check path object exists
         check_filesystem_objects_and_index_existance(
             {
-                log            => $log,
                 object_name    => $ann,
                 object_type    => q{file},
-                parameter_href => {},
                 parameter_name => q{vep_custom_annotation},
                 path           => $value_href->{path},
             }
@@ -1735,7 +1731,7 @@ sub check_vep_plugin {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+    use MIP::File::Path qw { check_filesystem_objects_and_index_existance };
 
     ## Nothing to check
     return 0 if ( not keys %{$vep_plugin_href} );
@@ -1753,10 +1749,8 @@ sub check_vep_plugin {
         ## Check path object exists
         check_filesystem_objects_and_index_existance(
             {
-                log            => $log,
                 object_name    => $plugin,
                 object_type    => $value_href->{exists_check},
-                parameter_href => {},
                 parameter_name => $parameter_name,
                 path           => $value_href->{path},
             }
