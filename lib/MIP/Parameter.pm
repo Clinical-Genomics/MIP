@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,6 +37,7 @@ BEGIN {
       set_cache
       set_cache_sample_id_parameter
       set_custom_default_to_active_parameter
+      set_default
       set_default_to_active_parameter
     };
 }
@@ -501,6 +502,89 @@ sub set_custom_default_to_active_parameter {
         );
     }
     return;
+}
+
+sub set_default {
+
+## Function : Set default from parameter hash to active_parameter for uninitilized parameters
+## Returns  :
+## Arguments: $active_parameter_href         => Active parameters for this analysis hash {REF}
+##          : $custom_default_parameters_ref => Custom default parameters that are dependent on other parameters
+##          : $parameter_href                => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $custom_default_parameters_ref;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        custom_default_parameters_ref => {
+            default     => [],
+            store       => \$custom_default_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ### Populate uninitilized active_parameters{parameter_name} with default from parameter
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$parameter_href} ) {
+
+        ## If hash and set - skip
+        next PARAMETER
+          if ( ref $active_parameter_href->{$parameter_name} eq qw{HASH}
+            && keys %{ $active_parameter_href->{$parameter_name} } );
+
+        ## If array and set - skip
+        next PARAMETER
+          if ( ref $active_parameter_href->{$parameter_name} eq qw{ARRAY}
+            && @{ $active_parameter_href->{$parameter_name} } );
+
+        ## If scalar and set - skip
+        next PARAMETER
+          if ( defined $active_parameter_href->{$parameter_name}
+            and not ref $active_parameter_href->{$parameter_name} );
+
+        if ( any { $_ eq $parameter_name } @{$custom_default_parameters_ref} ) {
+
+            set_custom_default_to_active_parameter(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_href        => $parameter_href,
+                    parameter_name        => $parameter_name,
+                }
+            );
+            next PARAMETER;
+        }
+
+        ## Checks and sets user input or default values to active_parameters
+        set_default_to_active_parameter(
+            {
+                active_parameter_href => $active_parameter_href,
+                associated_recipes_ref =>
+                  \@{ $parameter_href->{$parameter_name}{associated_recipe} },
+                parameter_href => $parameter_href,
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+    return 1;
 }
 
 sub set_default_to_active_parameter {

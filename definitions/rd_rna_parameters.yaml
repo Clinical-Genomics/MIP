@@ -1,6 +1,25 @@
 ---
 ## Version: 2.1.2
 ## HumanGenomeReference
+custom_default_parameters:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+   - analysis_type
+   - gatk_path
+   - infile_dirs
+   - pedigree_fam_file
+   - picardtools_path
+   - reference_dir
+   - reference_info_file
+   - salmon_quant_reference_genome
+   - sample_info_file
+   - star_aln_reference_genome
+   - star_fusion_reference_genome
+   - store_file
+   - temp_directory
+  type: mip
 human_genome_reference:
   associated_recipe:
     - mip

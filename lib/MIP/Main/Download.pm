@@ -33,8 +33,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   set_cache
-  set_custom_default_to_active_parameter
-  set_default_to_active_parameter
+  set_default
 };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
@@ -45,7 +44,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -153,52 +152,15 @@ sub mip_download {
     $log->info(
         q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );
 
-    ### Populate uninitilized active_parameters{parameter_name} with
-    ### default from parameter
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## If hash and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
-            && keys %{ $active_parameter{$parameter_name} } );
-
-        ## If array and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
-            && @{ $active_parameter{$parameter_name} } );
-
-        ## If scalar and set - skip
-        next PARAMETER
-          if ( defined $active_parameter{$parameter_name}
-            and not ref $active_parameter{$parameter_name} );
-
-        ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters = qw{ reference_dir temp_directory };
-
-        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
-
-            set_custom_default_to_active_parameter(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_href        => \%parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-            next PARAMETER;
+    ## Set default from parameter hash to active_parameter for uninitilized parameters
+    set_default(
+        {
+            active_parameter_href => \%active_parameter,
+            custom_default_parameters_ref =>
+              \@{ $parameter{custom_default_parameters}{default} },
+            parameter_href => \%parameter,
         }
-
-        ## Checks and sets user input or default values to active_parameters
-        set_default_to_active_parameter(
-            {
-                active_parameter_href => \%active_parameter,
-                associated_recipes_ref =>
-                  \@{ $parameter{$parameter_name}{associated_recipe} },
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-    }
+    );
 
     ## Make sure that we have lower case from user input
     @{ $active_parameter{reference_genome_versions} } =
@@ -351,10 +313,6 @@ q{Will write sbatch install instructions for references to individual sbatch scr
     );
     return;
 }
-
-#################
-###SubRoutines###
-#################
 
 ##Investigate potential autodie error
 if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {

@@ -23,7 +23,6 @@ use warnings qw{ FATAL utf8 };
 ## Third party module(s)
 use autodie qw{ open close :all };
 use IPC::System::Simple;
-use List::MoreUtils qw { any uniq all };
 use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
 
@@ -55,9 +54,8 @@ use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
-  check_parameter_hash set_cache
-  set_custom_default_to_active_parameter
-  set_default_to_active_parameter
+  set_cache
+  set_default
 };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ parse_pedigree };
@@ -87,7 +85,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -226,70 +224,15 @@ sub mip_analyse {
         }
     );
 
-### Populate uninitilized active_parameters{parameter_name} with default from parameter
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## If hash and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
-            && keys %{ $active_parameter{$parameter_name} } );
-
-        ## If array and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
-            && @{ $active_parameter{$parameter_name} } );
-
-        ## If scalar and set - skip
-        next PARAMETER
-          if ( defined $active_parameter{$parameter_name}
-            and not ref $active_parameter{$parameter_name} );
-
-        ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters = qw{
-          analysis_type
-          bwa_build_reference
-          exome_target_bed
-          gatk_path
-          infile_dirs
-          pedigree_fam_file
-          picardtools_path
-          reference_dir
-          reference_info_file
-          rtg_vcfeval_reference_genome
-          salmon_quant_reference_genome
-          sample_info_file
-          star_aln_reference_genome
-          star_fusion_reference_genome
-          store_file
-          sv_vcfparser_select_file
-          temp_directory
-          vcfparser_select_file
-        };
-
-        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
-
-            set_custom_default_to_active_parameter(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_href        => \%parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-            next PARAMETER;
+## Set default from parameter hash to active_parameter for uninitilized parameters
+    set_default(
+        {
+            active_parameter_href => \%active_parameter,
+            custom_default_parameters_ref =>
+              \@{ $parameter{custom_default_parameters}{default} },
+            parameter_href => \%parameter,
         }
-
-        ## Checks and sets user input or default values to active_parameters
-        set_default_to_active_parameter(
-            {
-                active_parameter_href => \%active_parameter,
-                associated_recipes_ref =>
-                  \@{ $parameter{$parameter_name}{associated_recipe} },
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-    }
+    );
 
 ## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
     set_parameter_reference_dir_path(
