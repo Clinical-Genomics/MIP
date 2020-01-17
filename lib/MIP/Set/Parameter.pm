@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catdir catfile splitpath };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -34,7 +34,6 @@ BEGIN {
       set_human_genome_reference_features
       set_nist_file_name_path
       set_no_dry_run_parameters
-      set_parameter_reference_dir_path
       set_parameter_to_broadcast
       set_programs_for_installation
       set_recipe_mode
@@ -323,92 +322,6 @@ sub set_no_dry_run_parameters {
         $sample_info_href->{$key} = $value;
     }
 
-    return;
-}
-
-sub set_parameter_reference_dir_path {
-
-## Function : Set path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => Parameter to update
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Unpack
-    my $reference_dir = $active_parameter_href->{reference_dir};
-
-    # $parameter can be array_ref, hash_ref, point to file or undef
-    my $parameter = $active_parameter_href->{$parameter_name};
-
-    return if ( not defined $parameter );
-
-    if ( ref $parameter eq q{ARRAY} ) {
-
-      FILE:
-        foreach my $file ( @{$parameter} ) {
-
-            ## Split to restate
-            my ( $volume, $directory, $file_name ) = splitpath($file);
-
-            ## Update original element - works since array_ref
-            $file = catfile( $reference_dir, $file_name );
-        }
-        return;
-    }
-    elsif ( ref $parameter eq q{HASH} ) {
-
-      FILE:
-        foreach my $file ( keys %{$parameter} ) {
-
-            ## Split to restate
-            my ( $volume, $directory, $file_name ) = splitpath($file);
-
-            ## Update original key with path and add potential annotation key
-            ## by deleting original value (returns value deleted)
-            $active_parameter_href->{$parameter_name}
-              { catfile( $reference_dir, $file_name ) } =
-              delete $active_parameter_href->{$parameter_name}{$file};
-        }
-        return;
-    }
-    else {
-
-        ## File
-        ## Split to restate
-        my ( $volume, $directory, $file_name ) =
-          splitpath( $active_parameter_href->{$parameter_name} );
-
-        ## Restate to allow for changing mip reference directory between runs
-        $active_parameter_href->{$parameter_name} = $file_name;
-
-        ## Update original value
-        my $path = catfile( $reference_dir, $active_parameter_href->{$parameter_name} );
-        $active_parameter_href->{$parameter_name} = $path;
-
-    }
     return;
 }
 
