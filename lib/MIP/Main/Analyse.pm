@@ -27,7 +27,7 @@ use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ update_to_absolute_path };
+use MIP::Active_parameter qw{ set_parameter_reference_dir_path update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
@@ -62,10 +62,8 @@ use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
-
   set_human_genome_reference_features
   set_no_dry_run_parameters
-  set_parameter_reference_dir_path
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_reference_parameters
   update_vcfparser_outfile_counter };
@@ -85,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -217,7 +215,7 @@ sub mip_analyse {
         }
     );
 
-    # Detect if all samples has the same sequencing type and return consensus if reached
+    ## Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
         {
             analysis_type_href => \%{ $active_parameter{analysis_type} },
@@ -234,7 +232,8 @@ sub mip_analyse {
         }
     );
 
-## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+## Update path for supplied reference(s) associated with parameter that should
+## reside in the mip reference directory to full path
     set_parameter_reference_dir_path(
         {
             active_parameter_href => \%active_parameter,

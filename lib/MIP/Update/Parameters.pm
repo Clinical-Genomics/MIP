@@ -202,7 +202,7 @@ sub update_reference_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Set::Parameter qw{ set_parameter_reference_dir_path };
+    use MIP::Active_parameter qw{ set_parameter_reference_dir_path };
 
     ## Check all recipes that use parameter
   ASSOCIATED_RECIPE:

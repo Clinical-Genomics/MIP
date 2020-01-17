@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile splitpath };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -44,6 +44,7 @@ BEGIN {
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
       set_exome_target_bed
+      set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       update_to_absolute_path
     };
@@ -590,6 +591,92 @@ sub set_default_parameter {
     ## Add default value for parameter
     ## Can be scalar|array_ref|hash_ref
     $active_parameter_href->{$parameter_name} = $parameter_default;
+
+    return;
+}
+
+sub set_parameter_reference_dir_path {
+
+## Function : Set path for supplied reference(s) associated with parameter that should
+##          : reside in the mip reference directory to full path.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => Parameter to update
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Unpack
+    my $reference_dir = $active_parameter_href->{reference_dir};
+
+    # $parameter can be array_ref, hash_ref, point to file or undef
+    my $parameter = $active_parameter_href->{$parameter_name};
+
+    return if ( not defined $parameter );
+
+    if ( ref $parameter eq q{ARRAY} ) {
+
+      FILE:
+        foreach my $file ( @{$parameter} ) {
+
+            ## Split to restate
+            my ( $volume, $directory, $file_name ) = splitpath($file);
+
+            ## Update original element - works since array_ref
+            ## Parameter element now stores path instead of file
+            $file = catfile( $reference_dir, $file_name );
+        }
+        return;
+    }
+    elsif ( ref $parameter eq q{HASH} ) {
+
+      FILE:
+        foreach my $file ( keys %{$parameter} ) {
+
+            ## Split to restate
+            my ( $volume, $directory, $file_name ) = splitpath($file);
+
+            ## Update original key with path and add potential annotation key
+            ## by deleting original value (returns value deleted)
+            my $path = catfile( $reference_dir, $file_name );
+            $active_parameter_href->{$parameter_name}{$path} =
+              delete $active_parameter_href->{$parameter_name}{$file};
+        }
+        return;
+    }
+
+    ## File
+    ## Split to restate
+    my ( $volume, $directory, $file_name ) =
+      splitpath( $active_parameter_href->{$parameter_name} );
+
+    ## Restate to allow for changing mip reference directory between runs
+    $active_parameter_href->{$parameter_name} = $file_name;
+
+    ## Update original value
+    my $path = catfile( $reference_dir, $active_parameter_href->{$parameter_name} );
+    $active_parameter_href->{$parameter_name} = $path;
 
     return;
 }
