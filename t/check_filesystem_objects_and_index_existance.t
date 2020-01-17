@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
@@ -27,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,7 +42,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path} => [qw{ check_filesystem_objects_and_index_existance }],
+        q{MIP::File::Path} => [qw{ check_filesystem_objects_and_index_existance }],
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
         q{MIP::Test::Fixtures}     => [qw{ test_log test_standard_cli }],
     );
@@ -51,10 +50,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_filesystem_objects_and_index_existance };
+use MIP::File::Path qw{ check_filesystem_objects_and_index_existance };
 
 diag(   q{Test check_filesystem_objects_and_index_existance from Path.pm v}
-      . $MIP::Check::Path::VERSION
+      . $MIP::File::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,19 +61,15 @@ diag(   q{Test check_filesystem_objects_and_index_existance from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir      = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
 ## Creates log object
 my $log = test_log( { no_screen => 0, } );
 
 my %active_parameter = (
     gatk_baserecalibration_known_sites =>
       catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf} ),
-    human_genome_reference_file_endings => catfile( $Bin, qw{ Should_not_exist_file } ),
     gatk_variantrecalibration_resource_indel =>
       catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf } ),
+    human_genome_reference_file_endings => catfile( $Bin, qw{ Should_not_exist_file } ),
 );
 
 my %parameter = load_yaml(
@@ -86,11 +81,9 @@ my %parameter = load_yaml(
 ### Given a reference which can be built
 my ($exist) = check_filesystem_objects_and_index_existance(
     {
-        log         => $log,
-        object_name => $active_parameter{human_genome_reference_file_endings},
-        ,
+        is_build_file  => $parameter{human_genome_reference_file_endings}{build_file},
+        object_name    => $active_parameter{human_genome_reference_file_endings},
         object_type    => q{file},
-        parameter_href => \%parameter,
         parameter_name => q{human_genome_reference_file_endings},
         path           => $active_parameter{human_genome_reference_file_endings},
     }
@@ -102,10 +95,9 @@ is( $exist, undef, q{Return for build file} );
 ## Given a file that exists
 ($exist) = check_filesystem_objects_and_index_existance(
     {
-        log            => $log,
+        is_build_file  => $parameter{gatk_baserecalibration_known_sites}{build_file},
         object_name    => $active_parameter{gatk_baserecalibration_known_sites},
         object_type    => q{file},
-        parameter_href => \%parameter,
         parameter_name => q{gatk_baserecalibration_known_sites},
         path           => $active_parameter{gatk_baserecalibration_known_sites},
     }
@@ -117,10 +109,10 @@ ok( $exist, q{File exists} );
 ## Given a file with index
 ($exist) = check_filesystem_objects_and_index_existance(
     {
-        log            => $log,
-        object_name    => $active_parameter{gatk_variantrecalibration_resource_indel},
-        object_type    => q{file},
-        parameter_href => \%parameter,
+        index_suffix  => q{gz},
+        is_build_file => $parameter{gatk_variantrecalibration_resource_indel}{build_file},
+        object_name   => $active_parameter{gatk_variantrecalibration_resource_indel},
+        object_type   => q{file},
         parameter_name => q{gatk_variantrecalibration_resource_indel},
         path           => $active_parameter{gatk_variantrecalibration_resource_indel},
     }
@@ -135,10 +127,10 @@ $active_parameter{gatk_variantrecalibration_resource_indel} = q{file_do_not_exis
 trap {
     check_filesystem_objects_and_index_existance(
         {
-            log            => $log,
+            is_build_file =>
+              $parameter{gatk_variantrecalibration_resource_indel}{build_file},
             object_name    => $active_parameter{gatk_variantrecalibration_resource_indel},
             object_type    => q{file},
-            parameter_href => \%parameter,
             parameter_name => q{gatk_variantrecalibration_resource_indel},
             path           => $active_parameter{gatk_variantrecalibration_resource_indel},
         }
@@ -156,10 +148,10 @@ $active_parameter{gatk_variantrecalibration_resource_indel} =
 trap {
     check_filesystem_objects_and_index_existance(
         {
-            log            => $log,
+            is_build_file =>
+              $parameter{gatk_variantrecalibration_resource_indel}{build_file},
             object_name    => $active_parameter{gatk_variantrecalibration_resource_indel},
             object_type    => q{file},
-            parameter_href => \%parameter,
             parameter_name => q{gatk_variantrecalibration_resource_indel},
             path           => $active_parameter{gatk_variantrecalibration_resource_indel},
         }
@@ -172,36 +164,3 @@ like( $trap->stderr, qr/FATAL/xms,
     q{Throw fatal log message if file index cannot be found} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

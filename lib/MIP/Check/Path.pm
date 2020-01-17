@@ -17,8 +17,7 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants
-  qw{ $AMPERSAND $CLOSE_BRACKET $DOT $NEWLINE $OPEN_BRACKET $SPACE $TAB };
+use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
 
 BEGIN {
 
@@ -26,12 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_executable_in_path
-      check_filesystem_objects_and_index_existance
       check_file_version_exist
       check_future_filesystem_for_directory
       check_gatk_sample_map_paths
@@ -114,113 +112,6 @@ sub check_executable_in_path {
         }
     }
     return;
-}
-
-sub check_filesystem_objects_and_index_existance {
-
-## Function : Checks if a file or directory file exists as well as index file. Croak if object or index file does not exist.
-## Returns  :
-## Arguments: $log            => Log object to write to
-##          : $index_suffix   => Index file ending
-##          : $object_name    => Object to check for existance
-##          : $object_type    => Type of item to check
-##          : $parameter_href => Parameters hash
-##          : $parameter_name => MIP parameter name {REF}
-##          : $path           => Path to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $object_name;
-    my $object_type;
-    my $parameter_href;
-    my $parameter_name;
-    my $path;
-
-    ## Default
-    my $index_suffix;
-
-    my $tmpl = {
-        log          => { required => 1, store => \$log, },
-        index_suffix => {
-            allow       => [qw{ .gz }],
-            default     => q{gz},
-            store       => \$index_suffix,
-            strict_type => 1,
-        },
-        object_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$object_name,
-            strict_type => 1,
-        },
-        object_type => {
-            allow       => [qw{ directory file }],
-            defined     => 1,
-            required    => 1,
-            store       => \$object_type,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw{ check_filesystem_objects_existance };
-
-    ## Special case for file with "build_file" in config
-    ## These are handled downstream
-    return if ( defined $parameter_href->{$parameter_name}{build_file} );
-
-    my ( $exist, $error_msg ) = check_filesystem_objects_existance(
-        {
-            object_name    => $path,
-            object_type    => $object_type,
-            parameter_name => $parameter_name,
-        }
-    );
-    if ( not $exist ) {
-        $log->fatal($error_msg);
-        exit 1;
-    }
-
-    ## Check for tabix index as well
-    if ( $path =~ m{ $index_suffix$ }xsm ) {
-
-        my $path_index = $path . $DOT . q{tbi};
-
-        my ( $index_exist, $index_error_msg ) = check_filesystem_objects_existance(
-            {
-                object_name    => $path_index,
-                object_type    => $object_type,
-                parameter_name => $path_index,
-            }
-        );
-        if ( not $index_exist ) {
-            $log->fatal($index_error_msg);
-            exit 1;
-        }
-    }
-    return 1;
 }
 
 sub check_file_version_exist {
@@ -457,8 +348,8 @@ sub check_parameter_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_filesystem_objects_existance };
-    use MIP::Check::Path qw{ check_filesystem_objects_and_index_existance };
+    use MIP::File::Path
+      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance };
 
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
@@ -494,10 +385,9 @@ sub check_parameter_files {
 
                 check_filesystem_objects_and_index_existance(
                     {
-                        log            => $log,
+                        is_build_file  => $parameter_href->{$parameter_name}{build_file},
                         object_name    => $path,
                         object_type    => $parameter_exists_check,
-                        parameter_href => $parameter_href,
                         parameter_name => $parameter_name,
                         path           => $path,
                     }
@@ -513,10 +403,9 @@ sub check_parameter_files {
 
                 check_filesystem_objects_and_index_existance(
                     {
-                        log            => $log,
+                        is_build_file  => $parameter_href->{$parameter_name}{build_file},
                         object_name    => $path,
                         object_type    => $parameter_exists_check,
-                        parameter_href => $parameter_href,
                         parameter_name => $parameter_name,
                         path           => $path,
                     }
@@ -530,10 +419,9 @@ sub check_parameter_files {
 
         check_filesystem_objects_and_index_existance(
             {
-                log            => $log,
+                is_build_file  => $parameter_href->{$parameter_name}{build_file},
                 object_name    => $path,
                 object_type    => $parameter_exists_check,
-                parameter_href => $parameter_href,
                 parameter_name => $parameter_name,
                 path           => $path,
             }
@@ -627,6 +515,7 @@ sub check_vcfanno_toml {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Toml qw{ load_toml };
+    use MIP::File::Path qw{ check_filesystem_objects_and_index_existance };
 
     my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
 
@@ -650,10 +539,8 @@ sub check_vcfanno_toml {
         ## Check path object exists
         check_filesystem_objects_and_index_existance(
             {
-                log            => $log,
                 object_name    => q{file},
                 object_type    => q{file},
-                parameter_href => {},
                 parameter_name => $parameter_name,
                 path           => $annotation_href->{file},
             }
