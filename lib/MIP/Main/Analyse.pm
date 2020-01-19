@@ -43,6 +43,7 @@ use MIP::Check::Reference qw{ check_human_genome_file_endings };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
+use MIP::File_info qw{ set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::Pedigree qw{ create_fam_file
   detect_founders
@@ -62,7 +63,6 @@ use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
-  set_human_genome_reference_features
   set_no_dry_run_parameters
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_reference_parameters

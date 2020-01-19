@@ -46,18 +46,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Parameter} => [qw{ set_human_genome_reference_features }],
+        q{MIP::File_info}      => [qw{ set_human_genome_reference_features }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Parameter qw{ set_human_genome_reference_features };
+use MIP::File_info qw{ set_human_genome_reference_features };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
-diag(   q{Test set_human_genome_reference_features from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_human_genome_reference_features from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -79,7 +79,6 @@ set_human_genome_reference_features(
     {
         file_info_href         => \%file_info,
         human_genome_reference => $human_genome_reference,
-        log                    => $log,
         parameter_href         => \%parameter,
     }
 );
@@ -98,7 +97,6 @@ set_human_genome_reference_features(
     {
         file_info_href         => \%file_info,
         human_genome_reference => $human_genome_reference,
-        log                    => $log,
         parameter_href         => \%parameter,
     }
 );
@@ -119,7 +117,6 @@ trap {
         {
             file_info_href         => \%file_info,
             human_genome_reference => $human_genome_reference_no_version,
-            log                    => $log,
             parameter_href         => \%parameter,
         }
     )
