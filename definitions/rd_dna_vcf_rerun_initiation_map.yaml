@@ -7,7 +7,6 @@ CHAIN_ALL:
          - sv_vcfparser
          - sv_rankvariant
          - sv_reformat
-         - vcf2cytosure_ar
    - CHAIN_MAIN:
       - vcf_rerun_reformat
       - prepareforvariantannotationblock
