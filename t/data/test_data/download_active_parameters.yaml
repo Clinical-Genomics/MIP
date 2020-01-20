@@ -103,6 +103,8 @@ reference:
     - 1.0
   mills_and_1000g_indels:
     - gold_standard_indels
+  pfam:
+    - 32
   rank_model:
     - v1.25
   reduced_penetrance:
@@ -646,6 +648,19 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  pfam:
+    grch37:
+      32:
+        file: Pfam-A.hmm.gz
+        outfile: pfam_a_-v32-.hmm.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/
+    grch38:
+      32:
+        file: Pfam-A.hmm.gz
+        outfile: pfam_a_-v32-.hmm.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/
   rank_model:
     grch37:
       v1.25:

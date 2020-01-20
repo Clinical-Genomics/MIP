@@ -172,8 +172,8 @@ reference_feature:
       phase1:
         file: Homo_sapiens_assembly38.known_indels.vcf.gz
         file_index: Homo_sapiens_assembly38.known_indels.vcf.gz.tbi
-        outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
-        outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
+        outfile: grch38_1000g_indels_-phase1-.vcf.gz
+        outfile_index: grch38_1000g_indels_-phase1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_omni:
     grch37:

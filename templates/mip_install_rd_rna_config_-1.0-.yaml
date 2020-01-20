@@ -90,6 +90,7 @@ singularity:
     executable:
       blastn:
       gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
+      hmmpress:
       make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
       makeblastdb:
       prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl

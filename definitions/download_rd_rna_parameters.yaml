@@ -49,6 +49,13 @@ mills_and_1000g_indels:
   data_type: SCALAR
   default: 1
   type: recipe
+pfam:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 recipe_core_number:
   associated_recipe:
    - mip
@@ -60,6 +67,7 @@ recipe_core_number:
     human_reference: 1
     gencode_annotation: 1
     mills_and_1000g_indels: 1
+    pfam: 1
     runstatus: 1
   type: mip
 recipe_time:
@@ -73,6 +81,7 @@ recipe_time:
     human_reference: 1
     gencode_annotation: 1
     mills_and_1000g_indels: 1
+    pfam: 1
     runstatus: 1
   type: mip
 reference_feature:
