@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Active_parameter} => [qw{ update_reference_parameters }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Parameter}      => [qw{ parse_reference_path }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Active_parameter qw{ update_reference_parameters };
+use MIP::Parameter qw{ parse_reference_path };
 
-diag(   q{Test update_reference_parameters from Active_parameter.pm v}
-      . $MIP::Active_parameter::VERSION
+diag(   q{Test parse_reference_path from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,10 +61,19 @@ diag(   q{Test update_reference_parameters from Active_parameter.pm v}
 my $reference_dir = catdir(qw{ test ref_dir });
 
 my %parameter = (
-    array       => { associated_recipe => [qw{ recipe_1 }], },
-    file_name_1 => { associated_recipe => [qw{ recipe_1 }], },
+    array => {
+        associated_recipe => [qw{ recipe_1 }],
+        reference         => 1,
+    },
+    file_name_1 => {
+        associated_recipe => [qw{ recipe_1 }],
+        reference         => 1,
+    },
     file_name_2 => { associated_recipe => [qw{ recipe_2 }], },
-    hash        => { associated_recipe => [qw{ recipe_1 }], },
+    hash        => {
+        associated_recipe => [qw{ recipe_1 }],
+        reference         => 1,
+    },
 );
 
 my %active_parameter = (
@@ -76,18 +85,12 @@ my %active_parameter = (
     reference_dir => $reference_dir,
 );
 
-PARAMETER:
-foreach my $parameter_name ( keys %parameter ) {
-
-    update_reference_parameters(
-        {
-            active_parameter_href => \%active_parameter,
-            associated_recipes_ref =>
-              \@{ $parameter{$parameter_name}{associated_recipe} },
-            parameter_name => $parameter_name,
-        }
-    );
-}
+parse_reference_path(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+    }
+);
 
 is( $active_parameter{file_name_2}, q{file_2}, q{Skipped setting file reference path} );
 
