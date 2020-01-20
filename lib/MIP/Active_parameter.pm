@@ -739,9 +739,9 @@ sub update_reference_parameters {
 
 ## Function : Update reference parameters with mip_reference directory path
 ## Returns  :
-## Arguments: $active_parameter_href   => Holds all set parameter for analysis
-##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
-##          : $parameter_name          => Parameter name
+## Arguments: $active_parameter_href  => Holds all set parameter for analysis
+##          : $associated_recipes_ref => The parameters recipe(s) {REF}
+##          : $parameter_name         => Parameter name
 
     my ($arg_href) = @_;
 

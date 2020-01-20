@@ -60,6 +60,7 @@ diag(   q{Test parse_reference_path from Parameter.pm v}
 
 my $reference_dir = catdir(qw{ test ref_dir });
 
+## Given reference parameters when key "reference" exists or not
 my %parameter = (
     array => {
         associated_recipe => [qw{ recipe_1 }],
@@ -92,21 +93,25 @@ parse_reference_path(
     }
 );
 
+## Then do NOT set mip reference dir path for parameter when "reference" key does NOT exists
 is( $active_parameter{file_name_2}, q{file_2}, q{Skipped setting file reference path} );
 
+## Then set set mip reference dir path for parameter when "reference" key exists
 is(
     $active_parameter{file_name_1},
     catfile( $reference_dir, q{file_0} ),
     q{Set file reference path}
 );
 
+## Then set set mip reference dir path for parameter when "reference" key exists
 is(
     $active_parameter{array}[0],
     catfile( $reference_dir, q{file_1} ),
     q{Set array reference path}
 );
-
+## Then set set mip reference dir path for parameter when "reference" key exists
 UPDATED_FILE:
+
 foreach my $updated_file ( keys %{ $active_parameter{hash} } ) {
 
     is( $updated_file, catfile( $reference_dir, q{file_3} ), q{Set hash reference path} );

@@ -209,7 +209,8 @@ sub get_order_of_parameters {
 
 sub parse_reference_path {
 
-## Function : Checks and sets user input or default values to active_parameters.
+## Function : Parse reference parameteres and updates file name to path for parameters
+##          : with key "reference"
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
 ##          : $parameter_href        => Holds all parameters {REF}
