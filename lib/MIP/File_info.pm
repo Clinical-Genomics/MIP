@@ -132,6 +132,7 @@ sub set_human_genome_reference_features {
             {
                 parameter_href => $parameter_href,
                 parameter_name => q{human_genome_reference_file_endings},
+                status         => 1,
             }
         );
     }

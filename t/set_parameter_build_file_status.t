@@ -60,15 +60,17 @@ diag(   q{Test set_parameter_build_file_status from Parameter.pm v}
 ## Given a build parameter
 my %parameter;
 my $parameter_name = q{human_genome_reference_file_endings};
+my $status         = 1;
 
 set_parameter_build_file_status(
     {
         parameter_href => \%parameter,
         parameter_name => $parameter_name,
+        status         => $status,
     }
 );
 
 ## Then set build file status for parameter to true
-ok( $parameter{$parameter_name}{build_file} = 1, q{Set build file status to true} );
+ok( $parameter{$parameter_name}{build_file} = $status, q{Set build file status to true} );
 
 done_testing();

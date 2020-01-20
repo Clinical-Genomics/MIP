@@ -691,12 +691,14 @@ sub set_parameter_build_file_status {
 ## Returns  :
 ## Arguments: $parameter_href => Parameter hash {REF}
 ##          : $parameter_name => Parameter name
+##          : $status         => Status
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $parameter_name;
+    my $status;
 
     my $tmpl = {
         parameter_href => {
@@ -712,11 +714,18 @@ sub set_parameter_build_file_status {
             store       => \$parameter_name,
             strict_type => 1,
         },
+        status => {
+            allow       => [ 0, 1 ],
+            defined     => 1,
+            required    => 1,
+            store       => \$status,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $parameter_href->{$parameter_name}{build_file} = 1;
+    $parameter_href->{$parameter_name}{build_file} = $status;
     return;
 }
 

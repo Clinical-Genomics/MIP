@@ -247,7 +247,6 @@ sub mip_analyse {
             file_info_href => \%file_info,
             human_genome_reference =>
               basename( $active_parameter{human_genome_reference} ),
-            log            => $log,
             parameter_href => \%parameter,
         }
     );
