@@ -55,6 +55,7 @@ use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
+  parse_reference_path
   set_cache
   set_default
 };
@@ -65,8 +66,7 @@ use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
   set_recipe_resource };
-use MIP::Update::Parameters qw{ update_reference_parameters
-  update_vcfparser_outfile_counter };
+use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
@@ -83,7 +83,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.33;
+    our $VERSION = 1.34;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -252,22 +252,12 @@ sub mip_analyse {
     );
 
 ## Reference in MIP reference directory
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## Expect file to be in reference directory
-        if ( exists $parameter{$parameter_name}{reference} ) {
-
-            update_reference_parameters(
-                {
-                    active_parameter_href => \%active_parameter,
-                    associated_recipes_ref =>
-                      \@{ $parameter{$parameter_name}{associated_recipe} },
-                    parameter_name => $parameter_name,
-                }
-            );
+    parse_reference_path(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
-    }
+    );
 
 ### Checks
 

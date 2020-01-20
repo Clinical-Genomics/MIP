@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,6 +46,7 @@ BEGIN {
       set_exome_target_bed
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      update_reference_parameters
       update_to_absolute_path
     };
 }
@@ -731,6 +732,70 @@ sub set_pedigree_sample_id_parameter {
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
 
+    return;
+}
+
+sub update_reference_parameters {
+
+## Function : Update reference parameters with mip_reference directory path
+## Returns  :
+## Arguments: $active_parameter_href  => Holds all set parameter for analysis
+##          : $associated_recipes_ref => The parameters recipe(s) {REF}
+##          : $parameter_name         => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $associated_recipes_ref;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        associated_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_recipes_ref,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Check all recipes that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
+
+        my $recipe_name = $active_parameter_href->{$associated_recipe};
+
+        ## Only check active recipes parameters
+        next ASSOCIATED_RECIPE if ( not $recipe_name );
+
+        ## Update path for supplied reference(s) associated with
+        ## parameter that should reside in the mip reference directory to full path
+        set_parameter_reference_dir_path(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            }
+        );
+
+        ## Only need to perform update once per parameter
+        return;
+    }
     return;
 }
 

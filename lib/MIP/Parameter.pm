@@ -26,13 +26,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_hash
       get_capture_kit
       get_order_of_parameters
+      parse_reference_path
       print_recipe
       set_cache
       set_cache_sample_id_parameter
@@ -205,6 +206,59 @@ sub get_order_of_parameters {
           );
     }
     return @order_of_parameters;
+}
+
+sub parse_reference_path {
+
+## Function : Parse reference parameteres and updates file name to path for parameters
+##          : with key "reference"
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ update_reference_parameters };
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$parameter_href} ) {
+
+        ## Expect file to be in reference directory
+        next PARAMETER if ( not exists $parameter_href->{$parameter_name}{reference} );
+
+        update_reference_parameters(
+            {
+                active_parameter_href => $active_parameter_href,
+                associated_recipes_ref =>
+                  \@{ $parameter_href->{$parameter_name}{associated_recipe} },
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+    return;
 }
 
 sub print_recipe {
