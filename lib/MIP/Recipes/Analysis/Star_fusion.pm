@@ -256,8 +256,6 @@ sub analysis_star_fusion {
             filehandle            => $filehandle,
             fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $referencefile_dir_path,
-
-         #genome_lib_dir_path   => $active_parameter_href->{star_fusion_reference_genome},
             min_junction_reads =>
               $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
