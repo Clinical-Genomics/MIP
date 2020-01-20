@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -364,13 +364,14 @@ sub analysis_vcf2cytosure {
 
         vcf2cytosure_convert(
             {
-                coverage_file   => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
-                filehandle      => $filehandle,
-                maxbnd          => $active_parameter_href->{vcf2cytosure_maxbnd},
-                outfile_path    => $outfile_path{$sample_id},
-                sex             => $sample_id_sex,
-                variant_size    => $active_parameter_href->{vcf2cytosure_var_size},
-                vcf_infile_path => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
+                blacklist_file_path => $active_parameter_href->{vcf2cytosure_blacklist},
+                coverage_file       => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
+                filehandle          => $filehandle,
+                maxbnd              => $active_parameter_href->{vcf2cytosure_maxbnd},
+                outfile_path        => $outfile_path{$sample_id},
+                sex                 => $sample_id_sex,
+                variant_size        => $active_parameter_href->{vcf2cytosure_var_size},
+                vcf_infile_path     => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
             }
         );
         say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;

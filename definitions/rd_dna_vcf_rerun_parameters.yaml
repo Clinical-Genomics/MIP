@@ -80,7 +80,6 @@ recipe_core_number:
     sv_varianteffectpredictor: 0
     sv_vcf_rerun_reformat: 1
     sv_vcfparser: 13
-    vcf2cytosure_ar: 0
     vcf_rerun_reformat: 1
     version_collect_ar: 1
     vt_ar: 13
@@ -99,7 +98,6 @@ recipe_memory:
     sv_reformat: 24
     sv_varianteffectpredictor: 9
     varianteffectpredictor: 7
-    vcf2cytosure_ar: 6
   type: mip
 recipe_time:
   associated_recipe:

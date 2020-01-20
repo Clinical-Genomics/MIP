@@ -8,7 +8,6 @@ CHAIN_ALL:
          - sv_vcfparser
          - sv_rankvariant
          - sv_reformat
-         - vcf2cytosure_ar
    - CHAIN_MAIN:
       - prepareforvariantannotationblock
       - rhocall_ar
@@ -22,4 +21,4 @@ CHAIN_ALL:
       - endvariantannotationblock
    - version_collect_ar
    - analysisrunstatus
-   - sacct 
+   - sacct

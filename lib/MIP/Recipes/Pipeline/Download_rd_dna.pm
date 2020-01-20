@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -118,6 +118,8 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
     use MIP::Recipes::Download::Sv_fqa_vcfanno_config
       qw{ download_sv_fqa_vcfanno_config };
+    use MIP::Recipes::Download::Vcf2cytosure_blacklist_regions
+      qw{ download_vcf2cytosure_blacklist_regions };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -125,38 +127,39 @@ sub pipeline_download_rd_dna {
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
-        q{1000g_all_sv}          => \&download_1000g_all_sv,
-        q{1000g_all_wgs}         => \&download_1000g_all_wgs,
-        q{1000g_indels}          => \&download_1000g_indels,
-        q{1000g_omni}            => \&download_1000g_omni,
-        q{1000g_sites}           => \&download_1000g_sites,
-        q{1000g_snps}            => \&download_1000g_snps,
-        cadd_bravo_topmed        => \&download_cadd_bravo_topmed,
-        cadd_gnomad_genomes      => \&download_cadd_gnomad_genomes,
-        cadd_offline_annotations => \&download_cadd_offline_annotations,
-        cadd_to_vcf_header       => \&download_cadd_to_vcf_header,
-        cadd_whole_genome_snvs   => \&download_cadd_whole_genome_snvs,
-        clinvar                  => \&download_clinvar,
-        dbnsfp                   => \&download_dbnsfp,
-        dbsnp                    => \&download_dbsnp,
-        delly_exclude            => \&download_delly_exclude,
-        expansionhunter          => \&download_expansionhunter,
-        fqa_vcfanno_config       => \&download_fqa_vcfanno_config,
-        gatk_mitochondrial_ref   => \&download_gatk_mitochondrial_ref,
-        genbank_haplogroup       => \&download_genbank_haplogroup,
-        genomic_superdups        => \&download_genomic_superdups,
-        giab                     => \&download_giab,
-        gnomad                   => \&download_gnomad,
-        gnomad_pli_per_gene      => \&download_gnomad_pli_per_gene,
-        hapmap                   => \&download_hapmap,
-        human_reference          => \&download_human_reference,
-        manta_call_regions       => \&download_manta_call_regions,
-        mills_and_1000g_indels   => \&download_mills_and_1000g_indels,
-        rank_model               => \&download_rank_model,
-        reduced_penetrance       => \&download_reduced_penetrance,
-        scout_exons              => \&download_scout_exons,
-        svrank_model             => \&download_svrank_model,
-        sv_fqa_vcfanno_config    => \&download_sv_fqa_vcfanno_config,
+        q{1000g_all_sv}                => \&download_1000g_all_sv,
+        q{1000g_all_wgs}               => \&download_1000g_all_wgs,
+        q{1000g_indels}                => \&download_1000g_indels,
+        q{1000g_omni}                  => \&download_1000g_omni,
+        q{1000g_sites}                 => \&download_1000g_sites,
+        q{1000g_snps}                  => \&download_1000g_snps,
+        cadd_bravo_topmed              => \&download_cadd_bravo_topmed,
+        cadd_gnomad_genomes            => \&download_cadd_gnomad_genomes,
+        cadd_offline_annotations       => \&download_cadd_offline_annotations,
+        cadd_to_vcf_header             => \&download_cadd_to_vcf_header,
+        cadd_whole_genome_snvs         => \&download_cadd_whole_genome_snvs,
+        clinvar                        => \&download_clinvar,
+        dbnsfp                         => \&download_dbnsfp,
+        dbsnp                          => \&download_dbsnp,
+        delly_exclude                  => \&download_delly_exclude,
+        expansionhunter                => \&download_expansionhunter,
+        fqa_vcfanno_config             => \&download_fqa_vcfanno_config,
+        gatk_mitochondrial_ref         => \&download_gatk_mitochondrial_ref,
+        genbank_haplogroup             => \&download_genbank_haplogroup,
+        genomic_superdups              => \&download_genomic_superdups,
+        giab                           => \&download_giab,
+        gnomad                         => \&download_gnomad,
+        gnomad_pli_per_gene            => \&download_gnomad_pli_per_gene,
+        hapmap                         => \&download_hapmap,
+        human_reference                => \&download_human_reference,
+        manta_call_regions             => \&download_manta_call_regions,
+        mills_and_1000g_indels         => \&download_mills_and_1000g_indels,
+        rank_model                     => \&download_rank_model,
+        reduced_penetrance             => \&download_reduced_penetrance,
+        scout_exons                    => \&download_scout_exons,
+        svrank_model                   => \&download_svrank_model,
+        sv_fqa_vcfanno_config          => \&download_sv_fqa_vcfanno_config,
+        vcf2cytosure_blacklist_regions => \&download_vcf2cytosure_blacklist_regions,
     );
 
     # Storing job_ids from SLURM, however currently all are independent

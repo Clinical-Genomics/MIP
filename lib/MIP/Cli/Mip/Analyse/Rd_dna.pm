@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.43;
+our $VERSION = 1.44;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -940,6 +940,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 q{Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcf2cytosure_blacklist} => (
+            cmd_aliases   => [qw{ v2cbl }],
+            documentation => q{Exclude regions file path},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
