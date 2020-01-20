@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -93,12 +93,10 @@ my %active_parameter = (
     varianteffectpredictor    => 0,
 );
 
-## Mip analyse rd_dna parameters
+## Mip analyse parameters
 ## The order of files in @definition_files should follow commands inheritance
-my @definition_files = (
-    catfile( dirname($Bin), qw{ definitions analyse_parameters.yaml } ),
-    catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml } ),
-);
+my @definition_files =
+  ( catfile( dirname($Bin), qw{ definitions analyse_parameters.yaml } ), );
 
 my %parameter;
 
