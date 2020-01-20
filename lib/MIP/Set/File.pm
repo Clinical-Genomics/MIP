@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -52,7 +52,7 @@ sub set_file_compression_features {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_gzipped };
+    use MIP::File::Path qw{ check_gzipped };
 
     my $read_file_command = q{zcat};
 

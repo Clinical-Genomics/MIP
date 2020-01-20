@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Path}     => [qw{ check_gzipped }],
+        q{MIP::Parameter}      => [qw{ set_parameter_build_file_status }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Path qw{ check_gzipped };
+use MIP::Parameter qw{ set_parameter_build_file_status };
 
-diag(   q{Test check_gzipped from Parameter.pm v}
-      . $MIP::File::Path::VERSION
+diag(   q{Test set_parameter_build_file_status from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,11 +57,20 @@ diag(   q{Test check_gzipped from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $filename         = catfile(q{text.txt});
-my $gzipped_filename = catfile(q{test.gz});
+## Given a build parameter
+my %parameter;
+my $parameter_name = q{human_genome_reference_file_endings};
+my $status         = 1;
 
-## Test
-is( check_gzipped( { file_name => $filename } ),         0, q{Plain file} );
-is( check_gzipped( { file_name => $gzipped_filename } ), 1, q{Gzipped file} );
+set_parameter_build_file_status(
+    {
+        parameter_href => \%parameter,
+        parameter_name => $parameter_name,
+        status         => $status,
+    }
+);
+
+## Then set build file status for parameter to true
+ok( $parameter{$parameter_name}{build_file} = $status, q{Set build file status to true} );
 
 done_testing();
