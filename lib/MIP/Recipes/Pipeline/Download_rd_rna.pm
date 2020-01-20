@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_rna };
@@ -88,6 +88,7 @@ sub pipeline_download_rd_rna {
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
+    use MIP::Recipes::Download::Pfam qw{ download_pfam };
     use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
 
     ## Retrieve logger object now that log_file has been set
@@ -102,6 +103,7 @@ sub pipeline_download_rd_rna {
         gencode_annotation     => \&download_gencode_annotation,
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
+        pfam                   => \&download_pfam,
     );
 
     # Storing job_ids from SLURM. However, all recipes are currently indepent

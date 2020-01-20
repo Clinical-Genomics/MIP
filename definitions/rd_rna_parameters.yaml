@@ -28,8 +28,6 @@ human_genome_reference:
     - gatk_haplotypecaller
     - gatk_splitncigarreads
     - gatk_variantfiltration
-    - star_aln
-    - star_fusion
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -43,8 +41,6 @@ human_genome_reference_file_endings:
     - gatk_haplotypecaller
     - gatk_splitncigarreads
     - gatk_variantfiltration
-    - star_aln
-    - star_fusion
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -354,7 +350,6 @@ star_aln_reference_genome:
   associated_recipe:
     - arriba_ar
     - star_aln
-    - genebody_coverage
   build_file: 1
   data_type: SCALAR
   exists_check: directory
@@ -404,7 +399,7 @@ star_fusion_min_junction_reads:
   data_type: SCALAR
   mandatory: no
   type: recipe_argument
-star_fusion_reference_genome:
+star_fusion_pfam_db:
   associated_recipe:
     - star_fusion
   build_file: 1
@@ -412,6 +407,15 @@ star_fusion_reference_genome:
   exists_check: directory
   is_reference: 1
   mandatory: no
+  reference: reference_dir
+  type: path
+star_fusion_reference_genome:
+  associated_recipe:
+    - star_fusion
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  is_reference: 1
   reference: reference_dir
   type: path
 ## Arriba

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_prerequisites };
@@ -159,8 +159,6 @@ sub build_star_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Star qw{ star_genome_generate };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -205,77 +203,52 @@ sub build_star_prerequisites {
         }
     );
 
-    build_human_genome_prerequisites(
+    $log->warn( q{Will try to create required }
+          . $human_genome_reference
+          . q{ Star files before executing }
+          . $recipe_name );
+
+    say {$filehandle} q{## Building Star dir files};
+
+    ## Get parameters
+    my $star_directory_tmp =
+      $active_parameter_href->{star_aln_reference_genome} . $UNDERSCORE . $random_integer;
+
+    # Create temp dir
+    gnu_mkdir(
         {
-            active_parameter_href   => $active_parameter_href,
-            filehandle              => $filehandle,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_build_suffixes_ref =>
-              \@{ $file_info_href->{human_genome_reference_file_endings} },
-            parameter_href   => $parameter_href,
-            recipe_name      => $recipe_name,
-            random_integer   => $random_integer,
-            sample_info_href => $sample_info_href,
+            filehandle       => $filehandle,
+            indirectory_path => $star_directory_tmp,
+            parents          => 1,
         }
     );
+    say {$filehandle} $NEWLINE;
 
-    if ( $parameter_href->{star_aln_reference_genome}{build_file} == 1 ) {
-
-        $log->warn( q{Will try to create required }
-              . $human_genome_reference
-              . q{ star files before executing }
-              . $recipe_name );
-
-        say {$filehandle} q{## Building Star dir files};
-
-        ## Get parameters
-        my $star_directory_tmp =
-            $active_parameter_href->{star_aln_reference_genome}
-          . $UNDERSCORE
-          . $random_integer;
-
-        # Create temp dir
-        gnu_mkdir(
-            {
-                filehandle       => $filehandle,
-                indirectory_path => $star_directory_tmp,
-                parents          => 1,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        star_genome_generate(
-            {
-                filehandle      => $filehandle,
-                fasta_path      => $human_genome_reference,
-                genome_dir_path => $star_directory_tmp,
-                gtf_path        => $active_parameter_href->{transcript_annotation},
-                read_length     => $READ_LENGTH,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-      PREREQ:
-        foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
-
-            my $intended_file_path =
-              $active_parameter_href->{star_aln_reference_genome} . $suffix;
-
-            ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-            check_exist_and_move_file(
-                {
-                    filehandle          => $filehandle,
-                    intended_file_path  => $intended_file_path,
-                    temporary_file_path => $star_directory_tmp,
-                }
-            );
+    star_genome_generate(
+        {
+            filehandle      => $filehandle,
+            fasta_path      => $human_genome_reference,
+            genome_dir_path => $star_directory_tmp,
+            gtf_path        => $active_parameter_href->{transcript_annotation},
+            read_length     => $READ_LENGTH,
         }
+    );
+    say {$filehandle} $NEWLINE;
 
-        ## Ensure that this subrutine is only executed once
-        $parameter_href->{star_aln_reference_genome}{build_file} = 0;
+  PREREQ:
+    foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
+
+        my $intended_file_path =
+          $active_parameter_href->{star_aln_reference_genome} . $suffix;
+
+        ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+        check_exist_and_move_file(
+            {
+                filehandle          => $filehandle,
+                intended_file_path  => $intended_file_path,
+                temporary_file_path => $star_directory_tmp,
+            }
+        );
     }
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});

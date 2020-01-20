@@ -4,16 +4,11 @@ load_env:
     mip:
 project_id: development
 reference:
+  1000g_indels:
+    - phase1
   ctat_resource_lib:
     - gencode_v19_ctat_lib_oct012019
     - gencode_v31_ctat_lib_oct012019
-  human_reference:
-    - decoy_5
-    - assembly38
-  1000g_indels:
-    - phase1
-  mills_and_1000g_indels:
-    - gold_standard_indels
   dbsnp:
     - 138_esa_129
     - 138
@@ -21,6 +16,13 @@ reference:
     - 146
   gencode_annotation:
     - v31
+  human_reference:
+    - decoy_5
+    - assembly38
+  mills_and_1000g_indels:
+    - gold_standard_indels
+  pfam:
+    - 32
 reference_feature:
   gencode_annotation:
     grch37:
@@ -39,7 +41,7 @@ reference_feature:
     grch37:
       gencode_v19_ctat_lib_oct012019:
         file: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz
-        file_check: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5
+        file_check: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5sum
         outfile: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz
         outfile_check: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
         outfile_decompress: tar
@@ -48,7 +50,7 @@ reference_feature:
     grch38:
       gencode_v31_ctat_lib_oct012019:
         file: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz
-        file_check: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5
+        file_check: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5sum
         outfile: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz
         outfile_check: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
         outfile_decompress: tar
@@ -97,8 +99,8 @@ reference_feature:
       phase1:
         file: Homo_sapiens_assembly38.known_indels.vcf.gz
         file_index: Homo_sapiens_assembly38.known_indels.vcf.gz.tbi
-        outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
-        outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
+        outfile: grch38_1000g_indels_-phase1-.vcf.gz
+        outfile_index: grch38_1000g_indels-phase1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   mills_and_1000g_indels:
     grch37:
@@ -170,3 +172,16 @@ reference_feature:
         outfile_index: grch38_dbsnp_-146-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle//hg38/
         user: gsapubftp-anonymous
+  pfam:
+    grch37:
+      32:
+        file: Pfam-A.hmm.gz
+        outfile: pfam_a_-v32-.hmm.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/
+    grch38:
+      32:
+        file: Pfam-A.hmm.gz
+        outfile: pfam_a_-v32-.hmm.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/

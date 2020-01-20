@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,9 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $THREAD_NUMBER => 16;
 
 BEGIN {
 
@@ -62,6 +59,10 @@ diag(   q{Test star_fusion_prep_genome_lib from Star_fusion.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $THREAD_NUMBER => 16;
+Readonly my $READLENGTH    => 150;
+
 ## Base arguments
 my @function_base_commands = qw{ prep_genome_lib.pl };
 
@@ -87,11 +88,9 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    blast_pairs_file_path => {
-        input           => catfile(qw{ a test blast_pairs_file.tab }),
-        expected_output => q{--blast_pairs}
-          . $SPACE
-          . catfile(qw{ a test blast_pairs_file.tab }),
+    dfam_db_path => {
+        input           => catfile(qw{ a test Dfam.hmm }),
+        expected_output => q{--dfam_db} . $SPACE . catfile(qw{ a test Dfam.hmm }),
     },
     gtf_path => {
         input           => catfile(qw{ a test transcripts_file.gtf }),
@@ -110,19 +109,35 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    blast_pairs_file_path => {
-        input           => catfile(qw{ a test blast_pairs_file.tab }),
-        expected_output => q{--blast_pairs}
+    dfam_db_path => {
+        input           => catfile(qw{ a test Dfam.hmm }),
+        expected_output => q{--dfam_db} . $SPACE . catfile(qw{ a test Dfam.hmm }),
+    },
+    fusion_annot_lib_path => {
+        input           => catfile(qw{ a test CTAT_HumanFusionLib.dat.gz }),
+        expected_output => q{--fusion_annot_lib}
           . $SPACE
-          . catfile(qw{ a test blast_pairs_file.tab }),
+          . catfile(qw{ a test CTAT_HumanFusionLib.dat.gz }),
     },
     gtf_path => {
         input           => catfile(qw{ a test transcripts_file.gtf }),
         expected_output => q{--gtf} . $SPACE . catfile(qw{ a test transcripts_file.gtf }),
     },
+    human_gencode_filter => {
+        input           => 1,
+        expected_output => q{--human_gencode_filter},
+    },
     output_dir_path => {
         input           => catdir(qw{ a test outdir }),
         expected_output => q{--output_dir} . $SPACE . catdir(qw{ a test outdir }),
+    },
+    pfam_db_path => {
+        input           => catfile(qw{ a test Pfam-A.hmm }),
+        expected_output => q{--pfam_db} . $SPACE . catfile(qw{ a test Pfam-A.hmm }),
+    },
+    read_length => {
+        input           => $READLENGTH,
+        expected_output => q{--max_readlength} . $SPACE . $READLENGTH,
     },
     referencefile_path => {
         input           => catfile(qw{ a test human_reference.fasta }),
@@ -130,9 +145,13 @@ my %specific_argument = (
           . $SPACE
           . catfile(qw{ a test  human_reference.fasta }),
     },
+    tempdir_path => {
+        input           => catdir(qw{ test tmp }),
+        expected_output => q{--outTmpDir} . $SPACE . catdir(qw{ test tmp }),
+    },
     thread_number => {
         input           => $THREAD_NUMBER,
-        expected_output => q{--cpu} . $SPACE . $THREAD_NUMBER,
+        expected_output => q{--CPU} . $SPACE . $THREAD_NUMBER,
     },
 );
 

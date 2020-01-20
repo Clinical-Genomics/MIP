@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Gencode_annotation;
+package MIP::Recipes::Download::Pfam;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,25 +26,25 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_gencode_annotation };
+    our @EXPORT_OK = qw{ download_pfam };
 
 }
 
-sub download_gencode_annotation {
+sub download_pfam {
 
-## Function : Download gencode_annotation
+## Function : Download Pfam
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
+##          : $quiet                 => Quiet (no output)
 ##          : $recipe_name           => Recipe name
 ##          : $reference_href        => Reference hash {REF}
 ##          : $reference_version     => Reference version
-##          : $quiet                 => Quiet (no output)
 ##          : $temp_directory        => Temporary directory for recipe
 ##          : $verbose               => Verbosity
 
@@ -88,6 +88,12 @@ sub download_gencode_annotation {
             store       => \$profile_base_command,
             strict_type => 1,
         },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -107,12 +113,6 @@ sub download_gencode_annotation {
             store       => \$reference_version,
             strict_type => 1,
         },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
         temp_directory => {
             store       => \$temp_directory,
             strict_type => 1,
@@ -122,16 +122,17 @@ sub download_gencode_annotation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Gtf2bed qw{ gtf2bed };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Hmmer qw{ hmmpress };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
@@ -185,52 +186,26 @@ sub download_gencode_annotation {
         }
     );
 
-    ### POST PROCESSING
-    my $outfile_name = join $UNDERSCORE,
-      ( $genome_version, $recipe_name, q{-} . $reference_version . q{-.gtf} );
-    my $outfile_path = catfile( $reference_dir, $outfile_name );
-
-    if ( $genome_version eq q{grch37} ) {
-        ## Build reformated outfile
-        my $reformated_outfile = join $UNDERSCORE,
-          (
-            $genome_version, $recipe_name, q{reformated},
-            q{-} . $reference_version . q{-.gtf}
-          );
-        my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-
-        _remove_chr_prefix_rename_chrm(
-            {
-                filehandle  => $filehandle,
-                infile_path => $outfile_path,
-            }
-        );
-        say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;
-
-        _remove_chr_prefix(
-            {
-                filehandle   => $filehandle,
-                outfile_path => $reformated_outfile_path,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        $outfile_path = $reformated_outfile_path;
-    }
-
-    ## Reformat gtf to bed
-    my $bed_outfile_path = $outfile_path =~ s/gtf$/bed/rxms;
-    gtf2bed(
+    ## Prep pfam database
+    my $hmmfile_path = catfile( $reference_dir, $reference_href->{outfile} );
+    $hmmfile_path = parse_file_suffix(
         {
-            filehandle      => $filehandle,
-            infile_path     => $outfile_path,
-            stdoutfile_path => $bed_outfile_path,
+            file_name   => $hmmfile_path,
+            file_suffix => $DOT . q{gz},
         }
     );
-    say {$filehandle} $NEWLINE;
+    hmmpress(
+        {
+            filehandle   => $filehandle,
+            hmmfile_path => $hmmfile_path,
+        }
+    );
 
-    ## Close filehandleS
+    ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
+
+    ## Delete key so that the reference is only downloaded once
+    $active_parameter_href->{reference_feature}{$recipe_name} = undef;
 
     if ( $recipe_mode == 1 ) {
 
@@ -245,90 +220,6 @@ sub download_gencode_annotation {
         );
     }
     return 1;
-}
-
-sub _remove_chr_prefix_rename_chrm {
-
-## Function : Remove chr prefix in file
-## Returns  :
-## Arguments: $filehandle  => Filehandle to write to
-##          : $infile_path => Infile path
-
-    my ($arg_href) = @_;
-
-## Flatten argument(s)
-    my $filehandle;
-    my $infile_path;
-
-    my $tmpl = {
-        filehandle  => { defined => 1, required => 1, store => \$filehandle, },
-        infile_path => {
-            default     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Execute perl
-    print {$filehandle} q{perl -nae ' };
-
-    # Print header
-    print {$filehandle} q?if($_=~/^#/) { print $_;} ?;
-
-    ## Remove prefix and rename mitochondria prefix
-    print {$filehandle} q?else { $_ =~ s/^(chrM)/MT/g; print $_;}' ?;
-
-    # Infile
-    print {$filehandle} $infile_path . $SPACE;
-
-    return;
-}
-
-sub _remove_chr_prefix {
-
-## Function : Remove chr prefix in file
-## Returns  :
-## Arguments: $filehandle   => Filehandle to write to
-##          : $outfile_path => Outfile path
-
-    my ($arg_href) = @_;
-
-## Flatten argument(s)
-    my $filehandle;
-    my $outfile_path;
-
-    my $tmpl = {
-        filehandle   => { defined => 1, required => 1, store => \$filehandle, },
-        outfile_path => {
-            default     => 1,
-            required    => 1,
-            store       => \$outfile_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Remove chr prefix
-    # Execute perl
-    print {$filehandle} q{perl -nae ' };
-
-    # Print header
-    print {$filehandle} q?if($_=~/^#/) { print $_; } ?;
-
-    # Remove prefix
-    print {$filehandle} q?else {$_ =~ s/^chr(.+)/$1/g; print $_; }' ?;
-
-    # Infile
-    print {$filehandle} $DASH . $SPACE;
-
-    # Outfile
-    print {$filehandle} q{> } . $outfile_path;
-
-    return;
 }
 
 1;

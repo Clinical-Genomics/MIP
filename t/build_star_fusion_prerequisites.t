@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -90,7 +90,9 @@ my %parameter = test_mip_hashes(
 my %sample_info;
 
 ## Special case
-$active_parameter{star_fusion_reference_genome} = q{human_genome.fastq};
+$active_parameter{star_fusion_genome_lib_dir} =
+  catfile(qw{ ctat_path fusion_annot_lib.gz });
+$active_parameter{star_fusion_reference_genome} = q{_star_fusion_genome_dir};
 $active_parameter{transcript_annotation}        = q{grch37_transcripts.gtf};
 
 my $is_ok = build_star_fusion_prerequisites(

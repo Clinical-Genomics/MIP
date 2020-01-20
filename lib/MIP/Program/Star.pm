@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -487,7 +487,7 @@ sub star_genome_generate {
         },
         thread_number => {
             allow       => qr/ ^\d+$ /xms,
-            default     => 16,
+            default     => 36,
             store       => \$thread_number,
             strict_type => 1,
         },

@@ -25,12 +25,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ star_fusion star_fusion_gtf_file_to_feature_seqs star_fusion_prep_genome_lib };
 }
+
+Readonly my $READLENGTH => 150;
 
 sub star_fusion {
 
@@ -104,8 +106,8 @@ sub star_fusion {
             strict_type => 1,
         },
         min_junction_reads => {
-            allow => [undef, qr/ \A \d+ \z /xms],
-            store => \$min_junction_reads,
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
+            store       => \$min_junction_reads,
             strict_type => 1,
         },
         output_directory_path => {
@@ -298,40 +300,53 @@ sub star_fusion_prep_genome_lib {
 
 ## Function : Perl wrapper for writing prep_genome_lib.pl (part of CTAT Genome Lib which is bundled with STAR-Fusion) command to $filehandle or return commands array. Based on STAR-Fusion v1.8.0
 ## Returns  : @commands
-## Arguments: $blast_pairs_file_path  => Blast pair file path
+## Arguments: $dfam_db_path           => DNA transposable element database
 ##          : $filehandle             => Filehandle to write to
+##          : $fusion_annot_lib_path  => Fusion annotation library
 ##          : $gtf_path               => Input gtf path
+##          : $human_gencode_filter   => Customized prep operations for human/gencode genome and annotation data
 ##          : $output_dir_path        => Output directory path
+##          : $pfam_db_path           => Pfam database
+##          : $read_length            => Read length
 ##          : $referencefile_path     => Reference sequence file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $tempdir_path           => Temporary directory
 ##          : $thread_number          => Number of threads (CPUs)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $blast_pairs_file_path;
     my $filehandle;
+    my $fusion_annot_lib_path;
     my $gtf_path;
     my $output_dir_path;
     my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $thread_number;
+    my $tempdir_path;
 
     ## Default(s)
+    my $dfam_db_path;
+    my $human_gencode_filter;
+    my $pfam_db_path;
+    my $read_length;
+    my $thread_number;
 
     my $tmpl = {
-        blast_pairs_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$blast_pairs_file_path,
+        dfam_db_path => {
+            default     => q{human},
+            store       => \$dfam_db_path,
             strict_type => 1,
         },
         filehandle => {
             store => \$filehandle,
+        },
+        fusion_annot_lib_path => {
+            store       => \$fusion_annot_lib_path,
+            strict_type => 1,
         },
         gtf_path => {
             defined     => 1,
@@ -339,10 +354,26 @@ sub star_fusion_prep_genome_lib {
             store       => \$gtf_path,
             strict_type => 1,
         },
+        human_gencode_filter => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$human_gencode_filter,
+            strict_type => 1,
+        },
         output_dir_path => {
             defined     => 1,
             required    => 1,
             store       => \$output_dir_path,
+            strict_type => 1,
+        },
+        pfam_db_path => {
+            default     => $arg_href->{pfam_db_path} ||= q{current},
+            store       => \$pfam_db_path,
+            strict_type => 1,
+        },
+        read_length => {
+            default     => $READLENGTH,
+            store       => \$read_length,
             strict_type => 1,
         },
         referencefile_path => {
@@ -363,9 +394,13 @@ sub star_fusion_prep_genome_lib {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        tempdir_path => {
+            store       => \$tempdir_path,
+            strict_type => 1,
+        },
         thread_number => {
-            allow       => qr/ ^\d+$ /sxm,
-            default     => 1,
+            allow       => [ undef, qr/ \A \d+ \z /sxm ],
+            default     => 16,
             store       => \$thread_number,
             strict_type => 1,
         },
@@ -376,18 +411,43 @@ sub star_fusion_prep_genome_lib {
     ## Stores commands depending on input parameters
     my @commands = qw{ prep_genome_lib.pl };
 
-    # Transcripts file
-    push @commands, q{--gtf} . $SPACE . $gtf_path;
+    push @commands, q{--dfam_db} . $SPACE . $dfam_db_path;
 
-    # Reference sequence file
+    if ($fusion_annot_lib_path) {
+
+        push @commands, q{--fusion_annot_lib} . $SPACE . $fusion_annot_lib_path;
+    }
+
     push @commands, q{--genome_fa} . $SPACE . $referencefile_path;
 
-    # Sequence type
-    push @commands, q{--blast_pairs} . $SPACE . $blast_pairs_file_path;
+    push @commands, q{--gtf} . $SPACE . $gtf_path;
 
-    push @commands, q{--cpu} . $SPACE . $thread_number;
+    if ($human_gencode_filter) {
+
+        push @commands, q{--human_gencode_filter};
+    }
 
     push @commands, q{--output_dir} . $SPACE . $output_dir_path;
+
+    if ($pfam_db_path) {
+
+        push @commands, q{--pfam_db} . $SPACE . $pfam_db_path;
+    }
+
+    if ($read_length) {
+
+        push @commands, q{--max_readlength} . $SPACE . $read_length;
+    }
+
+    if ($tempdir_path) {
+
+        push @commands, q{--outTmpDir} . $SPACE . $tempdir_path;
+    }
+
+    if ($thread_number) {
+
+        push @commands, q{--CPU} . $SPACE . $thread_number;
+    }
 
     push @commands,
       unix_standard_streams(
