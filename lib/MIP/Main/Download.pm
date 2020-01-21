@@ -20,11 +20,10 @@ use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ update_to_absolute_path };
+use MIP::Active_parameter qw{ check_parameter_files update_to_absolute_path };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
   qw{ check_email_address check_recipe_exists_in_hash check_recipe_mode };
-use MIP::Check::Path qw{ check_parameter_files };
 use MIP::Cluster qw{ check_max_core_number };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
@@ -32,6 +31,7 @@ use MIP::Constants
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
+  get_parameter_attribute
   set_cache
   set_default
 };
@@ -175,20 +175,24 @@ sub mip_download {
   PARAMETER:
     foreach my $parameter_name ( keys %parameter ) {
 
-        if ( exists $parameter{$parameter_name}{exists_check} ) {
+        ## Unpack
+        my %attribute = get_parameter_attribute(
+            {
+                parameter_href => \%parameter,
+                parameter_name => $parameter_name,
+            }
+        );
 
-            check_parameter_files(
-                {
-                    active_parameter_href => \%active_parameter,
-                    associated_recipes_ref =>
-                      \@{ $parameter{$parameter_name}{associated_recipe} },
-                    log                    => $log,
-                    parameter_exists_check => $parameter{$parameter_name}{exists_check},
-                    parameter_href         => \%parameter,
-                    parameter_name         => $parameter_name,
-                }
-            );
-        }
+        next PARAMETER if ( not exists $attribute{exists_check} );
+
+        check_parameter_files(
+            {
+                active_parameter_href  => \%active_parameter,
+                associated_recipes_ref => $attribute{associated_recipe},
+                parameter_exists_check => $attribute{exists_check},
+                parameter_name         => $parameter_name,
+            }
+        );
     }
 
     ## Check email adress syntax and mail host

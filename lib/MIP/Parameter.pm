@@ -31,8 +31,10 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_hash
+      get_cache
       get_capture_kit
       get_order_of_parameters
+      get_parameter_attribute
       parse_reference_path
       print_recipe
       set_cache
@@ -114,6 +116,49 @@ sub check_parameter_hash {
         );
     }
     return 1;
+}
+
+sub get_cache {
+
+## Function : Get aggregate information from parameter cache
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+##          : $parameter_name => Parameter name to get chache for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        parameter_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_href,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Unpack
+    my $parameter_value = $parameter_href->{cache}{$parameter_name};
+
+    return if ( not defined $parameter_value );
+
+    return @{$parameter_value} if ( ref $parameter_value eq q{ARRAY} );
+
+    return %{$parameter_value} if ( ref $parameter_value eq q{HASH} );
+
+    ## Return scalar parameter cache value
+    return $parameter_value;
 }
 
 sub get_capture_kit {
@@ -206,6 +251,75 @@ sub get_order_of_parameters {
           );
     }
     return @order_of_parameters;
+}
+
+sub get_parameter_attribute {
+
+## Function : Get parameter attribute
+## Returns  : $attribute
+## Arguments: $attribute      => Attribute to return
+##          : $parameter_href => Parameter hash {REF}
+##          : $parameter_name => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        attribute => {
+            allow => [
+                qw{ analysis_mode
+                  associated_recipe
+                  build_file
+                  data_type
+                  default
+                  exists_check
+                  file_tag
+                  is_reference
+                  outfile_suffix
+                  program_executables
+                  recipe_type
+                  reference
+                  type
+                  }
+            ],
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return entire parameter attribute hash if no specific attribute key supplied
+    return %{ $parameter_href->{$parameter_name} } if ( not defined $attribute );
+
+    ## Unpack
+    my $parameter_attribute = $parameter_href->{$parameter_name}{$attribute};
+
+    return if ( not defined $parameter_attribute );
+
+    return @{$parameter_attribute} if ( ref $parameter_attribute eq q{ARRAY} );
+
+    return %{$parameter_attribute} if ( ref $parameter_attribute eq q{HASH} );
+
+    ## Return scalar parameter attribute value
+    return $parameter_attribute;
 }
 
 sub parse_reference_path {
