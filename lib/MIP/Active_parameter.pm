@@ -19,17 +19,18 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $SPACE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_parameter_files
       get_user_supplied_pedigree_parameter
       set_default_analysis_type
       set_default_human_genome
@@ -49,6 +50,158 @@ BEGIN {
       update_reference_parameters
       update_to_absolute_path
     };
+}
+
+sub check_parameter_files {
+
+## Function : Checks that files/directories files exists
+## Returns  :
+## Arguments: $active_parameter_href   => Holds all set parameter for analysis
+##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
+##          : $build_status            => Build status of parameter
+##          : $case_id                 => Case_id
+##          : $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
+##          : $parameter_exists_check  => Check if intendend file exists in reference directory
+##          : $parameter_name          => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $associated_recipes_ref;
+    my $build_status;
+    my $consensus_analysis_type;
+    my $parameter_exists_check;
+    my $parameter_name;
+
+    ## Default(s)
+    my $case_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        associated_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_recipes_ref,
+            strict_type => 1,
+        },
+        build_status => {
+            store       => \$build_status,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        parameter_exists_check => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_exists_check,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path
+      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all recipes that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
+
+        ## Active associated recipe
+        my $associated_recipe_name = $active_parameter_href->{$associated_recipe};
+
+        ## Active parameter
+        my $active_parameter = $active_parameter_href->{$parameter_name};
+
+        ## Only check active associated recipes parameters
+        next ASSOCIATED_RECIPE if ( not $associated_recipe_name );
+
+        ## Only check active parameters
+        next ASSOCIATED_RECIPE if ( not defined $active_parameter );
+
+        if ( ref $active_parameter eq q{ARRAY} ) {
+
+            ## Get path for array elements
+          PATH:
+            foreach my $path ( @{ $active_parameter_href->{$parameter_name} } ) {
+
+                check_filesystem_objects_and_index_existance(
+                    {
+                        is_build_file  => $build_status,
+                        object_name    => $path,
+                        object_type    => $parameter_exists_check,
+                        parameter_name => $parameter_name,
+                        path           => $path,
+                    }
+                );
+            }
+            return;
+        }
+        elsif ( ref $active_parameter eq q{HASH} ) {
+
+            ## Get path for hash keys
+          PATH:
+            for my $path ( keys %{ $active_parameter_href->{$parameter_name} } ) {
+
+                check_filesystem_objects_and_index_existance(
+                    {
+                        is_build_file  => $build_status,
+                        object_name    => $path,
+                        object_type    => $parameter_exists_check,
+                        parameter_name => $parameter_name,
+                        path           => $path,
+                    }
+                );
+            }
+            return;
+        }
+
+        ## File
+        my $path = $active_parameter_href->{$parameter_name};
+
+        check_filesystem_objects_and_index_existance(
+            {
+                is_build_file  => $build_status,
+                object_name    => $path,
+                object_type    => $parameter_exists_check,
+                parameter_name => $parameter_name,
+                path           => $path,
+            }
+        );
+        return;
+    }
+    return;
 }
 
 sub get_user_supplied_pedigree_parameter {

@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,20 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}        => [qw{ check_parameter_files }],
+        q{MIP::Active_parameter}   => [qw{ check_parameter_files }],
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
+        q{MIP::Parameter}          => [qw{ get_parameter_attribute }],
         q{MIP::Test::Fixtures}     => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_parameter_files };
+use MIP::Active_parameter qw{ check_parameter_files };
+use MIP::Parameter qw{ get_parameter_attribute };
 
-diag(   q{Test check_parameter_files from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test check_parameter_files from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,6 +65,7 @@ diag(   q{Test check_parameter_files from Path.pm v}
 ## Creates log object
 my $log = test_log( {} );
 
+## Given files to check for existence when stored as scalar, array and hash
 my @order_parameters = qw{ gatk_baserecalibration_known_sites
   gatk_genotypegvcfs_ref_gvcf
   gatk_variantrecalibration_resource_indel
@@ -96,27 +96,31 @@ my %active_parameter = (
     },
     sv_vcfparser_select_file => q{test_file},
 );
-
-my %parameter = load_yaml(
+my $consensus_analysis_type = q{wgs};
+my %parameter               = load_yaml(
     {
         yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
-$parameter{cache}{consensus_analysis_type} = q{wgs};
-
 PARAMETER:
 foreach my $parameter_name (@order_parameters) {
 
+    my %attribute = get_parameter_attribute(
+        {
+            parameter_href => \%parameter,
+            parameter_name => $parameter_name,
+        }
+    );
+
     check_parameter_files(
         {
-            active_parameter_href => \%active_parameter,
-            associated_recipes_ref =>
-              \@{ $parameter{$parameter_name}{associated_recipe} },
-            log                    => $log,
-            parameter_exists_check => $parameter{$parameter_name}{exists_check},
-            parameter_href         => \%parameter,
-            parameter_name         => $parameter_name,
+            active_parameter_href   => \%active_parameter,
+            associated_recipes_ref  => $attribute{associated_recipe},
+            build_status            => $attribute{build_file},
+            consensus_analysis_type => $consensus_analysis_type,
+            parameter_exists_check  => $attribute{exists_check},
+            parameter_name          => $parameter_name,
         }
     );
 }

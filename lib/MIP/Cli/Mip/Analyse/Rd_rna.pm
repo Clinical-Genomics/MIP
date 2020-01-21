@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.30;
+our $VERSION = 1.31;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -43,9 +43,9 @@ sub run {
       get_first_level_keys_order_from_definition_file
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
-    use MIP::Dependency_tree qw{ get_dependency_tree_chain get_dependency_tree_order };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain set_dependency_tree_order };
     use MIP::File::Format::Yaml qw{ load_yaml };
-    use MIP::Parameter qw{ get_order_of_parameters print_recipe };
+    use MIP::Parameter qw{ get_cache get_order_of_parameters print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse rd_rna
     ## CLI commands inheritance
@@ -82,8 +82,8 @@ sub run {
         }
     );
 
-    ## ## Order recipes according to dependency tree
-    get_dependency_tree_order(
+    ## Set order of recipes according to dependency tree
+    set_dependency_tree_order(
         {
             dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },

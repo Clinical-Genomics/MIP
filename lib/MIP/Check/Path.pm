@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,7 +33,6 @@ BEGIN {
       check_file_version_exist
       check_future_filesystem_for_directory
       check_gatk_sample_map_paths
-      check_parameter_files
       check_target_bed_file_suffix
       check_vcfanno_toml
     };
@@ -277,158 +276,6 @@ sub check_gatk_sample_map_paths {
     }
     close $filehandle;
     return 1;
-}
-
-sub check_parameter_files {
-
-## Function : Checks that files/directories files exists
-## Returns  :
-## Arguments: $active_parameter_href   => Holds all set parameter for analysis
-##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
-##          : $case_id                 => The case_id
-##          : $log                     => Log object to write to
-##          : $parameter_exists_check  => Check if intendend file exists in reference directory
-##          : $parameter_href          => Holds all parameters
-##          : $parameter_name          => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $associated_recipes_ref;
-    my $log;
-    my $parameter_exists_check;
-    my $parameter_href;
-    my $parameter_name;
-
-    ## Default(s)
-    my $case_id;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        associated_recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$associated_recipes_ref,
-            strict_type => 1,
-        },
-        case_id => {
-            default     => $arg_href->{active_parameter_href}{case_id},
-            store       => \$case_id,
-            strict_type => 1,
-        },
-        log                    => { required => 1, store => \$log, },
-        parameter_exists_check => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_exists_check,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path
-      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance };
-
-    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
-
-    ## Unpack parameters
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-
-    ## Do nothing since parameter is not required unless exome mode is enabled
-    return
-      if ( exists $only_wgs{$parameter_name}
-        && $consensus_analysis_type =~ / wgs /xsm );
-
-    ## Check all recipes that use parameter
-  ASSOCIATED_RECIPE:
-    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
-
-        ## Active associated recipe
-        my $associated_recipe_name = $active_parameter_href->{$associated_recipe};
-
-        ## Active parameter
-        my $active_parameter = $active_parameter_href->{$parameter_name};
-
-        ## Only check active associated recipes parameters
-        next ASSOCIATED_RECIPE if ( not $associated_recipe_name );
-
-        ## Only check active parameters
-        next ASSOCIATED_RECIPE if ( not defined $active_parameter );
-
-        if ( ref $active_parameter eq q{ARRAY} ) {
-
-            ## Get path for array elements
-          PATH:
-            foreach my $path ( @{ $active_parameter_href->{$parameter_name} } ) {
-
-                check_filesystem_objects_and_index_existance(
-                    {
-                        is_build_file  => $parameter_href->{$parameter_name}{build_file},
-                        object_name    => $path,
-                        object_type    => $parameter_exists_check,
-                        parameter_name => $parameter_name,
-                        path           => $path,
-                    }
-                );
-            }
-            return;
-        }
-        elsif ( ref $active_parameter eq q{HASH} ) {
-
-            ## Get path for hash keys
-          PATH:
-            for my $path ( keys %{ $active_parameter_href->{$parameter_name} } ) {
-
-                check_filesystem_objects_and_index_existance(
-                    {
-                        is_build_file  => $parameter_href->{$parameter_name}{build_file},
-                        object_name    => $path,
-                        object_type    => $parameter_exists_check,
-                        parameter_name => $parameter_name,
-                        path           => $path,
-                    }
-                );
-            }
-            return;
-        }
-
-        ## File
-        my $path = $active_parameter_href->{$parameter_name};
-
-        check_filesystem_objects_and_index_existance(
-            {
-                is_build_file  => $parameter_href->{$parameter_name}{build_file},
-                object_name    => $path,
-                object_type    => $parameter_exists_check,
-                parameter_name => $parameter_name,
-                path           => $path,
-            }
-        );
-        return;
-    }
-    return;
 }
 
 sub check_target_bed_file_suffix {
