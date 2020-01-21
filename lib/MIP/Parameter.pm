@@ -121,7 +121,7 @@ sub check_parameter_hash {
 sub get_cache {
 
 ## Function : Get aggregate information from parameter cache
-## Returns  :
+## Returns  : $parameter_value | @{$parameter_value} | %{$parameter_value}
 ## Arguments: $parameter_href => Parameter hash {REF}
 ##          : $parameter_name => Parameter name to get chache for
 
