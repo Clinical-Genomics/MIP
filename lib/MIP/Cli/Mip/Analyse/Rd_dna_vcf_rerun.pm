@@ -44,7 +44,7 @@ sub run {
       get_first_level_keys_order_from_definition_file
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
-    use MIP::Dependency_tree qw{ get_dependency_tree_chain get_dependency_tree_order };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain set_dependency_tree_order };
     use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Parameter qw{ get_cache get_order_of_parameters print_recipe };
 
@@ -83,18 +83,11 @@ sub run {
         }
     );
 
-    ## Order recipes according to dependency tree
-    my @recipes = get_cache(
-        {
-            parameter_href => \%parameter,
-            parameter_name => q{order_recipes_ref},
-        }
-    );
-
-    get_dependency_tree_order(
+    ## Set order of recipes according to dependency tree
+    set_dependency_tree_order(
         {
             dependency_tree_href => $parameter{dependency_tree_href},
-            recipes_ref          => \@recipes,
+            recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
 

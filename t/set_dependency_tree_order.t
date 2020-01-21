@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Dependency_tree} => [qw{ get_dependency_tree_order }],
+        q{MIP::Dependency_tree} => [qw{ set_dependency_tree_order }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Dependency_tree qw{ get_dependency_tree_order };
+use MIP::Dependency_tree qw{ set_dependency_tree_order };
 
-diag(   q{Test get_dependency_tree_order from Dependency_tree.pm v}
+diag(   q{Test set_dependency_tree_order from Dependency_tree.pm v}
       . $MIP::Dependency_tree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -97,7 +97,7 @@ my @expected_recipes =
 
 my @recipes;
 
-get_dependency_tree_order(
+set_dependency_tree_order(
     {
         dependency_tree_href => \%dependency_tree,
         recipes_ref          => \@recipes,

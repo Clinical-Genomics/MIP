@@ -24,15 +24,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_dependency_tree
       get_dependency_tree_chain
-      get_dependency_tree_order
       get_dependency_subtree
       get_recipes_for_dependency_tree_chain
       get_recipe_dependency_tree_chain
+      set_dependency_tree_order
     };
 }
 
@@ -367,7 +367,7 @@ sub get_dependency_subtree {
     return;
 }
 
-sub get_dependency_tree_order {
+sub set_dependency_tree_order {
 
 ## Function  : Collects order of all recipes from initiation.
 ## Returns   :
@@ -408,7 +408,7 @@ sub get_dependency_tree_order {
         ## Call recursive
         if ( ref $value eq q{HASH} ) {
 
-            get_dependency_tree_order(
+            set_dependency_tree_order(
                 {
                     dependency_tree_href => $value,
                     recipes_ref          => $recipes_ref,
@@ -424,7 +424,7 @@ sub get_dependency_tree_order {
                 ## Call recursive
                 if ( ref $element eq q{HASH} ) {
 
-                    get_dependency_tree_order(
+                    set_dependency_tree_order(
                         {
                             dependency_tree_href => $element,
                             recipes_ref          => $recipes_ref,
@@ -496,7 +496,7 @@ sub get_recipes_for_dependency_tree_chain {
 
     ## Get the recipes
     my @recipes;
-    get_dependency_tree_order(
+    set_dependency_tree_order(
         {
             dependency_tree_href => $dependency_subtree_href,
             recipes_ref          => \@recipes,

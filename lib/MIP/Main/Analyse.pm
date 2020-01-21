@@ -237,6 +237,13 @@ sub mip_analyse {
         }
     );
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => \%parameter,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
 ## Update path for supplied reference(s) associated with parameter that should
 ## reside in the mip reference directory to full path
     set_parameter_reference_dir_path(
@@ -275,12 +282,6 @@ sub mip_analyse {
             {
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
-            }
-        );
-        my $consensus_analysis_type = get_cache(
-            {
-                parameter_href => \%parameter,
-                parameter_name => q{consensus_analysis_type},
             }
         );
 
@@ -574,13 +575,6 @@ sub mip_analyse {
             analysis_date    => $date_time_stamp,
             mip_version      => $MIP_VERSION,
             sample_info_href => \%sample_info,
-        }
-    );
-
-    my $consensus_analysis_type = get_cache(
-        {
-            parameter_href => \%parameter,
-            parameter_name => q{consensus_analysis_type},
         }
     );
 
