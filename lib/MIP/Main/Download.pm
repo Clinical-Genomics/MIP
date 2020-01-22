@@ -20,7 +20,7 @@ use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ check_parameter_files update_to_absolute_path };
+use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
   qw{ check_email_address check_recipe_exists_in_hash check_recipe_mode };
@@ -31,7 +31,7 @@ use MIP::Constants
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
-  get_parameter_attribute
+  parse_parameter_files
   set_cache
   set_default
 };
@@ -44,7 +44,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -171,29 +171,13 @@ sub mip_download {
 
     ### Checks
 
-    ## Check existence of files and directories
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## Unpack
-        my %attribute = get_parameter_attribute(
-            {
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-
-        next PARAMETER if ( not exists $attribute{exists_check} );
-
-        check_parameter_files(
-            {
-                active_parameter_href  => \%active_parameter,
-                associated_recipes_ref => $attribute{associated_recipe},
-                parameter_exists_check => $attribute{exists_check},
-                parameter_name         => $parameter_name,
-            }
-        );
-    }
+    ## Parse existence of files and directories
+    parse_parameter_files(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+        }
+    );
 
     ## Check email adress syntax and mail host
     check_email_address(

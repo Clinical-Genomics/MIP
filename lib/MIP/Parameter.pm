@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,6 +36,7 @@ BEGIN {
       get_order_of_parameters
       get_parameter_attribute
       parse_reference_path
+      parse_parameter_files
       print_recipe
       set_cache
       set_cache_sample_id_parameter
@@ -320,6 +321,73 @@ sub get_parameter_attribute {
 
     ## Return scalar parameter attribute value
     return $parameter_attribute;
+}
+
+sub parse_parameter_files {
+
+## Function : Parse parameter file objects and checks that their paths exist
+## Returns  :
+## Arguments: $active_parameter_href   => Holds all set parameter for analysis {REF}
+##          : $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
+##          : $parameter_href          => Holds all parameters {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $consensus_analysis_type;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ check_parameter_files };
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$parameter_href} ) {
+
+        ## Unpack
+        my %attribute = get_parameter_attribute(
+            {
+                parameter_href => $parameter_href,
+                parameter_name => $parameter_name,
+            }
+        );
+
+        next PARAMETER if ( not exists $attribute{exists_check} );
+
+        check_parameter_files(
+            {
+                active_parameter_href   => $active_parameter_href,
+                associated_recipes_ref  => $attribute{associated_recipe},
+                build_status            => $attribute{build_file},
+                consensus_analysis_type => $consensus_analysis_type,
+                parameter_exists_check  => $attribute{exists_check},
+                parameter_name          => $parameter_name,
+            }
+        );
+    }
+    return 1;
 }
 
 sub parse_reference_path {

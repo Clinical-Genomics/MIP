@@ -28,7 +28,6 @@ use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
-  check_parameter_files
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
@@ -59,7 +58,7 @@ use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
-  get_parameter_attribute
+  parse_parameter_files
   parse_reference_path
   set_cache
   set_default
@@ -88,7 +87,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.35;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -273,31 +272,14 @@ sub mip_analyse {
 
 ### Checks
 
-## Check existence of files and directories
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## Unpack
-        my %attribute = get_parameter_attribute(
-            {
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-
-        next PARAMETER if ( not exists $attribute{exists_check} );
-
-        check_parameter_files(
-            {
-                active_parameter_href   => \%active_parameter,
-                associated_recipes_ref  => $attribute{associated_recipe},
-                build_status            => $attribute{build_file},
-                consensus_analysis_type => $consensus_analysis_type,
-                parameter_exists_check  => $attribute{exists_check},
-                parameter_name          => $parameter_name,
-            }
-        );
-    }
+## Parse existence of files and directories
+    parse_parameter_files(
+        {
+            active_parameter_href   => \%active_parameter,
+            consensus_analysis_type => $consensus_analysis_type,
+            parameter_href          => \%parameter,
+        }
+    );
 
 ## Updates sample_info hash with previous run pedigree info
     reload_previous_pedigree_info(

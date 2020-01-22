@@ -21,11 +21,10 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -51,6 +50,7 @@ BEGIN {
 }
 
 use MIP::Active_parameter qw{ check_parameter_files };
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Parameter qw{ get_parameter_attribute };
 
 diag(   q{Test check_parameter_files from Active_parameter.pm v}
