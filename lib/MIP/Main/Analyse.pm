@@ -28,6 +28,7 @@ use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
+  reload_previous_pedigree_info
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
@@ -51,7 +52,7 @@ use MIP::Pedigree qw{ create_fam_file
   detect_founders
   detect_sample_id_gender
   detect_trio
-  reload_previous_pedigree_info };
+};
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Get::Parameter qw{ get_program_executables };
@@ -87,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.36;
+    our $VERSION = 1.37;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -284,7 +285,6 @@ sub mip_analyse {
 ## Updates sample_info hash with previous run pedigree info
     reload_previous_pedigree_info(
         {
-            log                   => $log,
             sample_info_href      => \%sample_info,
             sample_info_file_path => $active_parameter{sample_info_file},
         }

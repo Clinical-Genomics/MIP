@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ reload_previous_pedigree_info }],
+        q{MIP::Sample_info}    => [qw{ reload_previous_pedigree_info }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ reload_previous_pedigree_info };
+use MIP::Sample_info qw{ reload_previous_pedigree_info };
 
-diag(   q{Test reload_previous_pedigree_info from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test reload_previous_pedigree_info from Sample_info.pm v}
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -88,7 +88,6 @@ my %active_parameter =
 
 reload_previous_pedigree_info(
     {
-        log                   => $log,
         sample_info_href      => \%sample_info,
         sample_info_file_path => $active_parameter{sample_info_file},
     }
@@ -102,7 +101,6 @@ is( $sample_info{sample}{sample_1}{analysis_type}, q{wes}, q{No qc_sample_info t
 
 reload_previous_pedigree_info(
     {
-        log                   => $log,
         sample_info_href      => \%sample_info,
         sample_info_file_path => $active_parameter{sample_info_file},
     }
@@ -135,36 +133,3 @@ while ( my ( $key, $value ) = each %reloaded_sample_2 ) {
 is( $sample_info{sample}{sample_4}{sex}, q{unknown}, q{Keept new parameter} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

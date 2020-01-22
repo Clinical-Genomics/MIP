@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -45,7 +45,6 @@ BEGIN {
       is_sample_proband_in_trio
       parse_pedigree
       parse_yaml_pedigree_file
-      reload_previous_pedigree_info
       set_active_parameter_pedigree_keys
       set_pedigree_capture_kit_info
       set_pedigree_case_info
@@ -1194,66 +1193,6 @@ sub parse_yaml_pedigree_file {
     return 1;
 }
 
-sub reload_previous_pedigree_info {
-
-## Function : Updates sample_info hash with previous run pedigree info
-## Returns  :
-## Arguments: $log                   => Log object to write to
-##          : $sample_info_file_path => Previuos sample info file
-##          : $sample_info_href      => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $sample_info_file_path;
-    my $sample_info_href;
-
-    my $tmpl = {
-        log                   => { required => 1, store => \$log, },
-        sample_info_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_file_path,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Yaml qw{ load_yaml };
-
-    if ( -f $sample_info_file_path ) {
-
-        ## Loads a YAML file into an arbitrary hash and returns it.
-        # Load parameters from previous run from sample_info_file
-        my %previous_sample_info = load_yaml(
-            {
-                yaml_file => $sample_info_file_path,
-            }
-        );
-
-        $log->info( q{Loaded: } . $sample_info_file_path, $NEWLINE );
-
-        ## Update sample_info with pedigree information from previous run
-        ## Should be only pedigree keys in %allowed_entries
-        %{$sample_info_href} = _update_sample_info_hash(
-            {
-                sample_info_href          => $sample_info_href,
-                previous_sample_info_href => \%previous_sample_info,
-            }
-        );
-    }
-    return;
-}
-
 sub set_active_parameter_pedigree_keys {
 
 ## Function : Set the pedigree case keys and values
@@ -1835,68 +1774,6 @@ q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq
     $regexp .= q?{ $? . $case_member . q?++} } } print $? . $case_member . q?; last;'?;
 
     return $regexp;
-}
-
-sub _update_sample_info_hash {
-
-## Function : Update sample_info with information from pedigree from previous run. Required e.g. if only updating single sample analysis chains from trio.
-## Returns  : %{$previous_sample_info_href}
-## Arguments: $previous_sample_info_href => Allowed parameters from pedigre file hash {REF}
-##          : $sample_info_href          => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $previous_sample_info_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        previous_sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$previous_sample_info_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
-
-        ## Alias
-        my $sample_href = \%{ $sample_info_href->{sample}{$sample_id} };
-        my $previous_sample_href =
-          \%{ $previous_sample_info_href->{sample}{$sample_id} };
-
-      PEDIGREE_KEY:
-        foreach my $pedigree_key ( keys %{$sample_href} ) {
-
-            ## Previous run information, which should be updated using pedigree from current analysis
-            if ( exists $previous_sample_href->{$pedigree_key} ) {
-
-                ## Required to update keys downstream
-                my $previous_pedigree_value = delete $sample_href->{$pedigree_key};
-
-                ## Update previous sample info key
-                $previous_sample_href->{$pedigree_key} = $previous_pedigree_value;
-            }
-            else {
-
-                ## New sample_id or key
-                $previous_sample_href->{$pedigree_key} = $sample_href->{$pedigree_key};
-            }
-        }
-    }
-    return %{$previous_sample_info_href};
 }
 
 sub _parse_trio_members {
