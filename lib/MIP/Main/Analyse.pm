@@ -28,7 +28,6 @@ use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
-  reload_previous_pedigree_info
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
@@ -67,6 +66,7 @@ use MIP::Parameter qw{
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
@@ -80,7 +80,6 @@ use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
   qw{ pipeline_analyse_rd_dna_vcf_rerun };
-use MIP::Sample_info qw{ set_file_path_to_store };
 
 BEGIN {
 
