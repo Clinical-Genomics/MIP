@@ -40,7 +40,7 @@ BEGIN {
       get_read_length
       get_sample_ids_from_vcf
       get_select_file_contigs
-      get_seq_dict_contigs };
+    };
 }
 
 sub get_exom_target_bed_file {
@@ -753,74 +753,6 @@ sub get_select_file_contigs {
         $log->fatal(
             q{Could not detect any '##contig' in meta data header in select file: }
               . $select_file_path );
-        exit 1;
-    }
-    return @contigs;
-}
-
-sub get_seq_dict_contigs {
-
-## Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $human_genome_reference
-## Returns  :
-## Arguments: $dict_file_path => Dict file path
-##          : $log            => Log object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $dict_file_path;
-    my $log;
-
-    my $tmpl = {
-        dict_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$dict_file_path,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use IPC::Cmd qw{ run };
-
-    ## Build regexp to find contig names
-    # Execute perl
-    my $find_contig_name = q?perl -nae '?;
-
-    # Find contig line
-    $find_contig_name .= q?if($F[0]=~/^\@SQ/) { ?;
-
-    # Collect contig name
-    $find_contig_name .= q? if($F[1]=~/SN\:(\S+)/) { ?;
-
-    # Alias capture
-    $find_contig_name .= q?my $contig_name = $1; ?;
-
-    # Write to STDOUT
-    $find_contig_name .= q?print $contig_name, q{,};} }'?;
-
-    # Returns a comma seperated string of sequence contigs from dict file
-    my $find_contig_cmd = qq{$find_contig_name $dict_file_path };
-
-    # System call
-    my (
-        $success_ref,    $error_message_ref, $full_buf_ref,
-        $stdout_buf_ref, $stderr_buf_ref
-    ) = run( command => [$find_contig_cmd], verbose => 0 );
-
-    # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
-
-    if ( not @contigs ) {
-
-        $log->fatal(
-            q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
         exit 1;
     }
     return @contigs;

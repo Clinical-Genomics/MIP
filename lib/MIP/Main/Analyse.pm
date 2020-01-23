@@ -296,7 +296,6 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            log                   => $log,
             parameter_href        => \%parameter,
             parameter_name        => q{human_genome_reference_file_endings},
         }

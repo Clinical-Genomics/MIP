@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -167,13 +167,12 @@ sub perl_nae_oneliners {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Oneliner map
+    ## Oneliner dispatch table
     my %oneliner = (
-        synonyms_grch37_to_grch38 =>
-          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
-        synonyms_grch38_to_grch37 =>
-          q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?,
-        get_vep_version => q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?,
+        get_seq_dict_contigs      => \&_get_seq_dict_contigs,
+        get_vep_version           => \&_get_vep_version,
+        synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
+        synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
     );
 
     ## Stores commands depending on input parameters
@@ -187,7 +186,7 @@ sub perl_nae_oneliners {
 
     if ( defined $oneliner_name and exists $oneliner{$oneliner_name} ) {
 
-        push @commands, $oneliner{$oneliner_name};
+        push @commands, $oneliner{$oneliner_name}->();
     }
     elsif ($oneliner_cmd) {
 
@@ -215,4 +214,79 @@ sub perl_nae_oneliners {
     return @commands;
 }
 
+sub _get_vep_version {
+
+## Function : Return predifined one liners for getting vep version
+## Returns  : $get_vep_version
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    my $get_vep_version = q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?;
+
+    return $get_vep_version;
+}
+
+sub _get_seq_dict_contigs {
+
+## Function : Return predifined one liners to get contig names from dict file
+## Returns  : $get_dict_contigs
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Find contig line
+    my $get_dict_contigs = q?'if($F[0]=~/^\@SQ/) { ?;
+
+    # Collect contig name
+    $get_dict_contigs .= q? if($F[1]=~/SN\:(\S+)/) { ?;
+
+    # Alias capture
+    $get_dict_contigs .= q?my $contig_name = $1; ?;
+
+    # Write to STDOUT
+    $get_dict_contigs .= q?print $contig_name, q{,};} }'?;
+
+    return $get_dict_contigs;
+}
+
+sub _synonyms_grch37_to_grch38 {
+
+## Function : Return predifined one liners to modify chr prefix from genome version 37 to 38
+## Returns  : $modify_chr_prefix
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Add "chr" prefix to chromosome name and rename "M" to "MT"
+    my $modify_chr_prefix = q?\'if($_=~s/^M/chrMT/g) {} ?;
+
+    ## Add "chr" prefix to chromosome name
+    $modify_chr_prefix .= q?elsif ($_=~s/^(.+)/chr$1/g) {} ?;
+
+## Print line
+    $modify_chr_prefix .= q?print $_\'?;
+
+    return $modify_chr_prefix;
+}
+
+sub _synonyms_grch38_to_grch37 {
+
+## Function : Return predifined one liners to modify chr prefix from genome version 37 to 38
+## Returns  : $modify_chr_prefix
+## Arguments:
+
+    my ($arg_href) = @_;
+
+## Remove "chr" prefix from chromosome name and rename "MT" to "M"
+    my $modify_chr_prefix = q?\'if($_=~s/^chrMT/M/g) {} ?;
+
+## Remove "chr" prefix from chromosome name
+    $modify_chr_prefix .= q?elsif ($_=~s/^chr(.+)/$1/g) {} ?;
+
+## Print line
+    $modify_chr_prefix .= q?print $_\'?;
+
+    return $modify_chr_prefix;
+}
 1;

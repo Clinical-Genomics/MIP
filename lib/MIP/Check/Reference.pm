@@ -18,14 +18,14 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EQUALS $NEWLINE $SPACE $TAB };
+use MIP::Constants qw{ $DOT $EQUALS $LOG_NAME $NEWLINE $SPACE $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -37,12 +37,11 @@ BEGIN {
 
 sub check_human_genome_file_endings {
 
-## Function : Check the existance of associated human genome files.
+## Function : Check the existance of associated human genome files
 ## Returns  :
 ## Arguments: $active_parameter_href              => Holds all set parameter for analysis {REF}
 ##          : $file_info_href                     => File info hash {REF}
 ##          : $human_genome_reference_name_prefix => The associated human genome file without file ending {REF}
-##          : $log                                => Log object to write to
 ##          : $parameter_href                     => Parameter hash {REF}
 ##          : $parameter_name                     => The parameter under evaluation
 ##          : $reference_dir                      => MIP reference directory {REF}
@@ -54,7 +53,6 @@ sub check_human_genome_file_endings {
     my $file_info_href;
     my $parameter_href;
     my $parameter_name;
-    my $log;
 
     ## Default(s)
     my $human_genome_reference_name_prefix;
@@ -80,7 +78,6 @@ sub check_human_genome_file_endings {
             store   => \$human_genome_reference_name_prefix,
             strict_type => 1,
         },
-        log            => { store => \$log, },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -99,7 +96,10 @@ sub check_human_genome_file_endings {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ check_filesystem_objects_existance };
-    use MIP::Get::File qw{ get_seq_dict_contigs };
+    use MIP::Reference qw{ get_seq_dict_contigs };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Count the number of files that exists
     my $existence_check_counter = 0;
@@ -151,7 +151,6 @@ sub check_human_genome_file_endings {
         @{ $file_info_href->{contigs} } = get_seq_dict_contigs(
             {
                 dict_file_path => $dict_file_path,
-                log            => $log,
             }
         );
     }

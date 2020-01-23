@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -88,7 +88,6 @@ check_human_genome_file_endings(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
-        log                   => $log,
         parameter_href        => \%parameter,
         parameter_name        => q{human_genome_reference},
     }
@@ -103,7 +102,6 @@ check_human_genome_file_endings(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
-        log                   => $log,
         parameter_href        => \%parameter,
         parameter_name        => q{human_genome_reference},
     }
