@@ -295,11 +295,8 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            file_info_href => \%file_info,
             human_genome_reference_file_endings_ref =>
               $file_info{human_genome_reference_file_endings},
-            human_genome_reference_name_prefix =>
-              $file_info{human_genome_reference_name_prefix},
             human_genome_reference_path => $active_parameter{human_genome_reference},
             parameter_href              => \%parameter,
             parameter_name              => q{human_genome_reference_file_endings},

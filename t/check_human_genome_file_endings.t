@@ -39,18 +39,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference} => [qw{ check_human_genome_file_endings }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Reference}      => [qw{ check_human_genome_file_endings }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::File_info qw{ set_human_genome_reference_features };
 
 diag(   q{Test check_human_genome_file_endings from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,11 +63,9 @@ my $log = test_log( { no_screen => 1, } );
 
 my %parameter;
 
-my %active_parameter = (
-    human_genome_reference =>
-      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } ),
-    reference_dir => catfile( $Bin, qw{ data references } ),
-);
+my %active_parameter = ( human_genome_reference =>
+      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } ), );
+
 ## File info hash
 my %file_info = (
 
@@ -86,11 +84,8 @@ set_human_genome_reference_features(
 
 check_human_genome_file_endings(
     {
-        file_info_href => \%file_info,
         human_genome_reference_file_endings_ref =>
           $file_info{human_genome_reference_file_endings},
-        human_genome_reference_name_prefix =>
-          $file_info{human_genome_reference_name_prefix},
         human_genome_reference_path => $active_parameter{human_genome_reference},
         parameter_href              => \%parameter,
         parameter_name              => q{human_genome_reference_file_endings},
@@ -104,11 +99,8 @@ $active_parameter{human_genome_reference} = q{not an existing reference};
 
 check_human_genome_file_endings(
     {
-        file_info_href => \%file_info,
         human_genome_reference_file_endings_ref =>
           $file_info{human_genome_reference_file_endings},
-        human_genome_reference_name_prefix =>
-          $file_info{human_genome_reference_name_prefix},
         human_genome_reference_path => $active_parameter{human_genome_reference},
         parameter_href              => \%parameter,
         parameter_name              => q{human_genome_reference_file_endings},
