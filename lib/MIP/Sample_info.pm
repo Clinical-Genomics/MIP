@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -39,6 +39,7 @@ BEGIN {
       get_sample_info_sample_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
+      reload_previous_pedigree_info
       set_file_path_to_store
       set_gene_panel
       set_infile_info
@@ -328,7 +329,7 @@ sub get_rg_header_line {
     );
 
     ## Construct read group line;
-    my @rg_elements    = map { uc($_) . $COLON . $rg{$_} } qw{ id lb pl pu sm };
+    my @rg_elements    = map { uc . $COLON . $rg{$_} } qw{ id lb pl pu sm };
     my $rg_header_line = join $separator, @rg_elements;
 
     return $rg_header_line;
@@ -570,6 +571,63 @@ sub get_sequence_run_type_is_interleaved {
     return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
       {sequence_run_type}{interleaved};
 
+}
+
+sub reload_previous_pedigree_info {
+
+## Function : Updates sample_info hash with previous run pedigree info
+## Returns  :
+## Arguments: $sample_info_file_path => Previuos sample info file
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_file_path;
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_file_path,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ load_yaml };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    return if ( not -f $sample_info_file_path );
+
+    # Load parameters from sample_info_file from previous run
+    my %previous_sample_info = load_yaml(
+        {
+            yaml_file => $sample_info_file_path,
+        }
+    );
+
+    $log->info( q{Loaded: } . $sample_info_file_path, $NEWLINE );
+
+    ## Update sample_info with pedigree information from previous run
+    %{$sample_info_href} = _update_sample_info_hash_pedigree_data(
+        {
+            sample_info_href          => $sample_info_href,
+            previous_sample_info_href => \%previous_sample_info,
+        }
+    );
+    return;
 }
 
 sub set_file_path_to_store {
@@ -1620,6 +1678,68 @@ sub _file_name_formats {
       $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
+}
+
+sub _update_sample_info_hash_pedigree_data {
+
+## Function : Update sample_info with information from pedigree from previous run.
+##          : Required e.g. if only updating single sample analysis chains from trio.
+## Returns  : %{$previous_sample_info_href}
+## Arguments: $previous_sample_info_href => Allowed parameters from pedigre file hash {REF}
+##          : $sample_info_href          => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $previous_sample_info_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        previous_sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$previous_sample_info_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        ## Alias
+        my $sample_href = \%{ $sample_info_href->{sample}{$sample_id} };
+        my $previous_sample_href =
+          \%{ $previous_sample_info_href->{sample}{$sample_id} };
+
+      PEDIGREE_KEY:
+        foreach my $pedigree_key ( keys %{$sample_href} ) {
+
+            ## Previous run information, which should be updated using pedigree from current analysis
+            if ( exists $previous_sample_href->{$pedigree_key} ) {
+
+                ## Required to update keys downstream
+                my $previous_pedigree_value = delete $sample_href->{$pedigree_key};
+
+                ## Update previous sample info key
+                $previous_sample_href->{$pedigree_key} = $previous_pedigree_value;
+                next PEDIGREE_KEY;
+            }
+
+            ## New sample_id or key
+            $previous_sample_href->{$pedigree_key} = $sample_href->{$pedigree_key};
+        }
+    }
+    return %{$previous_sample_info_href};
 }
 
 1;
