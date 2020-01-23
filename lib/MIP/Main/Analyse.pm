@@ -50,7 +50,7 @@ use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::Pedigree qw{ create_fam_file
   detect_founders
   detect_sample_id_gender
-  detect_trio
+  get_trio
 };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
@@ -87,7 +87,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -302,10 +302,9 @@ sub mip_analyse {
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{cache}{trio} = detect_trio(
+    $parameter{cache}{trio} = get_trio(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             sample_info_href      => \%sample_info,
         }
     );
