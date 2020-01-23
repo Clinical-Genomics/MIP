@@ -54,6 +54,7 @@ use MIP::Pedigree qw{ create_fam_file
   reload_previous_pedigree_info };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::File_info qw{ set_dict_contigs };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -294,10 +295,26 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            active_parameter_href => \%active_parameter,
-            file_info_href        => \%file_info,
-            parameter_href        => \%parameter,
-            parameter_name        => q{human_genome_reference_file_endings},
+            file_info_href => \%file_info,
+            human_genome_reference_file_endings_ref =>
+              $file_info{human_genome_reference_file_endings},
+            human_genome_reference_name_prefix =>
+              $file_info{human_genome_reference_name_prefix},
+            human_genome_reference_path => $active_parameter{human_genome_reference},
+            parameter_href              => \%parameter,
+            parameter_name              => q{human_genome_reference_file_endings},
+        }
+    );
+
+## Set sequence contigs used in analysis from human genome sequence dict file
+    my $dict_file_path = catfile( $active_parameter{reference_dir},
+        $file_info{human_genome_reference_name_prefix} . $DOT . q{dict} );
+
+    set_dict_contigs(
+        {
+            dict_file_path => $dict_file_path,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
         }
     );
 

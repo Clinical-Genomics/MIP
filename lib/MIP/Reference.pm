@@ -26,10 +26,10 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_seq_dict_contigs };
+    our @EXPORT_OK = qw{ get_dict_contigs };
 }
 
-sub get_seq_dict_contigs {
+sub get_dict_contigs {
 
 ## Function : Collects sequence contigs used in analysis from human genome sequence
 ##          : dictionnary (.dict file)
@@ -61,17 +61,17 @@ sub get_seq_dict_contigs {
     ## Build regexp to find contig names
     my @perl_commands = perl_nae_oneliners(
         {
-            oneliner_name => q{get_seq_dict_contigs},
+            oneliner_name => q{get_dict_contigs},
         }
     );
 
-    my @get_seq_dict_contigs_cmds = join $SPACE, ( @perl_commands, $dict_file_path );
+    my @get_dict_contigs_cmds = join $SPACE, ( @perl_commands, $dict_file_path );
 
     # System call
     my (
         $success_ref,    $error_message_ref, $full_buf_ref,
         $stdout_buf_ref, $stderr_buf_ref
-    ) = run( command => \@get_seq_dict_contigs_cmds, verbose => 0 );
+    ) = run( command => \@get_dict_contigs_cmds, verbose => 0 );
 
     # Save contigs
     my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};

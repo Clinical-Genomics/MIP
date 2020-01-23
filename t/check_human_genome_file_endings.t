@@ -86,28 +86,36 @@ set_human_genome_reference_features(
 
 check_human_genome_file_endings(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        parameter_href        => \%parameter,
-        parameter_name        => q{human_genome_reference},
+        file_info_href => \%file_info,
+        human_genome_reference_file_endings_ref =>
+          $file_info{human_genome_reference_file_endings},
+        human_genome_reference_name_prefix =>
+          $file_info{human_genome_reference_name_prefix},
+        human_genome_reference_path => $active_parameter{human_genome_reference},
+        parameter_href              => \%parameter,
+        parameter_name              => q{human_genome_reference_file_endings},
     }
 );
 
-is( $parameter{human_genome_reference}{build_file},
+is( $parameter{human_genome_reference_file_endings}{build_file},
     0, q{Set build file switch for human genome reference to 0} );
 
 $active_parameter{human_genome_reference} = q{not an existing reference};
 
 check_human_genome_file_endings(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        parameter_href        => \%parameter,
-        parameter_name        => q{human_genome_reference},
+        file_info_href => \%file_info,
+        human_genome_reference_file_endings_ref =>
+          $file_info{human_genome_reference_file_endings},
+        human_genome_reference_name_prefix =>
+          $file_info{human_genome_reference_name_prefix},
+        human_genome_reference_path => $active_parameter{human_genome_reference},
+        parameter_href              => \%parameter,
+        parameter_name              => q{human_genome_reference_file_endings},
     }
 );
 
-is( $parameter{human_genome_reference}{build_file},
-    1, q{Set build file switch for human genome reference to 1} );
+is( $parameter{human_genome_reference_file_endings}{build_file},
+    1, q{Set build file switch for human genome reference file endings to 1} );
 
 done_testing();

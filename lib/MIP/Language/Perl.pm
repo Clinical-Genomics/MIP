@@ -169,7 +169,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
-        get_seq_dict_contigs      => \&_get_seq_dict_contigs,
+        get_dict_contigs          => \&_get_dict_contigs,
         get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
@@ -227,7 +227,7 @@ sub _get_vep_version {
     return $get_vep_version;
 }
 
-sub _get_seq_dict_contigs {
+sub _get_dict_contigs {
 
 ## Function : Return predifined one liners to get contig names from dict file
 ## Returns  : $get_dict_contigs
