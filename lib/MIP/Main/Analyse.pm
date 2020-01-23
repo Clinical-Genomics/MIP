@@ -10,7 +10,7 @@ use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename fileparse };
 use File::Copy qw{ copy };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -41,22 +41,21 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_executable_in_path };
-use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
-use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
-use MIP::File_info qw{ set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
+use MIP::File::Format::Store qw{ set_analysis_files_to_store };
+use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
+use MIP::Get::Parameter qw{ get_program_executables };
+use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Pedigree qw{ create_fam_file
   detect_founders
   detect_sample_id_gender
   detect_trio
   reload_previous_pedigree_info };
-use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ write_yaml };
-use MIP::File_info qw{ set_dict_contigs };
-use MIP::Get::Parameter qw{ get_program_executables };
-use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
   parse_parameter_files
@@ -67,6 +66,7 @@ use MIP::Parameter qw{
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Sample_info qw{ set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
@@ -80,7 +80,6 @@ use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
   qw{ pipeline_analyse_rd_dna_vcf_rerun };
-use MIP::Sample_info qw{ set_file_path_to_store };
 
 BEGIN {
 
