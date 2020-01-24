@@ -28,14 +28,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
       check_allowed_array_values
       check_allowed_temp_directory
-      check_email_address
       check_load_env_packages
       check_infile_contain_sample_id
       check_infiles
@@ -196,52 +195,6 @@ sub check_allowed_temp_directory {
     }
 
     # All ok
-    return 1;
-}
-
-sub check_email_address {
-
-## Function : Check the syntax of the email adress is valid and has a mail host.
-## Returns  :
-## Arguments: $email => The email adress
-##          : $log   => Log object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $email;
-    my $log;
-
-    my $tmpl = {
-        email => {
-            required    => 1,
-            store       => \$email,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not defined $email );
-
-    ## Check syntax and mail host
-    my $address = Email::Valid->address(
-        -address => $email,
-        -mxcheck => 1,
-    );
-    if ( not defined $address ) {
-
-        $log->fatal( q{The supplied email: }
-              . $email
-              . q{ seem to be malformed according to }
-              . Email::Valid->details() );
-        exit 1;
-    }
     return 1;
 }
 
