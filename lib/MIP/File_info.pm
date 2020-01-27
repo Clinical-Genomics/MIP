@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ fileparse };
+use File::Basename qw{ dirname fileparse };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -24,10 +24,75 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_human_genome_reference_features };
+    our @EXPORT_OK = qw{ set_dict_contigs set_human_genome_reference_features };
+}
+
+sub set_dict_contigs {
+
+## Function : Set sequence contigs used in analysis from human genome sequence
+##          : dictionnary (.dict file)
+## Returns  :
+## Arguments: $dict_file_path => Dict file path
+##          : $file_info_href => File info hash {REF}
+##          : $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $dict_file_path;
+    my $file_info_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        dict_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$dict_file_path,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_parameter_attribute };
+    use MIP::Reference qw{ get_dict_contigs };
+
+    ## Get sequence contigs from human reference ".dict" file since it exists
+    my $build_status = get_parameter_attribute(
+        {
+            attribute      => q{build_file},
+            parameter_href => $parameter_href,
+            parameter_name => q{human_genome_reference_file_endings},
+        }
+    );
+
+## File needs to be built before getting contigs
+    return if ($build_status);
+
+    @{ $file_info_href->{contigs} } = get_dict_contigs(
+        {
+            dict_file_path => $dict_file_path,
+        }
+    );
+
+    return;
 }
 
 sub set_human_genome_reference_features {
