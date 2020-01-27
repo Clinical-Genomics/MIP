@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,18 +39,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference} => [qw{ check_human_genome_file_endings }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Reference}      => [qw{ check_human_genome_file_endings }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::File_info qw{ set_human_genome_reference_features };
 
 diag(   q{Test check_human_genome_file_endings from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,11 +63,9 @@ my $log = test_log( { no_screen => 1, } );
 
 my %parameter;
 
-my %active_parameter = (
-    human_genome_reference =>
-      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } ),
-    reference_dir => catfile( $Bin, qw{ data references } ),
-);
+my %active_parameter = ( human_genome_reference =>
+      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } ), );
+
 ## File info hash
 my %file_info = (
 
@@ -86,30 +84,30 @@ set_human_genome_reference_features(
 
 check_human_genome_file_endings(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        log                   => $log,
-        parameter_href        => \%parameter,
-        parameter_name        => q{human_genome_reference},
+        human_genome_reference_file_endings_ref =>
+          $file_info{human_genome_reference_file_endings},
+        human_genome_reference_path => $active_parameter{human_genome_reference},
+        parameter_href              => \%parameter,
+        parameter_name              => q{human_genome_reference_file_endings},
     }
 );
 
-is( $parameter{human_genome_reference}{build_file},
+is( $parameter{human_genome_reference_file_endings}{build_file},
     0, q{Set build file switch for human genome reference to 0} );
 
 $active_parameter{human_genome_reference} = q{not an existing reference};
 
 check_human_genome_file_endings(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        log                   => $log,
-        parameter_href        => \%parameter,
-        parameter_name        => q{human_genome_reference},
+        human_genome_reference_file_endings_ref =>
+          $file_info{human_genome_reference_file_endings},
+        human_genome_reference_path => $active_parameter{human_genome_reference},
+        parameter_href              => \%parameter,
+        parameter_name              => q{human_genome_reference_file_endings},
     }
 );
 
-is( $parameter{human_genome_reference}{build_file},
-    1, q{Set build file switch for human genome reference to 1} );
+is( $parameter{human_genome_reference_file_endings}{build_file},
+    1, q{Set build file switch for human genome reference file endings to 1} );
 
 done_testing();
