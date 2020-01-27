@@ -36,7 +36,6 @@ use MIP::Check::Modules qw{ check_perl_modules };
 
 use MIP::Check::Parameter qw{
   check_load_env_packages
-  check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
   check_sample_ids
@@ -67,6 +66,7 @@ use MIP::Pedigree qw{ create_fam_file
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
@@ -360,7 +360,6 @@ sub mip_analyse {
         ## Test if key from query hash exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \%{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
@@ -384,7 +383,6 @@ sub mip_analyse {
             ## Test if element from query array exists truth hash
             check_recipe_exists_in_hash(
                 {
-                    log            => $log,
                     parameter_name => $parameter_name,
                     query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
                     truth_href     => \%parameter,
@@ -401,7 +399,6 @@ sub mip_analyse {
         ## Test if element from query array exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \@{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,

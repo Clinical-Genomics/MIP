@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_recipe_exists_in_hash }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Recipes::Check} => [qw{ check_recipe_exists_in_hash }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
+use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 
-diag(   q{Test check_recipe_exists_in_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_recipe_exists_in_hash from Check.pm v}
+      . $MIP::Recipes::Check::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -78,7 +74,6 @@ my %active_parameter = (
 trap {
     check_recipe_exists_in_hash(
         {
-            log            => $log,
             parameter_name => q{recipe_time},
             query_ref      => \%{ $active_parameter{recipe_time} },
             truth_href     => \%parameter,
@@ -99,7 +94,6 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 ## When all exists in truth hash
 my $return = check_recipe_exists_in_hash(
     {
-        log            => $log,
         parameter_name => q{recipe_time},
         query_ref      => \%{ $active_parameter{recipe_time} },
         truth_href     => \%parameter,
@@ -111,7 +105,6 @@ is( $return, undef, q{All recipe keys exists in truth hash} );
 trap {
     check_recipe_exists_in_hash(
         {
-            log            => $log,
             parameter_name => q{associated_recipe},
             query_ref      => \@{ $active_parameter{associated_recipe} },
             truth_href     => \%parameter,
@@ -133,7 +126,6 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 ## When all exists in truth hash
 $return = check_recipe_exists_in_hash(
     {
-        log            => $log,
         parameter_name => q{associated_recipe},
         query_ref      => \@{ $active_parameter{associated_recipe} },
         truth_href     => \%parameter,
@@ -150,7 +142,6 @@ my $recipe_name = q{bwa_memA};
 trap {
     check_recipe_exists_in_hash(
         {
-            log            => $log,
             parameter_name => $recipe_name,
             query_ref      => \$recipe_name,
             truth_href     => \%parameter,
@@ -168,7 +159,6 @@ $recipe_name = q{bwa_mem};
 ## When recipe exists in truth hash
 $return = check_recipe_exists_in_hash(
     {
-        log            => $log,
         parameter_name => $recipe_name,
         query_ref      => \$recipe_name,
         truth_href     => \%parameter,
