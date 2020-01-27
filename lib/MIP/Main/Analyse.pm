@@ -33,8 +33,8 @@ use MIP::Active_parameter qw{
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
+
 use MIP::Check::Parameter qw{
-  check_email_address
   check_load_env_packages
   check_recipe_exists_in_hash
   check_recipe_name
@@ -75,6 +75,7 @@ use MIP::Set::Parameter qw{
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
+use MIP::User qw{ check_email_address };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -335,7 +336,6 @@ sub mip_analyse {
     check_email_address(
         {
             email => $active_parameter{email},
-            log   => $log,
         }
     );
 
