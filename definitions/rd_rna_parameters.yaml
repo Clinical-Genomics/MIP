@@ -3,31 +3,35 @@
 ## HumanGenomeReference
 custom_default_parameters:
   associated_recipe:
-   - mip
+    - mip
   data_type: ARRAY
   default:
-   - analysis_type
-   - gatk_path
-   - infile_dirs
-   - pedigree_fam_file
-   - picardtools_path
-   - reference_dir
-   - reference_info_file
-   - salmon_quant_reference_genome
-   - sample_info_file
-   - star_aln_reference_genome
-   - star_fusion_reference_genome
-   - store_file
-   - temp_directory
+    - analysis_type
+    - gatk_path
+    - infile_dirs
+    - pedigree_fam_file
+    - picardtools_path
+    - reference_dir
+    - reference_info_file
+    - salmon_quant_reference_genome
+    - sample_info_file
+    - star_aln_reference_genome
+    - star_fusion_reference_genome
+    - store_file
+    - temp_directory
   type: mip
 human_genome_reference:
   associated_recipe:
+    - arriba_ar
     - mip
     - gatk_asereadcounter
     - gatk_baserecalibration
     - gatk_haplotypecaller
     - gatk_splitncigarreads
     - gatk_variantfiltration
+    - salmon_quant
+    - star_aln
+    - star_fusion
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -36,11 +40,15 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
+    - arriba_ar
     - gatk_asereadcounter
     - gatk_baserecalibration
     - gatk_haplotypecaller
     - gatk_splitncigarreads
     - gatk_variantfiltration
+    - salmon_quant
+    - star_aln
+    - star_fusion
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -49,6 +57,7 @@ human_genome_reference_file_endings:
   type: path
 transcript_annotation:
   associated_recipe:
+    - arriba_ar
     - blobfish
     - gffcompare_ar
     - salmon_quant
