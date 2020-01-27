@@ -16,22 +16,74 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME };
+use MIP::Constants qw{ $DOT $FORWARD_SLASH $LOG_NAME $SINGLE_QUOTE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_allowed_temp_directory
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_gzipped
       get_absolute_path
     };
+}
+
+sub check_allowed_temp_directory {
+
+## Function : Check that the temp directory value is allowed
+## Returns  :
+## Arguments: $not_allowed_paths_ref => Not allowed paths for temp dir
+##          : $temp_directory        => Temp directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $not_allowed_paths_ref;
+    my $temp_directory;
+
+    my $tmpl = {
+        not_allowed_paths_ref => {
+            default     => [],
+            defined     => 1,
+            store       => \$not_allowed_paths_ref,
+            strict_type => 1,
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %is_not_allowed = (
+        $FORWARD_SLASH . q{scratch}                  => undef,
+        $FORWARD_SLASH . q{scratch} . $FORWARD_SLASH => undef,
+    );
+
+    ## Add more than already defined paths
+    map { $is_not_allowed{$_} = undef; } @{$not_allowed_paths_ref};
+
+    # Return if value is allowed
+    return 1 if ( not exists $is_not_allowed{$temp_directory} );
+
+    $log->fatal( qq{$SINGLE_QUOTE--temp_directory }
+          . $temp_directory
+          . qq{$SINGLE_QUOTE is not allowed because MIP will remove the temp directory after processing.}
+    );
+    exit 1;
 }
 
 sub check_filesystem_objects_existance {
