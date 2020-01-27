@@ -46,17 +46,17 @@ sub check_recipe_exists_in_hash {
 
     my $tmpl = {
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        query_ref => {
+            defined  => 1,
+            required => 1,
+            store    => \$query_ref,
+        },
         truth_href     => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$truth_href,
             strict_type => 1,
-        },
-        query_ref => {
-            defined  => 1,
-            required => 1,
-            store    => \$query_ref,
         },
     };
 
