@@ -10,7 +10,7 @@ use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename fileparse };
 use File::Copy qw{ copy };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -28,11 +28,13 @@ use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
+  get_not_allowed_temp_dirs
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory
+
+use MIP::Check::Parameter qw{
   check_load_env_packages
   check_recipe_exists_in_hash
   check_recipe_name
@@ -40,19 +42,14 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_executable_in_path };
-use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
-use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
-use MIP::File_info qw{ set_human_genome_reference_features };
+use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::Pedigree qw{ create_fam_file
-  detect_founders
-  detect_sample_id_gender
-  detect_trio
-};
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -63,8 +60,14 @@ use MIP::Parameter qw{
   set_default
 };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
-use MIP::Pedigree qw{ parse_pedigree };
+use MIP::Pedigree qw{ create_fam_file
+  detect_founders
+  detect_sample_id_gender
+  detect_trio
+  parse_pedigree
+};
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
@@ -293,11 +296,23 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            active_parameter_href => \%active_parameter,
-            file_info_href        => \%file_info,
-            log                   => $log,
-            parameter_href        => \%parameter,
-            parameter_name        => q{human_genome_reference_file_endings},
+            human_genome_reference_file_endings_ref =>
+              $file_info{human_genome_reference_file_endings},
+            human_genome_reference_path => $active_parameter{human_genome_reference},
+            parameter_href              => \%parameter,
+            parameter_name              => q{human_genome_reference_file_endings},
+        }
+    );
+
+## Set sequence contigs used in analysis from human genome sequence dict file
+    my $dict_file_path = catfile( $active_parameter{reference_dir},
+        $file_info{human_genome_reference_name_prefix} . $DOT . q{dict} );
+
+    set_dict_contigs(
+        {
+            dict_file_path => $dict_file_path,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
         }
     );
 
@@ -326,10 +341,12 @@ sub mip_analyse {
     );
 
 ## Check that the temp directory value is allowed
+    my @is_not_allowed_temp_dirs =
+      get_not_allowed_temp_dirs( { active_parameter_href => \%active_parameter, } );
     check_allowed_temp_directory(
         {
-            log            => $log,
-            temp_directory => $active_parameter{temp_directory},
+            not_allowed_paths_ref => \@is_not_allowed_temp_dirs,
+            temp_directory        => $active_parameter{temp_directory},
         }
     );
 

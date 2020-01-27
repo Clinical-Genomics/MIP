@@ -20,7 +20,7 @@ use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -34,7 +34,6 @@ BEGIN {
     our @EXPORT_OK = qw{
       check_active_installation_parameters
       check_allowed_array_values
-      check_allowed_temp_directory
       check_load_env_packages
       check_infile_contain_sample_id
       check_infiles
@@ -150,53 +149,6 @@ sub check_allowed_array_values {
     return 1;
 }
 
-sub check_allowed_temp_directory {
-
-## Function : Check that the temp directory value is allowed
-## Returns  :
-## Arguments: $log            => Log object
-##          : $temp_directory => Temp directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $temp_directory;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        temp_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_directory,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %is_not_allowed = (
-        $FORWARD_SLASH . q{scratch}                  => undef,
-        $FORWARD_SLASH . q{scratch} . $FORWARD_SLASH => undef,
-    );
-
-    # Test if value is allowed
-    if ( exists $is_not_allowed{$temp_directory} ) {
-
-        $log->fatal( qq{$SINGLE_QUOTE--temp_directory }
-              . $temp_directory
-              . qq{$SINGLE_QUOTE is not allowed because MIP will remove the temp directory after processing.}
-        );
-        exit 1;
-    }
-
-    # All ok
-    return 1;
-}
 
 sub check_load_env_packages {
 
