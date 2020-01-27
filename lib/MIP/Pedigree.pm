@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,7 +37,6 @@ BEGIN {
       check_pedigree_sample_allowed_values
       check_pedigree_vs_user_input_sample_ids
       create_fam_file
-      detect_founders
       detect_sample_id_gender
       get_is_trio
       gatk_pedigree_flag
@@ -515,74 +514,6 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
     return;
-}
-
-sub detect_founders {
-
-## Function  : Detect number of founders (i.e. parents ) based on pedigree file
-## Returns   : "scalar @founders"
-## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
-##           : $sample_info_href      => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @founders;
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Alias
-        my $father_id =
-          $sample_info_href->{sample}{$sample_id}{father};
-        my $mother_id =
-          $sample_info_href->{sample}{$sample_id}{mother};
-
-        my %parent = (
-            father => $father_id,
-            mother => $mother_id,
-        );
-
-      PARENT:
-        foreach my $parent_id ( values %parent ) {
-
-            ## Child for true parent_id
-            next PARENT if ( not defined $parent_id and not $parent_id );
-
-            ## If parent is present in current analysis
-            if (
-                any { $_ eq $parent_id }
-                @{ $active_parameter_href->{sample_ids} }
-              )
-            {
-
-                push @founders, $parent_id;
-            }
-        }
-    }
-    return scalar @founders;
 }
 
 sub detect_sample_id_gender {

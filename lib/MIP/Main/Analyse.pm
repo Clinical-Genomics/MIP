@@ -60,7 +60,6 @@ use MIP::Parameter qw{
 };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ create_fam_file
-  detect_founders
   detect_sample_id_gender
   get_is_trio
   parse_pedigree
@@ -90,7 +89,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.38;
+    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -318,14 +317,6 @@ sub mip_analyse {
 
 ## Detect case constellation based on pedigree file
     $parameter{cache}{trio} = get_is_trio(
-        {
-            active_parameter_href => \%active_parameter,
-            sample_info_href      => \%sample_info,
-        }
-    );
-
-## Detect number of founders (i.e. parents ) based on pedigree file
-    detect_founders(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
