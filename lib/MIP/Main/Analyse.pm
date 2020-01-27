@@ -35,7 +35,6 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_email_address
   check_load_env_packages
-  check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
   check_sample_ids
@@ -66,6 +65,7 @@ use MIP::Parameter qw{
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
@@ -87,7 +87,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -345,7 +345,6 @@ sub mip_analyse {
         ## Test if key from query hash exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \%{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
@@ -369,7 +368,6 @@ sub mip_analyse {
             ## Test if element from query array exists truth hash
             check_recipe_exists_in_hash(
                 {
-                    log            => $log,
                     parameter_name => $parameter_name,
                     query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
                     truth_href     => \%parameter,
@@ -386,7 +384,6 @@ sub mip_analyse {
         ## Test if element from query array exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \@{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -488,15 +488,14 @@ sub parse_start_with_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
     use MIP::Dependency_tree qw{ get_dependency_tree };
+    use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
     use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
 
     return if ( not defined $active_parameter_href->{start_with_recipe} );
 
     check_recipe_exists_in_hash(
         {
-            log            => $log,
             parameter_name => $active_parameter_href->{start_with_recipe},
             query_ref      => \$active_parameter_href->{start_with_recipe},
             truth_href     => $parameter_href,

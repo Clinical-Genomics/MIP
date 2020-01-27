@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,7 +46,6 @@ BEGIN {
       check_nist_sample_id
       check_nist_version
       check_prioritize_variant_callers
-      check_recipe_exists_in_hash
       check_recipe_fastq_compatibility
       check_recipe_mode
       check_recipe_name
@@ -844,85 +843,6 @@ sub check_nist_version {
         exit 1;
     }
     return 1;
-}
-
-sub check_recipe_exists_in_hash {
-
-## Function : Test if parameter "recipe name" from query parameter exists in truth hash
-## Returns  :
-## Arguments: $log            => Log object
-##          : $parameter_name => Parameter name
-##          : $query_ref      => Query (ARRAY|HASH|SCALAR) {REF}
-##          : $truth_href     => Truth hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $parameter_name;
-    my $query_ref;
-    my $truth_href;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-        truth_href     => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$truth_href,
-            strict_type => 1,
-        },
-        query_ref => {
-            defined  => 1,
-            required => 1,
-            store    => \$query_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $error_msg = qq{$SINGLE_QUOTE - Does not exist as recipe parameter in MIP};
-
-    if ( ref $query_ref eq q{HASH} ) {
-
-      RECIPE_NAME:
-        foreach my $recipe_name ( keys %{$query_ref} ) {
-
-            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
-
-            $log->fatal(
-                $parameter_name . qq{ key $SINGLE_QUOTE} . $recipe_name . $error_msg );
-            exit 1;
-        }
-    }
-    if ( ref $query_ref eq q{ARRAY} ) {
-
-      RECIPE_NAME:
-        foreach my $recipe_name ( @{$query_ref} ) {
-
-            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
-
-            $log->fatal( $parameter_name
-                  . qq{ element $SINGLE_QUOTE}
-                  . $recipe_name
-                  . $error_msg );
-            exit 1;
-        }
-    }
-    if ( ref $query_ref eq q{SCALAR} ) {
-
-        return if ( exists $truth_href->{$parameter_name} );
-
-        $log->fatal(
-            $parameter_name . qq{ element $SINGLE_QUOTE} . $parameter_name . $error_msg );
-        exit 1;
-    }
-    return;
 }
 
 sub check_recipe_name {
