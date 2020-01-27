@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ get_trio }],
+        q{MIP::Pedigree}       => [qw{ get_is_trio }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ get_trio };
+use MIP::Pedigree qw{ get_is_trio };
 
-diag(   q{Test get_trio from Pedigree.pm v}
+diag(   q{Test get_is_trio from Pedigree.pm v}
       . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -64,7 +64,7 @@ my $log = test_log( { no_screen => 1, } );
 my %active_parameter = ( sample_ids => [qw{ sample_1 }], );
 my %sample_info;
 
-my $is_trio = get_trio(
+my $is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
@@ -93,7 +93,7 @@ is( $is_trio, undef, q{Single sample - did not detect trio} );
     },
 );
 
-$is_trio = get_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
@@ -121,7 +121,7 @@ is( $is_trio, undef, q{Three children - did not detect trio} );
     },
 );
 
-$is_trio = get_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
@@ -152,7 +152,7 @@ is( $is_trio, undef,
     },
 );
 
-$is_trio = get_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
@@ -183,7 +183,7 @@ is( $is_trio, undef,
     },
 );
 
-$is_trio = get_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,

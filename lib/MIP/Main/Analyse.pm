@@ -50,7 +50,8 @@ use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::Pedigree qw{ create_fam_file
   detect_founders
   detect_sample_id_gender
-  get_trio
+  get_is_trio
+  parse_pedigree
 };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
@@ -64,7 +65,6 @@ use MIP::Parameter qw{
   set_default
 };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
-use MIP::Pedigree qw{ parse_pedigree };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
@@ -302,7 +302,7 @@ sub mip_analyse {
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{cache}{trio} = get_trio(
+    $parameter{cache}{trio} = get_is_trio(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,

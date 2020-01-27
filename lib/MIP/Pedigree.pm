@@ -39,7 +39,7 @@ BEGIN {
       create_fam_file
       detect_founders
       detect_sample_id_gender
-      get_trio
+      get_is_trio
       gatk_pedigree_flag
       has_trio
       is_sample_proband_in_trio
@@ -652,7 +652,7 @@ sub detect_sample_id_gender {
     return $found_male, $found_female, $found_other;
 }
 
-sub get_trio {
+sub get_is_trio {
 
 ## Function  : Detect case constellation based on pedigree file
 ## Returns   : undef | 1
