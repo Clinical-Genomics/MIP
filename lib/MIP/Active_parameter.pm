@@ -26,11 +26,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_files
+      get_not_allowed_temp_dirs
       get_user_supplied_pedigree_parameter
       set_default_analysis_type
       set_default_human_genome
@@ -202,6 +203,38 @@ sub check_parameter_files {
         return;
     }
     return;
+}
+
+sub get_not_allowed_temp_dirs {
+
+## Function : Get paths that should not be set by mistake to temp_dir
+## Returns  : @not_allowed_temp_dirs
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @is_not_allowed_temp_dirs = (
+        $active_parameter_href->{cluster_constant_path},
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{outscript_dir},
+        $active_parameter_href->{reference_dir},
+    );
+    return @is_not_allowed_temp_dirs;
 }
 
 sub get_user_supplied_pedigree_parameter {

@@ -28,11 +28,12 @@ use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
+  get_not_allowed_temp_dirs
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory
+use MIP::Check::Parameter qw{
   check_email_address
   check_load_env_packages
   check_recipe_exists_in_hash
@@ -48,6 +49,7 @@ use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -339,10 +341,12 @@ sub mip_analyse {
     );
 
 ## Check that the temp directory value is allowed
+    my @is_not_allowed_temp_dirs =
+      get_not_allowed_temp_dirs( { active_parameter_href => \%active_parameter, } );
     check_allowed_temp_directory(
         {
-            log            => $log,
-            temp_directory => $active_parameter{temp_directory},
+            not_allowed_paths_ref => \@is_not_allowed_temp_dirs,
+            temp_directory        => $active_parameter{temp_directory},
         }
     );
 
