@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,7 +39,7 @@ BEGIN {
       create_fam_file
       detect_founders
       detect_sample_id_gender
-      detect_trio
+      get_is_trio
       gatk_pedigree_flag
       has_trio
       is_sample_proband_in_trio
@@ -652,19 +652,17 @@ sub detect_sample_id_gender {
     return $found_male, $found_female, $found_other;
 }
 
-sub detect_trio {
+sub get_is_trio {
 
 ## Function  : Detect case constellation based on pedigree file
 ## Returns   : undef | 1
 ## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
-##           : $log                   => Log
 ##           : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $sample_info_href;
 
     my $tmpl = {
@@ -674,11 +672,6 @@ sub detect_trio {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         sample_info_href => {
             default     => {},
@@ -691,6 +684,9 @@ sub detect_trio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
 
         $log->info( q{Found single sample: } . $active_parameter_href->{sample_ids}[0] );
@@ -698,20 +694,17 @@ sub detect_trio {
     }
     elsif ( scalar @{ $active_parameter_href->{sample_ids} } == $TRIO_MEMBERS_COUNT ) {
 
-        my $is_trio;
-
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            ## Alias
+            ## Unpack
             my $father_id =
               $sample_info_href->{sample}{$sample_id}{father};
             my $mother_id =
               $sample_info_href->{sample}{$sample_id}{mother};
-            $is_trio = _parse_trio_members(
+            my $is_trio = _parse_trio_members(
                 {
                     father_id      => $father_id,
-                    log            => $log,
                     mother_id      => $mother_id,
                     sample_id      => $sample_id,
                     sample_ids_ref => $active_parameter_href->{sample_ids},
@@ -1781,7 +1774,6 @@ sub _parse_trio_members {
 ## Function  : Parse trio constellation
 ## Returns   : %trio
 ## Arguments : $father_id      => Potential father
-##           : $log            => Log
 ##           : $mother_id      => Potential mother
 ##           : $sample_id      => Sample under investigation
 ##           : $sample_ids_ref => Sample_ids in current analysis {REF}
@@ -1790,7 +1782,6 @@ sub _parse_trio_members {
 
     ## Flatten argument(s)
     my $father_id;
-    my $log;
     my $mother_id;
     my $sample_id;
     my $sample_ids_ref;
@@ -1799,11 +1790,6 @@ sub _parse_trio_members {
         father_id => {
             required => 1,
             store    => \$father_id,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         mother_id => {
             required => 1,
@@ -1823,6 +1809,9 @@ sub _parse_trio_members {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %trio;
 

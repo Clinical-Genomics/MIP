@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ detect_trio }],
+        q{MIP::Pedigree}       => [qw{ get_is_trio }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ detect_trio };
+use MIP::Pedigree qw{ get_is_trio };
 
-diag(   q{Test detect_trio from Pedigree.pm v}
+diag(   q{Test get_is_trio from Pedigree.pm v}
       . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -64,10 +64,9 @@ my $log = test_log( { no_screen => 1, } );
 my %active_parameter = ( sample_ids => [qw{ sample_1 }], );
 my %sample_info;
 
-my $is_trio = detect_trio(
+my $is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
@@ -94,10 +93,9 @@ is( $is_trio, undef, q{Single sample - did not detect trio} );
     },
 );
 
-$is_trio = detect_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
@@ -123,10 +121,9 @@ is( $is_trio, undef, q{Three children - did not detect trio} );
     },
 );
 
-$is_trio = detect_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
@@ -155,10 +152,9 @@ is( $is_trio, undef,
     },
 );
 
-$is_trio = detect_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
@@ -187,10 +183,9 @@ is( $is_trio, undef,
     },
 );
 
-$is_trio = detect_trio(
+$is_trio = get_is_trio(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );

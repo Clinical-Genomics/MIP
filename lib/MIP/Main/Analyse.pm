@@ -33,10 +33,9 @@ use MIP::Active_parameter qw{
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
+
 use MIP::Check::Parameter qw{
-  check_email_address
   check_load_env_packages
-  check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
   check_sample_ids
@@ -63,10 +62,11 @@ use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ create_fam_file
   detect_founders
   detect_sample_id_gender
-  detect_trio
+  get_is_trio
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
@@ -75,6 +75,7 @@ use MIP::Set::Parameter qw{
   set_recipe_resource };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
+use MIP::User qw{ check_email_address };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -89,7 +90,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -316,10 +317,9 @@ sub mip_analyse {
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{cache}{trio} = detect_trio(
+    $parameter{cache}{trio} = get_is_trio(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             sample_info_href      => \%sample_info,
         }
     );
@@ -336,7 +336,6 @@ sub mip_analyse {
     check_email_address(
         {
             email => $active_parameter{email},
-            log   => $log,
         }
     );
 
@@ -361,7 +360,6 @@ sub mip_analyse {
         ## Test if key from query hash exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \%{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
@@ -385,7 +383,6 @@ sub mip_analyse {
             ## Test if element from query array exists truth hash
             check_recipe_exists_in_hash(
                 {
-                    log            => $log,
                     parameter_name => $parameter_name,
                     query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
                     truth_href     => \%parameter,
@@ -402,7 +399,6 @@ sub mip_analyse {
         ## Test if element from query array exists truth hash
         check_recipe_exists_in_hash(
             {
-                log            => $log,
                 parameter_name => $parameter_name,
                 query_ref      => \@{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
