@@ -69,9 +69,7 @@ reference_feature:
     grch38:
       assembly38:
         file: Homo_sapiens_assembly38.fasta
-        file_index: Homo_sapiens_assembly38.fasta.fai
         outfile: grch38_homo_sapiens_-assembly-.fasta
-        outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_indels:
     grch37:
