@@ -620,9 +620,11 @@ sub mip_analyse {
     );
 
     ## Writes a YAML hash to file
+    my %store_files = ( files => $sample_info{files}, );
     write_yaml(
         {
-            yaml_href      => \%{ $sample_info{files} },
+            yaml_href => \%store_files,
+
             yaml_file_path => $active_parameter{store_file},
         }
     );
