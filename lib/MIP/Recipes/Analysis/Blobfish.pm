@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_blobfish };
@@ -240,9 +240,15 @@ sub analysis_blobfish {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
+        my $de_outfile_name =
+            $sample_phenotypes[0]
+          . $UNDERSCORE . q{vs}
+          . $UNDERSCORE
+          . $sample_phenotypes[1]
+          . q{.results.tsv};
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outdir_path,
+                path             => catfile( $outdir_path, $de_outfile_name ),
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
