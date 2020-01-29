@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Parameter} => [qw{ set_recipe_resource }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ set_recipe_resource }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Parameter qw{ set_recipe_resource };
+use MIP::Active_parameter qw{ set_recipe_resource };
 
-diag(   q{Test set_recipe_resource from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_recipe_resource from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -103,7 +103,7 @@ my %expected_recipe_parameter = (
 is_deeply(
     \%{ $active_parameter{recipe_core_number} },
     \%{ $expected_recipe_parameter{recipe_core_number} },
-    q{Set recipes core numner parameters}
+    q{Set recipes core number parameters}
 );
 
 ## Then the resource recipe_time for the recipes should have been set
