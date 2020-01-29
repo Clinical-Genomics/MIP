@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -351,6 +351,7 @@ sub analysis_sv_combinevariantcallsets {
             {
                 filehandle          => $filehandle,
                 infile_path         => $outfile_path,
+                index_type          => q{csi},
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
             }
@@ -385,9 +386,11 @@ sub analysis_sv_combinevariantcallsets {
 
             set_file_path_to_store(
                 {
-                    file_tag         => q{sv_combined},
-                    file_type        => q{vcf},
+                    format           => q{bcf},
+                    id               => $case_id,
                     path             => $sv_bcf_file_path,
+                    path_index       => $sv_bcf_file_path . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );

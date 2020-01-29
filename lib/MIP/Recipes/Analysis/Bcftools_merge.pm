@@ -285,9 +285,10 @@ sub analysis_bcftools_merge {
 
         set_file_path_to_store(
             {
-                file_tag         => $case_id . $UNDERSCORE . q{ase},
-                file_type        => q{vcf},
+                format           => q{vcf},
+                id               => $case_id,
                 path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

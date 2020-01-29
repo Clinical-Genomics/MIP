@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,21 +59,38 @@ diag(   q{Test set_file_path_to_store from Sample_info.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given file info
-my $file_tag  = q{sv-vcf};
-my $file_type = q{vcf};
-my $path      = catfile(qw{ a test path });
+my $format      = q{vcf};
+my $path        = catfile(qw{ a test path.vcf.gz });
+my $path_index  = catfile(qw{ a test path.vcf.gz.tbi });
+my $recipe_name = q{gatk_variantrecalibration};
+my $sample_id   = q{sample_1};
 my %sample_info;
+my $tag = q{a_tag};
 
 set_file_path_to_store(
     {
-        file_tag         => $file_tag,
-        file_type        => $file_type,
+        format           => $format,
+        id               => $sample_id,
         path             => $path,
+        path_index       => $path_index,
+        recipe_name      => $recipe_name,
         sample_info_href => \%sample_info,
+        tag              => $tag,
     }
 );
 
-my %expected_sample_info = ( store => { $file_type => { $file_tag => $path, }, } );
+my %expected_sample_info = (
+    files => [
+        {
+            format     => $format,
+            id         => $sample_id,
+            path       => $path,
+            path_index => $path_index,
+            step       => $recipe_name,
+            tag        => $tag,
+        },
+    ],
+);
 
 ## Then file path should be set
 is_deeply( \%sample_info, \%expected_sample_info, q{Set file path in hash} );

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -327,9 +327,11 @@ sub analysis_samtools_subsample_mt {
 
         set_file_path_to_store(
             {
-                file_tag         => $sample_id . $UNDERSCORE . q{subsampled_mt},
-                file_type        => q{bam},
+                format           => q{bam},
+                id               => $sample_id,
                 path             => $outfile_path,
+                path_index       => $outfile_path . $DOT . q{bai},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

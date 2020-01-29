@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -576,7 +576,8 @@ sub set_default_store_file {
 
     ## Set store file
     $active_parameter_href->{$parameter_name} =
-      catfile( $active_parameter_href->{outdata_dir}, q{store_info.yaml} );
+      catfile( $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id} . $UNDERSCORE . q{deliverables.yaml} );
     return;
 }
 

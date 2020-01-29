@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,6 +62,7 @@ diag(   q{Test set_analysis_files_to_store from Store.pm v}
 
 ## Given a path
 my %active_parameter = (
+    case_id              => q{a_case_id},
     config_file          => catfile(qw{ a config_file }),
     config_file_analysis => catfile(qw{ a config_analysis_file }),
     log_file             => catfile(qw{ a log_file }),
@@ -82,19 +83,27 @@ set_analysis_files_to_store(
 );
 
 my %expected_sample_info = (
-    store => {
-        meta => {
-            config          => $active_parameter{config_file},
-            config_analysis => $active_parameter{config_file_analysis},
-            log             => $active_parameter{log_file},
-            pedigree        => $active_parameter{pedigree_file},
-            pedigree_fam    => $active_parameter{pedigree_fam_file},
-            references_info => $active_parameter{reference_info_file},
-            sample_info     => $active_parameter{sample_info_file},
+    files => [
+        {
+            format     => q{meta},
+            id         => $active_parameter{case_id},
+            path       => $active_parameter{config_file},
+            path_index => undef,
+            step       => q{mip_analyse},
+            tag        => q{config},
         },
-    },
+    ],
 );
 
-is_deeply( \%sample_info, \%expected_sample_info, q{Set analysis files} );
+while ( my ( $file_href_index, $file_href ) = each @{ $sample_info{files} } ) {
 
+    if ( $expected_sample_info{files}[0]{tag} eq $file_href->{tag} ) {
+
+        is_deeply(
+            $file_href,
+            \%{ $expected_sample_info{files}[0] },
+            q{Set analysis files}
+        );
+    }
+}
 done_testing();

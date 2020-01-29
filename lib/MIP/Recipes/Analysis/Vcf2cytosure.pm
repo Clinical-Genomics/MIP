@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -390,9 +390,10 @@ sub analysis_vcf2cytosure {
 
             set_file_path_to_store(
                 {
-                    file_tag         => $sample_id . $UNDERSCORE . q{sv_cytosure},
-                    file_type        => q{meta},
+                    format           => q{meta},
+                    id               => $sample_id,
                     path             => $outfile_path{$sample_id},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );

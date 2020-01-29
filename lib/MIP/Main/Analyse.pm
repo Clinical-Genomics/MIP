@@ -67,7 +67,7 @@ use MIP::Pedigree qw{ create_fam_file
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Reference qw{ check_human_genome_file_endings };
-use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
+use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
@@ -622,7 +622,7 @@ sub mip_analyse {
     ## Writes a YAML hash to file
     write_yaml(
         {
-            yaml_href      => \%{ $sample_info{store} },
+            yaml_href      => \%{ $sample_info{files} },
             yaml_file_path => $active_parameter{store_file},
         }
     );

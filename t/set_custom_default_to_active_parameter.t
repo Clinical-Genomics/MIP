@@ -155,7 +155,7 @@ my %expected_default = (
           q{Set human_genome_reference default for rtg vcfeval reference genome},
     },
     store_file => {
-        default    => catfile( $active_parameter{outdata_dir}, q{store_info.yaml} ),
+        default    => catfile( $active_parameter{outdata_dir}, $active_parameter{case_id} . $UNDERSCORE . q{deliverables.yaml} ),
         test_label => q{Set store_file default },
     },
     sv_vcfparser_select_file => {

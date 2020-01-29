@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -338,10 +338,12 @@ sub analysis_reformat_sv {
 
         if ( $recipe_mode == 1 ) {
 
+            my $outfile_path = $outfile_paths[$infile_index];
+
             set_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_paths[$infile_index],
+                    path                  => $outfile_path,
                     recipe_name           => $recipe_name,
                     sample_info_href      => $sample_info_href,
                     vcf_file_key          => q{sv}
@@ -354,7 +356,7 @@ sub analysis_reformat_sv {
             set_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    path                  => $outfile_path . $DOT . q{gz},
                     recipe_name           => $recipe_name,
                     sample_info_href      => $sample_info_href,
                     vcf_file_key          => q{sv}
@@ -370,17 +372,20 @@ sub analysis_reformat_sv {
             set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $metafile_tag,
-                    path             => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    path             => $outfile_path . $DOT . q{gz},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
             set_file_path_to_store(
                 {
-                    file_tag         => q{sv} . $UNDERSCORE . $metafile_tag,
-                    file_type        => q{vcf},
-                    path             => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    format           => q{vcf},
+                    id               => $case_id,
+                    path             => $outfile_path . $DOT . q{gz},
+                    path_index       => $outfile_path . $DOT . q{gz} . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
+                    tag              => $metafile_tag,
                 }
             );
         }
