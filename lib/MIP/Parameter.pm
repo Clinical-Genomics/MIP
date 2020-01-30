@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,6 +37,7 @@ BEGIN {
       get_parameter_attribute
       parse_reference_path
       parse_parameter_files
+      parse_parameter_recipe_names
       print_recipe
       set_cache
       set_cache_sample_id_parameter
@@ -386,6 +387,55 @@ sub parse_parameter_files {
                 parameter_name          => $parameter_name,
             }
         );
+    }
+    return 1;
+}
+
+sub parse_parameter_recipe_names {
+
+## Function : Parse parameter recipe names
+## Returns  : 1
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
+
+    ## Parameters with key(s) that have elements as MIP recipe names
+    my @parameter_element_to_check = qw{ associated_recipe };
+
+  PARAMETER:
+    foreach my $parameter ( keys %{$parameter_href} ) {
+
+      KEY:
+        foreach my $parameter_name (@parameter_element_to_check) {
+
+            next KEY if ( not exists $parameter_href->{$parameter}{$parameter_name} );
+
+            ## Test if element from query array exists truth hash
+            check_recipe_exists_in_hash(
+                {
+                    parameter_name => $parameter_name,
+                    query_ref  => \@{ $parameter_href->{$parameter}{$parameter_name} },
+                    truth_href => $parameter_href,
+                }
+            );
+        }
     }
     return 1;
 }
