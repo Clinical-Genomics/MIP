@@ -362,7 +362,7 @@ sub mip_analyse {
 ## Set recipe resource allocation for specific recipe(s)
     set_recipe_resource( { active_parameter_href => \%active_parameter, } );
 
-    parse_parameter_recipe_names( { parameter_href => $parameter_href, } );
+    parse_parameter_recipe_names( { parameter_href => \%parameter, } );
 
 ## Parameters that have elements as MIP recipe names
     my @parameter_elements_to_check =
