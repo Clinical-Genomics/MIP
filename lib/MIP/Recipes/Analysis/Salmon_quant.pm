@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -145,7 +145,8 @@ sub analysis_salmon_quant {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_sequence_run_type set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_sequence_run_type set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
@@ -298,6 +299,16 @@ sub analysis_salmon_quant {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

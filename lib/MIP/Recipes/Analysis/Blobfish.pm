@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_blobfish };
@@ -138,7 +138,7 @@ sub analysis_blobfish {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Blobfish qw{ blobfish_allvsall };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -240,9 +240,25 @@ sub analysis_blobfish {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
+        my $de_outfile_name =
+            $sample_phenotypes[0]
+          . $UNDERSCORE . q{vs}
+          . $UNDERSCORE
+          . $sample_phenotypes[1]
+          . q{.results.tsv};
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outdir_path,
+                path             => catfile( $outdir_path, $de_outfile_name ),
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $case_id,
+                path             => catfile( $outdir_path, $de_outfile_name ),
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

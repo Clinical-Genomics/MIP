@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -710,8 +710,6 @@ sub set_file_path_to_store {
 
     ## Set file path according to file type and tag
     push @{ $sample_info_href->{files} }, {%file_info};
-
-    #  $sample_info_href->{store}{$format}{$file_tag} = $path;
 
     return;
 }
