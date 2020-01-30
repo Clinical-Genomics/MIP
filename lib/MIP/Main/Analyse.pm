@@ -54,6 +54,7 @@ use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
   parse_parameter_files
+  parse_parameter_recipe_names
   parse_reference_path
   set_cache
   set_default
@@ -89,7 +90,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.39;
+    our $VERSION = 1.40;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -361,26 +362,7 @@ sub mip_analyse {
 ## Set recipe resource allocation for specific recipe(s)
     set_recipe_resource( { active_parameter_href => \%active_parameter, } );
 
-## Parameters with key(s) that have elements as MIP recipe names
-    my @parameter_element_to_check = qw{ associated_recipe };
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_element_to_check) {
-
-            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
-
-            ## Test if element from query array exists truth hash
-            check_recipe_exists_in_hash(
-                {
-                    parameter_name => $parameter_name,
-                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
-                    truth_href     => \%parameter,
-                }
-            );
-        }
-    }
+    parse_parameter_recipe_names( { parameter_href => $parameter_href, } );
 
 ## Parameters that have elements as MIP recipe names
     my @parameter_elements_to_check =
