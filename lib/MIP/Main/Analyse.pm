@@ -30,6 +30,7 @@ use Path::Iterator::Rule;
 use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
   set_parameter_reference_dir_path
+  set_recipe_resource
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
@@ -71,7 +72,7 @@ use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
-  set_recipe_resource };
+};
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 use MIP::User qw{ check_email_address };
@@ -89,7 +90,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.39;
+    our $VERSION = 1.40;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };

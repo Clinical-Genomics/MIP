@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -48,6 +48,7 @@ BEGIN {
       set_exome_target_bed
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      set_recipe_resource
       update_reference_parameters
       update_to_absolute_path
     };
@@ -918,6 +919,49 @@ sub set_pedigree_sample_id_parameter {
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
 
+    return;
+}
+
+sub set_recipe_resource {
+
+## Function : Set recipe resource allocation for specific recipe(s)
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %set_hash_key_map = (
+        set_recipe_core_number => q{recipe_core_number},
+        set_recipe_time        => q{recipe_time},
+        set_recipe_memory      => q{recipe_memory},
+    );
+
+  HASH_KEY:
+    while ( my ( $set_hash_key, $target_hash_key ) = each %set_hash_key_map ) {
+
+      RECIPE:
+        while ( my ( $recipe, $core_number ) =
+            each %{ $active_parameter_href->{$set_hash_key} } )
+        {
+
+            $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
+        }
+    }
     return;
 }
 
