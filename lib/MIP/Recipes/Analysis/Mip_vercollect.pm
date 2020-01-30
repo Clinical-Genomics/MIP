@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -235,9 +235,10 @@ sub analysis_mip_vercollect {
 
         set_file_path_to_store(
             {
-                file_tag         => q{binary_versions},
-                file_type        => q{meta},
+                format           => q{meta},
+                id               => $case_id,
                 path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

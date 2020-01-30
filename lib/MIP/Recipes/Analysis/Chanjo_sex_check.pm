@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
@@ -273,9 +273,10 @@ sub analysis_chanjo_sex_check {
         );
         set_file_path_to_store(
             {
-                file_tag         => q{chanjo_sex_check},
-                file_type        => q{meta},
+                format           => q{meta},
+                id               => $sample_id,
                 path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1423,9 +1423,10 @@ sub analysis_vep_rna {
 
         set_file_path_to_store(
             {
-                file_tag         => $case_id . $UNDERSCORE . q{vep},
-                file_type        => q{vcf},
+                format           => q{vcf},
+                id               => $case_id,
                 path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rna };
@@ -167,7 +167,6 @@ sub analysis_markduplicates {
     use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
-      set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -934,9 +933,11 @@ sub analysis_markduplicates_rna {
 
         set_file_path_to_store(
             {
-                file_tag         => $sample_id . $UNDERSCORE . q{markduplicates},
-                file_type        => q{bam},
+                format           => q{cram},
+                id               => $sample_id,
                 path             => $store_outfile_path,
+                path_index       => $store_outfile_path . $DOT . q{crai},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

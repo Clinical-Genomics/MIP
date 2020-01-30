@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -280,9 +280,10 @@ sub analysis_star_fusion {
 
         set_file_path_to_store(
             {
-                file_tag         => $sample_id . $UNDERSCORE . q{star_fusion},
-                file_type        => q{meta},
+                format           => q{meta},
+                id               => $sample_id,
                 path             => $file_paths[0],
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

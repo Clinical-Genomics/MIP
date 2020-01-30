@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_endvariantannotationblock };
@@ -361,15 +361,19 @@ sub analysis_endvariantannotationblock {
 
             if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
+                my $path = $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
                 $sample_info_href->{vcf_binary_file}{$metafile_tag}{path} =
-                  $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
+                  $path;
 
                 set_file_path_to_store(
                     {
-                        file_tag  => $metafile_tag,
-                        file_type => q{vcf},
-                        path => $outfile_paths[$analysis_suffix_index] . $DOT . q{gz},
+                        format           => q{vcf},
+                        id               => $case_id,
+                        path             => $path,
+                        path_index       => $path . $DOT . q{tbi},
+                        recipe_name      => $recipe_name,
                         sample_info_href => $sample_info_href,
+                        tag              => $metafile_tag,
                     }
                 );
             }
