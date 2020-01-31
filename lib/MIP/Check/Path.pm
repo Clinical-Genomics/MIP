@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -77,7 +77,7 @@ sub check_executable_in_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Unix qw{check_binary_in_path};
+    use MIP::Check::Unix qw{ check_binary_in_path };
 
   PARAMETER:
     foreach my $parameter_name ( keys %{$active_parameter_href} ) {
