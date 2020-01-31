@@ -89,7 +89,7 @@ my %parameter = (
 );
 my %parameter_to_check = (
     keys     => [qw{ recipe_time  }],
-    elements => [qw(associated_recipe decompose_normalize_references)],
+    elements => [qw{ associated_recipe decompose_normalize_references }],
 );
 
 my $is_ok = parse_recipes(
