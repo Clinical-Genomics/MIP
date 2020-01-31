@@ -25,6 +25,7 @@ use autodie qw{ open close :all };
 use IPC::System::Simple;
 use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
+use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
@@ -94,6 +95,15 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
+
+## Constants
+Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
+    keys => [
+        qw{ recipe_core_number recipe_memory recipe_time
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    ],
+    elements => [qw{ associated_recipe decompose_normalize_references }],
+);
 
 sub mip_analyse {
 
@@ -340,20 +350,12 @@ sub mip_analyse {
         }
     );
 
-    my %parameter_to_check = (
-        keys => [
-            qw{ recipe_core_number recipe_memory recipe_time
-              set_recipe_core_number set_recipe_memory set_recipe_time }
-        ],
-        elements => [qw{ associated_recipe decompose_normalize_references }],
-    );
-
 ## Parameters that have keys or elements as MIP recipe names
     parse_recipes(
         {
             active_parameter_href   => \%active_parameter,
             parameter_href          => \%parameter,
-            parameter_to_check_href => \%parameter_to_check,
+            parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
     );
 
