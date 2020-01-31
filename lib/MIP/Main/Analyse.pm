@@ -342,10 +342,10 @@ sub mip_analyse {
 
     my %parameter_to_check = (
         keys => [
-            qw{ recipe_time recipe_core_number recipe_memory
+            qw{ recipe_core_number recipe_memory recipe_time
               set_recipe_core_number set_recipe_memory set_recipe_time }
         ],
-        elements => [qw(associated_recipe decompose_normalize_references)],
+        elements => [qw{ associated_recipe decompose_normalize_references }],
     );
 
 ## Parameters that have keys or elements as MIP recipe names
