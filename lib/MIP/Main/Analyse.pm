@@ -25,12 +25,12 @@ use autodie qw{ open close :all };
 use IPC::System::Simple;
 use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
+use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
   set_parameter_reference_dir_path
-  set_recipe_resource
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Modules qw{ check_perl_modules };
@@ -55,7 +55,6 @@ use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
   parse_parameter_files
-  parse_parameter_recipe_names
   parse_reference_path
   set_cache
   set_default
@@ -67,7 +66,7 @@ use MIP::Pedigree qw{ create_fam_file
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
-use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
+use MIP::Recipes::Parse qw{ parse_recipes };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Contigs qw{ set_contigs };
@@ -91,11 +90,20 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.40;
+    our $VERSION = 1.41;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
+
+## Constants
+Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
+    keys => [
+        qw{ recipe_core_number recipe_memory recipe_time
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    ],
+    elements => [qw{ associated_recipe decompose_normalize_references }],
+);
 
 sub mip_analyse {
 
@@ -342,43 +350,14 @@ sub mip_analyse {
         }
     );
 
-## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (
-        qw{ recipe_time recipe_core_number recipe_memory
-          set_recipe_core_number set_recipe_memory set_recipe_time }
+## Parameters that have keys or elements as MIP recipe names
+    parse_recipes(
+        {
+            active_parameter_href   => \%active_parameter,
+            parameter_href          => \%parameter,
+            parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
+        }
     );
-  PARAMETER_NAME:
-    foreach my $parameter_name (@parameter_keys_to_check) {
-
-        ## Test if key from query hash exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                parameter_name => $parameter_name,
-                query_ref      => \%{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-## Set recipe resource allocation for specific recipe(s)
-    set_recipe_resource( { active_parameter_href => \%active_parameter, } );
-
-    parse_parameter_recipe_names( { parameter_href => \%parameter, } );
-
-## Parameters that have elements as MIP recipe names
-    my @parameter_elements_to_check =
-      (qw(associated_recipe decompose_normalize_references));
-    foreach my $parameter_name (@parameter_elements_to_check) {
-
-        ## Test if element from query array exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                parameter_name => $parameter_name,
-                query_ref      => \@{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
 
 ## Check that the recipe core number do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
