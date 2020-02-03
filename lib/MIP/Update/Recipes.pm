@@ -12,9 +12,6 @@ use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-## CPANM
-use Readonly;
-
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE };
 
@@ -176,11 +173,11 @@ sub update_recipe_mode_for_analysis_type {
 
 sub update_recipe_mode_for_pedigree {
 
-## Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
+## Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wts
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $recipes_ref             => Recipes to update {REF}
-##          : $sample_info_href        => Sample info hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $recipes_ref           => Recipes to update {REF}
+##          : $sample_info_href      => Sample info hash {REF}
 
     my ($arg_href) = @_;
 
@@ -215,10 +212,7 @@ sub update_recipe_mode_for_pedigree {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Array::Utils qw{ unique };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
-
-    Readonly my $TWO => 2;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -240,10 +234,9 @@ sub update_recipe_mode_for_pedigree {
     }
 
     ## Return if the phenotypes are affected and unaffected
-    my @phenotypes = sort keys %phenotype_count;
-    if (    scalar @phenotypes == $TWO
-        and $phenotypes[0] eq q{affected}
-        and $phenotypes[1] eq q{unaffected} )
+    if (    not $phenotype_count{unknown}
+        and $phenotype_count{affected}
+        and $phenotype_count{unaffected} )
     {
 
         return;
