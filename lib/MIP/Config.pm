@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -124,11 +124,15 @@ sub parse_config {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    my %config_parameter =
-      load_yaml( { yaml_file => $active_parameter_href->{config_file}, } );
+    my %config_parameter = read_from_file(
+        {
+            format => q{yaml},
+            path   => $active_parameter_href->{config_file},
+        }
+    );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
     my @remove_keys =

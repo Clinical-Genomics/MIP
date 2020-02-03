@@ -27,8 +27,8 @@ use MIP::Cluster qw{ check_max_core_number };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
-use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{
   parse_parameter_files
   set_cache
@@ -45,7 +45,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -117,8 +117,12 @@ sub mip_download {
     {
 
         ## Loads a YAML file into an arbitrary hash and returns it.
-        my %config_parameter =
-          load_yaml( { yaml_file => $active_parameter{config_file}, } );
+        my %config_parameter = read_from_file(
+            {
+                format => q{yaml},
+                path   => $active_parameter{config_file},
+            }
+        );
 
         ## Set config parameters into %active_parameter unless $parameter
         ## has been supplied on the command line

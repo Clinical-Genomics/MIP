@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -64,7 +61,7 @@ diag(   q{Test load_toml from Toml.pm v}
 ## Given a toml file to load
 my %hash_to_return = load_toml(
     {
-        toml_file_path => catfile(
+        path => catfile(
             $Bin,
             qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
         ),

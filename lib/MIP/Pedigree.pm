@@ -28,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -892,7 +892,7 @@ sub parse_pedigree {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     return if ( not defined $pedigree_file_path );
 
@@ -901,7 +901,12 @@ sub parse_pedigree {
 
     ## Load parameters for this run or if not provided on cmd - load
     ## previous run from sample_info_file
-    my %pedigree = load_yaml( { yaml_file => $pedigree_file_path, } );
+    my %pedigree = read_from_file(
+        {
+            format => q{yaml},
+            path   => $pedigree_file_path,
+        }
+    );
 
     $log->info( q{Loaded: } . $pedigree_file_path );
 

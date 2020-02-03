@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_yaml write_yaml };
@@ -33,18 +33,18 @@ sub load_yaml {
 
 ## Function : Loads a YAML file into an arbitrary hash and returns it.
 ## Returns  : %yaml
-## Arguments: $yaml_file => The yaml file to load
+## Arguments: $path => Yaml file path to load
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
-    my $yaml_file;
+    my $path;
 
     my $tmpl = {
-        yaml_file => {
+        path => {
             defined     => 1,
             required    => 1,
-            store       => \$yaml_file,
+            store       => \$path,
             strict_type => 1,
         },
     };
@@ -53,12 +53,12 @@ sub load_yaml {
 
     my %yaml;
 
-    open my $YAML, q{<}, $yaml_file
-      or croak q{cannot open} . $SPACE . $yaml_file . $COLON . $OS_ERROR,
+    open my $YAML, q{<}, $path
+      or croak q{cannot open} . $SPACE . $path . $COLON . $OS_ERROR,
       $NEWLINE;
 
     ## Load hashreference as hash
-    %yaml = %{ LoadFile($yaml_file) };
+    %yaml = %{ LoadFile($path) };
 
     close $YAML;
 

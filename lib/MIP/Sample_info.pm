@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -604,7 +604,7 @@ sub reload_previous_pedigree_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -612,9 +612,10 @@ sub reload_previous_pedigree_info {
     return if ( not -f $sample_info_file_path );
 
     # Load parameters from sample_info_file from previous run
-    my %previous_sample_info = load_yaml(
+    my %previous_sample_info = read_from_file(
         {
-            yaml_file => $sample_info_file_path,
+            format => q{yaml},
+            path   => $sample_info_file_path,
         }
     );
 

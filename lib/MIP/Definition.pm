@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -75,22 +75,29 @@ sub check_definition_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Parameter qw{ check_parameter_hash };
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
-    ## Loads a YAML file into an arbitrary hash and returns it.
-    my %parameter = load_yaml( { yaml_file => $define_parameters_path, } );
+    ## Loads MIP definition parameters
+    my %parameter = read_from_file(
+        {
+            format => q{yaml},
+            path   => $define_parameters_path,
+        }
+    );
 
     ## Load required keys and values for parameters
-    my %required = load_yaml(
+    my %required = read_from_file(
         {
-            yaml_file => $required_definition_file_path,
+            format => q{yaml},
+            path   => $required_definition_file_path,
         }
     );
 
     ## Load non required keys and values for parameters
-    my %not_required = load_yaml(
+    my %not_required = read_from_file(
         {
-            yaml_file => $not_required_definition_file_path,
+            format => q{yaml},
+            path   => $not_required_definition_file_path,
         }
     );
 
@@ -132,11 +139,16 @@ sub get_dependency_tree_from_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     my $definition_map_file_path =
       catfile( $Bin, qw{ definitions }, $level . $UNDERSCORE . q{initiation_map.yaml} );
-    my %dependency_tree = load_yaml( { yaml_file => $definition_map_file_path, } );
+    my %dependency_tree = read_from_file(
+        {
+            format => q{yaml},
+            path   => $definition_map_file_path,
+        }
+    );
 
     return %dependency_tree;
 }

@@ -22,11 +22,11 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,6 +43,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Config}         => [qw{ check_cmd_config_vs_definition_file }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
@@ -52,7 +53,7 @@ BEGIN {
 use MIP::Config qw{ check_cmd_config_vs_definition_file };
 
 diag(   q{Test check_cmd_config_vs_definition_file from Config.pm v}
-      . $MIP::Check::Parameter::VERSION
+      . $MIP::Config::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,9 +62,10 @@ diag(   q{Test check_cmd_config_vs_definition_file from Config.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given no unique and hence illegal keys
-my %parameter = load_yaml(
+my %parameter = read_from_file(
     {
-        yaml_file => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        format => q{yaml},
+        path   => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
     }
 );
 

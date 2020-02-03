@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -361,15 +361,20 @@ sub check_vcfanno_toml {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Toml qw{ load_toml };
     use MIP::File::Path qw{ check_filesystem_objects_and_index_existance };
+    use MIP::Io::Read qw{ read_from_file };
 
-    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
-
+    my %vcfanno_config = read_from_file(
+        {
+            path   => $vcfanno_file_toml,
+            format => q{toml},
+        }
+    );
     my @vcfanno_features = qw{ file fields ops };
     my $err_msg = q{ is not defined or empty vcfanno toml features. Please check file: }
       . $vcfanno_file_toml;
   ANNOTATION:
+
     foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
       FEATURE:

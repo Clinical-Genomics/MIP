@@ -25,7 +25,6 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
-use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
 use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
@@ -37,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -76,9 +75,12 @@ sub check_mip_installation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %program_test_cmds = load_yaml(
+    use MIP::Io::Read qw{ read_from_file };
+
+    my %program_test_cmds = read_from_file(
         {
-            yaml_file => $active_parameter_href->{program_test_file},
+            format => q{yaml},
+            path   => $active_parameter_href->{program_test_file},
         }
     );
 

@@ -21,7 +21,8 @@ use autodie qw{ open close :all };
 use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Qccollect
   qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
 use MIP::Qc_data qw{ set_qc_data_recipe_info };
@@ -32,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{2.1.4};
+    our $VERSION = q{2.1.5};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect };
@@ -106,12 +107,22 @@ sub mip_qccollect {
 
     ## Loads a YAML file into an arbitrary hash and returns it
     $log->info( q{Loading: } . $sample_info_file );
-    my %sample_info = load_yaml( { yaml_file => $sample_info_file, } );
+    my %sample_info = read_from_file(
+        {
+            format => q{yaml},
+            path   => $sample_info_file,
+        }
+    );
     $log->info( q{Loaded: } . $sample_info_file );
 
     ## Loads a reg exp file into an arbitrary hash
     $log->info( q{Loading: } . $regexp_file );
-    my %regexp = load_yaml( { yaml_file => $regexp_file, } );
+    my %regexp = read_from_file(
+        {
+            format => q{yaml},
+            path   => $regexp_file,
+        }
+    );
     $log->info( q{Loaded: } . $regexp_file );
 
     ## Set qccollect version to qc_data hash

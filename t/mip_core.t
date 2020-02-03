@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 our $USAGE = build_usage( {} );
 
@@ -217,12 +217,17 @@ sub test_modules {
 
     ##MIPs lib/
     use lib catdir( dirname($Bin), q{lib} );
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
     use YAML;
     my $yaml_file = catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
     ok( -f $yaml_file, q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
 
-    my $yaml = load_yaml( { yaml_file => $yaml_file, } );
+    my $yaml = read_from_file(
+        {
+            format => q{yaml},
+            path   => $yaml_file,
+        }
+    );
 
     # Check that we got something
     ok( defined $yaml, q{YAML: Load File} );
