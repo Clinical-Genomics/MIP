@@ -27,8 +27,8 @@ use MIP::Cluster qw{ check_max_core_number };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
-use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Io::Read qw{ read_from_file };
+use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   parse_parameter_files
   set_cache
