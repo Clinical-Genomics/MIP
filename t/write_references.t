@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Format::Reference} => [qw{ write_references }],
-        q{MIP::File::Format::Yaml}      => [qw{ load_yaml }],
+        q{MIP::Io::Read}                => [qw{ read_from_file }],
         q{MIP::Test::Fixtures}          => [qw{ test_log test_standard_cli }],
     );
 
@@ -50,7 +50,7 @@ BEGIN {
 }
 
 use MIP::File::Format::Reference qw{ write_references };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
 
 diag(   q{Test write_references from Reference.pm v}
       . $MIP::File::Format::Reference::VERSION
@@ -101,7 +101,12 @@ my %expected_reference = (
     },
     scalar_parameter => q{a_ref},
 );
-my %reference = load_yaml( { yaml_file => $outfile_path, } );
+my %reference = read_from_file(
+    {
+        format => q{yaml},
+        path   => $outfile_path,
+    }
+);
 
 ## Then only parameters with is_reference should be printed
 is_deeply( \%reference, \%expected_reference, q{Wrote reference hash correctly} );

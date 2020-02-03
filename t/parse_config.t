@@ -21,11 +21,10 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,6 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Config}         => [qw{ parse_config }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
@@ -49,6 +49,7 @@ BEGIN {
 }
 
 use MIP::Config qw{ parse_config };
+use MIP::Io::Read qw{ read_from_file };
 
 diag(   q{Test parse_config from Config.pm v}
       . $MIP::Config::VERSION
@@ -70,7 +71,15 @@ my %parameter;
 DEFINITION_FILE:
 foreach my $definition_file_path (@definition_file_paths) {
 
-    %parameter = ( %parameter, load_yaml( { yaml_file => $definition_file_path, } ) );
+    %parameter = (
+        %parameter,
+        read_from_file(
+            {
+                format => q{yaml},
+                path   => $definition_file_path,
+            }
+        ),
+    );
 }
 my %active_parameter =
   ( config_file => catfile( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } ), );

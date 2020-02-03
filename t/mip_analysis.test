@@ -27,7 +27,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SEMICOLON $SPACE $TAB };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -55,7 +55,7 @@ BEGIN {
 my ( $config_file, $infile );
 my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.05;
+our $VERSION = 2.06;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -105,12 +105,22 @@ if ( not defined $config_file ) {
 test_modules();
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-%active_parameter = load_yaml( { yaml_file => $config_file, } );
+%active_parameter = read_from_file(
+    {
+        format => q{yaml},
+        path   => $config_file,
+    }
+);
 
 if ( exists $active_parameter{pedigree_file} ) {
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %pedigree = load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
+    %pedigree = read_from_file(
+        {
+            format => q{yaml},
+            path   => $active_parameter{pedigree_file},
+        }
+    );
 
     ### Sample level info
 
@@ -1306,9 +1316,14 @@ sub _test_frequency_filter_in_vcf_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Array::Utils qw{ intersect };
-    use MIP::File::Format::Toml qw{ load_toml };
+    use MIP::Io::Read qw{ read_from_file };
 
-    my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $toml_file_path,
+        }
+    );
 
     ## Frequency filter has been used for recipe
     return if ( not $recipe_mode );

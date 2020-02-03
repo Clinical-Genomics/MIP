@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -520,9 +520,14 @@ sub _parse_vcfanno_toml_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Toml qw{ load_toml };
+    use MIP::Io::Read qw{ read_from_file };
 
-    my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $toml_file_path,
+        }
+    );
 
     ## Add config parameter to avoid vt check of toml config path
     $seen_href->{$toml_file_path} = undef;

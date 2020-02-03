@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parameter}          => [qw{ check_parameter_hash }],
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Parameter}      => [qw{ check_parameter_hash }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{ check_parameter_hash };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 diag(   q{Test check_parameter_hash from Parameter.pm v}
       . $MIP::Parameter::VERSION
@@ -64,21 +64,26 @@ diag(   q{Test check_parameter_hash from Parameter.pm v}
 my $definitions_file = catfile( $Bin, qw{ data test_data define_parameters.yaml } );
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
+my %parameter = read_from_file(
+    {
+        format => q{yaml},
+        path   => $definitions_file,
+    }
+);
 
 ## Load required keys and values for parameters
-my %required = load_yaml(
+my %required = read_from_file(
     {
-        yaml_file => catfile( dirname($Bin), qw{ definitions required_parameters.yaml } ),
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ definitions required_parameters.yaml } ),
     }
 );
 
 ## Load non required keys and values for parameters
-my %not_required = load_yaml(
+my %not_required = read_from_file(
     {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions not_required_parameters.yaml } ),
-
+        format => q{yaml},
+        path => catfile( dirname($Bin), qw{ definitions not_required_parameters.yaml } ),
     }
 );
 

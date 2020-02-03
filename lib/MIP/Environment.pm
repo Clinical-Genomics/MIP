@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ is_binary_in_path };
@@ -99,14 +99,8 @@ sub _check_binary_broadcast_fail {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Broadcast binary not found
-    if ( defined $log ) {
+    $log->fatal( q{Could not detect } . $binary . q{ in PATH} );
 
-        $log->fatal( q{Could not detect } . $binary . q{ in PATH} );
-    }
-    else {
-
-        say {*STDERR} q{Could not detect } . $binary . q{ in PATH};
-    }
     return;
 }
 
@@ -136,14 +130,7 @@ sub _check_binary_broadcast_pass {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Broadcast if found
-    if ( defined $log ) {
-
-        $log->info( q{Program check: } . $binary . q{ in PATH} );
-    }
-    else {
-
-        say {*STDERR} q{Program check: } . $binary . q{ in PATH};
-    }
+    $log->info( q{Program check: } . $binary . q{ in PATH} );
     return 1;
 
 }
