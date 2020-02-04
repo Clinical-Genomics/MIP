@@ -76,7 +76,6 @@ singularity:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-      wigToBigWig:
     uri: library://jemten/mip_containers/rseqc:3.0.1
   sambamba:
     executable:
@@ -110,3 +109,8 @@ singularity:
     executable:
       vep:
     uri: docker://ensemblorg/ensembl-vep:release_97.4
+  ucsc:
+    executable:
+      wigToBigWig:
+      bedToBigBed:
+    uri: docker://clinicalgenomics/ucsc:357
