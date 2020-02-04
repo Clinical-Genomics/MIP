@@ -240,11 +240,12 @@ sub analysis_blobfish {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
+        my @conditions = uniq @sample_phenotypes;
         my $de_outfile_name =
-            $sample_phenotypes[0]
+            $conditions[0]
           . $UNDERSCORE . q{vs}
           . $UNDERSCORE
-          . $sample_phenotypes[1]
+          . $conditions[1]
           . q{.results.tsv};
         set_recipe_outfile_in_sample_info(
             {

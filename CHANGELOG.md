@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [8.1.0]
 - STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
 - Dropped option to run sambamba markduplicates for RNA
 - Added SMNCopyNumberCaller to MIP for SMN calling with WGS data

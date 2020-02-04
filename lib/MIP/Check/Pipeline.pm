@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1040,6 +1040,7 @@ sub check_rd_rna {
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
     use MIP::Sample_info qw{ set_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -1114,6 +1115,15 @@ sub check_rd_rna {
             active_parameter_href => $active_parameter_href,
             outfile_path          => $active_parameter_href->{reference_info_file},
             parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update recipes depending on pedigree
+    update_recipe_mode_for_pedigree(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipes_ref           => [qw{ blobfish }],
+            sample_info_href      => $sample_info_href,
         }
     );
 
