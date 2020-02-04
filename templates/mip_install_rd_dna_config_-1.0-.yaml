@@ -127,14 +127,19 @@ singularity:
     executable:
       TIDDIT.py:
     uri: shub://J35P312/TIDDIT:2.8.0
-  varg:
+  ucsc:
     executable:
-      varg:
-    uri: docker://clinicalgenomics/varg:1.2.0
+      wigToBigWig:
+      bedToBigBed:
+    uri: docker://clinicalgenomics/ucsc:357
   upd:
     executable:
       upd:
     uri: docker://clinicalgenomics/upd:0.1
+  varg:
+    executable:
+      varg:
+    uri: docker://clinicalgenomics/varg:1.2.0
   variant_integrity:
     executable:
       variant_integrity:
@@ -155,11 +160,6 @@ singularity:
     executable:
       vt:
     uri: docker://clinicalgenomics/vt:2015.11.10
-  ucsc:
-    executable:
-      wigToBigWig:
-      bedToBigBed:
-    uri: docker://clinicalgenomics/ucsc:357
 vep_plugins:
   - dbNSFP
   - ExACpLI

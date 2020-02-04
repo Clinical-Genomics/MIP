@@ -105,12 +105,12 @@ singularity:
     executable:
       trim_galore:
     uri: library://jemten/mip_containers/trim-galore:0.6.4
-  vep:
-    executable:
-      vep:
-    uri: docker://ensemblorg/ensembl-vep:release_97.4
   ucsc:
     executable:
       wigToBigWig:
       bedToBigBed:
     uri: docker://clinicalgenomics/ucsc:357
+  vep:
+    executable:
+      vep:
+    uri: docker://ensemblorg/ensembl-vep:release_97.4
