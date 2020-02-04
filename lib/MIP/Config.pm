@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -425,7 +425,7 @@ sub write_mip_config {
 
     use File::Basename qw{ dirname };
     use File::Path qw{ make_path };
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Io::Write qw{ write_to_file };
 
     return if ( not $active_parameter_href->{config_file_analysis} );
 
@@ -435,11 +435,12 @@ sub write_mip_config {
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
     delete @{$active_parameter_href}{ @{$remove_keys_ref} };
 
-    ## Writes a YAML hash to file
-    write_yaml(
+    ## Writes hash to file
+    write_to_file(
         {
-            yaml_href      => $active_parameter_href,
-            yaml_file_path => $active_parameter_href->{config_file_analysis},
+            data_href => $active_parameter_href,
+            format    => q{yaml},
+            path      => $active_parameter_href->{config_file_analysis},
         }
     );
     $log->info( q{Wrote: } . $active_parameter_href->{config_file_analysis} );

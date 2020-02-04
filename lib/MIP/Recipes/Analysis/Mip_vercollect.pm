@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -131,8 +131,8 @@ sub analysis_mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ write_yaml };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Io::Write qw{ write_to_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_vercollect };
@@ -201,10 +201,11 @@ sub analysis_mip_vercollect {
     my $binary_path_file_path = $outfile_path_prefix . $UNDERSCORE . q{binary_paths.yaml};
 
     ## Writes a YAML hash to file
-    write_yaml(
+    write_to_file(
         {
-            yaml_href      => $active_parameter_href->{binary_path},
-            yaml_file_path => $binary_path_file_path,
+            data_href => $active_parameter_href->{binary_path},
+            format    => q{yaml},
+            path      => $binary_path_file_path,
         }
     );
     $log->info( q{Wrote: } . $binary_path_file_path );

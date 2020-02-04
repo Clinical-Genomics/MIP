@@ -22,8 +22,7 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
-use MIP::File::Format::Yaml qw{ write_yaml };
-use MIP::Io::Read qw{ read_from_file };
+use MIP::Io::Read qw{ read_from_file write_to_file };
 
 BEGIN {
 
@@ -106,10 +105,11 @@ sub mip_vercollect {
       ( %binary_version, get_binary_version( { binary_info_href => \%binary_info, } ) );
 
     ## Writes a qc data hash to file
-    write_yaml(
+    write_to_file(
         {
-            yaml_file_path => $outfile,
-            yaml_href      => \%binary_version,
+            data_href => \%binary_version,
+            format    => q{yaml},
+            path      => $outfile,
         }
     );
     $log->info( q{Wrote: } . $outfile );
