@@ -18,17 +18,20 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $LOG_NAME $SPACE };
+use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_human_genome_file_endings get_dict_contigs };
+    our @EXPORT_OK = qw{ check_human_genome_file_endings
+      get_dict_contigs
+      write_contigs_size_file
+    };
 }
 
 sub check_human_genome_file_endings {
@@ -169,11 +172,12 @@ sub get_dict_contigs {
     ## Build regexp to find contig names
     my @perl_commands = perl_nae_oneliners(
         {
-            oneliner_name => q{get_dict_contigs},
+            oneliner_name  => q{get_dict_contigs},
+            stdinfile_path => $dict_file_path,
         }
     );
 
-    my @get_dict_contigs_cmds = join $SPACE, ( @perl_commands, $dict_file_path );
+    my @get_dict_contigs_cmds = join $SPACE, ( @perl_commands, );
 
     # System call
     my (
@@ -188,6 +192,66 @@ sub get_dict_contigs {
 
     $log->fatal(
         q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
+    exit 1;
+}
+
+sub write_contigs_size_file {
+
+## Function : Write contig size file from human genome sequence fai (.fai) file
+## Returns  :
+## Arguments: $fai_file_path => Fai file path
+##          : $outfile_path  => Chromosome size file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fai_file_path;
+    my $outfile_path;
+
+    my $tmpl = {
+        fai_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fai_file_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use IPC::Cmd qw{ run };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Build regexp to find contig names
+    my @perl_commands = perl_nae_oneliners(
+        {
+            oneliner_name   => q{write_contigs_size_file},
+            stdinfile_path  => $fai_file_path,
+            stdoutfile_path => $outfile_path,
+        }
+    );
+
+    my @write_contigs_size_cmd = join $SPACE, ( @perl_commands, );
+
+    # System call
+    my (
+        $success_ref,    $error_message_ref, $full_buf_ref,
+        $stdout_buf_ref, $stderr_buf_ref
+    ) = run( command => \@write_contigs_size_cmd, verbose => 0 );
+
+    return if ( not @{$stderr_buf_ref} );
+
+    $log->fatal(q{Could not write contigs size file});
+    $log->fatal( q{Error: } . join $NEWLINE, @{$stderr_buf_ref} );
     exit 1;
 }
 

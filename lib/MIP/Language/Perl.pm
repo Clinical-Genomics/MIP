@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -169,6 +169,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
+        write_contigs_size_file   => \&_write_contigs_size_file,
         get_dict_contigs          => \&_get_dict_contigs,
         get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
@@ -289,4 +290,19 @@ sub _synonyms_grch38_to_grch37 {
 
     return $modify_chr_prefix;
 }
+
+sub _write_contigs_size_file {
+
+## Function : Return predifined one liners to write contig names and length from fai file
+## Returns  : $write_contigs_size
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # contig name ($F[0]), contig length ($F[1])
+    my $contigs_string = q?'say STDOUT $F[0] . "\t" . $F[1] '?;
+
+    return $contigs_string;
+}
+
 1;
