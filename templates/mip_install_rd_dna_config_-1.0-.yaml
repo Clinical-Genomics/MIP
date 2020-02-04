@@ -155,10 +155,11 @@ singularity:
     executable:
       vt:
     uri: docker://clinicalgenomics/vt:2015.11.10
-  wigtobigwig:
+  ucsc:
     executable:
-      wigtobigwig:
-    uri: docker://clinicalgenomics/wigtobigwig:357
+      wigToBigWig:
+      bedToBigBed:
+    uri: docker://clinicalgenomics/ucsc:357
 vep_plugins:
   - dbNSFP
   - ExACpLI
