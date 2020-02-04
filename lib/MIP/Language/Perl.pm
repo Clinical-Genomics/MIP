@@ -299,10 +299,10 @@ sub _write_contigs_size_file {
 
     my ($arg_href) = @_;
 
-    # contig name ($F[0]), contig length ($F[1])
-    my $contigs_string = q?'say STDOUT $F[0] . "\t" . $F[1] '?;
+    ## Contig name ($F[0]), contig length ($F[1])
+    my $write_contigs_size = q?'say STDOUT $F[0] . "\t" . $F[1] '?;
 
-    return $contigs_string;
+    return $write_contigs_size;
 }
 
 1;
