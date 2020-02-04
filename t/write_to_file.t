@@ -21,11 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $DOT $DOUBLE_QUOTE $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ write_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Io::Write}      => [qw{ write_to_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::Io::Write qw{ write_to_file };
 
-diag(   q{Test write_yaml from Yaml.pm v}
-      . $MIP::File::Format::Yaml::VERSION
+diag(   q{Test write_to_file from Write.pm v}
+      . $MIP::Io::Write::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,43 +61,19 @@ diag(   q{Test write_yaml from Yaml.pm v}
 
 my $test_dir = File::Temp->newdir();
 
-## Given a hash
+## Given a hash and a file path
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my $yaml_file_path   = catfile( $test_dir, q{ap_test.yaml} );
+my $yaml_file_path   = catfile( $test_dir, q{write_to_file_test.yaml} );
 
-write_yaml(
+write_to_file(
     {
         data_href => \%active_parameter,
+        format    => q{yaml},
         path      => $yaml_file_path,
     }
 );
 
 ## Then yaml file should exist
 ok( -e $yaml_file_path, q{Created yaml file} );
-
-open my $YAML, q{<}, $yaml_file_path
-  or croak q{Cannot open}
-  . $SPACE
-  . $SINGLE_QUOTE
-  . $DOUBLE_QUOTE
-  . $yaml_file_path
-  . $DOUBLE_QUOTE
-  . $SINGLE_QUOTE
-  . $COLON
-  . $OS_ERROR
-  . $NEWLINE;
-
-## Given a number in hash
-my $quoted_numeric_string;
-
-LINE:
-while ( my $line = <$YAML> ) {
-
-    ($quoted_numeric_string) = $line =~ /(java_use_large_pages:\s+'1')/xsm;
-    last LINE if ($quoted_numeric_string);
-}
-
-## Then number should be quoted in file
-ok( $quoted_numeric_string, q{Found quoted numeric string} );
 
 done_testing();

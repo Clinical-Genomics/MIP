@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ write_references };
@@ -69,7 +69,7 @@ sub write_references {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Io::Write qw{ write_to_file };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
     ## Retrieve logger object
@@ -102,11 +102,12 @@ sub write_references {
         }
     }
 
-    # Writes a YAML hash to file
-    write_yaml(
+    # Writes hash to file
+    write_to_file(
         {
-            yaml_href      => \%reference,
-            yaml_file_path => $outfile_path,
+            data_href => \%reference,
+            format    => q{yaml},
+            path      => $outfile_path,
         }
     );
     $log->info( q{Wrote reference YAML file to: } . $outfile_path );

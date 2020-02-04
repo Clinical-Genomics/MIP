@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_yaml write_yaml };
@@ -67,29 +67,29 @@ sub load_yaml {
 
 sub write_yaml {
 
-## Function : Writes a YAML hash to file
+## Function : Writes data hash to file
 ## Returns  :
-## Arguments: $yaml_file_path => Yaml file to write to
-##          : $yaml_href      => Hash to dump {REF}
+## Arguments: $data_href => Data hash to dump {REF}
+##          : $path      => Yaml file path to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $yaml_file_path;
-    my $yaml_href;
+    my $data_href;
+    my $path;
 
     my $tmpl = {
-        yaml_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$yaml_file_path,
-            strict_type => 1,
-        },
-        yaml_href => {
+        data_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$yaml_href,
+            store       => \$data_href,
+            strict_type => 1,
+        },
+        path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$path,
             strict_type => 1,
         },
     };
@@ -99,19 +99,19 @@ sub write_yaml {
     # Localize the current value
     local $YAML::QuoteNumericStrings = 1;
 
-    open my $YAML, q{>}, $yaml_file_path
+    open my $YAML, q{>}, $path
       or croak q{Cannot open}
       . $SPACE
       . $SINGLE_QUOTE
       . $DOUBLE_QUOTE
-      . $yaml_file_path
+      . $path
       . $DOUBLE_QUOTE
       . $SINGLE_QUOTE
       . $COLON
       . $OS_ERROR
       . $NEWLINE;
 
-    say {$YAML} Dump($yaml_href);
+    say {$YAML} Dump($data_href);
     close $YAML;
     return;
 }

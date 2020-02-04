@@ -48,9 +48,9 @@ use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPAC
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
+use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
@@ -90,7 +90,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.41;
+    our $VERSION = 1.42;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -556,10 +556,11 @@ sub mip_analyse {
     if ( $active_parameter{sample_info_file} ) {
 
         ## Writes a YAML hash to file
-        write_yaml(
+        write_to_file(
             {
-                yaml_href      => \%sample_info,
-                yaml_file_path => $active_parameter{sample_info_file},
+                data_href => \%sample_info,
+                format    => q{yaml},
+                path      => $active_parameter{sample_info_file},
             }
         );
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
@@ -583,10 +584,11 @@ sub mip_analyse {
 
     ## Writes a YAML hash to file
     my %store_files = ( files => $sample_info{files}, );
-    write_yaml(
+    write_to_file(
         {
-            yaml_href      => \%store_files,
-            yaml_file_path => $active_parameter{store_file},
+            data_href => \%store_files,
+            format    => q{yaml},
+            path      => $active_parameter{store_file},
         }
     );
     $log->info( q{Wrote: } . $active_parameter{store_file} );

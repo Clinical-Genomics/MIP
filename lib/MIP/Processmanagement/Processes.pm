@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1887,7 +1887,7 @@ sub write_job_ids_to_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Io::Write qw{ write_to_file };
 
     ## Write job_ids file
     return if ( not keys %{$job_id_href} );
@@ -1903,10 +1903,11 @@ sub write_job_ids_to_file {
 
     ## Writes a YAML hash to file
     my %out_job_id = ( $active_parameter_href->{case_id} => [@job_ids], );
-    write_yaml(
+    write_to_file(
         {
-            yaml_file_path => $job_ids_file,
-            yaml_href      => \%out_job_id,
+            data_href => \%out_job_id,
+            format    => q{yaml},
+            path      => $job_ids_file,
         }
     );
     $log->info( q{Wrote: } . $job_ids_file );

@@ -21,11 +21,11 @@ use autodie qw{ open close :all };
 use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Qccollect
   qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
 use MIP::Qc_data qw{ set_qc_data_recipe_info };
+use MIP::Io::Write qw{ write_to_file };
 
 BEGIN {
 
@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{2.1.5};
+    our $VERSION = q{2.1.7};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect };
@@ -194,10 +194,11 @@ sub mip_qccollect {
     }
 
     ## Writes a qc data hash to file
-    write_yaml(
+    write_to_file(
         {
-            yaml_file_path => $outfile,
-            yaml_href      => \%qc_data,
+            data_href => \%qc_data,
+            format    => q{yaml},
+            path      => $outfile,
         }
     );
     $log->info( q{Wrote: } . $outfile );
