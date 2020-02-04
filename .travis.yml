@@ -6,69 +6,67 @@ perl:
 sudo: required
 
 before_install:
-## Install SSL
+  ## Install SSL
   - sudo apt-get update
 
-## Install conda
-##  - wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+  ## Install conda
   - wget https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
   - conda activate base
   - conda config --set always_yes yes --set changeps1 no
-#  - conda update -q conda
   - conda info -a
 
-## Download cpan libraries
-## For some reason DB_File installation fails, it is not needed for the test
+  ## Download cpan libraries
+  ## For some reason DB_File installation fails, it is not needed for the test
   - sed -i '/DB_File/d' ./definitions/cpanfile
   - cd definitions; cpanm --quiet --notest --installdeps .
   - cd -
-## Set up for cpanm dependencies test
+  ## Set up for cpanm dependencies test
   - cpanm --notest Devel::Cover::Report::Coveralls
 
 install:
-## Test installation script and gather coverage information
+  ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
-## Generate rare disease installation script
+  ## Generate rare disease installation script
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --envn mip_travis --skip bwa bwakit bedtools cadd chanjo chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod  htslib  manta  multiqc  peddy  picard  plink  rhocall  rtg-tools  sambamba  smncopynumbercaller stranger  svdb  tiddit  upd  variant_integrity  varg  vcfanno  vep  vcf2cytosure  vt
-## Install MIP rare disease
+  ## Install MIP rare disease
   - bash mip.sh
-## Generate rna installation script
+  ## Generate rna installation script
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba fastqc gatk4 htslib multiqc picard rseqc sambamba star star-fusion stringtie trim-galore vep
-## Install MIP rna
+  ## Install MIP rna
   - bash mip.sh
-## Special case: Install bcftools since it is required by some tests
+  ## Special case: Install bcftools since it is required by some tests
   - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
   - conda install -n mip_rd-rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
-## Test MIP rd_dna
+  ## Test MIP rd_dna
   - conda activate mip_travis
-## Set-up test coverage for test directory "t"
+  ## Set-up test coverage for test directory "t"
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 9 t
-### Download
-## Set-up test coverage for mip_download_rd_dna.test
+  ### Download
+  ## Set-up test coverage for mip_download_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
-## Set-up test coverage for mip_download_rd_dna.test
+  ## Set-up test coverage for mip_download_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_rna.test
-### Analyse
-## Set-up test coverage for mip_analyse_rd_dna.test
+  ### Analyse
+  ## Set-up test coverage for mip_analyse_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna.test
-## Set-up test coverage for mip_analyse_vcf_rerun.test
+  ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
-## Set-up test coverage for mip qccollect
+  ## Set-up test coverage for mip qccollect
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
-## Set-up test coverage for mip vcfparser
+  ## Set-up test coverage for mip vcfparser
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
-## Set-up test coverage for mip_analyse_vcf_rerun.test
+  ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
-## Set-up test coverage for mip_analyse_rna.test
+  ## Set-up test coverage for mip_analyse_rna.test
   - conda activate mip_rd-rna
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
-## Get some coverage statistics
+  ## Get some coverage statistics
   - cover
 
 after_success:
-## Generate report for coveralls
+  ## Generate report for coveralls
   - cover -report coveralls

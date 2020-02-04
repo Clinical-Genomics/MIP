@@ -49,8 +49,8 @@ mip_dir="$(dirname "$(readlink -f "$0")")"
 
 for infile in ${infiles[@]}
 do
-    ## Only operate on perl files
-    if ! [[ $infile =~ .*\.(t|pm|pl|test)$ ]] ; then
+    ## Only operate on lintable files
+    if ! [[ $infile =~ .*\.(t|pm|pl|test|yaml|yml.yamllint)$ ]] ; then
         echo "[SKIPPING]: $infile"
         continue
     ## Skip removed files
@@ -61,7 +61,14 @@ do
     echo ""
     echo "[INFILE]: $infile"
 
-	## Check if file has been modified 
+    ## Run Yamllint
+    if [[ $infile =~ .*\.(yaml|yml) ]] ; then
+
+        yamllint \-c ${mip_dir}/.yamllint $infile
+        continue
+    fi
+	
+    ## Check if file has been modified 
 	if [ "$(git status --short $infile | perl -nae 'print $F[0]')" == "M" ] ; then 
 		## Check that the "our $VERSION" line has been updated 
 		version_update=$(git diff $infile | perl -nae 'if ($_ =~ /\bour\s\$VERSION\b/xms) {print q{OK}; exit 0}')

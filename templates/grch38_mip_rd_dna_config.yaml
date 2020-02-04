@@ -58,7 +58,7 @@ sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 sv_genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
 sv_svdb_query_db_files:
-#  FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
   grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1
   grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
   grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
@@ -77,15 +77,15 @@ sv_genmod_models_case_type: cmms
 sv_svdb_merge_prioritize: tiddit,cnvnator,manta
 sv_vep_plugin:
   ExACpLI:
-   exists_check: file
-   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    exists_check: file
+    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 vep_custom_annotation:
   genomic_superdups_frac_match:
-   annotation_type: overlap
-   force_report_coordinates: 0
-   key: genomic_superdups_frac_match
-   file_type: bed
-   path: cluster_constant_path!/references/grch38_genomic_superdups_reformated_-20190826-.bed.gz
+    annotation_type: overlap
+    force_report_coordinates: 0
+    key: genomic_superdups_frac_match
+    file_type: bed
+    path: cluster_constant_path!/references/grch38_genomic_superdups_reformated_-20190826-.bed.gz
   clinvar:
     annotation_type: exact
     force_report_coordinates: 0
@@ -97,23 +97,23 @@ vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ense
 vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugins
 vep_plugin:
   dbNSFP:
-   exists_check: file
-   parameters:
-    - GERP++_RS
-    - GERP++_NR
-    - phyloP100way_vertebrate
-    - phastCons100way_vertebrate
-    - REVEL_rankscore
-   path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.0b2a-.txt.gz
+    exists_check: file
+    parameters:
+      - GERP++_RS
+      - GERP++_NR
+      - phyloP100way_vertebrate
+      - phastCons100way_vertebrate
+      - REVEL_rankscore
+    path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.0b2a-.txt.gz
   ExACpLI:
-   exists_check: file
-   path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    exists_check: file
+    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
   LoFtool:
     exists_check: file
     path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
-   exists_check: directory
-   parameters:
-    - SWA
-    - NCSS
-   path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
+    exists_check: directory
+    parameters:
+      - SWA
+      - NCSS
+    path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-95/cache/Plugin/fordownload
