@@ -79,7 +79,7 @@ sub check_max_core_number {
         return $core_constraint;
     }
 
-        ## Core number requested is lower than the number of available cores
+    ## Core number requested is lower than the number of available cores
         return $core_number_requested;
 }
 
