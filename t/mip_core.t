@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 our $USAGE = build_usage( {} );
 
@@ -259,7 +259,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -287,7 +287,7 @@ sub mip_scripts {
 ## Returns  :
 ## Arguments:
 
-    my @mip_scripts = qw{ mip };
+    my @mip_scripts = qw{ mip cpanfile };
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
@@ -299,7 +299,6 @@ sub mip_scripts {
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
         definitions     => [
             qw{ analyse_parameters.yaml
-              cpanfile
               download_rd_dna_parameters.yaml
               download_rd_rna_parameters.yaml
               install_rd_dna_parameters.yaml

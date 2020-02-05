@@ -18,10 +18,8 @@ before_install:
   - conda info -a
 
   ## Download cpan libraries
-  ## For some reason DB_File installation fails, it is not needed for the test
-  - sed -i '/DB_File/d' ./definitions/cpanfile
-  - cd definitions; cpanm --quiet --notest --installdeps .
-  - cd -
+  - cpanm --quiet --notest --installdeps .
+  
   ## Set up for cpanm dependencies test
   - cpanm --notest Devel::Cover::Report::Coveralls
 
