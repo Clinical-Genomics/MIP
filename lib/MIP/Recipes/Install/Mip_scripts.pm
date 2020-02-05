@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -111,7 +111,7 @@ sub install_mip_scripts {
     my $pwd = cwd();
 
     ## Define MIP scripts and yaml files
-    my @mip_scripts = qw{ mip };
+    my @mip_scripts = qw{ cpanfile mip };
 
     my %mip_sub_script = (
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],

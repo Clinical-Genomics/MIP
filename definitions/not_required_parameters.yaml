@@ -1,3 +1,4 @@
+---
 build_file:
   key_data_type: SCALAR
   values:
@@ -31,7 +32,6 @@ outfile_suffix:
   key_data_type: SCALAR
 program_executables:
   key_data_type: ARRAY
-  key_data_type: SCALAR
 recipe_type:
   key_data_type: SCALAR
   values:

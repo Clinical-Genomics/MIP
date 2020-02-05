@@ -34,8 +34,6 @@ use MIP::Active_parameter qw{
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Modules qw{ check_perl_modules };
-
 use MIP::Check::Parameter qw{
   check_load_env_packages
   check_recipe_name
@@ -43,7 +41,6 @@ use MIP::Check::Parameter qw{
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_executable_in_path };
-use MIP::Cluster qw{ check_recipe_memory_allocation };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
@@ -91,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.43;
+    our $VERSION = 1.44;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -362,18 +359,6 @@ sub mip_analyse {
 
     ## Check core number requested against environment provisioned
     parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
-
-    ## Check that the recipe memory do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_memory} } ) {
-
-        check_recipe_memory_allocation(
-            {
-                node_ram_memory => $active_parameter{node_ram_memory},
-                recipe_memory_allocation =>
-                  $active_parameter{recipe_memory}{$recipe_name},
-            }
-        );
-    }
 
     ## Check programs in path, and executable
     check_executable_in_path(

@@ -123,9 +123,7 @@ $ cd MIP
 ##### 2.Install required perl modules from cpan
 
 ```Bash
-$ cd definitions
 $ bash mip_install_perl.sh -e [mip_rd-dna] -p [$HOME/miniconda3]
-$ cd -
 ```  
 
 ##### 3.Test conda and mip installation files (optional, but recommended)

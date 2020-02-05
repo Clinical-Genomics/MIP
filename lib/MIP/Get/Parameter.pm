@@ -778,7 +778,7 @@ sub get_recipe_resources {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ check_recipe_memory_allocation };
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
 
     ## Initilize variable
     my @source_environment_cmds = get_package_source_env_cmds(

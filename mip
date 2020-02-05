@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use lib catdir( $Bin, q{lib} );
 use MIP::Cli::Mip;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 BEGIN {
 
@@ -28,7 +28,7 @@ BEGIN {
 
     my @modules =
       parse_cpan_file {
-        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
+        cpanfile_path => catfile( $Bin, q{cpanfile} ),
       };
 
     ## Evaluate that all modules required are installed

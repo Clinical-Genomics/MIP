@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -324,7 +324,8 @@ sub parse_recipe_resources {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Cluster qw{ check_max_core_number };
+    use MIP::Environment::Cluster
+      qw{ check_max_core_number check_recipe_memory_allocation };
 
     ## Check that the recipe core number do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_core_number} } ) {
@@ -336,6 +337,20 @@ sub parse_recipe_resources {
                 max_cores_per_node => $active_parameter_href->{max_cores_per_node},
                 core_number_requested =>
                   $active_parameter_href->{recipe_core_number}{$recipe_name},
+            }
+          );
+    }
+
+    ## Check that the recipe memory do not exceed the maximum per node
+    ## Limit recipe_memory to node max memory if required
+    foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_memory} } ) {
+
+        $active_parameter_href->{recipe_memory}{$recipe_name} =
+          check_recipe_memory_allocation(
+            {
+                node_ram_memory => $active_parameter_href->{node_ram_memory},
+                recipe_memory_allocation =>
+                  $active_parameter_href->{recipe_memory}{$recipe_name},
             }
           );
     }
