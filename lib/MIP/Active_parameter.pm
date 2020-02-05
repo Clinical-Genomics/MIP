@@ -26,13 +26,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_files
       get_not_allowed_temp_dirs
       get_user_supplied_pedigree_parameter
+      parse_recipe_resources
       set_default_analysis_type
       set_default_human_genome
       set_default_infile_dirs
@@ -298,6 +299,48 @@ sub get_user_supplied_pedigree_parameter {
         }
     }
     return %is_user_supplied;
+}
+
+sub parse_recipe_resources {
+
+## Function : Check core number and memory requested against environment provisioned
+## Returns  : 1
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Cluster qw{ check_max_core_number };
+
+    ## Check that the recipe core number do not exceed the maximum per node
+    foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_core_number} } ) {
+
+        ## Limit number of cores requested to the maximum number of cores available per node
+        $active_parameter_href->{recipe_core_number}{$recipe_name} =
+          check_max_core_number(
+            {
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                core_number_requested =>
+                  $active_parameter_href->{recipe_core_number}{$recipe_name},
+            }
+          );
+    }
+
+    return 1;
 }
 
 sub set_default_analysis_type {
