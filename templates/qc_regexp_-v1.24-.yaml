@@ -102,4 +102,3 @@ variantevalall: &1
 variantevalexome: *1
 vcfparser_ar:
   version: "perl -nae 'if($_=~/##Software=<ID=mip,Version=(\\d+.\\d+.\\d+)/) {print $1;last;}' "
-

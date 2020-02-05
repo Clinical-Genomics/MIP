@@ -1,13 +1,14 @@
 #!/usr/bin/env/bash
 set -e
 
-usage="$(basename "$0") [-e <environment_name> -p <conda_path> -x <existing_conda_env>]
+usage="$(basename "$0") [-e <environment_name> -p <conda_path> -x <existing_conda_env> -d <install dev tools>]
 
 where:
     -h  Show this help text
     -e  Conda environment name [string]
     -p  Conda path [string]
-    -x  Install in already existing conda environment [flag]"
+    -x  Install in already existing conda environment [flag]
+    -d  Install developer tools"
 
 unset OPTARG
 unset OPTIND
@@ -15,8 +16,9 @@ unset OPTIND
 CONDA_PATH="$HOME/miniconda3"
 ENV_NAME='mip_rd-dna'
 EXISTING_ENV='false'
+DEV='false'
 
-while getopts ':he:p:x' option; do
+while getopts ':he:p:xd' option; do
   case "$option" in
     h) echo "$usage"
        exit
@@ -26,6 +28,8 @@ while getopts ':he:p:x' option; do
     p) CONDA_PATH=$OPTARG
        ;;
     x) EXISTING_ENV='true'
+       ;;
+    d) DEV='true'
        ;;
    \?) printf "illegal option: -%s\n" "$OPTARG" >&2
        echo "$usage" >&2
@@ -52,6 +56,8 @@ error() {
 ## Enable trap for signal(s) ERR
 trap '$(error "$previous_command" "$?")' ERR
 
+## Source conda
+source "$CONDA_PATH"/etc/profile.d/conda.sh
 
 ## Create or install conda env
 if [ "$EXISTING_ENV" = true ] && [ -d ${CONDA_PATH}/envs/${ENV_NAME} ]
@@ -67,12 +73,18 @@ fi
 
 conda install --name "$ENV_NAME" --yes -c bioconda -c conda-forge perl=5.26 perl-app-cpanminus perl-log-log4perl perl-moosex-app perl-file-copy-recursive perl-timedate perl-set-intervaltree
 
-## Source conda
-source "$CONDA_PATH"/etc/profile.d/conda.sh
-
 conda activate "$ENV_NAME"
 
 cpanm --installdeps .
+
+if [ "$DEV" = true ]; then 
+    
+    ## Install dev modules from cpan
+    cpanm Perl::Tidy@20200110 Perl::Critic@1.138
+
+    ## Install yamllint 
+    conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0
+fi
 
 conda deactivate
 

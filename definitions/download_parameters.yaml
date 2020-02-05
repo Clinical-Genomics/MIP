@@ -1,88 +1,88 @@
 ---
 config_file:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: 0
   type: path
   update_path: absolute_path
 custom_default_parameters:
   associated_recipe:
-   - mip
+    - mip
   data_type: ARRAY
   default:
-   - reference_dir
-   - temp_directory
+    - reference_dir
+    - temp_directory
   type: mip
 dry_run_all:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
 load_env:
   associated_recipe:
-   - mip
+    - mip
   data_type: HASH
   mandatory: no
   type: mip
 print_parameter_default:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: 0
   mandatory: no
   type: mip
 project_id:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   type: mip
 reference:
   associated_recipe:
-   - mip
+    - mip
   data_type: HASH
   type: mip
 reference_dir:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 reference_genome_versions:
   associated_recipe:
-   - mip
+    - mip
   data_type: ARRAY
   default:
-   - grch37
-   - grch38
+    - grch37
+    - grch38
   type: recipe_argument
 sacct_format_fields:
   associated_recipe:
-   - mip
+    - mip
   data_type: ARRAY
   default:
-   - jobid
-   - "jobname%50"
-   - account
-   - partition
-   - alloccpus
-   - TotalCPU
-   - elapsed
-   - start
-   - end
-   - state
-   - exitcode
+    - jobid
+    - "jobname%50"
+    - account
+    - partition
+    - alloccpus
+    - TotalCPU
+    - elapsed
+    - start
+    - end
+    - state
+    - exitcode
   type: recipe_argument
 submission_profile:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: slurm
   type: mip
 temp_directory:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   type: path

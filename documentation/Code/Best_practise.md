@@ -3,10 +3,10 @@
 Following best practices is a good way to create maintainable and readable code and should always be encouraged. However, learning what these best practices are and when they apply in the context of your code can be hard to determine. Luckily, there are several tools to help guide you on your way.
 
 ## Code standards
-All code that are present with MIP has to be processed by both [Perltidy] and [Perlcritic].
+All code that are present with MIP has to be processed by both [Perltidy], [Perlcritic] (Perl code) and [yamllint] (yaml code).
 
 ### mip-check
-MIP supplies a bash script that runs Perlcritic and Perltidy on perl scripts. Perltidy modifies the files in place and the files are then analyzed by Perl critic with a level 1 severity with a few exceptions as specified in the .perlcriticrc_mip file.
+MIP supplies a bash script that runs Perlcritic and Perltidy on perl scripts and yamllint for yaml files. Perltidy modifies the files in place and the files are then analyzed by Perl critic with a level 1 severity with a few exceptions as specified in the .perlcriticrc_mip file.
 
 Which files to operate on are supplied on the command line. If no files are given the script uses `git status` to check for new and modified perl scripts and uses that as input.
 
@@ -55,6 +55,10 @@ perltidy -b -bext='/' file1.pl file2.pl
 
 Create backups of files and modify files in place. The backup files file1.pl.bak and file2.pl.bak will be deleted if there are no errors.
 
+### Yamllint
+[yamllint] is a linter for YAML files. Yamllint does not only check for syntax validity, but for weirdnesses like key repetition and cosmetic problems such as lines length, trailing spaces, indentation, etc.
+
 [Perlcritic]: http://search.cpan.org/~petdance/Perl-Critic/bin/perlcritic
 [web interface]: http://perlcritic.com/
 [Perltidy]: http://perltidy.sourceforge.net/
+[yamllint]: https://github.com/adrienverge/yamllint
