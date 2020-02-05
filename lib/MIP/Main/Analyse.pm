@@ -30,6 +30,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
+  parse_recipe_resources
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
@@ -42,7 +43,7 @@ use MIP::Check::Parameter qw{
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_executable_in_path };
-use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
+use MIP::Cluster qw{ check_recipe_memory_allocation };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
@@ -90,7 +91,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.42;
+    our $VERSION = 1.43;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -359,18 +360,8 @@ sub mip_analyse {
         }
     );
 
-## Check that the recipe core number do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
-            {
-                max_cores_per_node => $active_parameter{max_cores_per_node},
-                core_number_requested =>
-                  $active_parameter{recipe_core_number}{$recipe_name},
-            }
-        );
-    }
+    ## Check core number requested against environment provisioned
+    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
     ## Check that the recipe memory do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter{recipe_memory} } ) {

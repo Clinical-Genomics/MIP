@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Cluster}        => [qw{ check_max_core_number }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Environment::Cluster} => [qw{ check_max_core_number }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Cluster qw{ check_max_core_number };
+use MIP::Environment::Cluster qw{ check_max_core_number };
 
 diag(   q{Test check_max_core_number from Cluster.pm v}
-      . $MIP::Cluster::VERSION
+      . $MIP::Environment::Cluster::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -77,7 +74,7 @@ $core_number = check_max_core_number(
     }
 );
 ## Then return requested cores
-is( $core_number, $OK_REQUEST, q{OK request} );
+is( $core_number, $OK_REQUEST, q{Ok request} );
 
 ## Given a request that exceeds the cores on the nodes
 $core_number = check_max_core_number(
@@ -86,6 +83,7 @@ $core_number = check_max_core_number(
         max_cores_per_node    => $MAX_CORES,
     }
 );
+
 ## Then return max cores on node
 is( $core_number, $MAX_CORES, q{Node constrained request} );
 
@@ -97,6 +95,7 @@ $core_number = check_max_core_number(
         recipe_core_number    => $RECIPE_CORES,
     }
 );
+
 ## Then return max cores allocated by recipe
 is( $core_number, $RECIPE_CORES, q{Recipe constrained request} );
 
