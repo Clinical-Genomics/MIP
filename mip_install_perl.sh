@@ -75,13 +75,12 @@ conda install --name "$ENV_NAME" --yes -c bioconda -c conda-forge perl=5.26 perl
 
 conda activate "$ENV_NAME"
 
-cd definitions && cpanm --installdeps .
-cd -
+cpanm --installdeps .
 
 if [ "$DEV" = true ]; then 
     
     ## Install dev modules from cpan
-    cpanm Perl::Tidy@20200110 Perl::Critic@1.138 Readonly::XS@1.05 YAML::XS@0.81
+    cpanm Perl::Tidy@20200110 Perl::Critic@1.138
 
     ## Install yamllint 
     conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0
