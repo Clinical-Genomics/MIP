@@ -55,7 +55,6 @@ sub ucsc_bed_to_big_bed {
     my $stdinfile_path;
     my $stdoutfile_path;
 
-    ## Default(s)
 
     my $tmpl = {
         contigs_size_file_path => {
