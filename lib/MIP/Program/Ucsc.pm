@@ -151,7 +151,6 @@ sub ucsc_wig_to_big_wig {
     my $stdinfile_path;
     my $stdoutfile_path;
 
-    ## Default(s)
 
     my $tmpl = {
         contigs_size_file_path => {
