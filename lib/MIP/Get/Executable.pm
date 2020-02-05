@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -173,7 +173,7 @@ q?'my ($version) = /FastQC\s+(\S+)/xms; if($version) {print $version;last;}'?,
 q?'my ($version) = /Hunter\s+(v\d+.\d+.\d+)/xms; if($version) {print $version;last;}'?,
         },
         gatk => {
-            version_cmd => q{--version},
+            version_cmd => q{--java-options "-Xmx1G" --version},
             version_regexp =>
 q?'my ($version) = /\(GATK\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
