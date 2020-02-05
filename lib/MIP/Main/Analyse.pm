@@ -34,8 +34,6 @@ use MIP::Active_parameter qw{
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Modules qw{ check_perl_modules };
-
 use MIP::Check::Parameter qw{
   check_load_env_packages
   check_recipe_name

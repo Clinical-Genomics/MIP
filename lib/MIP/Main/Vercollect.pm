@@ -22,7 +22,8 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
-use MIP::Io::Read qw{ read_from_file write_to_file };
+use MIP::Io::Read qw{ read_from_file };
+use MIP::Io::Write qw{ write_to_file };
 
 BEGIN {
 
@@ -30,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{1.0.1};
+    our $VERSION = q{1.0.2};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vercollect };

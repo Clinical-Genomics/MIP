@@ -25,4 +25,4 @@ requires qw{ Test::Trap };                          # MIP
 requires qw{ Text::WagnerFischer 0.04 };            # MIP
 requires qw{ TOML::Parser 0.91 };                   # MIP
 requires qw{ Try::Tiny 0.28 };                      # MIP
-requires qw{ YAML::XS 0.81 };                       # MIP
+requires qw{ YAML 1.24 };                           # MIP
