@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -65,17 +65,12 @@ sub set_conda_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Unix qw{ is_binary_in_path };
-    use MIP::Get::Parameter qw{ get_conda_path };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
+    use MIP::Environment::Path qw{ get_conda_path is_binary_in_path };
 
     ## Check if conda is in path
     is_binary_in_path(
         {
             binary => q{conda},
-            log    => $log,
         }
     );
 

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Environment}    => [qw{ is_binary_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli test_mip_hashes}],
+        q{MIP::Environment::Path} => [qw{ is_binary_in_path }],
+        q{MIP::Test::Fixtures}    => [qw{ test_log test_standard_cli test_mip_hashes}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Environment qw{ is_binary_in_path };
+use MIP::Environment::Path qw{ is_binary_in_path };
 
 diag(   q{Test is_binary_in_path from Environment.pm v}
-      . $MIP::Environment::VERSION
+      . $MIP::Environment::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,12 +62,12 @@ diag(   q{Test is_binary_in_path from Environment.pm v}
 my $log = test_log( {} );
 
 ## Given existing binary
-my $binary       = q{ls};
+my $binary = q{ls};
 
 trap {
     is_binary_in_path(
         {
-            binary                => $binary,
+            binary => $binary,
         }
     )
 };
@@ -81,7 +81,7 @@ my $no_binary = q{Nothing to see here};
 trap {
     is_binary_in_path(
         {
-            binary                => $no_binary,
+            binary => $no_binary,
         }
     )
 };
