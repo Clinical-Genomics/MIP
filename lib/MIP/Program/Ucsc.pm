@@ -1,4 +1,4 @@
-package MIP::Program::MODULE;
+package MIP::Program::Ucsc;
 
 use 5.026;
 use Carp;
@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
@@ -27,12 +28,12 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ space separated subroutines };
+    our @EXPORT_OK = qw{ ucsc_wig_to_big_wig };
 }
 
-sub name_of_subroutine {
+sub ucsc_wig_to_big_wig {
 
-## Function : Perl wrapper for generic commands module
+## Function : Perl wrapper for ucsc wigToBigWig version 357
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -73,7 +74,7 @@ sub name_of_subroutine {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ BASE COMMAND };
+    my @commands = qw{ wigToBigWig };
 
     ############################################
     ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
