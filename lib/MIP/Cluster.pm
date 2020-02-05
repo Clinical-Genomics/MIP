@@ -70,6 +70,8 @@ sub get_core_number {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Cluster qw{ check_max_core_number };
+
     my $core_number;
 
     if ( defined $recipe_core_number
