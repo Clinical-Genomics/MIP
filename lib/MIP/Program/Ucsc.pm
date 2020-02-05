@@ -28,14 +28,17 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ ucsc_wig_to_big_wig };
+    our @EXPORT_OK = qw{ ucsc_bed_to_big_bed ucsc_wig_to_big_wig };
 }
 
-sub ucsc_wig_to_big_wig {
+sub ucsc_bed_to_big_bed {
 
-## Function : Perl wrapper for ucsc wigToBigWig version 357
+## Function : Perl wrapper for ucsc bedToBigBed version 357
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $contigs_size_file_path => Contig name and size file path
+##          : $filehandle             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Path to output file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -44,7 +47,10 @@ sub ucsc_wig_to_big_wig {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $contigs_size_file_path;
     my $filehandle;
+    my $infile_path;
+    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -53,8 +59,122 @@ sub ucsc_wig_to_big_wig {
     ## Default(s)
 
     my $tmpl = {
+        contigs_size_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_size_file_path,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ bedToBigBed };
+
+    push @commands, $infile_path;
+
+    push @commands, $contigs_size_file_path;
+
+    push @commands, $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub ucsc_wig_to_big_wig {
+
+## Function : Perl wrapper for ucsc wigToBigWig version 357
+## Returns  : @commands
+## Arguments: $contigs_size_file_path => Contig name and size file path
+##          : $filehandle             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Path to output file
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_size_file_path;
+    my $filehandle;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdinfile_path;
+    my $stdoutfile_path;
+
+    ## Default(s)
+
+    my $tmpl = {
+        contigs_size_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_size_file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -76,9 +196,11 @@ sub ucsc_wig_to_big_wig {
     ## Stores commands depending on input parameters
     my @commands = qw{ wigToBigWig };
 
-    ############################################
-    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
-    ############################################
+    push @commands, $infile_path;
+
+    push @commands, $contigs_size_file_path;
+
+    push @commands, $outfile_path;
 
     push @commands,
       unix_standard_streams(

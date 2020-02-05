@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+        q{MIP::Program::Ucsc}  => [qw{ ucsc_wig_to_big_wig }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
 
-diag(   q{Test SUB_ROUTINE from MODULE.pm v}
-      . $MIP::Program::MODULE::VERSION
+diag(   q{Test ucsc_wig_to_big_wig from Ucsc.pm v}
+      . $MIP::Program::Ucsc::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -60,7 +60,7 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ BASE_COMMAND };
+my @function_base_commands = qw{ wigToBigWig };
 
 my %base_argument = (
     filehandle => {
@@ -84,47 +84,37 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    contigs_size_file_path => {
+        input           => q{a_contig_file_path},
+        expected_output => q{a_contig_file_path},
     },
-    HASH => {
-        input_href => {
-            key_1 => q{value_1},
-            key_2 => q{value_2},
-        },
-
-        # Always sorted to an alphabetical order according to ASCII table
-        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
+    infile_path => {
+        input           => q{an_infile_path},
+        expected_output => q{an_infile_path},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    outfile_path => {
+        input           => q{an_outfile_path},
+        expected_output => q{an_infile_path},
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    contigs_size_file_path => {
+        input           => q{a_contig_file_path},
+        expected_output => q{a_contig_file_path},
     },
-    HASH => {
-        input_href => {
-            key_1 => q{value_1},
-            key_2 => q{value_2},
-        },
-
-        # Always sorted to an alphabetical order according to ASCII table
-        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
+    infile_path => {
+        input           => q{an_infile_path},
+        expected_output => q{an_infile_path},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    outfile_path => {
+        input           => q{an_outfile_path},
+        expected_output => q{an_infile_path},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&ucsc_wig_to_big_wig;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
