@@ -7,6 +7,7 @@ requires qw{ Data::Diver 1.0101 };                  # MIP
 requires qw{ Data::Printer 0.40 };                  # MIP
 requires qw{ Email::Valid 1.202 };                  # MIP
 requires qw{ File::Find::Rule 0.34 };               # MIP
+requires qw{ IO::Interactive 1.022 };               # MIP
 requires qw{ IPC::System::Simple 1.25 };            # MIP
 requires qw{ List::MoreUtils 0.413 };               # MIP
 requires qw{ List::Util 1.49 };                     # MIP
