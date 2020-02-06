@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Toml} => [qw{ load_toml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Toml}           => [qw{ load_toml }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Toml qw{ load_toml };
+use MIP::Toml qw{ load_toml };
 
 diag(   q{Test load_toml from Toml.pm v}
-      . $MIP::File::Format::Toml::VERSION
+      . $MIP::Toml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
