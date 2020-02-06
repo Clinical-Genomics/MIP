@@ -65,8 +65,7 @@ sub set_conda_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment qw{ is_binary_in_path };
-    use MIP::Get::Parameter qw{ get_conda_path };
+    use MIP::Environment::Path qw{ get_conda_path is_binary_in_path };
 
     ## Check if conda is in path
     is_binary_in_path(

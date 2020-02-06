@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ write_to_file };
@@ -64,7 +64,7 @@ sub write_to_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Yaml qw{ write_yaml };
 
     my %file_api = (
         yaml => {

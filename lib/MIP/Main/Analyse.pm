@@ -43,6 +43,7 @@ use MIP::Check::Parameter qw{
 use MIP::Check::Path qw{ check_executable_in_path };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
@@ -73,7 +74,6 @@ use MIP::Set::Parameter qw{
 };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
-use MIP::User qw{ check_email_address };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -88,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.44;
+    our $VERSION = 1.45;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };

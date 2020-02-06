@@ -1,9 +1,10 @@
-package MIP::Environment;
+package MIP::Environment::Path;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,9 +14,13 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib
 use MIP::Constants qw{ $LOG_NAME };
+
+## Constants
+Readonly my $MINUS_TWO => -2;
 
 BEGIN {
     require Exporter;
@@ -25,7 +30,45 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ is_binary_in_path };
+    our @EXPORT_OK = qw{ get_conda_path is_binary_in_path };
+}
+
+sub get_conda_path {
+
+## Function : Get path to conda directory
+## Returns  : $conda_path
+## Arguments: $bin_file => Bin file to test
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $bin_file;
+
+    my $tmpl = {
+        bin_file => {
+            default     => q{conda},
+            store       => \$bin_file,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use IPC::Cmd qw{ can_run };
+
+    ## Find path to conda bin
+    my $conda_path = can_run($bin_file);
+
+    return if ( not $conda_path );
+
+    ## Split dirs to array
+    my @conda_path_dirs = File::Spec->splitdir($conda_path);
+
+    ## Traverse to conda dir from binary
+    splice @conda_path_dirs, $MINUS_TWO;
+
+    ## Return path to conda main directory
+    return catdir(@conda_path_dirs);
 }
 
 sub is_binary_in_path {

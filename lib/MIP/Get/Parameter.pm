@@ -30,7 +30,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_bin_file_path
-      get_conda_path
       get_dynamic_conda_path
       get_env_method_cmds
       get_gatk_intervals
@@ -48,7 +47,6 @@ BEGIN {
 
 ## Constants
 Readonly my $MINUS_ONE => -1;
-Readonly my $MINUS_TWO => -2;
 Readonly my $TWO       => 2;
 
 sub get_bin_file_path {
@@ -103,43 +101,6 @@ sub get_bin_file_path {
     return ( abs_path($bin_file_path), $environment );
 }
 
-sub get_conda_path {
-
-## Function: Get path to conda directory
-## Returns : $conda_path
-## Arguments: $bin_file               => Bin file to test
-
-    my ($arg_href) = @_;
-
-## Default(s)
-    my $bin_file;
-
-    my $tmpl = {
-        bin_file => {
-            default     => q{conda},
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    use IPC::Cmd qw{ can_run };
-
-    ## Find path to conda bin
-    my $conda_path = can_run($bin_file);
-
-    return if ( not $conda_path );
-
-    ## Split dirs to array
-    my @conda_path_dirs = File::Spec->splitdir($conda_path);
-
-    ## Traverse to conda dir from binary
-    splice @conda_path_dirs, $MINUS_TWO;
-
-    ## Return path to conda folder
-    return catdir(@conda_path_dirs);
-}
-
 sub get_dynamic_conda_path {
 
 ## Function : Attempts to find path to directory with binary in conda env
@@ -178,6 +139,8 @@ sub get_dynamic_conda_path {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Path qw{ get_conda_path };
 
     ## Establish path to conda
     if ( not $active_parameter_href->{conda_path} ) {

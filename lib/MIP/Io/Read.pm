@@ -56,7 +56,7 @@ sub read_from_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Toml qw{ load_toml };
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Yaml qw{ load_yaml };
 
     my %file_api = (
         yaml => {
