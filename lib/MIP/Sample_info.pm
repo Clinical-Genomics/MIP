@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -656,7 +656,7 @@ sub set_file_path_to_store {
 
     my $tmpl = {
         format => {
-            allow       => [qw{ fastq bam bcf cram meta vcf }],
+            allow       => [qw{ fastq bam bcf bed cram meta vcf wig }],
             defined     => 1,
             required    => 1,
             store       => \$format,
