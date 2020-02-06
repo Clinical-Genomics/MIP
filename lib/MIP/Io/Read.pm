@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ read_from_file };
@@ -56,17 +56,16 @@ sub read_from_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Toml qw{ load_toml };
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Yaml qw{ load_yaml };
 
     my %file_api = (
         yaml => {
-            method => \&load_yaml,
-            arg_href    => { path => $path,
-          },
+            method   => \&load_yaml,
+            arg_href => { path => $path, },
         },
         toml => {
-            method => \&load_toml,
-            arg_href    => { path => $path },
+            method   => \&load_toml,
+            arg_href => { path => $path },
         },
     );
 
