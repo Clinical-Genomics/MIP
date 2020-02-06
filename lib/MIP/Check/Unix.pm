@@ -63,7 +63,7 @@ sub check_binary_in_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment qw{ is_binary_in_path };
+    use MIP::Environment::Path qw{ is_binary_in_path };
     use MIP::Get::Parameter qw{ get_dynamic_conda_path };
 
     ## Search for binary in PATH in any MIP conda env defined by config
