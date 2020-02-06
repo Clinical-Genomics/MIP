@@ -18,7 +18,7 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -138,7 +138,9 @@ sub analysis_tiddit_coverage {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
+    use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -192,6 +194,7 @@ sub analysis_tiddit_coverage {
         )
     );
 
+    my $outdir_path         = $io{out}{dir_path};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
@@ -233,7 +236,31 @@ sub analysis_tiddit_coverage {
         }
     );
     say {$filehandle} $NEWLINE;
-    close $filehandle;
+
+    say {$filehandle} q{## Create chromosome name and size file};
+    my $contigs_size_file_path =
+      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference},
+            outfile_path  => $contigs_size_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    say {$filehandle} q{## Create wig index files};
+    my $index_file_path = $outfile_path_prefix . $DOT . q{bw};
+    ucsc_wig_to_big_wig(
+        {
+            contigs_size_file_path => $contigs_size_file_path,
+            filehandle             => $filehandle,
+            infile_path            => $outfile_path_prefix . $DOT . q{wig},
+            outfile_path           => $index_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -244,6 +271,17 @@ sub analysis_tiddit_coverage {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{wig},
+                id               => $sample_id,
+                path             => $outfile_path,
+                path_index       => $index_file_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
