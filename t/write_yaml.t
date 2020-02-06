@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ write_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Yaml}           => [qw{ write_yaml }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::Yaml qw{ write_yaml };
 
 diag(   q{Test write_yaml from Yaml.pm v}
-      . $MIP::File::Format::Yaml::VERSION
+      . $MIP::Yaml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
