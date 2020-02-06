@@ -27,6 +27,7 @@ use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_par
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::Environment::Cluster qw{ check_max_core_number };
+use MIP::Environment::User qw{ check_email_address };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -39,13 +40,12 @@ use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
-use MIP::User qw{ check_email_address };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
