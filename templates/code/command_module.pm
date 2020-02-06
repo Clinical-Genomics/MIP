@@ -1,4 +1,4 @@
-package MIP::PATH::TO::MODULE;
+package MIP::Program::MODULE;
 
 use 5.026;
 use Carp;
@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
@@ -33,7 +32,7 @@ BEGIN {
 
 sub name_of_subroutine {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
