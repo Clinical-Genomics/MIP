@@ -26,12 +26,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_files
       get_not_allowed_temp_dirs
+      get_package_env_attributes
       get_user_supplied_pedigree_parameter
       parse_recipe_resources
       set_default_analysis_type
@@ -237,6 +238,50 @@ sub get_not_allowed_temp_dirs {
         $active_parameter_href->{reference_dir},
     );
     return @is_not_allowed_temp_dirs;
+}
+
+sub get_package_env_attributes {
+
+## Function : Get environment name and method for package (recipe, program or MIP)
+## Returns  : $env_name, $env_method or "undef"
+## Arguments: $load_env_href => Load env hash defining environments for packages {REF}
+##          : $package_name  => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $load_env_href;
+    my $package_name;
+
+    my $tmpl = {
+        load_env_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$load_env_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  ENV:
+    foreach my $env_name ( keys %{$load_env_href} ) {
+
+        next ENV if ( not exists $load_env_href->{$env_name}{$package_name} );
+
+        ## Found package_name within env
+        ## Unpack
+        my $env_method = $load_env_href->{$env_name}{method};
+        return $env_name, $env_method;
+    }
+    return;
 }
 
 sub get_user_supplied_pedigree_parameter {
