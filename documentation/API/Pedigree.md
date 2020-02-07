@@ -15,6 +15,7 @@ samples: [  # Array of hashes
       mother: string, value="<case_id> | 0"
       phenotype: string, value="affected | unaffected | unknown"
       sample_id: string,
+      sample_display_name: string,
       is_from_sample: string, value="<sample_id>""
       sex: string, value="male | female | other"
       time_point: Integer,

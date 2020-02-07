@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -319,6 +319,15 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{ignore_sample_display_name} => (
+            cmd_aliases   => [qw{ isd }],
+            documentation => q{Do not use sample display name within some deliver files},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
