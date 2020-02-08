@@ -863,10 +863,9 @@ sub get_vep_version {
     );
     my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
 
-    my $command_string = join $SPACE, @get_vep_version_cmds;
     my %process_return = child_process(
         {
-            commands_ref => [ $command_string, ],
+            commands_ref => \@get_vep_version_cmds,
             process_type => q{open3},
         }
     );

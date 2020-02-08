@@ -28,7 +28,7 @@ BEGIN {
 sub ipc_cmd_run {
 
 ## Function : Wrapper for ipc cmd run sub
-## Returns  :
+## Returns  : %process_return
 ## Arguments: $commands_ref => Commands to run {REF}
 ##          : $verbose       => Verbosity level
 

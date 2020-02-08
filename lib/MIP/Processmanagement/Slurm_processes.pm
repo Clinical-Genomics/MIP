@@ -2042,10 +2042,9 @@ sub submit_jobs_to_sbatch {
     );
 
     # Submit job process
-    my $command_string = join $SPACE, @commands;
     my %process_return = child_process(
         {
-            commands_ref => [ $command_string, ],
+            commands_ref => \@commands,
             process_type => q{open3},
         }
     );

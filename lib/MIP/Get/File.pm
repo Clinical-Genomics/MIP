@@ -822,11 +822,9 @@ sub get_sample_ids_from_vcf {
         }
       );
 
-    my $command_string = join $SPACE, @commands;
-
     my %process_return = child_process(
         {
-            commands_ref => [ $command_string, ],
+            commands_ref => \@commands,
             process_type => q{open3},
         }
     );

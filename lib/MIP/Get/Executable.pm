@@ -80,12 +80,10 @@ sub get_binary_version {
             }
         );
 
-        my $command_string = join $SPACE, @version_cmds;
-
         ## Call binary and parse output to generate version
         my %process_return = child_process(
             {
-                commands_ref => [ $command_string, ],
+                commands_ref => \@version_cmds,
                 process_type => q{open3},
             }
         );
