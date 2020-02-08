@@ -36,11 +36,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ build_stream_file_cmd get_number_of_male_reads get_sampling_fastq_files parse_fastq_for_gender update_gender_info };
+    our @EXPORT_OK = qw{ build_stream_file_cmd
+      get_number_of_male_reads
+      get_sampling_fastq_files
+      parse_fastq_for_gender
+      update_gender_info
+    };
 }
 
 sub build_stream_file_cmd {
@@ -128,7 +132,7 @@ sub get_number_of_male_reads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use IPC::Cmd qw(run);
+    use MIP::Environment::Child_process qw{ child_process };
     use File::Path qw{ remove_tree };
 
     ## Constants
@@ -152,11 +156,15 @@ sub get_number_of_male_reads {
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
 
-    my $cmds_ref = [ q{bash}, $bash_temp_file ];
-    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-      run( command => $cmds_ref, verbose => 0 );
+    my $cmds_ref       = [ q{bash}, $bash_temp_file ];
+    my %process_return = child_process(
+        {
+            commands_ref => $cmds_ref,
+            process_type => q{ipc_cmd_run},
+        }
+    );
 
-    my $y_read_count = $stdout_buf_ref->[0];
+    my $y_read_count = $process_return{stdouts_ref}->[0];
 
     ## Clean-up
     close $filehandle;

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -161,8 +161,8 @@ sub get_fastq_file_header_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::File::Format::Casava qw{ casava_header_regexp };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     my $fastq_info_header_string;
 
@@ -181,9 +181,14 @@ sub get_fastq_file_header_info {
         my $get_header_cmd = qq{$read_file_command $file_path | $regexp;};
 
         ## Collect fastq header info
-        my %return = system_cmd_call( { command_string => $get_header_cmd, } );
+        my %process_return = child_process(
+            {
+                commands_ref => [$get_header_cmd],
+                process_type => q{open3},
+            }
+        );
 
-        $fastq_info_header_string = $return{output}[0];
+        $fastq_info_header_string = $process_return{stdouts_ref}[0];
 
         ## If successful regexp
         if ($fastq_info_header_string) {
@@ -667,7 +672,7 @@ sub get_read_length {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
 
     ## Prints sequence length and exits
     # Execute perl
@@ -687,10 +692,15 @@ sub get_read_length {
 
     my $read_length_cmd = qq{$read_file_command $file_path | $seq_length_regexp;};
 
-    my %return = system_cmd_call( { command_string => $read_length_cmd, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [$read_length_cmd],
+            process_type => q{open3},
+        }
+    );
 
     ## Return read length
-    return $return{output}[0];
+    return $process_return{stdouts_ref}[0];
 }
 
 sub get_select_file_contigs {
@@ -722,7 +732,7 @@ sub get_select_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
 
     # Execute perl
     my $find_contig_name = q?perl -nae ?;
@@ -743,10 +753,15 @@ sub get_select_file_contigs {
     my $find_contig_cmd = qq{$find_contig_name $select_file_path};
 
     # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [ $find_contig_cmd, ],
+            process_type => q{open3},
+        }
+    );
 
     # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
+    my @contigs = split $COMMA, join $COMMA, @{ $process_return{stdouts_ref} };
 
     if ( not @contigs ) {
 
@@ -780,9 +795,9 @@ sub get_sample_ids_from_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Bcftools qw{ bcftools_view };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -809,22 +824,29 @@ sub get_sample_ids_from_vcf {
 
     my $command_string = join $SPACE, @commands;
 
-    my %cmd_return = system_cmd_call( { command_string => $command_string, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [ $command_string, ],
+            process_type => q{open3},
+        }
+    );
 
     ## Some error handling
-    if ( scalar @{ $cmd_return{error} } or not scalar @{ $cmd_return{output} } ) {
+    if ( scalar @{ $process_return{stderrs_ref} }
+        or not scalar @{ $process_return{stdouts_ref} } )
+    {
 
         $log->fatal(qq{Could not retrieve sample id from vcf: $vcf_file_path});
 
         ## Print error message
       ERROR_LINE:
-        foreach my $error_line ( @{ $cmd_return{error} } ) {
+        foreach my $error_line ( @{ $process_return{stderrs_ref} } ) {
             $log->fatal(qq{ERROR: $error_line});
         }
         exit 1;
     }
 
-    my @sample_ids = split $SPACE, $cmd_return{output}->[0];
+    my @sample_ids = split $SPACE, $process_return{stdouts_ref}->[0];
 
     return @sample_ids;
 }

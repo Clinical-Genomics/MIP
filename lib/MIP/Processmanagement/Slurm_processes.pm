@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2027,8 +2027,8 @@ sub submit_jobs_to_sbatch {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Workloadmanager::Slurm qw{ slurm_sbatch };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
@@ -2042,19 +2042,26 @@ sub submit_jobs_to_sbatch {
     );
 
     # Submit job process
-    my %return = system_cmd_call( { command_string => join $SPACE, @commands, } );
+    my $command_string = join $SPACE, @commands;
+    my %process_return = child_process(
+        {
+            commands_ref => [ $command_string, ],
+            process_type => q{open3},
+        }
+    );
 
     # Sbatch should return message and job id in stdout
-    croak(
-        $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE ) )
-      if ( not $return{output}[0] );
+    croak(  $log->fatal( @{ $process_return{stderrs_ref} } )
+          . $log->fatal( q{Aborting run} . $NEWLINE ) )
+      if ( not $process_return{stdouts_ref}[0] );
 
     # Capture job id for submitted scripts
-    my ($job_id) = $return{output}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
+    my ($job_id) =
+      $process_return{stdouts_ref}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
 
     # Sbatch should return message and job id in stdout
-    croak(
-        $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE ) )
+    croak(  $log->fatal( @{ $process_return{stderrs_ref} } )
+          . $log->fatal( q{Aborting run} . $NEWLINE ) )
       if ( not $job_id );
 
     return $job_id;

@@ -14,10 +14,6 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
 
-## Cpanm
-use IPC::Cmd qw{ run };
-use Readonly;
-
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -28,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ conda_activate conda_create conda_deactivate conda_install };

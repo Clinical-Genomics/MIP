@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -50,7 +50,7 @@ BEGIN {
 }
 
 use MIP::Check::File qw{ check_mip_process_files };
-use MIP::Unix::System qw{ system_cmd_call };
+use MIP::Environment::Child_process qw{ child_process };
 
 diag(   q{Test check_mip_process_files from File.pm v}
       . $MIP::Check::File::VERSION
@@ -82,12 +82,18 @@ close $filehandle;
 ## Then bash function should be written
 ok( $is_ok, q{Wrote bash test} );
 
-my %return = system_cmd_call( { command_string => q{bash } . $test_file_path } );
+my %process_return = child_process(
+    {
+        commands_ref => [ q{bash } . $test_file_path, ],
+        process_type => q{open3},
+    }
+);
 
 ## Then "test.sh" file should be found
-like( $return{output}[0], qr/Found\s+file/sxm, q{Found file test} );
+like( $process_return{stdouts_ref}[0], qr/Found\s+file/sxm, q{Found file test} );
 
 ## Then does_not_exist.test file should not be found
-like( $return{error}[0], qr/Could\s+not\s+find/sxm, q{Could not find file test} );
+like( $process_return{stderrs_ref}[0],
+    qr/Could\s+not\s+find/sxm, q{Could not find file test} );
 
 done_testing();
