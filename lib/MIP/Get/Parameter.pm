@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,7 +34,6 @@ BEGIN {
       get_env_method_cmds
       get_gatk_intervals
       get_install_parameter_attribute
-      get_package_env_attributes
       get_package_source_env_cmds
       get_program_executables
       get_program_version
@@ -140,6 +139,7 @@ sub get_dynamic_conda_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Environment::Path qw{ get_conda_path };
 
     ## Establish path to conda
@@ -162,8 +162,8 @@ sub get_dynamic_conda_path {
     ## Load env
     my ( $env_name, $env_method ) = get_package_env_attributes(
         {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $environment_key,
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $environment_key,
         }
     );
 
@@ -173,8 +173,8 @@ sub get_dynamic_conda_path {
         ## Fall back to MIPs MAIN env
         ( $env_name, $env_method ) = get_package_env_attributes(
             {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{mip},
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
             }
         );
     }
@@ -435,51 +435,6 @@ sub get_install_parameter_attribute {
     return $parameter_href->{$parameter_name};
 }
 
-sub get_package_env_attributes {
-
-## Function : Get environment name and method for package (recipe, program or MIP)
-## Returns  : $env_name, $env_method or "undef"
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $package_name          => Package name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $package_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        package_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  ENV:
-    foreach my $env_name ( keys %{ $active_parameter_href->{load_env} } ) {
-
-        ## Found recipe within env
-        if ( exists $active_parameter_href->{load_env}{$env_name}{$package_name} ) {
-
-            ## Unpack
-            my $env_method = $active_parameter_href->{load_env}{$env_name}{method};
-            return $env_name, $env_method;
-        }
-    }
-    return;
-}
-
 sub get_package_source_env_cmds {
 
 ## Function : Get package source environment commands
@@ -511,6 +466,7 @@ sub get_package_source_env_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
 
     ## Initilize variable
@@ -518,8 +474,8 @@ sub get_package_source_env_cmds {
 
     my ( $env_name, $env_method ) = get_package_env_attributes(
         {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $package_name,
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $package_name,
         }
     );
 
@@ -529,8 +485,8 @@ sub get_package_source_env_cmds {
         ## Fall back to MIPs MAIN env
         ( $env_name, $env_method ) = get_package_env_attributes(
             {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{mip},
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
             }
         );
     }
