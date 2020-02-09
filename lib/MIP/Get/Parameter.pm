@@ -809,8 +809,8 @@ sub get_vep_version {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     my @perl_commands = perl_nae_oneliners(
         {
@@ -819,14 +819,14 @@ sub get_vep_version {
     );
     my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
 
-    my %vep_cmd_output = system_cmd_call(
+    my %process_return = child_process(
         {
-            command_string => join $SPACE,
-            @get_vep_version_cmds,
+            commands_ref => \@get_vep_version_cmds,
+            process_type => q{open3},
         }
     );
 
-    return $vep_cmd_output{output}[0];
+    return $process_return{stdouts_ref}[0];
 }
 
 1;

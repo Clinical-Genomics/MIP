@@ -22,10 +22,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +35,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,16 +42,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Parameter} => [qw{ parse_toml_config_parameters }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
-        q{MIP::Unix::System}     => [qw{ system_cmd_call }],
+        q{MIP::Parse::Parameter}           => [qw{ parse_toml_config_parameters }],
+        q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
+        q{MIP::Environment::Child_process} => [qw{ child_process }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Parse::Parameter qw{ parse_toml_config_parameters };
-use MIP::Unix::System qw{ system_cmd_call };
 
 diag(   q{Test parse_toml_config_parameters from Parameter.pm v}
       . $MIP::Parse::Parameter::VERSION
@@ -92,7 +89,12 @@ my $parse_path =
 my $command_string = join $SPACE,
   ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
 
-my %return = system_cmd_call( { command_string => $command_string, } );
+my %process_return = child_process(
+    {
+        commands_ref => [ $command_string, ],
+        process_type => q{open3},
+    }
+);
 
 ## Given a toml config file
 my %active_parameter = (
