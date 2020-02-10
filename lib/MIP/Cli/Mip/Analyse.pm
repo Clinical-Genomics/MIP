@@ -323,15 +323,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
-        q{ignore_sample_display_name} => (
-            cmd_aliases   => [qw{ isd }],
-            documentation => q{Do not use sample display name within some deliver files},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{version_collect} => (
             cmd_aliases   => [qw{ verc }],
             cmd_tags      => [q{Analysis recipe switch}],

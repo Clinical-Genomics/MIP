@@ -171,7 +171,8 @@ sub analysis_vcf2cytosure {
             recipe_name           => $recipe_name,
         }
     );
-    my $ignore_sample_display_name = $active_parameter_href->{ignore_sample_display_name};
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{vcf2cytosure_use_sample_id_as_display_name};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -344,9 +345,7 @@ sub analysis_vcf2cytosure {
     say {$filehandle} q{wait}, $NEWLINE;
 
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Rename vcf sample
         my $sample_display_name = get_pedigree_sample_id_attributes(
@@ -357,7 +356,7 @@ sub analysis_vcf2cytosure {
             }
         );
 
-        if ( $sample_display_name and not $ignore_sample_display_name ) {
+        if ( $sample_display_name and not $use_sample_id_as_display_name ) {
 
             my $sample_display_vcf_file = catfile( $outdir_path, $sample_display_name );
             $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name} =
