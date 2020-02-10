@@ -25,13 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_bin_file_path
       get_dynamic_conda_path
-      get_env_method_cmds
       get_gatk_intervals
       get_install_parameter_attribute
       get_package_source_env_cmds
@@ -140,6 +139,7 @@ sub get_dynamic_conda_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
     use MIP::Environment::Path qw{ get_conda_path };
 
     ## Establish path to conda
@@ -220,57 +220,6 @@ sub get_dynamic_conda_path {
     pop @bin_path_dirs;
 
     return catdir(@bin_path_dirs);
-}
-
-sub get_env_method_cmds {
-
-## Function : Get the standard load and unload env command for environment method
-## Returns  : @env_method_cmds
-## Arguments: $action     => What to do with the environment
-##          : $env_method => Method used to load environment
-##          : $env_name   => Name of environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $action;
-    my $env_method;
-    my $env_name;
-
-    my $tmpl = {
-        action => {
-            allow       => [qw{ load unload }],
-            defined     => 1,
-            required    => 1,
-            store       => \$action,
-            strict_type => 1,
-        },
-        env_method => {
-            allow       => [qw{ conda }],
-            defined     => 1,
-            required    => 1,
-            store       => \$env_method,
-            strict_type => 1,
-        },
-        env_name => {
-            required    => 1,
-            store       => \$env_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-
-    my %method_cmd = (
-        conda => {
-            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
-            unload => [ ( conda_deactivate( {} ), ) ],
-        },
-    );
-
-    return ( @{ $method_cmd{$env_method}{$action} } );
 }
 
 sub get_gatk_intervals {
@@ -467,6 +416,7 @@ sub get_package_source_env_cmds {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
     use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
 
     ## Initilize variable
