@@ -30,7 +30,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - Arriba: 1.1.0
 - SMNCopyNumberCaller: 4b2c1ad
-- vcf2cytosure: 0.4.3 -> 0.5.0
+- vcf2cytosure: 0.4.3 -> 0.5.1
 
 ## [8.0.0]
 

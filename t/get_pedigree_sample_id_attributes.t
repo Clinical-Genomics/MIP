@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,30 +64,30 @@ my $sample_id   = q{God of thunder};
 my %sample_info = (
     sample => {
         $sample_id => {
-            analysis_type     => q{wgs},
-            capture_kit       => q{agilent_v1},
-            expected_coverage => 1,
-            father            => q{Odin},
-            mother            => q{Frey},
-            phenotype         => q{affected},
-            sample_id         => q{God of thunder},
-            sample_name       => q{Thor},
-            dna_sample_id     => q{God of thunder},
-            sex               => q{male},
+            analysis_type       => q{wgs},
+            capture_kit         => q{agilent_v1},
+            expected_coverage   => 1,
+            father              => q{Odin},
+            mother              => q{Frey},
+            phenotype           => q{affected},
+            sample_id           => q{God of thunder},
+            sample_display_name => q{Thor},
+            dna_sample_id       => q{God of thunder},
+            sex                 => q{male},
         },
     },
 );
 my %attribute = (
-    analysis_type     => q{wgs},
-    capture_kit       => q{agilent_v1},
-    expected_coverage => 1,
-    father            => q{Odin},
-    mother            => q{Frey},
-    phenotype         => q{affected},
-    sample_id         => q{God of thunder},
-    sample_name       => q{Thor},
-    dna_sample_id     => q{God of thunder},
-    sex               => q{male},
+    analysis_type       => q{wgs},
+    capture_kit         => q{agilent_v1},
+    expected_coverage   => 1,
+    father              => q{Odin},
+    mother              => q{Frey},
+    phenotype           => q{affected},
+    sample_id           => q{God of thunder},
+    sample_display_name => q{Thor},
+    dna_sample_id       => q{God of thunder},
+    sex                 => q{male},
 );
 
 while ( my ( $attribute, $attribute_value ) = each %attribute ) {
@@ -109,7 +109,18 @@ while ( my ( $attribute, $attribute_value ) = each %attribute ) {
           . $attribute_value );
 }
 
-## Given a undefined attibute
+## Given a no attribute in call
+my %got_attribute_href = get_pedigree_sample_id_attributes(
+    {
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
+    }
+);
+
+## Then return entire sample id attribute hash
+is_deeply( \%got_attribute_href, \%attribute, q{Returned sample id attribute hash} );
+
+## Given a undefined attibute in sample_info hash
 delete $sample_info{sample}{$sample_id}{expected_coverage};
 
 my $got_attribute = get_pedigree_sample_id_attributes(
