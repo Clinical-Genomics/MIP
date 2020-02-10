@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,11 +25,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_bin_file_path
       get_dynamic_conda_path
       get_gatk_intervals
       get_install_parameter_attribute
@@ -44,60 +43,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $MINUS_ONE => -1;
-Readonly my $TWO       => 2;
-
-sub get_bin_file_path {
-
-## Function : Get the absolute path to the binary file
-## Returns  : $bin_file_path
-## Arguments: $bin_file              => Name of binary file
-##          : $conda_path            => Path to conda directory
-##          : $environment_href      => Hash with programs and their environments {REF}
-##          : $environment_key       => Key to the environment_href [program]
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bin_file;
-    my $conda_path;
-    my $environment_href;
-    my $environment_key;
-
-    my $tmpl = {
-        bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        conda_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$conda_path,
-        },
-        environment_href => {
-            default  => {},
-            required => 1,
-            store    => \$environment_href,
-        },
-        environment_key => {
-            defined  => 1,
-            required => 1,
-            store    => \$environment_key,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-
-    ## Get environment and set test path;
-    my $environment   = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-    my $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-
-    ## Return absolute path
-    return ( abs_path($bin_file_path), $environment );
-}
+Readonly my $TWO => 2;
 
 sub get_dynamic_conda_path {
 
@@ -140,7 +86,7 @@ sub get_dynamic_conda_path {
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Environment::Path qw{ get_conda_path };
+    use MIP::Environment::Path qw{ get_bin_file_path get_conda_path };
 
     ## Establish path to conda
     if ( not $active_parameter_href->{conda_path} ) {

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -30,7 +30,70 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_conda_path is_binary_in_path };
+    our @EXPORT_OK = qw{ get_bin_file_path get_conda_path is_binary_in_path };
+}
+
+## Constants
+Readonly my $MINUS_ONE => -1;
+
+sub get_bin_file_path {
+
+## Function : Get the absolute path to the binary file
+##          : and the corresponding conda environment
+## Returns  : $bin_file_path, $conda_environment
+## Arguments: $bin_file         => Name of binary file
+##          : $conda_path       => Path to conda directory
+##          : $environment_href => Hash with programs and their environments {REF}
+##          : $environment_key  => Key to the environment_href [program|recipe_name]
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bin_file;
+    my $conda_path;
+    my $environment_href;
+    my $environment_key;
+
+    my $tmpl = {
+        bin_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bin_file,
+            strict_type => 1,
+        },
+        conda_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$conda_path,
+            strict_type => 1,
+        },
+        environment_href => {
+            default     => {},
+            required    => 1,
+            store       => \$environment_href,
+            strict_type => 1,
+        },
+        environment_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$environment_key,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
+
+    ## Get environment where binary file is located by using "conda activate <conda_env>"
+    my $conda_environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
+
+    ## Place it in the conda environment binary path
+    my $bin_file_path =
+      catfile( $conda_path, q{envs}, $conda_environment, q{bin}, $bin_file );
+
+    ## Return absolute path and conda environment for binary file
+    return ( abs_path($bin_file_path), $conda_environment );
 }
 
 sub get_conda_path {
