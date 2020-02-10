@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -220,9 +220,9 @@ sub build_human_genome_prerequisites {
         ## Perl wrapper for writing gzip recipe to $filehandle
         gzip(
             {
-                decompress  => 1,
-                infile_path => $human_genome_reference,
-                filehandle  => $filehandle,
+                decompress       => 1,
+                infile_paths_ref => [$human_genome_reference],
+                filehandle       => $filehandle,
             }
         );
         say {$filehandle} $NEWLINE;

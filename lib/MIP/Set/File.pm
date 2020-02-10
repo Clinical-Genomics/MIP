@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -54,7 +54,7 @@ sub set_file_compression_features {
 
     use MIP::File::Path qw{ check_gzipped };
 
-    my $read_file_command = q{zcat};
+    my $read_file_command = q{gzip -d -c};
 
     ## Check if a file is gzipped.
     my $is_compressed = check_gzipped( { file_name => $file_name, } );
