@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -687,7 +687,7 @@ sub write_return_to_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Get::Parameter qw{ get_env_method_cmds };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
 
     my @env_method_cmds;
 
