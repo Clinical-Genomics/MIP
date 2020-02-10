@@ -25,7 +25,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
-use MIP::Get::Parameter qw{ get_env_method_cmds };
+use MIP::Environment::Manager qw{ get_env_method_cmds };
 use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
