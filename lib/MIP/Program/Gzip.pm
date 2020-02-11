@@ -36,7 +36,7 @@ sub gzip {
 ## Arguments: $decompress             => Decompress
 ##          : $filehandle             => Filehandle to write to (scalar undefined)
 ##          : $force                  => Force overwrite of output file and compress links
-##          : $infile_paths_ref       => Infile pathis
+##          : $infile_paths_ref       => Infile paths
 ##          : $outfile_path           => Outfile path. Write documents to FILE
 ##          : $quiet                  => Suppress all warnings
 ##          : $stderrfile_path        => Stderrfile path (scalar )

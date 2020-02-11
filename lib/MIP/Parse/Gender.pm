@@ -495,7 +495,7 @@ sub _get_file_read_commands {
 
 ## Function : Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
 ## Returns  : @read_cmds
-## Arguments: $file_path    => Fastq File path
+## Arguments: $file_path => Fastq File path to check status for
 
     my ($arg_href) = @_;
 
@@ -514,8 +514,8 @@ sub _get_file_read_commands {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ check_gzipped };
-    use MIP::Program::Gzip qw{ gzip };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gzip qw{ gzip };
 
     my @read_cmds;
 

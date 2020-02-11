@@ -32,14 +32,14 @@ BEGIN {
 
 sub decompress_files {
 
-## Function : Decompress files with gzip, unzip or tar
+## Function : Decompress file(s) with gzip, unzip or tar
 ## Returns  : @commands
 ##          : $file_path      => Path to file
 ##          : $file_paths_ref => path to file
 ##          : $filehandle     => Filehandle to write to
 ##          : $outdir_path    => Outdirectory path
 ##          : $outfile_path   => Outfile path
-##          : $program        => Decompress the downloaded file using program supplied
+##          : $program        => Decompress the file(s) using program supplied
 
     my ($arg_href) = @_;
 
@@ -78,7 +78,7 @@ sub decompress_files {
             strict_type => 1,
         },
         program => {
-            allow       => [ undef, qw{ gzip unzip tar } ],
+            allow       => [ undef, qw{ gzip tar unzip } ],
             store       => \$program,
             strict_type => 1,
         },

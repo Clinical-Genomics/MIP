@@ -63,16 +63,16 @@ my $file_paths_ref = [q{a_file_path.gz}];
 my $file_path      = q{a_file_path.gz};
 my $outdir_path    = q{a_outdir};
 my $outfile_path   = q{a_outfile};
-my @programs       = qw{ gzip unzip tar };
+my @programs       = qw{ gzip tar unzip };
 
 PROGRAM:
 foreach my $program (@programs) {
 
     my @decompress_commands = decompress_files(
         {
+            file_path    => $file_path,
             outdir_path  => $outdir_path,
             outfile_path => $outfile_path,
-            file_path    => $file_path,
             program      => $program,
         }
     );
@@ -84,9 +84,9 @@ foreach my $program (@programs) {
 trap {
     decompress_files(
         {
+            file_paths_ref => $file_paths_ref,
             outdir_path    => $outdir_path,
             outfile_path   => $outfile_path,
-            file_paths_ref => $file_paths_ref,
             program        => q{tar},
         }
     )
