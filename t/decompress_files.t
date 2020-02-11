@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $SPACE $NEWLINE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Decompression} => [qw{ decompress_file }],
+        q{MIP::File::Decompression} => [qw{ decompress_files }],
         q{MIP::Test::Fixtures}      => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Decompression qw{ decompress_file };
+use MIP::File::Decompression qw{ decompress_files };
 
-diag(   q{Test decompress_file from Decompression.pm v}
+diag(   q{Test decompress_files from Decompression.pm v}
       . $MIP::File::Decompression::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,44 +58,40 @@ diag(   q{Test decompress_file from Decompression.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
-# For storing info to write
-my $file_content;
-
-## Store file content in memory by using referenced variable
-open $filehandle, q{>}, \$file_content
-  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
-
 ## Given a file to decompress, when method gzip unzip and tar
-my $outfile_path  = q{a_file_path.gz};
-my $reference_dir = q{a_reference_dir};
-my @programs      = qw{ gzip unzip tar };
+my $file_paths_ref = [q{a_file_path.gz}];
+my $file_path      = q{a_file_path.gz};
+my $outdir_path    = q{a_outdir};
+my $outfile_path   = q{a_outfile};
+my @programs       = qw{ gzip tar unzip };
 
 PROGRAM:
 foreach my $program (@programs) {
 
-    decompress_file(
+    my @decompress_commands = decompress_files(
         {
-            filehandle         => $filehandle,
-            outdir_path        => $reference_dir,
-            outfile_path       => $outfile_path,
-            decompress_program => $program,
+            file_path    => $file_path,
+            outdir_path  => $outdir_path,
+            outfile_path => $outfile_path,
+            program      => $program,
         }
     );
-
+    ## Then write matching command
+    is( $decompress_commands[0], $program, qq{Wrote $program command for decompression} );
 }
-## Close the filehandle
-close $filehandle;
 
-PROGRAM:
-foreach my $program (@programs) {
-
-## Then each command should be in the same file
-    my ($returned_base_command) = $file_content =~ /^($program)/xms;
-    ok( $returned_base_command, qq{Wrote $program command for decompression} );
-
-}
+## Given missing file_paths for tar
+trap {
+    decompress_files(
+        {
+            file_paths_ref => $file_paths_ref,
+            outdir_path    => $outdir_path,
+            outfile_path   => $outfile_path,
+            program        => q{tar},
+        }
+    )
+};
+## Then croak
+ok( $trap->die, q{Croak when missing infile} );
 
 done_testing();

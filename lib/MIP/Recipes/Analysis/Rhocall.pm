@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -555,11 +555,11 @@ sub analysis_rhocall_viz {
 
     gzip(
         {
-            decompress   => 1,
-            filehandle   => $filehandle,
-            force        => 1,
-            infile_path  => $sample_vcf,
-            outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            decompress       => 1,
+            filehandle       => $filehandle,
+            force            => 1,
+            infile_paths_ref => [$sample_vcf],
+            outfile_path     => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
         }
     );
     say {$filehandle} $NEWLINE;

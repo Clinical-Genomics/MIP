@@ -163,12 +163,12 @@ sub install_gtf2bed {
     say {$filehandle} q{## Extract};
     unzip(
         {
-            filehandle  => $filehandle,
-            force       => 1,
-            infile_path => $program_zip_path,
-            outdir_path => $program_directory_path,
-            quiet       => $quiet,
-            verbose     => $verbose,
+            filehandle       => $filehandle,
+            force            => 1,
+            infile_paths_ref => [$program_zip_path],
+            outdir_path      => $program_directory_path,
+            quiet            => $quiet,
+            verbose          => $verbose,
         }
     );
     say {$filehandle} $NEWLINE;

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $DOT $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -84,4 +84,17 @@ $outfile_path_no_suffix = parse_file_suffix(
 ## Then return file name without suffix
 is( $outfile_path_no_suffix, $file_name, q{Match suffix} );
 
+## Given a compressed file when suffix match file name
+$compressed_file_name = catfile(qw{ a dir files.tar.gz });
+
+$outfile_path_no_suffix = parse_file_suffix(
+    {
+        file_name   => $compressed_file_name,
+        file_suffix => $DOT . q{gz},
+    }
+);
+
+$file_name = catfile(qw{ a dir files.tar });
+## Then return file name without suffix
+is( $outfile_path_no_suffix, $file_name, q{Match partial suffix} );
 done_testing();
