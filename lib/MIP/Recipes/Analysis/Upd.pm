@@ -244,6 +244,7 @@ sub analysis_upd {
     write_contigs_size_file(
         {
             fai_file_path => $active_parameter_href->{human_genome_reference},
+            filehandle    => $filehandle,
             outfile_path  => $contigs_size_file_path,
         }
     );
