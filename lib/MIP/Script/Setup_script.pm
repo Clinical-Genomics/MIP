@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -743,7 +743,7 @@ sub write_return_to_conda_environment {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Package_manager::Conda qw{ conda_deactivate };
+    use MIP::Program::Conda qw{ conda_deactivate };
 
     ## Return to main environment
     if ( @{$source_main_environment_commands_ref}

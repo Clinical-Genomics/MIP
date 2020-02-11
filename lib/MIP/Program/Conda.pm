@@ -1,4 +1,4 @@
-package MIP::Package_manager::Conda;
+package MIP::Program::Conda;
 
 use 5.026;
 use Carp;
@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ conda_activate conda_create conda_deactivate conda_install };

@@ -23,7 +23,7 @@ use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Gnu::Bash qw{ gnu_cd };
 use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
-use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Conda qw{ conda_activate conda_deactivate };
 use MIP::Versionmanager::Git qw{ git_clone };
 
 BEGIN {
@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_blobfish };

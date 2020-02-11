@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_env_method_cmds };
@@ -64,7 +64,7 @@ sub get_env_method_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+    use MIP::Program::Conda qw{ conda_activate conda_deactivate };
 
     my %method_cmd = (
         conda => {
