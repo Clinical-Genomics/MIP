@@ -204,14 +204,12 @@ sub write_contigs_size_file {
 ## Function : Write contig size file from human genome sequence fai (.fai) file
 ## Returns  :
 ## Arguments: $fai_file_path => Fai file path
-##          : $filehandle    => Filehandle to write to
 ##          : $outfile_path  => Chromosome size file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $fai_file_path;
-    my $filehandle;
     my $outfile_path;
 
     my $tmpl = {
@@ -220,9 +218,6 @@ sub write_contigs_size_file {
             required    => 1,
             store       => \$fai_file_path,
             strict_type => 1,
-        },
-        filehandle => {
-            store => \$filehandle,
         },
         outfile_path => {
             defined     => 1,
