@@ -31,7 +31,7 @@ install:
   ## Install MIP rare disease
   - bash mip.sh
   ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba fastqc gatk4 htslib multiqc picard rseqc sambamba star star-fusion stringtie trim-galore ucsc vep
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba blobfish fastqc gatk4 htslib multiqc picard rseqc sambamba star star-fusion stringtie trim-galore ucsc vep
   ## Install MIP rna
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
