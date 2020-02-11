@@ -8,7 +8,6 @@ conda:
   numpy:
   pigz:
   pip:
-  preseq: 2.0.3=gsl2.2_1
   python: 2.7
   r-optparse:
   r-readr:
@@ -65,6 +64,10 @@ singularity:
     executable:
       picard: "no_executable_in_image"
     uri: docker://broadinstitute/picard:2.20.7
+  preseq:
+    executable:
+      preseq:
+    uri: docker://clinicalgenomics/preseq:2.0.3
   rseqc:
     executable:
       bam2wig.py:
