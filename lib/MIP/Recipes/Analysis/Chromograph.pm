@@ -466,7 +466,6 @@ sub analysis_chromograph_proband {
     ## Create chromosome name and size file
     my $contigs_size_file_path =
       catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
-    say STDERR $active_parameter_href->{human_genome_reference} . $DOT . q{fai};
     write_contigs_size_file(
         {
             fai_file_path => $active_parameter_href->{human_genome_reference}

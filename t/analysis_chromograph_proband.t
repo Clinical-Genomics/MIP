@@ -76,7 +76,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{tiddit_coverage_bin_size}         = $TIDDIT_BIN_SIZE;
+$active_parameter{human_genome_reference} =
+  catfile( $Bin, qw{ data references grch38_homo_sapiens_-d5-.fasta} );
+$active_parameter{tiddit_coverage_bin_size} = $TIDDIT_BIN_SIZE;
 my $sample_id = $active_parameter{sample_ids}[0];
 my $case_id   = $active_parameter{case_id};
 
