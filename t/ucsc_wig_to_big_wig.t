@@ -99,10 +99,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-clip => {
-    input           => 1,
-    expected_output => q{-clip},
-},
+    clip => {
+        input           => 1,
+        expected_output => q{-clip},
+    },
     contigs_size_file_path => {
         input           => q{a_contig_file_path},
         expected_output => q{a_contig_file_path},

@@ -248,7 +248,6 @@ sub analysis_upd {
             outfile_path => $contigs_size_file_path,
         }
     );
-    say {$filehandle} $NEWLINE;
 
     ## Get family hash
     my %family_member_id =
@@ -301,10 +300,9 @@ sub analysis_upd {
         my $index_file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
         set_file_path_to_store(
             {
-                format           => q{bed},
+                format           => q{bb},
                 id               => $sample_id,
-                path             => $outfile_path{sites},
-                path_index       => $index_file_path_prefix . $DOT . q{bb},
+                path             => $index_file_path_prefix . $DOT . q{bb},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

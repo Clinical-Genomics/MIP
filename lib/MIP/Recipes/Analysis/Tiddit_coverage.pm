@@ -278,10 +278,9 @@ sub analysis_tiddit_coverage {
 
         set_file_path_to_store(
             {
-                format           => q{wig},
+                format           => q{bw},
                 id               => $sample_id,
-                path             => $outfile_path,
-                path_index       => $index_file_path,
+                path             => $index_file_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -620,10 +620,9 @@ sub analysis_rhocall_viz {
 
         set_file_path_to_store(
             {
-                format           => q{wig},
+                format           => q{bw},
                 id               => $sample_id,
-                path             => $viz_wig_outfile_path_prefix . $DOT . q{wig},
-                path_index       => $viz_wig_outfile_path_prefix . $DOT . q{bw},
+                path             => $viz_wig_outfile_path_prefix . $DOT . q{bw},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
