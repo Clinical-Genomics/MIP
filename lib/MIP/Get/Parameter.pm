@@ -5,7 +5,6 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir };
-use File::Basename qw{ dirname };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -19,7 +18,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
+  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $WITH_SINGULARITY };
 
 BEGIN {
     require Exporter;
@@ -30,7 +29,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_conda_bin_dir_path
       get_gatk_intervals
       get_install_parameter_attribute
       get_package_source_env_cmds
@@ -45,106 +43,6 @@ BEGIN {
 
 ## Constants
 Readonly my $TWO => 2;
-
-sub get_conda_bin_dir_path {
-
-## Function : Attempts to find path to directory with binary in conda env
-## Returns  : $conda_bin_dir_path
-## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $bin_file              => Bin file to test
-##          : $environment_key       => Key to conda environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $bin_file;
-    my $environment_key;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        bin_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-        environment_key => {
-            store       => \$environment_key,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Environment::Path qw{ get_bin_file_path };
-
-    ## Unpack
-    my $conda_path = $active_parameter_href->{conda_path};
-    my ( $env_name, $env_method );
-
-    ## Get environment name and manager in use for $environment_key
-  ENV_KEY:
-    foreach my $env_key ( $environment_key, qw{ mip } ) {
-
-        ( $env_name, $env_method ) = get_package_env_attributes(
-            {
-                load_env_href => $active_parameter_href->{load_env},
-                package_name  => $env_key,
-            }
-        );
-        ## Found program|recipe within env
-        last if ($env_name);
-    }
-
-    ## Get env load command
-    my @env_method_cmds = get_env_method_cmds(
-        {
-            action     => q{load},
-            env_name   => $env_name,
-            env_method => $env_method,
-        }
-    );
-
-    ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-    my %environment = ( $environment_key => [@env_method_cmds] );
-
-    ## Get the bin file path
-    my ( $bin_file_path, $conda_env ) = get_bin_file_path(
-        {
-            bin_file         => $bin_file,
-            conda_path       => $conda_path,
-            environment_href => \%environment,
-            environment_key  => $environment_key,
-        }
-    );
-
-    ## Test if path exists
-    if (   not $bin_file_path
-        or not -f $bin_file_path )
-    {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $conda_env;
-    }
-
-    ## Remove bin file from path
-    my $conda_bin_dir_path = dirname($bin_file_path);
-
-    return $conda_bin_dir_path;
-}
 
 sub get_gatk_intervals {
 

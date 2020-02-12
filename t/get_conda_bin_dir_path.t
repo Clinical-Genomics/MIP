@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_conda_bin_dir_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Environment::Path} => [qw{ get_conda_bin_dir_path }],
+        q{MIP::Test::Fixtures}    => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_conda_bin_dir_path };
+use MIP::Environment::Path qw{ get_conda_bin_dir_path };
 
-diag(   q{Test get_conda_bin_dir_path from Parameter.pm v}
-      . $MIP::Get::Parameter::VERSION
+diag(   q{Test get_conda_bin_dir_path from Path.pm v}
+      . $MIP::Environment::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

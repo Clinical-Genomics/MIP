@@ -17,7 +17,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_binary_in_path };
@@ -63,8 +63,7 @@ sub check_binary_in_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Path qw{ is_binary_in_path };
-    use MIP::Get::Parameter qw{ get_conda_bin_dir_path };
+    use MIP::Environment::Path qw{ get_conda_bin_dir_path is_binary_in_path };
 
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
