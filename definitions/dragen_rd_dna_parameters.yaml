@@ -410,7 +410,6 @@ sv_reformat:
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
-    - grep
     - picard
   type: recipe
 sv_rankvariant_binary_file:
@@ -469,7 +468,6 @@ vt_ar:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
@@ -510,7 +508,6 @@ vt_core:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   type: recipe
@@ -804,7 +801,6 @@ endvariantannotationblock:
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
-    - grep
     - gatk
   type: recipe
 rankvariant_binary_file:

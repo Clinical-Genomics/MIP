@@ -241,8 +241,6 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_executables:
-    - gzip
   type: recipe
 ## FastQC
 fastqc_ar:
