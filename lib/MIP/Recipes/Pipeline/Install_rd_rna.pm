@@ -181,7 +181,6 @@ sub pipeline_install_rd_rna {
     ### Install shell programs
     ## Create dispatch table for shell installation subs
     my %shell_subs = (
-        bootstrapann => \&install_bootstrapann,
         gtf2bed      => \&install_gtf2bed,
         mip_scripts  => \&install_mip_scripts,
     );

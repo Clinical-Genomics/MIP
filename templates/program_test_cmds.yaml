@@ -44,9 +44,6 @@ chromograph:
 cnvnator:
   execution:
   path: 'cnvnator'
-cython:
-  execution: 'python -c "import cython"'
-  path:
 delly:
   execution: 'delly'
   path: 'delly'
@@ -83,9 +80,6 @@ mip_scripts:
 multiqc:
   execution: 'multiqc --version'
   path: 'multiqc'
-numpy:
-  execution: 'python -c "import numpy"'
-  path:
 peddy:
   execution: 'peddy --version'
   path: 'peddy'
@@ -125,9 +119,6 @@ sambamba:
 samtools:
   execution: 'samtools --version'
   path: 'samtools'
-scipy:
-  execution: 'python -c "import scipy"'
-  path:
 star:
   execution: 'STAR'
   path: 'STAR'
