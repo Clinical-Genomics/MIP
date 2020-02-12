@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ ucsc_bed_to_big_bed ucsc_wig_to_big_wig };
@@ -34,7 +34,8 @@ sub ucsc_bed_to_big_bed {
 
 ## Function : Perl wrapper for ucsc bedToBigBed version 357
 ## Returns  : @commands
-## Arguments: $contigs_size_file_path => Contig name and size file path
+## Arguments: $clip                   => Warning of die if wig file contains items off end of chromosome
+##          : $contigs_size_file_path => Contig name and size file path
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Path to output file
@@ -55,7 +56,16 @@ sub ucsc_bed_to_big_bed {
     my $stdinfile_path;
     my $stdoutfile_path;
 
+    ## Default(s)
+    my $clip;
+
     my $tmpl = {
+      clip => {
+        allow => [undef, 0, 1, ],
+        default => 0,
+          store       => \$clip,
+          strict_type => 1,
+      },
         contigs_size_file_path => {
             defined     => 1,
             required    => 1,
@@ -99,6 +109,11 @@ sub ucsc_bed_to_big_bed {
 
     push @commands, $infile_path;
 
+    if($clip) {
+
+      push @commands, q{-clip};
+    }
+
     push @commands, $contigs_size_file_path;
 
     push @commands, $outfile_path;
@@ -128,7 +143,8 @@ sub ucsc_wig_to_big_wig {
 
 ## Function : Perl wrapper for ucsc wigToBigWig version 357
 ## Returns  : @commands
-## Arguments: $contigs_size_file_path => Contig name and size file path
+## Arguments: $clip                   => Warning of die if wig file contains items off end of chromosome
+##          : $contigs_size_file_path => Contig name and size file path
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Path to output file
@@ -149,8 +165,17 @@ sub ucsc_wig_to_big_wig {
     my $stdinfile_path;
     my $stdoutfile_path;
 
+    ## Default(s)
+    my $clip;
+
     my $tmpl = {
-        contigs_size_file_path => {
+      clip => {
+        allow => [undef, 0, 1, ],
+        default => 0,
+          store       => \$clip,
+          strict_type => 1,
+      },
+      contigs_size_file_path => {
             defined     => 1,
             required    => 1,
             store       => \$contigs_size_file_path,
@@ -193,6 +218,11 @@ sub ucsc_wig_to_big_wig {
 
     push @commands, $infile_path;
 
+    if($clip) {
+
+      push @commands, q{-clip};
+    }
+    
     push @commands, $contigs_size_file_path;
 
     push @commands, $outfile_path;
