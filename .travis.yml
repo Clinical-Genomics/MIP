@@ -27,11 +27,11 @@ install:
   ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
   ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --envn mip_travis --skip bwa bwakit bedtools cadd chanjo chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod  htslib  manta  multiqc  peddy  picard  plink  rhocall  rtg-tools  sambamba  smncopynumbercaller stranger  svdb  tiddit  ucsc upd  variant_integrity  varg  vcfanno  vep  vcf2cytosure  vt
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --envn mip_travis --skip bwa bwakit bedtools cadd chanjo chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod htslib manta multiqc  peddy picard pigz plink rhocall rtg-tools sambamba smncopynumbercaller stranger svdb tiddit ucsc upd variant_integrity varg vcfanno vep vcf2cytosure vt
   ## Install MIP rare disease
   - bash mip.sh
   ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba blobfish bootstrapann fastqc gatk4 htslib multiqc picard preseq rseqc sambamba star star-fusion stringtie trim-galore ucsc vep
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --skip arriba blobfish bootstrapann fastqc gatk4 htslib multiqc picard pigz preseq rseqc sambamba star star-fusion stringtie trim-galore ucsc vep
   ## Install MIP rna
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
