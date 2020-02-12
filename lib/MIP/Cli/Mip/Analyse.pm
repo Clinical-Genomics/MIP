@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 extends(qw{ MIP::Cli::Mip });
 
