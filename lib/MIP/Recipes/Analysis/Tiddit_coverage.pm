@@ -237,13 +237,14 @@ sub analysis_tiddit_coverage {
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle} q{## Create chromosome name and size file};
+    ## Create chromosome name and size file
     my $contigs_size_file_path =
       catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
     write_contigs_size_file(
         {
-            fai_file_path => $active_parameter_href->{human_genome_reference},
-            outfile_path  => $contigs_size_file_path,
+            fai_file_path => $active_parameter_href->{human_genome_reference}
+              . $DOT . q{fai},
+            outfile_path => $contigs_size_file_path,
         }
     );
     say {$filehandle} $NEWLINE;

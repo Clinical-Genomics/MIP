@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -52,8 +52,8 @@ sub get_binary_version {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Get::Executable qw{ get_executable };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -81,18 +81,19 @@ sub get_binary_version {
         );
 
         ## Call binary and parse output to generate version
-        my %cmd_output = system_cmd_call(
+        my %process_return = child_process(
             {
-                command_string => join $SPACE,
-                @version_cmds,
+                commands_ref => \@version_cmds,
+                process_type => q{open3},
             }
         );
-        if ( not $cmd_output{output}[0] ) {
+
+        if ( not $process_return{stdouts_ref}[0] ) {
 
             $log->warn(qq{Could not find version for binary: $binary});
         }
         ## Set binary version
-        $binary_version{$binary} = $cmd_output{output}[0];
+        $binary_version{$binary} = $process_return{stdouts_ref}[0];
     }
     return %binary_version;
 }

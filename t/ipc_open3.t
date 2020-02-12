@@ -39,17 +39,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Environment::Manager} => [qw{ get_env_method_cmds }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+        q{MIP::System_call} => [qw{ ipc_open3 }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Environment::Manager qw{ get_env_method_cmds };
 
-diag(   q{Test get_env_method_cmds from Parameter.pm v}
-      . $MIP::Environment::Manager::VERSION
+
+use MIP::System_call qw{ ipc_open3 };
+
+diag(   q{Test ipc_open3 from System_call.pm v}
+      . $MIP::System_call::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,34 +59,26 @@ diag(   q{Test get_env_method_cmds from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given env method, name and load action
-my $env_method = q{conda};
-my $env_name   = q{test_env};
+## Given proper system call
+my $cmd = q{ls};
 
-my @env_cmds = get_env_method_cmds(
-    {
-        action     => q{load},
-        env_name   => $env_name,
-        env_method => $env_method,
-    }
-);
-my @expected_load_cmds = ( qw{ conda activate }, $env_name );
+my %process_return = ipc_open3( { command_string => $cmd, } );
 
-## Then return load env commands
-is_deeply( \@expected_load_cmds, \@env_cmds, q{Got env load cmds} );
+## Then capture the output
+ok( @{ $process_return{stdouts_ref} }, q{Captured output from system call} );
 
-## Given env method, name and unload action
-@env_cmds = get_env_method_cmds(
-    {
-        action     => q{unload},
-        env_name   => $env_name,
-        env_method => $env_method,
-    }
-);
+## Then no errors should be generated
+is( @{ $process_return{stderrs_ref} }, 0, q{No error from correct system call} );
 
-my @expected_unload_cmds = (qw{ conda deactivate });
+## Given system call, when writing to STDERR
+$cmd = q{perl -e 'print STDERR q{Ops}'};
 
-## Then return unload env commands
-is_deeply( \@expected_unload_cmds, \@env_cmds, q{Got env unload cmds} );
+%process_return = ipc_open3( { command_string => $cmd, } );
+
+## Then capture the errors
+ok( @{ $process_return{stderrs_ref} }, q{Captured error from system call} );
+
+## Then no output should be generated
+is( @{ $process_return{stdouts_ref} }, 0, q{No output from incorrect system call} );
 
 done_testing();

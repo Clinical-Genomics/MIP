@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -47,10 +47,9 @@ BEGIN {
 }
 
 use MIP::Environment::Child_process qw{ child_process };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-diag(   q{Test test_standard_cli from Fixtures.pm v}
-      . $MIP::Test::Fixtures::VERSION
+diag(   q{Test child_process from Child_process.pm v}
+      . $MIP::Environment::Child_process::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,43 +57,37 @@ diag(   q{Test test_standard_cli from Fixtures.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a cli
-my $is_ok = test_standard_cli(
+## Given proper system call
+my $cmd          = q{ls};
+my $process_type = q{ipc_cmd_run};
+
+my %process_return = child_process(
     {
-        verbose => $VERBOSE,
-        version => $VERSION,
+        commands_ref => [$cmd],
+        process_type => $process_type,
     }
 );
 
-## Then return true
-ok( $is_ok, q{Generated standard cli} );
+## Then capture the output
+ok( @{ $process_return{stdouts_ref} }, q{Captured output from system call} );
 
-## Given verbose and version (this scripts)
-my $command_version_string = qq{perl $PROGRAM_NAME -v};
-my %process_return         = child_process(
-    {
-        commands_ref => [ $command_version_string, ],
-        process_type => q{open3},
-    }
-);
+## Then no errors should be generated
+is( @{ $process_return{stderrs_ref} }, 0, q{No error from correct system call} );
 
-my $expected_version_return = join $SPACE, @{ $process_return{stdouts_ref} };
+## Given system call, when writing to STDERR
+$cmd = q{perl -e 'print STDERR q{Ops}'};
 
-## Then show version
-like( $expected_version_return, qr/test_standard_cli.t \s+ 1/xms, q{Show version} );
-
-## Given verbose and help
-my $command_help_string = qq{perl $PROGRAM_NAME -h};
 %process_return = child_process(
     {
-        commands_ref => [ $command_help_string, ],
-        process_type => q{open3},
+        commands_ref => [$cmd],
+        process_type => $process_type,
     }
 );
 
-my $expected_help_return = join $SPACE, @{ $process_return{stdouts_ref} };
+## Then capture the errors
+ok( @{ $process_return{stderrs_ref} }, q{Captured error from system call} );
 
-## Then show help text
-like( $expected_help_return, qr/test_standard_cli.t \s+ [[]options[]]/xms, q{Show help} );
+## Then no output should be generated
+is( @{ $process_return{stdouts_ref} }, 0, q{No output from incorrect system call} );
 
 done_testing();

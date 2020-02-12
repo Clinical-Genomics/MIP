@@ -1539,7 +1539,7 @@ rhocall_viz:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   outfile_suffix: ".roh"
   program_executables:

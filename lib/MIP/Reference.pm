@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
@@ -163,7 +163,7 @@ sub get_dict_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use IPC::Cmd qw{ run };
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
 
     ## Retrieve logger object
@@ -180,13 +180,17 @@ sub get_dict_contigs {
     my @get_dict_contigs_cmds = join $SPACE, ( @perl_commands, );
 
     # System call
-    my (
-        $success_ref,    $error_message_ref, $full_buf_ref,
-        $stdout_buf_ref, $stderr_buf_ref
-    ) = run( command => \@get_dict_contigs_cmds, verbose => 0 );
+    my %return = child_process(
+        {
+            commands_ref => \@get_dict_contigs_cmds,
+            process_type => q{ipc_cmd_run},
+        }
+    );
 
     # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
+    my @contigs = split $COMMA, join $COMMA, @{ $return{stdouts_ref} };
+
+    #my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
 
     return @contigs if (@contigs);
 
@@ -225,7 +229,7 @@ sub write_contigs_size_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use IPC::Cmd qw{ run };
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
 
     ## Retrieve logger object
@@ -243,15 +247,18 @@ sub write_contigs_size_file {
     my @write_contigs_size_cmd = join $SPACE, ( @perl_commands, );
 
     # System call
-    my (
-        $success_ref,    $error_message_ref, $full_buf_ref,
-        $stdout_buf_ref, $stderr_buf_ref
-    ) = run( command => \@write_contigs_size_cmd, verbose => 0 );
+    my %process_return = child_process(
+        {
+            commands_ref => \@write_contigs_size_cmd,
+            process_type => q{ipc_cmd_run},
+            verbose      => 0,
+        }
+    );
 
-    return if ( not @{$stderr_buf_ref} );
+    return if ( not @{ $process_return{stderrs_ref} } );
 
     $log->fatal(q{Could not write contigs size file});
-    $log->fatal( q{Error: } . join $NEWLINE, @{$stderr_buf_ref} );
+    $log->fatal( q{Error: } . join $NEWLINE, @{ $process_return{stderrs_ref} } );
     exit 1;
 }
 

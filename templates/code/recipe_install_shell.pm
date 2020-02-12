@@ -115,7 +115,7 @@ sub install_PROGRAM {
     use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+    use MIP::Program::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Wget qw{ wget };
     use MIP::Program::Zip qw{ unzip };
 
