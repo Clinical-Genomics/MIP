@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ dirname };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -29,7 +30,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_dynamic_conda_path
+      get_conda_bin_dir_path
       get_gatk_intervals
       get_install_parameter_attribute
       get_package_source_env_cmds
@@ -45,40 +46,37 @@ BEGIN {
 ## Constants
 Readonly my $TWO => 2;
 
-sub get_dynamic_conda_path {
+sub get_conda_bin_dir_path {
 
 ## Function : Attempts to find path to directory with binary in conda env
-## Returns  : Path to directory
-## Arguments: $active_parameter_href  => Active parameter hash {REF}
-##          : $bin_file               => Bin file to test
-##          : $conda_bin_file         => Conda bin file name
-##          : $environment_key        => Key to conda environment
+## Returns  : $conda_bin_dir_path
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $bin_file              => Bin file to test
+##          : $environment_key       => Key to conda environment
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $bin_file;
-    my $conda_bin_file;
     my $environment_key;
 
     my $tmpl = {
         active_parameter_href => {
-            default  => {},
-            required => 1,
-            store    => \$active_parameter_href,
+            default     => {},
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
         },
         bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        conda_bin_file => {
-            default => q{conda},
-            store   => \$conda_bin_file,
+            defined     => 1,
+            required    => 1,
+            store       => \$bin_file,
+            strict_type => 1,
         },
         environment_key => {
-            store => \$environment_key,
+            store       => \$environment_key,
+            strict_type => 1,
         },
     };
 
@@ -86,43 +84,24 @@ sub get_dynamic_conda_path {
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Environment::Path qw{ get_bin_file_path get_conda_path };
+    use MIP::Environment::Path qw{ get_bin_file_path };
 
-    ## Establish path to conda
-    if ( not $active_parameter_href->{conda_path} ) {
-
-        $active_parameter_href->{conda_path} =
-          get_conda_path( { bin_file => $conda_bin_file, } );
-    }
-    if (   not $active_parameter_href->{conda_path}
-        or not -d $active_parameter_href->{conda_path} )
-    {
-
-        return q{Failed to find default conda path};
-    }
+    ## Unpack
     my $conda_path = $active_parameter_href->{conda_path};
+    my ( $env_name, $env_method );
 
-    ## Get module and program environments in use
-    my %environment;
+    ## Get environment name and manager in use for $environment_key
+  ENV_KEY:
+    foreach my $env_key ( $environment_key, qw{ mip } ) {
 
-    ## Load env
-    my ( $env_name, $env_method ) = get_package_env_attributes(
-        {
-            load_env_href => $active_parameter_href->{load_env},
-            package_name  => $environment_key,
-        }
-    );
-
-    ## Could not find recipe within env
-    if ( not $env_name ) {
-
-        ## Fall back to MIPs MAIN env
         ( $env_name, $env_method ) = get_package_env_attributes(
             {
                 load_env_href => $active_parameter_href->{load_env},
-                package_name  => q{mip},
+                package_name  => $env_key,
             }
         );
+        ## Found program|recipe within env
+        last if ($env_name);
     }
 
     ## Get env load command
@@ -135,10 +114,10 @@ sub get_dynamic_conda_path {
     );
 
     ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-    $environment{$environment_key} = [@env_method_cmds];
+    my %environment = ( $environment_key => [@env_method_cmds] );
 
     ## Get the bin file path
-    my ( $bin_file_path, $environment ) = get_bin_file_path(
+    my ( $bin_file_path, $conda_env ) = get_bin_file_path(
         {
             bin_file         => $bin_file,
             conda_path       => $conda_path,
@@ -158,14 +137,13 @@ sub get_dynamic_conda_path {
           . $SPACE
           . q{in conda environment}
           . $SPACE
-          . $environment;
+          . $conda_env;
     }
 
-    ## Get directory path
-    my @bin_path_dirs = File::Spec->splitdir($bin_file_path);
-    pop @bin_path_dirs;
+    ## Remove bin file from path
+    my $conda_bin_dir_path = dirname($bin_file_path);
 
-    return catdir(@bin_path_dirs);
+    return $conda_bin_dir_path;
 }
 
 sub get_gatk_intervals {

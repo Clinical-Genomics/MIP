@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,6 +36,7 @@ BEGIN {
       get_user_supplied_pedigree_parameter
       parse_recipe_resources
       set_default_analysis_type
+      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_parameter
@@ -431,6 +432,47 @@ sub set_default_analysis_type {
 
     map { $active_parameter_href->{$parameter_name}{$_} = q{wgs} }
       @{ $active_parameter_href->{sample_ids} };
+    return;
+}
+
+sub set_default_conda_path {
+
+## Function : Set default conda path to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Path qw{ get_conda_path };
+
+    ## Set conda path
+    $active_parameter_href->{$parameter_name} =
+      get_conda_path( {} );
+
+    if (   not $active_parameter_href->{conda_path}
+        or not -d $active_parameter_href->{conda_path} )
+    {
+
+        croak(q{Failed to find default conda path});
+    }
     return;
 }
 

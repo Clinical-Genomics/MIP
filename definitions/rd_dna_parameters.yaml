@@ -6,6 +6,7 @@ custom_default_parameters:
   data_type: ARRAY
   default:
     - analysis_type
+    - conda_path
     - bwa_build_reference
     - exome_target_bed
     - gatk_path
