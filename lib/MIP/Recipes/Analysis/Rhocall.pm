@@ -588,7 +588,6 @@ sub analysis_rhocall_viz {
             outfile_path => $contigs_size_file_path,
         }
     );
-    say {$filehandle} $NEWLINE;
 
     say {$filehandle} q{## Create wig index files};
     my $viz_wig_outfile_path_prefix = $outdir_path . q{output};
