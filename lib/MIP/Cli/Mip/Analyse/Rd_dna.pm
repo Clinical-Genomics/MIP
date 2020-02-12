@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.45;
+our $VERSION = 1.46;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -44,7 +44,6 @@ sub run {
       get_parameter_definition_file_paths
       get_parameter_from_definition_files };
     use MIP::Dependency_tree qw{ get_dependency_tree_chain set_dependency_tree_order };
-    use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Parameter qw{ get_cache get_order_of_parameters print_recipe };
 
     ## %parameter holds all defined parameters for MIP analyse rd_dna
@@ -1008,6 +1007,16 @@ q{Convert a VCF with structural variants to the “.CGH” format used by the co
             documentation => q{Specify minimum variant size},
             is            => q{rw},
             isa           => Int,
+        )
+    );
+
+    option(
+        q{vcf2cytosure_use_sample_id_as_display_name} => (
+            cmd_aliases   => [qw{ v2cusdn }],
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for vcf2cytosure outfile},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

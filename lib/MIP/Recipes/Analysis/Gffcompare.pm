@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -301,9 +301,10 @@ sub analysis_gffcompare {
 
         set_file_path_to_store(
             {
-                file_tag         => $sample_id . $UNDERSCORE . q{gffcompare},
-                file_type        => q{meta},
+                format           => q{meta},
+                id               => $sample_id,
                 path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

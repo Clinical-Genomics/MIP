@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.13;
+our $VERSION = 2.14;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -115,7 +115,7 @@ sub _build_usage {
                     [
                         qw{ arriba blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba star star-fusion stringtie trim-galore vep }
+                          salmon sambamba star star-fusion stringtie trim-galore ucsc vep }
                     ]
                 ),
             ],
@@ -144,7 +144,7 @@ sub _build_usage {
                     [
                         qw{ arriba blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba star star-fusion stringtie trim-galore vep }
+                          salmon sambamba star star-fusion stringtie trim-galore ucsc vep }
                     ]
                 ),
             ],

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -408,10 +408,13 @@ sub analysis_expansionhunter {
 
         set_file_path_to_store(
             {
-                file_tag         => q{sv_str},
-                file_type        => q{vcf},
+                format           => q{vcf},
+                id               => $case_id,
                 path             => $outfile_path . $DOT . q{gz},
+                path_index       => $outfile_path . $DOT . q{gz} . $DOT . q{csi},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{sv} . $UNDERSCORE . q{str},
             }
         );
 

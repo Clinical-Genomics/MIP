@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -140,10 +140,10 @@ sub analysis_sv_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Toml qw{ load_toml };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw(gnu_mv);
+    use MIP::Io::Read qw{ read_from_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools
@@ -398,9 +398,14 @@ sub analysis_sv_annotate {
         ## Update file tag
         $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
-        my %vcfanno_config = load_toml(
-            { toml_file_path => $active_parameter_href->{sv_fqa_vcfanno_config}, } );
-## Store vcf anno annotations
+        my %vcfanno_config = read_from_file(
+            {
+                format => q{toml},
+                path   => $active_parameter_href->{sv_fqa_vcfanno_config},
+            }
+        );
+
+        ## Store vcf anno annotations
         my @vcf_anno_annotations;
 
       ANNOTATION:

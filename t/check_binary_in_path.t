@@ -22,7 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli test_mip_hashes };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
 our $VERSION = 1.06;
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Unix}    => [qw{ check_binary_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli test_mip_hashes}],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli test_mip_hashes}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -58,6 +58,8 @@ diag(   q{Test check_binary_in_path from Unix.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+my $log = test_log( {} );
 
 ## Given existing binary
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
@@ -89,7 +91,7 @@ trap {
             binary                => $no_binary,
             program_name          => $program_name,
         }
-    );
+    )
 };
 
 ## Then exit and throw FATAL log message

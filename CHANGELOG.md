@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [8.2.0]
+- Minor changes to the install processes
+- Added yamllint
+- New store format file in new file: <case>_deliverables.yaml
+- Fixed memory error in version_collect due to GATK version command
+- Internal code refactoring
+- Updated docs for code style and best practise
+
+**Tools**
+- ucsc-wigToBigWig: 357
+- ucsc-bedToBigBed: 357
+
 ## [8.1.0]
 - STAR aligns sample fastq files with the same sequnece mode (eg. single-end or paired-end) within one job
 - Dropped option to run sambamba markduplicates for RNA
@@ -16,7 +28,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New option for vcf2cytosure "--vcf2cytosure_blacklist"
 
 **Tools**
-- vcf2cytosure: 0.4.3 -> 0.5.0
+- Arriba: 1.1.0
+- SMNCopyNumberCaller: 4b2c1ad
+- vcf2cytosure: 0.4.3 -> 0.5.1
 
 ## [8.0.0]
 

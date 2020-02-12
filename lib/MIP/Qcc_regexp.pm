@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -104,7 +104,7 @@ sub regexp_to_yaml {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Io::Write qw{ write_to_file };
 
     return 1 if ( not defined $print_regexp_outfile );
 
@@ -447,10 +447,11 @@ q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;}
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
     ## Writes a YAML hash to file
-    write_yaml(
+    write_to_file(
         {
-            yaml_href      => \%regexp,
-            yaml_file_path => $print_regexp_outfile,
+            data_href => \%regexp,
+            format    => q{yaml},
+            path      => $print_regexp_outfile,
         }
     );
     $log->info( q{Wrote regexp YAML file to: } . $print_regexp_outfile );

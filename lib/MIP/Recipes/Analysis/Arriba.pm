@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
@@ -442,23 +442,25 @@ sub analysis_arriba {
             }
         );
 
-        set_file_path_to_store(
-            {
-                file_tag         => $sample_id . $UNDERSCORE . q{arriba},
-                file_type        => q{meta},
-                path             => $outfile_path,
-                sample_info_href => $sample_info_href,
-            }
+        my %arriba_store = (
+            $recipe_name  => $outfile_path,
+            arriba_report => $report_path,
         );
 
-        set_file_path_to_store(
-            {
-                file_tag         => $sample_id . $UNDERSCORE . q{arriba_report},
-                file_type        => q{meta},
-                path             => $report_path,
-                sample_info_href => $sample_info_href,
-            }
-        );
+      TAG:
+        while ( my ( $tag, $path ) = each %arriba_store ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $sample_id,
+                    path             => $path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $tag,
+                }
+            );
+        }
 
         submit_recipe(
             {

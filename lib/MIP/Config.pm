@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -124,17 +124,22 @@ sub parse_config {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
+
+    ## Constants
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
+    my @REMOVE_KEYS =
+      qw{ binary_path found_female found_male found_other gender log_file dry_run_all };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    my %config_parameter =
-      load_yaml( { yaml_file => $active_parameter_href->{config_file}, } );
+    my %config_parameter = read_from_file(
+        {
+            format => q{yaml},
+            path   => $active_parameter_href->{config_file},
+        }
+    );
 
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @remove_keys =
-      qw{ found_female found_male found_other gender log_file dry_run_all };
-
-    delete @config_parameter{@remove_keys};
+    delete @config_parameter{@REMOVE_KEYS};
 
 ## Set config parameters into %active_parameter unless $parameter
 ## has been supplied on the command line
@@ -421,7 +426,7 @@ sub write_mip_config {
 
     use File::Basename qw{ dirname };
     use File::Path qw{ make_path };
-    use MIP::File::Format::Yaml qw{ write_yaml };
+    use MIP::Io::Write qw{ write_to_file };
 
     return if ( not $active_parameter_href->{config_file_analysis} );
 
@@ -431,11 +436,12 @@ sub write_mip_config {
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
     delete @{$active_parameter_href}{ @{$remove_keys_ref} };
 
-    ## Writes a YAML hash to file
-    write_yaml(
+    ## Writes hash to file
+    write_to_file(
         {
-            yaml_href      => $active_parameter_href,
-            yaml_file_path => $active_parameter_href->{config_file_analysis},
+            data_href => $active_parameter_href,
+            format    => q{yaml},
+            path      => $active_parameter_href->{config_file_analysis},
         }
     );
     $log->info( q{Wrote: } . $active_parameter_href->{config_file_analysis} );

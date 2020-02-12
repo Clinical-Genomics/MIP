@@ -21,10 +21,9 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,15 +43,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference}   => [qw{ check_parameter_metafiles }],
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Check::Reference} => [qw{ check_parameter_metafiles }],
+        q{MIP::Io::Read}         => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Check::Reference qw{ check_parameter_metafiles };
+use MIP::Io::Read qw{ read_from_file };
 
 diag(   q{Test check_parameter_metafiles from Reference.pm v}
       . $MIP::Check::Reference::VERSION
@@ -63,9 +63,10 @@ diag(   q{Test check_parameter_metafiles from Reference.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter = load_yaml(
+my %parameter = read_from_file(
     {
-        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 

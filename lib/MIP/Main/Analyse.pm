@@ -25,15 +25,15 @@ use autodie qw{ open close :all };
 use IPC::System::Simple;
 use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
+use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
+  parse_recipe_resources
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Modules qw{ check_perl_modules };
-
 use MIP::Check::Parameter qw{
   check_load_env_packages
   check_recipe_name
@@ -41,15 +41,15 @@ use MIP::Check::Parameter qw{
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_executable_in_path };
-use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
-use MIP::File::Format::Yaml qw{ write_yaml };
 use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
+use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   get_cache
@@ -65,16 +65,15 @@ use MIP::Pedigree qw{ create_fam_file
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
-use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
+use MIP::Recipes::Parse qw{ parse_recipes };
 use MIP::Reference qw{ check_human_genome_file_endings };
-use MIP::Sample_info qw{ reload_previous_pedigree_info set_file_path_to_store };
+use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
-  set_recipe_resource };
+};
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
-use MIP::User qw{ check_email_address };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -89,11 +88,20 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.39;
+    our $VERSION = 1.45;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
+
+## Constants
+Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
+    keys => [
+        qw{ recipe_core_number recipe_memory recipe_time
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    ],
+    elements => [qw{ associated_recipe decompose_normalize_references }],
+);
 
 sub mip_analyse {
 
@@ -340,87 +348,17 @@ sub mip_analyse {
         }
     );
 
-## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (
-        qw{ recipe_time recipe_core_number recipe_memory
-          set_recipe_core_number set_recipe_memory set_recipe_time }
-    );
-  PARAMETER_NAME:
-    foreach my $parameter_name (@parameter_keys_to_check) {
-
-        ## Test if key from query hash exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                parameter_name => $parameter_name,
-                query_ref      => \%{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-## Set recipe resource allocation for specific recipe(s)
-    set_recipe_resource( { active_parameter_href => \%active_parameter, } );
-
-## Parameters with key(s) that have elements as MIP recipe names
-    my @parameter_element_to_check = qw{ associated_recipe };
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_element_to_check) {
-
-            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
-
-            ## Test if element from query array exists truth hash
-            check_recipe_exists_in_hash(
-                {
-                    parameter_name => $parameter_name,
-                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
-                    truth_href     => \%parameter,
-                }
-            );
+## Parameters that have keys or elements as MIP recipe names
+    parse_recipes(
+        {
+            active_parameter_href   => \%active_parameter,
+            parameter_href          => \%parameter,
+            parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
-    }
+    );
 
-## Parameters that have elements as MIP recipe names
-    my @parameter_elements_to_check =
-      (qw(associated_recipe decompose_normalize_references));
-    foreach my $parameter_name (@parameter_elements_to_check) {
-
-        ## Test if element from query array exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                parameter_name => $parameter_name,
-                query_ref      => \@{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-## Check that the recipe core number do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
-            {
-                max_cores_per_node => $active_parameter{max_cores_per_node},
-                core_number_requested =>
-                  $active_parameter{recipe_core_number}{$recipe_name},
-            }
-        );
-    }
-
-    ## Check that the recipe memory do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_memory} } ) {
-
-        check_recipe_memory_allocation(
-            {
-                node_ram_memory => $active_parameter{node_ram_memory},
-                recipe_memory_allocation =>
-                  $active_parameter{recipe_memory}{$recipe_name},
-            }
-        );
-    }
+    ## Check core number requested against environment provisioned
+    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
     ## Check programs in path, and executable
     check_executable_in_path(
@@ -594,10 +532,11 @@ sub mip_analyse {
     if ( $active_parameter{sample_info_file} ) {
 
         ## Writes a YAML hash to file
-        write_yaml(
+        write_to_file(
             {
-                yaml_href      => \%sample_info,
-                yaml_file_path => $active_parameter{sample_info_file},
+                data_href => \%sample_info,
+                format    => q{yaml},
+                path      => $active_parameter{sample_info_file},
             }
         );
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
@@ -620,10 +559,12 @@ sub mip_analyse {
     );
 
     ## Writes a YAML hash to file
-    write_yaml(
+    my %store_files = ( files => $sample_info{files}, );
+    write_to_file(
         {
-            yaml_href      => \%{ $sample_info{store} },
-            yaml_file_path => $active_parameter{store_file},
+            data_href => \%store_files,
+            format    => q{yaml},
+            path      => $active_parameter{store_file},
         }
     );
     $log->info( q{Wrote: } . $active_parameter{store_file} );

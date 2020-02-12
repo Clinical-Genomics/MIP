@@ -19,20 +19,21 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_files
       get_not_allowed_temp_dirs
       get_user_supplied_pedigree_parameter
+      parse_recipe_resources
       set_default_analysis_type
       set_default_human_genome
       set_default_infile_dirs
@@ -48,6 +49,7 @@ BEGIN {
       set_exome_target_bed
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      set_recipe_resource
       update_reference_parameters
       update_to_absolute_path
     };
@@ -297,6 +299,63 @@ sub get_user_supplied_pedigree_parameter {
         }
     }
     return %is_user_supplied;
+}
+
+sub parse_recipe_resources {
+
+## Function : Check core number and memory requested against environment provisioned
+## Returns  : 1
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Cluster
+      qw{ check_max_core_number check_recipe_memory_allocation };
+
+    ## Check that the recipe core number do not exceed the maximum per node
+    foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_core_number} } ) {
+
+        ## Limit number of cores requested to the maximum number of cores available per node
+        $active_parameter_href->{recipe_core_number}{$recipe_name} =
+          check_max_core_number(
+            {
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                core_number_requested =>
+                  $active_parameter_href->{recipe_core_number}{$recipe_name},
+            }
+          );
+    }
+
+    ## Check that the recipe memory do not exceed the maximum per node
+    ## Limit recipe_memory to node max memory if required
+    foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_memory} } ) {
+
+        $active_parameter_href->{recipe_memory}{$recipe_name} =
+          check_recipe_memory_allocation(
+            {
+                node_ram_memory => $active_parameter_href->{node_ram_memory},
+                recipe_memory_allocation =>
+                  $active_parameter_href->{recipe_memory}{$recipe_name},
+            }
+          );
+    }
+
+    return 1;
 }
 
 sub set_default_analysis_type {
@@ -576,7 +635,8 @@ sub set_default_store_file {
 
     ## Set store file
     $active_parameter_href->{$parameter_name} =
-      catfile( $active_parameter_href->{outdata_dir}, q{store_info.yaml} );
+      catfile( $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id} . $UNDERSCORE . q{deliverables.yaml} );
     return;
 }
 
@@ -918,6 +978,49 @@ sub set_pedigree_sample_id_parameter {
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
 
+    return;
+}
+
+sub set_recipe_resource {
+
+## Function : Set recipe resource allocation for specific recipe(s)
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %set_hash_key_map = (
+        set_recipe_core_number => q{recipe_core_number},
+        set_recipe_time        => q{recipe_time},
+        set_recipe_memory      => q{recipe_memory},
+    );
+
+  HASH_KEY:
+    while ( my ( $set_hash_key, $target_hash_key ) = each %set_hash_key_map ) {
+
+      RECIPE:
+        while ( my ( $recipe, $core_number ) =
+            each %{ $active_parameter_href->{$set_hash_key} } )
+        {
+
+            $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
+        }
+    }
     return;
 }
 

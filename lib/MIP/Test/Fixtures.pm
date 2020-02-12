@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -216,7 +216,7 @@ sub test_mip_hashes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     my %test_hash = (
         active_parameter =>
@@ -242,9 +242,10 @@ sub test_mip_hashes {
 
     );
 
-    my %hash_to_return = load_yaml(
+    my %hash_to_return = read_from_file(
         {
-            yaml_file => $test_hash{$mip_hash_name},
+            format => q{yaml},
+            path   => $test_hash{$mip_hash_name},
         }
     );
 

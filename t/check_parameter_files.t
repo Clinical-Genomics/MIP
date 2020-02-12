@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Active_parameter}   => [qw{ check_parameter_files }],
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Parameter}          => [qw{ get_parameter_attribute }],
-        q{MIP::Test::Fixtures}     => [qw{ test_log test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ check_parameter_files }],
+        q{MIP::Io::Read}         => [qw{ read_from_file }],
+        q{MIP::Parameter}        => [qw{ get_parameter_attribute }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Active_parameter qw{ check_parameter_files };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{ get_parameter_attribute };
 
 diag(   q{Test check_parameter_files from Active_parameter.pm v}
@@ -97,9 +97,10 @@ my %active_parameter = (
     sv_vcfparser_select_file => q{test_file},
 );
 my $consensus_analysis_type = q{wgs};
-my %parameter               = load_yaml(
+my %parameter               = read_from_file(
     {
-        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 

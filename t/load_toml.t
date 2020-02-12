@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Toml} => [qw{ load_toml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Toml}           => [qw{ load_toml }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Toml qw{ load_toml };
+use MIP::Toml qw{ load_toml };
 
 diag(   q{Test load_toml from Toml.pm v}
-      . $MIP::File::Format::Toml::VERSION
+      . $MIP::Toml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,7 +61,7 @@ diag(   q{Test load_toml from Toml.pm v}
 ## Given a toml file to load
 my %hash_to_return = load_toml(
     {
-        toml_file_path => catfile(
+        path => catfile(
             $Bin,
             qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
         ),

@@ -17,7 +17,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_perl_modules parse_cpan_file };
@@ -58,6 +58,9 @@ sub check_perl_modules {
 
   MODULE:
     foreach my $module ( @{$modules_ref} ) {
+
+        ## Special case for Readonly::XS since it is not a standalone module
+        $module =~ s{Readonly::XS}{Readonly}sxmg;
 
         ## Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
         $module =~ s{::}{/}sxmg;

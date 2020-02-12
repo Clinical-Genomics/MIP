@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ define_analysis_files_to_store set_analysis_files_to_store };
@@ -54,32 +54,39 @@ sub define_analysis_files_to_store {
 
     my %analysis_store_file = (
         config => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{config_file},
+            format => q{meta},
+            path   => $active_parameter_href->{config_file},
+            tag    => q{config},
         },
         config_analysis => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{config_file_analysis},
+            format => q{meta},
+            path   => $active_parameter_href->{config_file_analysis},
+            tag    => q{config_analysis},
         },
         log => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{log_file},
+            format => q{meta},
+            path   => $active_parameter_href->{log_file},
+            tag    => q{log},
         },
         pedigree => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{pedigree_file},
+            format => q{meta},
+            path   => $active_parameter_href->{pedigree_file},
+            tag    => q{pedigree},
         },
         pedigree_fam => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{pedigree_fam_file},
+            format => q{meta},
+            path   => $active_parameter_href->{pedigree_fam_file},
+            tag    => q{pedigree_fam},
         },
         references_info => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{reference_info_file},
+            format => q{meta},
+            path   => $active_parameter_href->{reference_info_file},
+            tag    => q{references_info},
         },
         sample_info => {
-            file_type => q{meta},
-            path      => $active_parameter_href->{sample_info_file},
+            format => q{meta},
+            path   => $active_parameter_href->{sample_info_file},
+            tag    => q{sample_info},
         },
     );
     return %analysis_store_file;
@@ -122,15 +129,17 @@ sub set_analysis_files_to_store {
     my %analysis_store_file = define_analysis_files_to_store(
         { active_parameter_href => $active_parameter_href, } );
 
-  FILE_TAG:
-    foreach my $file_tag ( keys %analysis_store_file ) {
+  FILE:
+    foreach my $file ( keys %analysis_store_file ) {
 
         set_file_path_to_store(
             {
-                file_tag         => $file_tag,
-                file_type        => $analysis_store_file{$file_tag}{file_type},
-                path             => $analysis_store_file{$file_tag}{path},
+                format           => $analysis_store_file{$file}{format},
+                path             => $analysis_store_file{$file}{path},
+                id               => $active_parameter_href->{case_id},
+                recipe_name      => q{mip_analyse},
                 sample_info_href => $sample_info_href,
+                tag              => $analysis_store_file{$file}{tag},
             }
         );
     }

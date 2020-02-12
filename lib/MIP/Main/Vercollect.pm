@@ -22,7 +22,8 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::Io::Read qw{ read_from_file };
+use MIP::Io::Write qw{ write_to_file };
 
 BEGIN {
 
@@ -30,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{1.0.0};
+    our $VERSION = q{1.0.2};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vercollect };
@@ -79,14 +80,24 @@ sub mip_vercollect {
 
     ## Loads a YAML file into an arbitrary hash and returns it
     $log->info( q{Loading: } . $infile_path );
-    my %binary_info = load_yaml( { yaml_file => $infile_path, } );
+    my %binary_info = read_from_file(
+        {
+            format => q{yaml},
+            path   => $infile_path,
+        }
+    );
     $log->info( q{Loaded: } . $infile_path );
 
     ## If outfile was previously generated - load to update
     if ( -e $outfile ) {
         ## Loads a YAML file into an arbitrary hash and returns it
         $log->info( q{Loading: } . $outfile );
-        %binary_version = load_yaml( { yaml_file => $outfile, } );
+        %binary_version = read_from_file(
+            {
+                format => q{yaml},
+                path   => $outfile,
+            }
+        );
         $log->info( q{Loaded: } . $outfile );
     }
 
@@ -95,10 +106,11 @@ sub mip_vercollect {
       ( %binary_version, get_binary_version( { binary_info_href => \%binary_info, } ) );
 
     ## Writes a qc data hash to file
-    write_yaml(
+    write_to_file(
         {
-            yaml_file_path => $outfile,
-            yaml_href      => \%binary_version,
+            data_href => \%binary_version,
+            format    => q{yaml},
+            path      => $outfile,
         }
     );
     $log->info( q{Wrote: } . $outfile );

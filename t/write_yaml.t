@@ -21,10 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $DOT $DOUBLE_QUOTE $NEWLINE $SINGLE_QUOTE $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,16 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-## Constants
-Readonly my $COMMA        => q{,};
-Readonly my $COLON        => q{:};
-Readonly my $DOT          => q{.};
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -50,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ write_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Yaml}           => [qw{ write_yaml }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Yaml qw{ write_yaml };
+use MIP::Yaml qw{ write_yaml };
 
 diag(   q{Test write_yaml from Yaml.pm v}
-      . $MIP::File::Format::Yaml::VERSION
+      . $MIP::Yaml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -76,8 +67,8 @@ my $yaml_file_path   = catfile( $test_dir, q{ap_test.yaml} );
 
 write_yaml(
     {
-        yaml_href      => \%active_parameter,
-        yaml_file_path => $yaml_file_path,
+        data_href => \%active_parameter,
+        path      => $yaml_file_path,
     }
 );
 

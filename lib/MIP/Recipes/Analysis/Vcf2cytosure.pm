@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -142,10 +143,10 @@ sub analysis_vcf2cytosure {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_view bcftools_rename_vcf_samples };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
+    use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -170,6 +171,8 @@ sub analysis_vcf2cytosure {
             recipe_name           => $recipe_name,
         }
     );
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{vcf2cytosure_use_sample_id_as_display_name};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -185,6 +188,7 @@ sub analysis_vcf2cytosure {
         }
     );
 
+    my $outdir_path         = $io{out}{dir_path};
     my %outfile_name        = %{ $io{out}{file_name_href} };
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -322,7 +326,7 @@ sub analysis_vcf2cytosure {
           . $UNDERSCORE
           . $sample_id . q{.vcf};
 
-        ## Store file for use downstream
+        ## Store sample_id vcf file for use downstream
         $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}} =
           $bcftools_outfile_path;
 
@@ -339,6 +343,46 @@ sub analysis_vcf2cytosure {
         say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
     say {$filehandle} q{wait}, $NEWLINE;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Rename vcf sample
+        my $sample_display_name = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sample_display_name},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+
+            my $sample_display_vcf_file = catfile( $outdir_path, $sample_display_name );
+            $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name} =
+              $sample_display_vcf_file;
+
+            bcftools_rename_vcf_samples(
+                {
+                    create_sample_file => 1,
+                    filehandle         => $filehandle,
+                    infile => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
+                    index  => 0,
+                    outfile_path_prefix =>
+                      $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name},
+                    output_type    => q{v},
+                    sample_ids_ref => [$sample_display_name],
+                    temp_directory => $temp_directory,
+                }
+            );
+
+            ## Exhange for new display name vcf
+            $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}} =
+                $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name}
+              . $DOT . q{vcf};
+
+        }
+    }
 
     say {$filehandle}
       q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
@@ -390,9 +434,10 @@ sub analysis_vcf2cytosure {
 
             set_file_path_to_store(
                 {
-                    file_tag         => $sample_id . $UNDERSCORE . q{sv_cytosure},
-                    file_type        => q{meta},
+                    format           => q{meta},
+                    id               => $sample_id,
                     path             => $outfile_path{$sample_id},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );

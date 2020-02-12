@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter };
@@ -354,12 +354,17 @@ sub _build_bcftools_filter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Array::Utils qw{ intersect };
-    use MIP::File::Format::Toml qw{ load_toml };
+    use MIP::Io::Read qw{ read_from_file };
 
     ## Skip if there are no frequncy annotations to use in filtering
     return if ( not @{$fqf_annotations_ref} );
 
-    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $vcfanno_file_toml,
+        }
+    );
 
     my $exclude_filter = $BACKWARD_SLASH . $DOUBLE_QUOTE;
     my $threshold      = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;

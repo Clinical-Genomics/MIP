@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -139,8 +139,8 @@ sub analysis_fastqc {
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
-    use MIP::Cluster
-      qw{ check_max_core_number update_core_number_to_seq_mode update_memory_allocation };
+    use MIP::Cluster qw{ update_core_number_to_seq_mode update_memory_allocation };
+    use MIP::Environment::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };

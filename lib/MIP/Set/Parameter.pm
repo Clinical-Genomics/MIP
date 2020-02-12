@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,7 +35,6 @@ BEGIN {
       set_parameter_to_broadcast
       set_programs_for_installation
       set_recipe_mode
-      set_recipe_resource
     };
 }
 
@@ -66,17 +65,12 @@ sub set_conda_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Unix qw{ is_binary_in_path };
-    use MIP::Get::Parameter qw{ get_conda_path };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
+    use MIP::Environment::Path qw{ get_conda_path is_binary_in_path };
 
     ## Check if conda is in path
     is_binary_in_path(
         {
             binary => q{conda},
-            log    => $log,
         }
     );
 
@@ -453,49 +447,6 @@ sub set_recipe_mode {
             q{Set} . $SPACE . $recipe . $SPACE . q{to} . $COLON . $SPACE . $mode );
     }
 
-    return;
-}
-
-sub set_recipe_resource {
-
-## Function : Set recipe resource allocation for specific recipe(s)
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %set_hash_key_map = (
-        set_recipe_core_number => q{recipe_core_number},
-        set_recipe_time        => q{recipe_time},
-        set_recipe_memory      => q{recipe_memory},
-    );
-
-  HASH_KEY:
-    while ( my ( $set_hash_key, $target_hash_key ) = each %set_hash_key_map ) {
-
-      RECIPE:
-        while ( my ( $recipe, $core_number ) =
-            each %{ $active_parameter_href->{$set_hash_key} } )
-        {
-
-            $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
-        }
-    }
     return;
 }
 

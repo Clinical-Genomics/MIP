@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.09;
+our $VERSION = 1.11;
 
 our $USAGE = build_usage( {} );
 
@@ -217,12 +217,17 @@ sub test_modules {
 
     ##MIPs lib/
     use lib catdir( dirname($Bin), q{lib} );
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
     use YAML;
     my $yaml_file = catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
     ok( -f $yaml_file, q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
 
-    my $yaml = load_yaml( { yaml_file => $yaml_file, } );
+    my $yaml = read_from_file(
+        {
+            format => q{yaml},
+            path   => $yaml_file,
+        }
+    );
 
     # Check that we got something
     ok( defined $yaml, q{YAML: Load File} );
@@ -254,7 +259,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -282,7 +287,7 @@ sub mip_scripts {
 ## Returns  :
 ## Arguments:
 
-    my @mip_scripts = qw{ mip };
+    my @mip_scripts = qw{ mip cpanfile };
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
@@ -294,7 +299,6 @@ sub mip_scripts {
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
         definitions     => [
             qw{ analyse_parameters.yaml
-              cpanfile
               download_rd_dna_parameters.yaml
               download_rd_rna_parameters.yaml
               install_rd_dna_parameters.yaml

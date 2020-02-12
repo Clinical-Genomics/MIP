@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -504,9 +504,11 @@ sub analysis_gatk_baserecalibration {
 
         set_file_path_to_store(
             {
-                file_tag         => $sample_id . $UNDERSCORE . q{recalibrated},
-                file_type        => q{bam},
+                format           => q{cram},
+                id               => $sample_id,
                 path             => $store_outfile_path,
+                path_index       => $store_outfile_path . $DOT . q{crai},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

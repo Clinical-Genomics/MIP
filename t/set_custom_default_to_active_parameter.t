@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.18;
+our $VERSION = 1.19;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
+        q{MIP::Io::Read} => [qw{ read_from_file }],
         q{MIP::Parameter} =>
           [qw{ get_capture_kit set_custom_default_to_active_parameter }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
@@ -50,7 +50,7 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{ get_capture_kit set_custom_default_to_active_parameter };
 
 diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
@@ -101,9 +101,10 @@ foreach my $definition_file (@definition_files) {
 
     %parameter = (
         %parameter,
-        load_yaml(
+        read_from_file(
             {
-                yaml_file => $definition_file,
+                format => q{yaml},
+                path   => $definition_file,
             }
         ),
     );
@@ -155,7 +156,10 @@ my %expected_default = (
           q{Set human_genome_reference default for rtg vcfeval reference genome},
     },
     store_file => {
-        default    => catfile( $active_parameter{outdata_dir}, q{store_info.yaml} ),
+        default => catfile(
+            $active_parameter{outdata_dir},
+            $active_parameter{case_id} . $UNDERSCORE . q{deliverables.yaml}
+        ),
         test_label => q{Set store_file default },
     },
     sv_vcfparser_select_file => {

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -157,14 +157,12 @@ sub get_pedigree_sample_id_attributes {
                   father
                   mother
                   phenotype
+                  sample_display_name
                   sample_id
-                  sample_name
                   sex
                   time_point
                   }
             ],
-            defined     => 1,
-            required    => 1,
             store       => \$attribute,
             strict_type => 1,
         },
@@ -185,9 +183,15 @@ sub get_pedigree_sample_id_attributes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    if ( not $attribute ) {
+
+        ## Return entire sample id hash
+        return %{ $sample_info_href->{sample}{$sample_id} };
+    }
     ## Get attribute
     my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
 
+    ## Return requested attribute
     return $stored_attribute;
 }
 
@@ -604,7 +608,7 @@ sub reload_previous_pedigree_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -612,9 +616,10 @@ sub reload_previous_pedigree_info {
     return if ( not -f $sample_info_file_path );
 
     # Load parameters from sample_info_file from previous run
-    my %previous_sample_info = load_yaml(
+    my %previous_sample_info = read_from_file(
         {
-            yaml_file => $sample_info_file_path,
+            format => q{yaml},
+            path   => $sample_info_file_path,
         }
     );
 
@@ -634,37 +639,53 @@ sub set_file_path_to_store {
 
 ## Function : Set file to store in sample_info
 ## Returns  :
-## Arguments: $file_tag         => Short description of file
-##          : $file_type        => File type
+## Arguments: $format           => File format type
+##          : $id               => Id associated with file (sample_id|case_id)
 ##          : $path             => Path of file
+##          : $path_index       => Path of file index
+##          : $recipe_name      => Recipe name that produced the file
 ##          : $sample_info_href => Info on samples and case hash {REF}
+##          : $tag              => File tag
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_tag;
-    my $file_type;
+    my $format;
+    my $id;
     my $path;
+    my $path_index;
+    my $recipe_name;
     my $sample_info_href;
+    my $tag;
 
     my $tmpl = {
-        file_tag => {
+        format => {
+            allow       => [qw{ fastq bam bcf cram meta vcf }],
             defined     => 1,
             required    => 1,
-            store       => \$file_tag,
+            store       => \$format,
             strict_type => 1,
         },
-        file_type => {
-            allow       => [qw{ fastq bam meta vcf }],
+        id => {
             defined     => 1,
             required    => 1,
-            store       => \$file_type,
+            store       => \$id,
             strict_type => 1,
         },
         path => {
             defined     => 1,
             required    => 1,
             store       => \$path,
+            strict_type => 1,
+        },
+        path_index => {
+            store       => \$path_index,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -674,12 +695,26 @@ sub set_file_path_to_store {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        tag => {
+            store       => \$tag,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Build file meta data hash
+    my %file_info = (
+        format     => $format,
+        id         => $id,
+        path       => $path,
+        path_index => $path_index,
+        step       => $recipe_name,
+        tag        => $tag,
+    );
+
     ## Set file path according to file type and tag
-    $sample_info_href->{store}{$file_type}{$file_tag} = $path;
+    push @{ $sample_info_href->{files} }, {%file_info};
 
     return;
 }

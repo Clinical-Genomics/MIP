@@ -127,14 +127,19 @@ singularity:
     executable:
       TIDDIT.py:
     uri: shub://J35P312/TIDDIT:2.8.0
-  varg:
+  ucsc:
     executable:
-      varg:
-    uri: docker://clinicalgenomics/varg:1.2.0
+      wigToBigWig:
+      bedToBigBed:
+    uri: docker://clinicalgenomics/ucsc:357
   upd:
     executable:
       upd:
     uri: docker://clinicalgenomics/upd:0.1
+  varg:
+    executable:
+      varg:
+    uri: docker://clinicalgenomics/varg:1.2.0
   variant_integrity:
     executable:
       variant_integrity:
@@ -150,7 +155,7 @@ singularity:
   vcf2cytosure:
     executable:
       vcf2cytosure:
-    uri: shub://J35P312/vcf2cytosure:0.5.0
+    uri: shub://J35P312/vcf2cytosure:0.5.1
   vt:
     executable:
       vt:

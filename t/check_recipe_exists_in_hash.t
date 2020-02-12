@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,7 +61,7 @@ diag(   q{Test check_recipe_exists_in_hash from Check.pm v}
 my $log = test_log( {} );
 
 ## Given recipe names
-my %parameter = ( q{bcftools_mpileup} => 1, );
+my %parameter = ( bcftools_mpileup => 1, );
 
 my %active_parameter = (
     recipe_time => {
@@ -87,8 +87,8 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given recipe names
 %parameter = (
-    q{bcftools_mpileup} => 1,
-    q{bwa_mem}          => 1,
+    bcftools_mpileup => 1,
+    bwa_mem          => 1,
 );
 
 ## When all exists in truth hash
@@ -118,9 +118,9 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given recipe names
 %parameter = (
-    q{bcftools_mpileup} => 1,
-    q{bwa_mem}          => 1,
-    q{fastqc_ar}        => 1,
+    bcftools_mpileup => 1,
+    bwa_mem          => 1,
+    fastqc_ar        => 1,
 );
 
 ## When all exists in truth hash
@@ -134,7 +134,7 @@ $return = check_recipe_exists_in_hash(
 is( $return, undef, q{All recipe element exists in truth hash} );
 
 ## Given a recipe name
-my $recipe_name = q{bwa_memA};
+my $recipe_name = q{this_recipe_does_not_exist};
 
 %parameter = ( bwa_mem => 1, );
 
