@@ -384,7 +384,8 @@ sub analysis_chromograph_proband {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Reference qw{ write_contigs_size_file };
-    use MIP::Sample_info qw{ get_family_member_id set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_family_member_id set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
 
@@ -531,6 +532,7 @@ sub analysis_chromograph_proband {
         say {$filehandle} q{## Create bed index files};
         ucsc_bed_to_big_bed(
             {
+                clip                   => 1,
                 contigs_size_file_path => $contigs_size_file_path,
                 filehandle             => $filehandle,
                 infile_path            => $upd_outfile_path,
@@ -599,6 +601,16 @@ sub analysis_chromograph_proband {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{tar},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
