@@ -6,6 +6,7 @@ custom_default_parameters:
   data_type: ARRAY
   default:
     - analysis_type
+    - conda_path
     - bwa_build_reference
     - exome_target_bed
     - gatk_path
@@ -370,8 +371,6 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_executables:
-    - gzip
   type: recipe
 ## FastQC
 fastqc_ar:
@@ -1120,8 +1119,6 @@ sv_reformat:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_executables:
-    - grep
   type: recipe
 sv_reformat_remove_genes_file:
   associated_recipe:
@@ -1475,7 +1472,6 @@ vt_ar:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
@@ -1516,7 +1512,6 @@ vt_core:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   type: recipe
@@ -1972,8 +1967,6 @@ endvariantannotationblock:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_executables:
-    - grep
   type: recipe
 rankvariant_binary_file:
   associated_recipe:

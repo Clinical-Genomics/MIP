@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -725,6 +725,7 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
+      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_pedigree_fam_file
@@ -743,6 +744,7 @@ sub set_custom_default_to_active_parameter {
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
         analysis_type                 => \&set_default_analysis_type,
+        conda_path                    => \&set_default_conda_path,
         bwa_build_reference           => \&set_default_human_genome,
         infile_dirs                   => \&set_default_infile_dirs,
         pedigree_fam_file             => \&set_default_pedigree_fam_file,

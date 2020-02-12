@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -111,7 +111,8 @@ trap {
 };
 
 ## Then exit and throw FATAL message
-ok( $trap->exit, q{Exit on no bin} );
+is( $trap->leaveby, q{die}, q{Exit if binary cannot be found} );
 like( $trap->stderr, qr/not_in_path/xms,
     q{No bin and executable - Throw FATAL log message} );
+
 done_testing();
