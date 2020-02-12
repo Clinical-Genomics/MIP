@@ -252,6 +252,7 @@ sub analysis_tiddit_coverage {
     my $index_file_path = $outfile_path_prefix . $DOT . q{bw};
     ucsc_wig_to_big_wig(
         {
+            clip                   => 1,
             contigs_size_file_path => $contigs_size_file_path,
             filehandle             => $filehandle,
             infile_path            => $outfile_path_prefix . $DOT . q{wig},

@@ -593,6 +593,7 @@ sub analysis_rhocall_viz {
     my $viz_wig_outfile_path_prefix = $outdir_path . q{output};
     ucsc_wig_to_big_wig(
         {
+            clip                   => 1,
             contigs_size_file_path => $contigs_size_file_path,
             filehandle             => $filehandle,
             infile_path            => $viz_wig_outfile_path_prefix . $DOT . q{wig},
