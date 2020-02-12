@@ -247,7 +247,6 @@ sub analysis_tiddit_coverage {
             outfile_path => $contigs_size_file_path,
         }
     );
-    say {$filehandle} $NEWLINE;
 
     say {$filehandle} q{## Create wig index files};
     my $index_file_path = $outfile_path_prefix . $DOT . q{bw};

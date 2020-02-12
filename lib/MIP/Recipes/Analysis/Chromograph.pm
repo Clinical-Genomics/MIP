@@ -501,8 +501,9 @@ sub analysis_chromograph_proband {
   CALL_TYPE:
     foreach my $call_type (@call_types) {
 
-        my $upd_oufile_prefix_path = $outfile_path_prefix . $UNDERSCORE . $call_type;
-        my $upd_outfile_path       = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $upd_oufile_prefix_path   = $outfile_path_prefix . $UNDERSCORE . $call_type;
+        my $upd_outfile_path         = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $ucsc_outfile_prefix_path = catfile( $outfile_path_prefix, $call_type );
 
         upd_call(
             {
@@ -532,11 +533,10 @@ sub analysis_chromograph_proband {
         say {$filehandle} q{## Create bed index files};
         ucsc_bed_to_big_bed(
             {
-                clip                   => 1,
                 contigs_size_file_path => $contigs_size_file_path,
                 filehandle             => $filehandle,
                 infile_path            => $upd_outfile_path,
-                outfile_path           => $upd_oufile_prefix_path . $DOT . q{bb},
+                outfile_path           => $ucsc_outfile_prefix_path . $DOT . q{bb},
             }
         );
         say {$filehandle} $NEWLINE;
