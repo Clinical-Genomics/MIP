@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.145;
+our $VERSION = 2.15;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
