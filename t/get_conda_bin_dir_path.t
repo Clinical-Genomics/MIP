@@ -22,7 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.03;
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Path} => [qw{ get_conda_bin_dir_path }],
-        q{MIP::Test::Fixtures}    => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}    => [qw{ test_mip_hashes test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -58,6 +58,8 @@ diag(   q{Test get_conda_bin_dir_path from Path.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+my $log = test_log( { no_screen => 1, } );
 
 ## Given a conda bin and bwa bin file path, when exists
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
@@ -82,18 +84,22 @@ is( $bin_path, $bwa_bin_path, q{Found dynamic conda bin path} );
 ## Given a conda bin when bwa bin file path does not exist
 my $faulty_binary = q{not_a_bin_file};
 
-my $err_msg = get_conda_bin_dir_path(
-    {
-        active_parameter_href => \%active_parameter,
-        bin_file              => $faulty_binary,
-        environment_key       => $recipe_name,
-    }
-);
+trap {
+    get_conda_bin_dir_path(
+        {
+            active_parameter_href => \%active_parameter,
+            bin_file              => $faulty_binary,
+            environment_key       => $recipe_name,
+        }
+    )
+};
 
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if the binary path cannot be found} );
 like(
-    $err_msg,
+    $trap->die,
     qr/Failed \s+ to \s+ find \s+ default \s+ path/xms,
-    q{Could not find default binary file}
+    q{Could not find default binary file path }
 );
 
 done_testing();

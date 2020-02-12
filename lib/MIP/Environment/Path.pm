@@ -32,8 +32,8 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_bin_file_path
-      get_conda_path
       get_conda_bin_dir_path
+      get_conda_path
       is_binary_in_path
     };
 }
@@ -141,6 +141,9 @@ sub get_conda_bin_dir_path {
     use MIP::Environment::Manager qw{ get_env_method_cmds };
     use MIP::Environment::Path qw{ get_bin_file_path };
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     ## Unpack
     my $conda_path = $active_parameter_href->{conda_path};
     my ( $env_name, $env_method );
@@ -163,8 +166,8 @@ sub get_conda_bin_dir_path {
     my @env_method_cmds = get_env_method_cmds(
         {
             action     => q{load},
-            env_name   => $env_name,
             env_method => $env_method,
+            env_name   => $env_name,
         }
     );
 
@@ -185,14 +188,13 @@ sub get_conda_bin_dir_path {
     if (   not $bin_file_path
         or not -f $bin_file_path )
     {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $conda_env;
+        $log->logcroak( q{Failed to find default path for}
+              . $SPACE
+              . $bin_file
+              . $SPACE
+              . q{in conda environment}
+              . $SPACE
+              . $conda_env );
     }
 
     ## Remove bin file from path

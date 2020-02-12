@@ -447,6 +447,7 @@ sub set_default_conda_path {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $parameter_name;
+    my $bin_file;
 
     my $tmpl = {
         active_parameter_href => {
@@ -454,6 +455,11 @@ sub set_default_conda_path {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        bin_file => {
+            default     => q{conda},
+            store       => \$bin_file,
             strict_type => 1,
         },
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
@@ -465,10 +471,10 @@ sub set_default_conda_path {
 
     ## Set conda path
     $active_parameter_href->{$parameter_name} =
-      get_conda_path( {} );
+      get_conda_path( { bin_file => $bin_file, } );
 
-    if (   not $active_parameter_href->{conda_path}
-        or not -d $active_parameter_href->{conda_path} )
+    if (   not $active_parameter_href->{$parameter_name}
+        or not -d $active_parameter_href->{$parameter_name} )
     {
 
         croak(q{Failed to find default conda path});

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -94,7 +94,7 @@ trap {
     )
 };
 
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if binary cannot be found} );
+## Then exit and die
+is( $trap->leaveby, q{die}, q{Exit if binary cannot be found} );
 
 done_testing();

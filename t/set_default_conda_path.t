@@ -62,12 +62,13 @@ diag(   q{Test set_default_conda_path from Active_parameter.pm v}
 my $parameter_name   = q{conda_path};
 my %active_parameter = ( $parameter_name => undef, );
 
-## WHen not called with "conda_path"
+## When called with a faulty conda binary
 trap {
     set_default_conda_path(
         {
             active_parameter_href => \%active_parameter,
-            parameter_name        => q{not_conda_path},    # To enable test of croak
+            bin_file              => q{not_a_conda_path},
+            parameter_name        => $parameter_name,
         }
     )
 };
@@ -81,6 +82,8 @@ like(
 );
 
 ## Given a proper call using "conda_path"
+
+## When bin file is conda per default
 set_default_conda_path(
     {
         active_parameter_href => \%active_parameter,
