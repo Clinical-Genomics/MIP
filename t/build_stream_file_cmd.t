@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,6 +68,6 @@ my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } )
 
 ## Then commands for uncompressed and compressed fastq files is returned
 like( $bwa_infiles[0], qr/[<(]cat/sxm,  q{Got cmd for uncompressed fastq file} );
-like( $bwa_infiles[1], qr/[<(]zcat/sxm, q{Got cmd for compressed fastq file} );
+like( $bwa_infiles[1], qr/[<(]gzip/sxm, q{Got cmd for compressed fastq file} );
 
 done_testing();

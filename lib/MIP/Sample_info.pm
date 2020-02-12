@@ -157,14 +157,12 @@ sub get_pedigree_sample_id_attributes {
                   father
                   mother
                   phenotype
+                  sample_display_name
                   sample_id
-                  sample_name
                   sex
                   time_point
                   }
             ],
-            defined     => 1,
-            required    => 1,
             store       => \$attribute,
             strict_type => 1,
         },
@@ -185,9 +183,15 @@ sub get_pedigree_sample_id_attributes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    if ( not $attribute ) {
+
+        ## Return entire sample id hash
+        return %{ $sample_info_href->{sample}{$sample_id} };
+    }
     ## Get attribute
     my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
 
+    ## Return requested attribute
     return $stored_attribute;
 }
 

@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -347,16 +347,6 @@ sub build_perl_program_check_command {
         ## Skip programs that lacks a test_command
         next PROGRAM if ( not $program_test_command_href->{$program} );
 
-        ## Add path test
-        if ( $program_test_command_href->{$program}{path} ) {
-            my $path_test =
-              $OPEN_STRING . $program_test_command_href->{$program}{path} . $CLOSE_STRING;
-            my $path_test_name =
-              $OPEN_STRING . q{Program in path: } . $program . $CLOSE_STRING;
-            my $path_test_command =
-              qq{ok(can_run( $path_test ), $path_test_name)} . $SEMICOLON;
-            push @program_test_commands, $path_test_command;
-        }
         ## Add execution test
         if ( $program_test_command_href->{$program}{execution} ) {
             my $execution_test =
@@ -369,6 +359,16 @@ sub build_perl_program_check_command {
 qq{ok(run(command => $execution_test, timeout => $TIMEOUT), $execution_test_name)}
               . $SEMICOLON;
             push @program_test_commands, $execution_test_command;
+        }
+        ## Add path test if no execution test is available
+        elsif ( $program_test_command_href->{$program}{path} ) {
+            my $path_test =
+              $OPEN_STRING . $program_test_command_href->{$program}{path} . $CLOSE_STRING;
+            my $path_test_name =
+              $OPEN_STRING . q{Program in path: } . $program . $CLOSE_STRING;
+            my $path_test_command =
+              qq{ok(can_run( $path_test ), $path_test_name)} . $SEMICOLON;
+            push @program_test_commands, $path_test_command;
         }
     }
 

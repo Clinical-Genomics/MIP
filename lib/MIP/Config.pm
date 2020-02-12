@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -126,6 +126,11 @@ sub parse_config {
 
     use MIP::Io::Read qw{ read_from_file };
 
+    ## Constants
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
+    my @REMOVE_KEYS =
+      qw{ binary_path found_female found_male found_other gender log_file dry_run_all };
+
     ## Loads a YAML file into an arbitrary hash and returns it.
     my %config_parameter = read_from_file(
         {
@@ -134,11 +139,7 @@ sub parse_config {
         }
     );
 
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @remove_keys =
-      qw{ found_female found_male found_other gender log_file dry_run_all };
-
-    delete @config_parameter{@remove_keys};
+    delete @config_parameter{@REMOVE_KEYS};
 
 ## Set config parameters into %active_parameter unless $parameter
 ## has been supplied on the command line

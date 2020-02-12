@@ -557,11 +557,11 @@ sub analysis_rhocall_viz {
 
     gzip(
         {
-            decompress   => 1,
-            filehandle   => $filehandle,
-            force        => 1,
-            infile_path  => $sample_vcf,
-            outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            decompress       => 1,
+            filehandle       => $filehandle,
+            force            => 1,
+            infile_paths_ref => [$sample_vcf],
+            outfile_path     => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
         }
     );
     say {$filehandle} $NEWLINE;

@@ -1011,6 +1011,16 @@ q{Convert a VCF with structural variants to the “.CGH” format used by the co
     );
 
     option(
+        q{vcf2cytosure_use_sample_id_as_display_name} => (
+            cmd_aliases   => [qw{ v2cusdn }],
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for vcf2cytosure outfile},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{sv_varianteffectpredictor} => (
             cmd_aliases   => [qw{ svv }],
             cmd_tags      => [q{Analysis recipe switch}],

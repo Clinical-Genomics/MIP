@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ unzip };
@@ -37,7 +37,7 @@ sub unzip {
 ## Returns  : @commands
 ##          : $filehandle             => Filehandle to write to (scalar undefined)
 ##          : $force                  => Overwrite existing files
-##          : $infile_path            => Infile path
+##          : $infile_paths_ref       => Infile path
 ##          : $outdir_path            => Path to output directory
 ##          : $quiet                  => Suppress all warnings
 ##          : $stderrfile_path        => Stderrfile path (scalar )
@@ -49,7 +49,7 @@ sub unzip {
 
     ## Flatten argument(s)
     my $filehandle;
-    my $infile_path;
+    my $infile_paths_ref;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -70,10 +70,11 @@ sub unzip {
             store       => \$force,
             strict_type => 1,
         },
-        infile_path => {
+        infile_paths_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$infile_path,
+            store       => \$infile_paths_ref,
             strict_type => 1,
         },
         outdir_path => {
@@ -130,7 +131,7 @@ sub unzip {
         push @commands, q{-p};
     }
 
-    push @commands, $infile_path;
+    push @commands, join $SPACE, @{$infile_paths_ref};
 
     if ($outdir_path) {
         push @commands, q{-d} . $SPACE . $outdir_path;

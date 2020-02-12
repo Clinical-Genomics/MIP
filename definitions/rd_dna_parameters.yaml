@@ -951,6 +951,12 @@ vcf2cytosure_var_size:
   data_type: SCALAR
   default: 5000
   type: recipe_argument
+vcf2cytosure_use_sample_id_as_display_name:
+  associated_recipe:
+    - vcf2cytosure_ar
+  data_type: SCALAR
+  default: 0
+  type: mip
 sv_varianteffectpredictor:
   analysis_mode: case
   associated_recipe:
