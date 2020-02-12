@@ -26,8 +26,6 @@ chromograph:
   execution: 'chromograph'
 cnvnator:
   path: 'cnvnator'
-cython:
-  execution: 'python -c "import cython"'
 delly:
   execution: 'delly'
 expansionhunter:
@@ -52,8 +50,6 @@ mip_scripts:
   execution: 'mip --help'
 multiqc:
   execution: 'multiqc --version'
-numpy:
-  execution: 'python -c "import numpy"'
 peddy:
   execution: 'peddy --version'
 picard:
@@ -76,8 +72,6 @@ sambamba:
   execution: 'sambamba --version'
 samtools:
   execution: 'samtools --version'
-scipy:
-  execution: 'python -c "import scipy"'
 star:
   execution: 'STAR'
 star-fusion:
