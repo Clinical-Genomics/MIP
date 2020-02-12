@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -90,7 +90,7 @@ my %file_info = test_mip_hashes(
     }
 );
 
-## Special case since delly_reformat needs to collect from recipe not immediate upstream
+## Special case since vcf2cytosure needs to collect from recipe not immediate upstream
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -131,9 +131,18 @@ $parameter{sv_annotate}{chain}            = q{TEST};
 
 my %sample_info = (
     sample => {
-        ADM1059A1 => { sex => q{male}, },
-        ADM1059A2 => { sex => q{unknown}, },
-        ADM1059A3 => { sex => q{female}, },
+        ADM1059A1 => {
+            sample_display_name => q{boris},
+            sex                 => q{male},
+        },
+        ADM1059A2 => {
+            sample_display_name => q{stefan},
+            sex                 => q{unknown},
+        },
+        ADM1059A3 => {
+            sample_display_name => q{venus},
+            sex                 => q{female},
+        },
     }
 );
 
