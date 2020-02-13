@@ -92,9 +92,7 @@ sub check_binary_in_path {
     my $binary_path = catfile( $env_binary_path, $binary );
 
     ## Already tested
-    return
-      if (  exists $active_parameter_href->{binary_path}
-        and exists $active_parameter_href->{binary_path}{$binary} );
+    return if ( exists $active_parameter_href->{binary_path}{$binary} );
 
     ## Test binary
     is_binary_in_path( { binary => $binary_path, } );
