@@ -507,11 +507,12 @@ sub set_binary_path {
             strict_type => 1,
         },
         binary => { defined => 1, required => 1, store => \$binary, strict_type => 1, },
-        binary_path =>
-          { defined => 1, required => 1, store => \$binary_path, strict_type => 1, },
+        binary_path => { required => 1, store => \$binary_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $binary_path );
 
     $active_parameter_href->{binary_path}{$binary} = $binary_path;
     return;
