@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -99,6 +99,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    clip => {
+        input           => 1,
+        expected_output => q{-clip},
+    },
     contigs_size_file_path => {
         input           => q{a_contig_file_path},
         expected_output => q{a_contig_file_path},
