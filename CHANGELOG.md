@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+- Turned off bcftools_mpileup
+
 ## [8.2.0]
 - Minor changes to the install processes
 - Added yamllint

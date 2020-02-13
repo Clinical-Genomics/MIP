@@ -1135,7 +1135,7 @@ bcftools_mpileup:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _mpileup
   program_executables:
     - bcftools
