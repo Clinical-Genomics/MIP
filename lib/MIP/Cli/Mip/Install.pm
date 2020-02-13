@@ -2,9 +2,6 @@ package MIP::Cli::Mip::Install;
 
 use 5.026;
 use Carp;
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -18,11 +15,9 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.03;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -42,21 +37,10 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{conda_dir_path} => (
-            cmd_aliases   => [qw{ cdp }],
-            cmd_flag      => q{conda_dir_path},
-            documentation => q{Path to conda_directory},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{conda_update} => (
-            cmd_aliases   => [qw{ cdu }],
-            cmd_flag      => q{conda_update},
-            documentation => q{Update conda},
+        q{add_environment_date} => (
+            cmd_aliases   => [qw{ aed }],
+            cmd_flag      => q{add_environment_date},
+            documentation => q{Add creation date to environment},
             is            => q{rw},
             isa           => Bool,
             required      => 0,
@@ -75,44 +59,33 @@ sub _build_usage {
     );
 
     option(
-        q{disable_env_check} => (
-            cmd_aliases   => [qw{ dec }],
-            cmd_flag      => q{disable_env_check},
-            documentation => q{Disable source environment check},
+        q{core_number} => (
+            cmd_tags      => [q{Default: 1}],
+            documentation => q{Number of tasks in sbatch allocation},
             is            => q{rw},
-            isa           => Bool,
+            isa           => Int,
             required      => 0,
+
         ),
     );
 
     option(
-        q{email} => (
-            cmd_aliases   => [qw{ em }],
-            documentation => q{E-mail},
+        q{environment_prefix} => (
+            cmd_aliases => [qw{ ep }],
+            documentation =>
+              q{Prepend this to environment names. Separated by underscore},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{environment_suffix} => (
+            cmd_aliases   => [qw{ es }],
+            documentation => q{Append this to environment names. Separated by underscore},
             is            => q{rw},
             isa           => Str,
         )
-    );
-
-    option(
-        q{email_types} => (
-            cmd_aliases   => [qw{ emt }],
-            cmd_tags      => [q{Default: FAIL}],
-            documentation => q{E-mail type},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
-        )
-    );
-
-    option(
-        q{noupdate} => (
-            cmd_aliases   => [qw{ nup }],
-            cmd_flag      => q{noupdate},
-            documentation => q{Do not update existing shell programs},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
     );
 
     option(
@@ -139,6 +112,15 @@ sub _build_usage {
     );
 
     option(
+        q{program_test_file} => (
+            cmd_aliases   => [qw{ ptf }],
+            documentation => q{File with test commands in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{project_id} => (
             cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
@@ -156,6 +138,16 @@ sub _build_usage {
             isa           => Bool,
             required      => 0,
         ),
+    );
+
+    option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
     );
 
     option(
@@ -178,19 +170,23 @@ sub _build_usage {
     );
 
     option(
-        q{slurm_quality_of_service} => (
-            cmd_aliases   => [qw{ qos }],
-            documentation => q{SLURM quality of service},
+        q{vep_assemblies} => (
+            cmd_aliases   => [qw{ vea }],
+            cmd_tags      => [q{Default: GRCh37, GRCh38}],
+            cmd_flag      => q{vep_assemblies},
+            documentation => q{VEP assemblies to download},
             is            => q{rw},
-            isa           => enum( [qw{ low normal high }] ),
-        )
+            isa           => ArrayRef,
+            required      => 0,
+        ),
     );
 
     option(
-        q{update_config} => (
-            cmd_aliases   => [qw{ uc }],
-            cmd_flag      => q{update_config},
-            documentation => q{Path to existing config},
+        q{vep_auto_flag} => (
+            cmd_aliases   => [qw{ veaf }],
+            cmd_flag      => q{vep_auto_flag},
+            cmd_tags      => [q{Default: cf}],
+            documentation => q{VEP's --AUTO flag},
             is            => q{rw},
             isa           => Str,
             required      => 0,
@@ -198,12 +194,37 @@ sub _build_usage {
     );
 
     option(
-        q{write_config} => (
-            cmd_aliases   => [qw{ wc }],
-            cmd_flag      => q{write_config},
-            documentation => q{Generate config from template},
+        q{vep_cache_dir} => (
+            cmd_aliases => [qw{ vecd }],
+            cmd_flag    => q{vep_cache_dir},
+            cmd_tags =>
+              [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
+            documentation => q{VEP's cache directory},
             is            => q{rw},
-            isa           => Bool,
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_plugins} => (
+            cmd_aliases   => [qw{ vepl }],
+            cmd_flag      => q{vep_plugins},
+            documentation => q{VEP plugins to install},
+            is            => q{rw},
+            isa           => ArrayRef,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{vep_species} => (
+            cmd_aliases   => [qw{ ves }],
+            cmd_tags      => [q{Default: homo_sapiens_merged}],
+            cmd_flag      => q{vep_species},
+            documentation => q{VEP species},
+            is            => q{rw},
+            isa           => ArrayRef,
             required      => 0,
         ),
     );

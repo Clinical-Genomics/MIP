@@ -7,7 +7,7 @@ These comes in three flavors:
 ## Cpanm
 All of the required cpanm perl modules in MIP are recorded in the standardised [cpanfile]:
 
-This can be used to install or update cpanm modules using: 
+This can be used to install or update cpanm modules using:
 ```bash
 cpanm --installdeps .
 ```
@@ -16,8 +16,8 @@ MIP will also read this file and check that all of these modules are installed p
 ## MIPs internal modules
 
 ### Command module
-Each command module serves as an API for each specific command e.g. "cd", "git clone" or "bwa mem". The command module function is to standardise all interaction with the program in a versioned, testable way. Input parameters are validated through the validate params template in the each sub routine of the command module and output parameters are tested in the corresponding test script for each sub routine in the command module. The command module should be as simple and generic as possible i.e. contain no logic except to push or write commands depending on the input parameters. Modulation of the behaviour of the sub routines is reserved for modulating the input parameters when calling the sub routine for instance from an analysis recipe.
- 
+Each command module serves as an API for each specific command e.g. "cd", "git clone" or "bwa mem". The command module function is to standardise all interaction with the program in a versioned, testable way. Input parameters are validated through the validate params template in the each sub routine of the command module and output parameters are tested in the corresponding test script for each sub routine in the command module. The command module should be as simple and generic as possible i.e. contain no logic except to push or write commands depending on the input parameters. Modulation of the behavior of the sub routines is reserved for modulating the input parameters when calling the sub routine for instance from an analysis recipe.
+
 Standardised templates for writing MIPs internal modules e.g. command, generic module and recipe modules are found in the [code dir] with the standard perl `.pm` suffix.
 
 ## Using the templates
@@ -31,7 +31,7 @@ use MIP::PATH::TO:MODULE qw{SUB_ROUTINE};
 ```
 To:
 ```Perl
-use MIP::Program::Qc::Fastqc;
+use MIP::Program::Fastqc;
 ```
 #### Name of sub routine
 Change:

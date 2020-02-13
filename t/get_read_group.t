@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_read_group }],
+        q{MIP::Sample_info}    => [qw{ get_read_group }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_read_group };
+use MIP::Sample_info qw{ get_read_group };
 
-diag(   q{Test get_read_group from Parameters.pm v}
-      . $MIP::Get::Parameter::VERSION
+diag(   q{Test get_read_group from Sample_info.pm v}
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -81,7 +81,7 @@ my %sample_info = (
 );
 
 my %active_parameter = ( platform => q{ILLUMINA}, );
-my $infile_prefix = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
+my $infile_prefix    = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
 
 ## When the subroutine is executed
 my %read_group = get_read_group(
@@ -95,11 +95,12 @@ my %read_group = get_read_group(
 
 ## Then return expected read group hash
 my %expected_read_group = (
-    id => q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1},
-    pu => q{TestFilev2.1.GAGATTC},
-    sm => q{ADM1059A1},
-    pl => q{ILLUMINA},
-    lb => q{ADM1059A1},
+    id   => q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1},
+    lane => 1,
+    lb   => q{ADM1059A1},
+    pl   => q{ILLUMINA},
+    pu   => q{TestFilev2.1.GAGATTC},
+    sm   => q{ADM1059A1},
 );
 is_deeply( \%read_group, \%expected_read_group, q{Get read group} );
 

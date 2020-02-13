@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -100,24 +96,22 @@ diag(   q{Test update_exome_target_bed from Parameters.pm v}
 ## Test hashes
 my %file_info = (
     human_genome_reference_version => q{37},
-    human_genome_reference_source  => q{GRCh},
+    human_genome_reference_source  => q{grch},
 );
 
 my %active_parameter = (
     exome_target_bed => {
-q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed}
-          => q{sample_1},
+        q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed} =>
+          q{sample_1},
         q{test_capture.bed} => q{sample_2},
     },
 );
 
 update_exome_target_bed(
     {
-        exome_target_bed_file_href => $active_parameter{exome_target_bed},
-        human_genome_reference_source =>
-          $file_info{human_genome_reference_source},
-        human_genome_reference_version =>
-          $file_info{human_genome_reference_version},
+        exome_target_bed_file_href     => $active_parameter{exome_target_bed},
+        human_genome_reference_source  => $file_info{human_genome_reference_source},
+        human_genome_reference_version => $file_info{human_genome_reference_version},
     }
 );
 
@@ -125,13 +119,13 @@ foreach my $capture_file ( keys %{ $active_parameter{exome_target_bed} } ) {
 
     if ( $capture_file ne q{test_capture.bed} ) {
 
-        like( $capture_file, qr/GRCh/xsm, q{Updated genome source} );
+        like( $capture_file, qr/grch/xsm, q{Updated genome source} );
 
         like( $capture_file, qr/37/xsm, q{Updated genome version} );
     }
     else {
 
-        unlike( $capture_file, qr/GRCh/xsm, q{Did not updated genome source} );
+        unlike( $capture_file, qr/grch/xsm, q{Did not updated genome source} );
 
         unlike( $capture_file, qr/37/xsm, q{Did not updated genome version} );
     }

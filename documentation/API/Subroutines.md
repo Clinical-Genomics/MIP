@@ -1,17 +1,17 @@
 # Sub routines
-There are two main type of sub routines in MIP. 
+There are two main type of sub routines in MIP.
 1. Sub routines that are imported/exported
 2. Utility sub routines that only resides in the script or module they are created. These are named using an underscore in the beginning of the sub routine name i.e. `sub _a_utility_sub`
 
 ## Template
 A template for sub routines are found in the [code dir].
 
-The sub routine consists of four sections: 
+The sub routine consists of four sections:
 
 1. A documentation part with a mandatory header:
 ```Perl
-## Function : Descibe the sub routine function here
-## Returns  : Name of varibles returned. If none leave blank
+## Function : Describe the sub routine function here
+## Returns  : Name of variables returned. If none leave blank
 ## Arguments: $arrays_ref => Array ref description {REF}
 ##          : $hash_href  => Hash ref description {REF}
 ##          : $scalar     => Scalar description

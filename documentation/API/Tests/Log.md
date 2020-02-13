@@ -3,9 +3,10 @@ When the sub routine you want to test requires a Log4perl object you can use thi
 
 ```
 use MIP::Test::Fixtures qw{ test_log };
-my $log = test_log();
+my $log = test_log( {} );
 ```
 
+### Code recipe
 We are going to need a temporary file to write the log config to. Use the core perl module File::Temp to initiate a temporary file that will be automatically deleted when the process that initiated the file exists.
 
 ```Perl
@@ -32,7 +33,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
     }
 ```
 
-Create a test dir for writing log file 
+Create a test dir for writing log file
 
 ```Perl
 ## Create temp logger

@@ -15,17 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
-use Readonly;
+use Modern::Perl qw{ 2018 };
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,11 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-Readonly my $TAB   => qq{\t};
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Pedigree} => [qw{ create_fam_file }],
-        q{MIP::Test::Fixtures}         => [qw{ test_log test_standard_cli }],
+        q{MIP::Pedigree}       => [qw{ create_fam_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ create_fam_file };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Pedigree qw{ create_fam_file };
 
 diag(   q{Test create_fam_file from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -103,29 +97,29 @@ my %active_parameter_test_hash = (
   my $test_dir = File::Temp->newdir();
 my $test_fam_file_path = catfile( $test_dir, q{test_file.fam} );
 my $test_sbatch_path   = catfile( $test_dir, q{test_file.sbatch} );
-my $FILEHANDLE;
+my $filehandle;
 
 ## Create temp logger for Pedigree.pm
 my $test_log_path = catfile( $test_dir, q{test.log} );
 $active_parameter_test_hash{log_file} = $test_log_path;
 
-my $log = test_log();
+my $log = test_log( {} );
 
 my @execution_modes = qw{ system sbatch };
 for my $execution_mode (@execution_modes) {
 
     if ( $execution_mode eq q{sbatch} ) {
 
-        $FILEHANDLE = IO::Handle->new();
-        open $FILEHANDLE, q{>}, $test_sbatch_path
-          or croak q{Could not open FILEHANDLE};
+        $filehandle = IO::Handle->new();
+        open $filehandle, q{>}, $test_sbatch_path
+          or croak q{Could not open filehandle};
 
         # Build shebang
         my @commands = (q{#!/usr/bin/env bash});
         unix_write_to_file(
             {
                 commands_ref => \@commands,
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 separator    => $SPACE,
             }
         );
@@ -137,7 +131,7 @@ for my $execution_mode (@execution_modes) {
             active_parameter_href => \%active_parameter_test_hash,
             execution_mode        => $execution_mode,
             fam_file_path         => $test_fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             sample_info_href      => \%sample_info_test_hash,
         }
@@ -149,7 +143,7 @@ for my $execution_mode (@execution_modes) {
         ok( -e $test_sbatch_path, q{fam command written to sbatch file} );
 
         # Execute the sbatch
-        close $FILEHANDLE;
+        close $filehandle;
         system qq{bash $test_sbatch_path};
         unlink $test_sbatch_path or carp qq{Could not unlink $test_sbatch_path};
     }
@@ -203,7 +197,7 @@ for my $execution_mode (@execution_modes) {
       or carp qq{Could not unlink $test_fam_file_path};
 }
 
-## Given no FILEHANDLE when in sbatch mode
+## Given no filehandle when in sbatch mode
 # Run the create fam file test
 trap {
     create_fam_file(
@@ -214,15 +208,15 @@ trap {
             log                   => $log,
             sample_info_href      => \%sample_info_test_hash,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if no FILEHANDLE supplied in sbatch mode} );
+ok( $trap->exit, q{Exit if no filehandle supplied in sbatch mode} );
 like(
     $trap->stderr,
     qr/Please \s+ supply \s+ filehandle \s+ to/xms,
-    q{Throw fatal log message if no FILEHANDLE supplied in sbatch mode}
+    q{Throw fatal log message if no filehandle supplied in sbatch mode}
 );
 
 done_testing();

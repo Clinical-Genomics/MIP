@@ -2,8 +2,6 @@ package MIP::Cli::Mip::Analyse::Rd_rna;
 
 use 5.026;
 use Carp;
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -19,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.06;
+our $VERSION = 1.32;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -41,98 +39,63 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::File::Format::Parameter qw{ parse_definition_file  };
-    use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
-    use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
+    use MIP::Definition qw{ get_dependency_tree_from_definition_file
+      get_first_level_keys_order_from_definition_file
+      get_parameter_definition_file_paths
+      get_parameter_from_definition_files };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain set_dependency_tree_order };
+    use MIP::Parameter qw{ get_cache get_order_of_parameters print_recipe };
 
-    ## Mip analyse rd_rna parameters
+    ## %parameter holds all defined parameters for MIP analyse rd_rna
     ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions rd_rna_parameters.yaml } ),
-    );
+    my $level     = q{rd_rna};
+    my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
+    my @rd_rna_definition_file_paths =
+      get_parameter_definition_file_paths( { level => $level, } );
 
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ### %parameter holds all defined parameters for MIP
-    ### mip analyse rd_rna
-    my %parameter;
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path => $definition_file,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                }
-            ),
-        );
-    }
+    ### To write parameters and their values to log in logical order
+    ## Adds the order of first level keys from definition files to array
+    my @order_parameters = get_order_of_parameters(
+        { define_parameters_files_ref => \@rd_rna_definition_file_paths, } );
 
     ## Print recipes if requested and exit
     print_recipe(
         {
-            define_parameters_files_ref => \@definition_files,
-            parameter_href              => \%parameter,
-            print_recipe                => $active_parameter{print_recipe},
-            print_recipe_mode           => $active_parameter{print_recipe_mode},
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => $active_parameter{print_recipe_mode},
         }
     );
 
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file => catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } ),
-        }
-    );
+    ## Get dependency tree and store in parameter hash
+    %{ $parameter{dependency_tree_href} } =
+      get_dependency_tree_from_definition_file( { level => $level, } );
 
 ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree_href},
             parameter_href       => \%parameter,
         }
     );
 
-## Order recipes - Parsed from initiation file
-    get_dependency_tree_order(
+    ## Set order of recipes according to dependency tree
+    set_dependency_tree_order(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
 
-### To write parameters and their values to log in logical order
-### Actual order of parameters in definition parameters file(s) does not matter
-## Adds the order of first level keys from yaml files to array
-    my @order_parameters;
-    foreach my $define_parameters_file (@definition_files) {
-
-        push @order_parameters,
-          order_parameter_names(
-            {
-                file_path => $define_parameters_file,
-            }
-          );
-    }
-
 ## File info hash
     my %file_info = (
 
-        fusion_filter_reference_genome      => [qw{ _fusion_filter_genome_dir }],
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
+        star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
     );
 
     mip_analyse(
@@ -152,6 +115,56 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{arriba_ar} => (
+            cmd_aliases   => [qw{ arriba }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Detect and visualize fusions using Arriba},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{arriba_blacklist_path} => (
+            cmd_aliases   => [qw{ abp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba blacklist file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_cytoband_path} => (
+            cmd_aliases   => [qw{ acbp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba cytoband file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{arriba_proteindomain_path} => (
+            cmd_aliases   => [qw{ apdp }],
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba protein domain file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{bcftools_merge} => (
+            cmd_aliases   => [qw{ bcfm }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge vcfs before annotation},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
 
     option(
         q{blobfish} => (
@@ -174,12 +187,22 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_bundle_download_version} => (
-            cmd_aliases   => [qw{ gbdv }],
-            cmd_tags      => [q{Default: 2.8}],
-            documentation => q{GATK FTP bundle download version},
+        q{dna_vcf_file} => (
+            cmd_aliases   => [qw{ dvf }],
+            cmd_flag      => q{dna_vcf_file},
+            cmd_tags      => [q{Format: vcf | bcf}],
+            documentation => q{Variantcalls made on wgs or wes data },
             is            => q{rw},
-            isa           => Num,
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{force_dna_ase} => (
+            cmd_aliases   => [qw{ fda }],
+            documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -194,12 +217,22 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_downsample_to_coverage} => (
-            cmd_aliases   => [qw{ gdco }],
-            cmd_tags      => [q{Default: 1000}],
-            documentation => q{Coverage to downsample to at any given locus},
+        q{gatk_use_new_qual_calculator} => (
+            cmd_aliases   => [qw{ gatknq }],
+            cmd_flag      => q{gatk_new_qual},
+            documentation => q{Use new qual calculator},
             is            => q{rw},
-            isa           => Int,
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{genebody_coverage} => (
+            cmd_aliases   => [qw{ gbc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Run geneBody_coverage2.py on bam},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -214,50 +247,11 @@ sub _build_usage {
     );
 
     option(
-        q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
-            documentation => q{Use large page memory},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{recipe_core_number} => (
-            cmd_aliases   => [qw{ rcn }],
-            cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for each recipe},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{recipe_time} => (
-            cmd_aliases   => [qw{ rot }],
-            cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for each recipe},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
         q{picardtools_path} => (
             cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{sample_origin} => (
-            cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=sample_origin}],
-            documentation => q{Sample origin of replicate},
-            is            => q{rw},
-            isa           => HashRef,
         )
     );
 
@@ -367,7 +361,7 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
             cmd_aliases => [qw{ gbrkst }],
             cmd_flag    => q{gatk_baserecal_ks},
             cmd_tags    => [
-q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
             documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
             is            => q{rw},
@@ -418,6 +412,15 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
+        q{star_ulimit_n} => (
+            cmd_aliases   => [qw{ sun }],
+            documentation => q{Set ulimit -n for star recipe},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{align_intron_max} => (
             cmd_aliases   => [qw{ stn_aim }],
             cmd_tags      => [q{Default: 100,000}],
@@ -458,10 +461,30 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
+        q{chim_out_type} => (
+            cmd_aliases   => [qw{ stn_cot }],
+            cmd_tags      => [q{Default: WithinBam}],
+            documentation => q{Type of chimeric output},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{chim_segment_min} => (
             cmd_aliases   => [qw{ stn_csm }],
             cmd_tags      => [q{Default: 12}],
-            documentation => q{Minimum length of chimaeric segment},
+            documentation => q{Minimum length of chimeric segment},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{pe_overlap_nbases_min} => (
+            cmd_aliases   => [qw{ stn_ponm }],
+            cmd_tags      => [q{Default: 10}],
+            documentation => q{Min bases overlap to merge reads whne alingning },
             is            => q{rw},
             isa           => Int,
         )
@@ -484,6 +507,24 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_fusion_min_junction_reads} => (
+            cmd_tags      => [q{Star-Fusion parameter}],
+            documentation => q{STAR-Fusion: Minimum junction spanning reads},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{star_fusion_pfam_db} => (
+            cmd_tags      => [q{Star-Fusion parameter}],
+            documentation => q{Pfam db, used when building Star-Fusion references},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -557,7 +598,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_snp_known_set} => (
             cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
-            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
             is            => q{rw},
             isa           => Str,
@@ -576,54 +617,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{markduplicates_picardtools_markduplicates} => (
-            cmd_aliases   => [qw{ mdpmd }],
-            cmd_flag      => q{picard_markduplicates},
-            documentation => q{Markduplicates using Picardtools markduplicates},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup} => (
-            cmd_aliases   => [qw{ mdsmd }],
-            cmd_flag      => q{sambamba_markdup},
-            documentation => q{Markduplicates using Sambamba markduplicates},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_hash_table_size} => (
-            cmd_aliases   => [qw{ mdshts }],
-            cmd_flag      => q{sba_mdup_hts},
-            cmd_tags      => [q{Default: 262144}],
-            documentation => q{Sambamba size of hash table for finding read pairs},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_io_buffer_size} => (
-            cmd_aliases => [qw{ mdsibs }],
-            cmd_flag    => q{sba_mdup_ibs},
-            cmd_tags    => [q{Default: 2048}],
-            documentation =>
-q{Sambamba size of the io buffer for reading and writing BAM during the second pass},
-            is  => q{rw},
-            isa => Int,
-        )
-    );
-
-    option(
-        q{markduplicates_sambamba_markdup_overflow_list_size} => (
-            cmd_aliases   => [qw{ mdsols }],
-            cmd_flag      => q{sba_mdup_ols},
-            cmd_tags      => [q{Default: 200000}],
-            documentation => q{Sambamba size of the overflow list},
+        q{markduplicates_picardtools_opt_dup_dist} => (
+            cmd_aliases   => [qw{ mdpodd }],
+            cmd_flag      => q{picard_mdup_odd},
+            cmd_tags      => [q{Default: 2500}],
+            documentation => q{Picardtools markduplicates optical duplicate distance},
             is            => q{rw},
             isa           => Int,
         )
@@ -688,7 +686,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_snp_known_set} => (
             cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
-            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
             is            => q{rw},
             isa           => Str,
@@ -751,7 +749,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{gffcompare} => (
+        q{gffcompare_ar} => (
             cmd_aliases   => [qw{ gffcmp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare RNA transcripts to reference using GffCompare},
@@ -781,35 +779,70 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{sacct} => (
-            cmd_aliases => [qw{ sac }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Generating sbatch script for SLURM info on each submitted job},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
-q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
-            ],
-            documentation => q{Format and fields of sacct output},
+        q{preseq_ar} => (
+            cmd_aliases   => [qw{ prs }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Estimate library complexity},
             is            => q{rw},
-            isa           => ArrayRef [Str],
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
-        q{stringtie} => (
+        q{recipe_core_number} => (
+            cmd_aliases   => [qw{ rcn }],
+            cmd_tags      => [q{recipe_name=X(cores)}],
+            documentation => q{Set the number of cores for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{recipe_memory} => (
+            cmd_aliases   => [qw{ rm }],
+            cmd_tags      => [q{recipe_name=X(G)}],
+            documentation => q{Set the memory for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{recipe_time} => (
+            cmd_aliases   => [qw{ rot }],
+            cmd_tags      => [q{recipe_name=time(hours)}],
+            documentation => q{Set the time allocation for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{stringtie_ar} => (
             cmd_aliases   => [qw{ strg }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Assemble alignments using StringTie},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{stringtie_junction_reads} => (
+            cmd_aliases   => [qw{ strj }],
+            documentation => q{StringTie min junction spanning reads},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{stringtie_minimum_coverage} => (
+            cmd_aliases   => [qw{ strmc }],
+            documentation => q{StringTie min transcript coverage},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -835,6 +868,55 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
         )
     );
 
+    option(
+        q{trim_galore_ar} => (
+            cmd_aliases   => [qw{ trg }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Trim fastq files using Trim galore},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{varianteffectpredictor} => (
+            cmd_aliases   => [qw{ vep }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate variants using VEP},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vep_custom_annotation} => (
+            cmd_aliases   => [qw{ vepcann }],
+            documentation => q{VEP custom annotation},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{vep_directory_cache} => (
+            cmd_aliases   => [qw{ vepc }],
+            documentation => q{Specify the cache directory to use},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vep_features} => (
+            cmd_aliases => [qw{ vepf }],
+            cmd_tags    => [
+q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds, uniprot, biotype, regulatory, tsl, canonical, per_gene, appris}
+            ],
+            documentation => q{VEP features},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
     return;
 }
 

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -64,9 +64,9 @@ diag(   q{Test set_nist_file_name_path from Parameter.pm v}
 ## Given nist info
 my %active_parameter = (
     nist_call_set_vcf =>
-      { q{3.3.2} => { NA12878 => q{GRCh37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
+      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
     nist_call_set_bed =>
-      { q{3.3.2} => { NA12878 => q{GRCh37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
+      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
     nist_id       => { sample_1 => q{NA12878}, },
     nist_versions => [qw{ 3.3.2 }],
     reference_dir => catdir( $Bin, qw{ data references } ),
@@ -86,7 +86,7 @@ ok( $is_ok, q{Set nist file name path in nist hash parameters} );
 
 ## Then reference dir should have been prepended to file name
 my $expected_path =
-  catdir( $Bin, qw{ data references GRCh37_nist_hg001_-na12878_v3.3.2-.vcf} );
+  catdir( $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.vcf} );
 
 is( $active_parameter{nist_call_set_vcf}{q{3.3.2}}{NA12878},
     $expected_path, q{Set path using reference dir} );

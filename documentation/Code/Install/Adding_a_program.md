@@ -1,42 +1,52 @@
-# Adding a PROGRAM
+# Adding a program
 
 ## Define the program and version
-Add the program to a an env. In the definitions folder add the program to an environment in the install_[PIPELINE]_parameters.yaml.
+Add the program to an environment in the `templates/mip_install_<pipeline>_config_-<version>-.yaml` file.
 
-- You need to add your program according to which method is used to install the program:
+
+- Add your program according to which method the installation process uses:
 
 ```Yaml
 # [ENV_NAME] environment spec
-e[ENV_NAME]:
+e<env_name>:
   conda:
-    [PROGRAM_NAME]: [PROGRAM_VERSION]=[PROGRAM_VERSION_SUB_PATCH]
-  pip: [PROGRAM_NAME]=[PROGRAM_VERSION]
-  shell: [PROGRAM_NAME]=[PROGRAM_VERSION]
+    <program_name>: <program_version>=<program_version_subpatch>
+  pip:
+    <program_name>: <program_version>
+  shell:
+    <program_name>:
+      conda_dependency:
+        <dependency>: <dependency_version>
+      version: <program_version>
+  singularity:
+    uri: <uri_to_program>
+    executables:
+      <executable>: <path to executable in container> | <blank if executable in container path>
 ```
 
-## Add the environment to the CLI
-In `lib/MIP/Cli/Mip/Install/[PIPELINE]`:
+## Add the program to the CLI
+In `lib/MIP/Cli/Mip/Install/<pipeline>`:
 
 1. Add the new program to the option `select_programs` under the `isa` key
 
 2. Add the new program to the option `skip_programs` under the `isa` key
 
-3. Add the new program to the option `program_versions` under the `isa` key
+## Add program to integration test
 
-4. Add the executable of your program to the test envs:
+  1. Add the executable of your program to the test envs:
 
-In `t/data/modules/miniconda/envs/`:
 ```
-$ mkdir -p mip_travis_[ENV_NAME]
-$ touch mip_travis_[ENV_NAME]/bin/[PROGRAM_EXECUTABLE]
-$ chmod a+x mip_travis_[ENV_NAME]/bin/[PROGRAM_EXECUTABLE]
+$ touch t/data/modules/miniconda/envs/mip_travis_<env_name>/bin/<program_executable>
+$ chmod a+x t/data/modules/miniconda/envs/mip_travis_<env_name>/bin/<program_executable>
 ```
+2. Add the program to the template config
+
 ## Add installation tests
-Add a path and execution test to `definitions/install_[PIPELINE]_parameters.yaml`.
+Add a path and execution test to `templates/program_test_cmds.yaml`.
 ```Yaml
 program_test_command:
-  [PROGRAM_NAME]:
-    execution: '[PROGRAM_COMMAND]'
-    path: '[PROGRAM_EXECUTABLE]'
+  <program_name>:
+    execution: '<program_command>'
+    path: '<program_executable>'
 ```
 The path test checks that the file is in your $PATH and is executable while the execution test executes a command and checks the exit status. Note that the command must return a zero exit status for the test to succeed.

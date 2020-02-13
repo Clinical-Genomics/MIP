@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Salmon} => [qw{ salmon_quant }],
-        q{MIP::Test::Fixtures}                  => [qw{ test_standard_cli }],
+        q{MIP::Program::Salmon} => [qw{ salmon_quant }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Salmon qw{ salmon_quant };
 
 diag(   q{Test salmon_quant from Salmon.pm v}
-      . $MIP::Program::Variantcalling::Salmon::VERSION
+      . $MIP::Program::Salmon::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,9 +65,9 @@ Readonly my $READ_FILES_COMMAND => q{pigz -dc};
 my @function_base_commands = qw{ salmon quant };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -80,9 +77,9 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -91,17 +88,20 @@ my %required_argument = (
         input           => catfile(qw{ dir index_dir }),
         expected_output => q{--index} . $SPACE . catfile(qw{ dir index_dir }),
     },
-    outfile_path => {
+    outdir_path => {
         input           => catfile(qw{ dir output_dir }),
-        expected_output => q{--output} . $SPACE . catfile(qw{ dir output_dir }),
+        expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
-    read_1_fastq_path => {
-        input           => catfile(qw{ dir hej_r1.fastq.gz }),
+    read_1_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r1.fastq.gz })
+          . catfile(qw{ dir hi_r1.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
     },
 );
@@ -115,27 +115,37 @@ my %specific_argument = (
         input           => catfile(qw{ dir index_dir }),
         expected_output => q{--index} . $SPACE . catfile(qw{ dir index_dir }),
     },
-    outfile_path => {
+    outdir_path => {
         input           => catfile(qw{ dir output_dir }),
-        expected_output => q{--output} . $SPACE . catfile(qw{ dir output_dir }),
+        expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
-    read_1_fastq_path => {
-        input           => catfile(qw{ dir hej_r1.fastq.gz }),
+    read_1_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r1.fastq.gz })
+          . catfile(qw{ dir hi_r1.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
     },
-    read_2_fastq_path => {
-        input           => catfile(qw{ dir hej_r2.fastq.gz }),
+    read_2_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hi_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
         expected_output => q{-2}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r2.fastq.gz })
+          . catfile(qw{ dir hi_r2.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r2.fastq.gz })
           . $SPACE . q{)}
+    },
+    validate_mappings => {
+        input           => 1,
+        expected_output => q{--validateMappings},
     },
 );
 
@@ -148,10 +158,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

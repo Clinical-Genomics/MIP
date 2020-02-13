@@ -5,9 +5,9 @@ bwa_mem:
   chain: TEST
 exome_target_bed:
   build_file: 1
-fusion_filter_reference_genome:
-  build_file: 1
 human_genome_reference_file_endings:
+  associated_recipe:
+   - bwa_mem
   build_file: 1
 rtg_vcfeval_reference_genome:
   build_file: 1
@@ -15,4 +15,5 @@ salmon_quant_reference_genome:
   build_file: 1
 star_aln_reference_genome:
   build_file: 1
-
+star_fusion_reference_genome:
+  build_file: 1

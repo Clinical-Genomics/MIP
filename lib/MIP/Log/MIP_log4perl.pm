@@ -3,6 +3,7 @@ package MIP::Log::MIP_log4perl;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use File::Path qw{ make_path };
@@ -17,32 +18,25 @@ use warnings qw{ FATAL utf8 };
 use Log::Log4perl qw{ get_logger :levels };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $CLOSE_BRACKET $COMMA $DOT $EMPTY_STR $NEWLINE $OPEN_BRACKET $SPACE $TAB $UNDERSCORE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_log4perl_config log_display_recipe_for_user initiate_logger retrieve_log set_default_log4perl_file };
+      qw{ create_log4perl_config get_default_log4perl_file get_log log_display_recipe_for_user initiate_logger retrieve_log };
 }
-
-## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $COMMA         => q{,};
-Readonly my $DOT           => q{.};
-Readonly my $EMPTY_STR     => q{};
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
-Readonly my $TAB           => qq{\t};
-Readonly my $UNDERSCORE    => q{_};
 
 sub create_log4perl_config {
 
-## Function : Create log4perl config file.
+## Function : Create log4perl config file
 ## Returns  : $config
 ## Arguments: $categories_ref => Log categories {REF}
 ##          : $file_path      => log4perl config file path
@@ -97,6 +91,144 @@ $NEWLINE log4perl.appender.ScreenApp.color.ERROR=red
 $NEWLINE log4perl.appender.ScreenApp.color.FATAL=red
 EOF
     return $config;
+}
+
+sub get_default_log4perl_file {
+
+## Function : Get the default Log4perl file using supplied dynamic parameters
+## Returns  : $log_file
+## Arguments: $log_file        => User supplied path on cmd for log_file option
+##          : $date            => The date
+##          : $date_time_stamp => The date and time
+##          : $outdata_dir     => Outdata directory
+##          : $script          => The script that is executed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log_file;
+    my $date;
+    my $date_time_stamp;
+    my $script;
+
+    ## Default(s)
+    my $outdata_dir;
+
+    my $tmpl = {
+        log_file => { store => \$log_file, strict_type => 1, },
+        date     => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
+        date_time_stamp => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date_time_stamp,
+            strict_type => 1,
+        },
+        script => {
+            defined     => 1,
+            required    => 1,
+            store       => \$script,
+            strict_type => 1,
+        },
+        outdata_dir => {
+            default     => $arg_href->{outdata_dir} ||= getcwd(),
+            store       => \$outdata_dir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return $log_file if ( defined $log_file );
+
+    ## No input from cmd i.e. create default logging directory and log file path
+    make_path( catfile( $outdata_dir, q{mip_log}, $date ) );
+
+    ## Build log filename
+    $log_file = catfile( $outdata_dir, q{mip_log}, $date,
+        $script . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
+
+    ## Return default log file
+    return $log_file;
+}
+
+sub get_log {
+
+## Function : Create a log object, set log file in active_parameters and return log object
+## Returns  : $log
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $date                  => Date
+##          : $date_time_stamp       => Date and time stamp
+##          : $log_name              => Log name
+##          : $script                => The script that is executed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $date;
+    my $date_time_stamp;
+    my $log_name;
+    my $script;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
+        date_time_stamp => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date_time_stamp,
+            strict_type => 1,
+        },
+        log_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$log_name,
+            strict_type => 1,
+        },
+        script => {
+            defined     => 1,
+            required    => 1,
+            store       => \$script,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{log_file} = get_default_log4perl_file(
+        {
+            log_file        => $active_parameter_href->{log_file},
+            date            => $date,
+            date_time_stamp => $date_time_stamp,
+            outdata_dir     => $active_parameter_href->{outdata_dir},
+            script          => $script,
+        }
+    );
+
+    ## Creates log object
+    my $log = initiate_logger(
+        {
+            file_path => $active_parameter_href->{log_file},
+            log_name  => $log_name,
+        }
+    );
+    return $log;
 }
 
 sub log_display_recipe_for_user {
@@ -187,6 +319,8 @@ sub initiate_logger {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Constants qw{ set_log_name_constant };
+
     ## Creates config for the log file
     my $config = create_log4perl_config(
         {
@@ -198,6 +332,10 @@ sub initiate_logger {
 
     Log::Log4perl->init( \$config );
     my $logger = Log::Log4perl->get_logger($log_name);
+
+    ## Set log name as constant
+    set_log_name_constant( { log_name => $log_name, } );
+
     return $logger;
 }
 
@@ -258,82 +396,6 @@ sub retrieve_log {
         $log->level($level);
     }
     return $log;
-}
-
-sub set_default_log4perl_file {
-
-## Function : Set the default Log4perl file using supplied dynamic parameters.
-## Returns  : $log_file
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $cmd_input             => User supplied info on cmd for log_file option {REF}
-##          : $date                  => The date
-##          : $date_time_stamp       => The date and time
-##          : $script                => The script that is executed
-##          : $outdata_dir           => Outdata directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $cmd_input;
-    my $date;
-    my $date_time_stamp;
-    my $script;
-
-    ## Default(s)
-    my $outdata_dir;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        cmd_input => { store => \$cmd_input, strict_type => 1, },
-        date      => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date,
-            strict_type => 1,
-        },
-        date_time_stamp => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date_time_stamp,
-            strict_type => 1,
-        },
-        script => {
-            defined     => 1,
-            required    => 1,
-            store       => \$script,
-            strict_type => 1,
-        },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            store       => \$outdata_dir,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## No input from cmd i.e. create default logging directory and set default
-    if ( not defined $cmd_input ) {
-
-        make_path( catfile( $outdata_dir, q{mip_log}, $date ) );
-
-        ## Build log filename
-        my $log_file = catfile( $outdata_dir, q{mip_log}, $date,
-            $script . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
-
-        ## Return default log file
-        return $log_file;
-    }
-
-    ## Return cmd input log file
-    return $cmd_input;
 }
 
 1;

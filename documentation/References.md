@@ -1,17 +1,18 @@
 # References
 
-MIP can download many program prerequisites automatically via the mip download application ``mip download [PIPELINE]``. References available for download in MIP are located in: [definitions/define_download_references.yaml](https://github.com/Clinical-Genomics/MIP/blob/master/definitions/define_download_references.yaml) and the API is described [here](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/download_references.md).
+MIP can download many program prerequisites automatically via the mip download application ``mip download [PIPELINE]``. Each pipeline has a yaml file where available references are specified ([rd_dna](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_dna_config_-1.0-.yaml), [rd_rna]((https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_rna_config_-1.0-.yaml)) and the API is described [here](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/download_references.md).
 
-To add a new reference for download one needs to add a `reference_tag` and `version_tag` in the reference hash in the define_download_references.yaml file. Then you need to describe the meta data regarding your specific reference e.g the filename, url prefix, compression state etc, see the API for details. 
-
-To download you newly added reference using MIP, run:
+To download the references using MIP, run:
 ```
-$ mip download [PIPELINE] --reference_dir <reference_dir> --reference <reference_tag=version_tag>
+$ mip download [PIPELINE] --reference_dir <reference_dir> --config <download_config>
 ```
-This will create a batch file called `download_reference.sh`. To execute, run:
-```Bash
-$ bash download_reference.sh
+This will submit SLURM jobs that automatically downloads all references specified in the config that is not already present in the reference directory.
+
+For a full list of download options, run:
+```bash
+$ mip download [PIPELINE] --help
 ```
+## Updating a reference
+Open the download config corresponding to your pipeline and update or add a new `version_tag` in the reference hash. Update the same version tag together with any metadata changes in the reference_feature hash, see the API for details. Run the same mip command as above to download your updated reference.
 
-To include the changes in the analysis - add your reference to your mip config.yaml file where appropriate. 
-
+To include the changes in the analysis - add your reference to your mip config.yaml file where appropriate.

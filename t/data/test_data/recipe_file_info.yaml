@@ -1,24 +1,192 @@
 ---
+ADM1059A1:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
+ADM1059A2:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - ADM1059A2.fastq
+ADM1059A3:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - ADM1059A3.fastq
 bwa_build_reference:
   - .bwt
   - .ann
   - .amb
   - .pac
   - .sa
+bam_contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 21
+ - 22
+ - X
+ - Y
+ - MT
+bam_contigs_size_ordered:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - X
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 22
+ - 21
+ - Y
+ - MT
+contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 21
+ - 22
+ - X
+ - Y
+ - MT
+contigs_size_ordered:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - X
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 22
+ - 21
+ - Y
+ - MT
 exome_target_bed:
   - .interval_list
   - .pad100.interval_list
-fusion_filter_reference_genome:
-  - _fusion_filter_genome_dir
+star_fusion_reference_genome:
+  - _star_fusion_genome_dir
 human_genome_compressed: not_compressed
-human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 human_genome_reference_file_endings:
   - .dict
   - .fai
-human_genome_reference_name_prefix: GRCh37_homo_sapiens_-d5-
+human_genome_reference_name_prefix: grch37_homo_sapiens_-d5-
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:
   - salmon_quant_genome_dir
 star_aln_reference_genome:
   - _star_aln_genome_dir
+select_file_contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 21
+ - 22
+ - X
+ - Y
+ - MT
+sorted_select_file_contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - X
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 22
+ - 21
+ - Y
+ - MT

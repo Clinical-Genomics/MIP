@@ -22,21 +22,11 @@ case_id:
 email_types:
   associated_recipe:
    - mip
-  element_separator: ","
   data_type: ARRAY
   mandatory: no
   default:
    - FAIL
   type: mip
-bamcalibrationblock:
-  associated_recipe:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  reduce_io: 1
-  type: recipe
 bwa_mem:
   associated_recipe:
    - mip

@@ -1,31 +1,13 @@
 ---
 ## Environment
 analysis_constant_path: analysis
-bash_set_errexit: 1
-bash_set_nounset: 0
-bash_set_pipefail: 1
-java_use_large_pages: 1
-max_cores_per_node: 16
+max_cores_per_node: 36
+node_ram_memory: 180
 project_id: test
 load_env:
-  MIP_py3:
-    installation: epy3
-    method: conda
-    multiqc_ar:
-  MIP_rna:
-    installation: emip
+  MIP_rd_rna:
     method: conda
     mip:
-  MIP_rseqc:
-    installation: erseqc
-    method: conda
-    rseqc:
-  MIP_star:
-    gtf_file_to_feature_seqs.pl:
-    installation: estar
-    method: conda
-    star_aln:
-    star_fusion:
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
@@ -36,8 +18,13 @@ outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
-human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
+star_fusion_genome_lib_dir: cluster_constant_path!/references/grch37_v19_CTAT_lib_Feb092018
 ### Analysis
 ## Programs
 ## Parameters
-picardtools_path: cluster_constant_path!
+arriba_blacklist_path: /arriba_v1.1.0/database/blacklist_hg19_hs37d5_GRCh37_2018-11-04.tsv.gz
+arriba_cytoband_path: /arriba_v1.1.0/database/cytobands_hg19_hs37d5_GRCh37_2018-02-23.tsv
+arriba_proteindomain_path: /arriba_v1.1.0/database/protein_domains_hg19_hs37d5_GRCh37_2018-03-06.gff3
+picardtools_path: /usr/picard
+vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/

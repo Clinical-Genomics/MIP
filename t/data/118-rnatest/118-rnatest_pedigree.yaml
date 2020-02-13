@@ -3,29 +3,32 @@ default_gene_panels:
 case: '118-rnatest'
 samples:
   - analysis_type: wts
-    sample_id: 118-1-2A
     capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
     father: 118-2-1U
     mother: 118-2-2U
-    sample_name: 118-1-2A
     phenotype: affected
+    sample_id: 118-1-2A
+    sample_name: 118-1-2A
     sex: unknown
-    expected_coverage: 150
+    dna_sample_id: ADM1059A2 
   - analysis_type: wts
+    capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A1 
+    expected_coverage: 150
+    father: '0'
+    mother: '0'
+    phenotype: unaffected
     sample_id: 118-2-1U
-    capture_kit: agilent_sureselect.v5
-    father: '0'
-    mother: '0'
     sample_name: 118-2-1U
-    phenotype: unaffected
     sex: unknown
-    expected_coverage: 150
   - analysis_type: wts
-    sample_id: 118-2-2U
     capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A3 
+    expected_coverage: 150
     father: '0'
     mother: '0'
-    sample_name: 118-2-2U
     phenotype: unaffected
+    sample_id: 118-2-2U
+    sample_name: 118-2-2U
     sex: unknown
-    expected_coverage: 150

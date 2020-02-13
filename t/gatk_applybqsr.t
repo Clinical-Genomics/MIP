@@ -15,11 +15,13 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -33,8 +35,6 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA       => q{,};
-Readonly my $SPACE       => q{ };
 Readonly my $QUALSCORE_1 => 10;
 Readonly my $QUALSCORE_2 => 20;
 
@@ -47,11 +47,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_applybqsr };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_applybqsr };
 
 diag(   q{Test gatk_applybqsr from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,7 +66,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -78,8 +77,7 @@ my %base_argument = (
 my %required_argument = (
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir infile.bsqr }),
-        expected_output => q{--bqsr-recal-file }
-          . catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file } . catfile(qw{ dir infile.bsqr }),
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
@@ -94,8 +92,7 @@ my %required_argument = (
 my %specific_argument = (
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir infile.bsqr }),
-        expected_output => q{--bqsr-recal-file }
-          . catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file } . catfile(qw{ dir infile.bsqr }),
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),

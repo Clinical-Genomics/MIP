@@ -2,17 +2,14 @@ package MIP::Cli::Mip::Install::Rd_rna;
 
 use 5.026;
 use Carp;
-use Cwd qw{ abs_path };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
-use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use autodie qw{ :all };
@@ -20,15 +17,13 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ Str Int HashRef Bool ArrayRef };
 use MooseX::Types::Structured qw{ Dict Optional };
-use Readonly;
 
 ## MIPs lib
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils
-  qw{ nest_hash print_parameter_defaults update_program_versions };
+use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.00;
+our $VERSION = 2.15;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -47,48 +42,38 @@ sub run {
     ## Remove Moose::App extra variable
     delete $arg_href->{extra_argv};
 
-    ## Load default parameters from config file
-    my $install_parameters_path = abs_path( $arg_href->config_file );
-    my %parameter               = load_yaml(
-        {
-            yaml_file => $install_parameters_path
-        }
-    );
+    ## Input from Cli
+    my %active_parameter = %{$arg_href};
+
+    ## %parameter holds all defined parameters for MIP install rd_rna
+    ## CLI commands inheritance level
+    my %parameter =
+      get_parameter_from_definition_files( { level => q{install_rd_rna}, } );
+
+    ## If no config from cmd
+    if ( not $active_parameter{config_file} ) {
+
+        ## Use default
+        $active_parameter{config_file} =
+          catfile( $Bin, qw{ templates mip_install_rd_rna_config_-1.0-.yaml } );
+    }
 
     ## Print parameters from config file and exit
-    if ( $arg_href->{print_parameter_default} ) {
-
-        print_parameter_defaults(
-            {
-                parameter_href => \%parameter,
-            }
-        );
-    }
-
-    ## Merge arrays and overwrite flat values in config YAML with command line
-    @parameter{ keys %{$arg_href} } = values %{$arg_href};
-
-    ## Update installation array
-    if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip epy3 erseqc estar };
-    }
-
-    ## Nest the command line parameters and overwrite the default
-    nest_hash( { cmd_href => \%parameter } );
-
-    ## Update the program versions with the user input
-    update_program_versions(
+    print_parameter_defaults(
         {
-            parameter_href => \%parameter,
+            parameter_href          => \%parameter,
+            print_parameter_default => $arg_href->{print_parameter_default},
         }
     );
 
     ## Start generating the installation script
     mip_install(
         {
-            parameter_href => \%parameter,
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
     );
+
     return;
 }
 
@@ -99,94 +84,22 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{environment_name} => (
-            cmd_aliases   => [qw{ envn }],
-            cmd_flag      => q{environment_name},
-            documentation => q{Set environment names},
-            is            => q{rw},
-            isa           => Dict [
-                emip   => Optional [Str],
-                epy3   => Optional [Str],
-                erseqc => Optional [Str],
-                estar  => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
         q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is      => q{rw},
-            isa     => Str,
-            default => catfile(
-                dirname($Bin),
-                qw{ MIP definitions install_rd_rna_parameters.yaml }
-            ),
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
     option(
-        q{installations} => (
-            cmd_aliases   => [qw{ install }],
-            cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip}],
-            documentation => q{Environments to install},
-            is            => q{rw},
-            isa => ArrayRef [ enum( [qw{ emip full epy3 erseqc estar }] ), ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{program_versions} => (
-            cmd_aliases   => [qw{ pv }],
-            cmd_flag      => q{program_versions},
-            documentation => q{Set program versions},
-            is            => q{rw},
-            isa           => Dict [
-                bcftools         => Optional [Str],
-                cufflinks        => Optional [Str],
-                fastqc           => Optional [Str],
-                q{fusion-filter} => Optional [Str],
-                htslib           => Optional [Str],
-                java_jdk         => Optional [Str],
-                multiqc          => Optional [Str],
-                picard           => Optional [Str],
-                pip              => Optional [Str],
-                python           => Optional [Str],
-                rseqc            => Optional [Str],
-                salmon           => Optional [Str],
-                samtools         => Optional [Str],
-                star             => Optional [Str],
-                star_fusion      => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_flag      => q{reference_dir},
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Install references to this dir},
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: MIP_rd-rna }],
+            documentation => q{Set environment names},
             is            => q{rw},
             isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
-            cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Reference genomes to download},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
             required      => 0,
         ),
     );
@@ -200,10 +113,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk gatk4 htslib mip_scripts multiqc
-						  picard rseqc salmon sambamba samtools
-                          star star_fusion }
+                        qw{ arriba blobfish bootstrapann fastqc fusion-filter gatk4
+                          gffcompare gtf2bed htslib mip_scripts multiqc picard pigz preseq rseqc
+                          salmon sambamba star star-fusion stringtie trim-galore ucsc vep }
                     ]
                 ),
             ],
@@ -212,13 +124,12 @@ sub _build_usage {
     );
     option(
         q{shell_install} => (
-            cmd_aliases => [qw{ si }],
-            cmd_flag    => q{shell_install},
-            documentation =>
-              q{Install supplied programs via shell instead of via conda},
-            is       => q{rw},
-            isa      => ArrayRef [ enum( [qw{ picard }] ), ],
-            required => 0,
+            cmd_aliases   => [qw{ si }],
+            cmd_flag      => q{shell_install},
+            documentation => q{Install supplied programs via shell instead of via conda},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
+            required      => 0,
         ),
     );
 
@@ -231,10 +142,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk  gatk4 htslib mip_scripts multiqc
-						  picard rseqc salmon sambamba samtools
-                          star star_fusion }
+                        qw{ arriba blobfish bootstrapann fastqc fusion-filter gatk4
+                          gffcompare gtf2bed htslib mip_scripts multiqc picard pigz preseq rseqc
+                          salmon sambamba star star-fusion stringtie trim-galore ucsc vep }
                     ]
                 ),
             ],

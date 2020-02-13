@@ -1,0 +1,4 @@
+          FID         IID       PEDSEX       SNPSEX       STATUS            F
+  643594-miptest   ADM1059A1            1            0      PROBLEM        0.584
+  643594-miptest   ADM1059A2            1            0      PROBLEM       0.4053
+  643594-miptest   ADM1059A3            2            2           OK      -0.9835

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull splitpath };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -16,25 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_variant_integrity {
 
@@ -46,6 +42,7 @@ sub analysis_variant_integrity {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,6 +60,7 @@ sub analysis_variant_integrity {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -106,6 +104,11 @@ sub analysis_variant_integrity {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -128,20 +131,20 @@ sub analysis_variant_integrity {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Variant_integrity
+    use MIP::Program::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
-    use MIP::QC::Record qw{ add_recipe_metafile_to_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -152,7 +155,6 @@ sub analysis_variant_integrity {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -160,15 +162,15 @@ sub analysis_variant_integrity {
 
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my @sample_ids  = @{ $active_parameter_href->{sample_ids} };
-    my $is_trio     = $parameter_href->{cache}{trio};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my @sample_ids      = @{ $active_parameter_href->{sample_ids} };
+    my $is_trio         = $parameter_href->{cache}{trio};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -214,11 +216,11 @@ sub analysis_variant_integrity {
         }
     }
 
-    ## Check if we ahve something to analyse
+    ## Check if we have something to analyse
     if ( not scalar @var_int_outfiles ) {
 
         $log->warn(q{Not a trio nor a father in analysis - skipping 'variant_integrity'});
-        return;
+        return 1;
     }
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -233,7 +235,6 @@ sub analysis_variant_integrity {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -243,21 +244,22 @@ sub analysis_variant_integrity {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -268,7 +270,7 @@ sub analysis_variant_integrity {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -283,12 +285,12 @@ sub analysis_variant_integrity {
             {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{mendel},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
     # If father is included in analysis
@@ -298,26 +300,25 @@ sub analysis_variant_integrity {
             {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{father},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
-## Collect QC metadata info for later use
-            add_recipe_metafile_to_sample_info(
+            ## Collect QC metadata info for later use
+            set_recipe_outfile_in_sample_info(
                 {
-                    metafile_tag     => $outfile_tag,
                     path             => $outfile_path,
-                    recipe_name      => $recipe_name,
+                    recipe_name      => $recipe_name . $UNDERSCORE . $outfile_tag,
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -325,19 +326,21 @@ sub analysis_variant_integrity {
 
         submit_recipe(
             {
-                dependency_method       => q{case_to_island},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

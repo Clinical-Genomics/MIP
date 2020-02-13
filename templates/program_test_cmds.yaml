@@ -1,0 +1,104 @@
+---
+## Program tests
+# execution: the command and evaluate exit status, a non-zero exit status will fail the test
+# path: the program is executable and has been added to PATH
+arriba:
+  execution: 'arriba -h'
+bcftools:
+  execution: 'bcftools --version'
+bedtools:
+  execution: 'bedtools'
+blast:
+  execution: 'blastn -version'
+blobfish:
+  execution: 'BlobFish.py'
+bootstrapann:
+  execution: 'BootstrapAnn.py --help'
+bwa:
+  path: 'bwa'
+bwakit:
+  path: 'run-bwamem'
+cadd:
+  execution: 'CADD.sh -h'
+chanjo:
+  execution: 'chanjo'
+chromograph:
+  execution: 'chromograph'
+cnvnator:
+  path: 'cnvnator'
+delly:
+  execution: 'delly'
+expansionhunter:
+  execution: 'ExpansionHunter --version'
+fastqc:
+  execution: 'fastqc --version'
+fusion-filter:
+  path: 'gtf_file_to_feature_seqs.pl'
+gatk4:
+  execution: 'gatk'
+gatk:
+  execution: 'gatk3 java -jar /opt/conda/opt/gatk-3.8/GenomeAnalysisTK.jar --version'
+genmod:
+  execution: 'genmod'
+gffcompare:
+  execution: 'gffcompare --version'
+htslib:
+  execution: 'bgzip --version'
+manta:
+  execution: 'configManta.py --version'
+mip_scripts:
+  execution: 'mip --help'
+multiqc:
+  execution: 'multiqc --version'
+peddy:
+  execution: 'peddy --version'
+picard:
+  path: 'picard'
+pigz:
+  path: 'pigz'
+plink:
+  execution: 'plink2 --version'
+preseq:
+  execution: 'preseq'
+rhocall:
+  path: 'rhocall'
+rseqc:
+  path: 'inner_distance.py'
+rtg-tools:
+  execution: 'rtg --version'
+salmon:
+  execution: 'salmon --version'
+sambamba:
+  execution: 'sambamba --version'
+samtools:
+  execution: 'samtools --version'
+star:
+  execution: 'STAR'
+star-fusion:
+  execution: 'STAR-Fusion --version'
+stranger:
+  execution: 'stranger --version'
+stringtie:
+  execution: 'stringtie --version'
+svdb:
+  execution: 'svdb'
+tiddit:
+  execution: 'TIDDIT.py'
+trim-galore:
+  execution: 'trim_galore --version'
+ucsc-wigtobigwig:
+  path: 'wigToBigWig'
+upd:
+  execution: 'upd'
+varg:
+  execution: 'varg --version'
+variant_integrity:
+  execution: 'variant_integrity'
+vcf2cytosure:
+  execution: 'vcf2cytosure --version'
+vcfanno:
+  execution: 'vcfanno'
+vep:
+  execution: 'vep'
+vt:
+  execution: 'vt'

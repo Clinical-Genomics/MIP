@@ -1,93 +1,54 @@
 #!/usr/bin/env perl
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir catfile };
-use File::Temp;
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.026;
 
 ## CPANM
-use autodie;
-use Modern::Perl qw{ 2014 };
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
-
-our $USAGE = build_usage( {} );
-
-##Constants
-Readonly my $COMMA      => q{,};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
+our $VERSION = 1.00;
 
-###User Options
-GetOptions(
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
-    # Display help text
-    'h|help' => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
-        exit;
-    },
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+## Constants
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::Get::File}      => [qw{ get_exom_target_bed_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+    );
 
-    ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}}     = [qw{ help }];
-    $perl_module{q{MIP::Log::MIP_log4perl}} = [qw{ initiate_logger }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
-    }
-
-    ## Modules
-    my @modules = (q{MIP::Get::File});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Get::File qw{ get_exom_target_bed_file };
@@ -101,15 +62,8 @@ diag(   q{Test get_exom_target_bed_file from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir      = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-my $log           = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{MIP},
-    }
-);
+## Create log
+my $log = test_log( {} );
 
 ## Base arguments
 my $sample_1         = q{sample_1};
@@ -120,6 +74,7 @@ my %exome_target_bed = (
     q{exome_target_file_2.bed} => $sample_3,
 );
 
+## Given a sample_id
 my $exome_target_bed_file = get_exom_target_bed_file(
     {
         exome_target_bed_href => \%exome_target_bed,
@@ -128,9 +83,11 @@ my $exome_target_bed_file = get_exom_target_bed_file(
     }
 );
 
+## Then return exome target bed file for sample
 is( q{exome_target_file.bed}, $exome_target_bed_file,
     q{Get exom target bed file for sample_1} );
 
+## Given a sample id and a file ending
 $exome_target_bed_file = get_exom_target_bed_file(
     {
         exome_target_bed_href => \%exome_target_bed,
@@ -140,10 +97,11 @@ $exome_target_bed_file = get_exom_target_bed_file(
     }
 );
 
+## Then return exome target file with interval list file ending
 is( q{exome_target_file.bed.interval_list},
-    $exome_target_bed_file,
-    q{Get exom target bed.interval_list file for sample_1} );
+    $exome_target_bed_file, q{Get exom target bed.interval_list file for sample_1} );
 
+## Given another sample id
 $exome_target_bed_file = get_exom_target_bed_file(
     {
         exome_target_bed_href => \%exome_target_bed,
@@ -152,43 +110,27 @@ $exome_target_bed_file = get_exom_target_bed_file(
     }
 );
 
+## Then return exome target bed file for sample id
 is( q{exome_target_file_2.bed}, $exome_target_bed_file,
     q{Get exom target bed file for sample_3} );
 
+## Given a not exisitng sample id
+trap {
+    get_exom_target_bed_file(
+        {
+            exome_target_bed_href => \%exome_target_bed,
+            sample_id             => q{not_a_sample_id},
+            log                   => $log,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if sample id cannot be found} );
+like(
+    $trap->stderr,
+    qr/Could \s+ not \s+ detect/xms,
+    q{Throw fatal log message if sample id cannot be found}
+);
+
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

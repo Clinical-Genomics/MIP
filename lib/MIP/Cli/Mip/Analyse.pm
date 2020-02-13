@@ -3,8 +3,6 @@ package MIP::Cli::Mip::Analyse;
 use 5.026;
 use Carp;
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -19,12 +17,11 @@ use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+# MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.05;
+our $VERSION = 1.13;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -36,13 +33,6 @@ command_usage(q{analyse <pipeline>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
-
-#sub run {
-#    my ($arg_href) = @_;
-
-#    say {*STDERR} q{Please choose an subcommand to start the analysis};
-#    return;
-#}
 
 sub _build_usage {
 
@@ -58,6 +48,17 @@ sub _build_usage {
             documentation => q{Set the analysis constant path},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{analysisrunstatus} => (
+            cmd_aliases => [qw{ ars }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -111,25 +112,6 @@ sub _build_usage {
     );
 
     option(
-        q{email} => (
-            cmd_aliases   => [qw{ em }],
-            documentation => q{E-mail},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{email_types} => (
-            cmd_aliases   => [qw{ emt }],
-            cmd_tags      => [q{Default: FAIL}],
-            documentation => q{E-mail type},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
-        )
-    );
-
-    option(
         q{exclude_contigs} => (
             cmd_aliases   => [qw{ exc }],
             documentation => q{Exclude contigs from analysis},
@@ -167,22 +149,11 @@ sub _build_usage {
     );
 
     option(
-        q{node_ram_memory} => (
-            cmd_aliases   => [qw{ nrm }],
-            cmd_tags      => [q{Default: 128}],
-            documentation => q{RAM memory size of the node(s) in GigaBytes},
+        q{java_use_large_pages} => (
+            cmd_aliases   => [qw{ jul }],
+            documentation => q{Use large page memory},
             is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{max_cores_per_node} => (
-            cmd_aliases   => [qw{ mcpn }],
-            cmd_tags      => [q{Default: 16}],
-            documentation => q{Maximum number of processor cores per node},
-            is            => q{rw},
-            isa           => Int,
+            isa           => Bool,
         )
     );
 
@@ -254,9 +225,43 @@ sub _build_usage {
     option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
-            documentation => q{Reference(s) directory},
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_info_file} => (
+            cmd_aliases   => [qw{ rif }],
+            cmd_tags      => [q{YAML}],
+            documentation => q{File for reference info used in the analysis},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{sacct} => (
+            cmd_aliases => [qw{ sac }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Generating sbatch script for SLURM info on each submitted job},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
@@ -276,16 +281,6 @@ sub _build_usage {
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{slurm_quality_of_service} => (
-            cmd_aliases   => [qw{ qos }],
-            cmd_flag      => q{slurm_quly_sri},
-            documentation => q{SLURM quality of service},
-            is            => q{rw},
-            isa           => enum( [qw{ low normal high }] ),
         )
     );
 
@@ -314,6 +309,36 @@ sub _build_usage {
             documentation => q{Set the capture kit acronym shortcut in pedigree file},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{temp_directory} => (
+            cmd_aliases   => [qw{ tmd }],
+            cmd_tags      => [q{Default: "$outdata_dir/$SLURM_JOB_ID"}],
+            documentation => q{Set the temporary directory for all recipes},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{version_collect} => (
+            cmd_aliases   => [qw{ verc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collects executable versions across the analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{with_singularity} => (
+            cmd_aliases => [qw{ wsi }],
+            documentation =>
+              q{Run programs inside a singularity container where available},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 

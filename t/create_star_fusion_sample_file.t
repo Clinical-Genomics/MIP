@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -48,9 +48,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Star_fusion} =>
-          [qw{ create_star_fusion_sample_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::File::Format::Star_fusion} => [qw{ create_star_fusion_sample_file }],
+        q{MIP::Test::Fixtures}            => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -70,7 +69,7 @@ diag(   q{Test create_star_fusion_sample_file from Star_fusion.pm v}
 my $test_dir = File::Temp->newdir();
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
@@ -95,17 +94,12 @@ my %sample_info        = (
 );
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+open $filehandle, q{>}, \$file_content
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 create_star_fusion_sample_file(
     {
-        FILEHANDLE              => $FILEHANDLE,
+        filehandle              => $filehandle,
         infile_paths_ref        => \@infile_paths,
         infile_lane_prefix_href => \%infile_lane_prefix,
         samples_file_path       => $samples_file_path,
@@ -113,7 +107,7 @@ create_star_fusion_sample_file(
         sample_info_href        => \%sample_info,
     }
 );
-close $FILEHANDLE;
+close $filehandle;
 
 ## Then file content should exist and string with sample_id and path should written
 ok( $file_content, q{Created file content} );
@@ -124,8 +118,7 @@ my ($returned_samples_file_path) = $file_content =~ /($samples_file_path)/mxs;
 
 is( $returned_sample_id, $sample_id, q{Found sample_id in line} );
 
-is( $returned_samples_file_path, $samples_file_path,
-    q{Found sample path in line} );
+is( $returned_samples_file_path, $samples_file_path, q{Found sample path in line} );
 my $second_pair = $infile_paths[$INDEX_READ_1_SECOND_PAIR] . q{\S+}
   . $infile_paths[$INDEX_READ_2_SECOND_PAIR];
 my ($returned_second_pair) = $file_content =~ /($second_pair)/msx;

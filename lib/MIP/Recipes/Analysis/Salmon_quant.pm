@@ -14,7 +14,11 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ uniq };
 use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -22,30 +26,25 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_salmon_quant {
 
 ## Function : Transcript quantification using salmon quant
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -64,6 +63,7 @@ sub analysis_salmon_quant {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -107,6 +107,11 @@ sub analysis_salmon_quant {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -136,18 +141,18 @@ sub analysis_salmon_quant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
+    use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info
+      qw{ get_sequence_run_type set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -161,206 +166,170 @@ sub analysis_salmon_quant {
             temp_directory => $temp_directory,
         }
     );
-    my @infile_paths      = @{ $io{in}{file_paths} };
-    my @temp_infile_paths = @{ $io{temp}{file_paths} };
-    my $recipe_mode       = $active_parameter_href->{$recipe_name};
+    my @infile_paths = @{ $io{in}{file_paths} };
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
     my $referencefile_dir_path =
         $active_parameter_href->{salmon_quant_reference_genome}
       . $file_info_href->{salmon_quant_reference_genome}[0];
-    my $job_id_chain = get_recipe_attributes(
+    my %rec_atr = get_recipe_attributes(
         {
-            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $job_id_chain    = $rec_atr{chain};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
+    ## Set outfile
+    my $recipe_dir =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
+    my $file_path = catfile( $recipe_dir, $rec_atr{file_tag} . $rec_atr{outfile_suffix} );
+
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
-                id                     => $sample_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => [$file_path],
+                outdata_dir    => $active_parameter_href->{outdata_dir},
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                temp_directory => $temp_directory,
             }
         )
     );
-    my $outdir_path                = $io{out}{dir_path};
-    my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
-    my @outfile_paths              = @{ $io{out}{file_paths} };
-    my @temp_outfile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
-    my @temp_outfile_paths         = @{ $io{temp}{file_paths} };
+    my $outdir_path  = $io{out}{dir_path};
+    my $outfile_name = $io{out}{file_names}->[0];
+    my $outfile_path = $io{out}{file_paths}->[0];
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
-    # Too avoid adjusting infile_index in submitting to jobs
-    my $paired_end_tracker = 0;
+    ## Get sequence run type
+    my %sequence_run_type = get_sequence_run_type(
+        {
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_id               => $sample_id,
+            sample_info_href        => $sample_info_href,
+        }
+    );
 
-    ## Perform per single-end or read pair
-  INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+    my @sequence_run_types = uniq( values %sequence_run_type );
 
-        ## Assign file features
-        my $file_path           = $temp_outfile_paths[$infile_index];
-        my $file_path_prefix    = $temp_outfile_path_prefixes[$infile_index];
-        my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
-        my $outfile_path        = $outfile_paths[$infile_index];
+    my $sequence_run_mode = $sequence_run_types[0];
 
-        # Collect paired-end or single-end sequence run mode
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $sample_id,
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            temp_directory                  => $temp_directory,
+        }
+    );
 
-        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-        my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+    ### SHELL
+
+    ## Salmon quant
+    say {$filehandle} q{## Quantifying transcripts using } . $recipe_name;
+
+    ## For paired end
+    if ( $sequence_run_mode eq q{paired-end} ) {
+
+        ## Grep every other read file and place in new arrays
+        # Even array indexes get a 0 remainder and are evalauted as false
+        my @read_1_fastq_paths =
+          @infile_paths[ grep { !( $_ % 2 ) } 0 .. $#infile_paths ];
+
+        # Odd array indexes get a 1 remainder and are evalauted as true
+        my @read_2_fastq_paths = @infile_paths[ grep { $_ % 2 } 0 .. $#infile_paths ];
+
+        salmon_quant(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $core_number,
-                directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $time,
-                source_environment_commands_ref => \@source_environment_cmds,
-                temp_directory                  => $temp_directory,
+                filehandle             => $filehandle,
+                gc_bias                => 1,
+                index_path             => $referencefile_dir_path,
+                outdir_path            => $outdir_path,
+                read_1_fastq_paths_ref => \@read_1_fastq_paths,
+                read_2_fastq_paths_ref => \@read_2_fastq_paths,
             }
         );
-
-        ### SHELL
-
-        ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-        # Read 1
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_paths[$paired_end_tracker],
-                outfile_path => $temp_directory,
-            }
-        );
-
-        # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
-
-            # Read 2
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_paths[ $paired_end_tracker + 1 ],
-                    outfile_path => $temp_directory,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        ## Salmon quant
-        say {$FILEHANDLE} q{## Quantifying transcripts using } . $recipe_name;
-
-        ### Get parameters
-        ## Infile(s)
-        my @fastq_files = $temp_infile_paths[$paired_end_tracker];
-
-        # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
-
-            # Increment to collect correct read 2 from %infile
-            $paired_end_tracker++;
-            push @fastq_files, $temp_infile_paths[$paired_end_tracker];
-        }
-
-        # If second read direction is present
-        if ( $sequence_run_mode ne q{paired-end} ) {
-
-            salmon_quant(
-                {
-                    FILEHANDLE        => $FILEHANDLE,
-                    gc_bias           => 1,
-                    index_path        => $referencefile_dir_path,
-                    outfile_path      => $file_path_prefix,
-                    read_1_fastq_path => $fastq_files[0],
-                },
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-        else {
-            salmon_quant(
-                {
-                    FILEHANDLE        => $FILEHANDLE,
-                    gc_bias           => 1,
-                    index_path        => $referencefile_dir_path,
-                    outfile_path      => $file_path_prefix,
-                    read_1_fastq_path => $fastq_files[0],
-                    read_2_fastq_path => $fastq_files[1],
-                },
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-
-        ## Increment paired end tracker
-        $paired_end_tracker++;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $file_path_prefix . $ASTERISK,
-                outfile_path => $outdir_path,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        ## Close FILEHANDLES
-        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-
-        if ( $recipe_mode == 1 ) {
-
-            ## Collect QC metadata info for later use
-            add_recipe_outfile_to_sample_info(
-                {
-                    infile           => $outfile_name_prefix,
-                    path             => $outfile_path,
-                    recipe_name      => $recipe_name,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            submit_recipe(
-                {
-                    dependency_method       => q{sample_to_sample_parallel},
-                    case_id                 => $case_id,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
-                    job_id_chain            => $job_id_chain,
-                    recipe_file_path        => $recipe_file_path,
-                    recipe_files_tracker    => $infile_index,
-                    sample_id               => $sample_id,
-                    submission_profile => $active_parameter_href->{submission_profile},
-                }
-            );
-        }
+        say {$filehandle} $NEWLINE;
     }
-    return;
+    ## For single end
+    else {
+
+        salmon_quant(
+            {
+                filehandle             => $filehandle,
+                gc_bias                => 1,
+                index_path             => $referencefile_dir_path,
+                outdir_path            => $outdir_path,
+                read_1_fastq_paths_ref => \@infile_paths,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+
+    if ( $recipe_mode == 1 ) {
+
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                infile           => $outfile_name,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        submit_recipe(
+            {
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
+                recipe_file_path        => $recipe_file_path,
+                sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
+            }
+        );
+    }
+    return 1;
 }
 
 1;

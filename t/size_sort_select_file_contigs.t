@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ diag(   q{Test size_sort_select_file_contigs from Contigs.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -129,14 +125,13 @@ trap {
             hash_key_to_sort        => q{select_file_contigs},
             log                     => $log,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if hash key to sort does not exist in supplied hash} );
 like( $trap->stderr, qr/FATAL/xms,
-q{Throw fatal log message if hash key to sort does not exist in supplied hash}
-);
+    q{Throw fatal log message if hash key to sort does not exist in supplied hash} );
 
 ## Given a hash of array to sort, when no hash of array as reference exists
 %file_info = ( select_file_contigs => [qw{chr2 chr1 chrM chr3}], );
@@ -150,14 +145,13 @@ trap {
             hash_key_to_sort        => q{select_file_contigs},
             log                     => $log,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit,
-    q{Exit if hash key for reference does not exist in supplied hash} );
+ok( $trap->exit, q{Exit if hash key for reference does not exist in supplied hash} );
 like( $trap->stderr, qr/FATAL/xms,
-q{Throw fatal log message if hash key for reference does not exist in supplied hash}
+    q{Throw fatal log message if hash key for reference does not exist in supplied hash}
 );
 
 ## Given wes, when lacking mitochondrial contig in array to sort
@@ -201,15 +195,13 @@ trap {
             hash_key_to_sort        => q{select_file_contigs},
             log                     => $log,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit,
-    q{Exit if contig is lacking from sorted array due to reference} );
+ok( $trap->exit, q{Exit if contig is lacking from sorted array due to reference} );
 like( $trap->stderr, qr/FATAL/xms,
-q{Throw fatal log message if contig is lacking from sorted array due to reference}
-);
+    q{Throw fatal log message if contig is lacking from sorted array due to reference} );
 
 ## Given all ok parameters
 %file_info = (

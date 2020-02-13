@@ -16,16 +16,17 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Clone qw{ clone };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -64,169 +61,105 @@ diag(   q{Test set_programs_for_installation from Set::Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Create starting hash
-my $parameter_href = {
-    installations    => [qw{ test_env }],
-    python3_programs => [],
-    select_programs  => [],
-    shell_install    => [],
-    skip_programs    => [],
-    test_env         => {
-        conda => {
-            bio_prog_1   => 1,
-            dependency_1 => 1,
-            python       => 2.7,
-            snpeff       => 1,
-            snpsift      => 1,
+my $active_parameter_href = {
+    select_programs => [],
+    shell_install   => [],
+    skip_programs   => [],
+    conda           => {
+        bio_prog_1   => 1,
+        dependency_1 => 1,
+        picard       => 1,
+        python       => 2.7,
+    },
+    pip => {
+        py_prog_1 => 1,
+        py_prog_2 => 1,
+    },
+    shell => {
+        bio_prog_1 => {
+            conda_dependency => {
+                dependency_1 => 1,
+            },
+            version => 1,
         },
-        pip => {
-            py_prog_1 => 1,
-            py_prog_2 => 1,
+        bio_prog_2 => {
+            conda_dependency => {
+                dependency_1 => 1,
+            },
+            version => 2,
         },
-        shell => {
-            bio_prog_1 => {
-                conda_dependency => {
-                    dependency_1 => 1,
-                },
-                version => 1,
-            },
-            bio_prog_2 => {
-                conda_dependency => {
-                    dependency_1 => 1,
-                },
-                version => 2,
-            },
-            snpeff => {
-                snpeff_genome_versions => [qw{ GRCh37 }],
-                version                => 2,
-            },
+    },
+    singularity => {
+        multiqc => {
+            executable => undef,
+            uri        => q{docker://ewels/multiqc:v1.7},
         },
     },
 };
 
 ## Copy starting hash to working copy
-my $parameter_copy_href = clone($parameter_href);
+my $active_parameter_copy_href = clone($active_parameter_href);
 
 ## Given a parameter hash with conflicting options
-$parameter_copy_href->{select_programs} = [qw{ bio_prog_1 }];
-$parameter_copy_href->{skip_programs}   = [qw{ bio_prog_1 bio_prog_2 }];
+$active_parameter_copy_href->{select_programs} = [qw{ bio_prog_1 }];
+$active_parameter_copy_href->{skip_programs}   = [qw{ bio_prog_1 bio_prog_2 }];
 
 ## When subroutine is executed
 trap {
     set_programs_for_installation(
         {
-            installation   => q{test_env},
-            parameter_href => $parameter_copy_href,
-            log            => $log,
+            active_parameter_href => $active_parameter_copy_href,
         }
-      )
+    )
 };
 
 ## Then print FATAL log message and exit
-like( $trap->stderr, qr/FATAL/xms, q{Fatal log message} );
-ok( $trap->exit, q{Exit signal} );
-
-## Given a parameter hash with the select_program option and installation of several environements
-$parameter_copy_href                    = clone($parameter_href);
-$parameter_copy_href->{select_programs} = [qw{ bio_prog_1 }];
-$parameter_copy_href->{installations}   = [qw{ test_env test_env2 }];
-
-## When subroutine is executed
-trap {
-    set_programs_for_installation(
-        {
-            installation   => q{test_env},
-            parameter_href => $parameter_copy_href,
-            log            => $log,
-        }
-      )
-};
-
-## Then print FATAL log message for trying to use --select_program together with and installation of more than one environment
-like( $trap->stderr, qr/FATAL/xms, q{Fatal log message} );
+like( $trap->stderr, qr/mutually\sexclusive/xms, q{Fatal log message} );
 ok( $trap->exit, q{Exit signal} );
 
 ## Given a parameter hash with a request to skip programs
-$parameter_copy_href = clone($parameter_href);
-$parameter_copy_href->{skip_programs} = [qw{ py_prog_1 bio_prog_1 python }];
-
-## When subroutine is executed
-trap {
-    set_programs_for_installation(
-        {
-            installation   => q{test_env},
-            parameter_href => $parameter_copy_href,
-            log            => $log,
-        }
-      )
-};
-
-##Then warn for no python and solve the installation as such
-my $installation_href = clone($parameter_copy_href);
-$installation_href->{test_env}{snpeff_genome_versions} = [qw{ GRCh37 }];
-delete $installation_href->{test_env}{conda}{qw{ bio_prog_1 python }};
-delete $installation_href->{test_env}{pip}{py_prog_1};
-delete $installation_href->{test_env}{shell}{qw{ bio_prog_1 snpeff }};
-
-like( $trap->stderr, qr/WARN/xms, q{Warn for no python} );
-is_deeply( $parameter_copy_href, $installation_href, q{Solve installation} );
-
-## Given a selective installation
-$parameter_copy_href                    = clone($parameter_href);
-$parameter_copy_href->{select_programs} = [qw{ python snpeff bio_prog_2 }];
-$parameter_copy_href->{shell_install}   = [qw{ snpeff }];
+$active_parameter_copy_href                    = clone($active_parameter_href);
+$active_parameter_copy_href->{select_programs} = [];
+$active_parameter_copy_href->{skip_programs}   = [qw{ py_prog_1 bio_prog_1 python }];
 
 ## When subroutine is executed
 set_programs_for_installation(
     {
-        installation   => q{test_env},
-        parameter_href => $parameter_copy_href,
-        log            => $log,
+        active_parameter_href => $active_parameter_copy_href,
+    }
+);
+
+## Then warn for no python and solve the installation as such
+my $installation_href = clone($active_parameter_copy_href);
+delete $installation_href->{conda}{qw{ bio_prog_1 python }};
+delete $installation_href->{pip}{py_prog_1};
+delete $installation_href->{shell}{qw{ bio_prog_1 }};
+
+is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
+
+## Given a selective installation
+$active_parameter_copy_href                    = clone($active_parameter_href);
+$active_parameter_copy_href->{select_programs} = [qw{ python picard bio_prog_2 }];
+$active_parameter_copy_href->{shell_install}   = [qw{ picard }];
+
+## When subroutine is executed
+set_programs_for_installation(
+    {
+        active_parameter_href => $active_parameter_copy_href,
     }
 );
 
 ## Then solve the installation as such
-$installation_href = clone($parameter_copy_href);
-$installation_href->{test_env}{snpeff_genome_versions} = [qw{ GRCh37 }];
-delete $installation_href->{test_env}{conda}{qw{ bio_prog_1 snpeff snpsift }};
-delete $installation_href->{test_env}{pip}{qw{ py_prog_1 py_prog_2 }};
-delete $installation_href->{test_env}{shell}{bio_prog_1};
+$installation_href = clone($active_parameter_copy_href);
+delete $installation_href->{conda}{qw{ bio_prog_1 picard }};
+delete $installation_href->{pip}{qw{ py_prog_1 py_prog_2 }};
+delete $installation_href->{shell}{bio_prog_1};
+delete $installation_href->{singularity}{multiqc};
 
-is_deeply( $parameter_copy_href, $installation_href, q{Solve installation} );
+is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
 
 done_testing();
 
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

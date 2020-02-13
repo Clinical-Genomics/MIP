@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA              => q{,};
-Readonly my $MIN_MAP_QUAL       => q{20};
-Readonly my $INSERT_SIZE_CUTOFF => q{15};
-Readonly my $SPACE              => q{ };
+Readonly my $MIN_MAP_QUAL       => 20;
+Readonly my $INSERT_SIZE_CUTOFF => 15;
 
 BEGIN {
 
@@ -45,18 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Delly} => [qw{ delly_call }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Delly} => [qw{ delly_call }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Delly qw{ delly_call };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Delly qw{ delly_call };
 
 diag(   q{Test delly_call from Delly.pm v}
-      . $MIP::Program::Variantcalling::Delly::VERSION
+      . $MIP::Program::Delly::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,7 +67,7 @@ diag(   q{Test delly_call from Delly.pm v}
 my @function_base_commands = qw{ delly call };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -111,12 +110,10 @@ my %specific_argument = (
         expected_output => q{--exclude delly_exclude_file},
     },
     genotypefile_path => {
-        input => catfile(
-            qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
+        input => catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
         expected_output => q{--vcffile}
           . $SPACE
-          . catfile(
-            qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
+          . catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
     },
     mad_cutoff => {
         input           => $INSERT_SIZE_CUTOFF,
@@ -126,13 +123,12 @@ my %specific_argument = (
         input           => $MIN_MAP_QUAL,
         expected_output => q{--map-qual} . $SPACE . $MIN_MAP_QUAL,
     },
-    no_small_indel => {
+    small_indel => {
         input           => 1,
-        expected_output => q{--noindels},
+        expected_output => q{--i},
     },
     outfile_path => {
-        input =>
-          catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),
+        input => catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),
         expected_output => q{--outfile}
           . $SPACE
           . catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),

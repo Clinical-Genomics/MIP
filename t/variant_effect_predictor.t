@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +40,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Vep} => [qw{ variant_effect_predictor }],
-        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
+        q{MIP::Program::Vep}   => [qw{ variant_effect_predictor }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+use MIP::Program::Vep qw{ variant_effect_predictor };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test variant_effect_predictor from Vep.pm v}
-      . $MIP::Program::Variantcalling::Vep::VERSION
+      . $MIP::Program::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,7 +66,7 @@ Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 my @function_base_commands = qw{ vep };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -90,7 +87,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -127,7 +124,7 @@ my %specific_argument = (
         input           => 10,
         expected_output => q{--distance} . $SPACE . q{10},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -144,6 +141,10 @@ my %specific_argument = (
         expected_output => q{--input_file}
           . $SPACE
           . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    max_sv_size => {
+        input           => 1,
+        expected_output => q{--max_sv_size} . $SPACE . 1,
     },
     outfile_format => {
         input           => q{vcf},
@@ -164,12 +165,16 @@ my %specific_argument = (
         expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
     },
     reference_path => {
-        input           => catfile( q{test_dir},                       q{hum_ref.pl} ),
+        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
         expected_output => q{--fasta} . $SPACE . catfile( q{test_dir}, q{hum_ref.pl} ),
     },
     regions_ref => {
         inputs_ref      => [qw{ 1 2 }],
         expected_output => q{--chr} . $SPACE . q{1,2},
+    },
+    synonyms_file_path => {
+        input           => catfile(qw{a synonym_file.tsv}),
+        expected_output => q{--synonyms} . $SPACE . catfile(qw{a synonym_file.tsv}),
     },
     vep_features_ref => {
         inputs_ref      => [qw{ tsl hgvs}],
@@ -188,10 +193,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

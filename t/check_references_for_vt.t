@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -63,40 +59,37 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
       . $EXECUTABLE_NAME );
 
 # Create log object
-my $log = test_log();
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 my %active_parameter_test = (
-    fqf_vcfanno_config => catfile(
-        $Bin, qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml }
+    fqa_vcfanno_config => catfile(
+        $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
     ),
-    frequency_filter                   => 1,
+    frequency_annotation               => 1,
     gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
-        catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf } ),
-        catfile( $Bin, qw{ data references GRCh37_1000g_indels_-phase1-.vcf } ),
+        catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf } ),
+        catfile( $Bin, qw{ data references grch37_1000g_indels_-phase1-.vcf } ),
         catfile(
-            $Bin, qw{ data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            $Bin, qw{ data references grch37_mills_and_1000g_indels_-gold_standard-.vcf }
         )
     ],
     gatk_variantevalall => 1,
     gatk_varianteval_dbsnp =>
-      catfile( $Bin, qw{ data references GRCh37_dbsnp_-138_esa_129-.vcf } ),
-    gatk_variantevalexome    => 1,
-    snpeff                   => 1,
-    snpsift_annotation_files => {
-        catfile(
-            $Bin, qw{ data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz }
-          ) => q{SWEREF},
-        catfile( $Bin, qw{ data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz } ) =>
-          q{EXAC},
-        catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } ) =>
-          q{GNOMAD},
+      catfile( $Bin, qw{ data references grch37_dbsnp_-138_esa_129-.vcf } ),
+    gatk_variantevalexome                    => 1,
+    gatk_variantrecalibration                => 1,
+    gatk_variantrecalibration_resource_indel => {
+        q{grch37_dbsnp_-138-.vcf} =>
+          q{dbsnp,known=true,training=false,truth=false,prior=2.0},
+        q{grch37_mills_and_1000g_-gold_standard_indels-.vcf} =>
+          q{mills,known=false,training=true,truth=true,prior=12.0},
     },
 );
 
 my %parameter_test = (
-    fqf_vcfanno_config => {
-        associated_recipe => [qw{ frequency_filter }],
+    fqa_vcfanno_config => {
+        associated_recipe => [qw{ frequency_annotation }],
         data_type         => q{SCALAR},
     },
     gatk_baserecalibration_known_sites => {
@@ -107,12 +100,12 @@ my %parameter_test = (
         associated_recipe => [qw{ gatk_variantevalall gatk_variantevalexome }],
         data_type         => q{SCALAR},
     },
-    snpsift_annotation_files =>
-      { associated_recipe => [qw{ snpeff }], data_type => q{HASH}, },
+    gatk_variantrecalibration_resource_indel =>
+      { associated_recipe => [qw{ gatk_variantrecalibration }], data_type => q{HASH}, },
 );
 
 my @vt_references_test =
-  qw{ fqf_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
+  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel };
 
 my @refs_to_process = check_references_for_vt(
     {

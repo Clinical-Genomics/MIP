@@ -36,9 +36,9 @@ Readonly my $SPACE => q{ };
 
 sub gnu_sed {
 
-##Function : Perl wrapper for writing sed recipe to already open $FILEHANDLE or return commands array. Based on sed 4.2.1.
+##Function : Perl wrapper for writing sed recipe to already open $filehandle or return commands array. Based on sed 4.2.1.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE       => Filehandle to write to
+##Arguments: $filehandle       => Filehandle to write to
 ##         : $infile_path      => Infile path
 ##         : $inplace_edit     => Edit file in place
 ##         : $outfile_path     => Outfile path
@@ -49,7 +49,7 @@ sub gnu_sed {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $inplace_edit;
     my $outfile_path;
@@ -58,8 +58,8 @@ sub gnu_sed {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
         infile_path => {
             strict_type => 1,
@@ -129,7 +129,7 @@ sub gnu_sed {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;

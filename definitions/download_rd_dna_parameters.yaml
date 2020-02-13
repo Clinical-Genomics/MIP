@@ -1,398 +1,340 @@
 ---
 ## Version: 1.0.0
-#Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
-absolute_paths:
-  - reference_dir
-  - log_file
-log_file: download_rare_disease.log
-reference:
-  human_reference:
-    - decoy_5
-    - decoy_hla
-  1000g_all_wgs:
-    - phase3_v5b.20130502
-  1000g_all_sv:
-    - phase3_v8.20130502
-  clinvar:
-    - 20171029
-    - 20180429
-    - 20181028
-  1000g_omni:
-    - 2.5
-  1000g_indels:
-    - phase1
-  1000g_snps:
-    - phase1
-  1000g_sites:
-    - phase3_v4_20130502
-  mills_and_1000g_indels:
-    - gold_standard_indel
-  dbsnp:
-    - 138_esa_129
-    - 138
-    - gold_standard_dbsnp
-    - 146
-  hapmap:
-    - 3.3
-  dbnsfp:
-    - v2.9
-    - v3.2a
-    - v3.5a
-  genomic_superdups:
-    - 20181009
-  giab:
-    - na12878_v2.19_wgs
-    - na12878_v2.19_bed
-    - na12878_v3.3.2_wgs
-    - na12878_v3.3.2_bed
-    - na24385_v3.3.2_wgs
-    - na24385_v3.3.2_bed
-    - na24631_v3.3.2_wgs
-    - na24631_v3.3.2_bed
-  gnomad:
-    - r2.0.1
-gnomad:
-  grch37:
-    r2.0.1:
-      file: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz
-      file_index: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz.tbi
-      outfile: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz
-      outfile_index: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
-      url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
-human_reference:
-  grch37:
-    decoy_5:
-      file: human_g1k_v37_decoy.fasta.gz
-      file_check: human_g1k_v37_decoy.fasta.gz.md5
-      file_index: human_g1k_v37_decoy.fasta.fai.gz
-      file_index_check: human_g1k_v37_decoy.fasta.fai.gz.md5
-      outfile: GRCh37_homo_sapiens_-d5-.fasta.gz
-      outfile_check: GRCh37_homo_sapiens_-d5-.fasta.gz.md5
-      outfile_index: GRCh37_homo_sapiens_-d5-.fasta.fai.gz
-      outfile_index_check: GRCh37_homo_sapiens_-d5-.fasta.fai.gz.md5
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-  hg38:
-    decoy_hla:
-      file: GRCh38_full_analysis_set_plus_decoy_hla.fa
-      file_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
-      outfile: hg38_homo_sapiens_-decoy_hla-.fasta
-      outfile_index: hg38_homo_sapiens_-decoy_hla-.fasta.fai
-      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
-1000g_all_wgs:
-  grch37:
-    phase3_v5b.20130502:
-      file: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
-      file_index: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz.tbi
-      outfile: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-      outfile_index: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
-      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
+# Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
 1000g_all_sv:
-  grch37:
-    phase3_v8.20130502:
-      file: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz
-      file_index: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz.tbi
-      outfile: GRCh37_all_sv_-phase3_v8.2013-05-02-.vcf.gz
-      outfile_index: GRCh37_all_sv_-phase3_v8.2013-05-02-.vcf.gz.tbi
-      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
-clinvar:
-  grch37:
-    20171029:
-      file: clinvar_20171029.vcf.gz
-      file_check: clinvar_20171029.vcf.gz.md5
-      file_index: clinvar_20171029.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2017-10-29-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2017-10-29-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2017-10-29-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2017-10-29-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2017-10-29-.vcf"
-      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2017-10-29-.vcf'
-      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2017-10-29-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2017/
-    20181028:
-      file: clinvar_20181028.vcf.gz
-      file_check: clinvar_20181028.vcf.gz.md5
-      file_index: clinvar_20181028.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2018-10-28-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2018-10-28-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2018-10-28-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-10-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-10-28-.vcf"
-      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-10-28-.vcf'
-      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-10-28-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
-    20180429:
-      file: clinvar_20180429.vcf.gz
-      file_check: clinvar_20180429.vcf.gz.md5
-      file_index: clinvar_20180429.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2018-04-29-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2018-04-29-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2018-04-29-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-04-29-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-04-29-.vcf"
-      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-04-29-.vcf'
-      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-04-29-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
-  hg38:
-    20171029:
-      file: clinvar_20171029.vcf.gz
-      file_check: clinvar_20171029.vcf.gz.md5
-      file_index: clinvar_20171029.vcf.gz.tbi
-      outfile: hg38_clinvar_-2017-10-29-.vcf.gz
-      outfile_check: hg38_clinvar_-2017-10-29-.vcf.gz.md5
-      outfile_index: hg38_clinvar_-2017-10-29-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_decompress: gzip
-      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-10-29-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-10-29-.vcf"
-      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-10-29-.vcf'
-      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-10-29-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2017/
-1000g_omni:
-  grch37:
-    2.5:
-      file: 1000G_omni2.5.b37.vcf.gz
-      file_check: 1000G_omni2.5.b37.vcf.gz.md5
-      file_index: 1000G_omni2.5.b37.vcf.idx.gz
-      file_index_check: 1000G_omni2.5.b37.vcf.idx.gz.md5
-      outfile: GRCh37_1000g_omni_-2.5-.vcf.gz
-      outfile_check: GRCh37_1000g_omni_-2.5-.vcf.gz.md5
-      outfile_index: GRCh37_1000g_omni_-2.5-.vcf.idx.gz
-      outfile_index_check: GRCh37_1000g_omni_-2.5-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    2.5:
-      file: 1000G_omni2.5.hg38.vcf.gz
-      file_index: 1000G_omni2.5.hg38.vcf.gz.tbi
-      outfile: hg38_1000g_omni_-2.5-.vcf.gz
-      outfile_index: hg38_1000g_omni_-2.5-.vcf.gz.tbi
-      outfile_decompress: gzip
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_all_wgs:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 1000g_indels:
-  grch37:
-    phase1:
-      file: 1000G_phase1.indels.b37.vcf.gz
-      file_check: 1000G_phase1.indels.b37.vcf.gz.md5
-      file_index: 1000G_phase1.indels.b37.vcf.idx.gz
-      file_index_check: 1000G_phase1.indels.b37.vcf.idx.gz.md5
-      outfile: GRCh37_1000g_indels_-phase1-.vcf.gz
-      outfile_check: GRCh37_1000g_indels_-phase1-.vcf.gz.md5
-      outfile_index: GRCh37_1000g_indels_-phase1-.vcf.idx.gz
-      outfile_index_check: GRCh37_1000g_indels_-phase1-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-1000g_snps:
-  grch37:
-    phase1:
-      file: 1000G_phase1.snps.high_confidence.b37.vcf.gz
-      file_check: 1000G_phase1.snps.high_confidence.b37.vcf.gz.md5
-      file_index: 1000G_phase1.snps.high_confidence.b37.vcf.idx.gz
-      file_index_check: 1000G_phase1.snps.high_confidence.b37.vcf.idx.gz.md5
-      outfile: GRCh37_1000g_snps_high_confidence_-phase1-.vcf.gz
-      outfile_check: GRCh37_1000g_snps_high_confidence_-phase1-.vcf.gz.md5
-      outfile_index: GRCh37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz
-      outfile_index_check: GRCh37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    phase1:
-      file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-      file_index: 1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi
-      outfile: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz
-      outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
-      outfile_decompress: gzip
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_omni:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 1000g_sites:
-  grch37:
-    phase3_v4_20130502:
-      file: 1000G_phase3_v4_20130502.sites.vcf.gz
-      file_index: 1000G_phase3_v4_20130502.sites.vcf.gz.tbi
-      outfile: GRCh37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
-      outfile_index: GRCh37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz.tbi
-      outfile_decompress: gzip
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-mills_and_1000g_indels:
-  grch37:
-    gold_standard_indels:
-      file: Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-      file_check: Mills_and_1000G_gold_standard.indels.b37.vcf.gz.md5
-      file_index: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz
-      file_index_check: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz.md5
-      outfile: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz
-      outfile_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz.md5
-      outfile_index: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz
-      outfile_index_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    gold_standard_indels:
-      file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-      file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
-      outfile: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz
-      outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
-      outfile_decompress: gzip
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-dbsnp:
-  grch37:
-    138_esa_129:
-      file: dbsnp_138.b37.excluding_sites_after_129.vcf.gz
-      file_check: dbsnp_138.b37.excluding_sites_after_129.vcf.gz.md5 
-      file_index: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz
-      file_index_check: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz.md5
-      outfile: GRCh37_dbsnp_-138_esa_129-.vcf.gz
-      outfile_check: GRCh37_dbsnp_-138_esa_129-.vcf.gz.md5
-      outfile_index: GRCh37_dbsnp_-138_esa_129-.vcf.idx.gz
-      outfile_index_check: GRCh37_dbsnp_-138_esa_129-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    138:
-      file: dbsnp_138.b37.vcf.gz
-      file_check: dbsnp_138.b37.vcf.gz.md5
-      file_index: dbsnp_138.b37.vcf.idx.gz
-      file_index_check: dbsnp_138.b37.vcf.idx.gz.md5
-      outfile: GRCh37_dbsnp_-138-.vcf.gz
-      outfile_check: GRCh37_dbsnp_-138-.vcf.gz.md5
-      outfile_index: GRCh37_dbsnp_-138-.vcf.idx.gz
-      outfile_index_check: GRCh37_dbsnp_-138-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    gold_standard_dbsnp:
-      file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
-      file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
-      outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
-      outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
-      outfile_decompress: gzip
-    146:
-      file: dbsnp_146.hg38.vcf.gz
-      file_index: dbsnp_146.hg38.vcf.gz.tbi
-      outfile: hg38_dbsnp_-146-.vcf.gz
-      outfile_index: hg38_dbsnp_-146-.vcf.gz.tbi
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-      outfile_decompress: gzip
-hapmap:
-  grch37:
-    3.3:
-      file: hapmap_3.3.b37.vcf.gz 
-      file_check: hapmap_3.3.b37.vcf.gz.md5
-      file_index: hapmap_3.3.b37.vcf.idx.gz
-      file_index_check: hapmap_3.3.b37.vcf.idx.gz.md5
-      outfile: GRCh37_hapmap_-3.3-.vcf.gz
-      outfile_check: GRCh37_hapmap_-3.3-.vcf.gz.md5
-      outfile_index: GRCh37_hapmap_-3.3-.vcf.idx.gz
-      outfile_index_check: GRCh37_hapmap_-3.3-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    3.3:
-      file: hapmap_3.3.hg38.vcf.gz
-      file_index: hapmap_3.3.hg38.vcf.gz.tbi
-      outfile: hg38_hapmap_-3.3-.vcf.gz
-      outfile_index: hg38_hapmap_-3.3-.vcf.gz.tbi
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-      outfile_decompress: gzip
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_snps:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_bravo_topmed:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_gnomad_genomes:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_offline_annotations:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_to_vcf_header:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_whole_genome_snvs:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+clinvar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 dbnsfp:
-  grch37:
-    v2.9:
-      file: dbNSFPv2.9.zip
-      outfile: GRCh37_dbnsfp_-v2.9-.zip
-      url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
-      outfile_decompress: unzip
-      outfile_reformat_command: '(cat dbNSFP2.9_variant.chr* | grep -v "^#" ) > GRCh37_dbnsfp_-v2.9-.txt; rm dbNSFP2.9_variant.chr*; rm tryhg*.in; rm search_dbNSFP29*'
-      outfile_bgzip_command: 'bgzip GRCh37_dbnsfp_-v2.9-.txt'
-      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 GRCh37_dbnsfp_-v2.9-.txt.gz'
-    v3.5a:
-      file: dbNSFPv3.5a.zip
-      outfile: GRCh37_dbnsfp_-v3.5a-.zip
-      url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
-      outfile_decompress: unzip
-      outfile_reformat_command: head -n1 dbNSFP3.5a_variant.chr1 > h; cat dbNSFP3.5a_variant.chr* | grep -v ^#chr | awk '$8 != "."' | sort -k8,8 -k9,9n - | cat h - > GRCh37_dbnsfp_-v3.5a-.txt
-      outfile_bgzip_command: 'bgzip GRCh37_dbnsfp_-v3.5a-.txt'
-      outfile_tabix_command: 'tabix -s 8 -b 9 -e 9 GRCh37_dbnsfp_-v3.5.a-.txt.gz'
-  hg38:
-    v3.2a:
-      file: dbNSFPv3.2a.zip
-      outfile: hg38_dbnsfp_-v3.2a-.zip
-      url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
-      outfile_decompress: unzip
-      outfile_reformat_command: '(cat dbNSFP3.2a_variant.chr* | grep -v "^#" ) > hg38_dbnsfp_-v3.2a-.txt; rm dbNSFP3.2a_variant.chr*'
-      outfile_bgzip_command: 'bgzip hg38_dbnsfp_-v3.2a-.txt'
-      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 hg38_dbnsfp_-v3.2a-.txt.gz'
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+dbsnp:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+delly_exclude:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+download_pipeline_type:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: rd_dna
+  type: mip
+expansionhunter:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+fqa_vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+genbank_haplogroup:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 genomic_superdups:
-  grch37:
-    20181009:
-      file: genomicSuperDups.txt.gz
-      outfile: GRCh37_genomics_super_dups_-20181009.txt.gz 
-      url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
-      outfile_decompress: gzip
-      outfile_reformat_command: perl -i -p -e 'if($_!~/^#/) {s/chr(.+)/$1/g}' GRCh37_genomics_super_dups_-20181009.txt; grep -v ^# GRCh37_genomics_super_dups_-20181009.txt | sort -k2,2 -k3,3n - | cut -f2-4,27 - | uniq > GRCh37_genomics_super_dups_-20181009.bed
-      outfile_bgzip_command: 'bgzip GRCh37_genomics_super_dups_-20181009.bed'
-      outfile_tabix_command: 'tabix -0 -p bed GRCh37_genomics_super_dups_-20181009.bed.gz'
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 giab:
-  grch37:
-    na12878_v2.19_wgs:
-      file: NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
-      outfile: GRCh37_nist_hg001_-na12878_v2.19-.vcf.gz
-      outfile_decompress: gzip
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/
-    na12878_v2.19_bed:
-      file: union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz
-      outfile: GRCh37_nist_hg001_-na12878_v2.19-.bed.gz
-      outfile_decompress: gzip
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/
-    na12878_v3.3.2_wgs:
-      file: HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz
-      outfile: GRCh37_nist_hg001_-na12878_v3.3.2-.vcf.gz
-      outfile_decompress: gzip
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/
-    na12878_v3.3.2_bed:
-      file: HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed
-      outfile: GRCh37_nist_hg001_-na12878_v3.3.2-.bed
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/
-    na24385_v3.3.2_wgs:
-      file: HG002_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v.3.3.2_highconf_triophased.vcf.gz
-      outfile: GRCh37_nist_hg001_-na24385_v3.3.2-.vcf.gz
-      outfile_decompress: gzip
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh37/
-    na24385_v3.3.2_bed:
-      file: HG002_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v.3.3.2_highconf_noinconsistent.bed
-      outfile: GRCh37_nist_hg001_-na24385_v3.3.2-.bed
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh37/
-    na24631_v3.3.2_wgs:
-      file: HG005_GRCh37_highconf_CG-IllFB-IllGATKHC-Ion-SOLID_CHROM1-22_v.3.3.2_highconf.vcf.gz
-      outfile: GRCh37_nist_hg001_-na24631_v3.3.2-.vcf.gz
-      outfile_decompress: gzip
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
-    na24631_v3.3.2_bed:
-      file: HG005_GRCh37_highconf_CG-IllFB-IllGATKHC-Ion-SOLID_CHROM1-22_v.3.3.2_highconf_noMetaSV.bed
-      outfile: GRCh37_nist_hg001_-na24631_v3.3.2-.bed
-      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
-reference_dir: ~
-reference_genome_versions:
-  - GRCh37
-  - hg38
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gnomad:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gnomad_pli_per_gene:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+hapmap:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+human_reference:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+manta_call_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+mills_and_1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gatk_mitochondrial_ref:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+rank_model:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    cadd_bravo_topmed: 1
+    cadd_gnomad_genomes: 1
+    cadd_offline_annotations: 1
+    cadd_to_vcf_header: 1
+    cadd_whole_genome_snvs: 1
+    clinvar: 1
+    dbnsfp: 1
+    dbsnp: 1
+    delly_exclude: 1
+    expansionhunter: 1
+    fqa_vcfanno_config: 1
+    genbank_haplogroup: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 1
+    gnomad_pli_per_gene: 1
+    human_reference: 1
+    hapmap: 1
+    manta_call_regions: 1
+    mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
+    runstatus: 1
+    rank_model: 1
+    reduced_penetrance: 1
+    scout_exons: 1
+    svrank_model: 1
+    sv_fqa_vcfanno_config: 1
+    vcf2cytosure_blacklist_regions: 1
+  type: mip
+recipe_memory:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    # Per process
+    gnomad: 25
+  type: mip
+recipe_time:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    cadd_bravo_topmed: 5
+    cadd_gnomad_genomes: 5
+    cadd_offline_annotations: 15
+    cadd_to_vcf_header: 1
+    cadd_whole_genome_snvs: 15
+    clinvar: 1
+    dbnsfp: 15
+    dbsnp: 1
+    delly_exclude: 1
+    expansionhunter: 1
+    fqa_vcfanno_config: 1
+    genbank_haplogroup: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 25
+    gnomad_pli_per_gene: 1
+    hapmap: 1
+    human_reference: 1
+    manta_call_regions: 1
+    mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
+    rank_model: 1
+    reduced_penetrance: 1
+    runstatus: 1
+    scout_exons: 1
+    svrank_model: 1
+    sv_fqa_vcfanno_config: 1
+    vcf2cytosure_blacklist_regions: 1
+  type: mip
+reduced_penetrance:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+reference_feature:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  type: mip
+runstatus:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+scout_exons:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+svrank_model:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+sv_fqa_vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcf2cytosure_blacklist_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe

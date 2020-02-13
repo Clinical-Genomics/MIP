@@ -1,5 +1,6 @@
 package MIP::Test::Fixtures;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -19,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
 
 BEGIN {
@@ -27,16 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
 }
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub build_usage {
 
@@ -109,21 +105,59 @@ sub test_log {
 
 ## Function : Generate a log object and a temporary log file
 ## Returns  : $log
-## Arguments:
+## Arguments: $log_level => Log level
+##          : $log_name  => Name of logger
+##          : $no_screen => Don't log to screen
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log_name;
+    my $no_screen;
+
+    ## Default(s)
+    my $log_level;
+
+    my $tmpl = {
+        log_level => {
+            allow       => [qw{ DEBUG ERROR FATAL INFO TRACE WARN }],
+            default     => q{TRACE},
+            store       => \$log_level,
+            strict_type => 1,
+        },
+        log_name => {
+            default     => q{TEST},
+            store       => \$log_name,
+            strict_type => 1,
+        },
+        no_screen => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_screen,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
     ## Create temp logger
-    my $test_dir = File::Temp->newdir();
+    my $test_dir      = File::Temp->newdir();
     my $test_log_path = catfile( $test_dir, q{test.log} );
+
+    ## Set default log categories
+    my @categories = ( $log_level, qw{ LogFile ScreenApp } );
+
+    ## Disable print to screen
+    if ($no_screen) {
+        @categories = ( $log_level, q{LogFile} );
+    }
 
     ## Creates log object
     my $log = initiate_logger(
         {
-            file_path => $test_log_path,
-            log_name  => q{TEST},
+            categories_ref => \@categories,
+            file_path      => $test_log_path,
+            log_name       => $log_name,
         }
     );
 
@@ -148,7 +182,20 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter file_info install_parameter pedigree recipe_parameter }
+                qw{ active_parameter
+                  define_parameter
+                  dependency_tree_dna
+                  dependency_tree_rna
+                  download_active_parameter
+                  file_info
+                  install_parameter
+                  install_rd_dna_active_parameter
+                  install_rd_rna_active_parameter
+                  io
+                  job_id
+                  pedigree
+                  recipe_parameter
+                  qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -169,22 +216,36 @@ sub test_mip_hashes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Yaml qw{ load_yaml };
+    use MIP::Io::Read qw{ read_from_file };
 
     my %test_hash = (
         active_parameter =>
           catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
         define_parameter => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
-        file_info        => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
-        install_parameter =>
-          catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
+        dependency_tree_dna =>
+          catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
+        dependency_tree_rna =>
+          catfile( $Bin, qw{ data test_data rd_rna_initiation_map.yaml } ),
+        download_active_parameter =>
+          catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
+        file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        install_rd_dna_active_parameter =>
+          catfile( $Bin, qw{ data test_data install_rd_dna_active_parameters.yaml } ),
+        install_rd_rna_active_parameter =>
+          catfile( $Bin, qw{ data test_data install_rd_rna_active_parameters.yaml } ),
+        io               => catfile( $Bin, qw{ data test_data io.yaml } ),
+        job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
+        qc_sample_info =>
+          catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
+
     );
 
-    my %hash_to_return = load_yaml(
+    my %hash_to_return = read_from_file(
         {
-            yaml_file => $test_hash{$mip_hash_name},
+            format => q{yaml},
+            path   => $test_hash{$mip_hash_name},
         }
     );
 
@@ -251,14 +312,12 @@ sub test_standard_cli {
 
         # Display help text
         q{h|help} => sub {
-            done_testing();
             say {*STDOUT} $USAGE;
             exit;
         },
 
         # Display version number
         q{v|version} => sub {
-            done_testing();
             say {*STDOUT} $NEWLINE
               . basename($PROGRAM_NAME)
               . $SPACE
@@ -269,7 +328,6 @@ sub test_standard_cli {
         q{vb|verbose} => $verbose,
       )
       or (
-        done_testing(),
         help(
             {
                 USAGE     => $USAGE,
@@ -277,7 +335,6 @@ sub test_standard_cli {
             }
         )
       );
-
     return $verbose;
 }
 

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,28 +16,22 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $AMPERSAND $ASTERISK $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
 
 }
-
-## Constants
-Readonly my $AMPERSAND    => q{&};
-Readonly my $ASTERISK     => q{*};
-Readonly my $DOT          => q{.};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $SV_LENGTH    => 3000;
-Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_vcf2cytosure {
 
@@ -50,6 +44,7 @@ sub analysis_vcf2cytosure {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -68,6 +63,7 @@ sub analysis_vcf2cytosure {
     ## Default(s)
     my $bin_size;
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -116,6 +112,11 @@ sub analysis_vcf2cytosure {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -138,39 +139,40 @@ sub analysis_vcf2cytosure {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Program::Bcftools qw{ bcftools_view bcftools_rename_vcf_samples };
+    use MIP::Program::Tiddit qw{ tiddit_coverage };
+    use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
+    use MIP::Sample_info
+      qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{vcf2cytosure_use_sample_id_as_display_name};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -183,25 +185,33 @@ sub analysis_vcf2cytosure {
             iterators_ref    => $active_parameter_href->{sample_ids},
             parameter_href   => $parameter_href,
             recipe_name      => $recipe_name,
-            temp_directory   => $temp_directory,
         }
     );
 
-    my %outfile_name             = %{ $io{out}{file_name_href} };
-    my %outfile_path             = %{ $io{out}{file_path_href} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path         = $io{out}{dir_path};
+    my %outfile_name        = %{ $io{out}{file_name_href} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $active_parameter_href->{sample_ids} },
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
+            recipe_core_number   => $recipe_resource{core_number},
+        }
+    );
+
+    ## Update recipe memory allocation
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -211,18 +221,17 @@ sub analysis_vcf2cytosure {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
-
-    ### SHELL:
 
     ## Store file info from ".bam", ".tab" and ".vcf"
     my %vcf2cytosure_file_info;
@@ -236,27 +245,13 @@ sub analysis_vcf2cytosure {
             parameter_href => $parameter_href,
             recipe_name    => q{sv_annotate},
             stream         => q{out},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_path_prefix = $case_io{out}{file_path_prefix};
     my $infile_suffix      = $case_io{out}{file_suffix};
-    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $case_io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
     $vcf2cytosure_file_info{$case_id}{in}{$infile_suffix} =
-      $temp_infile_path;
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+      $infile_path;
 
     ## Collect BAM infiles for dependence recipes streams for all sample_ids
     my %recipe_tag_keys = ( gatk_baserecalibration => q{out}, );
@@ -277,116 +272,119 @@ sub analysis_vcf2cytosure {
                     parameter_href => $parameter_href,
                     recipe_name    => $recipe_tag,
                     stream         => $stream,
-                    temp_directory => $temp_directory,
                 }
             );
             my $infile_path_prefix_bam = $sample_io{$stream}{file_path_prefix};
             my $infile_suffix_bam      = $sample_io{$stream}{file_suffix};
-            my $infile_path_bam =
-              $infile_path_prefix_bam . substr( $infile_suffix_bam, 0, 2 ) . $ASTERISK;
-            my $temp_infile_path_prefix_bam = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path_bam = $temp_infile_path_prefix_bam . $infile_suffix_bam;
+            my $infile_path_bam        = $infile_path_prefix_bam . $infile_suffix_bam;
 
             $vcf2cytosure_file_info{$sample_id}{in}{$infile_suffix_bam} =
-              $temp_infile_path_bam;
-
-            $process_batches_count = print_wait(
-                {
-                    FILEHANDLE            => $FILEHANDLE,
-                    max_process_number    => $core_number,
-                    process_batches_count => $process_batches_count,
-                    process_counter       => $sample_id_index,
-                }
-            );
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_path_bam,
-                    outfile_path => $temp_directory,
-                }
-            );
+              $infile_path_bam;
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Excute vcf2cytosure just to get an error message for version
-    say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters} . $NEWLINE;
-    my $stderrfile_path = $recipe_info_path . $DOT . q{stderr.txt};
-    vcf2cytosure_convert(
-        {
-            coverage_file   => q{Na},
-            FILEHANDLE      => $FILEHANDLE,
-	 sex => q{male},
-            stderrfile_path => $stderrfile_path,
-            vcf_infile_path => q{Na},
-            version         => 1,
-        }
-    );
+    ### SHELL:
 
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Creating coverage file with tiddit -cov for samples};
+    say {$filehandle} q{## Creating coverage file with tiddit -cov for samples};
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
-        my $tiddit_temp_cov_file_path =
-          $temp_outfile_path_prefix . $UNDERSCORE . q{tiddit} . $UNDERSCORE . $sample_id;
+        my $tiddit_cov_file_path =
+          $outfile_path_prefix . $UNDERSCORE . q{tiddit} . $UNDERSCORE . $sample_id;
 
         ## Store file for use downstream
         $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}} =
-          $tiddit_temp_cov_file_path . q{.tab};
+          $tiddit_cov_file_path . q{.tab};
 
         ## Tiddit coverage
         tiddit_coverage(
             {
                 bin_size            => $bin_size,
-                FILEHANDLE          => $FILEHANDLE,
+                filehandle          => $filehandle,
                 infile_path         => $vcf2cytosure_file_info{$sample_id}{in}{q{.bam}},
-                outfile_path_prefix => $tiddit_temp_cov_file_path,
+                outfile_path_prefix => $tiddit_cov_file_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     # Extract SV from this sample from merged SV VCF file
-    say {$FILEHANDLE} q{## Using bcftools_view to extract SVs for samples} . $NEWLINE;
+    say {$filehandle} q{## Using bcftools_view to extract SVs for samples} . $NEWLINE;
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-        my $bcftools_temp_outfile_path =
-            $temp_outfile_path_prefix
+        my $bcftools_outfile_path =
+            $outfile_path_prefix
           . $UNDERSCORE
           . q{filtered}
           . $UNDERSCORE
           . $sample_id . q{.vcf};
-        ## Store file for use downstream
+
+        ## Store sample_id vcf file for use downstream
         $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}} =
-          $bcftools_temp_outfile_path;
+          $bcftools_outfile_path;
 
         # Bcftools view
         bcftools_view(
             {
                 exclude      => $active_parameter_href->{vcf2cytosure_exclude_filter},
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 infile_path  => $vcf2cytosure_file_info{$case_id}{in}{q{.vcf}},
                 samples_ref  => [$sample_id],
-                outfile_path => $bcftools_temp_outfile_path,
+                outfile_path => $bcftools_outfile_path,
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
-    say {$FILEHANDLE}
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Rename vcf sample
+        my $sample_display_name = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sample_display_name},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+
+            my $sample_display_vcf_file = catfile( $outdir_path, $sample_display_name );
+            $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name} =
+              $sample_display_vcf_file;
+
+            bcftools_rename_vcf_samples(
+                {
+                    create_sample_file => 1,
+                    filehandle         => $filehandle,
+                    infile => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
+                    index  => 0,
+                    outfile_path_prefix =>
+                      $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name},
+                    output_type    => q{v},
+                    sample_ids_ref => [$sample_display_name],
+                    temp_directory => $temp_directory,
+                }
+            );
+
+            ## Exhange for new display name vcf
+            $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}} =
+                $vcf2cytosure_file_info{$sample_id}{in}{$sample_display_name}
+              . $DOT . q{vcf};
+
+        }
+    }
+
+    say {$filehandle}
       q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -402,60 +400,70 @@ sub analysis_vcf2cytosure {
             }
         );
 
+        ## Special case for unknown sex
+        if ( $sample_id_sex eq q{unknown} ) {
+
+            $sample_id_sex = undef;
+        }
+
         vcf2cytosure_convert(
             {
-                coverage_file   => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
-                FILEHANDLE      => $FILEHANDLE,
-                outfile_path    => $outfile_path{$sample_id},
-                sex             => $sample_id_sex,
-                vcf_infile_path => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
+                blacklist_file_path => $active_parameter_href->{vcf2cytosure_blacklist},
+                coverage_file       => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
+                filehandle          => $filehandle,
+                maxbnd              => $active_parameter_href->{vcf2cytosure_maxbnd},
+                outfile_path        => $outfile_path{$sample_id},
+                sex                 => $sample_id_sex,
+                variant_size        => $active_parameter_href->{vcf2cytosure_var_size},
+                vcf_infile_path     => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
             }
         );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
-                    sample_id        => $sample_id,
                     path             => $outfile_path{$sample_id},
                     recipe_name      => q{vcf2cytosure},
+                    sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }
             );
 
-            ## For logging version - until present in cgh file
-            add_recipe_outfile_to_sample_info(
+            set_file_path_to_store(
                 {
-                    infile           => $outfile_name{$sample_id},
-                    sample_id        => $sample_id,
-                    path             => $stderrfile_path,
-                    recipe_name      => q{vcf2cytosure_version},
+                    format           => q{meta},
+                    id               => $sample_id,
+                    path             => $outfile_path{$sample_id},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                dependency_method       => q{case_to_island},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

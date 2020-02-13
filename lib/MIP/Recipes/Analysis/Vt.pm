@@ -17,42 +17,36 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $ASTERISK $DASH $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SEMICOLON  => q{;};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_vt {
 
 ## Function : Split multi allelic records into single records and normalize
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_path               => File path
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -71,6 +65,7 @@ sub analysis_vt {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -116,6 +111,11 @@ sub analysis_vt {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -144,13 +144,12 @@ sub analysis_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -158,10 +157,10 @@ sub analysis_vt {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -183,13 +182,14 @@ sub analysis_vt {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -215,17 +215,8 @@ sub analysis_vt {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
-        {
-            recipe_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-        }
-    );
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -233,13 +224,14 @@ sub analysis_vt {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -250,7 +242,7 @@ sub analysis_vt {
 
     ### SHELL:
 
-    say {$FILEHANDLE}
+    say {$filehandle}
 q{## vt - Decompose (split multi allelic records into single records) and/or normalize variants};
 
     my $xargs_file_path_prefix;
@@ -259,10 +251,10 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -278,7 +270,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                 cmd_break              => $SEMICOLON,
                 contig                 => $contig,
                 decompose              => $active_parameter_href->{vt_decompose},
-                FILEHANDLE             => $XARGSFILEHANDLE,
+                filehandle             => $xargsfilehandle,
                 gnu_sed                => 1,
                 infile_path            => $infile_path{$contig},
                 instream               => 0,
@@ -300,7 +292,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             ## Collect QC metadata info for later use
             my $qc_vt_outfile_path = catfile( $directory,
                 $stderr_file_xargs . $DOT . $contig . $DOT . q{stderr.txt} );
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $qc_vt_outfile_path,
                     recipe_name      => $recipe_name,
@@ -323,45 +315,47 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                     contig                 => $contig,
                     infile_path            => $outfile_path{$contig},
                     outfile_path           => $removed_outfile_path,
-                    XARGSFILEHANDLE        => $XARGSFILEHANDLE,
+                    xargsfilehandle        => $xargsfilehandle,
                     xargs_file_path_prefix => $xargs_file_path_prefix,
                 }
             );
 
             gnu_mv(
                 {
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    filehandle   => $xargsfilehandle,
                     infile_path  => $removed_outfile_path,
                     outfile_path => $outfile_path{$contig},
                 }
             );
-            say {$XARGSFILEHANDLE} $NEWLINE;
+            say {$xargsfilehandle} $NEWLINE;
 
         }
     }
 
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    say {$filehandle} q{wait}, $NEWLINE;
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub _remove_decomposed_asterisk_entries {
@@ -371,7 +365,7 @@ sub _remove_decomposed_asterisk_entries {
 ## Arguments: $contig                 => Contig
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
-##          : $XARGSFILEHANDLE        => XARGS file handle
+##          : $xargsfilehandle        => XARGS file handle
 ##          : $xargs_file_path_prefix => Xargs file path prefix
 
     my ($arg_href) = @_;
@@ -380,7 +374,7 @@ sub _remove_decomposed_asterisk_entries {
     my $contig;
     my $infile_path;
     my $outfile_path;
-    my $XARGSFILEHANDLE;
+    my $xargsfilehandle;
     my $xargs_file_path_prefix;
 
     my $tmpl = {
@@ -399,10 +393,10 @@ sub _remove_decomposed_asterisk_entries {
             required => 1,
             store    => \$outfile_path,
         },
-        XARGSFILEHANDLE => {
+        xargsfilehandle => {
             defined  => 1,
             required => 1,
-            store    => \$XARGSFILEHANDLE,
+            store    => \$xargsfilehandle,
         },
         xargs_file_path_prefix => {
             defined  => 1,
@@ -420,16 +414,16 @@ sub _remove_decomposed_asterisk_entries {
     $remove_star_regexp .= q?unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;
 
     ## Print regexp
-    print {$XARGSFILEHANDLE} $remove_star_regexp;
+    print {$xargsfilehandle} $remove_star_regexp;
 
     ## Print infile
-    print {$XARGSFILEHANDLE} $infile_path . $SPACE;
+    print {$xargsfilehandle} $infile_path . $SPACE;
 
     ## Print outfile
-    print {$XARGSFILEHANDLE} q{>} . $SPACE . $outfile_path . $SPACE;
+    print {$xargsfilehandle} q{>} . $SPACE . $outfile_path . $SPACE;
 
     ## Print stderr file
-    print {$XARGSFILEHANDLE} q{2>>}
+    print {$xargsfilehandle} q{2>>}
       . $SPACE
       . $xargs_file_path_prefix
       . $DOT
@@ -439,7 +433,7 @@ sub _remove_decomposed_asterisk_entries {
       . $SPACE;
 
     # Redirect xargs output to recipe specific stderr file
-    print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+    print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
     return;
 }

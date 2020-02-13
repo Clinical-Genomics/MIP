@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -62,7 +60,7 @@ diag(   q{Test update_recipe_mode_for_analysis_type from Recipes.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my @recipes = qw{ cnvnator_ar delly_call delly_reformat samtools_subsample_mt tiddit };
 my %active_parameter = (
@@ -74,25 +72,29 @@ my %active_parameter = (
     tiddit                => 1,
 );
 
-my @warning_msgs = update_recipe_mode_for_analysis_type(
-    {
-        active_parameter_href   => \%active_parameter,
-        consensus_analysis_type => q{wgs},
-        log                     => $log,
-        recipes_ref             => \@recipes,
-    }
-);
+trap {
+    update_recipe_mode_for_analysis_type(
+        {
+            active_parameter_href   => \%active_parameter,
+            consensus_analysis_type => q{wgs},
+            log                     => $log,
+            recipes_ref             => \@recipes,
+        }
+    )
+};
 
-is( @warning_msgs, 0, q{No updates to recipes mode} );
+is( $trap->stderr, $EMPTY_STR, q{No updates to recipes mode} );
 
-@warning_msgs = update_recipe_mode_for_analysis_type(
-    {
-        active_parameter_href   => \%active_parameter,
-        consensus_analysis_type => q{wes},
-        log                     => $log,
-        recipes_ref             => \@recipes,
-    }
-);
+trap {
+    update_recipe_mode_for_analysis_type(
+        {
+            active_parameter_href   => \%active_parameter,
+            consensus_analysis_type => q{wes},
+            log                     => $log,
+            recipes_ref             => \@recipes,
+        }
+    )
+};
 ## Alias
 my $cnvnator_mode              = $active_parameter{cnvnator_ar};
 my $delly_call_mode            = $active_parameter{delly_call};
@@ -108,6 +110,6 @@ is( $delly_reformat_mode,        0, q{Updated recipes mode for delly_reformat} )
 is( $manta_mode,                 1, q{Updated recipes mode for manta} );
 is( $samtools_subsample_mt_mode, 0, q{Updated recipes mode for samtools_subsample_mt} );
 is( $tiddit_mode,                0, q{Updated recipes mode for tiddit} );
-isnt( @warning_msgs, 0, q{Generated warning message} );
+like( $trap->stderr, qr/WARN/xms, q{Generated warning message} );
 
 done_testing();

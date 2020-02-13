@@ -1,155 +1,98 @@
 ---
 ## Version: 1.0.0
-#Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
-absolute_paths:
-  - reference_dir
-  - log_file
-log_file: download_rna.log
-reference:
-  CTAT_resource_lib:
-    - feb092018
-  human_reference:
-    - decoy_5
-    - decoy_hla
-  1000g_indels:
-    - phase1
-  mills_and_1000g_indels:
-    - gold_standard_indel
-  dbsnp:
-    - 138_esa_129
-    - 138
-    - gold_standard_dbsnp
-    - 146
-  transcript_annotation:
-    - 29
-transcript_annotation:
-  grch37:
-    29:
-      file: gencode.v29lift37.annotation.gtf.gz
-      outfile: GRCh37_gencode_annotation_-v29-.gtf.gz
-      outfile_decompress: gzip
-      outfile_reformat_command: "perl -nae ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(chrM)/MT/g; print $_;}' GRCh37_gencode_annotation_-v29-.gtf | perl -nae ' if($_=~/^#/) { print $_; } else {$_ =~ s/^chr(.+)/$1/g; print $_; }' > GRCh37_gencode_annotation_reformat_-v29-.gtf" 
-      url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
-CTAT_resource_lib:
-  grch37:
-    feb092018:
-      file: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz
-      file_check: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz.md5
-      outfile: GRCh37_CTAT_lib_plug-n-play_-feb092018-.tar.gz
-      outfile_check: GRCh37_CTAT_lib_plug-n-play_-feb092018-.tar.gz.md5
-      url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/
-      outfile_decompress: tar
-      outfile_check_method: md5sum
-      outfile_reformat_command: 'mv GRCh37_v19_CTAT_lib_Feb092018/ctat_genome_lib_build_dir/* GRCh37_v19_CTAT_lib_Feb092018'
-human_reference:
-  grch37:
-    decoy_5:
-      file: human_g1k_v37_decoy.fasta.gz
-      file_check: human_g1k_v37_decoy.fasta.gz.md5
-      file_index: human_g1k_v37_decoy.fasta.fai.gz
-      file_index_check: human_g1k_v37_decoy.fasta.fai.gz.md5
-      outfile: GRCh37_homo_sapiens_-d5-.fasta.gz
-      outfile_check: GRCh37_homo_sapiens_-d5-.fasta.gz.md5
-      outfile_index: GRCh37_homo_sapiens_-d5-.fasta.fai.gz
-      outfile_index_check: GRCh37_homo_sapiens_-d5-.fasta.fai.gz.md5
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-  hg38:
-    decoy_hla:
-      file: GRCh38_full_analysis_set_plus_decoy_hla.fa
-      file_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
-      outfile: hg38_homo_sapiens_-decoy_hla-.fasta
-      outfile_index: hg38_homo_sapiens_-decoy_hla-.fasta.fai
-      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
+# Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
 1000g_indels:
-  grch37:
-    phase1:
-      file: 1000G_phase1.indels.b37.vcf.gz
-      file_check: 1000G_phase1.indels.b37.vcf.gz.md5
-      file_index: 1000G_phase1.indels.b37.vcf.idx.gz
-      file_index_check: 1000G_phase1.indels.b37.vcf.idx.gz.md5
-      outfile: GRCh37_1000g_indels_-phase1-.vcf.gz
-      outfile_check: GRCh37_1000g_indels_-phase1-.vcf.gz.md5
-      outfile_index: GRCh37_1000g_indels_-phase1-.vcf.idx.gz
-      outfile_index_check: GRCh37_1000g_indels_-phase1-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-mills_and_1000g_indels:
-  grch37:
-    gold_standard_indels:
-      file: Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-      file_check: Mills_and_1000G_gold_standard.indels.b37.vcf.gz.md5
-      file_index: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz
-      file_index_check: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz.md5
-      outfile: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz
-      outfile_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz.md5
-      outfile_index: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz
-      outfile_index_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    gold_standard_indels:
-      file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-      file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
-      outfile: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz
-      outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
-      outfile_decompress: gzip
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+ctat_resource_lib:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 dbsnp:
-  grch37:
-    138_esa_129:
-      file: dbsnp_138.b37.excluding_sites_after_129.vcf.gz
-      file_check: dbsnp_138.b37.excluding_sites_after_129.vcf.gz.md5 
-      file_index: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz
-      file_index_check: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz.md5
-      outfile: GRCh37_dbsnp_-138_esa_129-.vcf.gz
-      outfile_check: GRCh37_dbsnp_-138_esa_129-.vcf.gz.md5
-      outfile_index: GRCh37_dbsnp_-138_esa_129-.vcf.idx.gz
-      outfile_index_check: GRCh37_dbsnp_-138_esa_129-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-    138:
-      file: dbsnp_138.b37.vcf.gz
-      file_check: dbsnp_138.b37.vcf.gz.md5
-      file_index: dbsnp_138.b37.vcf.idx.gz
-      file_index_check: dbsnp_138.b37.vcf.idx.gz.md5
-      outfile: GRCh37_dbsnp_-138-.vcf.gz
-      outfile_check: GRCh37_dbsnp_-138-.vcf.gz.md5
-      outfile_index: GRCh37_dbsnp_-138-.vcf.idx.gz
-      outfile_index_check: GRCh37_dbsnp_-138-.vcf.idx.gz.md5
-      outfile_decompress: gzip
-      outfile_index_decompress: gzip
-      outfile_check_method: md5sum
-      outfile_index_check_method: md5sum
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
-  hg38:
-    gold_standard_dbsnp:
-      file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
-      file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
-      outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
-      outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
-      outfile_decompress: gzip
-    146:
-      file: dbsnp_146.hg38.vcf.gz
-      file_index: dbsnp_146.hg38.vcf.gz.tbi
-      outfile: hg38_dbsnp_-146-.vcf.gz
-      outfile_index: hg38_dbsnp_-146-.vcf.gz.tbi
-      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-      outfile_decompress: gzip
-reference_dir: ~
-reference_genome_versions:
-  - GRCh37
-  - hg38
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+download_pipeline_type:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: rd_rna
+  type: mip
+gencode_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+human_reference:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+mills_and_1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+pfam:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_indels: 1
+    ctat_resource_lib: 1
+    dbsnp: 1
+    human_reference: 1
+    gencode_annotation: 1
+    mills_and_1000g_indels: 1
+    pfam: 1
+    runstatus: 1
+  type: mip
+recipe_time:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_indels: 1
+    ctat_resource_lib: 10
+    dbsnp: 1
+    human_reference: 1
+    gencode_annotation: 1
+    mills_and_1000g_indels: 1
+    pfam: 1
+    runstatus: 1
+  type: mip
+reference_feature:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  type: mip
+runstatus:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe

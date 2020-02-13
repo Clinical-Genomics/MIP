@@ -1,100 +1,93 @@
 ---
 ## Environment
 analysis_constant_path: analysis
-cluster_constant_path: /mnt/hds/proj/cust003/develop
-bash_set_errexit: 1
-bash_set_nounset: 0
-bash_set_pipefail: 1
-java_use_large_pages: 1
-max_cores_per_node: 16
-project_id: travis_test
 load_env:
   mip_travis:
-   mip:
-   method: conda
-  mip_travis_py3:
-   genmod:
-   method: conda
-   rankvariant:
-   sv_rankvariant:
-  mip_travis_svdb:
-   method: conda
-   sv_annotate:
-  mip_travis_vep:
-   method: conda
-   sv_varianteffectpredictor:
-   varianteffectpredictor:
+    method: conda
+    mip:
+max_cores_per_node: 36
+node_ram_memory: 192
+project_id: travis_test
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
-vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 sv_vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
+vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
-fqf_vcfanno_config: GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml
+fqa_vcfanno_config: grch37_frequency_vcfanno_filter_config_-v1.3-.toml
 genmod_annotate_cadd_files:
-  - GRCh37_cadd_whole_genome_snvs_ge10_-v1.3-.tsv.gz
-  - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
-  - GRCh37_cadd_1000g_phase3_-v1.3-.tsv.gz
-genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
-genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
-human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_cmms_-v1.21-.ini
-snpsift_annotation_files:
-  GRCh37_clinvar_reformat_-2018-04-29-.vcf.gz: CLNSIG,CLNVID,CLNREVSTAT
-  GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz: AF,AF_POPMAX
-  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
-  GRCh37_loqusdb_-2017-05-22-.vcf.gz: Obs,Hom
-  GRCh37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
-sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
-sv_rank_model_file: svrank_model_cmms_-v1.2-.ini
+  - grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz
+  - grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
+genmod_annotate_spidex_file: grch37_spidex_public_noncommercial_-v1_0-.tab.gz
+genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
+rank_model_file: rank_model_cmms_-v1.28-.ini
+sv_fqa_vcfanno_config: grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml
+sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
 sv_svdb_query_db_files:
-  GRCh37_svdb_query_decipher_-v1.0.0-.vcf: decipher
-  GRCh37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
-  GRCh37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
-  GRCh37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi
-sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
-sv_vcfanno_config: GRCh37_vcfanno_config_-v1.0-.toml
-sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
+  # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1
+  grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
+  grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
+  grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
+  grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
+  grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
+  grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
 ### Analysis
 ## Programs
 ## Parameters
-gatk_path: cluster_constant_path!
-genmod_annotate_regions: 1
-genmod_models_whole_gene: 1
-picardtools_path: cluster_constant_path!
-rankvariant_binary_file: 1
-snpeff_ann: 1
-snpeff_path: cluster_constant_path!
-snpsift_annotation_outinfo_key:
-  GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz: GNOMAD
-  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
-snpsift_dbnsfp_annotations:
-  - GERP++_RS
-  - GERP++_NR
-  - phyloP100way_vertebrate
-  - phastCons100way_vertebrate
-sv_bcftools_view_filter: 1
-sv_genmod_annotate_regions: 1
-sv_frequency_filter: 1
+fqf_annotations:
+  - GNOMADAF
+  - GNOMADAF_popmax
+  - SWEGENAF
+picardtools_path: /usr/picard
 sv_genmod_models_case_type: cmms
-sv_rankvariant_binary_file: 1
-sv_svdb_query: 1
-sv_vcfanno: 1
-sv_vcfparser_per_gene: 1
-sv_vcfparser_select_file_matching_column: 3
-sv_vcfparser_vep_transcripts: 1
-vcfparser_vep_transcripts: 1
-vcfparser_select_file_matching_column: 3
-vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
-vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-91/cache/
-vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-91/cache/
-vt_decompose: 1
-vt_normalize: 1
-vt_uniq: 1
-vt_missing_alt_allele: 1
+sv_vep_plugin:
+  ExACpLI:
+    exists_check: file
+    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+vep_custom_annotation:
+  genomic_superdups_frac_match:
+    annotation_type: overlap
+    force_report_coordinates: 0
+    key: genomic_superdups_frac_match
+    file_type: bed
+    path: cluster_constant_path!/references/grch37_genomics_super_dups_-20181009.bed.gz
+  clinvar:
+    annotation_type: exact
+    force_report_coordinates: 0
+    key: CLINVAR
+    file_type: vcf
+    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20190305-.vcf.gz
+    vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins
+vep_plugin:
+  dbNSFP:
+    exists_check: file
+    parameters:
+      - GERP++_RS
+      - GERP++_NR
+      - phyloP100way_vertebrate
+      - phastCons100way_vertebrate
+      - REVEL_rankscore
+    path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
+  ExACpLI:
+    exists_check: file
+    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exists_check: file
+    path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exists_check: directory
+    parameters:
+      - SWA
+      - NCSS
+    path: cluster_constant_path!/references/ensembl-tools-data/cache/Plugins/fordownload

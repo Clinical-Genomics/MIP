@@ -39,7 +39,7 @@ sub gnu_make {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $test                   => Run test
 
     my ($arg_href) = @_;
@@ -49,7 +49,7 @@ sub gnu_make {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $filehandle;
     my $test;
 
     ## Default(s)
@@ -71,8 +71,8 @@ sub gnu_make {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        filehandle => {
+            store => \$filehandle,
         },
         test => {
             default     => 0,
@@ -108,7 +108,7 @@ sub gnu_make {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

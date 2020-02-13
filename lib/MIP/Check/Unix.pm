@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use File::Spec::Functions qw{ catfile };
-use IPC::Cmd qw{ can_run };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -18,7 +17,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_binary_in_path };
@@ -26,12 +25,12 @@ BEGIN {
 
 sub check_binary_in_path {
 
-## Function  : Scans through PATH for supplied binary
-## Returns   :
-## Arguments : $active_parameter_href => Holds all set parameter for analysis {REF}
-##           : $binary                => Binary to search for
-##           : $log                   => Log
-##           : $program_name          => MIP program name (Analysis recipe switch)
+## Function : Scans through PATH for supplied binary
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $binary                => Binary to search for
+##          : $log                   => Log
+##          : $program_name          => MIP program name (Analysis recipe switch)
 
     my ($arg_href) = @_;
 
@@ -64,11 +63,11 @@ sub check_binary_in_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
+    use MIP::Environment::Path qw{ get_conda_bin_dir_path is_binary_in_path };
 
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
-    my $env_binary_path = get_dynamic_conda_path(
+    my $env_binary_path = get_conda_bin_dir_path(
         {
             active_parameter_href => $active_parameter_href,
             bin_file              => $binary,
@@ -76,119 +75,25 @@ sub check_binary_in_path {
         }
     );
 
+    ## Add binary for use downstream
+    $active_parameter_href->{binary_path}{$binary} = $binary;
+
+    ## Potential full path to binary
+    my $binary_path = catfile( $env_binary_path, $binary );
+
     ## Search for binary in conda envs path
-    if ( can_run( catfile( $env_binary_path, $binary ) ) ) {
+    if ( -e $binary_path ) {
 
-        ## Broadcast successful scan through PATH for supplied binary
-        _check_binary_broadcast_pass(
-            {
-                binary => catfile( $env_binary_path, $binary ),
-                log    => $log,
-            }
-        );
-        return 1;
+        ## Update binary to full binary_path
+        $active_parameter_href->{binary_path}{$binary} = $binary_path;
+
+        $binary = $binary_path;
     }
 
-    # Search for binary in PATH
-    if ( can_run($binary) ) {
+    ## Test binary
+    is_binary_in_path( { binary => $binary, } );
 
-        ## Broadcast successful scan through PATH for supplied binary
-        _check_binary_broadcast_pass(
-            {
-                binary => $binary,
-                log    => $log,
-            }
-        );
-        return 1;
-    }
-
-    ## Broadcast scan through PATH for supplied binary when not found
-    _check_binary_broadcast_fail(
-        {
-            binary => $binary,
-            log    => $log,
-        }
-    );
-    exit 1;
-}
-
-sub _check_binary_broadcast_fail {
-
-## Function  : Broadcast scan through PATH for supplied binary when not found
-## Returns   :
-## Arguments : $binary => Binary to search for
-##           : $log    => Log
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $binary;
-    my $log;
-
-    my $tmpl = {
-        binary => {
-            defined     => 1,
-            required    => 1,
-            store       => \$binary,
-            strict_type => 1,
-        },
-        log => {
-            store => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Broadcast binary not found
-    if ($log) {
-
-        $log->fatal( q{Could not detect } . $binary . q{ in PATH} );
-    }
-    else {
-
-        say {*STDERR} q{Could not detect } . $binary . q{ in PATH};
-    }
-    return;
-}
-
-sub _check_binary_broadcast_pass {
-
-## Function  : Broadcast successful scan through PATH for supplied binary
-## Returns   :
-## Arguments : $binary => Binary to search for
-##           : $log    => Log
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $binary;
-    my $log;
-
-    my $tmpl = {
-        binary => {
-            defined     => 1,
-            required    => 1,
-            store       => \$binary,
-            strict_type => 1,
-        },
-        log => {
-            store => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Broadcast if found
-    if ( defined $log ) {
-
-        $log->info( q{Program check: } . $binary . q{ in PATH} );
-    }
-    else {
-
-        say {*STDERR} q{Program check: } . $binary . q{ in PATH};
-    }
     return 1;
-
 }
 
 1;

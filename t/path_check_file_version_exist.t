@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -46,11 +46,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -100,7 +96,7 @@ diag(   q{Test check_file_version_exist from Path.pm v}
       . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # File path prefix
 my $file_prefix = q{test_check_file_version_exist} . $DOT;
@@ -117,18 +113,16 @@ my $temp_dir = catdir( cwd(), qw{ test_dir .test_check_file_version_exist } );
 # Create path
 make_path($temp_dir);
 
-my $test_file_path =
-  catfile( $temp_dir, $file_prefix . $file_counter . $file_suffix );
+my $test_file_path = catfile( $temp_dir, $file_prefix . $file_counter . $file_suffix );
 
 # Open filehandle
-open $FILEHANDLE, q{>}, $test_file_path
-  or croak(
-    q{Cannot write to '} . $test_file_path . q{' :} . $OS_ERROR . $NEWLINE );
+open $filehandle, q{>}, $test_file_path
+  or croak( q{Cannot write to '} . $test_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 # Create file
-print {$FILEHANDLE} q{Test};
+print {$filehandle} q{Test};
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Testing write to file
 ok( -e $test_file_path, q{Create test file} );

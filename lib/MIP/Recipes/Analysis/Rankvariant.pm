@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -17,30 +17,23 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $AMPERSAND $ASTERISK $DASH $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 
 }
-
-## Constants
-Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERISK   => q{*};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_rankvariant {
 
@@ -52,6 +45,7 @@ sub analysis_rankvariant {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -70,6 +64,7 @@ sub analysis_rankvariant {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -114,6 +109,11 @@ sub analysis_rankvariant {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -142,17 +142,16 @@ sub analysis_rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Cluster qw{ get_core_number };
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Genmod
+    use MIP::Program::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -162,10 +161,10 @@ sub analysis_rankvariant {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -173,7 +172,6 @@ sub analysis_rankvariant {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -182,14 +180,14 @@ sub analysis_rankvariant {
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -209,7 +207,6 @@ sub analysis_rankvariant {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -220,24 +217,23 @@ sub analysis_rankvariant {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $core_number,
+            recipe_core_number   => $recipe_resource{core_number},
         }
     );
-
-    ### Detect the number of cores to use per genmod process.
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
         {
-            core_number_requested => $CORE_NUMBER_REQUESTED,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -247,13 +243,14 @@ sub analysis_rankvariant {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            log                             => $log,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            process_time                    => $time,
+            log                             => $log,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -267,7 +264,7 @@ sub analysis_rankvariant {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -275,16 +272,16 @@ sub analysis_rankvariant {
     );
 
     ## Genmod
-    say {$FILEHANDLE} q{## Genmod};
+    say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $genmod_core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            core_number        => $core_number,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -329,7 +326,7 @@ sub analysis_rankvariant {
                 annotate_region => $active_parameter_href->{genmod_annotate_regions},
                 cadd_file_paths_ref =>
                   \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                FILEHANDLE       => $XARGSFILEHANDLE,
+                filehandle       => $xargsfilehandle,
                 infile_path      => $genmod_indata,
                 outfile_path     => $genmod_outfile_path,
                 spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
@@ -340,7 +337,7 @@ sub analysis_rankvariant {
         );
 
         ## Pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         # Preparation for next module
         $genmod_indata = $DASH;
@@ -352,7 +349,7 @@ sub analysis_rankvariant {
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
         genmod_models(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
+                filehandle   => $xargsfilehandle,
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
                 infile_path  => $genmod_indata,
@@ -368,7 +365,7 @@ sub analysis_rankvariant {
             }
         );
         ## Pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Score
         $genmod_module .= $UNDERSCORE . q{score};
@@ -379,7 +376,7 @@ sub analysis_rankvariant {
             {
                 case_file            => $case_file_path,
                 case_type            => $active_parameter_href->{genmod_models_case_type},
-                FILEHANDLE           => $XARGSFILEHANDLE,
+                filehandle           => $xargsfilehandle,
                 infile_path          => $genmod_indata,
                 outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
                 rank_result          => 1,
@@ -389,7 +386,7 @@ sub analysis_rankvariant {
             }
         );
         ## Pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+        print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Compound
         $genmod_module .= q{_compound};
@@ -398,7 +395,7 @@ sub analysis_rankvariant {
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
         genmod_compound(
             {
-                FILEHANDLE          => $XARGSFILEHANDLE,
+                filehandle          => $xargsfilehandle,
                 infile_path         => $genmod_indata,
                 outfile_path        => $outfile_path{$contig_index},
                 stderrfile_path     => $compound_stderrfile_path,
@@ -407,16 +404,16 @@ sub analysis_rankvariant {
                 vep                 => $use_vep,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => q{genmod},
@@ -431,7 +428,7 @@ sub analysis_rankvariant {
               $active_parameter_href->{rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
@@ -444,19 +441,21 @@ sub analysis_rankvariant {
         }
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_rankvariant_unaffected {
@@ -469,6 +468,7 @@ sub analysis_rankvariant_unaffected {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -487,6 +487,7 @@ sub analysis_rankvariant_unaffected {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -531,6 +532,11 @@ sub analysis_rankvariant_unaffected {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -559,17 +565,16 @@ sub analysis_rankvariant_unaffected {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Cluster qw{ get_core_number };
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Genmod
+    use MIP::Program::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -579,10 +584,10 @@ sub analysis_rankvariant_unaffected {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -590,7 +595,6 @@ sub analysis_rankvariant_unaffected {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -606,7 +610,7 @@ sub analysis_rankvariant_unaffected {
     );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -626,7 +630,6 @@ sub analysis_rankvariant_unaffected {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -637,24 +640,23 @@ sub analysis_rankvariant_unaffected {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $core_number,
+            recipe_core_number   => $recipe_resource{core_number},
         }
     );
-
-    ### Detect the number of cores to use per genmod process.
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
         {
-            core_number_requested => $CORE_NUMBER_REQUESTED,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -664,13 +666,14 @@ sub analysis_rankvariant_unaffected {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -684,7 +687,7 @@ sub analysis_rankvariant_unaffected {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -692,16 +695,16 @@ sub analysis_rankvariant_unaffected {
     );
 
     ## Genmod
-    say {$FILEHANDLE} q{## Genmod};
+    say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $genmod_core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            core_number        => $core_number,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -734,7 +737,7 @@ sub analysis_rankvariant_unaffected {
                 annotate_region => $active_parameter_href->{genmod_annotate_regions},
                 cadd_file_paths_ref =>
                   \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                FILEHANDLE       => $XARGSFILEHANDLE,
+                filehandle       => $xargsfilehandle,
                 infile_path      => $genmod_indata,
                 outfile_path     => $genmod_outfile_path,
                 spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
@@ -743,16 +746,16 @@ sub analysis_rankvariant_unaffected {
                 verbosity           => q{v},
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+    close $xargsfilehandle
+      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => q{genmod},
@@ -767,7 +770,7 @@ sub analysis_rankvariant_unaffected {
               $active_parameter_href->{rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
@@ -780,19 +783,21 @@ sub analysis_rankvariant_unaffected {
         }
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_rankvariant_sv {
@@ -801,11 +806,12 @@ sub analysis_rankvariant_sv {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -824,6 +830,7 @@ sub analysis_rankvariant_sv {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -868,6 +875,11 @@ sub analysis_rankvariant_sv {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -895,22 +907,22 @@ sub analysis_rankvariant_sv {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
-    use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
+    use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Genmod
+    use MIP::Program::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -920,7 +932,6 @@ sub analysis_rankvariant_sv {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
 
@@ -935,8 +946,8 @@ sub analysis_rankvariant_sv {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -966,7 +977,6 @@ sub analysis_rankvariant_sv {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -977,29 +987,22 @@ sub analysis_rankvariant_sv {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
-        }
-    );
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -1013,14 +1016,14 @@ sub analysis_rankvariant_sv {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
     );
 
-    say {$FILEHANDLE} q{## Genmod};
+    say {$filehandle} q{## Genmod};
 
     ## Get parameters
     my $use_vep;
@@ -1048,7 +1051,7 @@ sub analysis_rankvariant_sv {
         genmod_annotate(
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 infile_path     => $genmod_indata,
                 outfile_path    => $genmod_outfile_path,
                 stderrfile_path => $recipe_info_path
@@ -1061,7 +1064,7 @@ sub analysis_rankvariant_sv {
         );
 
         # Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Get parameters
         # Preparation for next module
@@ -1072,7 +1075,7 @@ sub analysis_rankvariant_sv {
 
         genmod_models(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 case_file    => $fam_file_path,
                 case_type    => $active_parameter_href->{sv_genmod_models_case_type},
                 infile_path  => $genmod_indata,
@@ -1093,13 +1096,13 @@ sub analysis_rankvariant_sv {
         );
 
         # Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Genmod score
         $genmod_module .= $UNDERSCORE . q{score};
         genmod_score(
             {
-                FILEHANDLE   => $FILEHANDLE,
+                filehandle   => $filehandle,
                 case_file    => $fam_file_path,
                 case_type    => $active_parameter_href->{sv_genmod_models_case_type},
                 infile_path  => $genmod_indata,
@@ -1116,13 +1119,13 @@ sub analysis_rankvariant_sv {
         );
 
         # Pipe
-        print {$FILEHANDLE} $PIPE . $SPACE;
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Genmod compound
         $genmod_module .= $UNDERSCORE . q{compound};
         genmod_compound(
             {
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 infile_path     => $genmod_indata,
                 outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $recipe_info_path
@@ -1136,11 +1139,11 @@ sub analysis_rankvariant_sv {
             }
         );
 
-        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $outfile_paths[$infile_index],
                     recipe_name      => q{sv_genmod},
@@ -1149,9 +1152,9 @@ sub analysis_rankvariant_sv {
             );
         }
     }
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    say {$filehandle} q{wait} . $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -1162,7 +1165,7 @@ sub analysis_rankvariant_sv {
               $active_parameter_href->{sv_rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},
@@ -1176,33 +1179,36 @@ sub analysis_rankvariant_sv {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_rankvariant_sv_unaffected {
 
-## Function : Annotate variants using genmod anotate only.
+## Function : Annotate variants using genmod annotate only
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $case_id                 => Family id
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -1220,6 +1226,7 @@ sub analysis_rankvariant_sv_unaffected {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -1264,6 +1271,11 @@ sub analysis_rankvariant_sv_unaffected {
             strict_type => 1,
             store       => \$parameter_href,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -1292,19 +1304,18 @@ sub analysis_rankvariant_sv_unaffected {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::Program::Genmod qw{ genmod_annotate };
+    use MIP::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1314,7 +1325,6 @@ sub analysis_rankvariant_sv_unaffected {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
 
@@ -1325,13 +1335,13 @@ sub analysis_rankvariant_sv_unaffected {
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -1361,7 +1371,6 @@ sub analysis_rankvariant_sv_unaffected {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -1371,36 +1380,29 @@ sub analysis_rankvariant_sv_unaffected {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
-        }
-    );
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
     ### SHELL:
 
-    say {$FILEHANDLE} q{## Genmod};
+    say {$filehandle} q{## Genmod};
     ## Get parameters
 
   INFILE:
@@ -1411,7 +1413,7 @@ sub analysis_rankvariant_sv_unaffected {
         genmod_annotate(
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
-                FILEHANDLE      => $FILEHANDLE,
+                filehandle      => $filehandle,
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $recipe_info_path
@@ -1424,11 +1426,11 @@ sub analysis_rankvariant_sv_unaffected {
             }
         );
 
-        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $outfile_paths[$infile_index],
                     recipe_name      => q{sv_genmod},
@@ -1437,9 +1439,9 @@ sub analysis_rankvariant_sv_unaffected {
             );
         }
     }
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    say {$filehandle} q{wait} . $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -1450,7 +1452,7 @@ sub analysis_rankvariant_sv_unaffected {
               $active_parameter_href->{sv_rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},
@@ -1465,19 +1467,21 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

@@ -18,13 +18,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -32,23 +35,21 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_gatk_splitncigarreads {
 
 ## Function : GATK SplitNCigarReads to splits reads into exon segments and hard-clip any sequences overhanging into the intronic regions and reassign mapping qualities from STAR.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -69,6 +70,7 @@ sub analysis_gatk_splitncigarreads {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -114,6 +116,11 @@ sub analysis_gatk_splitncigarreads {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -148,23 +155,22 @@ sub analysis_gatk_splitncigarreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::Program::Gatk qw{ gatk_splitncigarreads };
+    use MIP::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -178,9 +184,7 @@ sub analysis_gatk_splitncigarreads {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path        = %{ $io{in}{file_path_href} };
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $job_id_chain       = get_recipe_attributes(
         {
@@ -189,12 +193,13 @@ sub analysis_gatk_splitncigarreads {
             recipe_name    => $recipe_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -213,18 +218,16 @@ sub analysis_gatk_splitncigarreads {
             }
         )
     );
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my @outfile_paths            = @{ $io{out}{file_paths} };
-    my $outdir_path              = $io{out}{dir_path};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
     my $xargs_file_path_prefix;
 
     ## Filehandles
     # Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();
-    my $FILEHANDLE      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -232,61 +235,43 @@ sub analysis_gatk_splitncigarreads {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
     ### SHELL
 
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            FILEHANDLE         => $FILEHANDLE,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            xargs_file_counter => $xargs_file_counter,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-        }
-    );
-
-    ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 12;
-    Readonly my $MEMORY_SPLIT           => 1.25;
-    my $node_ram_split = $active_parameter_href->{node_ram_memory} / $MEMORY_SPLIT;
-    $core_number = floor( $node_ram_split / $JAVA_MEMORY_ALLOCATION );
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
         {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
+            core_number               => $core_number,
         }
     );
 
     ## GATK SplitNCigarReads
-    say {$FILEHANDLE} q{## GATK SplitNCigarReads};
+    say {$filehandle} q{## GATK SplitNCigarReads};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            core_number        => $parallel_processes,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -296,18 +281,16 @@ sub analysis_gatk_splitncigarreads {
         each @{ $file_info_href->{contigs_size_ordered} } )
     {
 
-        my $infile_path  = $temp_infile_path{$contig};
-        my $outfile_path = $temp_outfile_path{$contig};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         gatk_splitncigarreads(
             {
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $infile_path,
+                filehandle           => $xargsfilehandle,
+                infile_path          => $infile_path{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path         => $outfile_path,
+                outfile_path         => $outfile_path{$contig},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 stderrfile_path      => $stderrfile_path,
                 temp_directory       => $temp_directory,
@@ -315,28 +298,18 @@ sub analysis_gatk_splitncigarreads {
                 xargs_mode           => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        print {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Copies out files from temporary directory.
-    say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path_prefix . $ASTERISK,
-            outfile_path => $outdir_path,
-        }
-    );
-
-    close $FILEHANDLE;
-    close $XARGSFILEHANDLE;
+    close $filehandle;
+    close $xargsfilehandle;
 
     if ( $recipe_mode == 1 ) {
 
         my $first_outfile_path = $outfile_paths[0];
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $first_outfile_path,
@@ -348,7 +321,7 @@ sub analysis_gatk_splitncigarreads {
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_in_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $first_outfile_path,
@@ -359,18 +332,20 @@ sub analysis_gatk_splitncigarreads {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 1;

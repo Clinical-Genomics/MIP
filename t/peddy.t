@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA        => q{,};
-Readonly my $NEWLINE      => qq{\n};
 Readonly my $N_PROCESSORS => 4;
-Readonly my $SPACE        => q{ };
 
 BEGIN {
 
@@ -46,18 +44,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Peddy} => [qw{ peddy }],
-        q{MIP::Test::Fixtures}                 => [qw{ test_standard_cli }],
+        q{MIP::Program::Peddy} => [qw{ peddy }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Peddy qw{ peddy };
+use MIP::Program::Peddy qw{ peddy };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test peddy from Peddy.pm v}
-      . $MIP::Program::Variantcalling::Peddy::VERSION
+      . $MIP::Program::Peddy::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,16 +64,16 @@ diag(   q{Test peddy from Peddy.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ python -m peddy };
+my @function_base_commands = qw{ peddy };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
     stderrfile_path_append => {
         input           => q{stderrfile.test},
@@ -90,7 +88,10 @@ my %base_argument = (
 # Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-
+    case_file_path => {
+        input           => catfile(qw{ outcase_file_directory case_id .fam }),
+        expected_output => catfile(qw{ outcase_file_directory case_id .fam }),
+    },
     infile_path => {
         input           => catfile(qw{ temp_directory infile_prefix .vcf.gz }),
         expected_output => catfile(qw{ temp_directory infile_prefix .vcf.gz }),
@@ -101,20 +102,20 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ outcase_directory case_id }),
     },
-    case_file_path => {
-        input           => catfile(qw{ outcase_file_directory case_id .fam }),
-        expected_output => catfile(qw{ outcase_file_directory case_id .fam }),
-    },
 );
 
 my %specific_argument = (
-    processor_number => {
-        input           => $N_PROCESSORS,
-        expected_output => q{--procs} . $SPACE . $N_PROCESSORS,
+    genome_site => {
+        input           => q{hg38},
+        expected_output => q{--sites} . $SPACE . q{hg38},
     },
     plot => {
         input           => 1,
         expected_output => q{--plot},
+    },
+    processor_number => {
+        input           => $N_PROCESSORS,
+        expected_output => q{--procs} . $SPACE . $N_PROCESSORS,
     },
 );
 
@@ -129,10 +130,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

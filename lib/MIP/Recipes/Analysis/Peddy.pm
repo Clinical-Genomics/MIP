@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitpath };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -16,36 +16,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_peddy {
 
 ## Function : Compares case-relationships and sexes.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -62,6 +60,7 @@ sub analysis_peddy {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -105,6 +104,11 @@ sub analysis_peddy {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -127,20 +131,20 @@ sub analysis_peddy {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Peddy qw{ peddy };
-    use MIP::QC::Record qw{ add_recipe_metafile_to_sample_info };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Peddy qw{ peddy };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -151,7 +155,6 @@ sub analysis_peddy {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
@@ -159,15 +162,16 @@ sub analysis_peddy {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
-    my $job_id_chain = get_recipe_attributes(
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -194,7 +198,6 @@ sub analysis_peddy {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
@@ -205,30 +208,27 @@ sub analysis_peddy {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
-
-    # To enable submission to &sample_info_qc later
-    my $stderr_file_path =
-      catfile( $directory, $recipe_info_file . $DOT . q{stderr.txt} );
 
     ### SHELL:
 
@@ -239,7 +239,7 @@ sub analysis_peddy {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -252,7 +252,7 @@ sub analysis_peddy {
     ## Reformat variant calling file and index
     bcftools_view_and_index_vcf(
         {
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             infile_path         => $infile_path,
             index               => 1,
             index_type          => q{tbi},
@@ -262,17 +262,19 @@ sub analysis_peddy {
     );
 
     ## Peddy
+    my $genome_site = _get_genome_site( { version => $genome_reference_version } );
     peddy(
         {
             case_file_path      => $case_file_path,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
+            genome_site         => $genome_site,
             infile_path         => $outfile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -280,7 +282,7 @@ sub analysis_peddy {
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $outfile_tag,
                     path             => $outfile_path,
@@ -288,33 +290,62 @@ sub analysis_peddy {
                     sample_info_href => $sample_info_href,
                 }
             );
-        }
 
-        ## Collect QC metadata info for later use
-        add_recipe_metafile_to_sample_info(
-            {
-                metafile_tag     => q{stderr},
-                path             => $stderr_file_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $case_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $outfile_tag,
+                }
+            );
+        }
 
         submit_recipe(
             {
-                dependency_method       => q{case_to_island},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
+sub _get_genome_site {
+
+## Function : Get the genomic site for peddy if using grch38
+## Returns  : hg38
+## Arguments: $version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $version;
+
+    my $tmpl = {
+        version => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 1,
+            store       => \$version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $version eq q{38} );
+
+    return q{hg38};
+}
 1;

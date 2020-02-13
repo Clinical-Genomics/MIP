@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -17,148 +16,22 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EQUALS $LOG_NAME $NEWLINE $SPACE $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_human_genome_file_endings
+    our @EXPORT_OK = qw{
       check_if_processed_by_vt
       check_object_suffixes_to_build
       check_parameter_metafiles
       check_references_for_vt };
-}
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
-
-sub check_human_genome_file_endings {
-
-## Function : Check the existance of associated human genome files.
-## Returns  :
-## Arguments: $active_parameter_href              => Holds all set parameter for analysis {REF}
-##          : $file_info_href                     => File info hash {REF}
-##          : $human_genome_reference_name_prefix => The associated human genome file without file ending {REF}
-##          : $log                                => Log object to write to
-##          : $parameter_href                     => Parameter hash {REF}
-##          : $parameter_name                     => The parameter under evaluation
-##          : $reference_dir                      => MIP reference directory {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $parameter_href;
-    my $parameter_name;
-    my $log;
-
-    ## Default(s)
-    my $human_genome_reference_name_prefix;
-    my $reference_dir;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        human_genome_reference_name_prefix => {
-            default => $arg_href->{file_info_href}{human_genome_reference_name_prefix},
-            store   => \$human_genome_reference_name_prefix,
-            strict_type => 1,
-        },
-        log            => { store => \$log, },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { store => \$parameter_name, strict_type => 1, },
-        reference_dir  => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            store       => \$reference_dir,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
-    use MIP::Get::File qw{ get_seq_dict_contigs };
-
-    ## Count the number of files that exists
-    my $existence_check_counter = 0;
-
-    ## Unpack
-    my @human_reference_file_endings =
-      @{ $file_info_href->{human_genome_reference_file_endings} };
-
-  FILE_ENDING:
-    foreach my $file_ending (@human_reference_file_endings) {
-
-        my $path = $active_parameter_href->{human_genome_reference};
-
-        if ( $file_ending eq q{.dict} ) {
-
-            ## Removes ".file_ending" in filename.FILENDING(.gz)
-            my ( $file, $dir_path ) =
-              fileparse( $path, qr/ [.]fasta | [.]fasta[.]gz /sxm );
-            $path = catfile( $dir_path, $file );
-        }
-
-        ## Add current ending
-        $path = $path . $file_ending;
-
-        my ($does_exist) = check_filesystem_objects_existance(
-            {
-                object_name    => $path,
-                object_type    => q{file},
-                parameter_name => $parameter_name,
-            }
-        );
-
-        ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $does_exist;
-    }
-    ## Files need to be built
-    if ( $existence_check_counter != scalar @human_reference_file_endings ) {
-
-        $parameter_href->{$parameter_name}{build_file} = 1;
-    }
-    else {
-
-        # All file exist in this check
-        $parameter_href->{$parameter_name}{build_file} = 0;
-
-        ## Get sequence contigs from human reference ".dict" file since it exists
-        my $dict_file_path =
-          catfile( $reference_dir, $human_genome_reference_name_prefix . $DOT . q{dict} );
-        @{ $file_info_href->{contigs} } = get_seq_dict_contigs(
-            {
-                dict_file_path => $dict_file_path,
-                log            => $log,
-            }
-        );
-    }
-    return;
 }
 
 sub check_if_processed_by_vt {
@@ -189,6 +62,8 @@ sub check_if_processed_by_vt {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
 
     my %vt_regexp;
 
@@ -221,8 +96,15 @@ sub check_if_processed_by_vt {
         ## If header is finished quit
         $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
+        ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
+        my $export_cmd = join $SPACE,
+          gnu_export( { bash_variable => q{MIP_BIND} . $EQUALS . $reference_file_path } );
+
+        ## Unset MIP_BIND after system parsing
+        my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
+
         ## Detect if vt program has processed reference
-        my $ret = `bcftools view $reference_file_path | $regexp`;
+        my $ret = `$export_cmd; bcftools view $reference_file_path | $regexp; $unset_cmd`;
 
         ## No trace of vt processing found
         if ( not $ret ) {
@@ -308,7 +190,7 @@ sub check_object_suffixes_to_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
 
     ## Count the number of files that exists
     my $existence_check_counter = 0;
@@ -500,8 +382,8 @@ sub check_references_for_vt {
 
     ## TOML parameters
     my %toml = (
-        fqf_vcfanno_config => 1,
-        sv_vcfanno_config  => 1,
+        fqa_vcfanno_config    => 1,
+        sv_fqa_vcfanno_config => 1,
     );
 
   PARAMETER_NAME:
@@ -638,9 +520,14 @@ sub _parse_vcfanno_toml_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Toml qw{ load_toml };
+    use MIP::Io::Read qw{ read_from_file };
 
-    my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $toml_file_path,
+        }
+    );
 
     ## Add config parameter to avoid vt check of toml config path
     $seen_href->{$toml_file_path} = undef;

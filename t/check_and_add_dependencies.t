@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -63,7 +63,7 @@ diag(   q{Test check_and_add_dependencies from Check::Installation.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given a parameter hash specifying an installation with no conflicting dependencies
 my %installation = (
@@ -86,9 +86,9 @@ my %installation = (
 check_and_add_dependencies(
     {
         conda_program_href => $installation{conda},
-        dependency_href => $installation{shell}{bio_prog_2}{conda_dependency},
-        log             => $log,
-        shell_program   => q{bio_prog_2},
+        dependency_href    => $installation{shell}{bio_prog_2}{conda_dependency},
+        log                => $log,
+        shell_program      => q{bio_prog_2},
     }
 );
 
@@ -119,12 +119,11 @@ trap {
     check_and_add_dependencies(
         {
             conda_program_href => $installation{conda},
-            dependency_href =>
-              $installation{shell}{bio_prog_2}{conda_dependency},
-            log           => $log,
-            shell_program => q{bio_prog_2},
+            dependency_href    => $installation{shell}{bio_prog_2}{conda_dependency},
+            log                => $log,
+            shell_program      => q{bio_prog_2},
         }
-      )
+    )
 };
 
 ## Then print FATAL log message and exit

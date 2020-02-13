@@ -15,16 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -63,10 +58,11 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name = q{star_fusion};
+my $recipe_name    = q{star_fusion};
+my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -74,6 +70,9 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$active_parameter{$recipe_name} = 1;
+$active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -81,33 +80,34 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
-
+my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{recipe_parameter},
+        recipe_name   => $recipe_name,
+    }
+);
 my %sample_info;
 
-#Special case
-$active_parameter{star_aln_reference_genome} = q{human_genome.fastq};
-$active_parameter{star_aln_transcripts_file} = q{GRCH37_transcripts.gtf};
+# Special case
+$active_parameter{transcript_annotation} = q{grch37_transcripts.gtf};
 
-trap {
-    build_star_prerequisites(
-        {
-            active_parameter_href        => \%active_parameter,
-            file_info_href               => \%file_info,
-            infile_lane_prefix_href      => \%infile_lane_prefix,
-            job_id_href                  => \%job_id,
-            log                          => $log,
-            parameter_href               => \%parameter,
-            parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
-            recipe_name                  => $recipe_name,
-            sample_info_href             => \%sample_info,
-        }
-      )
-};
+my $is_ok = build_star_prerequisites(
+    {
+        active_parameter_href        => \%active_parameter,
+        file_info_href               => \%file_info,
+        infile_lane_prefix_href      => \%infile_lane_prefix,
+        job_id_href                  => \%job_id,
+        log                          => $log,
+        parameter_href               => \%parameter,
+        parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
+        profile_base_command         => $slurm_mock_cmd,
+        recipe_name                  => $recipe_name,
+        sample_info_href             => \%sample_info,
+    }
+);
 
-## Then broadcast info log message
-my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
+## Then return TRUE
+ok( $is_ok, q{ Executed build star prerequisites} );
 
 done_testing();

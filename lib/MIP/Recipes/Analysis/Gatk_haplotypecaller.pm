@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Check::Cluster qw{ check_max_core_number };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.012;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -35,11 +35,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_GUEST_OS_MEMORY          => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
+Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
 
 sub analysis_gatk_haplotypecaller {
 
@@ -51,6 +49,7 @@ sub analysis_gatk_haplotypecaller {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -71,6 +70,7 @@ sub analysis_gatk_haplotypecaller {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -115,6 +115,11 @@ sub analysis_gatk_haplotypecaller {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -149,28 +154,24 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Cluster qw{ get_parallel_processes };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_gatk_intervals get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
+      qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Program::Gatk qw{ gatk_haplotypecaller };
+    use MIP::Program::Gatk qw{ gatk_gathervcfscloud };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_io_files };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constants
-    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
-    Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
-
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -181,14 +182,10 @@ sub analysis_gatk_haplotypecaller {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix       = $io{in}{dir_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -203,23 +200,13 @@ sub analysis_gatk_haplotypecaller {
     my $xargs_file_path_prefix;
 
     ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-
-    # Division by X according to the java heap
-    $core_number =
-      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
-        }
-    );
+    my $core_number = $recipe_resource{core_number};
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -235,19 +222,18 @@ sub analysis_gatk_haplotypecaller {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
+    my $outdir_path         = $io{out}{dir_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
     my %outfile_path        = %{ $io{out}{file_path_href} };
-    my %temp_outfile_path   = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $filehandle      = IO::Handle->new();
+    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -255,13 +241,14 @@ sub analysis_gatk_haplotypecaller {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -278,7 +265,7 @@ sub analysis_gatk_haplotypecaller {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $fam_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             parameter_href        => $parameter_href,
             log                   => $log,
             sample_info_href      => $sample_info_href,
@@ -290,54 +277,47 @@ sub analysis_gatk_haplotypecaller {
         {
             analysis_type         => $analysis_type,
             contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE            => $FILEHANDLE,
-            max_cores_per_node    => $core_number,
-            outdirectory          => $temp_directory,
-            reference_dir         => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            filehandle            => $filehandle,
             file_ending           => $file_info_href->{exome_target_bed}[1],
             log                   => $log,
+            max_cores_per_node    => $core_number,
+            outdirectory          => $outdir_path,
+            reference_dir         => $active_parameter_href->{reference_dir},
             sample_id             => $sample_id,
         }
     );
 
     ## Set the PCR indel model for haplotypecaller
-    my $pcr_indel_model = _set_pcr_indel_model(
+    my $pcr_indel_model = _get_pcr_indel_model(
         {
-            analysis_type         => $analysis_type,
             active_parameter_href => $active_parameter_href,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
+            analysis_type         => $analysis_type,
         }
     );
 
     ## GATK HaplotypeCaller
-    say {$FILEHANDLE} q{## GATK HaplotypeCaller};
+    say {$filehandle} q{## GATK HaplotypeCaller};
+
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
+        {
+            core_number               => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
+        }
+    );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
+            core_number        => $parallel_processes,
+            filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargsfilehandle    => $xargsfilehandle,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -346,8 +326,8 @@ sub analysis_gatk_haplotypecaller {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## GATK Haplotypecaller
-        my $stderrfile_path => $xargs_file_path_prefix . $DOT . $contig . $DOT
-          . q{stderr.txt};
+        my $stderrfile_path =
+          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_haplotypecaller(
             {
                 annotations_ref =>
@@ -358,24 +338,30 @@ sub analysis_gatk_haplotypecaller {
                   $active_parameter_href->{gatk_haplotypecaller_no_soft_clipped_bases},
                 emit_ref_confidence =>
                   $active_parameter_href->{gatk_haplotypecaller_emit_ref_confidence},
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
+                filehandle           => $xargsfilehandle,
+                infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path         => $temp_outfile_path{$contig},
-                pcr_indel_model      => $pcr_indel_model,
-                pedigree             => $fam_file_path,
-                referencefile_path   => $referencefile_path,
+                num_ref_samples_if_no_call =>
+                  $active_parameter_href->{gatk_num_reference_samples_if_no_call},
+                outfile_path    => $outfile_path{$contig},
+                pcr_indel_model => $pcr_indel_model,
+                pedigree        => $fam_file_path,
+                population_callset =>
+                  $active_parameter_href->{gatk_calculate_genotype_call_set},
+                referencefile_path => $referencefile_path,
                 standard_min_confidence_threshold_for_calling =>
                   $STANDARD_MIN_CONFIDENCE_THRSD,
                 stderrfile_path => $stderrfile_path,
                 temp_directory  => $temp_directory,
                 verbosity       => $active_parameter_href->{gatk_logging_level},
-                xargs_mode      => 1,
+                use_new_qual_calculator =>
+                  $active_parameter_href->{gatk_use_new_qual_calculator},
+                xargs_mode => 1,
             }
         );
-        say {$XARGSFILEHANDLE} $NEWLINE;
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## Concatenate contig VCFs
@@ -386,12 +372,12 @@ sub analysis_gatk_haplotypecaller {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
-        push @contig_vcf_paths, $temp_outfile_path{$contig};
+        push @contig_vcf_paths, $outfile_path{$contig};
     }
 
     gatk_gathervcfscloud(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             ignore_safety_checks => 0,
             infile_paths_ref     => \@contig_vcf_paths,
             memory_allocation    => q{Xmx4G},
@@ -400,10 +386,10 @@ sub analysis_gatk_haplotypecaller {
             verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
-    close $XARGSFILEHANDLE;
+    close $filehandle;
+    close $xargsfilehandle;
 
     ## Set input files for next module
     set_io_files(
@@ -420,7 +406,7 @@ sub analysis_gatk_haplotypecaller {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => basename($concat_vcf_path),
                 path             => $concat_vcf_path,
@@ -432,27 +418,29 @@ sub analysis_gatk_haplotypecaller {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
-sub _set_pcr_indel_model {
+sub _get_pcr_indel_model {
 
 ## Function : Set the pcr indel model for GATK HaplotypeCaller
 ## Returns  : $pcr_indel_model
-## Argumetns: active_parameter_href  => Active parameter hash {REF}
-##          : $analysis_type         => Analysis type
+## Argumetns: active_parameter_href => Active parameter hash {REF}
+##          : $analysis_type        => Analysis type
 
     my ($arg_href) = @_;
 

@@ -4,10 +4,9 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -16,80 +15,42 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.03;
 
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Pedigree}       => [qw{ detect_sample_id_gender }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::File::Format::Pedigree});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ detect_sample_id_gender };
+use MIP::Pedigree qw{ detect_sample_id_gender };
 
 diag(   q{Test detect_sample_id_gender from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,13 +59,13 @@ diag(   q{Test detect_sample_id_gender from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given sample ids and genders
-my %active_parameter = ( sample_ids => [qw{ sample-1 sample-2 sample-3 }], );
+my %active_parameter = ( sample_ids => [qw{ sample_1 sample_2 sample_3 }], );
 
 my %sample_info = (
     sample => {
-        q{sample-1} => { sex => q{male}, },
-        q{sample-2} => { sex => q{female}, },
-        q{sample-3} => { sex => q{other}, },
+        sample_1 => { sex => q{male}, },
+        sample_2 => { sex => q{female}, },
+        sample_3 => { sex => q{other}, },
     },
 );
 (
@@ -112,7 +73,6 @@ my %sample_info = (
     $active_parameter{found_male},
     $active_parameter{found_female},
     $active_parameter{found_other},
-    $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -122,44 +82,54 @@ my %sample_info = (
   );
 
 my %expected_result = (
-    found_male        => 1,
-    found_female      => 1,
-    found_other       => 1,
-    found_other_count => 1,
+    found_male   => 2,
+    found_female => 1,
+    found_other  => 1,
+);
+
+my %expected_gender_info = (
+    gender => {
+        males   => [qw{ sample_1 }],
+        females => [qw{ sample_2 }],
+        others  => [qw{ sample_3 }],
+    }
 );
 
 GENDER:
 foreach my $found_gender ( keys %expected_result ) {
 
 ## Then all genders count should be one
-    is(
-        $active_parameter{$found_gender},
-        $expected_result{$found_gender},
-        $found_gender
-    );
+    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
+        $found_gender );
 }
 
+## Then sample_ids should be added to each gender category
+is_deeply(
+    $active_parameter{gender},
+    $expected_gender_info{gender},
+    q{Added gender info to active parameter}
+);
+
 ## Given no males or females
+
 %sample_info = (
     sample => {
-        q{sample-1} => { sex => q{xyz}, },
-        q{sample-2} => { sex => q{xyz}, },
-        q{sample-3} => { sex => q{other}, },
+        sample_1 => { sex => q{xyz}, },
+        sample_2 => { sex => q{xyz}, },
+        sample_3 => { sex => q{other}, },
     },
 );
 
 %expected_result = (
-    found_male        => 1,
-    found_female      => 0,
-    found_other       => 1,
-    found_other_count => 3,
+    found_male   => 3,
+    found_female => 0,
+    found_other  => 3,
 );
 (
 
     $active_parameter{found_male},
     $active_parameter{found_female},
     $active_parameter{found_other},
-    $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -172,44 +142,8 @@ GENDER:
 foreach my $found_gender ( keys %expected_result ) {
 
 ## Then one male should be found and a other count of three
-    is(
-        $active_parameter{$found_gender},
-        $expected_result{$found_gender},
-        $found_gender
-    );
+    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
+        $found_gender );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

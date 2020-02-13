@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -61,7 +61,7 @@ diag(   q{Test test_mip_hashes from Fixtures.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given active parameters
 my $recipe_name = q{bwa_mem};
@@ -87,7 +87,7 @@ my %file_info = test_mip_hashes(
 ## Then dynamic parameters should be set
 is(
     $file_info{human_genome_reference},
-    q{GRCh37_homo_sapiens_-d5-.fasta},
+    q{grch37_homo_sapiens_-d5-.fasta},
     q{Set human genome reference}
 );
 

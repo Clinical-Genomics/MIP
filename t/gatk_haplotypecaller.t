@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,11 +43,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_haplotypecaller };
 
 diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,6 +55,7 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $HOM_REF_GENOTYPES_IN_CALL_SET                 => 7854;
 Readonly my $SAMPLE_PLOIDY                                 => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 
@@ -65,13 +63,13 @@ Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 my @function_base_commands = qw{ gatk HaplotypeCaller };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
 );
 
@@ -100,17 +98,38 @@ my %specific_argument = (
           q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
     },
     dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        input           => catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+    },
+    dont_use_soft_clipped_bases => {
+        input           => 1,
+        expected_output => q{--dont-use-soft-clipped-bases},
+    },
+    emit_ref_confidence => {
+        input           => q{GVCF},
+        expected_output => q{--emit-ref-confidence GVCF},
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
+    num_ref_samples_if_no_call => {
+        input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
+        expected_output => q{--num-reference-samples-if-no-call }
+          . $HOM_REF_GENOTYPES_IN_CALL_SET,
+    },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
+    },
+    pcr_indel_model => {
+        input           => q{NONE},
+        expected_output => q{--pcr-indel-model NONE},
+    },
+    population_callset => {
+        input           => catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
+        expected_output => q{--population-callset }
+          . catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
     },
     sample_ploidy => {
         input           => $SAMPLE_PLOIDY,
@@ -121,17 +140,9 @@ my %specific_argument = (
         expected_output => q{--standard-min-confidence-threshold-for-calling }
           . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
     },
-    dont_use_soft_clipped_bases => {
+    use_new_qual_calculator => {
         input           => 1,
-        expected_output => q{--dont-use-soft-clipped-bases},
-    },
-    pcr_indel_model => {
-        input           => q{NONE},
-        expected_output => q{--pcr-indel-model NONE},
-    },
-    emit_ref_confidence => {
-        input           => q{GVCF},
-        expected_output => q{--emit-ref-confidence GVCF},
+        expected_output => q{--use-new-qual-calculator},
     },
 );
 
@@ -145,12 +156,12 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            base_commands_index        => 1,
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
+            base_commands_index        => 1,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

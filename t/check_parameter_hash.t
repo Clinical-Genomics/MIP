@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,19 +41,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter}   => [qw{ check_parameter_hash }],
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Parameter}      => [qw{ check_parameter_hash }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_parameter_hash };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Io::Read qw{ read_from_file };
+use MIP::Parameter qw{ check_parameter_hash };
 
 diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,32 +64,36 @@ diag(   q{Test check_parameter_hash from Parameter.pm v}
 my $definitions_file = catfile( $Bin, qw{ data test_data define_parameters.yaml } );
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
-
-## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
+my %parameter = read_from_file(
     {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions mandatory_parameter_keys.yaml } ),
+        format => q{yaml},
+        path   => $definitions_file,
     }
 );
 
-## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
+## Load required keys and values for parameters
+my %required = read_from_file(
     {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions non_mandatory_parameter_keys.yaml } ),
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ definitions required_parameters.yaml } ),
+    }
+);
 
+## Load non required keys and values for parameters
+my %not_required = read_from_file(
+    {
+        format => q{yaml},
+        path => catfile( dirname($Bin), qw{ definitions not_required_parameters.yaml } ),
     }
 );
 
 ## Given valid input
 my $is_ok = check_parameter_hash(
     {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
-        file_path              => $definitions_file,
+        file_path         => $definitions_file,
+        not_required_href => \%not_required,
+        parameter_href    => \%parameter,
+        required_href     => \%required,
     }
 );
 
@@ -105,12 +106,12 @@ $parameter{case_id}{data_type} = [q{wrong_data_type}];
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -126,12 +127,12 @@ $parameter{case_id}{associated_recipe} = q{not_an_array};
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -147,12 +148,12 @@ $parameter{case_id}{data_type} = q{not_valid_value};
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -162,25 +163,25 @@ like(
     q{Throw fatal log message for illegal value}
 );
 
-## Given a missing mandatory key
+## Given a missing required key
 delete $parameter{case_id}{data_type};
 
 trap {
     check_parameter_hash(
         {
-            parameter_href         => \%parameter,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path              => $definitions_file,
+            file_path         => $definitions_file,
+            not_required_href => \%not_required,
+            parameter_href    => \%parameter,
+            required_href     => \%required,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
 like(
     $trap->stderr,
-    qr/Missing\s+mandatory\s+key/xms,
-    q{Throw fatal log message for missing mandatory key}
+    qr/Missing\s+required\s+key/xms,
+    q{Throw fatal log message for missing required key}
 );
 
 done_testing();

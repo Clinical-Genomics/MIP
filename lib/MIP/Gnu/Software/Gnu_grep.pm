@@ -1,122 +1,153 @@
 package MIP::Gnu::Software::Gnu_grep;
 
-use strict;
-use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.026;
 use Carp;
-use autodie;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
-use FindBin qw($Bin);  #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
+## CPANM
+use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw(unix_standard_streams);
-use MIP::Unix::Write_to_file qw(unix_write_to_file);
+use MIP::Constants qw{ $SPACE };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
-
-    use base qw(Exporter);
     require Exporter;
+    use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gnu_grep);
+    our @EXPORT_OK = qw{ gnu_grep };
 }
 
 sub gnu_grep {
 
-##gnu_grep
-
-##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on grep 2.6.3
-##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $stderrfile_path_append, $invert_match
-##         : $FILEHANDLE             => Filehandle to write to
+##Function : Perl wrapper for writing grep recipe to already open $filehandle or return commands array. Based on grep 2.6.3
+##Returns  : @commands
+##Arguments: $count                  => Count
+##         : $filehandle             => Filehandle to write to
+##         : $filter_file_path       => Obtain patterns from file, one per line
 ##         : $infile_path            => Infile path
-##         : $outfile_path           => Outfile path
+##         : $invert_match           => Invert the sense of matching, to select non-matching lines
+##         : $pattern                => Pattern to match
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
-##         : $filter_file_path       => Obtain patterns from file, one per line
-##         : $invert_match           => Invert the sense of matching, to select non-matching lines
+##         : $stdoutfile_path        => Stdoutfile path
+##         : $word_regexp            => Select only those lines containing matches that form whole words
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $stderrfile_path_append;
-    my $invert_match;
-
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $stderrfile_path;
+    my $count;
+    my $filehandle;
     my $filter_file_path;
+    my $infile_path;
+    my $pattern;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $invert_match;
+    my $word_regexp;
 
     my $tmpl = {
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        FILEHANDLE       => { store       => \$FILEHANDLE },
-        outfile_path     => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path  => { strict_type => 1, store => \$stderrfile_path },
-        filter_file_path => { strict_type => 1, store => \$filter_file_path },
-		stderrfile_path_append =>
-		{ strict_type => 1, store => \$stderrfile_path_append },
-        invert_match => {
-            default     => 0,
+        count => {
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$count,
             strict_type => 1,
-            store       => \$invert_match
+        },
+        filehandle       => { store => \$filehandle, },
+        filter_file_path => { store => \$filter_file_path, strict_type => 1, },
+        infile_path => {
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        invert_match => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$invert_match,
+            strict_type => 1,
+        },
+        pattern         => { store => \$pattern,         strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        word_regexp => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$word_regexp,
+            strict_type => 1,
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $SPACE = q{ };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### grep
     ## Stores commands depending on input parameters
-    my @commands = qw(grep);
+    my @commands = qw{ grep };
 
     ## Options
+    if ($count) {
+
+        push @commands, q{--count};
+    }
     if ($invert_match) {
 
-        push @commands, '--invert-match';
+        push @commands, q{--invert-match};
+    }
+    if ($word_regexp) {
+
+        push @commands, q{--word-regexp};
     }
     if ($filter_file_path) {
 
-        push @commands, '--file=' . $filter_file_path;
+        push @commands, q{--file=} . $filter_file_path;
+    }
+
+    if ($pattern) {
+
+        push @commands, $pattern;
     }
 
     ## Infile
+    if ($infile_path) {
 
-    push @commands, $infile_path;
+        push @commands, $infile_path;
+    }
 
-    ## Outfile
-    if ($outfile_path) {
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
 
-        push @commands, '> ' . $outfile_path;
-      }
-
-    push @commands, unix_standard_streams({stderrfile_path => $stderrfile_path,
-					   stderrfile_path_append => $stderrfile_path_append,
-					  });
-
-    unix_write_to_file({commands_ref => \@commands,
-			separator => $SPACE,
-			FILEHANDLE => $FILEHANDLE,
-		       });
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
     return @commands;
 }
 

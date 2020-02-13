@@ -16,34 +16,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
 
 }
 
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-
 sub analysis_gzip_fastq {
 
 ## Function : Gzips fastq files
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
@@ -61,6 +61,7 @@ sub analysis_gzip_fastq {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
 
     my $tmpl = {
         active_parameter_href => {
@@ -103,6 +104,11 @@ sub analysis_gzip_fastq {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -126,20 +132,20 @@ sub analysis_gzip_fastq {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
+    use MIP::Environment::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## No uncompressed fastq infiles
     return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -165,13 +171,14 @@ sub analysis_gzip_fastq {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Outpaths
     my @outfile_paths =
@@ -194,11 +201,11 @@ sub analysis_gzip_fastq {
 
     ## Adjust according to number of infiles to process
     # One full lane on Hiseq takes approx. 2 h for gzip to process
-    $time = $time * scalar @infile_names;
+    my $time = $recipe_resource{time} * scalar @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -228,13 +235,14 @@ sub analysis_gzip_fastq {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $time,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -244,7 +252,7 @@ sub analysis_gzip_fastq {
     my $uncompressed_file_counter = 0;
 
     ## Gzip
-    say {$FILEHANDLE} q{## } . $recipe_name;
+    say {$filehandle} q{## } . $recipe_name;
 
   INFILE:
     while ( my ( $infile_index, $infile ) = each @infile_names ) {
@@ -257,40 +265,42 @@ sub analysis_gzip_fastq {
                 $process_batches_count * $active_parameter_href->{max_cores_per_node} )
             {
 
-                say {$FILEHANDLE} q{wait}, $NEWLINE;
+                say {$filehandle} q{wait}, $NEWLINE;
                 $process_batches_count = $process_batches_count + 1;
             }
 
-            ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+            ## Perl wrapper for writing gzip recipe to $filehandle
             gzip(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $infile_paths[$infile_index],
+                    filehandle       => $filehandle,
+                    infile_paths_ref => [ $infile_paths[$infile_index] ],
                 }
             );
-            say {$FILEHANDLE} q{&};
+            say {$filehandle} q{&};
             $uncompressed_file_counter++;
         }
     }
-    print {$FILEHANDLE} $NEWLINE;
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    print {$filehandle} $NEWLINE;
+    say {$filehandle} q{wait}, $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                dependency_method  => q{island_to_sample},
-                case_id            => $case_id,
-                job_id_href        => $job_id_href,
-                log                => $log,
-                job_id_chain       => $job_id_chain,
-                recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
-                submission_profile => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{island_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                recipe_file_path     => $recipe_file_path,
+                sample_id            => $sample_id,
+                submission_profile   => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

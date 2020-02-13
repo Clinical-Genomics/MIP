@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,7 +67,7 @@ diag(   q{Test pip_install from Pip.pm v}
 my @function_base_commands = qw{ pip install };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -90,13 +90,17 @@ my %specific_argument = (
         input           => catdir(qw{ test path }),
         expected_output => q{--editable test/path},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
     packages_ref => {
         inputs_ref      => [qw{ test_package_1 test_package_2 }],
         expected_output => q{test_package_1 test_package_2},
+    },
+    no_cache_dir => {
+        input           => 1,
+        expected_output => q{--no-cache-dir},
     },
     quiet => {
         input           => 1,
@@ -105,6 +109,10 @@ my %specific_argument = (
     requirement => {
         input           => q{test_file.txt},
         expected_output => q{--requirement test_file.txt},
+    },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
     },
 );
 

@@ -16,23 +16,22 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EMPTY_STR $SPACE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_io_outfiles };
+      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_file_suffix parse_io_outfiles };
 
 }
-
-## Constants
-Readonly my $DOT       => q{.};
-Readonly my $EMPTY_STR => q{};
 
 sub parse_fastq_infiles {
 
@@ -104,7 +103,7 @@ sub parse_fastq_infiles {
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
     use MIP::Set::File qw{ set_file_compression_features };
-    use MIP::QC::Record qw{ add_infile_info };
+    use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -140,27 +139,31 @@ sub parse_fastq_infiles {
             ## Parse infile according to filename convention
             my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
-            ## Get read length and interleaved status from file
-            if ( exists $infile_info{direction}
-                and $infile_info{direction} == 1 )
+            ## Get sequence read length from file
+            $read_length = get_read_length(
+                {
+                    file_path         => catfile( $infiles_dir, $file_name ),
+                    read_file_command => $read_file_command,
+                }
+            );
+
+            ## Is file interleaved and have proper read direction
+            $is_interleaved = check_interleaved(
+                {
+                    file_path         => catfile( $infiles_dir, $file_name ),
+                    log               => $log,
+                    read_file_command => $read_file_command,
+                }
+            );
+
+            ## STAR does not support interleaved fastq files
+            if ( ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wts} )
+                and $is_interleaved )
             {
-
-                ## Get sequence read length from file
-                $read_length = get_read_length(
-                    {
-                        file_path         => catfile( $infiles_dir, $file_name ),
-                        read_file_command => $read_file_command,
-                    }
-                );
-
-                ## Is file interleaved and have proper read direction
-                $is_interleaved = check_interleaved(
-                    {
-                        file_path         => catfile( $infiles_dir, $file_name ),
-                        log               => $log,
-                        read_file_command => $read_file_command,
-                    }
-                );
+                $log->fatal(q{MIP rd_rna does not support interleaved fastq files});
+                $log->fatal(
+                    q{Please deinterleave: } . catfile( $infiles_dir, $file_name ) );
+                exit 1;
             }
 
             ## If filename convention is followed
@@ -178,7 +181,7 @@ sub parse_fastq_infiles {
                 );
 
                 ## Adds information derived from infile name to hashes
-                $lane_tracker = add_infile_info(
+                $lane_tracker = set_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         date                  => $infile_info{date},
@@ -230,7 +233,7 @@ sub parse_fastq_infiles {
                     $fastq_info_header{index} = $EMPTY_STR;
                 }
                 ## Adds information derived from infile name to hashes
-                $lane_tracker = add_infile_info(
+                $lane_tracker = set_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         ## fastq format does not contain a date of the run,
@@ -315,6 +318,42 @@ sub parse_fastq_infiles_format {
         $file_info{$feature} = $file_features[$index];
     }
     return %file_info;
+}
+
+sub parse_file_suffix {
+
+## Function : Parse file suffix in filename.suffix(.gz). Removes suffix if matching else return undef
+## Returns  : undef | $file_name
+## Arguments: $file_name   => File name
+##          : $file_suffix => File suffix to be removed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $file_suffix;
+
+    my $tmpl = {
+        file_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_name
+        },
+        file_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_suffix
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my ($file_name_nosuffix) =
+      $file_name =~ / (\S+)($file_suffix$ | $file_suffix.gz$) /xsm;
+
+    return $file_name_nosuffix;
 }
 
 sub parse_io_outfiles {

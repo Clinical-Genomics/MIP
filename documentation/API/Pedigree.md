@@ -15,7 +15,8 @@ samples: [  # Array of hashes
       mother: string, value="<case_id> | 0"
       phenotype: string, value="affected | unaffected | unknown"
       sample_id: string,
-      sample_origin: string, value="<sample_id>""
+      sample_display_name: string,
+      is_from_sample: string, value="<sample_id>""
       sex: string, value="male | female | other"
       time_point: Integer,
     }
@@ -25,14 +26,5 @@ samples: [  # Array of hashes
     .,
     }
 ],
-``
-
-## Methods
-get_pedigree_sample_id_attributes:
-Return the value of for a supplied sample id with a given attribute (e.g. 'sex')
-```Perl
-my $sample_id_sex = get_pedigree_sample_id_attributes({ attribute => q{sex},
-							sample_id => $sample_id,
-							sample_info_href => $sample_info_href,
-						      });
 ```
+

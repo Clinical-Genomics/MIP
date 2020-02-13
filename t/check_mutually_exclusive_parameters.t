@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +62,7 @@ diag(   q{Test check_mutually_exclusive_parameters from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given no mutually exclusive parameter
 my %active_parameter = (
@@ -89,12 +89,11 @@ trap {
             active_parameter_href => \%active_parameter,
             log                   => $log,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if mutually exclusive parameters are found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal mutually exclusive log message} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal mutually exclusive log message} );
 
 done_testing();

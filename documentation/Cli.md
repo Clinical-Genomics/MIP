@@ -22,7 +22,7 @@ There is currently three main commands:
 There are three levels of parameters:
 - Global
 - Commands
-- Subcommands
+- Sub commands
 
 These parameters are defined for the CLI at each level of the underlying namespace in `lib/MIP/Cli`. The complete parameter feature is defined for each command and subcommand in definition file located under `definitions`.
 

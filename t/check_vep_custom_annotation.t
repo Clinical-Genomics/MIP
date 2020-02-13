@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -61,7 +61,7 @@ diag(   q{Test check_vep_custom_annotation from Parameter.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given a undefined vep_custom_annotation
 my %vep_custom_ann_undef;
@@ -83,7 +83,7 @@ my %vep_custom_ann = (
         key                      => q{genomic_superdups_frac_match},
         file_type                => q{bed},
         path                     => catfile(
-            $Bin, qw{ data references GRCh37_genomics_super_dups_-20181009.bed.gz }
+            $Bin, qw{ data references grch37_genomics_super_dups_-20181009.bed.gz }
         ),
     },
 );
@@ -106,7 +106,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -130,7 +130,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_not_valid_option,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -157,7 +157,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_path,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -179,7 +179,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_key,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

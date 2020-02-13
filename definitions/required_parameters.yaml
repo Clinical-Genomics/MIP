@@ -1,0 +1,16 @@
+---
+associated_recipe:
+  key_data_type: ARRAY
+data_type:
+  key_data_type: SCALAR
+  values:
+    - SCALAR
+    - ARRAY
+    - HASH
+type:
+  key_data_type: SCALAR
+  values:
+    - mip
+    - path
+    - recipe
+    - recipe_argument

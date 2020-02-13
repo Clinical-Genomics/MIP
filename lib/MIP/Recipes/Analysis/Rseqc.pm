@@ -18,34 +18,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rseqc };
 
 }
 
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_rseqc {
 
 ## Function : Rseqc analysis for RNA-seq
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -65,6 +65,7 @@ sub analysis_rseqc {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -109,6 +110,11 @@ sub analysis_rseqc {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -144,17 +150,17 @@ sub analysis_rseqc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Rseqc
+    use MIP::Program::Rseqc
       qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -180,7 +186,7 @@ sub analysis_rseqc {
             recipe_name    => $recipe_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -208,21 +214,22 @@ sub analysis_rseqc {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -230,11 +237,11 @@ sub analysis_rseqc {
     ## SHELL
 
     ## Rseq
-    say {$FILEHANDLE} q{## Rseq infer_experiment.py};
+    say {$filehandle} q{## Rseq infer_experiment.py};
     rseqc_infer_experiment(
         {
             bed_file_path   => $bed_file_path,
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $outfile_path_prefix
               . $UNDERSCORE
@@ -242,51 +249,51 @@ sub analysis_rseqc {
               . $outfile_suffix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq junction_annotation.py};
+    say {$filehandle} q{## Rseq junction_annotation.py};
     rseqc_junction_annotation(
         {
             bed_file_path        => $bed_file_path,
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix
               . $UNDERSCORE
               . q{junction_annotation},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq junction_saturation.py};
+    say {$filehandle} q{## Rseq junction_saturation.py};
     rseqc_junction_saturation(
         {
             bed_file_path        => $bed_file_path,
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix
               . $UNDERSCORE
               . q{junction_saturation},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq inner_distance.py};
+    say {$filehandle} q{## Rseq inner_distance.py};
     rseqc_inner_distance(
         {
             bed_file_path        => $bed_file_path,
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix
               . $UNDERSCORE
               . q{inner_distance},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq bam_stat.py};
+    say {$filehandle} q{## Rseq bam_stat.py};
     rseqc_bam_stat(
         {
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $outfile_path_prefix
               . $UNDERSCORE
@@ -294,13 +301,13 @@ sub analysis_rseqc {
               . $outfile_suffix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq read_distribution.py};
+    say {$filehandle} q{## Rseq read_distribution.py};
     rseqc_read_distribution(
         {
             bed_file_path   => $bed_file_path,
-            FILEHANDLE      => $FILEHANDLE,
+            filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $outfile_path_prefix
               . $UNDERSCORE
@@ -308,39 +315,41 @@ sub analysis_rseqc {
               . $outfile_suffix,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseqc read_duplication};
+    say {$filehandle} q{## Rseqc read_duplication};
     rseqc_read_duplication(
         {
-            FILEHANDLE           => $FILEHANDLE,
+            filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix
               . $UNDERSCORE
               . q{read_duplication},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
+                base_command            => $profile_base_command,
+                dependency_method       => q{sample_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

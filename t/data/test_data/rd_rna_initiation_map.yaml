@@ -1,0 +1,39 @@
+---
+CHAIN_ALL:
+  - CHAIN_MAIN:
+    - gzip_fastq
+# Parallel chains (branch)
+  - CHAIN_FASTQ:
+    - fastqc_ar
+  - CHAIN_DE:
+    - salmon_quant
+    - blobfish
+  - CHAIN_FUSION:
+    - PARALLEL:
+      - star_fusion
+      - arriba_ar
+  - CHAIN_MAIN:
+    - star_aln
+    - picardtools_mergesamfiles
+    - CHAIN_STRINGTIE:
+      - stringtie_ar
+      - gffcompare_ar
+    - CHAIN_QC:
+      - PARALLEL:
+        - preseq_ar
+        - rseqc
+        - genebody_coverage
+  - CHAIN_ASE:
+    - markduplicates
+    - gatk_splitncigarreads
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_variantfiltration
+    - gatk_asereadcounter
+    - bootstrapann
+    - bcftools_merge
+    - varianteffectpredictor
+  - CHAIN_MAIN:
+    - multiqc_ar
+    - analysisrunstatus
+    - sacct

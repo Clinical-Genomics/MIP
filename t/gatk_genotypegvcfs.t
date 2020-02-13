@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,24 +34,22 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
     ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Program::Gatk}  => [qw{ gatk_genotypegvcfs }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_genotypegvcfs };
 
-diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
-      . $MIP::Program::Variantcalling::Gatk::VERSION
+diag(   q{Test gatk_genotypegvcfs from Gatk.pm v}
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,13 +61,13 @@ diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
 my @function_base_commands = qw{ gatk GenotypeGVCFs };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
 );
 
@@ -90,9 +90,12 @@ my %required_argument = (
 
 my %specific_argument = (
     dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        input           => catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+    },
+    include_nonvariant_sites => {
+        input           => 1,
+        expected_output => q{--include-non-variant-sites},
     },
     infile_path => {
         input           => q{gendb://} . catdir(qw{ path to my_db }),
@@ -105,6 +108,10 @@ my %specific_argument = (
     referencefile_path => {
         input           => catfile(qw{ my genome }),
         expected_output => q{--reference } . catdir(qw{ my genome }),
+    },
+    use_new_qual_calculator => {
+        input           => 1,
+        expected_output => q{--use-new-qual-calculator},
     },
 );
 

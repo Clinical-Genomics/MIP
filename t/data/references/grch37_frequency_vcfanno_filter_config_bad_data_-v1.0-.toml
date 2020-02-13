@@ -1,0 +1,9 @@
+# TOML
+
+title = "Vcfanno configuration file" 
+
+[[annotation]]
+file="/mnt/hds/proj/cust003/develop/mip_references/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
+#fields = ["AF", "AF_POPMAX"]
+ops=["self", "self"]
+names=["GNOMADAF", "GNOMADAF_POPMAX"]

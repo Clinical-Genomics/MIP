@@ -1,5 +1,6 @@
 package MIP::Gnu::Findutils;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs gnu_find };
@@ -38,66 +39,74 @@ Readonly my $SPACE        => q{ };
 
 sub xargs {
 
-## Function : Perl wrapper for writing xargs recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
-## Returns  : "@commands"
-## Arguments: $shell_commands_ref => The string following this command will be interpreted as a shell command {REF}
-##          : $FILEHANDLE         => Filehandle to write to
-##          : $replace_str        => Replace string.  Enables us to tell xargs where to put the command file lines
-##          : $verbose            => Print the command line on the standard error output before executing it
+## Function : Perl wrapper for writing xargs recipe to already open $filehandle or return command line string. Based on xargs 4.4.2
+## Returns  : @commands
+## Arguments: $filehandle         => Filehandle to write to
 ##          : $max_args           => Use at most max-args arguments per command line
 ##          : $max_procs          => Run up to max-procs processes at a time
+##          : $null_character     => Input items are terminated by a null character instead of by whitespace
 ##          : $placeholder_symbol => Set placeholder symbol
+##          : $replace_str        => Replace string.  Enables us to tell xargs where to put the command file lines
+##          : $shell_commands_ref => The string following this command will be interpreted as a shell command {REF}
+##          : $verbose            => Print the command line on the standard error output before executing it
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $replace_str;
-    my $verbose;
     my $max_args;
     my $max_procs;
     my $placeholder_symbol;
+    my $replace_str;
+    my $verbose;
 
     ## Flatten argument(s)
+    my $filehandle;
     my $shell_commands_ref;
-    my $FILEHANDLE;
+    my $null_character;
 
     my $tmpl = {
-        shell_commands_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$shell_commands_ref
-        },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        replace_str => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$replace_str
-        },
-        verbose => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$verbose
-        },
-        max_args => {
-            default     => 1,
+        filehandle => { store => \$filehandle, },
+        max_args   => {
             allow       => qr/ ^\d+$ /sxm,
+            default     => 1,
+            store       => \$max_args,
             strict_type => 1,
-            store       => \$max_args
         },
         max_procs => {
-            default     => 1,
             allow       => qr/ ^\d+$ /sxm,
+            default     => 1,
+            store       => \$max_procs,
             strict_type => 1,
-            store       => \$max_procs
+        },
+        null_character => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 0,
+            store       => \$null_character,
+            strict_type => 1,
         },
         placeholder_symbol => {
             default     => q?{}?,
+            store       => \$placeholder_symbol,
             strict_type => 1,
-            store       => \$placeholder_symbol
+        },
+        replace_str => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$replace_str,
+            strict_type => 1,
+        },
+        shell_commands_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$shell_commands_ref,
+            strict_type => 1,
+        },
+        verbose => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$verbose,
+            strict_type => 1,
         },
     };
 
@@ -109,12 +118,12 @@ sub xargs {
 
     if ($replace_str) {
 
-     # Replace-str; Enables us to tell xargs where to put the command file lines
+        # Replace-str; Enables us to tell xargs where to put the command file lines
         push @commands, q{-i};
     }
     if ($verbose) {
 
-       # Print the command line on the standard error output before executing it
+        # Print the command line on the standard error output before executing it
         push @commands, q{--verbose};
     }
     if ($max_args) {
@@ -127,9 +136,13 @@ sub xargs {
         # Run up to max-procs processes at a time
         push @commands, q{-P} . $SPACE . $max_procs;
     }
+    if ($null_character) {
+
+        push @commands, q{-0};
+    }
     if ($placeholder_symbol) {
 
-      # The string following this command will be interpreted as a shell command
+        # The string following this command will be interpreted as a shell command
         push @commands, q{sh -c} . $SPACE . $DOUBLE_QUOTE;
 
         if ($shell_commands_ref) {
@@ -144,7 +157,7 @@ sub xargs {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
     return @commands;
@@ -152,12 +165,12 @@ sub xargs {
 
 sub gnu_find {
 
-## Function : Perl wrapper for writing find recipe to already open $FILEHANDLE or return command line string. Based on find 4.4.2
+## Function : Perl wrapper for writing find recipe to already open $filehandle or return command line string. Based on find 4.4.2
 ## Returns  : "@commands"
 ## Arguments: $search_path   => Where to perform the search
 ##          : $test_criteria => Evaluation criteria
 ##          : $action        => Action when evaluation is true
-##          : $FILEHANDLE    => Filehandle to write to
+##          : $filehandle    => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -165,7 +178,7 @@ sub gnu_find {
     my $search_path;
     my $test_criteria;
     my $action;
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
         search_path => {
@@ -183,8 +196,8 @@ sub gnu_find {
         action => {
             store => \$action
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
+        filehandle => {
+            store => \$filehandle
         },
     };
 
@@ -205,7 +218,7 @@ sub gnu_find {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
         }
     );
 

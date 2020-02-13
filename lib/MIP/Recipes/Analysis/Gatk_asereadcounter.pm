@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Check::Cluster qw{ check_max_core_number };
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,20 +26,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
 
 }
 
-## Constants
-Readonly my $ASTERISK => q{*};
-Readonly my $NEWLINE  => qq{\n};
-
 sub analysis_gatk_asereadcounter {
 
-## Function : Gatk asereadcounter analysis for rna recipe
+## Function : Gatk asereadcounter analysis for RNA recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -47,6 +43,7 @@ sub analysis_gatk_asereadcounter {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -66,6 +63,7 @@ sub analysis_gatk_asereadcounter {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -109,6 +107,11 @@ sub analysis_gatk_asereadcounter {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -138,15 +141,14 @@ sub analysis_gatk_asereadcounter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+    use MIP::Program::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
 
     ## Constants
     Readonly my $ALLELES                => 2;
@@ -155,7 +157,14 @@ sub analysis_gatk_asereadcounter {
     ### PREPROCESSING
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Return if ASE has been turned off for this sample
+    if ( grep { $sample_id eq $_ } @{ $active_parameter_href->{no_ase_samples} } ) {
+
+        $log->warn(qq{No ASE analysis for $sample_id});
+        return 0;
+    }
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -169,12 +178,9 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_name           = ${ $io{in}{file_names} }[0];
-    my $variant_infile_name_prefix    = $io{in}{file_name_prefix};
-    my $variant_infile_path           = ${ $io{in}{file_paths} }[0];
-    my $variant_suffix                = $io{in}{file_suffix};
-    my $temp_variant_file_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_variant_file_path        = $temp_variant_file_path_prefix . $variant_suffix;
+    my $variant_infile_name_prefix = $io{in}{file_name_prefix};
+    my $variant_infile_path        = ${ $io{in}{file_paths} }[0];
+    my $variant_suffix             = $io{in}{file_suffix};
 
     ## Get bam infile from GATK BaseRecalibration
     my %alignment_io = get_io_files(
@@ -182,16 +188,14 @@ sub analysis_gatk_asereadcounter {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{gatk_baserecalibration},
+            recipe_name    => q{markduplicates},
             stream         => q{in},
             temp_directory => $temp_directory,
         }
     );
-    my $alignment_file_path_prefix      = $alignment_io{out}{file_path_prefix};
-    my $alignment_suffix                = $alignment_io{out}{file_suffix};
-    my $alignment_file_path             = $alignment_file_path_prefix . $alignment_suffix;
-    my $temp_alignment_file_path_prefix = $alignment_io{temp}{file_path_prefix};
-    my $temp_alignment_file_path = $temp_alignment_file_path_prefix . $alignment_suffix;
+    my $alignment_file_path_prefix = $alignment_io{out}{file_path_prefix};
+    my $alignment_suffix           = $alignment_io{out}{file_suffix};
+    my $alignment_file_path        = $alignment_file_path_prefix . $alignment_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -203,8 +207,8 @@ sub analysis_gatk_asereadcounter {
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
-    ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    ## Get module resources
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -228,95 +232,86 @@ sub analysis_gatk_asereadcounter {
             }
         )
     );
-    my $outfile_path = ${ $io{out}{file_paths} }[0];
-    my $outdir_path  = $io{out}{dir_path};
+    my $outfile_name      = ${ $io{out}{file_names} }[0];
+    my $outfile_path      = ${ $io{out}{file_paths} }[0];
+    my $outdir_path       = $io{out}{dir_path};
+    my $variant_file_path = catfile( $outdir_path,
+        $variant_infile_name_prefix . $UNDERSCORE . q{restricted} . $variant_suffix );
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
     ### SHELL
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy bam file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $alignment_file_path_prefix
-              . substr( $alignment_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
     ## Restrict analysis to biallelic, heterogenous SNPs
-    say {$FILEHANDLE} q{## Bcftools view};
+    say {$filehandle} q{## Bcftools view};
     bcftools_view(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             genotype     => q{het},
             infile_path  => $variant_infile_path,
             max_alleles  => $ALLELES,
             min_alleles  => $ALLELES,
-            outfile_path => $temp_variant_file_path,
+            outfile_path => $variant_file_path,
             types        => q{snps},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_variant_file_path,
+            filehandle  => $filehandle,
+            infile_path => $variant_file_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    say {$filehandle} q{## GATK ASEReadCounter};
     gatk_asereadcounter(
         {
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $temp_alignment_file_path,
+            filehandle           => $filehandle,
+            infile_path          => $alignment_file_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
             referencefile_path   => $active_parameter_href->{human_genome_reference},
-            variant_infile_path  => $temp_variant_file_path,
+            variant_infile_path  => $variant_file_path,
             verbosity            => $active_parameter_href->{gatk_logging_level},
             temp_directory       => $temp_directory,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE;
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
-                infile           => $variant_infile_name,
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
@@ -324,20 +319,33 @@ sub analysis_gatk_asereadcounter {
             }
         );
 
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
+
 1;

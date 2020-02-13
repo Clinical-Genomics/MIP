@@ -1,0 +1,45 @@
+Bootstrap: docker
+From: ubuntu:xenial
+
+%help
+    This is a container for installing StringTie version 2.0.3
+
+%labels
+    ## Fill in metadata here
+    Maintainer Clinical-Genomics/MIP
+    Version 0.1
+
+%environment
+    SHELL=/bin/bash
+    LC_ALL=C.UTF-8
+
+%runscript
+    "$@"
+
+%post
+    ## Set up sytem programs and libraries
+    apt-get update --fix-missing && \
+    apt-get install -y \
+        build-essential \
+        coreutils \
+        dialog \
+        git \
+        language-pack-en-base \
+        libbz2-dev \
+        libcurl4-openssl-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libncursesw5-dev \
+        libreadline-dev \
+        libssl-dev \
+        unzip \
+        wget \
+        zlib1g-dev && \
+    apt-get clean
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+    ## Download and unpack pre-compiled stringtie binary
+    wget https://github.com/gpertea/stringtie/releases/download/v2.0.3/stringtie-2.0.3.Linux_x86_64.tar.gz
+    tar -xzf ./stringtie-2.0.3.Linux_x86_64.tar.gz -C /opt/
+    ln -s /opt/stringtie-2.0.3.Linux_x86_64/stringtie /bin/stringtie
+    rm -rf ./stringtie-2.0.3.Linux_x86_64.tar.gz

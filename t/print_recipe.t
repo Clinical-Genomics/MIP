@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Analysis}  => [qw{ print_recipe }],
+        q{MIP::Parameter}      => [qw{ get_order_of_parameters print_recipe }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ print_recipe };
+use MIP::Parameter qw{ get_order_of_parameters print_recipe };
 
-diag(   q{Test print_recipe from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test print_recipe from Parameter.pm v}
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,12 +61,17 @@ diag(   q{Test print_recipe from Analysis.pm v}
 
 ## Given the option to not print recipes
 my %parameter = ( bwa_mem => { type => q{recipe} } );
+my @define_parameters_file_paths =
+  ( catfile( $Bin, qw{ data test_data define_parameters.yaml } ) );
+
+my @order_parameters = get_order_of_parameters(
+    { define_parameters_files_ref => \@define_parameters_file_paths, } );
+
 my $return = print_recipe(
     {
-        define_parameters_files_ref =>
-          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
-        parameter_href    => \%parameter,
-        print_recipe_mode => 1,
+        order_parameters_ref => \@order_parameters,
+        parameter_href       => \%parameter,
+        print_recipe_mode    => 1,
     }
 );
 
@@ -82,13 +84,12 @@ my %active_parameter = ( print_recipe => 1 );
 trap {
     print_recipe(
         {
-            define_parameters_files_ref =>
-              [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
-            parameter_href    => \%parameter,
-            print_recipe      => $active_parameter{print_recipe},
-            print_recipe_mode => 1,
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => 1,
         }
-      )
+    )
 };
 
 ## Then write bwa_mem recipe and mode
@@ -96,10 +97,5 @@ my ( $recipe, $recipe_mode ) = $trap->stdout =~ qr{ (bwa_mem)\s+(1)}sxm;
 is( $recipe, q{bwa_mem}, q{Printed recipe} );
 
 is( $recipe_mode, 1, q{Printed correct recipe mode} );
-
-## And do not write bamcalibrationblock recipe and mode
-my ($bamcal_recipe) = $trap->stdout =~ qr{ (bamcalibrationblock) }sxm;
-
-is( $bamcal_recipe, undef, q{Did not print rio block: bamcalibrationblock} );
 
 done_testing();

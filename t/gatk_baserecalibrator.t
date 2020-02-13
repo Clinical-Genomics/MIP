@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,11 +43,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_baserecalibrator };
 
 diag(   q{Test gatk_baserecalibrator from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,7 +62,7 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -80,10 +77,10 @@ my %required_argument = (
     },
     known_sites_ref => {
         inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            qw{ grch37_1000g_indels_-phase1-.vcf grch37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
+q{--known-sites grch37_1000g_indels_-phase1-.vcf --known-sites grch37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
@@ -103,10 +100,10 @@ my %specific_argument = (
     },
     known_sites_ref => {
         inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            qw{ grch37_1000g_indels_-phase1-.vcf grch37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
+q{--known-sites grch37_1000g_indels_-phase1-.vcf --known-sites grch37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),

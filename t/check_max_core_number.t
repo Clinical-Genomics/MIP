@@ -1,162 +1,102 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.026;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
-our $USAGE = build_usage( {} );
+my $VERBOSE = 1;
+our $VERSION = 1.02;
 
-my $VERBOSE = 0;
-our $VERSION = '1.0.0';
-
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-    ## Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Environment::Cluster} => [qw{ check_max_core_number }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
-
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
-    }
-
-    ## Modules
-    my @modules = ('MIP::Check::Cluster');
-
-    for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Cluster qw(check_max_core_number);
+use MIP::Environment::Cluster qw{ check_max_core_number };
 
-diag(
-"Test check_max_core_number $MIP::Check::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME"
+diag(   q{Test check_max_core_number from Cluster.pm v}
+      . $MIP::Environment::Cluster::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+## Set constants
+Readonly my $BIG_REQUEST  => 10;
+Readonly my $MAX_CORES    => 8;
+Readonly my $OK_REQUEST   => 6;
+Readonly my $RECIPE_CORES => 4;
+
+my $core_number;
+
+## Given a request within node limit
+$core_number = check_max_core_number(
+    {
+        core_number_requested => $OK_REQUEST,
+        max_cores_per_node    => $MAX_CORES,
+    }
+);
+## Then return requested cores
+is( $core_number, $OK_REQUEST, q{Ok request} );
+
+## Given a request that exceeds the cores on the nodes
+$core_number = check_max_core_number(
+    {
+        core_number_requested => $BIG_REQUEST,
+        max_cores_per_node    => $MAX_CORES,
+    }
 );
 
-# Core number to test
-Readonly my $LOWER_THAN_MAX_CORES_PER_NODE    => 1;
-Readonly my $EQUALS_MAX_CORES_PER_NODE        => 2;
-Readonly my $GREATHER_THAN_MAX_CORES_PER_NODE => 3;
+## Then return max cores on node
+is( $core_number, $MAX_CORES, q{Node constrained request} );
 
-my @test_core_numbers = (
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    $EQUALS_MAX_CORES_PER_NODE, $GREATHER_THAN_MAX_CORES_PER_NODE,
+## Given a request that exceeds the number of cores allocated
+$core_number = check_max_core_number(
+    {
+        core_number_requested => $OK_REQUEST,
+        max_cores_per_node    => $MAX_CORES,
+        recipe_core_number    => $RECIPE_CORES,
+    }
 );
 
-# Possibly adjusted core numbers according to max core numbers
-my @returned_core_numbers;
-
-foreach my $core_number (@test_core_numbers) {
-
-    push @returned_core_numbers,
-      check_max_core_number(
-        {
-            max_cores_per_node    => 2,
-            core_number_requested => $core_number,
-        }
-      );
-}
-
-## Test
-is(
-    $returned_core_numbers[0],
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    'Core number requested is lower than max core number'
-);
-
-is( $returned_core_numbers[1],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested equals max core number' );
-
-is( $returned_core_numbers[2],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested was greather than max core number' );
+## Then return max cores allocated by recipe
+is( $core_number, $RECIPE_CORES, q{Recipe constrained request} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

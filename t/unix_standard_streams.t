@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -74,7 +71,7 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -94,6 +91,10 @@ my %specific_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>>} . $SPACE . q{stderrfile.test},
     },
+    stdoutfile_path_append => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1>>} . $SPACE . q{stdoutfile.test},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
@@ -107,7 +108,7 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            do_test_base_command       => 1,
+            do_test_base_command       => 0,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,

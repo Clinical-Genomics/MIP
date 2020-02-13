@@ -16,24 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_stringtie };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_stringtie {
 
@@ -45,6 +42,7 @@ sub analysis_stringtie {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -65,6 +63,7 @@ sub analysis_stringtie {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -109,6 +108,11 @@ sub analysis_stringtie {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -144,18 +148,17 @@ sub analysis_stringtie {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Stringtie qw{ stringtie };
+    use MIP::Program::Stringtie qw{ stringtie };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -169,13 +172,11 @@ sub analysis_stringtie {
             temp_directory => $temp_directory,
         }
     );
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $infile_path_prefix      = $io{in}{file_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name             = $infile_name_prefix . $infile_suffix;
-    my $infile_path             = $infile_path_prefix . $infile_suffix;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name        = $infile_name_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my %recipe_attribute = get_recipe_attributes(
         {
@@ -186,7 +187,7 @@ sub analysis_stringtie {
     my $job_id_chain        = $recipe_attribute{chain};
     my $recipe_mode         = $active_parameter_href->{$recipe_name};
     my $annotationfile_path = $active_parameter_href->{transcript_annotation};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource     = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -217,65 +218,55 @@ sub analysis_stringtie {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy bam file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path_prefix
-              . substr( $infile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
     ## StringTie
-    say {$FILEHANDLE} q{## StringTie};
+    say {$filehandle} q{## StringTie};
     stringtie(
         {
             cov_ref_transcripts_outfile_path => $outfile_path_prefix
               . q{_cov_refs}
               . $outfile_suffix,
-            FILEHANDLE                  => $FILEHANDLE,
+            filehandle                  => $filehandle,
             gene_abundance_outfile_path => $outfile_path_prefix . q{_gene_abound.txt},
             gtf_reference_path => $active_parameter_href->{transcript_annotation},
-            infile_path        => $temp_infile_path,
+            infile_path        => $infile_path,
+            junction_reads     => $active_parameter_href->{stringtie_junction_reads},
             library_type       => $active_parameter_href->{library_type},
+            minimum_coverage   => $active_parameter_href->{stringtie_minimum_coverage},
             outfile_path       => $outfile_path,
-            threads            => $core_number,
+            threads            => $recipe_resource{core_number},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    ## Close FILEHANDLE
-    close $FILEHANDLE;
+    ## Close filehandle
+    close $filehandle;
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_name,
                 path             => $outfile_path,
@@ -285,13 +276,25 @@ sub analysis_stringtie {
             }
         );
 
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
@@ -299,7 +302,7 @@ sub analysis_stringtie {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

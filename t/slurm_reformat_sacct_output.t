@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -88,10 +88,10 @@ my $outfile_path = $log_file_path . q{.status};
 
 ## Create test file
 # Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # Open filehandle
-open $FILEHANDLE, q{>}, $bash_file_path
+open $filehandle, q{>}, $bash_file_path
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 # Write reformat command to bash file
@@ -100,12 +100,12 @@ _build_test_file_recipe(
     {
         bash_file_path             => $bash_file_path,
         commands_ref               => \@commands,
-        FILEHANDLE                 => $FILEHANDLE,
+        filehandle                 => $filehandle,
         log_file_path              => $log_file_path,
         reformat_sacct_headers_ref => \@reformat_sacct_headers,
     }
 );
-close $FILEHANDLE;
+close $filehandle;
 
 # File is created and has content
 ok( -s $bash_file_path, q{Create bash} );
@@ -120,17 +120,17 @@ my $ok = run( command => [ q{bash}, $bash_file_path ] );
 ok( -s $outfile_path, q{Created: } . $outfile_path );
 
 # Create anonymous filehandle
-$FILEHANDLE = IO::Handle->new();
+$filehandle = IO::Handle->new();
 
 # Open filehandle
-open $FILEHANDLE, q{<}, $outfile_path
+open $filehandle, q{<}, $outfile_path
   or croak( q{Cannot read '} . $outfile_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Then the tests should be passed (check the _parse_outfile sub for more information on the tests)
-_parse_outfile( { FILEHANDLE => $FILEHANDLE, } );
+_parse_outfile( { filehandle => $filehandle, } );
 
 ### CLEANUP
-close $FILEHANDLE;
+close $filehandle;
 
 # Remove test files
 unlink $bash_file_path, $outfile_path or croak q{Could not remove test files};
@@ -147,7 +147,7 @@ sub _build_test_file_recipe {
 ## Returns  :
 ## Arguments: $bash_file_path             => Test file to write recipe to
 ##          : $commands_ref               => Commands to stream to perl oneliner
-##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $filehandle                 => Sbatch filehandle to write to
 ##          : $log_file_path              => The log file {REF}
 ##          : $reformat_sacct_headers_ref => Reformated sacct headers
 
@@ -156,7 +156,7 @@ sub _build_test_file_recipe {
     ## Flatten argument(s)
     my $bash_file_path;
     my $commands_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log_file_path;
     my $reformat_sacct_headers_ref;
 
@@ -179,9 +179,9 @@ sub _build_test_file_recipe {
             store       => \$log_file_path,
             strict_type => 1,
         },
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
         bash_file_path => {
             required => 1,
@@ -194,14 +194,14 @@ sub _build_test_file_recipe {
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE => $FILEHANDLE,
+            filehandle => $filehandle,
         }
     );
 
     ## Set shell attributes
     gnu_set(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            filehandle  => $filehandle,
             set_errexit => 1,
             set_nounset => 1,
         }
@@ -210,7 +210,7 @@ sub _build_test_file_recipe {
     slurm_reformat_sacct_output(
         {
             commands_ref               => \@commands,
-            FILEHANDLE                 => $FILEHANDLE,
+            filehandle                 => $filehandle,
             log_file_path              => $log_file_path,
             reformat_sacct_headers_ref => \@reformat_sacct_headers,
         }
@@ -222,17 +222,17 @@ sub _parse_outfile {
 
 ## Function : Test the outfile from the bash script is properly formatted
 ## Returns  :
-## Aeguments: $FILEHANDLE => Filehandle to read from
+## Aeguments: $filehandle => Filehandle to read from
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
+    my $filehandle;
 
     my $tmpl = {
-        FILEHANDLE => {
+        filehandle => {
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$filehandle,
         },
     };
 
@@ -242,7 +242,7 @@ sub _parse_outfile {
     Readonly my $JOB_ID           => 815_575;
 
     # Read file line by line
-    while (<$FILEHANDLE>) {
+    while (<$filehandle>) {
 
         my $line = $_;
 

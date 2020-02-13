@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ diag(   q{Test check_sample_id_in_hash_parameter from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -165,13 +161,12 @@ trap {
             parameter_href        => \%parameter,
             sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if mandatory parameter} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message for mandatory parameter} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message for mandatory parameter} );
 
 ## Given a hash parameter, when parameter is not mandatory
 %active_parameter = (

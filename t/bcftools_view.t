@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $SPACE $COMMA };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_view }],
-        q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
+        q{MIP::Program::Bcftools} => [qw{ bcftools_view }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Bcftools qw{ bcftools_view };
 
 diag(   q{Test bcftools_view from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+      . $MIP::Program::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,13 +60,14 @@ diag(   q{Test bcftools_view from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = q{bcftools view};
+my @function_base_commands = qw{ bcftools view };
 
 Readonly my $MAX_ALLELES => 2;
+Readonly my $MIN_AC      => 1;
 Readonly my $MIN_ALLELES => 2;
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -89,32 +87,42 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
-
 my %specific_argument = (
     apply_filters_ref => {
         inputs_ref      => [qw{ filter1 filter2 }],
         expected_output => q{--apply-filters filter1,filter2},
     },
-    exclude_types_ref => {
-        inputs_ref      => [qw{ type1 type2 }],
-        expected_output => q{--exclude-types type1,type2},
-    },
     exclude => {
         input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
         expected_output => q{--exclude %QUAL<10 || (RPB<0.1 && %QUAL<15)},
+    },
+    exclude_types_ref => {
+        inputs_ref      => [qw{ type1 type2 }],
+        expected_output => q{--exclude-types type1,type2},
     },
     genotype => {
         input           => q{het},
         expected_output => q{--genotype het},
     },
+    header_only => {
+        input           => 1,
+        expected_output => q{--header-only},
+    },
     include => {
         input           => q{INFO/CSQ[*]~":p[.]"},
         expected_output => q{--include INFO/CSQ[*]~":p[.]"},
     },
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
+    },
     max_alleles => {
         input           => $MAX_ALLELES,
         expected_output => q{--max-alleles } . $MAX_ALLELES,
+    },
+    min_ac => {
+        input           => $MIN_AC,
+        expected_output => q{--min-ac } . $MIN_AC,
     },
     min_alleles => {
         input           => $MIN_ALLELES,
@@ -123,10 +131,6 @@ my %specific_argument = (
     outfile_path => {
         input           => q{outfile.txt},
         expected_output => q{--output-file outfile.txt},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
     },
     output_type => {
         input           => q{v},
@@ -149,10 +153,9 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }

@@ -16,34 +16,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
 
 }
 
-## Constants
-Readonly my $ASTERISK => q{*};
-Readonly my $NEWLINE  => qq{\n};
-
 sub analysis_star_fusion {
 
-## Function : Analysis recipe for star-fusion v1.4.0
+## Function : Analysis recipe for star-fusion v1.8.0
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -62,6 +62,7 @@ sub analysis_star_fusion {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -105,6 +106,11 @@ sub analysis_star_fusion {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -135,21 +141,21 @@ sub analysis_star_fusion {
 
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+    use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
 
     ## Star fusion has a fixed sample_prefix
-    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions};
+    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions.abridged};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -163,8 +169,7 @@ sub analysis_star_fusion {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_path        = $io{in}{dir_path};
-    my @temp_infile_paths = @{ $io{temp}{file_paths} };
+    my @infile_paths = @{ $io{in}{file_paths} };
 
     ## Build outfile_paths
     my %recipe_attribute = get_recipe_attributes(
@@ -175,10 +180,10 @@ sub analysis_star_fusion {
     );
     my $outdir_path =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $outsample_name = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
-    my @file_paths     = catfile( $outdir_path, $outsample_name );
-    my $recipe_mode    = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $outsample_name  = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
+    my @file_paths      = catfile( $outdir_path, $outsample_name );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -201,81 +206,70 @@ sub analysis_star_fusion {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
 # Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            process_time                    => $time,
-            source_environment_commands_ref => \@source_environment_cmds,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
+            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
         }
     );
 
     ### SHELL
 
-    ## Copy infiles to temp directory
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $indir_path . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Star-fusion
-    say {$FILEHANDLE} q{## Performing fusion transcript detections using } . $recipe_name;
+    say {$filehandle} q{## Performing fusion transcript detections using } . $recipe_name;
 
     ## Create sample file
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
     create_star_fusion_sample_file(
         {
-            FILEHANDLE              => $FILEHANDLE,
-            infile_paths_ref        => \@temp_infile_paths,
+            filehandle              => $filehandle,
+            infile_paths_ref        => \@infile_paths,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             samples_file_path       => $sample_files_path,
             sample_id               => $sample_id,
             sample_info_href        => $sample_info_href,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
+    my $referencefile_dir_path =
+        $active_parameter_href->{star_fusion_reference_genome}
+      . $file_info_href->{star_fusion_reference_genome}[0];
     star_fusion(
         {
-            cpu                   => $core_number,
-            FILEHANDLE            => $FILEHANDLE,
-            genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
-            output_directory_path => $temp_directory,
+            cpu                   => $recipe_resource{core_number},
+            examine_coding_effect => 1,
+            filehandle            => $filehandle,
+            fusion_inspector      => q{inspect},
+            genome_lib_dir_path   => $referencefile_dir_path,
+            min_junction_reads =>
+              $active_parameter_href->{star_fusion_min_junction_reads},
+            output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => catfile( $temp_directory, $ASTERISK ),
-            outfile_path => $outdir_path,
-            recursive    => 1,
-            force        => 1,
-        }
-    );
-
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Close filehandleS
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $file_paths[0],
                 recipe_name      => $recipe_name,
@@ -284,21 +278,33 @@ sub analysis_star_fusion {
             }
         );
 
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $file_paths[0],
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $recipe_attribute{chain},
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

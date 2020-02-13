@@ -18,12 +18,15 @@ use Readonly;
 use List::MoreUtils qw{ any };
 use Path::Iterator::Rule;
 
+## MIPs lib/
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,15 +38,10 @@ BEGIN {
       get_merged_infile_prefix
       get_path_entries
       get_read_length
+      get_sample_ids_from_vcf
       get_select_file_contigs
-      get_seq_dict_contigs };
+    };
 }
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub get_exom_target_bed_file {
 
@@ -114,17 +112,16 @@ sub get_exom_target_bed_file {
             return $exome_target_bed_file;
         }
     }
-    if ( not defined $seen{$sample_id} ) {
+    ## Found exome target bed file for sample
+    return if ( $seen{$sample_id} );
 
-        $log->fatal(
-            q{Could not detect }
-              . $sample_id
-              . q{ in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file},
-            $NEWLINE
-        );
-        exit 1;
-    }
-    return;
+    $log->fatal(
+        q{Could not detect }
+          . $sample_id
+          . q{ in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file},
+        $NEWLINE
+    );
+    exit 1;
 }
 
 sub get_fastq_file_header_info {
@@ -164,8 +161,8 @@ sub get_fastq_file_header_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::File::Format::Casava qw{ casava_header_regexp };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     my $fastq_info_header_string;
 
@@ -184,9 +181,14 @@ sub get_fastq_file_header_info {
         my $get_header_cmd = qq{$read_file_command $file_path | $regexp;};
 
         ## Collect fastq header info
-        my %return = system_cmd_call( { command_string => $get_header_cmd, } );
+        my %process_return = child_process(
+            {
+                commands_ref => [$get_header_cmd],
+                process_type => q{open3},
+            }
+        );
 
-        $fastq_info_header_string = $return{output}[0];
+        $fastq_info_header_string = $process_return{stdouts_ref}[0];
 
         ## If successful regexp
         if ($fastq_info_header_string) {
@@ -477,7 +479,7 @@ sub get_matching_values_key {
 ## Returns  : "key pointing to matched value"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $parameter_name        => MIP parameter name
-##          : $query_value       => Value to query in the hash {REF}
+##          : $query_value           => Value to query in the hash {REF}
 
     my ($arg_href) = @_;
 
@@ -509,6 +511,8 @@ sub get_matching_values_key {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $active_parameter_href->{$parameter_name} );
 
     ## Values are now keys and vice versa
     my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
@@ -668,7 +672,7 @@ sub get_read_length {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
 
     ## Prints sequence length and exits
     # Execute perl
@@ -688,10 +692,15 @@ sub get_read_length {
 
     my $read_length_cmd = qq{$read_file_command $file_path | $seq_length_regexp;};
 
-    my %return = system_cmd_call( { command_string => $read_length_cmd, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [$read_length_cmd],
+            process_type => q{open3},
+        }
+    );
 
     ## Return read length
-    return $return{output}[0];
+    return $process_return{stdouts_ref}[0];
 }
 
 sub get_select_file_contigs {
@@ -723,7 +732,7 @@ sub get_select_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
 
     # Execute perl
     my $find_contig_name = q?perl -nae ?;
@@ -744,10 +753,15 @@ sub get_select_file_contigs {
     my $find_contig_cmd = qq{$find_contig_name $select_file_path};
 
     # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [ $find_contig_cmd, ],
+            process_type => q{open3},
+        }
+    );
 
     # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
+    my @contigs = split $COMMA, join $COMMA, @{ $process_return{stdouts_ref} };
 
     if ( not @contigs ) {
 
@@ -759,69 +773,80 @@ sub get_select_file_contigs {
     return @contigs;
 }
 
-sub get_seq_dict_contigs {
+sub get_sample_ids_from_vcf {
 
-## Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $human_genome_reference
-## Returns  :
-## Arguments: $dict_file_path => Dict file path
-##          : $log            => Log object
+## Function : Get sample ids from a vcf file
+## Returns  : @sample_ids
+## Arguments: $vcf_file_path => Unannotated case vcf file from dna pipeline
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $dict_file_path;
-    my $log;
+    my $vcf_file_path;
 
     my $tmpl = {
-        dict_file_path => {
+        vcf_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$dict_file_path,
+            store       => \$vcf_file_path,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_view };
 
-    ## Build regexp to find contig names
-    # Execute perl
-    my $find_contig_name = q?perl -nae '?;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    # Find contig line
-    $find_contig_name .= q?if($F[0]=~/^\@SQ/) { ?;
+    ## Get sample_ids from vcf
+    my @commands = bcftools_view(
+        {
+            header_only => 1,
+            infile_path => $vcf_file_path,
+        }
+    );
 
-    # Collect contig name
-    $find_contig_name .= q? if($F[1]=~/SN\:(\S+)/) { ?;
+    push @commands, $PIPE;
 
-    # Alias capture
-    $find_contig_name .= q?my $contig_name = $1; ?;
+    my $get_sample_ids_cmd =
+      q?'if ($_ =~ /^#CHROM/ and $F[8] eq q{FORMAT}) {print "@F[9..$#F]"}'?;
 
-    # Write to STDOUT
-    $find_contig_name .= q?print $contig_name, q{,};} }' ?;
+    push @commands,
+      perl_nae_oneliners(
+        {
+            oneliner_cmd => $get_sample_ids_cmd,
+        }
+      );
 
-    # Returns a comma seperated string of sequence contigs from dict file
-    my $find_contig_cmd = qq{$find_contig_name $dict_file_path};
+    my %process_return = child_process(
+        {
+            commands_ref => \@commands,
+            process_type => q{open3},
+        }
+    );
 
-    # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+    ## Some error handling
+    if ( scalar @{ $process_return{stderrs_ref} }
+        or not scalar @{ $process_return{stdouts_ref} } )
+    {
 
-    # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
+        $log->fatal(qq{Could not retrieve sample id from vcf: $vcf_file_path});
 
-    if ( not @contigs ) {
-
-        $log->fatal(
-            q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
+        ## Print error message
+      ERROR_LINE:
+        foreach my $error_line ( @{ $process_return{stderrs_ref} } ) {
+            $log->fatal(qq{ERROR: $error_line});
+        }
         exit 1;
     }
-    return @contigs;
+
+    my @sample_ids = split $SPACE, $process_return{stdouts_ref}->[0];
+
+    return @sample_ids;
 }
 
 sub _check_and_add_to_array {

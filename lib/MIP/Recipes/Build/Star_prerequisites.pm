@@ -16,38 +16,37 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_prerequisites };
 
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub build_star_prerequisites {
 
 ## Function : Creates the Star prerequisites for the human genome
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $case_id                    => Family id
+##          : $case_id                      => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $recipe_name                 => Program name
+##          : $recipe_name                  => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
+##          : $profile_base_command         => Submission profile base command
 ##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
 
@@ -67,6 +66,7 @@ sub build_star_prerequisites {
     ## Default(s)
     my $case_id;
     my $human_genome_reference;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -133,6 +133,11 @@ sub build_star_prerequisites {
             store       => \$parameter_build_suffixes_ref,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -149,36 +154,34 @@ sub build_star_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Star qw{ star_genome_generate };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Program::Star qw{ star_genome_generate };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
-    Readonly my $READ_LENGTH       => 100;
+    Readonly my $READ_LENGTH       => 150;
 
     ## Set recipe mode
     my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
-    ## FILEHANDLES
+    ## filehandleS
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -187,96 +190,74 @@ sub build_star_prerequisites {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             directory_id                    => $case_id,
             core_number                     => $NUMBER_OF_CORES,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             process_time                    => $PROCESSING_TIME,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
-    build_human_genome_prerequisites(
+    $log->warn( q{Will try to create required }
+          . $human_genome_reference
+          . q{ Star files before executing }
+          . $recipe_name );
+
+    say {$filehandle} q{## Building Star dir files};
+
+    ## Get parameters
+    my $star_directory_tmp =
+      $active_parameter_href->{star_aln_reference_genome} . $UNDERSCORE . $random_integer;
+
+    # Create temp dir
+    gnu_mkdir(
         {
-            active_parameter_href   => $active_parameter_href,
-            FILEHANDLE              => $FILEHANDLE,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_build_suffixes_ref =>
-              \@{ $file_info_href->{human_genome_reference_file_endings} },
-            parameter_href   => $parameter_href,
-            recipe_name      => $recipe_name,
-            random_integer   => $random_integer,
-            sample_info_href => $sample_info_href,
+            filehandle       => $filehandle,
+            indirectory_path => $star_directory_tmp,
+            parents          => 1,
         }
     );
+    say {$filehandle} $NEWLINE;
 
-    if ( $parameter_href->{star_aln_reference_genome}{build_file} == 1 ) {
-
-        $log->warn( q{Will try to create required }
-              . $human_genome_reference
-              . q{ star files before executing }
-              . $recipe_name );
-
-        say {$FILEHANDLE} q{## Building Star dir files};
-        ## Get parameters
-        my $star_directory_tmp =
-            $active_parameter_href->{star_aln_reference_genome}
-          . $UNDERSCORE
-          . $random_integer;
-
-        # Create temp dir
-        gnu_mkdir(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $star_directory_tmp,
-                parents          => 1,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        star_genome_generate(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                fasta_path      => $human_genome_reference,
-                genome_dir_path => $star_directory_tmp,
-                gtf_path        => $active_parameter_href->{transcript_annotation},
-                read_length     => $READ_LENGTH,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-      PREREQ:
-        foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
-
-            my $intended_file_path =
-              $active_parameter_href->{star_aln_reference_genome} . $suffix;
-
-            ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-            check_exist_and_move_file(
-                {
-                    FILEHANDLE          => $FILEHANDLE,
-                    intended_file_path  => $intended_file_path,
-                    temporary_file_path => $star_directory_tmp,
-                }
-            );
+    star_genome_generate(
+        {
+            filehandle      => $filehandle,
+            fasta_path      => $human_genome_reference,
+            genome_dir_path => $star_directory_tmp,
+            gtf_path        => $active_parameter_href->{transcript_annotation},
+            read_length     => $READ_LENGTH,
         }
+    );
+    say {$filehandle} $NEWLINE;
 
-        ## Ensure that this subrutine is only executed once
-        $parameter_href->{star_aln_reference_genome}{build_file} = 0;
+  PREREQ:
+    foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
+
+        my $intended_file_path =
+          $active_parameter_href->{star_aln_reference_genome} . $suffix;
+
+        ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+        check_exist_and_move_file(
+            {
+                filehandle          => $filehandle,
+                intended_file_path  => $intended_file_path,
+                temporary_file_path => $star_directory_tmp,
+            }
+        );
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
+                base_command       => $profile_base_command,
                 dependency_method  => q{island_to_samples},
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
@@ -288,7 +269,7 @@ sub build_star_prerequisites {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

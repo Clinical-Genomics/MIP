@@ -4,8 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
-use List::MoreUtils qw { any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -17,36 +15,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_call };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_delly_call {
 
-## Function : Call structural variants using delly version 0.7.8
+## Function : Call structural variants using delly version 0.8.1
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -67,6 +63,7 @@ sub analysis_delly_call {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
     my $xargs_file_counter;
@@ -112,6 +109,11 @@ sub analysis_delly_call {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -151,11 +153,10 @@ sub analysis_delly_call {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Delly qw{ delly_call };
+    use MIP::Program::Delly qw{ delly_call };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -163,7 +164,7 @@ sub analysis_delly_call {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -189,8 +190,8 @@ sub analysis_delly_call {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -217,34 +218,35 @@ sub analysis_delly_call {
 
     ## Filehandles
     # Create anonymous filehandles
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $sample_id,
-            core_number                     => $core_number,
-            FILEHANDLE                      => $FILEHANDLE,
+            core_number                     => $recipe_resource{core_number},
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            process_time                    => $time,
-            source_environment_commands_ref => \@source_environment_cmds,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
     ### SHELL:
     ## Delly
-    say {$FILEHANDLE} q{## Delly call};
+    say {$filehandle} q{## Delly call};
 
     delly_call(
         {
             exclude_file_path  => $active_parameter_href->{delly_exclude_file},
-            FILEHANDLE         => $FILEHANDLE,
-            no_small_indel     => 1,
+            filehandle         => $filehandle,
+            small_indel        => 0,
             infile_path        => $infile_path,
             outfile_path       => $outfile_path,
             referencefile_path => $active_parameter_href->{human_genome_reference},
@@ -252,19 +254,21 @@ sub analysis_delly_call {
             stdoutfile_path    => $recipe_file_path . $DOT . q{stdout.txt},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
                 log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
@@ -272,7 +276,7 @@ sub analysis_delly_call {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

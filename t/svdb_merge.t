@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Svdb} => [qw{ svdb_merge }],
-        q{MIP::Test::Fixtures}                => [qw{ test_standard_cli }],
+        q{MIP::Program::Svdb}  => [qw{ svdb_merge }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Svdb qw{ svdb_merge };
 
 diag(   q{Test svdb_merge from Svdb.pm v}
-      . $MIP::Program::Variantcalling::Svdb::VERSION
+      . $MIP::Program::Svdb::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +63,7 @@ diag(   q{Test svdb_merge from Svdb.pm v}
 my @function_base_commands = qw{ svdb --merge };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -88,8 +85,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -100,8 +96,7 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -114,9 +109,7 @@ my %specific_argument = (
     },
     priority => {
         input           => q{manta,delly,cnvnator,tiddit},
-        expected_output => q{--priority}
-          . $SPACE
-          . q{manta,delly,cnvnator,tiddit},
+        expected_output => q{--priority} . $SPACE . q{manta,delly,cnvnator,tiddit},
     },
     same_order => {
         input           => q{1},
@@ -135,10 +128,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

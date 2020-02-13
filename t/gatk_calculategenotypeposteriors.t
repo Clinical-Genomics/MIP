@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,23 +35,24 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $HOM_REF_GENOTYPES_IN_CALL_SET => 7854;
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
     ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Program::Gatk}  => [qw{ gatk_calculategenotypeposteriors }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_calculategenotypeposteriors };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Gatk qw{ gatk_calculategenotypeposteriors };
 
 diag(   q{Test gatk_calculategenotypeposteriors from Variantcalling::Gatk.pm v}
-      . $MIP::Program::Variantcalling::Gatk::VERSION
+      . $MIP::Program::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,13 +64,13 @@ diag(   q{Test gatk_calculategenotypeposteriors from Variantcalling::Gatk.pm v}
 my @function_base_commands = qw{ gatk CalculateGenotypePosteriors };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
 );
 
@@ -88,6 +91,11 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ my case.vcf  }),
         expected_output => q{--variant } . catfile(qw{ my case.vcf }),
+    },
+    num_ref_samples_if_no_call => {
+        input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
+        expected_output => q{--num-reference-samples-if-no-call }
+          . $HOM_REF_GENOTYPES_IN_CALL_SET,
     },
     outfile_path => {
         input           => catfile(qw{ my case_refined.vcf }),

@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw(2014);
+use Modern::Perl qw{ 2018 };
 use warnings qw(FATAL utf8);
 use autodie;
 use 5.026;    # Require at least perl 5.18
@@ -39,8 +39,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -82,13 +81,13 @@ diag(
 "Test print_wait $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
-my $FILEHANDLE = IO::Handle->new();
+my $filehandle = IO::Handle->new();
 
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $FILEHANDLE, '>', \$file_content
+open $filehandle, '>', \$file_content
   or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
 
 # Process number to test
@@ -108,18 +107,17 @@ foreach my $process_counter (@process_counters) {
             process_counter       => $process_counter,
             max_process_number    => $MAX_PROCESS_NUMBER,
             process_batches_count => $process_batch_count,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
         }
       );
 }
 
-close $FILEHANDLE;
+close $filehandle;
 
 ## Test
 is( $returned_process_batch_count[0], 1, q{Did not print wait} );
 
-is( $returned_process_batch_count[1],
-    2, q{Update process_batches_count for next loop} );
+is( $returned_process_batch_count[1], 2, q{Update process_batches_count for next loop} );
 
 done_testing();
 

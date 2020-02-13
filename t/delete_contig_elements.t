@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -128,8 +124,7 @@ my @chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY};
 @expected_contigs = qw{ chr1 chr3 };
 
 ## Then remove the contigs irrespective of prefix
-is_deeply( \@cleansed_contigs, \@expected_contigs,
-    q{Removed contigs with chr prefix} );
+is_deeply( \@cleansed_contigs, \@expected_contigs, q{Removed contigs with chr prefix} );
 
 ## Given contigs, when prefix in remove
 @chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY};

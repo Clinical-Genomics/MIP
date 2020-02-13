@@ -2,8 +2,6 @@ package MIP::Cli::Mip::Analyse::Rd_dna_vcf_rerun;
 
 use 5.026;
 use Carp;
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -12,7 +10,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
@@ -20,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.05;
+our $VERSION = 1.26;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -43,91 +40,55 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    use MIP::File::Format::Parameter qw{ parse_definition_file  };
-    use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
-    use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
+    use MIP::Definition qw{ get_dependency_tree_from_definition_file
+      get_first_level_keys_order_from_definition_file
+      get_parameter_definition_file_paths
+      get_parameter_from_definition_files };
+    use MIP::Dependency_tree qw{ get_dependency_tree_chain set_dependency_tree_order };
+    use MIP::Parameter qw{ get_cache get_order_of_parameters print_recipe };
 
-    ## Mip analyse rare_disease parameters
+    ## %parameter holds all defined parameters for MIP analyse rd_dna_vcf_rerun
     ## CLI commands inheritance
-    my @definition_files = (
-        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_parameters.yaml } ),
-    );
+    my $level     = q{rd_dna_vcf_rerun};
+    my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
-    ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
+    my @rd_dna_vcf_rerun_definition_file_paths =
+      get_parameter_definition_file_paths( { level => $level, } );
 
-    ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path =
-      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
-
-    ## %parameter holds all defined parameters for MIP
-    ## mip analyse rare_disease parameters
-    my %parameter;
-    foreach my $definition_file (@definition_files) {
-
-        %parameter = (
-            %parameter,
-            parse_definition_file(
-                {
-                    define_parameters_path => $definition_file,
-                    non_mandatory_parameter_keys_path =>
-                      $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-                }
-            ),
-        );
-    }
+    ### To write parameters and their values to log in logical order
+    ## Adds the order of first level keys from definition files to array
+    my @order_parameters = get_order_of_parameters(
+        { define_parameters_files_ref => \@rd_dna_vcf_rerun_definition_file_paths, } );
 
     ## Print recipes if requested and exit
     print_recipe(
         {
-            define_parameters_files_ref => \@definition_files,
-            parameter_href              => \%parameter,
-            print_recipe                => $active_parameter{print_recipe},
-            print_recipe_mode           => $active_parameter{print_recipe_mode},
+            order_parameters_ref => \@order_parameters,
+            parameter_href       => \%parameter,
+            print_recipe         => $active_parameter{print_recipe},
+            print_recipe_mode    => $active_parameter{print_recipe_mode},
         }
     );
 
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file =>
-              catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } ),
-        }
-    );
+    ## Get dependency tree and store in parameter hash
+    %{ $parameter{dependency_tree_href} } =
+      get_dependency_tree_from_definition_file( { level => $level, } );
 
     ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree_href},
             parameter_href       => \%parameter,
         }
     );
 
-    ## Order recipes - Parsed from initiation file
-    get_dependency_tree_order(
+    ## Set order of recipes according to dependency tree
+    set_dependency_tree_order(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree_href},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
-
-    ### To write parameters and their values to log in logical order
-    ### Actual order of parameters in definition parameters file(s) does not matter
-    ## Adds the order of first level keys from yaml files to array
-    my @order_parameters;
-    foreach my $define_parameters_file (@definition_files) {
-
-        push @order_parameters,
-          order_parameter_names(
-            {
-                file_path => $define_parameters_file,
-            }
-          );
-    }
 
     ## File info hash
     my %file_info = (
@@ -159,7 +120,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -170,19 +131,10 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{human_genome_reference} => (
             cmd_aliases   => [qw{ hgr }],
-            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
+            cmd_tags      => [q{Default: grch37_homo_sapiens_-d5-.fasta}],
             documentation => q{Human genome reference},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
-            documentation => q{Use large page memory},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
@@ -191,6 +143,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             cmd_aliases   => [qw{ rcn }],
             cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{recipe_memory} => (
+            cmd_aliases   => [qw{ rm }],
+            cmd_tags      => [q{recipe_name=X(G)}],
+            documentation => q{Set the memory for each recipe},
             is            => q{rw},
             isa           => HashRef,
         )
@@ -216,15 +178,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{reduce_io} => (
-            cmd_aliases   => [qw{ rio }],
-            documentation => q{Run consecutive models at node},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{sv_vcf_rerun_reformat} => (
             cmd_aliases   => [qw{ svrr }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -238,7 +191,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{sv_vcf_rerun_file} => (
             cmd_aliases   => [qw{ svrrf }],
             cmd_flag      => q{sv_vcf_rerun_file},
-            cmd_tags      => [q{Format: vcf}],
+            cmd_tags      => [q{Format: vcf | bcf}],
             documentation => q{Sv variant calling file},
             is            => q{rw},
             isa           => Str,
@@ -256,11 +209,20 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{sv_bcftools_view_filter} => (
-            cmd_aliases   => [qw{ svcbtv }],
-            documentation => q{Include structural variants with PASS in FILTER column},
+        q{sv_fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ svfqav }],
+            documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
-            isa           => Bool,
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{sv_fqa_annotations} => (
+            cmd_aliases   => [qw{ svfqaa }],
+            documentation => q{Frequency annotations to use when filtering },
+            is            => q{rw},
+            isa           => ArrayRef,
         )
     );
 
@@ -293,44 +255,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{sv_vcfanno} => (
-            cmd_aliases   => [qw{ svcvan }],
-            documentation => q{Annotate structural variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_config} => (
-            cmd_aliases   => [qw{ svcvac }],
-            documentation => q{VcfAnno toml config},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfannotation_header_lines_file} => (
-            cmd_aliases => [qw{ svcvah }],
-            cmd_flag    => q{sv_vcfanno_hlf},
-            documentation =>
-              q{Adjust for postscript by adding required header lines to vcf},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_lua} => (
-            cmd_aliases   => [qw{ svcval }],
-            documentation => q{VcfAnno lua postscripting file},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{sv_varianteffectpredictor} => (
             cmd_aliases   => [qw{ svv }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -353,22 +277,22 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_vep_plugins} => (
-            cmd_aliases   => [qw{ svvepl }],
-            cmd_tags      => [q{Default: UpDownDistance, LoFtool}],
-            documentation => q{VEP plugins},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{sv_vcfparser} => (
             cmd_aliases   => [qw{ svvcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sv_vcfparser_add_all_mt_var} => (
+            cmd_aliases   => [qw{ svvcpamt }],
+            cmd_flag      => q{sv_vcfparser_all_mt},
+            documentation => q{Add all MT variants in select vcf},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -548,8 +472,8 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{vcf_rerun_file} => (
             cmd_aliases   => [qw{ vrrf }],
             cmd_flag      => q{vcf_rerun_file},
-            cmd_tags      => [q{Format: vcf}],
-            documentation => q{Sv variant calling file},
+            cmd_tags      => [q{Format: vcf | bcf }],
+            documentation => q{Variant calling file},
             is            => q{rw},
             isa           => Str,
         )
@@ -581,7 +505,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     option(
         q{rhocall_frequency_file} => (
             cmd_aliases => [qw{ rhcf }],
-            cmd_tags    => [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags    => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -635,6 +559,25 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
+        q{frequency_annotation} => (
+            cmd_aliases   => [qw{ fqa }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate vcf with allele frequencies},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fqa_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqavac }],
+            documentation => q{Frequency vcfanno toml config},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{frequency_filter} => (
             cmd_aliases   => [qw{ fqf }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -645,11 +588,11 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{fqf_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqfcvac }],
-            documentation => q{Frequency vcfanno toml config},
+        q{fqf_annotations} => (
+            cmd_aliases   => [qw{ fqfa }],
+            documentation => q{Frequency annotations to use when filtering },
             is            => q{rw},
-            isa           => Str,
+            isa           => ArrayRef,
         )
     );
 
@@ -661,6 +604,34 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             documentation => q{Threshold for filtering variants},
             is            => q{rw},
             isa           => Num,
+        )
+    );
+
+    option(
+        q{cadd_ar} => (
+            cmd_aliases   => [qw{ cad }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate variants with CADD},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{cadd_column_names} => (
+            cmd_aliases   => [qw{ cadc }],
+            documentation => q{Column names in cadd tsv},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{cadd_vcf_header_file} => (
+            cmd_aliases   => [qw{ cadvh }],
+            documentation => q{},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -693,31 +664,12 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vep_directory_path} => (
-            cmd_aliases   => [qw{ vepp }],
-            documentation => q{Path to VEP script directory},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{vep_features} => (
             cmd_aliases => [qw{ vepf }],
             cmd_tags    => [
 q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds, uniprot, biotype, regulatory, tsl, canonical, per_gene, appris}
             ],
             documentation => q{VEP features},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
-        q{vep_plugins} => (
-            cmd_aliases   => [qw{ veppl }],
-            cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
-            documentation => q{VEP plugins},
             is            => q{rw},
             isa           => ArrayRef [Str],
         )
@@ -733,21 +685,22 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vep_plugin_pli_value_file_path} => (
-            cmd_aliases   => [qw{ vepplpli }],
-            documentation => q{VEP plugin pli file path},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{vcfparser_ar} => (
             cmd_aliases   => [qw{ vcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcfparser_add_all_mt_var} => (
+            cmd_aliases   => [qw{ vcpamt }],
+            cmd_flag      => q{vcfparser_all_mt},
+            documentation => q{Add all MT variants in select vcf},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -810,92 +763,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Parse VEP transcript specific entries},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{snpeff} => (
-            cmd_aliases   => [qw{ sne }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant annotation using snpEff},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{snpeff_ann} => (
-            cmd_aliases   => [qw{ sneann }],
-            documentation => q{Annotate variants using snpeff},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_files} => (
-            cmd_aliases => [qw{ snesaf }],
-            cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
-            ],
-            documentation => q{Annotation files to use with snpsift},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_annotation_outinfo_key} => (
-            cmd_aliases => [qw{ snesaoi }],
-            cmd_flag    => q{snpsift_ann_oik},
-            cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
-            ],
-            documentation => q{Snpsift output INFO key},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_annotations} => (
-            cmd_aliases => [qw{ snesdbnsfpa }],
-            cmd_flag    => q{snpsift_dbnsfp_ann},
-            cmd_tags    => [
-q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP++_RS, phastCons100way_vertebrate}
-            ],
-            documentation => q{DbNSFP annotations to use with snpsift},
-            is            => q{rw},
-            isa           => ArrayRef,
-        )
-    );
-
-    option(
-        q{snpsift_dbnsfp_file} => (
-            cmd_aliases   => [qw{ snesdbnsfp }],
-            cmd_tags      => [q{Default: GRCh37_dbnsfp_-v2.9-.txt.gz}],
-            documentation => q{DbNSFP File},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_genome_build_version} => (
-            cmd_aliases   => [qw{ snegbv }],
-            cmd_tags      => [q{Default: GRCh37.75}],
-            documentation => q{Snpeff genome build version},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{snpeff_path} => (
-            cmd_aliases   => [qw{ snep }],
-            documentation => q{Path to snpEff},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
@@ -1007,40 +874,6 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
             documentation => q{Remove variants with hgnc_ids from file},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{analysisrunstatus} => (
-            cmd_aliases => [qw{ ars }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sacct} => (
-            cmd_aliases => [qw{ sac }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Generating sbatch script for SLURM info on each submitted job},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
-q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
-            ],
-            documentation => q{Format and fields of sacct output},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
         )
     );
 

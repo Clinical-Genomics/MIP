@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -72,7 +72,7 @@ diag(   q{Test slurm_build_sbatch_header from SLURM.pm v}
 my $sbatch_shebang = q{#SBATCH };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => $sbatch_shebang,
     },
@@ -146,13 +146,13 @@ foreach my $key ( keys %argument ) {
 # Fake arguments
 my @args = (
     project_id => 1,
-    FILEHANDLE => undef,
+    filehandle => undef,
 );
 
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&slurm_build_sbatch_header;
 
-my @function_base_commands = qw{ #SBATCH  };
+my @function_base_commands = ( q{#SBATCH}, );
 
 test_write_to_file(
     {

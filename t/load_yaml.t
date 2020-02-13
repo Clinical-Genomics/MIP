@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Yaml}           => [qw{ load_yaml }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Yaml qw{ load_yaml };
 
 diag(   q{Test load_yaml from Yaml.pm v}
-      . $MIP::File::Format::Yaml::VERSION
+      . $MIP::Yaml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,8 +61,7 @@ diag(   q{Test load_yaml from Yaml.pm v}
 ## Given a yaml file to load
 my %hash_to_return = load_yaml(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+        path => catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
     }
 );
 

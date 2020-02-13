@@ -13,22 +13,18 @@ use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use autodie qw { :all };
-use Readonly;
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ delete_contig_elements  delete_male_contig delete_non_wes_contig };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub delete_contig_elements {
 
@@ -98,7 +94,7 @@ sub delete_male_contig {
 ## Returns  : @contigs
 ## Arguments: $contigs_ref      => Contigs array to update {REF}
 ##          : $contig_names_ref => Contig names to remove {REF}
-##          : $found_male       => Male was included in the analysis
+##          : $found_male       => Male(s) was included in the analysis
 
     my ($arg_href) = @_;
 
@@ -131,7 +127,7 @@ sub delete_male_contig {
             strict_type => 1,
         },
         found_male => {
-            allow       => [ 0, 1 ],
+            allow       => qr{\A \d+ \z}sxm,
             defined     => 1,
             required    => 1,
             store       => \$found_male,
@@ -144,6 +140,7 @@ sub delete_male_contig {
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my @contigs = @{$contigs_ref};
+
     ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
     if ( not $found_male ) {
 
@@ -164,6 +161,7 @@ sub delete_non_wes_contig {
 ## Arguments: $analysis_type_href => Analysis_type hash {REF}
 ##          : $contigs_ref        => Contigs array to update {REF}
 ##          : $contig_names_ref   => Contig names to remove {REF}
+##          : $log                => Log object
 
     my ($arg_href) = @_;
 
@@ -171,6 +169,7 @@ sub delete_non_wes_contig {
     my $analysis_type_href;
     my $contigs_ref;
     my $contig_names_ref;
+    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -202,21 +201,28 @@ sub delete_non_wes_contig {
             store       => \$contig_names_ref,
             strict_type => 1,
         },
+        log => {
+            required => 1,
+            store    => \$log,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
-    use MIP::Get::Analysis qw{ get_overall_analysis_type };
+    use MIP::Analysis qw{ get_overall_analysis_type };
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
-        { analysis_type_href => $analysis_type_href, } );
+        {
+            analysis_type_href => $analysis_type_href,
+        }
+    );
 
     my @contigs = @{$contigs_ref};
 
     ## Removes contigM|chrMT from contigs
-    if ( $consensus_analysis_type eq q{wes} ) {
+    if ( $consensus_analysis_type eq q{wes} or $consensus_analysis_type eq q{mixed} ) {
 
         @contigs = delete_contig_elements(
             {

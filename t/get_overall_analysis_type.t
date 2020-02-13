@@ -1,100 +1,65 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.026;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
+our $VERSION = 1.01;
 
-### User Options
-GetOptions(
-
-    # Display help text
-    'h|help' => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
-        exit;
-    },
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = (
+        q{MIP::Analysis}       => [qw{ get_overall_analysis_type }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+    );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Get::Analysis});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Analysis qw{ get_overall_analysis_type };
 
-diag(   q{Test get_overall_analysis_type from Get.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test get_overall_analysis_type from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+my $log = test_log( {} );
 
 ## Base arguments
 my %analysis_type_consensus = (
@@ -109,51 +74,47 @@ my %analysis_type_mixed = (
     sample_3 => q{wes},
 );
 
+my %analysis_type_faulty = (
+    sample_1 => q{wgs},
+    sample_2 => q{wes},
+    sample_3 => q{not_a_analysis_type},
+);
+
+## Given a consensus analysis type
 my $consensus_analysis_type = get_overall_analysis_type(
-    { analysis_type_href => \%analysis_type_consensus, } );
+    {
+        analysis_type_href => \%analysis_type_consensus,
+    }
+);
 
-my $mixed_analysis_type =
-  get_overall_analysis_type( { analysis_type_href => \%analysis_type_mixed, } );
+## Then a consensus analysis type should be set
+is( $consensus_analysis_type, q{wgs}, q{Correct return of consensus analysis typ} );
 
-is( $consensus_analysis_type, q{wgs},
-    q{Correct return of consensus analysis typ} );
+## Given a mixed analysis type
+my $mixed_analysis_type = get_overall_analysis_type(
+    {
+        analysis_type_href => \%analysis_type_mixed,
+    }
+);
 
+## Then a mixed analysis type should be set
 is( $mixed_analysis_type, q{mixed}, q{Correct return of mixed analysis type} );
 
+## Given a faulty analysis type
+trap {
+    get_overall_analysis_type(
+        {
+            analysis_type_href => \%analysis_type_faulty,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if analysis type is not supported} );
+like(
+    $trap->stderr,
+    qr/is \s+ not \s+ a \s+ supported \s+ analysis_type/xms,
+    q{Throw fatal log message if analysis type is not supported}
+);
+
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

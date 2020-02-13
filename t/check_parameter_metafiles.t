@@ -15,16 +15,15 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,15 +43,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference}   => [qw{ check_parameter_metafiles }],
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Check::Reference} => [qw{ check_parameter_metafiles }],
+        q{MIP::Io::Read}         => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Check::Reference qw{ check_parameter_metafiles };
+use MIP::Io::Read qw{ read_from_file };
 
 diag(   q{Test check_parameter_metafiles from Reference.pm v}
       . $MIP::Check::Reference::VERSION
@@ -63,11 +63,10 @@ diag(   q{Test check_parameter_metafiles from Reference.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter = load_yaml(
+my %parameter = read_from_file(
     {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
-        ),
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
@@ -92,8 +91,8 @@ my $parameter_name = q{exome_target_bed};
 my %active_parameter = (
     not_correct_key => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
 );
 
@@ -107,15 +106,15 @@ check_parameter_metafiles(
 
 ## Then set build switch should not be set to zero i.e. default of "1" is kept
 ## as this will not be evaluated in sub or downstream
-is( $parameter{$parameter_name}{build_file},
-    1, q{No active parameter and existing file} );
+is( $parameter{$parameter_name}{build_file}, 1,
+    q{No active parameter and existing file} );
 
 ## Given hash entries with active parameter, existing files, and no active associated programs
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
 );
 
@@ -130,15 +129,14 @@ check_parameter_metafiles(
 ## Then set build switch should not be set to zero i.e. default of "1" is kept
 ## as this will not be evaluated in sub or downstream
 is( $parameter{$parameter_name}{build_file},
-    1,
-    q{Active parameter and existing file, and no active associated program} );
+    1, q{Active parameter and existing file, and no active associated program} );
 
 ## Given hash entries with active parameter, files exists, and active associated programs
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
-        ) => q{sample1},
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ) =>
+          q{sample1},
     },
     picardtools_collecthsmetrics => 1,
 );
@@ -169,14 +167,13 @@ check_parameter_metafiles(
 );
 
 ## Then set build file to true to rebuild for all parameter keys
-is( $parameter{exome_target_bed}{build_file}, 1,
-q{Set build file switch for hash parameter reference with mixed existence to 1}
-);
+is( $parameter{exome_target_bed}{build_file},
+    1, q{Set build file switch for hash parameter reference with mixed existence to 1} );
 
 ## Given scalar entries with active parameter, files exists, and active associated programs
 $active_parameter{bwa_build_reference} = 1;
 $active_parameter{human_genome_reference} =
-  catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta } );
+  catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } );
 $active_parameter{bwa_mem} = 1;
 
 check_parameter_metafiles(

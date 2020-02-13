@@ -15,15 +15,15 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
-use Readonly;
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Pedigree}  => [qw{ set_pedigree_sex_info }],
+        q{MIP::Pedigree}       => [qw{ set_pedigree_sex_info }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Pedigree qw{ set_pedigree_sex_info };
+use MIP::Pedigree qw{ set_pedigree_sex_info };
 
 diag(   q{Test set_pedigree_sex_info from Pedigree.pm v}
-      . $MIP::Set::Pedigree::VERSION
+      . $MIP::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -102,20 +98,20 @@ my %pedigree = (
 my %parameter;
 set_pedigree_sex_info(
     {
-        pedigree_href  => \%pedigree,
         parameter_href => \%parameter,
+        pedigree_href  => \%pedigree,
     }
 );
 
-my @got_male_samples    = @{ $parameter{cache}{male} };
 my @got_female_samples  = @{ $parameter{cache}{female} };
+my @got_male_samples    = @{ $parameter{cache}{male} };
 my @got_other_samples   = @{ $parameter{cache}{other} };
 my @got_unknown_samples = @{ $parameter{cache}{unknown} };
 
 ## Then pedigree members sex should have been set
-is( scalar @got_male_samples, 1, q{Got all samples with male sex} );
-
 is( scalar @got_female_samples, 1, q{Got all samples with female sex} );
+
+is( scalar @got_male_samples, 1, q{Got all samples with male sex} );
 
 is( scalar @got_other_samples, 1, q{Got all samples with other sex} );
 

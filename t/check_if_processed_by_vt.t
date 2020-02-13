@@ -15,15 +15,16 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -61,7 +58,7 @@ diag(   q{Test check_if_processed_by_vt from Reference.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( { no_screen => 1, } );
 
 ## Given no reference path
 my $return = check_if_processed_by_vt(
@@ -73,8 +70,8 @@ my $return = check_if_processed_by_vt(
 is( $return, undef, q{No reference file to check} );
 
 ## Given a reference file path, when needing vt processing
-my $reference_file_path_no_vt = catfile( $Bin,
-    qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
+my $reference_file_path_no_vt =
+  catfile( $Bin, qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
 
 ## Check if vt has processed references using regexp
 my @checked_references = check_if_processed_by_vt(
@@ -89,7 +86,7 @@ is( 1, scalar @checked_references, q{Detected VT processing is needed} );
 
 ## Given a reference file path, when not needing vt processing
 my $reference_file_path_vt =
-  catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
 
 ## Check if vt has processed references using regexp
 @checked_references = check_if_processed_by_vt(

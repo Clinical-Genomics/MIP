@@ -8,12 +8,11 @@ use charnames qw{ :full :short };
 use Cwd;
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname fileparse };
+use File::Basename qw{ basename fileparse };
 use File::Copy qw{ copy };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use IPC::Cmd qw{ can_run run};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use POSIX;
@@ -24,48 +23,64 @@ use warnings qw{ FATAL utf8 };
 ## Third party module(s)
 use autodie qw{ open close :all };
 use IPC::System::Simple;
-use List::MoreUtils qw { any uniq all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
 use Readonly;
 
 ## MIPs lib/
-# Add MIPs internal lib
-use MIP::Check::Cluster qw{ check_max_core_number };
-use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory
-  check_cmd_config_vs_definition_file
-  check_email_address
+use MIP::Active_parameter qw{
+  get_not_allowed_temp_dirs
+  parse_recipe_resources
+  set_parameter_reference_dir_path
+  update_to_absolute_path };
+use MIP::Analysis qw{ get_overall_analysis_type };
+use MIP::Check::Parameter qw{
   check_load_env_packages
-  check_parameter_hash
-  check_recipe_exists_in_hash
   check_recipe_name
   check_recipe_mode
   check_sample_ids
 };
-use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
-use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Check::Path qw{ check_executable_in_path };
+use MIP::Config qw{ parse_config };
+use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Environment::User qw{ check_email_address };
+use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::File::Format::Pedigree
-  qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::File::Format::Store qw{ set_analysis_files_to_store };
+use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
-use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Io::Write qw{ write_to_file };
+use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Parameter qw{
+  get_cache
+  parse_parameter_files
+  parse_reference_path
+  set_cache
+  set_default
+};
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
-use MIP::Script::Utils qw{ help write_script_version };
+use MIP::Pedigree qw{ create_fam_file
+  detect_sample_id_gender
+  get_is_trio
+  parse_pedigree
+};
+use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
+use MIP::Recipes::Parse qw{ parse_recipes };
+use MIP::Reference qw{ check_human_genome_file_endings };
+use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
-use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
-use MIP::Update::Path qw{ update_to_absolute_path };
+use MIP::Set::Parameter qw{
+  set_no_dry_run_parameters
+};
+use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
-use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
-use MIP::Recipes::Pipeline::Rd_rna qw{ pipeline_rd_rna };
-use MIP::Recipes::Pipeline::Rd_dna_vcf_rerun qw{ pipeline_rd_dna_vcf_rerun };
+use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
+use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
+use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
+use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
+  qw{ pipeline_analyse_rd_dna_vcf_rerun };
 
 BEGIN {
 
@@ -73,19 +88,20 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.45;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
 
 ## Constants
-Readonly my $DOT          => q{.};
-Readonly my $EMPTY_STR    => q{};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
+Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
+    keys => [
+        qw{ recipe_core_number recipe_memory recipe_time
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    ],
+    elements => [qw{ associated_recipe decompose_normalize_references }],
+);
 
 sub mip_analyse {
 
@@ -93,7 +109,7 @@ sub mip_analyse {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => File info hash {REF}
-    #           : $order_parameters_ref  => Order of addition to parameter array {REF}
+##          : $order_parameters_ref  => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -138,13 +154,20 @@ sub mip_analyse {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Transfer to lexical variables
+    # Parameters to include in each analysis run
     my %active_parameter = %{$active_parameter_href};
 
     # Holds all active parameters values for broadcasting
     my @broadcasts;
-    my %file_info        = %{$file_info_href};
+
+    # File information
+    my %file_info = %{$file_info_href};
+
+    # Order parameters for logical broadcast of parameters
     my @order_parameters = @{$order_parameters_ref};
-    my %parameter        = %{$parameter_href};
+
+    # All parameters MIP analyse knows
+    my %parameter = %{$parameter_href};
 
 #### Script parameters
 
@@ -155,19 +178,8 @@ sub mip_analyse {
 
     # Catches script name and removes ending
     my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
-    chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
-
-## Set MIP version
-    our $VERSION = q{v7.0.1};
-
-    write_script_version(
-        {
-            version       => $VERSION,
-            write_version => $active_parameter{version},
-        }
-    );
 
 ## Directories, files, job_ids and sample_info
     my ( %infile_lane_prefix, %infile_both_strands_prefix, %job_id, %sample_info );
@@ -183,184 +195,66 @@ sub mip_analyse {
         }
     );
 
-### Config file
-## If config from cmd
-    if ( exists $active_parameter{config_file}
-        && defined $active_parameter{config_file} )
-    {
-
-        ## Loads a YAML file into an arbitrary hash and returns it.
-        my %config_parameter =
-          load_yaml( { yaml_file => $active_parameter{config_file}, } );
-
-        ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-        my @remove_keys = (
-            qw{ found_female found_male found_other found_other_count log_file dry_run_all }
-        );
-
-      KEY:
-        foreach my $key (@remove_keys) {
-
-            delete $config_parameter{$key};
-        }
-
-## Set config parameters into %active_parameter unless $parameter
-## has been supplied on the command line
-        set_config_to_active_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                config_parameter_href => \%config_parameter,
-            }
-        );
-
-        ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
-        check_cmd_config_vs_definition_file(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_href        => \%parameter,
-            }
-        );
-
-        my @config_dynamic_parameters = qw{ analysis_constant_path };
-
-        ## Replace config parameter with cmd info for config dynamic parameter
-        set_default_config_dynamic_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_href        => \%parameter,
-                parameter_names_ref   => \@config_dynamic_parameters,
-            }
-        );
-
-        ## Loop through all parameters and update info
-      PARAMETER:
-        foreach my $parameter_name ( keys %parameter ) {
-
-            ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-            update_dynamic_config_parameters(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-        }
-    }
-
-## Set the default Log4perl file using supplied dynamic parameters.
-    $active_parameter{log_file} = set_default_log4perl_file(
+### Config
+    parse_config(
         {
             active_parameter_href => \%active_parameter,
-            cmd_input             => $active_parameter{log_file},
+            parameter_href        => \%parameter,
+        }
+    );
+
+## Get log object and set log file in active parameters unless already set from cmd
+    my $log = get_log(
+        {
+            active_parameter_href => \%active_parameter,
             date                  => $date,
             date_time_stamp       => $date_time_stamp,
+            log_name              => uc q{mip_analyse},
             script                => $script,
         }
     );
 
-## Creates log object
-    my $log = initiate_logger(
-        {
-            file_path => $active_parameter{log_file},
-            log_name  => q{MIP},
-        }
-    );
-
 ## Write MIP VERSION and log file path
-    $log->info( q{MIP Version: } . $VERSION );
+    $log->info( q{MIP Version: } . $MIP_VERSION );
     $log->info( q{Script parameters and info from are saved in file: }
           . $active_parameter{log_file} );
 
-## Parse pedigree file
-## Reads case_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-    # Meta data in YAML format
-    if ( defined $active_parameter{pedigree_file} ) {
-
-        ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-        my %pedigree =
-          load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
-
-        $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
-
-        parse_yaml_pedigree_file(
-            {
-                active_parameter_href => \%active_parameter,
-                file_path             => $active_parameter{pedigree_file},
-                log                   => $log,
-                parameter_href        => \%parameter,
-                pedigree_href         => \%pedigree,
-                sample_info_href      => \%sample_info,
-            }
-        );
-    }
-
-    # Detect if all samples has the same sequencing type and return consensus if reached
-    $parameter{cache}{consensus_analysis_type} =
-      get_overall_analysis_type(
-        { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
-
-### Populate uninitilized active_parameters{parameter_name} with default from parameter
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## If hash and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
-            && keys %{ $active_parameter{$parameter_name} } );
-
-        ## If array and set - skip
-        next PARAMETER
-          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
-            && @{ $active_parameter{$parameter_name} } );
-
-        ## If scalar and set - skip
-        next PARAMETER
-          if ( defined $active_parameter{$parameter_name}
-            and not ref $active_parameter{$parameter_name} );
-
-        ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters = qw{
-          analysis_type
-          bwa_build_reference
-          exome_target_bed
-          expansionhunter_repeat_specs_dir
-          fusion_filter_reference_genome
-          gatk_path
-          infile_dirs
-          picardtools_path
-          salmon_quant_reference_genome
-          sample_info_file
-          snpeff_path
-          star_aln_reference_genome
-          rtg_vcfeval_reference_genome
-          vep_directory_path
-        };
-
-        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
-
-            set_custom_default_to_active_parameter(
-                {
-                    active_parameter_href => \%active_parameter,
-                    parameter_href        => \%parameter,
-                    parameter_name        => $parameter_name,
-                }
-            );
-            next PARAMETER;
+## Pedigree
+    parse_pedigree(
+        {
+            active_parameter_href => \%active_parameter,
+            pedigree_file_path    => $active_parameter{pedigree_file},
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
         }
+    );
 
-        ## Checks and sets user input or default values to active_parameters
-        set_default_to_active_parameter(
-            {
-                active_parameter_href => \%active_parameter,
-                associated_recipes_ref =>
-                  \@{ $parameter{$parameter_name}{associated_recipe} },
-                log            => $log,
-                parameter_href => \%parameter,
-                parameter_name => $parameter_name,
-            }
-        );
-    }
+    ## Detect if all samples has the same sequencing type and return consensus if reached
+    $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
+        {
+            analysis_type_href => \%{ $active_parameter{analysis_type} },
+        }
+    );
 
-## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+## Set default from parameter hash to active_parameter for uninitilized parameters
+    set_default(
+        {
+            active_parameter_href => \%active_parameter,
+            custom_default_parameters_ref =>
+              \@{ $parameter{custom_default_parameters}{default} },
+            parameter_href => \%parameter,
+        }
+    );
+
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => \%parameter,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
+## Update path for supplied reference(s) associated with parameter that should
+## reside in the mip reference directory to full path
     set_parameter_reference_dir_path(
         {
             active_parameter_href => \%active_parameter,
@@ -374,55 +268,32 @@ sub mip_analyse {
             file_info_href => \%file_info,
             human_genome_reference =>
               basename( $active_parameter{human_genome_reference} ),
-            log            => $log,
             parameter_href => \%parameter,
         }
     );
 
 ## Reference in MIP reference directory
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        ## Expect file to be in reference directory
-        if ( exists $parameter{$parameter_name}{reference} ) {
-
-            update_reference_parameters(
-                {
-                    active_parameter_href => \%active_parameter,
-                    associated_recipes_ref =>
-                      \@{ $parameter{$parameter_name}{associated_recipe} },
-                    parameter_name => $parameter_name,
-                }
-            );
+    parse_reference_path(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
-    }
+    );
 
 ### Checks
 
-## Check existence of files and directories
-  PARAMETER:
-    foreach my $parameter_name ( keys %parameter ) {
-
-        if ( exists $parameter{$parameter_name}{exists_check} ) {
-
-            check_parameter_files(
-                {
-                    active_parameter_href => \%active_parameter,
-                    associated_recipes_ref =>
-                      \@{ $parameter{$parameter_name}{associated_recipe} },
-                    log                    => $log,
-                    parameter_exists_check => $parameter{$parameter_name}{exists_check},
-                    parameter_href         => \%parameter,
-                    parameter_name         => $parameter_name,
-                }
-            );
+## Parse existence of files and directories
+    parse_parameter_files(
+        {
+            active_parameter_href   => \%active_parameter,
+            consensus_analysis_type => $consensus_analysis_type,
+            parameter_href          => \%parameter,
         }
-    }
+    );
 
 ## Updates sample_info hash with previous run pedigree info
     reload_previous_pedigree_info(
         {
-            log                   => $log,
             sample_info_href      => \%sample_info,
             sample_info_file_path => $active_parameter{sample_info_file},
         }
@@ -432,25 +303,28 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            active_parameter_href => \%active_parameter,
-            file_info_href        => \%file_info,
-            log                   => $log,
-            parameter_href        => \%parameter,
-            parameter_name        => q{human_genome_reference_file_endings},
+            human_genome_reference_file_endings_ref =>
+              $file_info{human_genome_reference_file_endings},
+            human_genome_reference_path => $active_parameter{human_genome_reference},
+            parameter_href              => \%parameter,
+            parameter_name              => q{human_genome_reference_file_endings},
+        }
+    );
+
+## Set sequence contigs used in analysis from human genome sequence dict file
+    my $dict_file_path = catfile( $active_parameter{reference_dir},
+        $file_info{human_genome_reference_name_prefix} . $DOT . q{dict} );
+
+    set_dict_contigs(
+        {
+            dict_file_path => $dict_file_path,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
         }
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{cache}{trio} = detect_trio(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            sample_info_href      => \%sample_info,
-        }
-    );
-
-## Detect number of founders (i.e. parents ) based on pedigree file
-    detect_founders(
+    $parameter{cache}{trio} = get_is_trio(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
@@ -458,90 +332,35 @@ sub mip_analyse {
     );
 
 ## Check email adress syntax and mail host
-
     check_email_address(
         {
             email => $active_parameter{email},
-            log   => $log,
         }
     );
 
 ## Check that the temp directory value is allowed
+    my @is_not_allowed_temp_dirs =
+      get_not_allowed_temp_dirs( { active_parameter_href => \%active_parameter, } );
     check_allowed_temp_directory(
         {
-            log            => $log,
-            temp_directory => $active_parameter{temp_directory},
+            not_allowed_paths_ref => \@is_not_allowed_temp_dirs,
+            temp_directory        => $active_parameter{temp_directory},
         }
     );
 
-## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number });
-  PARAMETER_NAME:
-    foreach my $parameter_name (@parameter_keys_to_check) {
-
-        ## Test if key from query hash exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                log            => $log,
-                parameter_name => $parameter_name,
-                query_ref      => \%{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-## Parameters with key(s) that have elements as MIP recipe names
-    my @parameter_element_to_check = qw{ associated_recipe };
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_element_to_check) {
-
-            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
-
-            ## Test if element from query array exists truth hash
-            check_recipe_exists_in_hash(
-                {
-                    log            => $log,
-                    parameter_name => $parameter_name,
-                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
-                    truth_href     => \%parameter,
-                }
-            );
+## Parameters that have keys or elements as MIP recipe names
+    parse_recipes(
+        {
+            active_parameter_href   => \%active_parameter,
+            parameter_href          => \%parameter,
+            parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
-    }
+    );
 
-## Parameters that have elements as MIP recipe names
-    my @parameter_elements_to_check =
-      (qw(associated_recipe decompose_normalize_references));
-    foreach my $parameter_name (@parameter_elements_to_check) {
+    ## Check core number requested against environment provisioned
+    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
-        ## Test if element from query array exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                log            => $log,
-                parameter_name => $parameter_name,
-                query_ref      => \@{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-## Check that the module core number do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
-            {
-                max_cores_per_node => $active_parameter{max_cores_per_node},
-                core_number_requested =>
-                  $active_parameter{recipe_core_number}{$recipe_name},
-            }
-        );
-    }
-
-## Check programs in path, and executable
+    ## Check programs in path, and executable
     check_executable_in_path(
         {
             active_parameter_href => \%active_parameter,
@@ -598,24 +417,6 @@ sub mip_analyse {
         }
     );
 
-    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
-
-## Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe parameter depending on pipeline
-    my $initiation_file = catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
-
-    # For Rd RNA pipeline
-    if ( $consensus_analysis_type eq q{wts} ) {
-
-        $initiation_file = catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
-    }
-
-    # For Vcf rerun pipeline
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $initiation_file =
-          catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
-    }
-
 ## Check that recipe name and program name are not identical
     check_recipe_name(
         {
@@ -627,7 +428,6 @@ sub mip_analyse {
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
-            initiation_file       => $initiation_file,
             log                   => $log,
             parameter_href        => \%parameter,
         },
@@ -642,13 +442,12 @@ sub mip_analyse {
         }
     );
 
-## Detect the gender(s) included in current analysis
+    ## Detect the gender(s) included in current analysis
     (
 
         $active_parameter{found_male},
         $active_parameter{found_female},
         $active_parameter{found_other},
-        $active_parameter{found_other_count},
       )
       = detect_sample_id_gender(
         {
@@ -661,8 +460,8 @@ sub mip_analyse {
 ## Set contig prefix and contig names depending on reference used
     set_contigs(
         {
-            file_info_href         => \%file_info,
-            human_genome_reference => $active_parameter{human_genome_reference},
+            file_info_href => \%file_info,
+            version        => $file_info{human_genome_reference_version},
         }
     );
 
@@ -676,18 +475,15 @@ sub mip_analyse {
         }
     );
 
-## Create .fam file to be used in variant calling analyses
+    ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => \%active_parameter,
             execution_mode        => q{system},
-            fam_file_path         => catfile(
-                $active_parameter{outdata_dir}, $active_parameter{case_id},
-                $active_parameter{case_id} . $DOT . q{fam}
-            ),
-            log              => $log,
-            parameter_href   => \%parameter,
-            sample_info_href => \%sample_info,
+            fam_file_path         => $active_parameter{pedigree_fam_file},
+            log                   => $log,
+            parameter_href        => \%parameter,
+            sample_info_href      => \%sample_info,
         }
     );
 
@@ -699,95 +495,79 @@ sub mip_analyse {
         {
             is_dry_run_all   => $active_parameter{dry_run_all},
             analysis_date    => $date_time_stamp,
-            mip_version      => $VERSION,
+            mip_version      => $MIP_VERSION,
             sample_info_href => \%sample_info,
         }
     );
 
-### Rd RNA
-    if ( $consensus_analysis_type eq q{wts} ) {
+    ## Create dispatch table of pipelines
+    my %pipeline = (
+        dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
+        mixed         => \&pipeline_analyse_rd_dna,
+        vrn           => \&pipeline_analyse_rd_dna_vcf_rerun,
+        wes           => \&pipeline_analyse_rd_dna,
+        wgs           => \&pipeline_analyse_rd_dna,
+        wts           => \&pipeline_analyse_rd_rna,
+    );
 
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+    $pipeline{$consensus_analysis_type}->(
+        {
+            active_parameter_href           => \%active_parameter,
+            broadcasts_ref                  => \@broadcasts,
+            file_info_href                  => \%file_info,
+            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
+            infile_lane_prefix_href         => \%infile_lane_prefix,
+            job_id_href                     => \%job_id,
+            log                             => $log,
+            order_parameters_ref            => \@order_parameters,
+            order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
+            parameter_href                  => \%parameter,
+            sample_info_href                => \%sample_info,
+        }
+    );
 
-        ## Pipeline recipe for rna data
-        pipeline_rd_rna(
-            {
-                active_parameter_href           => \%active_parameter,
-                broadcasts_ref                  => \@broadcasts,
-                file_info_href                  => \%file_info,
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
-                job_id_href                     => \%job_id,
-                log                             => $log,
-                order_parameters_ref            => \@order_parameters,
-                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href    => \%parameter,
-                sample_info_href  => \%sample_info,
-            }
-        );
-    }
-
-### Vcf rerun
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for DNA vcf rerun data
-        pipeline_rd_dna_vcf_rerun(
-            {
-                active_parameter_href   => \%active_parameter,
-                broadcasts_ref          => \@broadcasts,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                log                     => $log,
-                order_parameters_ref    => \@order_parameters,
-                order_recipes_ref       => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href          => \%parameter,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-
-### WES|WGS
-    if (   $consensus_analysis_type eq q{wgs}
-        || $consensus_analysis_type eq q{wes}
-        || $consensus_analysis_type eq q{mixed} )
-    {
-
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for DNA data
-        pipeline_rd_dna(
-            {
-                active_parameter_href           => \%active_parameter,
-                broadcasts_ref                  => \@broadcasts,
-                file_info_href                  => \%file_info,
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
-                job_id_href                     => \%job_id,
-                log                             => $log,
-                order_parameters_ref            => \@order_parameters,
-                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href    => \%parameter,
-                sample_info_href  => \%sample_info,
-            }
-        );
-    }
-
-## Write QC for recipes used in analysis
+    ## Write QC for recipes used in analysis
     # Write sample info to yaml file
     if ( $active_parameter{sample_info_file} ) {
 
         ## Writes a YAML hash to file
-        write_yaml(
+        write_to_file(
             {
-                yaml_href      => \%sample_info,
-                yaml_file_path => $active_parameter{sample_info_file},
+                data_href => \%sample_info,
+                format    => q{yaml},
+                path      => $active_parameter{sample_info_file},
             }
         );
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
     }
+
+    ## Write job_ids to file
+    write_job_ids_to_file(
+        {
+            active_parameter_href => \%active_parameter,
+            date_time_stamp       => $date_time_stamp,
+            job_id_href           => \%job_id,
+        }
+    );
+
+    set_analysis_files_to_store(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
+
+    ## Writes a YAML hash to file
+    my %store_files = ( files => $sample_info{files}, );
+    write_to_file(
+        {
+            data_href => \%store_files,
+            format    => q{yaml},
+            path      => $active_parameter{store_file},
+        }
+    );
+    $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
 

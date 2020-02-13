@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 BEGIN {
     require Exporter;
@@ -25,9 +24,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ space separated subroutines };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub name_of_subroutine {
 

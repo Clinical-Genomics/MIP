@@ -1,0 +1,16 @@
+---
+case1_MAIN:
+  case1_MAIN:
+    - job_id_6
+  sample1_MAIN:
+    - job_id_1
+    - job_id_2
+  sample2_MAIN:
+    - job_id_3
+  sample3_MAIN:
+    - job_id_4
+    - job_id_5
+    - job_id_8
+  sample4_MAIN:
+    - ~
+

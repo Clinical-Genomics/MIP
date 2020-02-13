@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.022;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -17,29 +17,32 @@ use warnings qw{ FATAL utf8 };
 
 ## Cpanm
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{2014};
+use Modern::Perl qw{2017};
 use Readonly;
 use autodie qw{open close :all};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
+use MIP::Test::Writefile qw{ write_toml_config };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+our $VERSION = 1.06;
 
 ## Set paths
-my $conda_path = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
 my $config_file =
   catfile( dirname($Bin), qw{ templates mip_rd_dna_vcf_rerun_config.yaml } );
-my $mip_path = catfile( dirname($Bin), q{mip} );
+my $mip_path            = catfile( dirname($Bin), q{mip} );
+my $test_reference_path = catdir( $cluster_constant_path, q{references} );
+my $toml_template_path  = catfile( $test_reference_path,
+    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_config_path =
+  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(
@@ -56,11 +59,7 @@ GetOptions(
     ## Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -77,7 +76,14 @@ GetOptions(
 
 ok( can_run(q{mip}), q{Checking can run mip} );
 
-## Update path in vcfanno_config to cluster specific path
+## Update path in toml config
+write_toml_config(
+    {
+        test_reference_path => $test_reference_path,
+        toml_config_path    => $toml_config_path,
+        toml_template_path  => $toml_template_path,
+    }
+);
 
 ## Test execution of mip
 # Create array ref for cmd
@@ -93,8 +99,7 @@ my $cmds_ref = [
     $cluster_constant_path,
     q{--pedigree},
     catfile(
-        dirname($Bin),
-        qw{ t data 643594-miptest 643594-miptest_vcf_rerun_pedigree.yaml }
+        dirname($Bin), qw{ t data 643594-miptest 643594-miptest_vcf_rerun_pedigree.yaml }
     ),
     q{--vcf_rerun_file},
     catfile(
@@ -107,6 +112,8 @@ my $cmds_ref = [
         qw{ test_data 643594-miptest_sorted_md_brecal_comb_SV.vcf.gz }
     ),
     qw{ --dra --vb },
+    q{--fqa_vcfanno_config},
+    $toml_config_path,
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
@@ -115,11 +122,11 @@ ok( $success, q{Executed mip} );
 
 my $qc_sample_info_file = catfile( $cluster_constant_path,
     qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml } );
-ok( -f $qc_sample_info_file,
-    q{Checking for 643594-miptest_qc_sample_info.yaml} );
+ok( -f $qc_sample_info_file, q{Checking for 643594-miptest_qc_sample_info.yaml} );
 
 ## Clean-up
 remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
+unlink $toml_config_path;
 
 done_testing();
 

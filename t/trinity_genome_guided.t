@@ -15,15 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA               => q{,};
 Readonly my $CPU                 => 16;
 Readonly my $MAX_INTRON_DISTANCE => 10_000;
-Readonly my $SPACE               => q{ };
 
 BEGIN {
 
@@ -45,19 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Trinity} =>
-          [qw{ trinity_genome_guided }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Trinity} => [qw{ trinity_genome_guided }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Trinity qw{ trinity_genome_guided };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Trinity qw{ trinity_genome_guided };
 
 diag(   q{Test trinity_genome_guided from Trinity.pm v}
-      . $MIP::Program::Variantcalling::Trinity::VERSION
+      . $MIP::Program::Trinity::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,7 +67,7 @@ diag(   q{Test trinity_genome_guided from Trinity.pm v}
 my @function_base_commands = qw{ Trinity };
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -103,17 +101,15 @@ my %specific_argument = (
     },
     max_intron_distance => {
         input           => $MAX_INTRON_DISTANCE,
-        expected_output => q{--genome_guided_max_intron}
-          . $SPACE
-          . $MAX_INTRON_DISTANCE,
-    },
-    number_cpu => {
-        input           => $CPU,
-        expected_output => q{--CPU} . $SPACE . $CPU,
+        expected_output => q{--genome_guided_max_intron} . $SPACE . $MAX_INTRON_DISTANCE,
     },
     max_memory => {
         input           => $CPU,
         expected_output => q{--max_memory} . $SPACE . $CPU . q{G},
+    },
+    number_cpu => {
+        input           => $CPU,
+        expected_output => q{--CPU} . $SPACE . $CPU,
     },
 );
 

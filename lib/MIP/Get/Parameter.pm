@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,372 +16,43 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $WITH_SINGULARITY };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_bin_file_path
-      get_capture_kit
-      get_conda_path
-      get_dynamic_conda_path
-      get_env_method_cmds
       get_gatk_intervals
       get_install_parameter_attribute
-      get_package_env_attributes
       get_package_source_env_cmds
-      get_pedigree_sample_id_attributes
       get_program_executables
       get_program_version
       get_programs_for_shell_installation
-      get_read_group
-      get_recipe_parameters
+      get_recipe_resources
       get_recipe_attributes
-      get_user_supplied_info
+      get_vep_version
     };
 }
 
 ## Constants
-Readonly my $COLON      => q{:};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $MINUS_FOUR => -4;
-Readonly my $MINUS_ONE  => -1;
-Readonly my $MINUS_TWO  => -2;
-Readonly my $SPACE      => q{ };
-
-sub get_bin_file_path {
-
-## Function : Get the absolute path to the binary file
-## Returns  : $bin_file_path
-## Arguments: $active_parameter_href => Hash with active parameters {REF}
-##          : $bin_file              => Name of binary file
-##          : $conda_path            => Path to conda directory
-##          : $environment_href      => Hash with programs and their environments {REF}
-##          : $environment_key       => Key to the environment_href [program]
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $bin_file;
-    my $conda_path;
-    my $environment_href;
-    my $environment_key;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default  => {},
-            required => 1,
-            store    => \$active_parameter_href,
-        },
-        bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        conda_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$conda_path,
-        },
-        environment_href => {
-            default  => {},
-            required => 1,
-            store    => \$environment_href,
-        },
-        environment_key => {
-            store => \$environment_key,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-
-    ## Get environment and set test path;
-    my $environment;
-    my $bin_file_path;
-
-    ## Check environments special case env first
-    if ( $environment_key and $environment_href->{$environment_key} ) {
-
-        $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-        $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-    }
-    ## Assume installed in conda base environment
-    else {
-
-        $environment = q{base};
-        $bin_file_path = catfile( $conda_path, q{bin}, $bin_file );
-    }
-
-    ## Return absolute path
-    return ( abs_path($bin_file_path), $environment );
-}
-
-sub get_capture_kit {
-
-## Function : Return a capture kit depending on user info. If arg->{user_supplied_parameter_switchRef} is set, go a head and add capture kit no matter what the switch was.
-## Returns  : "$capture kit", "supported capture kit" or "undef"
-## Arguments: $capture_kit                    => Capture kit to add
-##          : $supported_capture_kit_href     => The supported capture kits hash {REF}
-##          : $user_supplied_parameter_switch => Has user supplied parameter {OPTIONAL}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $capture_kit;
-    my $user_supplied_parameter_switch;
-    my $supported_capture_kit_href;
-
-    my $tmpl = {
-        capture_kit                => { store => \$capture_kit, strict_type => 1, },
-        supported_capture_kit_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$supported_capture_kit_href,
-            strict_type => 1,
-        },
-        user_supplied_parameter_switch =>
-          { store => \$user_supplied_parameter_switch, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set default or return supplied capture kit
-    if ( not defined $user_supplied_parameter_switch ) {
-
-        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
-
-            return $supported_capture_kit_href->{$capture_kit};
-        }
-        else {
-            ## Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-    ## Only add if user supplied no info on parameter
-    if ( defined $user_supplied_parameter_switch
-        and not $user_supplied_parameter_switch )
-    {
-
-        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
-
-            return $supported_capture_kit_href->{$capture_kit};
-        }
-        else {
-            #Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-    return;
-}
-
-sub get_conda_path {
-
-## Function: Get path to conda directory
-## Returns : $conda_path
-
-    use IPC::Cmd qw{ can_run };
-
-    ## Find path to conda bin
-    my $conda_path = can_run(q{conda});
-
-    ## Split ditrs to array
-    my @conda_path_dirs = File::Spec->splitdir($conda_path);
-
-    ## Running from conda_environment
-    if ( $conda_path_dirs[$MINUS_FOUR] eq q{envs} ) {
-
-        splice @conda_path_dirs, $MINUS_FOUR;
-    }
-    ## Running from conda base environment
-    else {
-
-        splice @conda_path_dirs, $MINUS_TWO;
-    }
-
-    ## Return path to conda folder
-    return catdir(@conda_path_dirs);
-}
-
-sub get_dynamic_conda_path {
-
-## Function : Attempts to find path to directory with binary in conda env
-## Returns  : Path to directory
-## Arguments: $active_parameters_href => Active parameter hash {REF}
-##          : $bin_file               => Bin file to test
-##          : $environment_key        => Key to conda environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $bin_file;
-    my $environment_key;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default  => {},
-            required => 1,
-            store    => \$active_parameter_href,
-        },
-        bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        environment_key => {
-            store => \$environment_key,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Establish path to conda
-    if ( not $active_parameter_href->{conda_path} ) {
-
-        $active_parameter_href->{conda_path} = get_conda_path();
-    }
-    if ( not -d $active_parameter_href->{conda_path} ) {
-
-        return q{Failed to find default conda path};
-    }
-    my $conda_path = $active_parameter_href->{conda_path};
-
-    ## Get module and program environments in use
-    my %environment;
-
-    ## Load env
-    my ( $env_name, $env_method ) = get_package_env_attributes(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $environment_key,
-        }
-    );
-    if ($env_name) {
-
-        ## Get env load command
-        my @env_method_cmds = get_env_method_cmds(
-            {
-                action     => q{load},
-                env_name   => $env_name,
-                env_method => $env_method,
-            }
-        );
-
-        ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-        $environment{$environment_key} = [@env_method_cmds];
-    }
-
-    ## Get the bin file path
-    my ( $bin_file_path, $environment ) = get_bin_file_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            bin_file              => $bin_file,
-            conda_path            => $conda_path,
-            environment_href      => \%environment,
-            environment_key       => $environment_key,
-        }
-    );
-
-    ## Test if path exists
-    if ( not $bin_file_path ) {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $environment;
-    }
-    if ( not -f $bin_file_path ) {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $environment;
-    }
-
-    ## Get directory path
-    my @bin_path_dirs = File::Spec->splitdir($bin_file_path);
-    pop @bin_path_dirs;
-
-    return catdir(@bin_path_dirs);
-}
-
-sub get_env_method_cmds {
-
-## Function : Get the standard load and unload env command for environment method
-## Returns  : @env_method_cmds
-## Arguments: $action     => What to do with the environment
-##          : $env_method => Method used to load environment
-##          : $env_name   => Name of environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $action;
-    my $env_method;
-    my $env_name;
-
-    my $tmpl = {
-        action => {
-            allow       => [qw{ load unload }],
-            defined     => 1,
-            required    => 1,
-            store       => \$action,
-            strict_type => 1,
-        },
-        env_method => {
-            allow       => [qw{ conda }],
-            defined     => 1,
-            required    => 1,
-            store       => \$env_method,
-            strict_type => 1,
-        },
-        env_name => {
-            required    => 1,
-            store       => \$env_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-
-    my %method_cmd = (
-        conda => {
-            load => [ ( conda_activate( { env_name => $env_name, } ), ) ],
-            unload => [ ( conda_deactivate( {} ), ) ],
-        },
-    );
-
-    return ( @{ $method_cmd{$env_method}{$action} } );
-}
+Readonly my $TWO => 2;
 
 sub get_gatk_intervals {
 
 ## Function : Generate and return interval hash
 ## Returns  : %gatk_intervals
-## Argumetns: $analysis_type         => Analysis type
+## Arguments: $analysis_type         => Analysis type
 ##          : $contigs_ref           => Contigs to split in file
 ##          : $exome_target_bed_href => Exome target bed files lnked to sample ids
 ##          : $file_ending           => File ending to add {Optional}
-##          : $FILEHANDLE            => Filehandle to write to
+##          : $filehandle            => Filehandle to write to
 ##          : $log                   => Log
 ##          : $max_cores_per_node    => Maximum core per node
 ##          : $outdirectory          => Outdirectory
@@ -395,7 +66,7 @@ sub get_gatk_intervals {
     my $contigs_ref;
     my $exome_target_bed_href;
     my $file_ending;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log;
     my $outdirectory;
     my $reference_dir;
@@ -419,15 +90,13 @@ sub get_gatk_intervals {
             strict_type => 1,
         },
         exome_target_bed_href => {
-            default     => {},
-            store       => \$exome_target_bed_href,
-            strict_type => 1,
+            store => \$exome_target_bed_href,
         },
         file_ending => {
             store       => \$file_ending,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        filehandle => { store => \$filehandle, },
         log        => {
             store => \$log,
         },
@@ -475,7 +144,7 @@ sub get_gatk_intervals {
             {
                 contigs_ref           => $contigs_ref,
                 exome_target_bed_file => $exome_target_bed_file,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 max_cores_per_node    => $max_cores_per_node,
                 outdirectory          => $outdirectory,
                 reference_dir         => $reference_dir,
@@ -537,51 +206,6 @@ sub get_install_parameter_attribute {
     return $parameter_href->{$parameter_name};
 }
 
-sub get_package_env_attributes {
-
-## Function : Get environment name and method for package (recipe, program or MIP)
-## Returns  : $env_name, $env_method or "undef"
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $package_name          => Package name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $package_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        package_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  ENV:
-    foreach my $env_name ( keys %{ $active_parameter_href->{load_env} } ) {
-
-        ## Found recipe within env
-        if ( exists $active_parameter_href->{load_env}{$env_name}{$package_name} ) {
-
-            ## Unpack
-            my $env_method = $active_parameter_href->{load_env}{$env_name}{method};
-            return $env_name, $env_method;
-        }
-    }
-    return;
-}
-
 sub get_package_source_env_cmds {
 
 ## Function : Get package source environment commands
@@ -613,13 +237,17 @@ sub get_package_source_env_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
+    use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
+
     ## Initilize variable
     my @source_environment_cmds;
 
     my ( $env_name, $env_method ) = get_package_env_attributes(
         {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $package_name,
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $package_name,
         }
     );
 
@@ -629,8 +257,8 @@ sub get_package_source_env_cmds {
         ## Fall back to MIPs MAIN env
         ( $env_name, $env_method ) = get_package_env_attributes(
             {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{mip},
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
             }
         );
     }
@@ -641,6 +269,15 @@ sub get_package_source_env_cmds {
 
         push @source_environment_cmds, $prior_to_load_cmd;
     }
+
+    ## Append singularity bind variable to source_environment_cmds_ref if applicable
+    parse_sing_bind_paths(
+        {
+            active_parameter_href       => $active_parameter_href,
+            package_name                => $package_name,
+            source_environment_cmds_ref => \@source_environment_cmds,
+        }
+    );
 
     ## Get env load command
     my @env_method_cmds = get_env_method_cmds(
@@ -653,55 +290,6 @@ sub get_package_source_env_cmds {
     push @source_environment_cmds, @env_method_cmds;
 
     return @source_environment_cmds;
-}
-
-sub get_pedigree_sample_id_attributes {
-
-## Function : Get pedigree sample id attribute
-## Returns  : $attribute
-## Arguments: $attribute        => Attribute key
-##          : $sample_id        => Sample id to get attribute for
-##          : $sample_info_href => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $attribute;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        attribute => {
-            allow => [
-                qw{ analysis_type capture_kit expected_coverage father mother phenotype sample_id sample_name sample_origin sex }
-            ],
-            defined     => 1,
-            required    => 1,
-            store       => \$attribute,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Make sure that the supplied key exists
-    croak(qq{Could not find sample_info_name key: '$attribute' in hash})
-      if ( not exists $sample_info_href->{sample}{$sample_id}{$attribute} );
-
-    return $sample_info_href->{sample}{$sample_id}{$attribute};
 }
 
 sub get_program_executables {
@@ -833,168 +421,6 @@ sub get_programs_for_shell_installation {
     return @shell_programs;
 }
 
-sub get_program_version {
-
-## Function : Get program version by 1. regexp or 2. cmd
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $cmd                   => Command line call
-##          : $parameter_name        => Parameter to add version from
-##          : $regexp                => Regexp to use for getting version
-##          : $sample_info_href      => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $cmd;
-    my $parameter_name;
-    my $regexp;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        cmd => {
-            defined     => 1,
-            required    => 1,
-            store       => \$cmd,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        regexp => {
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    if ( exists $active_parameter_href->{$parameter_name}
-        && $active_parameter_href->{$parameter_name} )
-    {
-
-        ## Dry run mode for all recipes
-        return if ( $active_parameter_href->{dry_run_all} );
-
-        ## Dry run mode for this recipe
-        return if ( $active_parameter_href->{$parameter_name} eq q{2} );
-
-        my ($version) = $active_parameter_href->{$parameter_name} =~ /$regexp/xsm;
-
-        # If not set - fall back on actually calling program
-        if ( not $version ) {
-
-            my %return = system_cmd_call( { command_string => $cmd, } );
-            if ( $return{output}[0] ) {
-
-                chomp( $version = $return{output}[0] );
-            }
-        }
-        return $version;
-    }
-    return;
-}
-
-sub get_read_group {
-
-## Function : Builds hash with read group headers
-## Returns  : %read_group
-## Arguments: $infile_prefix    => Name of Fastq file minus read direction information
-##          : $platform         => Sequencing platform
-##          : $sample_id        => Sample ID
-##          : $sample_info_href => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_prefix;
-    my $platform;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_prefix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_prefix,
-            strict_type => 1,
-        },
-        platform => {
-            defined     => 1,
-            required    => 1,
-            store       => \$platform,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Traverse down $sample_info_href
-    my %fastq_file =
-      %{ $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {read_direction_file}{ $infile_prefix . q{_1} } };
-
-    ## RG hash
-    my %rg;
-
-    ## Add ID
-    $rg{id} = $infile_prefix;
-
-    ## Add platform unit
-    $rg{pu} =
-        $fastq_file{flowcell}
-      . $DOT
-      . $fastq_file{lane}
-      . $DOT
-      . $fastq_file{sample_barcode};
-
-    ## Add sample
-    $rg{sm} = $sample_id;
-
-    ## Add platform
-    $rg{pl} = $platform;
-
-    ## Add molecular library (Dummy value since the actual LB isn't available)
-    $rg{lb} = $sample_id;
-
-    return %rg;
-}
-
 sub get_recipe_attributes {
 
 ## Function : Return recipe attributes
@@ -1022,7 +448,12 @@ sub get_recipe_attributes {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        recipe_name => { store => \$recipe_name, strict_type => 1, },
+        recipe_name => {
+            required    => 1,
+            defined     => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1037,18 +468,20 @@ sub get_recipe_attributes {
     return %{ $parameter_href->{$recipe_name} };
 }
 
-sub get_recipe_parameters {
+sub get_recipe_resources {
 
-## Function : Get core number, time and source environment command
-## Returns  : $core_number, $time, @source_environment_cmds
+## Function : Return recipe resources
+## Returns  : $recipe_resource | %recipe_resource
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $recipe_name           => Recipe name
+##          : $recipe_resource       => Recipe parameter key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $recipe_name;
+    my $resource;
 
     my $tmpl = {
         active_parameter_href => {
@@ -1064,9 +497,16 @@ sub get_recipe_parameters {
             store       => \$recipe_name,
             strict_type => 1,
         },
+        resource => {
+            allow       => [qw{ core_number load_env_ref memory time }],
+            store       => \$resource,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
 
     ## Initilize variable
     my @source_environment_cmds = get_package_source_env_cmds(
@@ -1076,77 +516,89 @@ sub get_recipe_parameters {
         }
     );
 
-    my $core_number = $active_parameter_href->{recipe_core_number}{$recipe_name};
-    my $time        = $active_parameter_href->{recipe_time}{$recipe_name};
+    my $core_number    = $active_parameter_href->{recipe_core_number}{$recipe_name};
+    my $process_memory = $active_parameter_href->{recipe_memory}{$recipe_name};
+    my $memory;
 
-    return $core_number, $time, @source_environment_cmds;
+    ## Multiply memory with processes that are to be launched in the recipe
+    if ( $process_memory and $core_number ) {
+        $memory = $process_memory * $core_number;
+    }
+    ## Set default recipe memory allocation if it hasn't been specified
+    elsif ( not $process_memory and $core_number ) {
+        $memory = $core_number * $active_parameter_href->{core_ram_memory};
+    }
+    elsif ( not $process_memory and not $core_number ) {
+        $memory = $active_parameter_href->{core_ram_memory};
+    }
+    else {
+        $memory = $process_memory;
+    }
+
+    check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $active_parameter_href->{node_ram_memory},
+            recipe_memory_allocation => $memory,
+        }
+    );
+
+    my %recipe_resource = (
+        core_number  => $core_number,
+        load_env_ref => \@source_environment_cmds,
+        memory       => $memory,
+        time         => $active_parameter_href->{recipe_time}{$recipe_name},
+    );
+
+    ## Return specified recipe resource
+    if ( defined $resource && $resource ) {
+        return $recipe_resource{$resource};
+    }
+
+    ## Return recipe resource hash
+    return %recipe_resource;
+
 }
 
-sub get_user_supplied_info {
+sub get_vep_version {
 
-## Function : Detect if user supplied info on parameters otherwise collected from pedigree
-## Returns  : %user_supply_switch - Hash where 1=user input and 0=no user input
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+## Function : Get version of VEP API in use
+## Returns  : $vep_version
+## Arguments: $vep_bin_path => Path to vep binary
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $vep_bin_path;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        vep_bin_path => {
+            default     => q{vep},
             defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$vep_bin_path,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Define what should be checked
-    my %user_supply_switch = (
-        analysis_type         => 0,
-        exome_target_bed      => 0,
-        expected_coverage     => 0,
-        sample_ids            => 0,
-        sample_origin         => 0,
-        supported_capture_kit => 0,
-        time_point            => 0,
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    my @perl_commands = perl_nae_oneliners(
+        {
+            oneliner_name => q{get_vep_version},
+        }
+    );
+    my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
+
+    my %process_return = child_process(
+        {
+            commands_ref => \@get_vep_version_cmds,
+            process_type => q{open3},
+        }
     );
 
-    ## Detect user supplied info
-  USER_PARAMETER:
-    foreach my $parameter ( keys %user_supply_switch ) {
-
-        ## If hash and supplied
-        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
-            && keys %{ $active_parameter_href->{$parameter} } )
-        {
-
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
-            && @{ $active_parameter_href->{$parameter} } )
-        {
-            ## If array and supplied
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( defined $active_parameter_href->{$parameter}
-            and not ref $active_parameter_href->{$parameter} )
-        {
-
-            ## If scalar and supplied
-            $user_supply_switch{$parameter} = 1;
-        }
-        else {
-
-            ## No user defined input for parameter
-            $user_supply_switch{$parameter} = 0;
-        }
-    }
-    return %user_supply_switch;
+    return $process_return{stdouts_ref}[0];
 }
 
 1;

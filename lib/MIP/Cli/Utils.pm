@@ -20,14 +20,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ run };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub run {
 

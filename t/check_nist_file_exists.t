@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -62,21 +62,21 @@ diag(   q{Test check_nist_file_exists from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given nist info
 my %active_parameter = (
     nist_call_set_vcf => {
         q{3.3.2} => {
             NA12878 => catdir(
-                $Bin, qw{ data references GRCh37_nist_hg001_-na12878_v3.3.2-.vcf }
+                $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.vcf }
             ),
         },
     },
     nist_call_set_bed => {
         q{3.3.2} => {
             NA12878 => catdir(
-                $Bin, qw{ data references GRCh37_nist_hg001_-na12878_v3.3.2-.bed }
+                $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.bed }
             ),
         },
     },
@@ -108,7 +108,7 @@ trap {
             log                   => $log,
             nist_parameters_ref   => \@nist_parameters,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

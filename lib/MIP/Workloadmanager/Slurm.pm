@@ -1,23 +1,22 @@
 package MIP::Workloadmanager::Slurm;
 
+use 5.026;
 use Carp;
-use charnames qw( :full :short );
-use FindBin qw($Bin);
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
-use open qw( :encoding(UTF-8) :std );
-use Params::Check qw[check allow last_error];
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
-use warnings qw(FATAL utf8);
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $EQUALS $NEWLINE $PIPE $SPACE $TAB };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -27,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,18 +38,14 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $PIPE    => q{|};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
+Readonly my $FIVE => 5;
 
 sub slurm_sacct {
 
-## Function : Perl wrapper for writing SLURM sacct recipe to already open $FILEHANDLE or return commands array. Based on SLURM sacct 2.6.0.
+## Function : Perl wrapper for writing SLURM sacct recipe to already open $filehandle or return commands array. Based on SLURM sacct 2.6.0.
 ## Returns  : "@commands"
 ## Arguments: $fields_format_ref      => List of format fields
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $filehandle             => Filehandle to write to
 ##          : $job_ids_ref            => Slurm job id
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file
@@ -60,7 +55,7 @@ sub slurm_sacct {
 
     ## Flatten argument(s)
     my $fields_format_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $job_ids_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -72,7 +67,7 @@ sub slurm_sacct {
             store       => \$fields_format_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        filehandle  => { store => \$filehandle, },
         job_ids_ref => {
             default     => [],
             store       => \$job_ids_ref,
@@ -118,7 +113,7 @@ sub slurm_sacct {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -130,7 +125,7 @@ sub slurm_reformat_sacct_output {
 ## Function : Removes ".batch" lines in sacct output.
 ## Returns  :
 ## Arguments: $commands_ref               => Commands to stream to perl oneliner
-##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $filehandle                 => Sbatch filehandle to write to
 ##          : $log_file_path              => The log file {REF}
 ##          : $reformat_sacct_headers_ref => Reformated sacct headers
 
@@ -138,7 +133,7 @@ sub slurm_reformat_sacct_output {
 
     ## Flatten argument(s)
     my $commands_ref;
-    my $FILEHANDLE;
+    my $filehandle;
     my $log_file_path;
     my $reformat_sacct_headers_ref;
 
@@ -150,6 +145,14 @@ sub slurm_reformat_sacct_output {
             store       => \$commands_ref,
             strict_type => 1,
         },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        log_file_path => {
+            store       => \$log_file_path,
+            strict_type => 1,
+        },
         reformat_sacct_headers_ref => {
             default     => [],
             defined     => 1,
@@ -157,51 +160,45 @@ sub slurm_reformat_sacct_output {
             store       => \$reformat_sacct_headers_ref,
             strict_type => 1,
         },
-        log_file_path => {
-            store       => \$log_file_path,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     #Stream to
-    print {$FILEHANDLE} $TAB . join( $SPACE, @{$commands_ref} ) . $SPACE;
+    print {$filehandle} $TAB . join( $SPACE, @{$commands_ref} ) . $SPACE;
 
     # Pipe
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     #Execute perl
-    print {$FILEHANDLE} q?perl -nae '?;
+    print {$filehandle} q?perl -nae '?;
 
     # Define reformated sacct headers
-    print {$FILEHANDLE} q?my @headers=(?
+    print {$filehandle} q?my @headers=(?
       . join( $COMMA, @{$reformat_sacct_headers_ref} ) . q?); ?;
 
     #Write header line
-    print {$FILEHANDLE} q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
+    print {$filehandle} q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
 
   # Write individual job line - skip line containing (.batch or .bat+) in the first column
-    print {$FILEHANDLE}
+    print {$filehandle}
 q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), qq{\n} }' ?;
 
     #Write to log_file.status
-    print {$FILEHANDLE} q{> } . $log_file_path . q{.status} . $NEWLINE x 2;
+    print {$filehandle} q{> } . $log_file_path . q{.status} . $NEWLINE x 2;
     return;
 }
 
 sub slurm_sbatch {
 
-## Function : Perl wrapper for writing SLURM sbatch recipe to already open $FILEHANDLE or return commands array. Based on SLURM sbatch 2.6.0.
-## Returns  : "@commands"
-## Arguments: $dependency_type        => Type of slurm job dependency
-##          : $FILEHANDLE             => Filehandle to write to
+## Function : Perl wrapper for writing SLURM sbatch recipe to already open $filehandle or return commands array. Based on SLURM sbatch 2.6.0.
+## Returns  : @commands
+## Arguments: $base_command           => Sbatch or slurm-mock (for tests)
+##          : $dependency_type        => Type of slurm job dependency
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile_path
 ##          : $job_ids_string         => Slurm job ids string (:job_id:job_id...n)
+##          : $reservation_name       => Allocate resources from named reservation
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -210,21 +207,28 @@ sub slurm_sbatch {
 
     ## Flatten argument(s)
     my $dependency_type;
-    my $FILEHANDLE;
+    my $filehandle;
     my $infile_path;
     my $job_ids_string;
+    my $reservation_name;
     my $stderrfile_path;
     my $stdoutfile_path;
 
     ## Default(s)
+    my $base_command;
     my $stderrfile_path_append;
 
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         dependency_type => {
             store       => \$dependency_type,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -233,6 +237,10 @@ sub slurm_sbatch {
         },
         job_ids_string => {
             store       => \$job_ids_string,
+            strict_type => 1,
+        },
+        reservation_name => {
+            store       => \$reservation_name,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -251,17 +259,17 @@ sub slurm_sbatch {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## sbatch
+    my @commands = $base_command;
 
-    #Stores commands depending on input parameters
-    my @commands = q{sbatch};
+    if ( $dependency_type and $job_ids_string ) {
 
-    ## Options
-    if ( ($dependency_type) && ($job_ids_string) ) {
         push @commands, q{--dependency=} . $dependency_type . $job_ids_string;
     }
 
-    # Infile
+    if ($reservation_name) {
+
+        push @commands, q{--reservation} . $EQUALS . $reservation_name;
+    }
     push @commands, $infile_path;
 
     push @commands,
@@ -276,7 +284,7 @@ sub slurm_sbatch {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $SPACE,
         }
     );
@@ -285,13 +293,14 @@ sub slurm_sbatch {
 
 sub slurm_build_sbatch_header {
 
-## Function : Perl wrapper for writing SLURM sbatch header recipe to already open $FILEHANDLE or return commands array. Based on SLURM 2.6.0.
+## Function : Perl wrapper for writing SLURM sbatch header recipe to already open $filehandle or return commands array. Based on SLURM 2.6.0.
 ## Returns  : "@commands"
 ## Arguments: $core_number              => Core number to allocate
 ##          : $email                    => User to receive email notification
 ##          : $email_types_ref          => When to send email for event {REF}
-##          : $FILEHANDLE               => Filehandle to write to
+##          : $filehandle               => Filehandle to write to
 ##          : $job_name                 => Specify a name for the job allocation
+##          : $memory_allocation        => Memory allocation
 ##          : $process_time             => Time limit
 ##          : $project_id               => Project id
 ##          : $separator                => Separator to use when writing
@@ -303,8 +312,9 @@ sub slurm_build_sbatch_header {
 
     ## Flatten argument(s)
     my $email;
-    my $FILEHANDLE;
+    my $filehandle;
     my $job_name;
+    my $memory_allocation;
     my $project_id;
     my $slurm_quality_of_service;
     my $stderrfile_path;
@@ -319,26 +329,10 @@ sub slurm_build_sbatch_header {
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my $tmpl = {
-        project_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$project_id,
-            strict_type => 1,
-        },
-        slurm_quality_of_service => {
-            store       => \$slurm_quality_of_service,
-            strict_type => 1,
-        },
-        job_name => {
-            store       => \$job_name,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stdoutfile_path => {
-            store       => \$stdoutfile_path,
+        core_number => {
+            allow       => qr{ \A\d+\z }xms,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
         },
         email => {
@@ -360,22 +354,43 @@ sub slurm_build_sbatch_header {
             store       => \$email_types_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        core_number => {
-            allow       => qr/^\d+$/xms,
-            default     => 1,
-            store       => \$core_number,
+        filehandle => { store => \$filehandle },
+        job_name   => {
+            store       => \$job_name,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            store       => \$memory_allocation,
             strict_type => 1,
         },
         process_time => {
-            allow       => [ qr/^\d+:\d+:\d+$/xms, qr/^\d-\d+:\d+:\d+$/xms ],
+            allow       => [ qr{ \A\d+:\d+:\d+\z }xms, qr{ \A\d-\d+:\d+:\d+\z }xms ],
             default     => q{1:00:00},
             store       => \$process_time,
+            strict_type => 1,
+        },
+        project_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$project_id,
             strict_type => 1,
         },
         separator => {
             default     => q{\n},
             store       => \$separator,
+            strict_type => 1,
+        },
+        slurm_quality_of_service => {
+            store       => \$slurm_quality_of_service,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
             strict_type => 1,
         },
     };
@@ -397,6 +412,11 @@ sub slurm_build_sbatch_header {
 
     # Time allocation
     push @commands, q{--time=} . $process_time;
+
+    # Memory allocation
+    if ($memory_allocation) {
+        push @commands, q{--mem=} . $memory_allocation . q{G};
+    }
 
     # Quality of service
     if ($slurm_quality_of_service) {
@@ -433,7 +453,7 @@ sub slurm_build_sbatch_header {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             separator    => $separator,
         }
     );

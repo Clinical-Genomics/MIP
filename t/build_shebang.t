@@ -101,7 +101,7 @@ my $separator = q{\n};
 my $batch_shebang = q{#!};
 
 my %base_argument = (
-    FILEHANDLE => {
+    filehandle => {
         input           => undef,
         expected_output => $batch_shebang,
     },
@@ -143,7 +143,7 @@ foreach my $key ( keys %argument ) {
 # Fake arguments
 my @args = (
     bash_bin_path => $bash_bin_path,
-    FILEHANDLE    => undef,
+    filehandle    => undef,
 );
 
 ## Coderef - enables generalized use of generate call

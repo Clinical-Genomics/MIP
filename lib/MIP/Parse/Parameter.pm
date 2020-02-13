@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -14,8 +14,9 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::Util qw{ any };
-use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -23,16 +24,136 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
+    our @EXPORT_OK = qw{
+      parse_conda_env_name
+      parse_download_reference_parameter
+      parse_infiles
+      parse_nist_parameters
+      parse_prioritize_variant_callers
+      parse_start_with_recipe
+      parse_toml_config_parameters
+    };
 
 }
 
-## Constants
-Readonly my $SPACE => q{ };
+sub parse_conda_env_name {
+
+## Function : Build conda environment names depending on input parameters
+## Returns  : $conda_environment_name
+## Arguments: $base_name     => Degfault base environment name
+##          : $date          => Date
+##          : $environment   => Installation environment
+##          : parameter_href => Parmeter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $base_name;
+    my $date;
+    my $environment;
+    my $parameter_href;
+
+    my $tmpl = {
+        base_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$base_name,
+            strict_type => 1,
+        },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
+        environment => {
+            defined     => 1,
+            required    => 1,
+            store       => \$environment,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $environment_name = $parameter_href->{environment_name}{$environment};
+
+    ## Give the env a default name if not given
+    if ( not $environment_name ) {
+
+        ## Strip the first character, i.e. 'e' from the environment string
+        my $env_postfix = substr $environment, 1;
+        $environment_name = $base_name . $UNDERSCORE . $env_postfix;
+    }
+
+    ## Prepend environemnt prefix
+    if ( $parameter_href->{environment_prefix} ) {
+
+        $environment_name =
+          $parameter_href->{environment_prefix} . $UNDERSCORE . $environment_name;
+    }
+
+    ## Add environment date
+    if ( $parameter_href->{add_environment_date} ) {
+
+        $environment_name = $environment_name . $UNDERSCORE . $date;
+    }
+
+    ## Append environment suffix
+    if ( $parameter_href->{environment_suffix} ) {
+
+        $environment_name =
+          $environment_name . $UNDERSCORE . $parameter_href->{environment_suffix};
+    }
+
+    return $environment_name;
+}
+
+sub parse_download_reference_parameter {
+
+## Function : Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+## Returns  :
+## Arguments: $reference_href => Reference hash {REF}
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $reference_href;
+
+    my $tmpl = {
+        reference_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  VERSION_REF:
+    foreach my $versions_ref ( values %{$reference_href} ) {
+
+        if ( ref $versions_ref ne q{ARRAY} ) {
+
+            ## Make scalar from CLI '--ref key=value' option into array
+            $versions_ref = [$versions_ref];
+        }
+    }
+
+    return;
+}
 
 sub parse_infiles {
 
@@ -87,6 +208,13 @@ sub parse_infiles {
                 active_parameter_href => $active_parameter_href,
                 parameter_name        => q{infile_dirs},
                 query_value           => $sample_id,
+            }
+        );
+
+        _check_infile_directory(
+            {
+                infile_directory => $infile_directory,
+                sample_id        => $sample_id,
             }
         );
 
@@ -174,8 +302,7 @@ sub parse_nist_parameters {
     use MIP::Set::Parameter qw{ set_nist_file_name_path };
 
     return
-      if (  not $active_parameter_href->{rtg_vcfeval}
-        and not $active_parameter_href->{evaluation} );
+      if ( not $active_parameter_href->{rtg_vcfeval} );
 
     # Unpack
     my %nist_id         = %{ $active_parameter_href->{nist_id} };
@@ -334,7 +461,6 @@ sub parse_start_with_recipe {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $initiation_file;
     my $log;
     my $parameter_href;
 
@@ -344,12 +470,6 @@ sub parse_start_with_recipe {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        initiation_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$initiation_file,
             strict_type => 1,
         },
         log => {
@@ -368,22 +488,14 @@ sub parse_start_with_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
-    use MIP::File::Format::Yaml qw{ load_yaml };
-    use MIP::Get::Analysis qw{ get_dependency_tree };
+    use MIP::Dependency_tree qw{ get_dependency_tree };
+    use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
     use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
 
     return if ( not defined $active_parameter_href->{start_with_recipe} );
 
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file => $initiation_file,
-        }
-    );
-
     check_recipe_exists_in_hash(
         {
-            log            => $log,
             parameter_name => $active_parameter_href->{start_with_recipe},
             query_ref      => \$active_parameter_href->{start_with_recipe},
             truth_href     => $parameter_href,
@@ -397,7 +509,7 @@ sub parse_start_with_recipe {
     ## Collects all downstream recipes from initation point
     get_dependency_tree(
         {
-            dependency_tree_href   => \%dependency_tree,
+            dependency_tree_href   => $parameter_href->{dependency_tree_href},
             is_recipe_found_ref    => \$is_recipe_found,
             is_chain_found_ref     => \$is_chain_found,
             recipe                 => $active_parameter_href->{start_with_recipe},
@@ -449,10 +561,7 @@ sub parse_toml_config_parameters {
     use MIP::Check::Path qw{ check_vcfanno_toml };
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-    my %toml_config_parameter = (
-        frequency_filter => q{fqf_vcfanno_config},
-        sv_vcfanno       => q{sv_vcfanno_config},
-    );
+    my %toml_config_parameter = ( frequency_filter => q{fqa_vcfanno_config}, );
   CONFIG_FILE:
     while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
 
@@ -468,6 +577,45 @@ sub parse_toml_config_parameters {
         }
     }
     return 1;
+}
+
+sub _check_infile_directory {
+
+## Function : Check if infile directory exists per sample id
+## Returns  :
+## Arguments: $infile_directory => Infile directory
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_directory;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_directory => {
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    my $log = retrieve_log( { log_name => $LOG_NAME, } );
+
+    return if ( defined $infile_directory );
+
+    $log->fatal(
+        q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
+    exit 1;
 }
 
 1;

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitpath};
+use File::Spec::Functions qw{ catfile splitpath};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -16,13 +16,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -30,13 +33,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $CHR_X_NUMBER        => 23;
+Readonly my $CHR_Y_NUMBER        => 24;
+Readonly my $FEMALE_MAX_F        => 0.2;
+Readonly my $INDEP_WINDOW_SIZE   => 50;
+Readonly my $INDEP_STEP_SIZE     => 5;
+Readonly my $INDEP_VIF_THRESHOLD => 2;
+Readonly my $MALE_MIN_F          => 0.75;
 
 sub analysis_plink {
 
@@ -48,6 +51,7 @@ sub analysis_plink {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -65,6 +69,7 @@ sub analysis_plink {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -108,6 +113,11 @@ sub analysis_plink {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -130,32 +140,23 @@ sub analysis_plink {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_annotate);
-    use MIP::Program::Variantcalling::Plink
+    use MIP::Program::Bcftools qw(bcftools_view bcftools_annotate);
+    use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use MIP::Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::Program::Vt qw(vt_uniq);
+    use MIP::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
-    ## Constants
-    Readonly my $CHR_X_NUMBER        => 23;
-    Readonly my $CHR_Y_NUMBER        => 24;
-    Readonly my $FEMALE_MAX_F        => 0.2;
-    Readonly my $INDEP_WINDOW_SIZE   => 50;
-    Readonly my $INDEP_STEP_SIZE     => 5;
-    Readonly my $INDEP_VIF_THRESHOLD => 2;
-    Readonly my $MALE_MIN_F          => 0.75;
-
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -185,9 +186,9 @@ sub analysis_plink {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my @sample_ids  = @{ $active_parameter_href->{sample_ids} };
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my @sample_ids      = @{ $active_parameter_href->{sample_ids} };
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -217,13 +218,21 @@ sub analysis_plink {
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
-            if (    $active_parameter_href->{found_other_count} ne scalar @sample_ids
+            if (    $active_parameter_href->{found_other} ne scalar @sample_ids
                 and $mode eq q{check_for_sex} )
             {
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
             }
         }
+    }
+
+    ## No eligible test to run
+    if ( not scalar @plink_outfiles ) {
+        $log->warn(
+            q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'}
+        );
+        return;
     }
 
     ## Set and get the io files per chain, id and stream
@@ -250,21 +259,22 @@ sub analysis_plink {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
-            FILEHANDLE                      => $FILEHANDLE,
+            filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -285,7 +295,7 @@ sub analysis_plink {
         {
             active_parameter_href => $active_parameter_href,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -293,24 +303,24 @@ sub analysis_plink {
     );
 
     ## Prepare input
-    say {$FILEHANDLE} q{## Remove indels using bcftools};
+    say {$filehandle} q{## Remove indels using bcftools};
     my $view_outfile_path =
       $infile_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix;
     bcftools_view(
         {
             exclude_types_ref => [qw{ indels }],
-            FILEHANDLE        => $FILEHANDLE,
+            filehandle        => $filehandle,
             infile_path       => $infile_path,
             outfile_path      => $view_outfile_path,
             output_type       => q{v},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Create uniq IDs and remove duplicate variants};
+    say {$filehandle} q{## Create uniq IDs and remove duplicate variants};
     bcftools_annotate(
         {
-            FILEHANDLE     => $FILEHANDLE,
+            filehandle     => $filehandle,
             infile_path    => $view_outfile_path,
             output_type    => q{v},
             remove_ids_ref => [q{ID}],
@@ -318,26 +328,26 @@ sub analysis_plink {
         }
     );
 
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     ## Drops duplicate variants that appear later in the the VCF file
     my $uniq_outfile_path =
       $infile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
     vt_uniq(
         {
-            FILEHANDLE   => $FILEHANDLE,
+            filehandle   => $filehandle,
             infile_path  => $DASH,
             outfile_path => $uniq_outfile_path,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
     ### Plink variant pruning and creation of unique Ids
-    say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
+    say {$filehandle} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
         {
             const_fid           => $case_id,
-            FILEHANDLE          => $FILEHANDLE,
+            filehandle          => $filehandle,
             make_bed            => 1,
             outfile_prefix      => $plink_outfile_prefix,
             indep               => 1,
@@ -352,15 +362,15 @@ sub analysis_plink {
             vcf_require_gt => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$filehandle} $NEWLINE;
 
-    say {$FILEHANDLE}
+    say {$filehandle}
       q{## Update Plink fam. Create ped and map file and frequency report};
     ## Get parameters
     my $allow_no_sex;
 
     ## If not all samples have a known sex
-    if ( $active_parameter_href->{found_other_count} ) {
+    if ( $active_parameter_href->{found_other} ) {
 
         $allow_no_sex = 1;
     }
@@ -371,52 +381,52 @@ sub analysis_plink {
             allow_no_sex          => $allow_no_sex,
             binary_fileset_prefix => $binary_fileset_prefix,
             fam_file_path         => $case_file_path,
-            FILEHANDLE            => $FILEHANDLE,
+            filehandle            => $filehandle,
             freqx                 => 1,
             make_just_fam         => 1,
             outfile_prefix        => $plink_outfile_prefix,
             recode                => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
-
-    my $inbreeding_outfile_prefix_hets =
-      $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
+    say {$filehandle} $NEWLINE;
 
     # Only perform if more than 1 sample
     if ( scalar @sample_ids > 1 ) {
 
-        say {$FILEHANDLE} q{## Calculate inbreeding coefficients per case};
+        my $inbreeding_outfile_prefix_hets =
+          $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
+
+        say {$filehandle} q{## Calculate inbreeding coefficients per case};
         plink_calculate_inbreeding(
             {
                 binary_fileset_prefix   => $binary_fileset_prefix,
                 extract_file            => $binary_fileset_prefix . $DOT . q{prune.in},
-                FILEHANDLE              => $FILEHANDLE,
+                filehandle              => $filehandle,
                 inbreeding_coefficients => 1,
                 het                     => 1,
                 outfile_prefix          => $inbreeding_outfile_prefix_hets,
                 small_sample            => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         my $inbreeding_outfile_prefix_mibs =
           $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{relation_check};
-        say {$FILEHANDLE} q{## Create Plink .mibs per case};
+        say {$filehandle} q{## Create Plink .mibs per case};
         plink_create_mibs(
             {
                 cluster        => 1,
-                FILEHANDLE     => $FILEHANDLE,
+                filehandle     => $filehandle,
                 map_file_path  => $binary_fileset_prefix . $DOT . q{map},
                 matrix         => 1,
                 outfile_prefix => $inbreeding_outfile_prefix_mibs,
                 ped_file_path  => $binary_fileset_prefix . $DOT . q{ped},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    if ( $active_parameter_href->{found_other_count} ne scalar @sample_ids ) {
+    if ( $active_parameter_href->{found_other} ne scalar @sample_ids ) {
 
         ## Only if not all samples have unknown sex
         ### Plink sex-check
@@ -424,7 +434,7 @@ sub analysis_plink {
         my $genome_build;
 
         ## Set correct build prefix
-        if ( $human_genome_reference_source eq q{GRCh} ) {
+        if ( $human_genome_reference_source eq q{grch} ) {
 
             $genome_build = q{b} . $human_genome_reference_version;
         }
@@ -436,7 +446,7 @@ sub analysis_plink {
         plink_check_sex_chroms(
             {
                 binary_fileset_prefix => $binary_fileset_prefix,
-                FILEHANDLE            => $FILEHANDLE,
+                filehandle            => $filehandle,
                 no_fail               => 1,
                 make_bed              => 1,
                 outfile_prefix        => $plink_outfile_prefix . $UNDERSCORE . q{unsplit},
@@ -444,7 +454,7 @@ sub analysis_plink {
                 split_x               => $genome_build,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
 
         ## Get parameters
         my $sex_check_min_f;
@@ -469,23 +479,23 @@ sub analysis_plink {
                   . $UNDERSCORE
                   . q{unsplit},
                 extract_file       => $extract_file,
-                FILEHANDLE         => $FILEHANDLE,
+                filehandle         => $filehandle,
                 outfile_prefix     => $sex_check_outfile_prefix,
                 read_freqfile_path => $read_freqfile_path,
                 sex_check_min_f    => $sex_check_min_f,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $outfile_path,
                     recipe_name      => $outfile_tag,
@@ -495,30 +505,23 @@ sub analysis_plink {
 
         }
 
-        ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
-            {
-                path             => $stdout_file_path,
-                recipe_name      => q{plink2},
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         submit_recipe(
             {
-                dependency_method       => q{case_to_island},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
                 job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
