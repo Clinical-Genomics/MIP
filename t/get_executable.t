@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Executable} => [qw{ get_executable }],
+        q{MIP::Environment::Executable} => [qw{ get_executable }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Executable qw{ get_executable };
+use MIP::Environment::Executable qw{ get_executable };
 
 diag(   q{Test get_executable from Executable.pm v}
-      . $MIP::Get::Executable::VERSION
+      . $MIP::Environment::Executable::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
