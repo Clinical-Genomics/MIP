@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,7 +68,7 @@ trap {
         {
             active_parameter_href => \%active_parameter,
             bin_file              => q{not_a_conda_path},
-            parameter_name        => $parameter_name,
+            conda_path            => $parameter_name,
         }
     )
 };
@@ -87,7 +87,7 @@ like(
 set_default_conda_path(
     {
         active_parameter_href => \%active_parameter,
-        parameter_name        => $parameter_name,
+        conda_path            => $parameter_name,
     }
 );
 
