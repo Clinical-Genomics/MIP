@@ -1,4 +1,4 @@
-package MIP::Get::Executable;
+package MIP::Environment::Executable;
 
 use 5.026;
 use Carp;
@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_binary_version get_executable };
@@ -53,12 +53,11 @@ sub get_binary_version {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
-    use MIP::Get::Executable qw{ get_executable };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %binary_version;
+    my %binary;
     my %executable = get_executable( {} );
 
   BINARY:
@@ -92,10 +91,13 @@ sub get_binary_version {
 
             $log->warn(qq{Could not find version for binary: $binary});
         }
-        ## Set binary version
-        $binary_version{$binary} = $process_return{stdouts_ref}[0];
+
+        ## Set binary version and path
+        $binary{$binary} = ({path => $binary_path,
+          version => $process_return{stdouts_ref}[0],
+        });
     }
-    return %binary_version;
+    return %binary;
 }
 
 sub get_executable {

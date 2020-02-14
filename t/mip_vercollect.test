@@ -1,0 +1,147 @@
+#!/usr/bin/env perl
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use Cwd;
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname basename };
+use File::Path qw{ remove_tree };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error};
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## Cpanm
+use IPC::Cmd qw{ can_run run};
+use Modern::Perl qw{ 2018 };
+use Readonly;
+use autodie qw{open close :all};
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $NEWLINE $SPACE };
+use MIP::Io::Write qw{ write_to_file };
+use MIP::Script::Utils qw{ help };
+use MIP::Environment::Child_process qw{ child_process };
+
+our $USAGE = build_usage( {} );
+
+my $VERBOSE = 1;
+our $VERSION = 1.00;
+
+## Set paths
+my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
+my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
+my $mip_path      = catfile( dirname($Bin), q{mip} );
+my $log_file_path = catfile( cwd(),         q{vercollect.log} );
+my $infile_path   = catfile( $cluster_constant_path,
+    qw{ 643594-miptest analysis version_collect_ar binary_paths.yaml} );
+my $outfile_path =
+  catfile( $cluster_constant_path, qw{ 643594-miptest analysis reference_info.yaml } );
+
+### User Options
+GetOptions(
+
+    ## Display help text
+    q{h|help} => sub {
+        done_testing();
+        say {*STDOUT} $USAGE;
+        exit;
+    },
+
+    ## Display version number
+    q{v|version} => sub {
+        done_testing();
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        exit;
+    },
+    q{vb|verbose} => $VERBOSE,
+  )
+  or (
+    done_testing(),
+    help(
+        {
+            USAGE     => $USAGE,
+            exit_code => 1,
+        }
+    )
+  );
+
+ok( can_run(q{mip}), q{Checking can run mip} );
+
+### Prepare temporary file for testing
+my $binary_paths_file_path =
+  catfile( $cluster_constant_path,
+    qw{ 643594-miptest analysis version_collect_ar binary_paths.yaml} );
+my %binary_path = ( mip => catfile( $conda_path, qw{ envs mip_travis bin mip} ), );
+
+write_to_file(
+    {
+        data_href => \%binary_path,
+        format    => q{yaml},
+        path      => $binary_paths_file_path,
+    }
+);
+
+## Test execution of mip
+# Create array ref for cmd
+my $cmds_ref = [
+    q{perl},        $mip_path,        qw{ vercollect }, q{--log_file},
+    $log_file_path, q{--infile_path}, $infile_path,     q{--outfile},
+    $outfile_path,
+];
+
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip vercollect} );
+
+ok( -f $outfile_path, q{Checking for outfile} );
+
+## Clean-up
+unlink $binary_paths_file_path;
+unlink $log_file_path;
+
+done_testing();
+
+######################
+####SubRoutines#######
+######################
+
+sub build_usage {
+
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options]
+    -vb/--verbose    Verbose
+    -h/--help        Display this help message
+    -v/--version     Display version
+END_USAGE
+}
