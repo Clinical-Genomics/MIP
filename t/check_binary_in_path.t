@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Unix}    => [qw{ check_binary_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli test_mip_hashes}],
+        q{MIP::Environment::Path} => [qw{ check_binary_in_path }],
+        q{MIP::Test::Fixtures}    => [qw{ test_log test_standard_cli test_mip_hashes}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Unix qw{ check_binary_in_path };
+use MIP::Environment::Path qw{ check_binary_in_path };
 
-diag(   q{Test check_binary_in_path from Unix.pm v}
-      . $MIP::Check::Unix::VERSION
+diag(   q{Test check_binary_in_path from Path.pm v}
+      . $MIP::Environment::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}    => [qw{ check_executable_in_path }],
+        q{MIP::Active_parameter}    => [qw{ parse_program_executables }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_executable_in_path };
+use MIP::Active_parameter qw{ parse_program_executables };
 
-diag(   q{Test check_executable_in_path from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test parse_program_executables from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,10 +69,9 @@ $active_parameter{bwa_mem}    = 0;
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
 
 ## Given switched off active recipe parameter
-my $return = check_executable_in_path(
+my $return = parse_program_executables(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         parameter_href        => \%parameter,
     }
 );
@@ -84,10 +83,9 @@ is( $return, undef, q{Skip check for inactive recipes} );
 $active_parameter{bwa_mem} = 1;
 
 trap {
-    check_executable_in_path(
+    parse_program_executables(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         }
     )
@@ -101,10 +99,9 @@ like( $trap->stderr, qr/samtools/xms,
 $parameter{bwa_mem}{program_executables} = [qw{ not_in_path }];
 
 trap {
-    check_executable_in_path(
+    parse_program_executables(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         }
     );

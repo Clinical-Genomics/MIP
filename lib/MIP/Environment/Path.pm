@@ -31,7 +31,9 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_bin_file_path
+    our @EXPORT_OK = qw{
+      check_binary_in_path
+      get_bin_file_path
       get_conda_bin_dir_path
       get_conda_path
       is_binary_in_path
@@ -40,6 +42,63 @@ BEGIN {
 
 ## Constants
 Readonly my $MINUS_ONE => -1;
+
+sub check_binary_in_path {
+
+## Function : Scans through PATH for supplied binary
+## Returns  : $binary_path
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $binary                => Binary to search for
+##          : $program_name          => MIP program name (Analysis recipe switch)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $binary;
+    my $program_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        binary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary,
+            strict_type => 1,
+        },
+        program_name => {
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Search for binary in PATH in any MIP conda env defined by config
+    ## or conda base
+    my $env_binary_path = get_conda_bin_dir_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            bin_file              => $binary,
+            environment_key       => $program_name,
+        }
+    );
+
+    ## Potential full path to binary
+    my $binary_path = catfile( $env_binary_path, $binary );
+
+    ## Already tested
+    return if ( exists $active_parameter_href->{binary_path}{$binary} );
+
+    ## Test binary
+    is_binary_in_path( { binary => $binary_path, } );
+
+    return $binary_path;
+}
 
 sub get_bin_file_path {
 

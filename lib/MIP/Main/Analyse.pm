@@ -30,6 +30,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
+  parse_program_executables
   parse_recipe_resources
   set_parameter_reference_dir_path
   update_to_absolute_path };
@@ -40,7 +41,6 @@ use MIP::Check::Parameter qw{
   check_recipe_mode
   check_sample_ids
 };
-use MIP::Check::Path qw{ check_executable_in_path };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Environment::User qw{ check_email_address };
@@ -88,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.45;
+    our $VERSION = 1.46;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -360,11 +360,10 @@ sub mip_analyse {
     ## Check core number requested against environment provisioned
     parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
-    ## Check programs in path, and executable
-    check_executable_in_path(
+    ## Check programs in path, is executable, and set binary_path
+    parse_program_executables(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         }
     );
