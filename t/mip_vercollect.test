@@ -39,10 +39,9 @@ my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
 my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
 my $mip_path      = catfile( dirname($Bin), q{mip} );
 my $log_file_path = catfile( cwd(),         q{vercollect.log} );
-my $infile_path   = catfile( $cluster_constant_path,
-    qw{ 643594-miptest analysis version_collect_ar binary_paths.yaml} );
-my $outfile_path =
-  catfile( $cluster_constant_path, qw{ 643594-miptest analysis reference_info.yaml } );
+my $binary_paths_file_path =
+  catfile( $cluster_constant_path, qw{ test_data binary_paths.yaml} );
+my $outfile_path = catfile( $cluster_constant_path, qw{ test_data reference_info.yaml } );
 
 ### User Options
 GetOptions(
@@ -75,9 +74,6 @@ GetOptions(
 ok( can_run(q{mip}), q{Checking can run mip} );
 
 ### Prepare temporary file for testing
-my $binary_paths_file_path =
-  catfile( $cluster_constant_path,
-    qw{ 643594-miptest analysis version_collect_ar binary_paths.yaml} );
 my %binary_path = ( mip => catfile( $conda_path, qw{ envs mip_travis bin mip} ), );
 
 write_to_file(
@@ -91,8 +87,10 @@ write_to_file(
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
-    q{perl},        $mip_path,        qw{ vercollect }, q{--log_file},
-    $log_file_path, q{--infile_path}, $infile_path,     q{--outfile},
+    q{perl},                 $mip_path,
+    qw{ vercollect },        q{--log_file},
+    $log_file_path,          q{--infile_path},
+    $binary_paths_file_path, q{--outfile},
     $outfile_path,
 ];
 
