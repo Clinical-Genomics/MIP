@@ -15,13 +15,12 @@ use warnings;
 
 ## CPAN
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
-use MIP::Package_manager::Pip qw{ pip_install };
 use MIP::Program::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Pip qw{ pip_install };
 
 BEGIN {
 
@@ -29,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
