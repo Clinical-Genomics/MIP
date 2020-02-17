@@ -21,7 +21,7 @@ use autodie qw{ open close :all };
 use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $LOG_NAME $SPACE };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Io::Write qw{ write_to_file };
 
@@ -31,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{1.0.2};
+    our $VERSION = q{1.0.3};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vercollect };
@@ -41,23 +41,16 @@ sub mip_vercollect {
 
 ## Function : Execute mip vercollect to get executable versions
 ## Returns  :
-## Arguments: $log         => Log object
+## Arguments: $infile_path => Executables (binary) info file
 ##          : $outfile     => Data metric output file
-##          : $infile_path => Executables (binary) info file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
     my $outfile;
     my $infile_path;
 
     my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         outfile => {
             defined     => 1,
             required    => 1,
@@ -74,13 +67,16 @@ sub mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Executable qw{ get_binary_version };
+    use MIP::Environment::Executable qw{ get_binary_version };
 
-    my %binary_version;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %binary_info;
 
     ## Loads a YAML file into an arbitrary hash and returns it
     $log->info( q{Loading: } . $infile_path );
-    my %binary_info = read_from_file(
+    my %binary_path = read_from_file(
         {
             format => q{yaml},
             path   => $infile_path,
@@ -92,7 +88,7 @@ sub mip_vercollect {
     if ( -e $outfile ) {
         ## Loads a YAML file into an arbitrary hash and returns it
         $log->info( q{Loading: } . $outfile );
-        %binary_version = read_from_file(
+        %binary_info = read_from_file(
             {
                 format => q{yaml},
                 path   => $outfile,
@@ -102,13 +98,13 @@ sub mip_vercollect {
     }
 
     ## Get/update executable versions
-    %binary_version =
-      ( %binary_version, get_binary_version( { binary_info_href => \%binary_info, } ) );
+    %binary_info =
+      ( %binary_info, get_binary_version( { binary_info_href => \%binary_path, } ) );
 
-    ## Writes a qc data hash to file
+    ## Writes a binary hash to file
     write_to_file(
         {
-            data_href => \%binary_version,
+            data_href => \%binary_info,
             format    => q{yaml},
             path      => $outfile,
         }
