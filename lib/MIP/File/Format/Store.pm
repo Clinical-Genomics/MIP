@@ -172,7 +172,7 @@ sub parse_store_files {
 
     ## Remove duplicates, keep most recent additions
     my %seen;
-    my @store_files = grep { !$seen{ $_->{path} }++ } ( reverse @{$store_files_ref} );
+    my @store_files = grep {  not $seen{ $_->{path} }++ } ( reverse @{$store_files_ref} );
     $store_files_ref = [ reverse @store_files ];
 
     return $store_files_ref;
