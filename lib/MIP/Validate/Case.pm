@@ -79,7 +79,7 @@ sub check_sample_ids {
         ## Family_id cannot be the same as sample_id
         if ( $case_id eq $sample_id ) {
 
-            $log->fatal( q{Family_id: '}
+            $log->fatal( q{Case_id: '}
                   . $case_id
                   . q{' equals sample_id: '}
                   . $sample_id
