@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $SPACE };
+use MIP::Constants qw{ $SPACE };
 
 BEGIN {
     require Exporter;
