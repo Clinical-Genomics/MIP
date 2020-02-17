@@ -45,7 +45,7 @@ use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPAC
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::File::Format::Store qw{ set_analysis_files_to_store };
+use MIP::File::Format::Store qw{ parse_store_files set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Io::Write qw{ write_to_file };
@@ -556,8 +556,15 @@ sub mip_analyse {
         }
     );
 
+    ## Parse and write store array to file
+    my %store_files = (
+        files => parse_store_files(
+            {
+                store_files_ref => $sample_info{files},
+            }
+        )
+    );
     ## Writes a YAML hash to file
-    my %store_files = ( files => $sample_info{files}, );
     write_to_file(
         {
             data_href => \%store_files,
