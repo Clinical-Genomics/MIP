@@ -1,16 +1,18 @@
-package MIP::Package_manager::Pip;
+package MIP::Program::Pip;
 
 use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use Readonly;
+
+## CPANM
+use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
@@ -23,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pip_install };
