@@ -39,7 +39,6 @@ use MIP::Check::Parameter qw{
   check_load_env_packages
   check_recipe_name
   check_recipe_mode
-  check_sample_ids
 };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
@@ -74,6 +73,7 @@ use MIP::Set::Parameter qw{
 };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
+use MIP::Validate::Case qw{ check_sample_ids };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -88,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.46;
+    our $VERSION = 1.47;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -368,11 +368,10 @@ sub mip_analyse {
         }
     );
 
-## Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+    ## Check that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
         {
             case_id        => $active_parameter{case_id},
-            log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
