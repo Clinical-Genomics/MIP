@@ -23,10 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ define_analysis_files_to_store set_analysis_files_to_store };
+    our @EXPORT_OK = qw{ define_analysis_files_to_store parse_store_files set_analysis_files_to_store };
 }
 
 sub define_analysis_files_to_store {
@@ -144,6 +144,37 @@ sub set_analysis_files_to_store {
         );
     }
     return;
+}
+
+sub parse_store_files {
+
+## Function : Parse store files and remove old duplicates based on same path
+## Returns  : $store_files_ref
+## Arguments: $store_files_ref => Store files {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $store_files_ref;
+
+    my $tmpl = {
+        store_files_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$store_files_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Remove duplicates, keep most recent additions
+    my %seen;
+    my @store_files = grep {  not $seen{ $_->{path} }++ } ( reverse @{$store_files_ref} );
+    $store_files_ref = [ reverse @store_files ];
+
+    return $store_files_ref;
 }
 
 1;
