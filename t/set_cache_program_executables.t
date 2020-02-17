@@ -16,8 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +39,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parameter}      => [qw{ get_program_executables }],
+        q{MIP::Parameter}      => [qw{ set_cache_program_executables }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parameter qw{ get_program_executables };
+use MIP::Parameter qw{ set_cache_program_executables };
 
-diag(   q{Test get_program_executables from Parameter.pm v}
+diag(   q{Test set_cache_program_executables from Parameter.pm v}
       . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -59,30 +57,21 @@ diag(   q{Test get_program_executables from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given parameters with program executables when no recipes in cache
+## Given parameters with program executables and a cache recipe
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
-
-trap {
-    get_program_executables( { parameter_href => \%parameter, } )
-};
-
-## Then croak and exist
-is( $trap->leaveby, q{die}, q{Exit if no recipe is found} );
-like(
-    $trap->die,
-    qr{ No\skeys\s'cache'\sand\s'recipe'}xms,
-    q{Throw error if no recipe can be found}
-);
-
-## Given a cache recipe and program
 push @{ $parameter{cache}{recipe} }, q{bwa_mem};
 
-my @program_executables = get_program_executables( { parameter_href => \%parameter, } );
+set_cache_program_executables( { parameter_href => \%parameter, } );
 
-my @expected_program_executables = qw{ bwa samtools sambamba };
+my %expected_cache = (
+    cache => {
+        program_executables => [qw{ bwa samtools sambamba }],
+        recipe              => [qw{ bwa_mem }],
+    },
+);
 
-## Then all program executables is returned
-is_deeply( \@expected_program_executables,
-    \@program_executables, q{Got all program executables} );
+## Then program executables should be set in cache
+is_deeply( $parameter{cache}, $expected_cache{cache},
+    q{Set program executables in cache} );
 
 done_testing();

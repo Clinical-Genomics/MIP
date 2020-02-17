@@ -48,7 +48,6 @@ use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
-use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -56,6 +55,7 @@ use MIP::Parameter qw{
   parse_parameter_files
   parse_reference_path
   set_cache
+  set_cache_program_executables
   set_default
 };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
@@ -88,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.46;
+    our $VERSION = 1.47;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -396,8 +396,7 @@ sub mip_analyse {
         }
     );
 
-    @{ $parameter{cache}{program_executables} } =
-      get_program_executables( { parameter_href => \%parameter, } );
+    set_cache_program_executables( { parameter_href => \%parameter, } );
 
 ## Check correct value for recipe mode in MIP
     check_recipe_mode(
