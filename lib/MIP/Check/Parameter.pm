@@ -20,7 +20,7 @@ use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -47,7 +47,6 @@ BEGIN {
       check_recipe_fastq_compatibility
       check_recipe_mode
       check_recipe_name
-      check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
@@ -147,7 +146,6 @@ sub check_allowed_array_values {
     # All ok
     return 1;
 }
-
 
 sub check_load_env_packages {
 
@@ -983,88 +981,6 @@ sub check_recipe_mode {
             ( sort keys %is_allowed )
         );
         exit 1;
-    }
-    return 1;
-}
-
-sub check_sample_ids {
-
-## Function : Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-## Returns  :
-## Arguments: $case_id      => Family id
-##          : $log            => Log object
-##          : $sample_ids_ref => Sample ids {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $case_id;
-    my $log;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-        case_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$case_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Hash to test duplicate sample_ids later
-    my %seen;
-
-    if ( not @{$sample_ids_ref} ) {
-
-        $log->fatal(q{Please provide sample_id(s)});
-        exit 1;
-    }
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-        ## Increment instance to check duplicates later
-        $seen{$sample_id}++;
-
-        ## Family_id cannot be the same as sample_id
-        if ( $case_id eq $sample_id ) {
-
-            $log->fatal( q{Family_id: }
-                  . $case_id
-                  . q{ equals sample_id: }
-                  . $sample_id
-                  . q{. Please make sure that the case_id and sample_id(s) are unique.} );
-            exit 1;
-        }
-        ## Check for unique sample_ids
-        if ( $seen{$sample_id} > 1 ) {
-
-            $log->fatal( q{Sample_id: } . $sample_id . q{ is not uniqe.} );
-            exit 1;
-        }
-        ## Sample_id contains "_", not allowed in filename convention
-        if ( $sample_id =~ /$UNDERSCORE/sxm ) {
-
-            $log->fatal( q{Sample_id: }
-                  . $sample_id
-                  . q{ contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.}
-            );
-            exit 1;
-        }
     }
     return 1;
 }
