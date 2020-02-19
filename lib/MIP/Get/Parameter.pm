@@ -13,7 +13,6 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
@@ -25,14 +24,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_gatk_intervals
       get_install_parameter_attribute
       get_package_source_env_cmds
-      get_program_executables
       get_program_version
       get_programs_for_shell_installation
       get_recipe_resources
@@ -290,48 +288,6 @@ sub get_package_source_env_cmds {
     push @source_environment_cmds, @env_method_cmds;
 
     return @source_environment_cmds;
-}
-
-sub get_program_executables {
-
-## Function : Get the parameter file program executables per recipe
-## Returns  : uniq @program_executables
-## Arguments: $parameter_href => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Get all program executables
-    my @program_executables;
-
-    my $err_msg = q{No keys 'cache' and 'recipe' in parameter hash};
-    croak($err_msg) if ( not exists $parameter_href->{cache}{recipe} );
-
-  RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
-
-        if ( exists $parameter_href->{$recipe}{program_executables} ) {
-
-            push @program_executables,
-              @{ $parameter_href->{$recipe}{program_executables} };
-        }
-    }
-    ## Make unique and return
-    return uniq(@program_executables);
 }
 
 sub get_programs_for_shell_installation {

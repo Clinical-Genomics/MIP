@@ -14,7 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
+use List::MoreUtils qw { any uniq };
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,11 +35,13 @@ BEGIN {
       get_capture_kit
       get_order_of_parameters
       get_parameter_attribute
+      get_program_executables
       parse_reference_path
       parse_parameter_files
       parse_parameter_recipe_names
       print_recipe
       set_cache
+      set_cache_program_executables
       set_cache_sample_id_parameter
       set_custom_default_to_active_parameter
       set_default
@@ -322,6 +324,47 @@ sub get_parameter_attribute {
 
     ## Return scalar parameter attribute value
     return $parameter_attribute;
+}
+
+sub get_program_executables {
+
+## Function : Get the parameter file program executables per recipe
+## Returns  : uniq @program_executables
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get all program executables
+    my @program_executables;
+
+    my $err_msg = q{No keys 'cache' and 'recipe' in parameter hash};
+    croak($err_msg) if ( not exists $parameter_href->{cache}{recipe} );
+
+  RECIPE:
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
+
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
+
+        push @program_executables, @{ $parameter_href->{$recipe}{program_executables} };
+    }
+
+    ## Make unique and return
+    return uniq(@program_executables);
 }
 
 sub parse_parameter_files {
@@ -635,6 +678,35 @@ sub set_cache {
             push @{ $parameter_href->{cache}{$string_to_match} }, $parameter_name;
         }
     }
+    return;
+}
+
+sub set_cache_program_executables {
+
+## Function : Set program executables per recipe to parameter cache
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    @{ $parameter_href->{cache}{program_executables} } =
+      get_program_executables( { parameter_href => $parameter_href, } );
+
     return;
 }
 
