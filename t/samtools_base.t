@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Samtools} => [qw{ samtools_view }],
+        q{MIP::Program::Samtools} => [qw{ samtools_base }],
         q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Samtools qw{ samtools_view };
+use MIP::Program::Samtools qw{ samtools_base };
 
-diag(   q{Test samtools_view from samtools.pl v}
+diag(   q{Test samtools_base from Samtools.pm v}
       . $MIP::Program::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -60,7 +60,7 @@ diag(   q{Test samtools_view from samtools.pl v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ samtools view };
+my @function_base_commands = qw{ samtools };
 
 my %base_argument = (
     filehandle => {
@@ -69,67 +69,19 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
 my %required_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    commands_ref => {
+        inputs_ref      => [qw{ samtools }],
+        expected_output => q{samtools},
     },
 );
 
-## Specific arguments
 my %specific_argument = (
-    auto_detect_input_format => {
-        input           => 1,
-        expected_output => q{-S},
-    },
-    exclude_reads_with_these_flags => {
-        input           => 1,
-        expected_output => q{-F 1},
-    },
-    fraction => {
-        input           => q{2.5},
-        expected_output => q{-s 2.5},
-    },
-    outfile_path => {
-        input           => q{outfilepath},
-        expected_output => q{-o outfilepath},
-    },
-    output_format => {
-        input           => q{sam},
-        expected_output => q{--output-fmt SAM},
-    },
-    regions_ref => {
-        inputs_ref      => [qw{ 1:1000000-2000000 2:1000-5000 }],
-        expected_output => q{1:1000000-2000000 2:1000-5000},
-    },
-    referencefile_path => {
-        input           => q{grch37_homo_sapiens.fasta},
-        expected_output => q{--reference grch37_homo_sapiens.fasta},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
-    },
-    thread_number => {
-        input           => 2,
-        expected_output => q{--threads 2},
-    },
-    uncompressed_bam_output => {
-        input           => 1,
-        expected_output => q{-u},
-    },
-    with_header => {
-        input           => 1,
-        expected_output => q{-h},
+    commands_ref => {
+        inputs_ref      => [qw{ samtools }],
+        expected_output => q{samtools},
     },
     write_index => {
         input           => 1,
@@ -138,11 +90,12 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&samtools_view;
+my $module_function_cref = \&samtools_base;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
