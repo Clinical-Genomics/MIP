@@ -19,18 +19,19 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_files
+      check_recipe_mode
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_user_supplied_pedigree_parameter
@@ -209,6 +210,79 @@ sub check_parameter_files {
         return;
     }
     return;
+}
+
+sub check_recipe_mode {
+
+## Function : Check correct value for recipe mode in MIP
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_cache };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Set allowed values
+    my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
+
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+  RECIPE:
+    foreach my $recipe (@recipes) {
+
+        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
+        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
+
+        ## Unpack
+        my $recipe_mode = $active_parameter_href->{$recipe};
+
+        next RECIPE if ( $is_allowed{$recipe_mode} );
+
+        #If not an allowed value in active parameters
+        $log->fatal(
+            $SINGLE_QUOTE
+              . $active_parameter_href->{$recipe}
+              . q{' Is not an allowed mode for recipe '--}
+              . $recipe
+              . q{'. Set to: }
+              . join $PIPE,
+            ( sort keys %is_allowed )
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub get_not_allowed_temp_dirs {
