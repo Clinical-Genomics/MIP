@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
+use List::MoreUtils qw { any };
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE $UNDERSCORE };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -54,6 +54,7 @@ BEGIN {
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
+      update_recipe_mode_for_start_with_option
       update_reference_parameters
       update_to_absolute_path
     };
@@ -1200,6 +1201,72 @@ sub set_recipe_resource {
 
             $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
         }
+    }
+    return;
+}
+
+sub update_recipe_mode_for_start_with_option {
+
+## Function : Update recipe mode depending on recipe to start with
+## Returns  :
+## Arguments: $active_parameter_href  => The active parameters for this analysis hash {REF}
+##          : $recipes_ref            => Recipes in MIP
+##          : $start_with_recipes_ref => Recipes to run
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $recipes_ref;
+    my $start_with_recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+        start_with_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$start_with_recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Run mode
+    my $run_mode = 1;
+
+    ## Dry run mode
+    my $dry_run_mode = 2;
+
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
+
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
+
+        ## If recipe is uppstream of start with recipe
+        if ( not any { $_ eq $recipe_name } @{$start_with_recipes_ref} ) {
+
+            ## Change recipe mode to dry run
+            $active_parameter_href->{$recipe_name} = $dry_run_mode;
+            next RECIPE;
+        }
+        ## Recipe or downstream dependency recipe
+        # Change recipe mode to active
+        $active_parameter_href->{$recipe_name} = $run_mode;
     }
     return;
 }
