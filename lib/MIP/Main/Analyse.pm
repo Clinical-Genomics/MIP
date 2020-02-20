@@ -29,6 +29,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
+  check_load_env_packages
   check_recipe_mode
   get_not_allowed_temp_dirs
   parse_program_executables
@@ -37,7 +38,6 @@ use MIP::Active_parameter qw{
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Parameter qw{
-  check_load_env_packages
   check_recipe_name
 };
 use MIP::Config qw{ parse_config };
@@ -88,7 +88,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.48;
+    our $VERSION = 1.49;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };

@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_load_env_packages }],
+        q{MIP::Active_parameter} => [qw{ check_load_env_packages }],
         q{MIP::Test::Fixtures}   => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_load_env_packages };
+use MIP::Active_parameter qw{ check_load_env_packages };
 
-diag(   q{Test check_load_env_packages from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_load_env_packages from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,9 +58,10 @@ diag(   q{Test check_load_env_packages from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given load_env packages with existing program executables
+## Given load_env packages with existing program executables and recipes
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
 push @{ $parameter{cache}{program_executables} }, qw{ bwa samtools sambamba };
+push @{ $parameter{cache}{recipe} }, qw{ bwa_mem samtools_subsample_mt sambamba_depth };
 
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 
