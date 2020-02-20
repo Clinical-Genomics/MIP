@@ -19,8 +19,7 @@ use Readonly;
 use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -28,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -45,7 +44,6 @@ BEGIN {
       check_nist_version
       check_prioritize_variant_callers
       check_recipe_fastq_compatibility
-      check_recipe_mode
       check_recipe_name
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -913,74 +911,6 @@ sub check_prioritize_variant_callers {
                   . $SINGLE_QUOTE );
             exit 1;
         }
-    }
-    return 1;
-}
-
-sub check_recipe_mode {
-
-## Function : Check correct value for recipe mode in MIP.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set allowed values
-    my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
-
-  RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
-
-        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
-        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
-
-        ## Alias
-        my $recipe_mode = $active_parameter_href->{$recipe};
-
-        next RECIPE if ( $is_allowed{$recipe_mode} );
-
-        #If not an allowed value in active parameters
-        $log->fatal(
-            $SINGLE_QUOTE
-              . $active_parameter_href->{$recipe}
-              . q{' Is not an allowed mode for recipe '--}
-              . $recipe
-              . q{'. Set to: }
-              . join $PIPE,
-            ( sort keys %is_allowed )
-        );
-        exit 1;
     }
     return 1;
 }
