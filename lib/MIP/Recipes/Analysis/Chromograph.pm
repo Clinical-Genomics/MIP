@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
@@ -377,7 +377,7 @@ sub analysis_chromograph_proband {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_sort };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
     use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Upd qw{ upd_call };
@@ -494,6 +494,15 @@ sub analysis_chromograph_proband {
     ## Get family hash
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href } );
+
+    gnu_mkdir(
+        {
+            filehandle       => $filehandle,
+            indirectory_path => $outfile_path_prefix,
+            parents          => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     my @call_types         = qw{ sites regions };
     my $upd_outfile_suffix = $DOT . q{bed};
