@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [8.2.2]
+- Fixes a crash in MIP caused by not looping over the Y chromosomes for females in the GATK SplitNCigarReads recipe
+
 ## [8.2.1]
 - Removes multiple identical entries in the store file. Keeps the most recent
 
