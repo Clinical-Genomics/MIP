@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -135,7 +135,7 @@ sub get_family_member_id {
 sub get_pedigree_sample_id_attributes {
 
 ## Function : Get pedigree sample id attribute
-## Returns  : $attribute
+## Returns  : $attribute | %attribute
 ## Arguments: $attribute        => Attribute key
 ##          : $sample_id        => Sample id to get attribute for
 ##          : $sample_info_href => Info on samples and case hash {REF}

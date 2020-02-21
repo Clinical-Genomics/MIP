@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -52,6 +52,7 @@ BEGIN {
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
       set_exome_target_bed
+      set_gender_sample_ids
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
@@ -1097,6 +1098,81 @@ sub set_default_parameter {
     return;
 }
 
+sub set_gender_sample_ids {
+
+## Function : Set gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    my %gender_map = (
+        1      => \&_set_male_gender,
+        2      => \&_set_female_gender,
+        female => \&_set_female_gender,
+        male   => \&_set_male_gender,
+        other  => \&_set_other_and_male_gender,
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $sex = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sex},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( exists $gender_map{$sex} ) {
+
+            $gender_map{$sex}->(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    sample_id             => $sample_id
+                }
+            );
+            next SAMPLE_ID;
+        }
+        ## Set as other and male
+        _set_other_and_male_gender(
+            {
+                active_parameter_href => $active_parameter_href,
+                sample_id             => $sample_id
+            }
+        );
+
+    }
+    return;
+}
+
 sub set_parameter_reference_dir_path {
 
 ## Function : Set path for supplied reference(s) associated with parameter that should
@@ -1509,6 +1585,118 @@ sub update_to_absolute_path {
             }
         );
     }
+    return;
+}
+
+sub _set_female_gender {
+
+## Function : Set female gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{found_female}++;
+    push @{ $active_parameter_href->{gender}{females} }, $sample_id;
+    return;
+}
+
+sub _set_male_gender {
+
+## Function : Set male gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{found_male}++;
+    push @{ $active_parameter_href->{gender}{males} }, $sample_id;
+    return;
+}
+
+sub _set_other_and_male_gender {
+
+## Function : Set other gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
+    ## will be performed from fastq reads
+    $active_parameter_href->{found_male}++;
+
+    $active_parameter_href->{found_other}++;
+    push @{ $active_parameter_href->{gender}{others} }, $sample_id;
     return;
 }
 

@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Pedigree}       => [qw{ detect_sample_id_gender }],
+        q{MIP::Active_parameter}       => [qw{ set_gender_sample_ids }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Pedigree qw{ detect_sample_id_gender };
+use MIP::Active_parameter qw{ set_gender_sample_ids };
 
-diag(   q{Test detect_sample_id_gender from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test set_gender_sample_ids from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,13 +67,8 @@ my %sample_info = (
         sample_3 => { sex => q{other}, },
     },
 );
-(
 
-    $active_parameter{found_male},
-    $active_parameter{found_female},
-    $active_parameter{found_other},
-  )
-  = detect_sample_id_gender(
+  set_gender_sample_ids(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
@@ -111,6 +105,8 @@ is_deeply(
 );
 
 ## Given no males or females
+# Clear data from previous test
+map { $active_parameter{$_} = 0 } (qw{ found_male found_female found_other });
 
 %sample_info = (
     sample => {
@@ -125,13 +121,8 @@ is_deeply(
     found_female => 0,
     found_other  => 3,
 );
-(
 
-    $active_parameter{found_male},
-    $active_parameter{found_female},
-    $active_parameter{found_other},
-  )
-  = detect_sample_id_gender(
+set_gender_sample_ids(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
