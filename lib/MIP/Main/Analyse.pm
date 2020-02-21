@@ -57,14 +57,13 @@ use MIP::Parameter qw{
   set_cache_program_executables
   set_default
 };
-use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ create_fam_file
   detect_sample_id_gender
   get_is_trio
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
-use MIP::Recipes::Parse qw{ parse_recipes };
+use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Contigs qw{ set_contigs };
@@ -424,7 +423,6 @@ sub mip_analyse {
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         },
     );
