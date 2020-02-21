@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -146,8 +146,7 @@ sub analysis_bwa_mem {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem };
-    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
-    use MIP::Program::Sambamba qw{ sambamba_sort };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
       get_sequence_run_type
@@ -225,11 +224,13 @@ sub analysis_bwa_mem {
     my $outfile_tag =
       $file_info_href->{$sample_id}{$recipe_name}{file_tag};
 
+    my $output_format;
     my $uncompressed_bam_output;
     if ( $outfile_suffix eq q{.bam} ) {
 
         # Used downstream in samtools view
         $uncompressed_bam_output = 1;
+        $output_format           = q{bam};
     }
 
     # Too avoid adjusting infile_index in submitting to jobs
@@ -324,7 +325,7 @@ sub analysis_bwa_mem {
 
         ## Prepare for downstream processing
         # Can be either infile or instream
-        my $sambamba_sort_infile;
+        my $samtools_sort_infile;
 
         # Prior to ALTs in reference genome
         bwa_mem(
@@ -357,21 +358,23 @@ sub analysis_bwa_mem {
         print {$filehandle} $PIPE . $SPACE;
 
         ## Set sambamba sort input; Pipe from samtools view
-        $sambamba_sort_infile =
+        $samtools_sort_infile =
           catfile( dirname( devnull() ), q{stdin} );
 
         ## Increment paired end tracker
         $paired_end_tracker++;
 
-        ## Sort the output from bwa mem|run-bwamem
-        sambamba_sort(
+        ## Sort the output from bwa mem
+        samtools_sort(
             {
                 filehandle    => $filehandle,
-                infile_path   => $sambamba_sort_infile,
-                memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
+                infile_path   => $samtools_sort_infile,
                 outfile_path  => $outfile_path,
-                show_progress => 1,
-                temp_directory => $temp_directory,
+                output_format => $output_format,
+                temp_file_path_prefix =>
+                  catfile( $temp_directory, q{samtools_sort_temp} ),
+                thread_number => $recipe_resource{core_number},
+                write_index   => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -608,7 +611,7 @@ sub analysis_run_bwa_mem {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Samtools qw{ samtools_stats samtools_view };
+    use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
     use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info qw{
       get_rg_header_line
@@ -688,11 +691,13 @@ sub analysis_run_bwa_mem {
     my $outfile_tag =
       $file_info_href->{$sample_id}{$recipe_name}{file_tag};
 
+    my $output_format;
     my $uncompressed_bam_output;
     if ( $outfile_suffix eq q{.bam} ) {
 
         # Used downstream in samtools view
         $uncompressed_bam_output = 1;
+        $output_format           = q{bam};
     }
 
     # Too avoid adjusting infile_index in submitting to jobs
@@ -778,7 +783,7 @@ sub analysis_run_bwa_mem {
 
         ## Prepare for downstream processing
         # Can be either infile or instream
-        my $sambamba_sort_infile;
+        my $samtools_sort_infile;
 
         # If post to ALTs in reference genome
         run_bwamem(
@@ -798,20 +803,22 @@ sub analysis_run_bwa_mem {
         say   {$filehandle} $NEWLINE;
 
         ## Set sambamba sort input; Sort directly from run-bwakit
-        $sambamba_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
+        $samtools_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
 
-        ## Sort the output from bwa mem|run-bwamem
-        sambamba_sort(
+        ## Sort the output from run-bwamem
+        samtools_sort(
             {
                 filehandle    => $filehandle,
-                infile_path   => $sambamba_sort_infile,
-                memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
+                infile_path   => $samtools_sort_infile,
                 outfile_path  => $outfile_path,
-                show_progress => 1,
-                temp_directory => $temp_directory,
+                output_format => $output_format,
+                temp_file_path_prefix =>
+                  catfile( $temp_directory, q{samtools_sort_temp} ),
+                thread_number => $recipe_resource{core_number},
+                write_index   => 1,
             }
         );
         say {$filehandle} $NEWLINE;
