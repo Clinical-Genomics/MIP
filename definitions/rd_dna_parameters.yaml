@@ -396,7 +396,6 @@ bwa_mem:
   program_executables:
     - bwa
     - samtools
-    - sambamba
   recipe_type: aligners
   type: recipe
 bwa_build_reference:
