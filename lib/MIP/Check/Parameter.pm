@@ -27,13 +27,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
       check_allowed_array_values
-      check_load_env_packages
       check_infile_contain_sample_id
       check_infiles
       check_mutually_exclusive_parameters
@@ -142,66 +141,6 @@ sub check_allowed_array_values {
     }
 
     # All ok
-    return 1;
-}
-
-sub check_load_env_packages {
-
-## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Allowed packages/keywords in load_env section of  config
-    my @allowed_packages = (
-        @{ $parameter_href->{cache}{program_executables} },
-        qw{ installation method mip }
-    );
-
-  ENV:
-    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
-
-      PACKAGE:
-        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
-
-            ## is program executable, installation, method or MIP main
-            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
-
-            ## is recipe
-            next PACKAGE if ( exists $parameter_href->{$package} );
-
-            my $err_msg =
-                q{Could not find load_env package: '}
-              . $package
-              . q{' in MIP as either recipe or program_executables};
-            croak($err_msg);
-        }
-    }
     return 1;
 }
 

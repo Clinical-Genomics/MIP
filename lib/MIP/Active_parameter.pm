@@ -17,6 +17,8 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use List::MoreUtils qw { any };
+use Readonly;
+
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
@@ -26,10 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_load_env_packages
       check_parameter_files
       check_recipe_mode
       get_not_allowed_temp_dirs
@@ -59,6 +62,79 @@ BEGIN {
       update_reference_parameters
       update_to_absolute_path
     };
+}
+
+sub check_load_env_packages {
+
+## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_cache };
+
+    ## Constants
+    Readonly my @LOAD_ENV_KEYS => qw{ installation method mip };
+
+    my @program_executables = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{program_executables},
+        }
+    );
+
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+    ## Allowed packages/keywords in load_env section of config
+    my @allowed_packages = ( @program_executables, @LOAD_ENV_KEYS, @recipes, );
+
+  ENV:
+    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
+
+      PACKAGE:
+        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
+
+            ## is program executable, installation, method, mip or recipe_name
+            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
+
+            my $err_msg =
+                q{Could not find load_env package: '}
+              . $package
+              . q{' in MIP as either recipe or program_executables};
+            croak($err_msg);
+        }
+    }
+    return 1;
 }
 
 sub check_parameter_files {
