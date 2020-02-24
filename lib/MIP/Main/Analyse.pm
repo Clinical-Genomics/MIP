@@ -36,6 +36,7 @@ use MIP::Active_parameter qw{
   parse_recipe_resources
   set_gender_sample_ids
   set_parameter_reference_dir_path
+  update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Parameter qw{
@@ -71,7 +72,6 @@ use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
-use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 use MIP::Validate::Case qw{ check_sample_ids };
 
 ## Recipes
@@ -87,7 +87,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.49;
+    our $VERSION = 1.50;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };

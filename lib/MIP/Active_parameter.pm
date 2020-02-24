@@ -19,7 +19,6 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
-
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
@@ -28,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -60,6 +59,7 @@ BEGIN {
       set_pedigree_sample_id_parameter
       set_recipe_resource
       update_recipe_mode_for_start_with_option
+      update_recipe_mode_with_dry_run_all
       update_reference_parameters
       update_to_absolute_path
     };
@@ -1493,6 +1493,63 @@ sub update_recipe_mode_for_start_with_option {
         ## Recipe or downstream dependency recipe
         # Change recipe mode to active
         $active_parameter_href->{$recipe_name} = $run_mode;
+    }
+    return;
+}
+
+sub update_recipe_mode_with_dry_run_all {
+
+## Function : Update recipe mode depending on dry_run_all flag
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $dry_run_all           => Simulation mode
+##          : $recipes_ref           => Recipes in MIP
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $dry_run_all;
+    my $recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        dry_run_all => {
+            allow       => [ undef, 0, 1, 2 ],
+            default     => 0,
+            store       => \$dry_run_all,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $dry_run_all );
+
+    ## Activate dry run mode
+    my $dry_run_mode = 2;
+
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
+
+        ## If recipe is activated
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
+
+        # Change recipe mode to simulation
+        $active_parameter_href->{$recipe_name} = $dry_run_mode;
     }
     return;
 }
