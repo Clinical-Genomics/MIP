@@ -26,11 +26,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_hash
+      check_recipe_vs_binary_name
       get_cache
       get_capture_kit
       get_order_of_parameters
@@ -118,6 +119,60 @@ sub check_parameter_hash {
                 parameter_href => $parameter_href,
             }
         );
+    }
+    return 1;
+}
+
+sub check_recipe_vs_binary_name {
+
+## Function : Check that recipe name and program binaries are not identical
+## Returns  : 1
+## Arguments: $parameter_href   => Parameter hash {REF}
+##          : $recipe_names_ref => Recipe names {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $recipe_names_ref;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_names_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %binary_name;
+
+  RECIPE:
+    foreach my $recipe ( @{$recipe_names_ref} ) {
+
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
+
+      BINARY:
+        foreach my $binary ( @{ $parameter_href->{$recipe}{program_executables} } ) {
+
+            $binary_name{$binary} = undef;
+        }
+
+        next RECIPE if ( not exists $binary_name{$recipe} );
+
+        my $err_msg =
+qq{Identical names for recipe and program: $recipe. Recipes cannot be identical to program binaries };
+        croak($err_msg);
     }
     return 1;
 }
