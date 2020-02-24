@@ -59,21 +59,21 @@ diag(   q{Test update_recipe_mode_with_dry_run_all from Active_parameter.pm v}
 
 ### No update of recipe parameters
 
-my $simulation_mode = 0;
+my $dry_run_mode = 0;
 
 my @recipes = qw{fastqc_ar bwa_mem peddy_ar};
 
 my %active_parameter = (
-    fastqc_ar => 0,
     bwa_mem   => 1,
+    fastqc_ar => 0,
     peddy_ar  => 2,
 );
 
 update_recipe_mode_with_dry_run_all(
     {
         active_parameter_href => \%active_parameter,
+        dry_run_all           => $dry_run_mode,
         recipes_ref           => \@recipes,
-        dry_run_all           => $simulation_mode,
     }
 );
 
@@ -86,13 +86,13 @@ is( $active_parameter{peddy_ar}, 2, q{No update peddy_ar} );
 ### Update of recipe parameters
 
 # Set simulation mode
-$simulation_mode = 1;
+$dry_run_mode = 1;
 
 update_recipe_mode_with_dry_run_all(
     {
         active_parameter_href => \%active_parameter,
+        dry_run_all           => $dry_run_mode,
         recipes_ref           => \@recipes,
-        dry_run_all           => $simulation_mode,
     }
 );
 
