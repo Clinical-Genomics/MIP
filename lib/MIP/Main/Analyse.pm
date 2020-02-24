@@ -34,6 +34,7 @@ use MIP::Active_parameter qw{
   get_not_allowed_temp_dirs
   parse_program_executables
   parse_recipe_resources
+  set_gender_sample_ids
   set_parameter_reference_dir_path
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
@@ -58,7 +59,6 @@ use MIP::Parameter qw{
   set_default
 };
 use MIP::Pedigree qw{ create_fam_file
-  detect_sample_id_gender
   get_is_trio
   parse_pedigree
 };
@@ -436,19 +436,13 @@ sub mip_analyse {
         }
     );
 
-    ## Detect the gender(s) included in current analysis
-    (
-
-        $active_parameter{found_male},
-        $active_parameter{found_female},
-        $active_parameter{found_other},
-      )
-      = detect_sample_id_gender(
+    ## Set the gender(s) included in current analysisa and count them
+    set_gender_sample_ids(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
         }
-      );
+    );
 
 ### Contigs
 ## Set contig prefix and contig names depending on reference used
