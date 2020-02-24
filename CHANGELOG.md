@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2
 
+## [8.2.2]
+- Fixes a crash in MIP caused by not looping over the Y chromosomes for females in the GATK SplitNCigarReads recipe
+
+## [8.2.1]
+- Removes multiple identical entries in the store file. Keeps the most recent
+
 ## [8.2.0]
 - Minor changes to the install processes
 - Added yamllint
