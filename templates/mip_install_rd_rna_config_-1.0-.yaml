@@ -8,9 +8,6 @@ conda:
 shell:
   mip_scripts:
     version: Your current MIP version
-  gtf2bed:
-    version: 1.04.807
-    url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
 singularity:
   arriba:
     executable:
@@ -48,8 +45,9 @@ singularity:
     executable:
       picard: "no_executable_in_image"
     uri: docker://broadinstitute/picard:2.20.7
-  pigz:
+  utilities:
     executable:
+      gtf2bed:
       pigz:
     uri: docker://clinicalgenomics/utilities:latest
   preseq:
