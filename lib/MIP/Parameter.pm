@@ -155,18 +155,20 @@ sub check_recipe_vs_binary_name {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Get all program executables
+    my @program_executables = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{program_executables},
+        }
+    );
+
+    ## Create hash map for check
     my %binary_name;
+    @binary_name{@program_executables} = undef;
 
   RECIPE:
     foreach my $recipe ( @{$recipe_names_ref} ) {
-
-        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
-
-      BINARY:
-        foreach my $binary ( @{ $parameter_href->{$recipe}{program_executables} } ) {
-
-            $binary_name{$binary} = undef;
-        }
 
         next RECIPE if ( not exists $binary_name{$recipe} );
 
