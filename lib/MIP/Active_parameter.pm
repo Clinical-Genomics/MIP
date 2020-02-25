@@ -1521,7 +1521,7 @@ sub update_recipe_mode_with_dry_run_all {
             strict_type => 1,
         },
         dry_run_all => {
-            allow       => [ undef, 0, 1, 2 ],
+            allow       => [ undef, 0, 1, ],
             default     => 0,
             store       => \$dry_run_all,
             strict_type => 1,
