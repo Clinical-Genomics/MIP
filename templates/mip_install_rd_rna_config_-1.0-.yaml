@@ -4,7 +4,6 @@ bash_set_pipefail: 1
 conda:
   gffcompare: 0.11.2
   python: 3.7
-  salmon: 0.12.0=h86b0361_1
 shell:
   mip_scripts:
     version: Your current MIP version
@@ -66,6 +65,10 @@ singularity:
       read_distribution.py:
       read_duplication.py:
     uri: library://jemten/mip_containers/rseqc:3.0.1
+  salmon:
+    executable:
+      salmon:
+    uri: docker://clinicalgenomics/salmon:0.12.0
   sambamba:
     executable:
       sambamba:
