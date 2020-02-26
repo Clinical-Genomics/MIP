@@ -95,7 +95,7 @@ singularity:
     executable:
       picard: "no_executable_in_image"
     uri: docker://broadinstitute/picard:2.20.7
-  pigz:
+  utilities:
     executable:
       pigz:
     uri: docker://clinicalgenomics/utilities:latest
