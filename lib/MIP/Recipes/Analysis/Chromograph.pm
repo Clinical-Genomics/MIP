@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
@@ -420,6 +420,8 @@ sub analysis_chromograph_proband {
         }
     );
 
+    ## Switch from case id to sample id for the outfiles since this is done per sample
+    $infile_name_prefix =~ s/$case_id/$sample_id/xms;
     %io = (
         %io,
         parse_io_outfiles(
