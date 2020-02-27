@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -43,7 +43,6 @@ BEGIN {
       check_nist_version
       check_prioritize_variant_callers
       check_recipe_fastq_compatibility
-      check_recipe_name
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
@@ -681,59 +680,6 @@ sub check_nist_version {
             @{$nist_parameters_ref}
         );
         exit 1;
-    }
-    return 1;
-}
-
-sub check_recipe_name {
-
-## Function : Check that recipe name and program name are not identical
-## Returns  :
-## Arguments: $parameter_href   => Parameter hash {REF}
-##          : $recipe_names_ref => Recipe names {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $recipe_names_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        recipe_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_names_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %program_name;
-
-  RECIPE:
-    foreach my $recipe ( @{$recipe_names_ref} ) {
-
-        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
-
-        foreach my $program ( @{ $parameter_href->{$recipe}{program_executables} } ) {
-
-            $program_name{$program} = undef;
-        }
-        if ( exists $program_name{$recipe} ) {
-
-            my $err_msg =
-qq{Identical names for recipe and program: $recipe. Recipes cannot be names as program binaries };
-            croak($err_msg);
-        }
     }
     return 1;
 }

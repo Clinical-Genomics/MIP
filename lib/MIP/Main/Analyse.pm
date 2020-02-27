@@ -36,11 +36,9 @@ use MIP::Active_parameter qw{
   parse_recipe_resources
   set_gender_sample_ids
   set_parameter_reference_dir_path
+  update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Parameter qw{
-  check_recipe_name
-};
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Environment::User qw{ check_email_address };
@@ -51,6 +49,7 @@ use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
+  check_recipe_vs_binary_name
   get_cache
   parse_parameter_files
   parse_reference_path
@@ -71,7 +70,6 @@ use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
-use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 use MIP::Validate::Case qw{ check_sample_ids };
 
 ## Recipes
@@ -87,7 +85,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.49;
+    our $VERSION = 1.50;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -396,7 +394,7 @@ sub mip_analyse {
 
     set_cache_program_executables( { parameter_href => \%parameter, } );
 
-## Check correct value for recipe mode in MIP
+    ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
             active_parameter_href => \%active_parameter,
@@ -412,8 +410,8 @@ sub mip_analyse {
         }
     );
 
-## Check that recipe name and program name are not identical
-    check_recipe_name(
+    ## Check that recipe name and program name are not identical
+    check_recipe_vs_binary_name(
         {
             parameter_href   => \%parameter,
             recipe_names_ref => \@{ $parameter{cache}{recipe} },

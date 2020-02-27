@@ -19,14 +19,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       update_prioritize_flag
       update_recipe_mode_for_analysis_type
       update_recipe_mode_for_pedigree
-      update_recipe_mode_with_dry_run_all
     };
 }
 
@@ -252,65 +251,6 @@ sub update_recipe_mode_for_pedigree {
 
         $log->warn(
             q{Turned off: } . $recipe . q{ as it is not compatible with this pedigree.} );
-    }
-    return;
-}
-
-sub update_recipe_mode_with_dry_run_all {
-
-## Function : Update recipe mode depending on dry_run_all flag
-## Returns  :
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $dry_run_all           => Simulation mode
-##          : $recipes_ref           => Recipes in MIP
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $dry_run_all;
-    my $recipes_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        dry_run_all => {
-            allow       => [ undef, 0, 1, 2 ],
-            default     => 0,
-            store       => \$dry_run_all,
-            strict_type => 1,
-        },
-        recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipes_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Activated simulation mode
-    my $simulation_mode = 2;
-
-    if ($dry_run_all) {
-
-      RECIPE:
-        foreach my $recipe_name ( @{$recipes_ref} ) {
-
-            ## If recipe is activated
-            if ( $active_parameter_href->{$recipe_name} ) {
-
-                # Change recipe mode to simulation
-                $active_parameter_href->{$recipe_name} = $simulation_mode;
-            }
-        }
     }
     return;
 }
