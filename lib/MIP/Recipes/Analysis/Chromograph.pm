@@ -148,7 +148,6 @@ sub analysis_chromograph {
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
-
     my %io = get_io_files(
         {
             id             => $sample_id,
