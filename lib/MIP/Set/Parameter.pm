@@ -25,11 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
+      set_container_bind_paths
       set_nist_file_name_path
       set_no_dry_run_parameters
       set_parameter_to_broadcast
@@ -580,6 +581,47 @@ sub _parse_parameter_to_broadcast {
     ## Scalar
     $info .= $value . $COMMA . $SPACE;
     return $info;
+}
+
+sub set_container_bind_paths {
+
+## Function : Set/add bind paths to container hash
+## Returns  :
+## Arguments: $bind_paths_ref  => Active parameter hash {REF}
+##          : $contaienr_href  => Container hah {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bind_paths_ref;
+    my $container_href;
+
+    my $tmpl = {
+        bind_paths_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$bind_paths_ref,
+            strict_type => 1,
+        },
+        container_href => {
+            default     => {},
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $container_href->{program_bind_paths} ) {
+
+        push @{ $container_href->{program_bind_paths} }, @{$bind_paths_ref};
+    }
+    else {
+        $container_href->{program_bind_paths} = $bind_paths_ref;
+    }
+
+    return;
 }
 
 1;
