@@ -22,15 +22,14 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $BACKWARD_SLASH $COLON $DOUBLE_QUOTE $FORWARD_SLASH $LOG_NAME $NEWLINE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-use MIP::Program::Singularity qw{ singularity_exec };
+use MIP::Set::Parameter qw{ set_container_bind_paths };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cadd };
@@ -109,12 +108,12 @@ q{Please supply a reference directory when installing CADD to use a static path}
       . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } );
 
     ## Store annotation dir path for later
-    if ( $container_href->{program_bind_paths} ) {
-        push @{ $container_href->{program_bind_paths} }, $cadd_bind_path;
-    }
-    else {
-        $container_href->{program_bind_paths} = [$cadd_bind_path];
-    }
+    set_container_bind_paths(
+        {
+            bind_paths_ref => [$cadd_bind_path],
+            container_href => $container_href,
+        }
+    );
     return 1;
 }
 
