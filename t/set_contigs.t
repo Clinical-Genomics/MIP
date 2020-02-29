@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -113,7 +113,7 @@ is_deeply(
 $file_info{human_genome_reference_version} = $GENOME_BUILD_38;
 my @grch38_alt_loci = qw{ chr1_KI270706v1_random
   chr1_KI270707v1_random };
-$file_info{contigs} = [@grch38_alt_loci];
+$file_info{dict_contigs} = [ qw{ chr1 }, @grch38_alt_loci ];
 
 set_contigs(
     {
@@ -133,4 +133,3 @@ is_deeply( \@{ $file_info{alt_loci} },
     \@grch38_alt_loci, q{Set grch38 reference alt loci} );
 
 done_testing();
-
