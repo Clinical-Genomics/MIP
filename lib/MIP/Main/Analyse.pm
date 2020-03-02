@@ -41,6 +41,7 @@ use MIP::Active_parameter qw{
 use MIP::Analysis qw{ get_overall_analysis_type };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
@@ -65,7 +66,6 @@ use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info };
-use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };

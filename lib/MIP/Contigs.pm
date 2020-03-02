@@ -1,4 +1,4 @@
-package MIP::Set::Contigs;
+package MIP::Contigs;
 
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ set_contigs };
@@ -58,6 +58,8 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ set_alt_loci_contigs set_bam_contigs set_primary_contigs };
+
     ## Make a modifiable copy for downstream use of global constant
     my %primary_contig_clone = Readonly::Clone %PRIMARY_CONTIG;
 
@@ -65,27 +67,46 @@ sub set_contigs {
     my %primary_contig;
     @primary_contig{ @{ $primary_contig_clone{$version}{contigs} } } = ();
 
-    ## Get alternative loci set
-    @{ $file_info_href->{alt_loci} } =
-      grep { not $primary_contig{$_} } @{ $file_info_href->{contigs} };
+    ## Set alternative loci contig set
+    set_alt_loci_contigs(
+        {
+            alt_contig_set_name => q{alt_loci},
+            file_info_href      => $file_info_href,
+            primary_contig_href => \%primary_contig,
+        }
+    );
 
-    ## Contigs sets to set for primary assembly
+    ## Set contigs sets for primary assembly
     my @primary_contig_sets = qw{ contigs contigs_size_ordered };
-    my %bam_contig_set      = (
+
+  PRIMARY_CONTIG_SET:
+    foreach my $contig_set (@primary_contig_sets) {
+
+        set_primary_contigs(
+            {
+                file_info_href      => $file_info_href,
+                primary_contigs_ref => \@{ $primary_contig_clone{$version}{$contig_set} },
+                primary_contig_set_name => $contig_set,
+            }
+        );
+    }
+
+## Set contigs sets for bam level processing downstream
+    my %bam_contig_set = (
         bam_contigs              => q{contigs},
         bam_contigs_size_ordered => q{contigs_size_ordered},
     );
 
-    ## Set primary contig sets
-    @{$file_info_href}{@primary_contig_sets} =
-      @{ $primary_contig_clone{$version} }{@primary_contig_sets};
-
-    ## Set BAM level contigs
   BAM_CONTIG_SET:
     while ( my ( $bam_contig_set, $contig_set ) = each %bam_contig_set ) {
 
-        @{ $file_info_href->{$bam_contig_set} } =
-          @{ $primary_contig_clone{$version}->{$contig_set} };
+        set_bam_contigs(
+            {
+                file_info_href      => $file_info_href,
+                primary_contigs_ref => \@{ $primary_contig_clone{$version}{$contig_set} },
+                bam_contig_set_name => $bam_contig_set,
+            }
+        );
     }
     return;
 }
