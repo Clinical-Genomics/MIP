@@ -184,6 +184,7 @@ recipe_core_number:
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
+    samtools_merge: 13
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
     split_fastq_file: 4
@@ -292,6 +293,7 @@ recipe_time:
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 10
+    samtools_merge: 10
     samtools_subsample_mt: 1
     smncopynumbercaller: 1
     split_fastq_file: 10
@@ -436,6 +438,17 @@ bwa_soft_clip_sup_align:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+samtools_merge:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  program_executables:
+    - samtools
+  outfile_suffix: ".bam"
+  type: recipe
 picardtools_mergesamfiles:
   analysis_mode: sample
   associated_recipe:

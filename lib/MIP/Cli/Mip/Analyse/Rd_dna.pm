@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.46;
+our $VERSION = 1.47;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -398,6 +398,18 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Use soft clipping for supplementary alignments},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{samtools_merge} => (
+            cmd_aliases => [qw{ stm }],
+            cmd_flag    => q{samtools_merge},
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Merge (BAM file(s) ) or rename single samples for downstream processing},
+            is  => q{rw},
+            isa => enum( [ 1, 2 ] ),
         )
     );
 

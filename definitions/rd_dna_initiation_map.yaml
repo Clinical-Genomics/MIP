@@ -9,6 +9,7 @@ CHAIN_ALL:
     - fastqc_ar
   - CHAIN_MAIN:
     - bwa_mem
+    - samtools_merge
     - picardtools_mergesamfiles
     - markduplicates
     - gatk_baserecalibration

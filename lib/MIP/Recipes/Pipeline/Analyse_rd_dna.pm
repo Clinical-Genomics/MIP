@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -199,9 +199,10 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-    use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
+    use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
     use MIP::Recipes::Analysis::Samtools_subsample_mt
       qw{ analysis_samtools_subsample_mt };
+    use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
@@ -306,6 +307,7 @@ sub pipeline_analyse_rd_dna {
         rtg_vcfeval    => \&analysis_rtg_vcfeval,
         sacct          => \&analysis_sacct,
         sambamba_depth => \&analysis_sambamba_depth,
+        samtools_merge => \&analysis_samtools_merge,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         smncopynumbercaller       => \&analysis_smncopynumbercaller,
         split_fastq_file          => \&analysis_split_fastq_file,
