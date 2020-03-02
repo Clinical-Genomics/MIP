@@ -1,4 +1,4 @@
-package MIP::Set::Contigs;
+package MIP::Contigs;
 
 use strict;
 use warnings;

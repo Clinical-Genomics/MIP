@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Contigs}   => [qw{ set_contigs }],
+        q{MIP::Contigs}        => [qw{ set_contigs }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Contigs qw{ set_contigs };
+use MIP::Contigs qw{ set_contigs };
 
 diag(   q{Test set_contigs from List.pm v}
-      . $MIP::Set::Contigs::VERSION
+      . $MIP::Contigs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
