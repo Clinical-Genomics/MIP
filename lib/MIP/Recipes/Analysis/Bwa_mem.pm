@@ -323,10 +323,6 @@ sub analysis_bwa_mem {
         $rg_header_line =
           $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
-        ## Prepare for downstream processing
-        # Can be either infile or instream
-        my $samtools_sort_infile;
-
         # Prior to ALTs in reference genome
         bwa_mem(
             {
@@ -357,8 +353,8 @@ sub analysis_bwa_mem {
         );
         print {$filehandle} $PIPE . $SPACE;
 
-        ## Set sambamba sort input; Pipe from samtools view
-        $samtools_sort_infile =
+        ## Set samtools sort input; Pipe from samtools view
+        my $samtools_sort_infile =
           catfile( dirname( devnull() ), q{stdin} );
 
         ## Increment paired end tracker
@@ -781,10 +777,6 @@ sub analysis_run_bwa_mem {
         $rg_header_line =
           $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
-        ## Prepare for downstream processing
-        # Can be either infile or instream
-        my $samtools_sort_infile;
-
         # If post to ALTs in reference genome
         run_bwamem(
             {
@@ -802,8 +794,8 @@ sub analysis_run_bwa_mem {
         print {$filehandle} q{sh} . $SPACE;
         say   {$filehandle} $NEWLINE;
 
-        ## Set sambamba sort input; Sort directly from run-bwakit
-        $samtools_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
+        ## Set samtools sort input; Sort directly from run-bwakit
+        my $samtools_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
