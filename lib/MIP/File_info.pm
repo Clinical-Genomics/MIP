@@ -213,7 +213,6 @@ sub set_file_tag {
 
     my $tmpl = {
         file_tag => {
-            defined     => 1,
             required    => 1,
             store       => \$file_tag,
             strict_type => 1,
