@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rna };
@@ -35,7 +35,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_MEMORY_ALLOCATION      => 4;
+Readonly my $JAVA_MEMORY_ALLOCATION      => 6;
 Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
 Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
   $JAVA_MEMORY_RECIPE_ADDITION;
