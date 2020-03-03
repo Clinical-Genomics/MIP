@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rna };
@@ -163,8 +163,8 @@ sub analysis_markduplicates {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
-    use MIP::Program::Sambamba qw{ sambamba_flagstat sambamba_markdup };
-    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Sambamba qw{ sambamba_markdup };
+    use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
       set_recipe_metafile_in_sample_info
@@ -347,12 +347,12 @@ sub analysis_markduplicates {
             );
             print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
-            ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            sambamba_flagstat(
+            ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+            samtools_flagstat(
                 {
-                    filehandle   => $xargsfilehandle,
-                    infile_path  => $outfile_path{$contig},
-                    outfile_path => $outfile_path_prefix
+                    filehandle      => $xargsfilehandle,
+                    infile_path     => $outfile_path{$contig},
+                    stdoutfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -403,12 +403,12 @@ sub analysis_markduplicates {
             );
             print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
-            ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            sambamba_flagstat(
+            ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+            samtools_flagstat(
                 {
-                    filehandle   => $xargsfilehandle,
-                    infile_path  => $outfile_path{$contig},
-                    outfile_path => $outfile_path_prefix
+                    filehandle      => $xargsfilehandle,
+                    infile_path     => $outfile_path{$contig},
+                    stdoutfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -643,7 +643,7 @@ sub analysis_markduplicates_rna {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
-    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
       set_file_path_to_store
@@ -820,12 +820,12 @@ sub analysis_markduplicates_rna {
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
-        ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-        sambamba_flagstat(
+        ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+        samtools_flagstat(
             {
-                filehandle   => $xargsfilehandle,
-                infile_path  => $outfile_path{$contig},
-                outfile_path => $outfile_path_prefix
+                filehandle      => $xargsfilehandle,
+                infile_path     => $outfile_path{$contig},
+                stdoutfile_path => $outfile_path_prefix
                   . $DOT
                   . $contig
                   . $UNDERSCORE
