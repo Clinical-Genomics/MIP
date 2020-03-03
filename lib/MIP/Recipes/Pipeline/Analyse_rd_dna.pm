@@ -187,8 +187,6 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
-    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
@@ -297,7 +295,6 @@ sub pipeline_analyse_rd_dna {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
         plink                            => \&analysis_plink,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         qccollect_ar                     => \&analysis_mip_qccollect,

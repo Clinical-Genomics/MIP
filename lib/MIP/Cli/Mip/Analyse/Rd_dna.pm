@@ -414,18 +414,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{picardtools_mergesamfiles} => (
-            cmd_aliases => [qw{ ptm }],
-            cmd_flag    => q{picardtools_mergesamfiles},
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Merge (BAM file(s) ) or rename single samples for downstream processing},
-            is  => q{rw},
-            isa => enum( [ 1, 2 ] ),
-        )
-    );
-
-    option(
         q{markduplicates} => (
             cmd_aliases   => [qw{ md }],
             cmd_flag      => q{markduplicates},

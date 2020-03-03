@@ -10,7 +10,6 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - bwa_mem
     - samtools_merge
-    - picardtools_mergesamfiles
     - markduplicates
     - gatk_baserecalibration
     # Parallel chains (branches), which inherit from MAIN in initiation

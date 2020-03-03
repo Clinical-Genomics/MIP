@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use POSIX;
@@ -16,11 +16,10 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ %ANALYSIS $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -158,14 +157,11 @@ sub analysis_samtools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
-    use MIP::Program::Samtools qw{ samtools_merge samtools_index };
+    use MIP::Program::Samtools qw{ samtools_merge samtools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -187,9 +183,7 @@ sub analysis_samtools_merge {
             stream         => q{in},
         }
     );
-    my $infile_suffix        = $io{in}{file_suffix};
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @infile_paths         = @{ $io{in}{file_paths} };
+    my @infile_paths = @{ $io{in}{file_paths} };
 
     my %rec_atr = get_recipe_attributes(
         {
@@ -197,9 +191,8 @@ sub analysis_samtools_merge {
             recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain            = $rec_atr{chain};
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $recipe_mode             = $active_parameter_href->{$recipe_name};
+    my $job_id_chain = $rec_atr{chain};
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
     my %recipe_resource = get_recipe_resources(
         {
@@ -250,18 +243,13 @@ sub analysis_samtools_merge {
         )
     );
 
-    my $outdir_path = $io{out}{dir_path};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
-
-    ## Get recipe memory allocation
-    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -297,7 +285,7 @@ sub analysis_samtools_merge {
     ## More than one file - we have something to merge
     if ( scalar @infile_paths > 1 ) {
 
-        ## picardtools_mergesamfiles
+        ## Samtools_merge
         say {$filehandle} q{## Merging alignment files};
 
         ## Create file commands for xargs
@@ -316,10 +304,6 @@ sub analysis_samtools_merge {
         foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
             ## Get parameters
-            # Assemble infile paths by adding directory and file suffixes
-            my @merge_infile_paths =
-              map { $outdir_path . $_ . $DOT . $contig . $infile_suffix }
-              @infile_name_prefixes;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
@@ -327,10 +311,11 @@ sub analysis_samtools_merge {
                 {
                     filehandle         => $xargsfilehandle,
                     force              => 1,
-                    infile_paths_ref   => \@merge_infile_paths,
-                    output_format      => q{bam},
+                    infile_paths_ref   => \@infile_paths,
                     outfile_path       => $outfile_path{$contig},
+                    output_format      => q{bam},
                     referencefile_path => $referencefile_path,
+                    region             => $contig,
                     stderrfile_path    => $stderrfile_path,
                     thread_number      => 2,
                     write_index        => 1,
@@ -344,7 +329,7 @@ sub analysis_samtools_merge {
 
         ## Rename samples
         say {$filehandle}
-q{## Renaming sample instead of merge to streamline handling of filenames downstream};
+q{## Split file into contigs instead of merge to streamline handling of files downstream};
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -361,59 +346,19 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
       CONTIG:
         foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-          INFILES:
-            foreach my $infile_name_prefix (@infile_name_prefixes) {
-
-                ## Get parameters
-                my $gnu_infile_path =
-                  $outdir_path . $infile_name_prefix . $DOT . $contig . $infile_suffix;
-                my $gnu_outfile_path = $outfile_path{$contig};
-
-                ## Rename
-                gnu_mv(
-                    {
-                        filehandle   => $xargsfilehandle,
-                        infile_path  => $gnu_infile_path,
-                        outfile_path => $gnu_outfile_path,
-                    }
-                );
-                print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-                ## Index
-                samtools_index(
-                    {
-                        bai_format  => 1,
-                        filehandle  => $xargsfilehandle,
-                        infile_path => $gnu_outfile_path,
-                    }
-                );
-            }
+            samtools_view(
+                {
+                    filehandle    => $xargsfilehandle,
+                    infile_path   => $infile_paths[0],
+                    outfile_path  => $outfile_path{$contig},
+                    output_format => q{bam},
+                    regions_ref   => [$contig],
+                    write_index   => 1,
+                }
+            );
             say {$xargsfilehandle} $NEWLINE;
         }
     }
-
-    ## Gather BAM files
-    say {$filehandle} q{## Gather BAM files};
-
-    ## Assemble infile paths in contig order and not per size
-    my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
-
-    picardtools_gatherbamfiles(
-        {
-            create_index     => q{true},
-            filehandle       => $filehandle,
-            infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path         => $outfile_path_prefix . $outfile_suffix,
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $temp_directory,
-        }
-    );
-    say {$filehandle} $NEWLINE;
 
     close $xargsfilehandle;
     close $filehandle;
