@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.46;
+our $VERSION = 1.47;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1748,6 +1748,16 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             documentation => q{Chromograph},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{chromograph_cytoband_file} => (
+            cmd_aliases   => [qw{ ccf }],
+            cmd_tags      => [q{Default: grch37_cytoband.bed}],
+            documentation => q{Cytoband bed file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
@@ -148,7 +148,6 @@ sub analysis_chromograph {
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
-
     my %io = get_io_files(
         {
             id             => $sample_id,
@@ -226,6 +225,16 @@ sub analysis_chromograph {
             filehandle         => $filehandle,
             outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => $outdir_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -420,6 +429,8 @@ sub analysis_chromograph_proband {
         }
     );
 
+    ## Switch from case id to sample id for the outfiles since this is done per sample
+    $infile_name_prefix =~ s/$case_id/$sample_id/xms;
     %io = (
         %io,
         parse_io_outfiles(
@@ -525,6 +536,16 @@ sub analysis_chromograph_proband {
             filehandle          => $filehandle,
             outdir_path         => $outdir_path,
             upd_sites_file_path => $outfile_path_prefix . $UNDERSCORE . q{sites},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => $outdir_path,
         }
     );
     say {$filehandle} $NEWLINE;

@@ -1574,6 +1574,15 @@ chromograph_ar:
   program_executables:
     - chromograph
   type: recipe
+chromograph_cytoband_file:
+  associated_recipe:
+    - chromograph_ar
+  data_type: SCALAR
+  default: grch37_cytoband.bed
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 frequency_filter:
   analysis_mode: case
   associated_recipe:
