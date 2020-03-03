@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +31,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -62,13 +58,14 @@ diag(   q{Test build_file_prefix_tag from Mip.pm v}
       . $EXECUTABLE_NAME );
 
 my $sample_id     = q{homer};
+my $case_id       = q{simpsons};
 my $current_chain = q{MAIN};
 my $other_chain   = q{SV};
 
 my @order_recipes = qw{ bwa_mem pmerge pmark manta };
 
 my %active_parameter = (
-    case_id               => q{simpsons},
+    case_id               => $case_id,
     bwa_mem               => 1,
     manta                 => 1,
     pmark                 => 1,
@@ -114,7 +111,7 @@ my %expected_file_tag = (
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
     },
-    q{simpsons} => {
+    simpsons => {
         bwa_mem => { file_tag => q{mem}, },
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
