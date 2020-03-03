@@ -111,7 +111,7 @@ my %expected_file_tag = (
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
     },
-    simpsons => {
+    $case_id => {
         bwa_mem => { file_tag => q{mem}, },
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
