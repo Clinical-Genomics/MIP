@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [8.2.3]
+- Chromograph now creates ideograms over the chromosomes
+- Proband chromograph files are named with sample id instead of case id
+- Increases java memory for picardtools markduplicates
+
 ## [8.2.2]
 - Fixes a crash in MIP caused by not looping over the Y chromosomes for females in the GATK SplitNCigarReads recipe
 
