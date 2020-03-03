@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Samtools} => [qw{ samtools_base }],
+        q{MIP::Program::Samtools} => [qw{ samtools_merge }],
         q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Samtools qw{ samtools_base };
+use MIP::Program::Samtools qw{ samtools_merge };
 
-diag(   q{Test samtools_base from Samtools.pm v}
+diag(   q{Test samtools_merge from Samtools.pm v}
       . $MIP::Program::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -60,49 +60,57 @@ diag(   q{Test samtools_base from Samtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ samtools };
+my @function_base_commands = qw{ samtools merge };
 
 my %base_argument = (
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    commands_ref => {
-        inputs_ref      => [qw{ samtools }],
-        expected_output => q{samtools},
+    infile_paths_ref => {
+        inputs_ref      => [qw{ a_file.bam another_file.bam }],
+        expected_output => q{a_file.bam another_file.bam},
     },
 );
 
 my %specific_argument = (
-    commands_ref => {
-        inputs_ref      => [qw{ samtools }],
-        expected_output => q{samtools},
-    },
-    output_format => {
-        input           => q{cram},
-        expected_output => q{--output-fmt} . $SPACE . uc q{cram},
-    },
-    referencefile_path => {
-        input           => q{a_file.fasta},
-        expected_output => q{--reference} . $SPACE . q{a_file.fasta},
-    },
-    thread_number => {
+    force => {
         input           => 1,
-        expected_output => q{--threads 1},
+        expected_output => q{-f},
     },
-    write_index => {
-        input           => 1,
-        expected_output => q{--write-index},
+    infile_paths_ref => {
+        inputs_ref      => [qw{ a_file.bam another_file.bam }],
+        expected_output => q{a_file.bam another_file.bam},
+    },
+    outfile_path => {
+        input           => q{an_outfile.bam},
+        expected_output => q{an_outfile.bam},
+    },
+    region => {
+        input           => q{chr1},
+        expected_output => q{-R} . $SPACE . q{chr1},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&samtools_base;
+my $module_function_cref = \&samtools_merge;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

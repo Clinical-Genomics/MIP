@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -39,7 +39,9 @@ BEGIN {
       samtools_faidx
       samtools_idxstats
       samtools_index
+      samtools_merge
       samtools_stats
+      samtools_sort
       samtools_view
     };
 }
@@ -48,15 +50,23 @@ sub samtools_base {
 
 ## Function : Perl wrapper for samtools base. Based on Samtools 1.10
 ## Returns  : @commands
-## Arguments: $commands_ref => List of commands added earlier
-##          : $filehandle   => Filehandle to write to
-##          : $write_index  => Write index while writing file
+## Arguments: $commands_ref       => List of commands added earlier
+##          : $filehandle         => Filehandle to write to
+##          : $output_format      => Output format
+##          : $referencefile_path => Reference file path (fasta)
+##          : $thread_number      => Number of BAM/CRAM compression threads
+##          : $write_index        => Write index while writing file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $commands_ref;
     my $filehandle;
+    my $referencefile_path;
+
+    ## Default(s)
+    my $output_format;
+    my $thread_number;
     my $write_index;
 
     my $tmpl = {
@@ -67,6 +77,21 @@ sub samtools_base {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        output_format => {
+            allow       => [qw{ bam cram sam }],
+            default     => q{bam},
+            store       => \$output_format,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        thread_number => {
+            allow       => [ undef, qr{ \A\d+\z }xsm, ],
+            store       => \$thread_number,
+            strict_type => 1,
         },
         write_index => {
             allow       => [ undef, 0, 1, ],
@@ -79,6 +104,21 @@ sub samtools_base {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my @commands = @{$commands_ref};
+
+    if ($output_format) {
+
+        push @commands, q{--output-fmt} . $SPACE . uc $output_format;
+    }
+
+    if ($referencefile_path) {
+
+        push @commands, q{--reference} . $SPACE . $referencefile_path;
+    }
+
+    if ($thread_number) {
+
+        push @commands, q{--threads} . $SPACE . $thread_number;
+    }
 
     if ($write_index) {
 
@@ -460,6 +500,263 @@ sub samtools_index {
     return @commands;
 }
 
+sub samtools_merge {
+
+## Function : Perl wrapper for writing samtools merge recipe to $filehandle. Based on samtools 1.10 (using htslib 1.10).
+## Returns  : @commands
+##          : $filehandle             => Sbatch filehandle to write to
+##          : $force                  => Overwrite output file path
+##          : $infile_paths_ref       => Infile paths {REF}
+##          : $outfile_path           => Outfile path
+##          : $output_format          => Output format
+##          : $referencefile_path     => Reference file path (fasta)
+##          : $region                 => Region to merge
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Stderrfile path append
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $thread_number          => Number of BAM/CRAM compression threads
+##          : $write_index            => Write index while writing file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $referencefile_path;
+    my $region;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $thread_number;
+
+    ## Default(s)
+    my $force;
+    my $output_format;
+    my $write_index;
+
+    my $tmpl = {
+        filehandle => { store => \$filehandle, },
+        force      => {
+            allow       => [ undef, 0, 1, ],
+            default     => 1,
+            store       => \$force,
+            strict_type => 1,
+        },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        outfile_path  => { store => \$outfile_path, strict_type => 1, },
+        output_format => {
+            allow       => [qw{ bam cram sam }],
+            default     => q{bam},
+            store       => \$output_format,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        region => {
+            store       => \$region,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
+        },
+        thread_number => {
+            allow       => [ undef, qr{ \A\d+\z }xsm, ],
+            store       => \$thread_number,
+            strict_type => 1,
+        },
+        write_index => {
+            allow       => [ undef, 0, 1, ],
+            default     => 0,
+            store       => \$write_index,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ samtools merge };
+
+    ## Samtools base args
+    @commands = samtools_base(
+        {
+            commands_ref       => \@commands,
+            output_format      => $output_format,
+            referencefile_path => $referencefile_path,
+            thread_number      => $thread_number,
+            write_index        => $write_index,
+        }
+    );
+
+    if ($force) {
+
+        push @commands, q{-f};
+    }
+
+    if ($region) {
+
+        push @commands, q{-R} . $SPACE . $region;
+    }
+
+    if ($outfile_path) {
+
+        push @commands, $outfile_path;
+    }
+
+    push @commands, join $SPACE, @{$infile_paths_ref};
+
+    # Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub samtools_sort {
+
+## Function : Perl wrapper for writing samtools sort recipe to $filehandle. Based on samtools 1.10 (using htslib 1.10).
+## Returns  : @commands
+##          : $filehandle             => Sbatch filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Outfile path
+##          : $output_format          => Output format
+##          : $referencefile_path     => Reference file path (fasta)
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Stderrfile path append
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $thread_number          => Number of BAM/CRAM compression threads
+##          : $temp_file_path_prefix  => Write temporary files to path prefix
+##          : $write_index            => Write index while writing file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $temp_file_path_prefix;
+    my $thread_number;
+
+    ## Default(s)
+    my $output_format;
+    my $write_index;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path  => { store => \$outfile_path, strict_type => 1, },
+        output_format => {
+            allow       => [qw{ bam cram sam }],
+            default     => q{bam},
+            store       => \$output_format,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
+        },
+        temp_file_path_prefix => { store => \$temp_file_path_prefix, strict_type => 1, },
+        thread_number         => {
+            allow       => [ undef, qr{ \A\d+\z }xsm, ],
+            store       => \$thread_number,
+            strict_type => 1,
+        },
+        write_index => {
+            allow       => [ undef, 0, 1, ],
+            default     => 0,
+            store       => \$write_index,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ samtools sort };
+
+    ## Samtools base args
+    @commands = samtools_base(
+        {
+            commands_ref       => \@commands,
+            output_format      => $output_format,
+            referencefile_path => $referencefile_path,
+            thread_number      => $thread_number,
+            write_index        => $write_index,
+        }
+    );
+
+    if ($temp_file_path_prefix) {
+
+        push @commands, q{-T} . $SPACE . $temp_file_path_prefix;
+    }
+
+    if ($outfile_path) {
+
+        push @commands, q{-o} . $SPACE . $outfile_path;
+    }
+
+    push @commands, $infile_path;
+
+    # Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
 sub samtools_stats {
 
 ## Function : Perl wrapper for writing samtools stats recipe to $filehandle. Based on samtools 1.10 (using htslib 1.10).
@@ -472,7 +769,7 @@ sub samtools_stats {
 ##          : $remove_overlap           => Remove overlaps of paired-end reads from coverage and base count computations
 ##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Stderrfile path append
-##          : $stdoutfile_path        => Stdoutfile path
+##          : $stdoutfile_path          => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -638,7 +935,7 @@ sub samtools_view {
             strict_type => 1,
         },
         output_format => {
-            allow       => [qw{ sam bam cram json }],
+            allow       => [qw{ bam cram sam }],
             default     => q{bam},
             store       => \$output_format,
             strict_type => 1,
@@ -661,7 +958,7 @@ sub samtools_view {
             strict_type => 1,
         },
         thread_number => {
-            allow       => qr{ \A\d+\z }xsm,
+            allow       => [ undef, qr{ \A\d+\z }xsm, ],
             store       => \$thread_number,
             strict_type => 1,
         },
@@ -689,27 +986,20 @@ sub samtools_view {
 
     my @commands = qw{ samtools view };
 
-    ## Bcftools base args
+    ## Samtools base args
     @commands = samtools_base(
         {
-            commands_ref => \@commands,
-            write_index  => $write_index,
+            commands_ref       => \@commands,
+            output_format      => $output_format,
+            referencefile_path => $referencefile_path,
+            thread_number      => $thread_number,
+            write_index        => $write_index,
         }
     );
-
-    if ($thread_number) {
-
-        push @commands, q{--threads} . $SPACE . $thread_number;
-    }
 
     if ($with_header) {
 
         push @commands, q{-h};
-    }
-
-    if ($output_format) {
-
-        push @commands, q{--output-fmt} . $SPACE . uc $output_format;
     }
 
     if ($auto_detect_input_format) {
@@ -721,10 +1011,6 @@ sub samtools_view {
         push @commands, q{-F} . $SPACE . $exclude_reads_with_these_flags;
     }
 
-    if ($referencefile_path) {
-
-        push @commands, q{--reference} . $SPACE . $referencefile_path;
-    }
     if ($outfile_path) {
 
         push @commands, q{-o} . $SPACE . $outfile_path;
@@ -738,7 +1024,6 @@ sub samtools_view {
     if ($fraction) {
 
         push @commands, q{-s} . $SPACE . $fraction;
-
     }
 
     push @commands, $infile_path;
