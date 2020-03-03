@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -92,6 +92,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Cadd_to_vcf_header qw{ download_cadd_to_vcf_header };
     use MIP::Recipes::Download::Cadd_whole_genome_snvs
       qw{ download_cadd_whole_genome_snvs };
+    use MIP::Recipes::Download::Chromograph_cytoband qw{ download_chromograph_cytoband };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
@@ -138,6 +139,7 @@ sub pipeline_download_rd_dna {
         cadd_offline_annotations       => \&download_cadd_offline_annotations,
         cadd_to_vcf_header             => \&download_cadd_to_vcf_header,
         cadd_whole_genome_snvs         => \&download_cadd_whole_genome_snvs,
+        chromograph_cytoband           => \&download_chromograph_cytoband,
         clinvar                        => \&download_clinvar,
         dbnsfp                         => \&download_dbnsfp,
         dbsnp                          => \&download_dbsnp,

@@ -78,6 +78,13 @@ cadd_whole_genome_snvs:
   data_type: SCALAR
   default: 1
   type: recipe
+chromograph_cytoband:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 clinvar:
   analysis_mode: case
   associated_recipe:
@@ -219,6 +226,7 @@ recipe_core_number:
     cadd_offline_annotations: 1
     cadd_to_vcf_header: 1
     cadd_whole_genome_snvs: 1
+    chromograph_cytoband: 1
     clinvar: 1
     dbnsfp: 1
     dbsnp: 1
@@ -267,6 +275,7 @@ recipe_time:
     cadd_offline_annotations: 15
     cadd_to_vcf_header: 1
     cadd_whole_genome_snvs: 15
+    chromograph_cytoband: 1
     clinvar: 1
     dbnsfp: 15
     dbsnp: 1

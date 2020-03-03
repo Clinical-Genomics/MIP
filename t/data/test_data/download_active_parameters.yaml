@@ -3,7 +3,7 @@ bash_set_errexit: 1
 bash_set_nounset: 1
 bash_set_pipefail: 1
 load_env:
-   MIP_rd_dna:
+  MIP_rd_dna:
     method: conda
     mip: ~
 project_id: development
@@ -33,6 +33,8 @@ reference:
     - 1.0
   cadd_whole_genome_snvs:
     - v1.4
+  chromograph_cytoband:
+    - v1.0
   clinvar:
     - '20180429'
     - '20181028'
@@ -255,6 +257,23 @@ reference_feature:
         outfile: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  chromograph_cytoband:
+    grch37:
+      v1.0:
+        file: grch37_cytoband.bed
+        file_check: grch37_cytoband.bed.md5
+        outfile: grch37_cytoband.bed
+        outfile_check: grch37_cytoband.bed.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
+    grch38:
+      v1.0:
+        file: grch38_cytoband.bed
+        file_check: grch38_cytoband.bed.md5
+        outfile: grch38_cytoband.bed
+        outfile_check: grch38_cytoband.bed.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   clinvar:
     grch37:
       '20171029':
@@ -370,12 +389,12 @@ reference_feature:
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
   delly_exclude:
     grch37:
-      20150227: #latest commit for file on master branch
+      20150227:  # latest commit for file on master branch
         file: human.hg19.excl.tsv
         outfile: hg19_human_excl_-20150227-.tsv
         url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
     grch38:
-      20150915: #latest commit for file on master branch
+      20150915:  # latest commit for file on master branch
         file: human.hg38.excl.tsv
         outfile: grch38_human_excl_-20150915-.tsv
         url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/

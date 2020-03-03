@@ -229,6 +229,16 @@ sub analysis_chromograph {
     );
     say {$filehandle} $NEWLINE;
 
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => $outdir_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     tar(
         {
             create       => 1,
@@ -526,6 +536,16 @@ sub analysis_chromograph_proband {
             filehandle          => $filehandle,
             outdir_path         => $outdir_path,
             upd_sites_file_path => $outfile_path_prefix . $UNDERSCORE . q{sites},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => $outdir_path,
         }
     );
     say {$filehandle} $NEWLINE;

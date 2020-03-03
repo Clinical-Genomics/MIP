@@ -31,6 +31,8 @@ reference:
   cadd_whole_genome_snvs:
     - v1.4
     - v1.5
+  chromograph_cytoband:
+    - v1.0
   clinvar:
     - 20190305
     - 20190731
@@ -298,6 +300,23 @@ reference_feature:
         outfile_index_check: grch38_cadd_whole_genome_snvs_-v1.5-.tsv.gz.tbi.md5
         outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
+  chromograph_cytoband:
+    grch37:
+      v1.0:
+        file: grch37_cytoband.bed
+        file_check: grch37_cytoband.bed.md5
+        outfile: grch37_cytoband.bed
+        outfile_check: grch37_cytoband.bed.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
+    grch38:
+      v1.0:
+        file: grch38_cytoband.bed
+        file_check: grch38_cytoband.bed.md5
+        outfile: grch38_cytoband.bed
+        outfile_check: grch38_cytoband.bed.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   clinvar:
     grch37:
       20190305:
