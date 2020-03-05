@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -289,11 +289,11 @@ sub analysis_manta {
     ## Perl wrapper for writing gzip recipe to $filehandle
     gzip(
         {
-            decompress   => 1,
-            filehandle   => $filehandle,
-            infile_path  => $manta_temp_outfile_path,
-            outfile_path => $outfile_path,
-            stdout       => 1,
+            decompress       => 1,
+            filehandle       => $filehandle,
+            infile_paths_ref => [$manta_temp_outfile_path],
+            outfile_path     => $outfile_path,
+            stdout           => 1,
         }
     );
     say {$filehandle} $NEWLINE;

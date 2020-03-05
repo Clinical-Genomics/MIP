@@ -6,6 +6,7 @@ custom_default_parameters:
   data_type: ARRAY
   default:
     - analysis_type
+    - conda_path
     - bwa_build_reference
     - exome_target_bed
     - gatk_path
@@ -175,7 +176,6 @@ recipe_core_number:
     peddy_ar: 4
     picardtools_collecthsmetrics: 1
     picardtools_collectmultiplemetrics: 1
-    picardtools_mergesamfiles: 13
     plink: 1
     qccollect_ar: 1
     rhocall_ar: 13
@@ -183,6 +183,7 @@ recipe_core_number:
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
+    samtools_merge: 13
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
     split_fastq_file: 4
@@ -281,7 +282,6 @@ recipe_time:
     peddy_ar: 1
     picardtools_collecthsmetrics: 10
     picardtools_collectmultiplemetrics: 10
-    picardtools_mergesamfiles: 20
     plink: 1
     prepareforvariantannotationblock: 5
     qccollect_ar: 1
@@ -291,6 +291,7 @@ recipe_time:
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 10
+    samtools_merge: 10
     samtools_subsample_mt: 1
     smncopynumbercaller: 1
     split_fastq_file: 10
@@ -332,7 +333,6 @@ picardtools_path:
     - markduplicates
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
-    - picardtools_mergesamfiles
     - sv_reformat
   data_type: SCALAR
   type: path
@@ -370,8 +370,6 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_executables:
-    - gzip
   type: recipe
 ## FastQC
 fastqc_ar:
@@ -397,7 +395,6 @@ bwa_mem:
   program_executables:
     - bwa
     - samtools
-    - sambamba
   recipe_type: aligners
   type: recipe
 bwa_build_reference:
@@ -438,13 +435,15 @@ bwa_soft_clip_sup_align:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-picardtools_mergesamfiles:
+samtools_merge:
   analysis_mode: sample
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
   file_tag: ""
+  program_executables:
+    - samtools
   outfile_suffix: ".bam"
   type: recipe
 markduplicates:
@@ -1120,8 +1119,6 @@ sv_reformat:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_executables:
-    - grep
   type: recipe
 sv_reformat_remove_genes_file:
   associated_recipe:
@@ -1138,7 +1135,7 @@ bcftools_mpileup:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _mpileup
   program_executables:
     - bcftools
@@ -1475,7 +1472,6 @@ vt_ar:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
@@ -1516,7 +1512,6 @@ vt_core:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   type: recipe
@@ -1545,7 +1540,7 @@ rhocall_viz:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   outfile_suffix: ".roh"
   program_executables:
@@ -1981,8 +1976,6 @@ endvariantannotationblock:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_executables:
-    - grep
   type: recipe
 rankvariant_binary_file:
   associated_recipe:

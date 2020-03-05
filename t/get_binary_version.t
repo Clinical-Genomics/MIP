@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Executable} => [qw{ get_binary_version }],
-        q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
+        q{MIP::Environment::Executable} => [qw{ get_binary_version }],
+        q{MIP::Test::Fixtures}          => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Executable qw{ get_binary_version };
+use MIP::Environment::Executable qw{ get_binary_version };
 
 diag(   q{Test get_binary_version from Executable.pm v}
-      . $MIP::Get::Executable::VERSION
+      . $MIP::Environment::Executable::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,12 +62,18 @@ diag(   q{Test get_binary_version from Executable.pm v}
 my $log = test_log( {} );
 
 ## Given a binary and version when exists
-my %binary_info =
-  ( mip => catfile( $Bin, qw{ data modules miniconda envs mip_travis bin  mip } ), );
+my $binary      = q{mip};
+my $binary_path = catfile( $Bin, qw{ data modules miniconda envs mip_travis bin mip } );
+my %binary_info = ( $binary => $binary_path, );
 
 my %binary_version = get_binary_version( { binary_info_href => \%binary_info, } );
 
-my %expected_binary_version = ( mip => q{v7.1.4} );
+my %expected_binary_version = (
+    mip => {
+        path    => $binary_path,
+        version => q{v7.1.4},
+    },
+);
 
 ## Then mip binary name and version should be returned
 is_deeply( \%binary_version, \%expected_binary_version, q{Got binary version} );

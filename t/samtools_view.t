@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -130,6 +130,10 @@ my %specific_argument = (
     with_header => {
         input           => 1,
         expected_output => q{-h},
+    },
+    write_index => {
+        input           => 1,
+        expected_output => q{--write-index},
     },
 );
 

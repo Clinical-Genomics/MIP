@@ -19,8 +19,7 @@ use Readonly;
 use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOLLAR_SIGN $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -28,13 +27,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
       check_allowed_array_values
-      check_load_env_packages
       check_infile_contain_sample_id
       check_infiles
       check_mutually_exclusive_parameters
@@ -45,9 +43,6 @@ BEGIN {
       check_nist_version
       check_prioritize_variant_callers
       check_recipe_fastq_compatibility
-      check_recipe_mode
-      check_recipe_name
-      check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
@@ -145,67 +140,6 @@ sub check_allowed_array_values {
     }
 
     # All ok
-    return 1;
-}
-
-
-sub check_load_env_packages {
-
-## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Allowed packages/keywords in load_env section of  config
-    my @allowed_packages = (
-        @{ $parameter_href->{cache}{program_executables} },
-        qw{ installation method mip }
-    );
-
-  ENV:
-    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
-
-      PACKAGE:
-        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
-
-            ## is program executable, installation, method or MIP main
-            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
-
-            ## is recipe
-            next PACKAGE if ( exists $parameter_href->{$package} );
-
-            my $err_msg =
-                q{Could not find load_env package: '}
-              . $package
-              . q{' in MIP as either recipe or program_executables};
-            croak($err_msg);
-        }
-    }
     return 1;
 }
 
@@ -750,59 +684,6 @@ sub check_nist_version {
     return 1;
 }
 
-sub check_recipe_name {
-
-## Function : Check that recipe name and program name are not identical
-## Returns  :
-## Arguments: $parameter_href   => Parameter hash {REF}
-##          : $recipe_names_ref => Recipe names {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $recipe_names_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        recipe_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_names_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %program_name;
-
-  RECIPE:
-    foreach my $recipe ( @{$recipe_names_ref} ) {
-
-        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
-
-        foreach my $program ( @{ $parameter_href->{$recipe}{program_executables} } ) {
-
-            $program_name{$program} = undef;
-        }
-        if ( exists $program_name{$recipe} ) {
-
-            my $err_msg =
-qq{Identical names for recipe and program: $recipe. Recipes cannot be names as program binaries };
-            croak($err_msg);
-        }
-    }
-    return 1;
-}
-
 sub check_prioritize_variant_callers {
 
 ## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
@@ -913,156 +794,6 @@ sub check_prioritize_variant_callers {
                   . q{' does not match any supported variant caller: '}
                   . join( $COMMA, @variant_caller_aliases )
                   . $SINGLE_QUOTE );
-            exit 1;
-        }
-    }
-    return 1;
-}
-
-sub check_recipe_mode {
-
-## Function : Check correct value for recipe mode in MIP.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set allowed values
-    my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
-
-  RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
-
-        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
-        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
-
-        ## Alias
-        my $recipe_mode = $active_parameter_href->{$recipe};
-
-        next RECIPE if ( $is_allowed{$recipe_mode} );
-
-        #If not an allowed value in active parameters
-        $log->fatal(
-            $SINGLE_QUOTE
-              . $active_parameter_href->{$recipe}
-              . q{' Is not an allowed mode for recipe '--}
-              . $recipe
-              . q{'. Set to: }
-              . join $PIPE,
-            ( sort keys %is_allowed )
-        );
-        exit 1;
-    }
-    return 1;
-}
-
-sub check_sample_ids {
-
-## Function : Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-## Returns  :
-## Arguments: $case_id      => Family id
-##          : $log            => Log object
-##          : $sample_ids_ref => Sample ids {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $case_id;
-    my $log;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-        case_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$case_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Hash to test duplicate sample_ids later
-    my %seen;
-
-    if ( not @{$sample_ids_ref} ) {
-
-        $log->fatal(q{Please provide sample_id(s)});
-        exit 1;
-    }
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-        ## Increment instance to check duplicates later
-        $seen{$sample_id}++;
-
-        ## Family_id cannot be the same as sample_id
-        if ( $case_id eq $sample_id ) {
-
-            $log->fatal( q{Family_id: }
-                  . $case_id
-                  . q{ equals sample_id: }
-                  . $sample_id
-                  . q{. Please make sure that the case_id and sample_id(s) are unique.} );
-            exit 1;
-        }
-        ## Check for unique sample_ids
-        if ( $seen{$sample_id} > 1 ) {
-
-            $log->fatal( q{Sample_id: } . $sample_id . q{ is not uniqe.} );
-            exit 1;
-        }
-        ## Sample_id contains "_", not allowed in filename convention
-        if ( $sample_id =~ /$UNDERSCORE/sxm ) {
-
-            $log->fatal( q{Sample_id: }
-                  . $sample_id
-                  . q{ contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.}
-            );
             exit 1;
         }
     }

@@ -29,10 +29,7 @@ use MIP::Script::Setup_script qw{ setup_install_script };
 use MIP::Set::Parameter qw{ set_programs_for_installation };
 
 ## Recipes
-use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
-use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
-use MIP::Recipes::Install::Gtf2bed qw{ install_gtf2bed };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{ check_mip_installation };
@@ -44,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_rna };
@@ -181,12 +178,7 @@ sub pipeline_install_rd_rna {
 
     ### Install shell programs
     ## Create dispatch table for shell installation subs
-    my %shell_subs = (
-        blobfish     => \&install_blobfish,
-        bootstrapann => \&install_bootstrapann,
-        gtf2bed      => \&install_gtf2bed,
-        mip_scripts  => \&install_mip_scripts,
-    );
+    my %shell_subs = ( mip_scripts => \&install_mip_scripts, );
 
     ## Launch shell installation subroutines
   SHELL_PROGRAM:

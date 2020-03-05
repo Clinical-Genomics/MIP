@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Package_manager::Conda} => [qw{ conda_deactivate }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Program::Conda} => [qw{ conda_deactivate }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Package_manager::Conda qw{ conda_deactivate };
+use MIP::Program::Conda qw{ conda_deactivate };
 
 diag(   q{Test conda_deactivate from Conda.pm v}
-      . $MIP::Package_manager::Conda::VERSION
+      . $MIP::Program::Conda::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -90,10 +86,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

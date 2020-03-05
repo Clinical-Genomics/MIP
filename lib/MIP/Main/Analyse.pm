@@ -29,51 +29,48 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{
+  check_load_env_packages
+  check_recipe_mode
   get_not_allowed_temp_dirs
+  parse_program_executables
   parse_recipe_resources
+  set_gender_sample_ids
   set_parameter_reference_dir_path
+  update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
 use MIP::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Parameter qw{
-  check_load_env_packages
-  check_recipe_name
-  check_recipe_mode
-  check_sample_ids
-};
-use MIP::Check::Path qw{ check_executable_in_path };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ parse_store_files set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
-use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
+  check_recipe_vs_binary_name
   get_cache
   parse_parameter_files
   parse_reference_path
   set_cache
+  set_cache_program_executables
   set_default
 };
-use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Pedigree qw{ create_fam_file
-  detect_sample_id_gender
   get_is_trio
   parse_pedigree
 };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
-use MIP::Recipes::Parse qw{ parse_recipes };
+use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info };
-use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
-use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
+use MIP::Validate::Case qw{ check_sample_ids };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
@@ -88,7 +85,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.46;
+    our $VERSION = 1.50;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -360,20 +357,18 @@ sub mip_analyse {
     ## Check core number requested against environment provisioned
     parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
-    ## Check programs in path, and executable
-    check_executable_in_path(
+    ## Check programs in path, is executable, and set binary_path
+    parse_program_executables(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         }
     );
 
-## Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+    ## Check that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
         {
             case_id        => $active_parameter{case_id},
-            log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
@@ -397,14 +392,12 @@ sub mip_analyse {
         }
     );
 
-    @{ $parameter{cache}{program_executables} } =
-      get_program_executables( { parameter_href => \%parameter, } );
+    set_cache_program_executables( { parameter_href => \%parameter, } );
 
-## Check correct value for recipe mode in MIP
+    ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         }
     );
@@ -417,8 +410,8 @@ sub mip_analyse {
         }
     );
 
-## Check that recipe name and program name are not identical
-    check_recipe_name(
+    ## Check that recipe name and program name are not identical
+    check_recipe_vs_binary_name(
         {
             parameter_href   => \%parameter,
             recipe_names_ref => \@{ $parameter{cache}{recipe} },
@@ -428,7 +421,6 @@ sub mip_analyse {
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             parameter_href        => \%parameter,
         },
     );
@@ -442,19 +434,13 @@ sub mip_analyse {
         }
     );
 
-    ## Detect the gender(s) included in current analysis
-    (
-
-        $active_parameter{found_male},
-        $active_parameter{found_female},
-        $active_parameter{found_other},
-      )
-      = detect_sample_id_gender(
+    ## Set the gender(s) included in current analysisa and count them
+    set_gender_sample_ids(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
         }
-      );
+    );
 
 ### Contigs
 ## Set contig prefix and contig names depending on reference used
@@ -566,7 +552,6 @@ sub mip_analyse {
             }
         )
     );
-
     ## Writes a YAML hash to file
     write_to_file(
         {

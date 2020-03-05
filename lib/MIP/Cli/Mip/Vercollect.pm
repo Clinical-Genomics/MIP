@@ -19,7 +19,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 command_short_description(q{MIP vercollect command});
 
@@ -57,7 +57,6 @@ sub run {
     mip_vercollect(
         {
             infile_path => $infile_path,
-            log         => $log,
             outfile     => $outfile,
         }
     );

@@ -36,11 +36,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ build_stream_file_cmd get_number_of_male_reads get_sampling_fastq_files parse_fastq_for_gender update_gender_info };
+    our @EXPORT_OK = qw{ build_stream_file_cmd
+      get_number_of_male_reads
+      get_sampling_fastq_files
+      parse_fastq_for_gender
+      update_gender_info
+    };
 }
 
 sub build_stream_file_cmd {
@@ -66,7 +70,7 @@ sub build_stream_file_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_tail };
+    use MIP::Gnu::Coreutils qw{ gnu_head gnu_tail };
 
     ## Constants
     Readonly my $BYTE_START_POS => 10_000;
@@ -77,13 +81,10 @@ sub build_stream_file_cmd {
   FILE:
     foreach my $file_path ( @{$fastq_files_ref} ) {
 
-        my @cmds_cat = gnu_cat( { infile_paths_ref => [$file_path], } );
-
-        ## Check gzipped status of file path to choose correct cat binary (cat or zcat). Also prepend stream character.
-        $cmds_cat[0] = _get_file_gzipped_status(
+        ## Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
+        my @cmds_cat = _get_file_read_commands(
             {
-                cmds_cat_ref => \@cmds_cat,
-                file_path    => $file_path,
+                file_path => $file_path,
             }
         );
 
@@ -128,7 +129,7 @@ sub get_number_of_male_reads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use IPC::Cmd qw(run);
+    use MIP::Environment::Child_process qw{ child_process };
     use File::Path qw{ remove_tree };
 
     ## Constants
@@ -152,11 +153,15 @@ sub get_number_of_male_reads {
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
 
-    my $cmds_ref = [ q{bash}, $bash_temp_file ];
-    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-      run( command => $cmds_ref, verbose => 0 );
+    my $cmds_ref       = [ q{bash}, $bash_temp_file ];
+    my %process_return = child_process(
+        {
+            commands_ref => $cmds_ref,
+            process_type => q{ipc_cmd_run},
+        }
+    );
 
-    my $y_read_count = $stdout_buf_ref->[0];
+    my $y_read_count = $process_return{stdouts_ref}->[0];
 
     ## Clean-up
     close $filehandle;
@@ -486,18 +491,16 @@ sub update_gender_info {
     return 1;
 }
 
-sub _get_file_gzipped_status {
+sub _get_file_read_commands {
 
-## Function : Check gzipped status of file path to choose correct cat binary (cat or zcat). Also prepend stream character.
-## Returns  : $cmd
-## Arguments: $cmds_cat_ref => Command array for cat {REF}
-##          : $file_path    => Fastq File path
+## Function : Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
+## Returns  : @read_cmds
+## Arguments: $file_path => Fastq File path to check status for
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_path;
-    my $cmds_cat_ref;
 
     my $tmpl = {
         file_path => {
@@ -506,38 +509,39 @@ sub _get_file_gzipped_status {
             store       => \$file_path,
             strict_type => 1,
         },
-        cmds_cat_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$cmds_cat_ref,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gzip qw{ gzip };
 
-    my $cmd;
+    my @read_cmds;
 
-    ## Parse file suffix in filename.suffix(.gz).
-    ## Removes suffix if matching else return undef
-    my $is_gzipped = parse_file_suffix(
+    my $is_gzipped = check_gzipped(
         {
-            file_name   => $file_path,
-            file_suffix => $DOT . q{gz},
+            file_name => $file_path,
         }
     );
     if ($is_gzipped) {
 
-        $cmd = q{<} . $OPEN_PARENTHESIS . q{z} . $cmds_cat_ref->[0];
+        @read_cmds = gzip(
+            {
+                decompress       => 1,
+                infile_paths_ref => [$file_path],
+                stdout           => 1,
+            }
+        );
     }
     else {
 
-        $cmd = q{<} . $OPEN_PARENTHESIS . $cmds_cat_ref->[0];
+        @read_cmds = gnu_cat( { infile_paths_ref => [$file_path], } );
     }
-    return $cmd;
+
+    $read_cmds[0] = q{<} . $OPEN_PARENTHESIS . $read_cmds[0];
+
+    return @read_cmds;
 }
 
 1;

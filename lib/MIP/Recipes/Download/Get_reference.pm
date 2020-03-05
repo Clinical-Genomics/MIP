@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -103,7 +103,7 @@ sub get_reference {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::File qw{ check_file_md5sum };
-    use MIP::File::Decompression qw{ decompress_file };
+    use MIP::File::Decompression qw{ decompress_files };
     use MIP::Program::Wget qw{ wget };
 
     ## Potential download files
@@ -145,12 +145,12 @@ sub get_reference {
         say {$filehandle} $NEWLINE;
 
         ## Check if file needs to be decompress and write decompression if so
-        decompress_file(
+        decompress_files(
             {
-                filehandle   => $filehandle,
-                outdir_path  => $outdir_path,
-                outfile_path => $outfile_path,
-                decompress_program =>
+                filehandle  => $filehandle,
+                outdir_path => $outdir_path,
+                file_path   => $outfile_path,
+                program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
             }
         );

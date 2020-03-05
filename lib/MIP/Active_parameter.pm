@@ -16,25 +16,32 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_load_env_packages
       check_parameter_files
+      check_recipe_mode
       get_not_allowed_temp_dirs
+      get_package_env_attributes
       get_user_supplied_pedigree_parameter
+      parse_program_executables
       parse_recipe_resources
+      set_binary_path
       set_default_analysis_type
+      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_parameter
@@ -47,12 +54,88 @@ BEGIN {
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
       set_exome_target_bed
+      set_gender_sample_ids
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
+      update_recipe_mode_for_start_with_option
+      update_recipe_mode_with_dry_run_all
       update_reference_parameters
       update_to_absolute_path
     };
+}
+
+sub check_load_env_packages {
+
+## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_cache };
+
+    ## Constants
+    Readonly my @LOAD_ENV_KEYS => qw{ installation method mip };
+
+    my @program_executables = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{program_executables},
+        }
+    );
+
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+    ## Allowed packages/keywords in load_env section of config
+    my @allowed_packages = ( @program_executables, @LOAD_ENV_KEYS, @recipes, );
+
+  ENV:
+    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
+
+      PACKAGE:
+        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
+
+            ## is program executable, installation, method, mip or recipe_name
+            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
+
+            my $err_msg =
+                q{Could not find load_env package: '}
+              . $package
+              . q{' in MIP as either recipe or program_executables};
+            croak($err_msg);
+        }
+    }
+    return 1;
 }
 
 sub check_parameter_files {
@@ -207,6 +290,79 @@ sub check_parameter_files {
     return;
 }
 
+sub check_recipe_mode {
+
+## Function : Check correct value for recipe mode in MIP
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_cache };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Set allowed values
+    my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
+
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+  RECIPE:
+    foreach my $recipe (@recipes) {
+
+        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
+        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
+
+        ## Unpack
+        my $recipe_mode = $active_parameter_href->{$recipe};
+
+        next RECIPE if ( $is_allowed{$recipe_mode} );
+
+        #If not an allowed value in active parameters
+        $log->fatal(
+            $SINGLE_QUOTE
+              . $active_parameter_href->{$recipe}
+              . q{' Is not an allowed mode for recipe '--}
+              . $recipe
+              . q{'. Set to: }
+              . join $PIPE,
+            ( sort keys %is_allowed )
+        );
+        exit 1;
+    }
+    return 1;
+}
+
 sub get_not_allowed_temp_dirs {
 
 ## Function : Get paths that should not be set by mistake to temp_dir
@@ -237,6 +393,50 @@ sub get_not_allowed_temp_dirs {
         $active_parameter_href->{reference_dir},
     );
     return @is_not_allowed_temp_dirs;
+}
+
+sub get_package_env_attributes {
+
+## Function : Get environment name and method for package (recipe, program or MIP)
+## Returns  : $env_name, $env_method or "undef"
+## Arguments: $load_env_href => Load env hash defining environments for packages {REF}
+##          : $package_name  => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $load_env_href;
+    my $package_name;
+
+    my $tmpl = {
+        load_env_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$load_env_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  ENV:
+    foreach my $env_name ( keys %{$load_env_href} ) {
+
+        next ENV if ( not exists $load_env_href->{$env_name}{$package_name} );
+
+        ## Found package_name within env
+        ## Unpack
+        my $env_method = $load_env_href->{$env_name}{method};
+        return $env_name, $env_method;
+    }
+    return;
 }
 
 sub get_user_supplied_pedigree_parameter {
@@ -301,6 +501,83 @@ sub get_user_supplied_pedigree_parameter {
     return %is_user_supplied;
 }
 
+sub parse_program_executables {
+
+## Function : Checking commands in your path and executable
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_binary_path };
+    use MIP::Environment::Path qw{ check_binary_in_path };
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
+
+        ## Only check path(s) for parameters with "type" key
+        next PARAMETER
+          if ( not exists $parameter_href->{$parameter_name}{type} );
+
+        ## Only check path(s) for parameters with type value eq "recipe"
+        next PARAMETER
+          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
+
+        ## Only check path(s) for active recipes
+        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
+
+        ## Alias
+        my $program_executables_ref =
+          \@{ $parameter_href->{$parameter_name}{program_executables} };
+
+      PROGRAM:
+        foreach my $program ( @{$program_executables_ref} ) {
+
+            my $binary_path = check_binary_in_path(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    binary                => $program,
+                    program_name          => $parameter_name,
+                }
+            );
+
+            ## Set to use downstream
+            set_binary_path(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    binary                => $program,
+                    binary_path           => $binary_path,
+                }
+            );
+        }
+    }
+    return;
+}
+
 sub parse_recipe_resources {
 
 ## Function : Check core number and memory requested against environment provisioned
@@ -358,18 +635,20 @@ sub parse_recipe_resources {
     return 1;
 }
 
-sub set_default_analysis_type {
+sub set_binary_path {
 
-## Function : Set default analysis type to active parameters
+## Function : Set binary path to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
+##          : $binary                => Binary to set
+##          : $binary_path           => Path to binary
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
+    my $binary;
+    my $binary_path;
 
     my $tmpl = {
         active_parameter_href => {
@@ -379,13 +658,90 @@ sub set_default_analysis_type {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        binary => { defined => 1, required => 1, store => \$binary, strict_type => 1, },
+        binary_path => { required => 1, store => \$binary_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    map { $active_parameter_href->{$parameter_name}{$_} = q{wgs} }
+    return if ( not defined $binary_path );
+
+    $active_parameter_href->{binary_path}{$binary} = $binary_path;
+    return;
+}
+
+sub set_default_analysis_type {
+
+## Function : Set default analysis type to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    map { $active_parameter_href->{analysis_type}{$_} = q{wgs} }
       @{ $active_parameter_href->{sample_ids} };
+    return;
+}
+
+sub set_default_conda_path {
+
+## Function : Set default conda path to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $conda_path            => Conda bin file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $conda_path;
+    my $bin_file;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        bin_file => {
+            default     => q{conda},
+            store       => \$bin_file,
+            strict_type => 1,
+        },
+        conda_path => { defined => 1, required => 1, store => \$conda_path, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Path qw{ get_conda_path };
+
+    ## Set conda path
+    $active_parameter_href->{$conda_path} =
+      get_conda_path( { bin_file => $bin_file, } );
+
+    if (   not $active_parameter_href->{$conda_path}
+        or not -d $active_parameter_href->{$conda_path} )
+    {
+
+        croak(q{Failed to find default conda path});
+    }
     return;
 }
 
@@ -427,13 +783,11 @@ sub set_default_infile_dirs {
 ## Function : Set default infile dirs to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -443,7 +797,6 @@ sub set_default_infile_dirs {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -457,7 +810,6 @@ sub set_default_infile_dirs {
             set_default_analysis_type(
                 {
                     active_parameter_href => $active_parameter_href,
-                    parameter_name        => q{analysis_type},
                 }
             );
         }
@@ -469,7 +821,7 @@ sub set_default_infile_dirs {
             q{fastq}
         );
 
-        $active_parameter_href->{$parameter_name}{$path} = $sample_id;
+        $active_parameter_href->{infile_dirs}{$path} = $sample_id;
     }
     return;
 }
@@ -479,13 +831,11 @@ sub set_default_pedigree_fam_file {
 ## Function : Set default pedigree_fam_file to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -495,13 +845,12 @@ sub set_default_pedigree_fam_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set pedigree fam file
-    $active_parameter_href->{$parameter_name} = catfile(
+    $active_parameter_href->{pedigree_fam_file} = catfile(
         $active_parameter_href->{outdata_dir},
         $active_parameter_href->{case_id},
         $active_parameter_href->{case_id} . $DOT . q{fam}
@@ -514,13 +863,11 @@ sub set_default_program_test_file {
 ## Function : Set default path to file with program test commands
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -530,14 +877,13 @@ sub set_default_program_test_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( $active_parameter_href->{$parameter_name} );
+    return if ( $active_parameter_href->{program_test_file} );
 
-    $active_parameter_href->{$parameter_name} =
+    $active_parameter_href->{program_test_file} =
       catfile( $Bin, qw{templates program_test_cmds.yaml } );
 
     return;
@@ -548,13 +894,11 @@ sub set_default_reference_dir {
 ## Function : Set default reference dir to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -564,13 +908,12 @@ sub set_default_reference_dir {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set reference dir to current working dir
-    $active_parameter_href->{$parameter_name} = cwd();
+    $active_parameter_href->{reference_dir} = cwd();
     return;
 }
 
@@ -579,13 +922,11 @@ sub set_default_reference_info_file {
 ## Function : Set default reference_info_file
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -595,7 +936,6 @@ sub set_default_reference_info_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -611,13 +951,11 @@ sub set_default_store_file {
 ## Function : Set default store_file to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -627,15 +965,12 @@ sub set_default_store_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set store file
-    $active_parameter_href->{$parameter_name} =
-      catfile( $active_parameter_href->{outdata_dir},
+    $active_parameter_href->{store_file} = catfile( $active_parameter_href->{outdata_dir},
         $active_parameter_href->{case_id} . $UNDERSCORE . q{deliverables.yaml} );
     return;
 }
@@ -645,13 +980,11 @@ sub set_default_temp_directory {
 ## Function : Set default temp directory to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -661,7 +994,6 @@ sub set_default_temp_directory {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -740,7 +1072,7 @@ sub set_default_vcfparser_select_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Build default for vcfparser select file
+    ## Build default for (sv_)vcfparser select file
     my $path = catfile(
         $active_parameter_href->{cluster_constant_path},
         $active_parameter_href->{case_id},
@@ -839,6 +1171,81 @@ sub set_default_parameter {
     ## Can be scalar|array_ref|hash_ref
     $active_parameter_href->{$parameter_name} = $parameter_default;
 
+    return;
+}
+
+sub set_gender_sample_ids {
+
+## Function : Set gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    my %gender_map = (
+        1      => \&_set_male_gender,
+        2      => \&_set_female_gender,
+        female => \&_set_female_gender,
+        male   => \&_set_male_gender,
+        other  => \&_set_other_and_male_gender,
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $sex = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sex},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        if ( exists $gender_map{$sex} ) {
+
+            $gender_map{$sex}->(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    sample_id             => $sample_id
+                }
+            );
+            next SAMPLE_ID;
+        }
+        ## Set as other and male
+        _set_other_and_male_gender(
+            {
+                active_parameter_href => $active_parameter_href,
+                sample_id             => $sample_id
+            }
+        );
+
+    }
     return;
 }
 
@@ -1024,6 +1431,129 @@ sub set_recipe_resource {
     return;
 }
 
+sub update_recipe_mode_for_start_with_option {
+
+## Function : Update recipe mode depending on recipe to start with
+## Returns  :
+## Arguments: $active_parameter_href  => The active parameters for this analysis hash {REF}
+##          : $recipes_ref            => Recipes in MIP
+##          : $start_with_recipes_ref => Recipes to run
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $recipes_ref;
+    my $start_with_recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+        start_with_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$start_with_recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Run mode
+    my $run_mode = 1;
+
+    ## Dry run mode
+    my $dry_run_mode = 2;
+
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
+
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
+
+        ## If recipe is uppstream of start with recipe
+        if ( not any { $_ eq $recipe_name } @{$start_with_recipes_ref} ) {
+
+            ## Change recipe mode to dry run
+            $active_parameter_href->{$recipe_name} = $dry_run_mode;
+            next RECIPE;
+        }
+        ## Recipe or downstream dependency recipe
+        # Change recipe mode to active
+        $active_parameter_href->{$recipe_name} = $run_mode;
+    }
+    return;
+}
+
+sub update_recipe_mode_with_dry_run_all {
+
+## Function : Update recipe mode depending on dry_run_all flag
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $dry_run_all           => Simulation mode
+##          : $recipes_ref           => Recipes in MIP
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $dry_run_all;
+    my $recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        dry_run_all => {
+            allow       => [ undef, 0, 1, ],
+            default     => 0,
+            store       => \$dry_run_all,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $dry_run_all );
+
+    ## Activate dry run mode
+    my $dry_run_mode = 2;
+
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
+
+        ## If recipe is activated
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
+
+        # Change recipe mode to simulation
+        $active_parameter_href->{$recipe_name} = $dry_run_mode;
+    }
+    return;
+}
+
 sub update_reference_parameters {
 
 ## Function : Update reference parameters with mip_reference directory path
@@ -1188,6 +1718,118 @@ sub update_to_absolute_path {
             }
         );
     }
+    return;
+}
+
+sub _set_female_gender {
+
+## Function : Set female gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{found_female}++;
+    push @{ $active_parameter_href->{gender}{females} }, $sample_id;
+    return;
+}
+
+sub _set_male_gender {
+
+## Function : Set male gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{found_male}++;
+    push @{ $active_parameter_href->{gender}{males} }, $sample_id;
+    return;
+}
+
+sub _set_other_and_male_gender {
+
+## Function : Set other gender sample_ids of the current analysis and count each instance
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
+    ## will be performed from fastq reads
+    $active_parameter_href->{found_male}++;
+
+    $active_parameter_href->{found_other}++;
+    push @{ $active_parameter_href->{gender}{others} }, $sample_id;
     return;
 }
 
