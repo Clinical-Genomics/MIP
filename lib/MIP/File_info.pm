@@ -198,30 +198,30 @@ sub set_file_tag {
 
 ## Function : Set the file tag depending on id, branch and recipe
 ## Returns  :
-## Arguments: $file_tag       => File tag to set
-##          : $file_info_href => Info on files hash {REF}
+## Arguments: $file_info_href => Info on files hash {REF}
+##          : $file_tag       => File tag to set
 ##          : $id             => To change id for case or sample
 ##          : $recipe_name    => Recipe to add file tag for
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_tag;
     my $file_info_href;
+    my $file_tag;
     my $id;
     my $recipe_name;
 
     my $tmpl = {
-        file_tag => {
-            required    => 1,
-            store       => \$file_tag,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_tag => {
+            required    => 1,
+            store       => \$file_tag,
             strict_type => 1,
         },
         id => {

@@ -30,8 +30,8 @@ sub set_file_prefix_tag {
 ## Function : Set the file tag depending on active recipes
 ## Returns  : $file_tag_to_set
 ## Arguments: $current_chain         => Name of current chain
-##          : $file_tag              => File tag to set
 ##          : $file_info_href        => Info on files hash {REF}
+##          : $file_tag              => File tag to set
 ##          : $id                    => To change id for case or sample
 ##          : $is_active_recipe      => Active recipe for this analysis
 ##          : $recipe_name           => Recipe to add file tag for
@@ -41,8 +41,8 @@ sub set_file_prefix_tag {
 
     ## Flatten argument(s)
     my $current_chain;
-    my $file_tag;
     my $file_info_href;
+    my $file_tag;
     my $id;
     my $is_active_recipe;
     my $recipe_name;
@@ -55,17 +55,17 @@ sub set_file_prefix_tag {
             store       => \$current_chain,
             strict_type => 1,
         },
-        file_tag => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_tag,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_tag => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_tag,
             strict_type => 1,
         },
         id => {
