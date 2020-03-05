@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_recipes parse_start_with_recipe };
@@ -140,6 +140,7 @@ sub parse_start_with_recipe {
 
     use MIP::Active_parameter qw{  update_recipe_mode_for_start_with_option };
     use MIP::Dependency_tree qw{ get_dependency_tree };
+    use MIP::Parameter qw{ get_cache };
     use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 
     return if ( not defined $active_parameter_href->{start_with_recipe} );
@@ -167,11 +168,18 @@ sub parse_start_with_recipe {
         }
     );
 
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
     ## Update recipe mode depending on start with flag
     update_recipe_mode_for_start_with_option(
         {
             active_parameter_href  => $active_parameter_href,
-            recipes_ref            => \@{ $parameter_href->{cache}{recipe} },
+            recipes_ref            => \@recipes,
             start_with_recipes_ref => \@start_with_recipes,
         }
     );
