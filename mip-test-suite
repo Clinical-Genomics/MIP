@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+## Unit and integration
+prove t -r -j 8
+
+## Install
+perl t/mip_install.test
+
+## Download
+perl t/mip_download_rd_dna.test
+
+perl t/mip_download_rd_rna.test
+
+## DNA
+perl t/mip_analyse_rd_dna.test
+
+perl t/mip_analyse_rd_dna_vcf_rerun.test
+
+perl t/mip_analyse_dragen_rd_dna.test
+
+## RNA
+perl t/mip_analyse_rd_rna.test

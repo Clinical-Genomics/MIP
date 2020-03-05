@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -272,8 +272,8 @@ sub analysis_gzip_fastq {
             ## Perl wrapper for writing gzip recipe to $filehandle
             gzip(
                 {
-                    filehandle  => $filehandle,
-                    infile_path => $infile_paths[$infile_index],
+                    filehandle       => $filehandle,
+                    infile_paths_ref => [ $infile_paths[$infile_index] ],
                 }
             );
             say {$filehandle} q{&};

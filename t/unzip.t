@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -80,8 +80,8 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ path to file }),
+    infile_paths_ref => {
+        inputs_ref      => [ catfile(qw{ path to file }) ],
         expected_output => catfile(qw{ path to file }),
     },
 );
@@ -95,8 +95,8 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{-o},
     },
-    infile_path => {
-        input           => catfile(qw{ path to file }),
+    infile_paths_ref => {
+        inputs_ref      => [ catfile(qw{ path to file }) ],
         expected_output => catfile(qw{ path to file }),
     },
     outdir_path => {

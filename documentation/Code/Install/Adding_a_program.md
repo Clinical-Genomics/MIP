@@ -7,21 +7,19 @@ Add the program to an environment in the `templates/mip_install_<pipeline>_confi
 - Add your program according to which method the installation process uses:
 
 ```Yaml
-# [ENV_NAME] environment spec
-e<env_name>:
-  conda:
-    <program_name>: <program_version>=<program_version_subpatch>
-  pip:
-    <program_name>: <program_version>
-  shell:
-    <program_name>:
-      conda_dependency:
-        <dependency>: <dependency_version>
-      version: <program_version>
-  singularity:
-    uri: <uri_to_program>
-    executables:
-      <executable>: <path to executable in container> | <blank if executable in container path>
+conda:
+  <program_name>: <program_version>=<program_version_subpatch>
+pip:
+  <program_name>: <program_version>
+shell:
+  <program_name>:
+    conda_dependency:
+      <dependency>: <dependency_version>
+    version: <program_version>
+singularity:
+  uri: <uri_to_program>
+  executables:
+    <executable>: <path to executable in container> | <blank if executable in container path>
 ```
 
 ## Add the program to the CLI
@@ -42,7 +40,7 @@ $ chmod a+x t/data/modules/miniconda/envs/mip_travis_<env_name>/bin/<program_exe
 2. Add the program to the template config
 
 ## Add installation tests
-Add a path and execution test to `templates/program_test_cmds.yaml`.
+Add a path and/or a execution test to `templates/program_test_cmds.yaml`.
 ```Yaml
 program_test_command:
   <program_name>:

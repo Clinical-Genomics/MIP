@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -434,10 +434,12 @@ sub analysis_rhocall_viz {
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
+    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Reference qw{ write_contigs_size_file };
     use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+      qw{ set_file_path_to_store set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -555,11 +557,11 @@ sub analysis_rhocall_viz {
 
     gzip(
         {
-            decompress   => 1,
-            filehandle   => $filehandle,
-            force        => 1,
-            infile_path  => $sample_vcf,
-            outfile_path => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            decompress       => 1,
+            filehandle       => $filehandle,
+            force            => 1,
+            infile_paths_ref => [$sample_vcf],
+            outfile_path     => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -576,7 +578,31 @@ sub analysis_rhocall_viz {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    ## Create chromosome name and size file
+    my $contigs_size_file_path =
+      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference}
+              . $DOT . q{fai},
+            outfile_path => $contigs_size_file_path,
+        }
+    );
+
+    say {$filehandle} q{## Create wig index files};
+    my $viz_wig_outfile_path_prefix = $outdir_path . q{output};
+    ucsc_wig_to_big_wig(
+        {
+            clip                   => 1,
+            contigs_size_file_path => $contigs_size_file_path,
+            filehandle             => $filehandle,
+            infile_path            => $viz_wig_outfile_path_prefix . $DOT . q{wig},
+            outfile_path           => $viz_wig_outfile_path_prefix . $DOT . q{bw},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
@@ -585,9 +611,19 @@ sub analysis_rhocall_viz {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_path,
-                path             => catfile( $outdir_path, q{output.bed} ),
+                path             => $viz_wig_outfile_path_prefix . $DOT . q{wig},
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{bw},
+                id               => $sample_id,
+                path             => $viz_wig_outfile_path_prefix . $DOT . q{bw},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

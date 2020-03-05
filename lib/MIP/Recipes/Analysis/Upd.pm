@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
+use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_upd };
@@ -137,9 +137,14 @@ sub analysis_upd {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
     use MIP::Program::Upd qw{ upd_call };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_family_member_id set_recipe_outfile_in_sample_info };
+    use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Sample_info qw{ get_family_member_id
+      set_file_path_to_store
+      set_recipe_outfile_in_sample_info
+    };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -233,6 +238,17 @@ sub analysis_upd {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    ## Create chromosome name and size file
+    my $contigs_size_file_path =
+      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference}
+              . $DOT . q{fai},
+            outfile_path => $contigs_size_file_path,
+        }
+    );
+
     ## Get family hash
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href } );
@@ -252,6 +268,19 @@ sub analysis_upd {
             }
         );
         say {$filehandle} $NEWLINE;
+
+        say {$filehandle} q{## Create bed index files};
+        my $index_file_path_prefix =
+          fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+        ucsc_bed_to_big_bed(
+            {
+                contigs_size_file_path => $contigs_size_file_path,
+                filehandle             => $filehandle,
+                infile_path            => $outfile_path{$call_type},
+                outfile_path           => $index_file_path_prefix . $DOT . q{bb},
+            }
+        );
+        say {$filehandle} $NEWLINE;
     }
 
     ## Close filehandleS
@@ -265,6 +294,16 @@ sub analysis_upd {
                 path             => $outfile_path{sites},
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        my $index_file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
+        set_file_path_to_store(
+            {
+                format           => q{bb},
+                id               => $sample_id,
+                path             => $index_file_path_prefix . $DOT . q{bb},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

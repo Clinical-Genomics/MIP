@@ -48,7 +48,7 @@ use MIP::PATH::TO:MODULE qw{SUB_ROUTINE};
 ```
 To:
 ```Perl
-use MIP::Package_manager::Conda qw{conda_install};
+use MIP::Program::Conda qw{conda_install};
 ```  
 #### Diagnose string
 Change:
@@ -65,7 +65,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
 To:
 ```Perl
 diag(   q{Test conda_install from Conda.pm v}
-      . $MIP::Package_manager::Conda::VERSION
+      . $MIP::Program::Conda::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

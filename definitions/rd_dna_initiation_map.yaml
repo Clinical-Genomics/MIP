@@ -9,7 +9,7 @@ CHAIN_ALL:
     - fastqc_ar
   - CHAIN_MAIN:
     - bwa_mem
-    - picardtools_mergesamfiles
+    - samtools_merge
     - markduplicates
     - gatk_baserecalibration
     # Parallel chains (branches), which inherit from MAIN in initiation

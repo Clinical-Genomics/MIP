@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,7 +33,6 @@ BEGIN {
       parse_infiles
       parse_nist_parameters
       parse_prioritize_variant_callers
-      parse_start_with_recipe
       parse_toml_config_parameters
     };
 
@@ -445,86 +444,6 @@ sub parse_prioritize_variant_callers {
             return;
         }
     }
-    return 1;
-}
-
-sub parse_start_with_recipe {
-
-## Function : Get initiation recipe, downstream dependencies and update recipe modes fo start_with_recipe parameter
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $initiation_file       => Initiation file for pipeline
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Dependency_tree qw{ get_dependency_tree };
-    use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
-    use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
-
-    return if ( not defined $active_parameter_href->{start_with_recipe} );
-
-    check_recipe_exists_in_hash(
-        {
-            parameter_name => $active_parameter_href->{start_with_recipe},
-            query_ref      => \$active_parameter_href->{start_with_recipe},
-            truth_href     => $parameter_href,
-        }
-    );
-
-    my @start_with_recipes;
-    my $is_recipe_found = 0;
-    my $is_chain_found  = 0;
-
-    ## Collects all downstream recipes from initation point
-    get_dependency_tree(
-        {
-            dependency_tree_href   => $parameter_href->{dependency_tree_href},
-            is_recipe_found_ref    => \$is_recipe_found,
-            is_chain_found_ref     => \$is_chain_found,
-            recipe                 => $active_parameter_href->{start_with_recipe},
-            start_with_recipes_ref => \@start_with_recipes,
-        }
-    );
-
-    ## Update recipe mode depending on start with flag
-    update_recipe_mode_with_start_with(
-        {
-            active_parameter_href  => $active_parameter_href,
-            recipes_ref            => \@{ $parameter_href->{cache}{recipe} },
-            start_with_recipes_ref => \@start_with_recipes,
-        }
-    );
     return 1;
 }
 

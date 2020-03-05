@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,16 +42,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}    => [qw{ check_vcfanno_toml }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
-        q{MIP::Unix::System}   => [qw{ system_cmd_call }],
+        q{MIP::Check::Path}                => [qw{ check_vcfanno_toml }],
+        q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
+        q{MIP::Environment::Child_process} => [qw{ child_process }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Check::Path qw{ check_vcfanno_toml };
-use MIP::Unix::System qw{ system_cmd_call };
+use MIP::Environment::Child_process qw{ child_process };
 
 diag(   q{Test check_vcfanno_toml from Path.pm v}
       . $MIP::Check::Path::VERSION
@@ -89,7 +89,12 @@ my $parse_path =
 my $command_string = join $SPACE,
   ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
 
-my %return = system_cmd_call( { command_string => $command_string, } );
+my %process_return = child_process(
+    {
+        commands_ref => [ $command_string, ],
+        process_type => q{open3},
+    }
+);
 
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
