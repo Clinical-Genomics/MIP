@@ -14,6 +14,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 
+## [8.2.4]
+- Chromograph patch
+
+## [8.2.3]
+- Chromograph now creates ideograms over the chromosomes
+- Proband chromograph files are named with sample id instead of case id
+- Increases java memory for picardtools markduplicates
+
 ## [8.2.2]
 - Fixes a crash in MIP caused by not looping over the Y chromosomes for females in the GATK SplitNCigarReads recipe
 

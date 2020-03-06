@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,6 +97,10 @@ my %specific_argument = (
     coverage_file_path => {
         input           => catfile(qw{ path to wig }),
         expected_output => q{--coverage} . $SPACE . catfile(qw{ path to wig }),
+    },
+    ideo_file_path => {
+        input           => catfile(qw{ a file.bed }),
+        expected_output => q{--ideo} . $SPACE . catfile(qw{ a file.bed }),
     },
     outdir_path => {
         input           => catdir(qw{ path to out_dir }),

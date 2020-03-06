@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ chromograph };
@@ -37,6 +37,7 @@ sub chromograph {
 ## Returns  : @commands
 ## Arguments: $coverage_file_path     => Coverage data infile
 ##          : $filehandle             => Filehandle to write to
+##          : $ideo_file_path         => Bed file with ideogram data
 ##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -51,6 +52,7 @@ sub chromograph {
     ## Flatten argument(s)
     my $coverage_file_path;
     my $filehandle;
+    my $ideo_file_path;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -67,6 +69,10 @@ sub chromograph {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        ideo_file_path => {
+            store       => \$ideo_file_path,
+            strict_type => 1,
         },
         outdir_path => {
             defined     => 1,
@@ -110,6 +116,11 @@ sub chromograph {
     if ($coverage_file_path) {
 
         push @commands, q{--coverage} . $SPACE . $coverage_file_path;
+    }
+
+    if ($ideo_file_path) {
+
+        push @commands, q{--ideo} . $SPACE . $ideo_file_path;
     }
 
     push @commands, q{--outd} . $SPACE . $outdir_path;
