@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_file_prefix_tag }],
+        q{MIP::Io::Recipes}    => [qw{ set_file_prefix_tag }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_file_prefix_tag };
+use MIP::Io::Recipes qw{ set_file_prefix_tag };
 
-diag(   q{Test set_file_prefix_tag from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test set_file_prefix_tag from Recipes.pm v}
+      . $MIP::Io::Recipes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -73,7 +69,7 @@ my %active_parameter = (
 );
 my %expected_file_tag;
 my %file_info;
-my %parameter = (
+my %file_tag = (
     bwa_mem => q{mem},
     manta   => q{manta},
     pmark   => q{md},
@@ -83,16 +79,16 @@ my %temp_file_ending;
 
 ## Given MAIN chain file tags, when merge is turned off
 RECIPE:
-foreach my $recipe (@order_parameters) {
+foreach my $recipe_name (@order_parameters) {
 
     $temp_file_ending{$current_chain}{$sample_id} = set_file_prefix_tag(
         {
-            active_parameter_href => \%active_parameter,
             current_chain         => $current_chain,
-            file_tag              => $parameter{$recipe},
+            file_tag              => $file_tag{$recipe_name},
             file_info_href        => \%file_info,
             id                    => $sample_id,
-            recipe_name           => $recipe,
+            is_active_recipe      => $active_parameter{$recipe_name},
+            recipe_name           => $recipe_name,
             temp_file_ending_href => \%temp_file_ending,
         }
     );
@@ -101,14 +97,14 @@ foreach my $recipe (@order_parameters) {
 
 ## Define what to expect
 # First file tag
-$expected_file_tag{$sample_id}{bwa_mem}{file_tag} = $parameter{bwa_mem};
+$expected_file_tag{$sample_id}{bwa_mem}{file_tag} = $file_tag{bwa_mem};
 
 # Propagated
-$expected_file_tag{$sample_id}{pmerge}{file_tag} = $parameter{bwa_mem};
+$expected_file_tag{$sample_id}{pmerge}{file_tag} = $file_tag{bwa_mem};
 
 # Sequential
 $expected_file_tag{$sample_id}{pmark}{file_tag} =
-  $parameter{bwa_mem} . $parameter{pmark};
+  $file_tag{bwa_mem} . $file_tag{pmark};
 
 ## Then 3 file tags should be added where one is sequential and one is just propagated
 is_deeply( \%file_info, \%expected_file_tag, q{Added file prefix tags for MAIN } );
@@ -123,22 +119,22 @@ my $other_chain = q{SV};
 
 ## Given SV chain file tags, when merge is turned off
 RECIPE:
-foreach my $recipe (@order_parameters) {
+foreach my $recipe_name (@order_parameters) {
 
     $temp_file_ending{$current_chain}{$sample_id} = set_file_prefix_tag(
         {
-            active_parameter_href => \%active_parameter,
             current_chain         => $current_chain,
-            file_tag              => $parameter{$recipe},
+            file_tag              => $file_tag{$recipe_name},
             file_info_href        => \%file_info,
             id                    => $sample_id,
-            recipe_name           => $recipe,
+            is_active_recipe      => $active_parameter{$recipe_name},
+            recipe_name           => $recipe_name,
             temp_file_ending_href => \%temp_file_ending,
         }
     );
 }
 $expected_file_tag{$sample_id}{manta}{file_tag} =
-  $expected_file_tag{$sample_id}{pmark}{file_tag} . $parameter{manta};
+  $expected_file_tag{$sample_id}{pmark}{file_tag} . $file_tag{manta};
 
 is_deeply( \%file_info, \%expected_file_tag,
     q{Added file prefix tags for chain that inherits from MAIN } );

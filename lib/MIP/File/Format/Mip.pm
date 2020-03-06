@@ -13,22 +13,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
-use Readonly;
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_file_prefix_tag fastq_file_name_regexp };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub build_file_prefix_tag {
 
@@ -89,7 +84,7 @@ sub build_file_prefix_tag {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Set::File qw{ set_file_prefix_tag };
+    use MIP::Io::Recipes qw{ set_file_prefix_tag };
 
     ## Used to enable seqential build-up of file_tags between analysis recipes
     my %temp_file_ending;
@@ -115,11 +110,11 @@ sub build_file_prefix_tag {
             ## Set file tag for recipe and update sequential build-up of fileending
             $temp_file_ending{$current_chain}{$sample_id} = set_file_prefix_tag(
                 {
-                    active_parameter_href => $active_parameter_href,
                     current_chain         => $current_chain,
                     file_tag              => $file_tag,
                     file_info_href        => $file_info_href,
                     id                    => $sample_id,
+                    is_active_recipe      => $active_parameter_href->{$recipe_name},
                     recipe_name           => $recipe_name,
                     temp_file_ending_href => \%temp_file_ending,
                 }
@@ -130,11 +125,11 @@ sub build_file_prefix_tag {
         ## Set file tag for recipe and update sequential build-up of fileending
         $temp_file_ending{$current_chain}{$case_id} = set_file_prefix_tag(
             {
-                active_parameter_href => $active_parameter_href,
                 current_chain         => $current_chain,
                 file_tag              => $file_tag,
                 file_info_href        => $file_info_href,
                 id                    => $case_id,
+                is_active_recipe      => $active_parameter_href->{$recipe_name},
                 recipe_name           => $recipe_name,
                 temp_file_ending_href => \%temp_file_ending,
             }
