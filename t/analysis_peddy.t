@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -101,7 +101,12 @@ my %parameter = test_mip_hashes(
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
-my %sample_info;
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+        recipe_name   => $recipe_name,
+    }
+);
 
 my $is_ok = analysis_peddy(
     {

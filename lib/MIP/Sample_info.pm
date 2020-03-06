@@ -1173,33 +1173,26 @@ sub set_most_complete_vcf {
     return;
 }
 
-sub set_parameter_in_sample_info {
+sub set_in_sample_info {
 
-##Function : Sets parameter to sample info
+##Function : Sets key and value to sample info
 ##Returns  :
-##Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $key_to_add            => Key and value to add
-##         : $sample_info_href      => Info on samples and case hash {REF}
+##Arguments: $key              => Key to add
+##         : $sample_info_href => Info on samples and case hash {REF}
+##         : $value            => Value to add
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $key_to_add;
+    my $key;
     my $sample_info_href;
+    my $value;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        key => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        key_to_add => {
-            defined     => 1,
-            required    => 1,
-            store       => \$key_to_add,
+            store       => \$key,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1209,15 +1202,17 @@ sub set_parameter_in_sample_info {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        value => {
+            required => 1,
+            store    => \$value,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( exists $active_parameter_href->{$key_to_add} ) {
+    return if ( not defined $value );
 
-        $sample_info_href->{$key_to_add} = $active_parameter_href->{$key_to_add};
-    }
-
+    $sample_info_href->{$key} = $value;
     return;
 }
 
@@ -1509,7 +1504,7 @@ sub set_recipe_metafile_in_sample_info {
     return;
 }
 
-sub set_in_sample_info {
+sub set_parameter_in_sample_info {
 
 ## Function : Sets parameter info to sample_info
 ## Returns  :
@@ -1581,11 +1576,11 @@ sub set_in_sample_info {
   PARAMETER:
     foreach my $key_to_add (@add_keys) {
 
-        set_parameter_in_sample_info(
+        set_in_sample_info(
             {
-                active_parameter_href => $active_parameter_href,
-                key_to_add            => $key_to_add,
-                sample_info_href      => $sample_info_href,
+                key              => $key_to_add,
+                sample_info_href => $sample_info_href,
+                value            => $active_parameter_href->{$key_to_add},
             }
         );
     }
