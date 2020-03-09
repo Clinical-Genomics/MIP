@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -335,6 +335,7 @@ sub get_parameter_attribute {
                 qw{ analysis_mode
                   associated_recipe
                   build_file
+                  chain
                   data_type
                   default
                   exists_check
