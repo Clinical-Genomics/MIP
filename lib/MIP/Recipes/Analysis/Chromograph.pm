@@ -524,11 +524,7 @@ sub analysis_chromograph_proband {
         my $upd_oufile_prefix_path = $outfile_path_prefix . $UNDERSCORE . $call_type;
         my $upd_outfile_path       = $upd_oufile_prefix_path . $upd_outfile_suffix;
         my $sort_outfile_path =
-            $upd_oufile_prefix_path
-          . $UNDERSCORE
-          . q{sorted}
-          . $UNDERSCORE
-          . $upd_outfile_suffix;
+          $upd_oufile_prefix_path . $UNDERSCORE . q{sorted} . $upd_outfile_suffix;
         my $ucsc_outfile_prefix_path = catfile( $outfile_path_prefix, $call_type );
 
         upd_call(
