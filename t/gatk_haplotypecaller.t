@@ -113,6 +113,10 @@ my %specific_argument = (
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
+    linked_de_bruijn_graph => {
+        input           => 1,
+        expected_output => q{--linked-de-bruijn-graph},
+    },
     num_ref_samples_if_no_call => {
         input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
         expected_output => q{--num-reference-samples-if-no-call }
