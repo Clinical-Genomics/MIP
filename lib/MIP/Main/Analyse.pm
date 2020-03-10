@@ -489,7 +489,6 @@ sub mip_analyse {
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
             infile_lane_prefix_href         => \%infile_lane_prefix,
             job_id_href                     => \%job_id,
-            log                             => $log,
             order_parameters_ref            => \@order_parameters,
             order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
             parameter_href                  => \%parameter,

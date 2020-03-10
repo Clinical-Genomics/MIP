@@ -14,6 +14,9 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -22,7 +25,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ run_analyse_pipeline };
+    our @EXPORT_OK =
+      qw{ run_analyse_pipeline run_download_pipeline run_install_pipeline };
 }
 
 sub run_analyse_pipeline {
@@ -36,7 +40,6 @@ sub run_analyse_pipeline {
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                     => Job id hash {REF}
-##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $order_recipes_ref               => Order of recipes
 ##          : $parameter_href                  => Parameter hash {REF}
@@ -52,7 +55,6 @@ sub run_analyse_pipeline {
     my $infile_both_strands_prefix_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
     my $order_parameters_ref;
     my $order_recipes_ref;
     my $parameter_href;
@@ -107,11 +109,6 @@ sub run_analyse_pipeline {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         order_parameters_ref => {
             default     => [],
             defined     => 1,
@@ -152,6 +149,9 @@ sub run_analyse_pipeline {
     use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
       qw{ pipeline_analyse_rd_dna_vcf_rerun };
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     ## Create dispatch table of pipelines
     my %pipeline = (
         dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
@@ -178,7 +178,103 @@ sub run_analyse_pipeline {
             sample_info_href                => $sample_info_href,
         }
     );
+    return;
+}
 
+sub run_download_pipeline {
+
+## Function : Run download pipeline recipe
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
+    use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack
+    my $pipeline_type = $active_parameter_href->{download_pipeline_type};
+
+    ## Create dispatch table of pipelines
+    my %pipeline = (
+        rd_dna => \&pipeline_download_rd_dna,
+        rd_rna => \&pipeline_download_rd_rna,
+    );
+
+    $log->info( q{Pipeline download type: } . $pipeline_type );
+    $pipeline{$pipeline_type}->(
+        {
+            active_parameter_href => $active_parameter_href,
+            temp_directory        => $active_parameter_href->{temp_directory},
+        }
+    );
+    return;
+}
+
+sub run_install_pipeline {
+
+## Function : Run install pipeline recipe
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this install hash {REF}
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
+    use MIP::Recipes::Pipeline::Install_rd_rna qw{ pipeline_install_rd_rna };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack
+    my $pipeline = $active_parameter_href->{pipeline};
+
+## Create dispatch table of pipelines
+    my %pipeline_table = (
+        install_rd_dna => \&pipeline_install_rd_dna,
+        install_rd_rna => \&pipeline_install_rd_rna,
+    );
+
+    $log->info( q{Pipeline type: } . $pipeline );
+    $pipeline_table{$pipeline}->(
+        {
+            active_parameter_href => $active_parameter_href,
+            quiet                 => $active_parameter_href->{quiet},
+            verbose               => $active_parameter_href->{verbose},
+        }
+    );
     return;
 }
 
