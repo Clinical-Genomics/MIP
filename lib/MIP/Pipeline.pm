@@ -261,7 +261,7 @@ sub run_install_pipeline {
     ## Unpack
     my $pipeline = $active_parameter_href->{pipeline};
 
-## Create dispatch table of pipelines
+    ## Create dispatch table of pipelines
     my %pipeline_table = (
         install_rd_dna => \&pipeline_install_rd_dna,
         install_rd_rna => \&pipeline_install_rd_rna,
