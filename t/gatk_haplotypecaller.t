@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -112,6 +112,10 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
+    },
+    linked_de_bruijn_graph => {
+        input           => 1,
+        expected_output => q{--linked-de-bruijn-graph},
     },
     num_ref_samples_if_no_call => {
         input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
