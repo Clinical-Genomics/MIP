@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.32;
+our $VERSION = 1.33;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -211,16 +211,6 @@ sub _build_usage {
             cmd_aliases   => [qw{ gdai }],
             cmd_flag      => q{gatk_dis_auto_ind_fl},
             documentation => q{Disable auto index creation and locking when reading rods},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{gatk_use_new_qual_calculator} => (
-            cmd_aliases   => [qw{ gatknq }],
-            cmd_flag      => q{gatk_new_qual},
-            documentation => q{Use new qual calculator},
             is            => q{rw},
             isa           => Bool,
         )

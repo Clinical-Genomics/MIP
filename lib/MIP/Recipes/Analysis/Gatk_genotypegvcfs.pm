@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -343,8 +343,6 @@ sub analysis_gatk_genotypegvcfs {
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 temp_directory       => $temp_directory,
                 verbosity            => $active_parameter_href->{gatk_logging_level},
-                use_new_qual_calculator =>
-                  $active_parameter_href->{gatk_use_new_qual_calculator},
             }
         );
         say {$filehandle} $NEWLINE;
