@@ -144,10 +144,6 @@ my %specific_argument = (
         expected_output => q{--standard-min-confidence-threshold-for-calling }
           . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
     },
-    use_new_qual_calculator => {
-        input           => 1,
-        expected_output => q{--use-new-qual-calculator},
-    },
 );
 
 ## Coderef - enables generalized use of generate call

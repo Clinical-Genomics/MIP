@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -108,10 +108,6 @@ my %specific_argument = (
     referencefile_path => {
         input           => catfile(qw{ my genome }),
         expected_output => q{--reference } . catdir(qw{ my genome }),
-    },
-    use_new_qual_calculator => {
-        input           => 1,
-        expected_output => q{--use-new-qual-calculator},
     },
 );
 
