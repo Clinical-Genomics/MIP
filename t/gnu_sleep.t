@@ -77,7 +77,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = (q{MIP::Gnu::Coreutils});
+    my @modules = (q{MIP::Program::Gnu::Coreutils});
 
   MODULE:
     for my $module (@modules) {
@@ -85,11 +85,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw{ gnu_sleep };
+use MIP::Program::Gnu::Coreutils qw{ gnu_sleep };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test gnu_sleep from Coreutils.pm v}
-      . $MIP::Gnu::Coreutils::VERSION
+      . $MIP::Program::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

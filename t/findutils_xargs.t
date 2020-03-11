@@ -45,18 +45,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Findutils} => [qw{ xargs }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Gnu::Findutils} => [qw{ xargs }],
+        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Findutils qw{xargs};
+use MIP::Program::Gnu::Findutils qw{xargs};
 use MIP::Test::Commands qw{test_function};
 
 diag(   q{Test xargs from Findutils v}
-      . $MIP::Gnu::Findutils::VERSION
+      . $MIP::Program::Gnu::Findutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

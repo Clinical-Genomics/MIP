@@ -134,7 +134,7 @@ sub analysis_genebody_coverage {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp gnu_rm };
     use MIP::Program::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

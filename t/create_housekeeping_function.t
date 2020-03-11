@@ -47,8 +47,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Bash}       => [qw{ gnu_set }],
-        q{MIP::Gnu::Coreutils}  => [qw{ gnu_mkdir }],
+        q{MIP::Program::Gnu::Bash}      => [qw{ gnu_set }],
+        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_mkdir }],
         q{MIP::Language::Shell} => [qw{ build_shebang create_housekeeping_function }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
@@ -56,8 +56,8 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Bash qw{ gnu_set };
-use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+use MIP::Program::Gnu::Bash qw{ gnu_set };
+use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 
 diag(   q{Test create_housekeeping_function from Shell.pm v}

@@ -76,7 +76,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Gnu::Software::Gnu_sed});
+    my @modules = (q{MIP::Program::Gnu::Software::Gnu_sed});
 
   MODULE:
     for my $module (@modules) {
@@ -84,11 +84,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test gnu_sed from Gnu_sed.pm v}
-      . $MIP::Gnu::Software::Gnu_sed::VERSION
+      . $MIP::Program::Gnu::Software::Gnu_sed::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

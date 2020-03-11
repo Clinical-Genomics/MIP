@@ -208,8 +208,8 @@ sub analysis_vt_core {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
@@ -595,8 +595,8 @@ sub analysis_vt_core_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };

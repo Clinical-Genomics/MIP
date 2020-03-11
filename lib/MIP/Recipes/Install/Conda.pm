@@ -22,8 +22,8 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $BACKTICK $COLON $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
-use MIP::Gnu::Bash qw{ gnu_unset };
-use MIP::Gnu::Coreutils qw{ gnu_ln };
+use MIP::Program::Gnu::Bash qw{ gnu_unset };
+use MIP::Program::Gnu::Coreutils qw{ gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Conda qw{ conda_create conda_install };
 

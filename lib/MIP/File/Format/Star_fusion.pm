@@ -95,7 +95,7 @@ sub create_star_fusion_sample_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_echo };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
     say {$filehandle} q{# Generating STAR-fusion 'samples_file'};
 

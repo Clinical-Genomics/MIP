@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
+        q{MIP::Test::Fixtures}                   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
 
 diag(   q{Test gnu_grep from Gnu_grep.pm v}
-      . $MIP::Gnu::Software::Gnu_grep::VERSION
+      . $MIP::Program::Gnu::Software::Gnu_grep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,7 +59,7 @@ diag(   q{Test gnu_grep from Gnu_grep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+use MIP::Program::Gnu::Software::Gnu_grep qw(gnu_grep);
 use MIP::Test::Commands qw(test_function);
 
 ## Base arguments

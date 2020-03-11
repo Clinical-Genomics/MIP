@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
-use MIP::Gnu::Coreutils qw{ gnu_echo };
+use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
 BEGIN {
     use base qw{ Exporter };

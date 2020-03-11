@@ -26,8 +26,8 @@ use Readonly;
 use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Environment::Manager qw{ get_env_method_cmds };
-use MIP::Gnu::Bash qw{ gnu_set };
-use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
+use MIP::Program::Gnu::Bash qw{ gnu_set };
+use MIP::Program::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
