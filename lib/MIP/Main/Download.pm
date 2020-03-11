@@ -22,6 +22,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Active_parameter qw{
   check_recipe_mode
+  parse_recipe_resources
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path
 };
@@ -40,6 +41,7 @@ use MIP::Parameter qw{
 };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
+use MIP::Recipes::Parse qw{ parse_recipes };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 
@@ -47,12 +49,18 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
 
 }
+
+## Constants
+Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
+    keys     => [qw{ recipe_core_number recipe_time }],
+    elements => [qw{ associated_recipe  }],
+);
 
 sub mip_download {
 
@@ -193,54 +201,17 @@ sub mip_download {
         }
     );
 
-    ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number });
-  PARAMETER_NAME:
-    foreach my $parameter_name (@parameter_keys_to_check) {
-
-        ## Test if key from query hash exists truth hash
-        check_recipe_exists_in_hash(
-            {
-                parameter_name => $parameter_name,
-                query_ref      => \%{ $active_parameter{$parameter_name} },
-                truth_href     => \%parameter,
-            }
-        );
-    }
-
-    ## Parameters with key(s) that have elements as MIP recipe names
-    my @parameter_element_to_check = qw{ associated_recipe };
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_element_to_check) {
-
-            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
-
-            ## Test if element from query array exists truth hash
-            check_recipe_exists_in_hash(
-                {
-                    parameter_name => $parameter_name,
-                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
-                    truth_href     => \%parameter,
-                }
-            );
+    ## Parameters that have keys or elements as MIP recipe names
+    parse_recipes(
+        {
+            active_parameter_href   => \%active_parameter,
+            parameter_href          => \%parameter,
+            parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
-    }
+    );
 
-    ## Check that the module core number do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
-            {
-                max_cores_per_node => $active_parameter{max_cores_per_node},
-                core_number_requested =>
-                  $active_parameter{recipe_core_number}{$recipe_name},
-            }
-        );
-    }
+    ## Check core number requested against environment provisioned
+    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     set_cache(
