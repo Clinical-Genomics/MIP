@@ -36,7 +36,7 @@ install:
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
   - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
-  - conda install -n mip_rd-rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+  - conda install -n mip_rd_rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
   ## Test MIP rd_dna
