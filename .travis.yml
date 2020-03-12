@@ -62,7 +62,7 @@ script:
   ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
   ## Set-up test coverage for mip_analyse_rna.test
-  - conda activate mip_rd-rna
+  - conda activate mip_rd_rna
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
   ## Get some coverage statistics
   - cover
