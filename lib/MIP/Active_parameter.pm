@@ -55,6 +55,7 @@ BEGIN {
       set_default_vcfparser_select_file
       set_exome_target_bed
       set_gender_sample_ids
+      set_load_env_environment
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
@@ -1171,6 +1172,53 @@ sub set_default_parameter {
     ## Can be scalar|array_ref|hash_ref
     $active_parameter_href->{$parameter_name} = $parameter_default;
 
+    return;
+}
+
+sub set_load_env_environment {
+
+## Function : Set load_env environment name based on supplied environment name
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
+
+    ## Unpack
+    my $env_name = $active_parameter_href->{environment_name};
+
+    if ( keys %{ $active_parameter_href->{load_env} } != 1 ) {
+
+        ## Retrieve logger object
+        my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+        $log->warn( q{Could not use }
+              . $env_name
+              . q{ as there are multiple environments to update} );
+        return;
+    }
+
+  ENV:
+    foreach my $config_env_name ( keys %{ $active_parameter_href->{load_env} } ) {
+
+        ## Set new environment name
+        $active_parameter_href->{load_env}{$env_name} =
+          delete $active_parameter_href->{load_env}{$config_env_name};
+    }
     return;
 }
 

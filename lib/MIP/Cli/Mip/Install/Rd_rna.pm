@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.17;
+our $VERSION = 2.18;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -96,8 +96,8 @@ sub _build_usage {
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
-            cmd_tags      => [q{Default: MIP_rd-rna }],
-            documentation => q{Set environment names},
+            cmd_tags      => [q{Default: mip_rd_rna }],
+            documentation => q{Set environment name},
             is            => q{rw},
             isa           => Str,
             required      => 0,
