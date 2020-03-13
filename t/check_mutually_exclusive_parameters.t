@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use Test::Trap;
 
 my $VERBOSE = 1;
-our $VERSION = 1.0;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_mutually_exclusive_parameters }],
+        q{MIP::Active_parameter} => [qw{ check_mutually_exclusive_parameters }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_mutually_exclusive_parameters };
+use MIP::Active_parameter qw{ check_mutually_exclusive_parameters };
 
-diag(   q{Test check_mutually_exclusive_parameters from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_mutually_exclusive_parameters from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -73,7 +70,6 @@ my %active_parameter = (
 my $is_ok = check_mutually_exclusive_parameters(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
     }
 );
 
@@ -87,7 +83,6 @@ trap {
     check_mutually_exclusive_parameters(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
         }
     )
 };
