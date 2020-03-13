@@ -45,7 +45,6 @@ use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
-use MIP::File::Format::Store qw{ parse_store_files set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
@@ -69,6 +68,7 @@ use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };
+use MIP::Store qw{ parse_store_files set_analysis_files_to_store store_files };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
 
@@ -537,30 +537,12 @@ sub mip_analyse {
         }
     );
 
-    set_analysis_files_to_store(
+    store_files(
         {
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
         }
     );
-
-    ## Parse and write store array to file
-    my %store_files = (
-        files => parse_store_files(
-            {
-                store_files_ref => $sample_info{files},
-            }
-        )
-    );
-    ## Writes a YAML hash to file
-    write_to_file(
-        {
-            data_href => \%store_files,
-            format    => q{yaml},
-            path      => $active_parameter{store_file},
-        }
-    );
-    $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
 

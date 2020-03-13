@@ -1,4 +1,4 @@
-package MIP::File::Format::Store;
+package MIP::Store;
 
 use 5.026;
 use Carp;
@@ -13,21 +13,22 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $LOG_NAME };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = 
-      qw{ define_analysis_files_to_store parse_store_files set_analysis_files_to_store };
+    our @EXPORT_OK = qw{ define_analysis_files_to_store
+      parse_store_files
+      set_analysis_files_to_store
+      store_files };
 }
 
 sub define_analysis_files_to_store {
@@ -93,6 +94,37 @@ sub define_analysis_files_to_store {
     return %analysis_store_file;
 }
 
+sub parse_store_files {
+
+## Function : Parse store files and remove old duplicates based on same path
+## Returns  : $store_files_ref
+## Arguments: $store_files_ref => Store files {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $store_files_ref;
+
+    my $tmpl = {
+        store_files_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$store_files_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Remove duplicates, keep most recent additions
+    my %seen;
+    my @store_files = grep { not $seen{ $_->{path} }++ } ( reverse @{$store_files_ref} );
+    $store_files_ref = [ reverse @store_files ];
+
+    return $store_files_ref;
+}
+
 sub set_analysis_files_to_store {
 
 ## Function : Set analysis files to store
@@ -147,35 +179,70 @@ sub set_analysis_files_to_store {
     return;
 }
 
-sub parse_store_files {
+sub store_files {
 
-## Function : Parse store files and remove old duplicates based on same path
-## Returns  : $store_files_ref
-## Arguments: $store_files_ref => Store files {REF}
+## Function : Store files from the analysis
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_info_href      => Sample info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $store_files_ref;
+    my $active_parameter_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        store_files_ref => {
-            default     => [],
+        active_parameter_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$store_files_ref,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Remove duplicates, keep most recent additions
-    my %seen;
-    my @store_files = grep {  not $seen{ $_->{path} }++ } ( reverse @{$store_files_ref} );
-    $store_files_ref = [ reverse @store_files ];
+    use MIP::Io::Write qw{ write_to_file };
 
-    return $store_files_ref;
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    set_analysis_files_to_store(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Parse and write store array to file
+    my %store_files = (
+        files => parse_store_files(
+            {
+                store_files_ref => $sample_info_href->{files},
+            }
+        )
+    );
+
+    ## Writes a YAML hash to file
+    write_to_file(
+        {
+            data_href => \%store_files,
+            format    => q{yaml},
+            path      => $active_parameter_href->{store_file},
+        }
+    );
+    $log->info( q{Wrote: } . $active_parameter_href->{store_file} );
+
+    return;
 }
 
 1;
