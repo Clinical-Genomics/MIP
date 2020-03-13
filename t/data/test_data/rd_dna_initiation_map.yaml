@@ -1,3 +1,4 @@
+---
 CHAIN_ALL:
    - CHAIN_MAIN:
       - gzip_fastq
