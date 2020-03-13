@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="fastqc"
 LABEL software.version="0.11.8"
 LABEL extra.binaries="fastqc"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install fastqc=0.11.8=1
 
@@ -19,4 +17,3 @@ RUN conda install fastqc=0.11.8=1
 RUN /opt/conda/bin/conda clean -tipsy
 #
 WORKDIR /data/
-
