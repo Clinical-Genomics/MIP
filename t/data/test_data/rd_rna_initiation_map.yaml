@@ -2,7 +2,7 @@
 CHAIN_ALL:
   - CHAIN_MAIN:
     - gzip_fastq
-# Parallel chains (branch)
+  # Parallel chains (branch)
   - CHAIN_FASTQ:
     - fastqc_ar
   - CHAIN_DE:
