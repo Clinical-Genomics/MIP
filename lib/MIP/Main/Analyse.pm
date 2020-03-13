@@ -68,7 +68,7 @@ use MIP::Sample_info qw{ reload_previous_pedigree_info };
 use MIP::Set::Parameter qw{
   set_no_dry_run_parameters
 };
-use MIP::Store qw{ parse_store_files set_analysis_files_to_store store_files };
+use MIP::Store qw{ store_files };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
 
