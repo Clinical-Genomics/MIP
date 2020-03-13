@@ -94,9 +94,9 @@ $is_ok  = write_job_ids_to_file(
 ok( $is_ok, q{Wrote job ids file for job ids} );
 
 ## Then job_id file should exist
+my $log_dir = dirname($log_file);
 my $job_ids_file =
   catfile( $log_dir, q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
-my $log_dir = dirname($log_file);
 ok( -e $job_ids_file, q{Created file} );
 
 ## Clean-up
