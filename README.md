@@ -5,6 +5,7 @@
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/master/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/issues)
+[![CodeFactor](https://www.codefactor.io/repository/github/clinical-genomics/mip/badge)](https://www.codefactor.io/repository/github/clinical-genomics/mip)
 
 MIP enables identification of potential disease causing variants from sequencing data.
 
