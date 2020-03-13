@@ -64,14 +64,15 @@ my $log = test_log( { no_screen => 1, } );
 ## Given a log file when no job ids
 my $case_id         = q{case_1};
 my $date_time_stamp = q{1999-12-31T12:00:00};
-my $log_file        = catfile( $Bin, q{a_test.log} );
 my %job_id;
+my $log_file = catfile( $Bin, q{a_test.log} );
+
 my $is_ok = write_job_ids_to_file(
     {
         case_id         => $case_id,
         date_time_stamp => $date_time_stamp,
-        log_file        => $log_file,
         job_id_href     => \%job_id,
+        log_file        => $log_file,
     }
 );
 
@@ -84,8 +85,8 @@ $is_ok  = write_job_ids_to_file(
     {
         case_id         => $case_id,
         date_time_stamp => $date_time_stamp,
-        log_file        => $log_file,
         job_id_href     => \%job_id,
+        log_file        => $log_file,
     }
 );
 
@@ -93,9 +94,9 @@ $is_ok  = write_job_ids_to_file(
 ok( $is_ok, q{Wrote job ids file for job ids} );
 
 ## Then job_id file should exist
-my $log_dir = dirname($log_file);
 my $job_ids_file =
   catfile( $log_dir, q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
+my $log_dir = dirname($log_file);
 ok( -e $job_ids_file, q{Created file} );
 
 ## Clean-up
