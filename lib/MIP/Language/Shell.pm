@@ -167,7 +167,7 @@ sub create_housekeeping_function {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
 
     ## Create housekeeping function and trap
     say {$filehandle} $trap_function_name . q?() {?, $NEWLINE;
@@ -339,7 +339,7 @@ sub clear_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_trap };
+    use MIP::Program::Gnu::Bash qw{ gnu_trap };
 
     ## Clear trap for signal ERR
     say {$filehandle} $NEWLINE . q{## Clear trap for signal(s) } . join $SPACE,
@@ -390,7 +390,7 @@ sub enable_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_trap };
+    use MIP::Program::Gnu::Bash qw{ gnu_trap };
 
     say {$filehandle} $NEWLINE . q{## Enable trap for signal(s) } . join $SPACE,
       @{$trap_signals_ref};
@@ -536,7 +536,7 @@ sub check_exist_and_move_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv};
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_mv};
 
     ## Check file exists and is larger than 0
     print {$filehandle} q{[ -s } . $intended_file_path . q{ ]} . $SPACE;

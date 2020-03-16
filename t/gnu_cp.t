@@ -65,16 +65,16 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
+    my @modules = ('MIP::Program::Gnu::Coreutils');
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_cp);
+use MIP::Program::Gnu::Coreutils qw(gnu_cp);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_cp $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test gnu_cp $MIP::Program::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
 my @function_base_commands = 'cp';

@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Gnu::Findutils});
+    my @modules = (q{MIP::Program::Gnu::Findutils});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Findutils qw{ gnu_find };
+use MIP::Program::Gnu::Findutils qw{ gnu_find };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test gnu_find from Findutils.pm v}
-      . $MIP::Gnu::Findutils::VERSION
+      . $MIP::Program::Gnu::Findutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

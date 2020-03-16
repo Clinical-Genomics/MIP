@@ -171,8 +171,8 @@ sub check_existing_installation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
-    use MIP::Gnu::Findutils qw{ gnu_find };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Gnu::Findutils qw{ gnu_find };
 
     ## Return if directory dosen't exist
     return 0 if ( not -d $program_directory_path );

@@ -122,8 +122,8 @@ sub download_gnomad_pli_per_gene {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_cut };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cut };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

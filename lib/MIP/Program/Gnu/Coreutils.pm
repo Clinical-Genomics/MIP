@@ -1,4 +1,4 @@
-package MIP::Gnu::Coreutils;
+package MIP::Program::Gnu::Coreutils;
 
 use 5.026;
 use Carp;

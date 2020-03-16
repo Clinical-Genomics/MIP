@@ -143,7 +143,7 @@ sub analysis_fastqc {
     use MIP::Environment::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Fastqc qw{ fastqc };

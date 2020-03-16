@@ -1690,7 +1690,7 @@ sub print_wait {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{gnu_wait};
+    use MIP::Program::Gnu::Bash qw{gnu_wait};
 
     # Using only nr of processs eq the maximum number of process scaled by the batch count
     if ( $process_counter == $process_batches_count * $max_process_number ) {

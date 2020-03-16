@@ -70,7 +70,7 @@ sub build_stream_file_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_head gnu_tail };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
 
     ## Constants
     Readonly my $BYTE_START_POS => 10_000;
@@ -316,8 +316,8 @@ sub parse_fastq_for_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_cut };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Bwa qw{ bwa_mem };
 
     ## All sample ids have a gender - non need to continue
@@ -514,7 +514,7 @@ sub _get_file_read_commands {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ check_gzipped };
-    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Program::Gzip qw{ gzip };
 
     my @read_cmds;

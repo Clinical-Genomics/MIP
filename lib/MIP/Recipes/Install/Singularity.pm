@@ -21,8 +21,8 @@ use Readonly;
 use MIP::Check::Path qw{ check_future_filesystem_for_directory };
 use MIP::Constants
   qw{ $AT $BACKWARD_SLASH $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
-use MIP::Gnu::Bash qw{ gnu_unset };
-use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_echo gnu_mkdir };
+use MIP::Program::Gnu::Bash qw{ gnu_unset };
+use MIP::Program::Gnu::Coreutils qw{ gnu_chmod gnu_echo gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Program::Singularity qw{ singularity_exec singularity_pull };

@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
-use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
+use MIP::Program::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
 BEGIN {

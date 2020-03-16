@@ -67,7 +67,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = ('MIP::Gnu::Software::Gnu_less');
+    my @modules = ('MIP::Program::Gnu::Software::Gnu_less');
 
     for my $module (@modules) {
 
@@ -75,10 +75,12 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_less qw(gnu_less);
+use MIP::Program::Gnu::Software::Gnu_less qw(gnu_less);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_less $MIP::Gnu::Software::Gnu_less::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(
+"Test gnu_less $MIP::Program::Gnu::Software::Gnu_less::VERSION, Perl $^V, $EXECUTABLE_NAME"
+);
 
 ## Base arguments
 my @function_base_commands = 'less';
