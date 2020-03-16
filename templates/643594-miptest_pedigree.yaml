@@ -1,3 +1,4 @@
+---
 case: '643594-miptest'
 samples:
   - analysis_type: wes
