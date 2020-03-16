@@ -466,12 +466,12 @@ sub mip_analyse {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            active_parameter_href => \%active_parameter,
-            execution_mode        => q{system},
-            fam_file_path         => $active_parameter{pedigree_fam_file},
-            log                   => $log,
-            parameter_href        => \%parameter,
-            sample_info_href      => \%sample_info,
+            case_id          => $active_parameter{case_id},
+            execution_mode   => q{system},
+            fam_file_path    => $active_parameter{pedigree_fam_file},
+            parameter_href   => \%parameter,
+            sample_ids_ref   => $active_parameter{sample_ids},
+            sample_info_href => \%sample_info,
         }
     );
 
