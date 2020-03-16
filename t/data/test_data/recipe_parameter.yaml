@@ -7,7 +7,7 @@ exome_target_bed:
   build_file: 1
 human_genome_reference_file_endings:
   associated_recipe:
-   - bwa_mem
+    - bwa_mem
   build_file: 1
 rtg_vcfeval_reference_genome:
   build_file: 1
