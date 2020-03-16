@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Store} => [qw{ parse_store_files }],
-        q{MIP::Test::Fixtures}      => [qw{ test_log test_standard_cli }],
+        q{MIP::Store}          => [qw{ parse_store_files }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Store qw{ parse_store_files };
+use MIP::Store qw{ parse_store_files };
 
 diag(   q{Test parse_store_files from Store.pm v}
-      . $MIP::File::Format::Store::VERSION
+      . $MIP::Store::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
