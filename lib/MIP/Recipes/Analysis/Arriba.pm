@@ -148,7 +148,7 @@ sub analysis_arriba {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_tee };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Arriba qw{ arriba draw_fusions };

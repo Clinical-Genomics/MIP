@@ -158,7 +158,7 @@ sub check_file_md5sum {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
     use MIP::Parse::File qw{ parse_file_suffix };
 
     ## Skip file

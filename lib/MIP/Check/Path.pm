@@ -105,7 +105,7 @@ sub check_future_filesystem_for_directory {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{gnu_mkdir};
+    use MIP::Program::Gnu::Coreutils qw{gnu_mkdir};
 
     my $dir_check_command =
         $OPEN_BRACKET

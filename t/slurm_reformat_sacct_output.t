@@ -54,7 +54,7 @@ BEGIN {
 }
 
 use MIP::Language::Shell qw{ build_shebang };
-use MIP::Gnu::Bash qw{ gnu_set };
+use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
 diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}

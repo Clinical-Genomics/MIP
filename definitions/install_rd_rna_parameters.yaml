@@ -3,6 +3,6 @@ environment_name:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: mip_rd-rna
+  default: mip_rd_rna
   mandatory: no
   type: mip

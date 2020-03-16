@@ -1,4 +1,4 @@
-package MIP::Gnu::Findutils;
+package MIP::Program::Gnu::Findutils;
 
 use 5.026;
 use strict;

@@ -44,9 +44,9 @@ use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPAC
 use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
-use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ parse_store_files set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
+use MIP::Io::Recipes qw{ build_file_prefix_tag };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -62,6 +62,7 @@ use MIP::Pedigree qw{ create_fam_file
   get_is_trio
   parse_pedigree
 };
+use MIP::Pipeline qw{ run_analyse_pipeline };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
@@ -72,20 +73,13 @@ use MIP::Set::Parameter qw{
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
 
-## Recipes
-use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
-use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
-use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
-use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
-  qw{ pipeline_analyse_rd_dna_vcf_rerun };
-
 BEGIN {
 
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.50;
+    our $VERSION = 1.51;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -452,12 +446,20 @@ sub mip_analyse {
     );
 
 ## Creates all fileendings as the samples is processed depending on the chain of modules activated
+    my @order_recipes = get_cache(
+        {
+            parameter_href => \%parameter,
+            parameter_name => q{order_recipes_ref},
+        }
+    );
     build_file_prefix_tag(
         {
             active_parameter_href => \%active_parameter,
+            case_id               => $active_parameter{case_id},
             file_info_href        => \%file_info,
-            order_recipes_ref     => \@{ $parameter{cache}{order_recipes_ref} },
+            order_recipes_ref     => \@order_recipes,
             parameter_href        => \%parameter,
+            sample_ids_ref        => $active_parameter{sample_ids},
         }
     );
 
@@ -486,26 +488,15 @@ sub mip_analyse {
         }
     );
 
-    ## Create dispatch table of pipelines
-    my %pipeline = (
-        dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
-        mixed         => \&pipeline_analyse_rd_dna,
-        vrn           => \&pipeline_analyse_rd_dna_vcf_rerun,
-        wes           => \&pipeline_analyse_rd_dna,
-        wgs           => \&pipeline_analyse_rd_dna,
-        wts           => \&pipeline_analyse_rd_rna,
-    );
-
-    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-    $pipeline{$consensus_analysis_type}->(
+    run_analyse_pipeline(
         {
             active_parameter_href           => \%active_parameter,
             broadcasts_ref                  => \@broadcasts,
+            consensus_analysis_type         => $consensus_analysis_type,
             file_info_href                  => \%file_info,
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
             infile_lane_prefix_href         => \%infile_lane_prefix,
             job_id_href                     => \%job_id,
-            log                             => $log,
             order_parameters_ref            => \@order_parameters,
             order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
             parameter_href                  => \%parameter,
@@ -531,9 +522,10 @@ sub mip_analyse {
     ## Write job_ids to file
     write_job_ids_to_file(
         {
-            active_parameter_href => \%active_parameter,
-            date_time_stamp       => $date_time_stamp,
-            job_id_href           => \%job_id,
+            case_id         => $active_parameter{case_id},
+            date_time_stamp => $date_time_stamp,
+            job_id_href     => \%job_id,
+            log_file        => $active_parameter{log_file},
         }
     );
 
@@ -563,10 +555,6 @@ sub mip_analyse {
     $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
-
-######################
-####Sub routines######
-######################
 
 ##Investigate potential autodie error
 if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {

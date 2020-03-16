@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
@@ -386,7 +386,7 @@ sub analysis_chromograph_proband {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
     use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Upd qw{ upd_call };
@@ -521,8 +521,10 @@ sub analysis_chromograph_proband {
   CALL_TYPE:
     foreach my $call_type (@call_types) {
 
-        my $upd_oufile_prefix_path   = $outfile_path_prefix . $UNDERSCORE . $call_type;
-        my $upd_outfile_path         = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $upd_oufile_prefix_path = $outfile_path_prefix . $UNDERSCORE . $call_type;
+        my $upd_outfile_path       = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $sort_outfile_path =
+          $upd_oufile_prefix_path . $UNDERSCORE . q{sorted} . $upd_outfile_suffix;
         my $ucsc_outfile_prefix_path = catfile( $outfile_path_prefix, $call_type );
 
         upd_call(
@@ -545,7 +547,7 @@ sub analysis_chromograph_proband {
                 filehandle   => $filehandle,
                 keys_ref     => [ q{1,1}, q{2,2n} ],
                 infile_path  => $upd_outfile_path,
-                outfile_path => $upd_outfile_path,
+                outfile_path => $sort_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -555,7 +557,7 @@ sub analysis_chromograph_proband {
             {
                 contigs_size_file_path => $contigs_size_file_path,
                 filehandle             => $filehandle,
-                infile_path            => $upd_outfile_path,
+                infile_path            => $sort_outfile_path,
                 outfile_path           => $ucsc_outfile_prefix_path . $DOT . q{bb},
             }
         );

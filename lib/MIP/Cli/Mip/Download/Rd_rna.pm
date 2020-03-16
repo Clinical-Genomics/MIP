@@ -20,7 +20,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -80,6 +80,17 @@ sub _build_usage {
             is      => q{rw},
             isa     => Str,
         )
+    );
+
+    option(
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: mip_rd_rna}],
+            documentation => q{Set environment name},
+            is            => q{rw},
+            isa           => Str,
+        ),
     );
     return;
 }

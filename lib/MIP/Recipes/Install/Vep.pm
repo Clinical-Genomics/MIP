@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $BACKTICK $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
+use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
 use MIP::Program::Tar qw{ tar };
 use MIP::Program::Wget qw{ wget };

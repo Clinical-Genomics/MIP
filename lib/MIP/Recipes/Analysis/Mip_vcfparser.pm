@@ -152,7 +152,7 @@ sub analysis_mip_vcfparser {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_vcfparser };
@@ -888,7 +888,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };

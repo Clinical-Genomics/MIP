@@ -163,7 +163,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools

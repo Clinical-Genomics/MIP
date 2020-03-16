@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rna };
@@ -158,11 +158,10 @@ sub analysis_markduplicates {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates };
     use MIP::Program::Sambamba qw{ sambamba_markdup };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -440,28 +439,6 @@ sub analysis_markduplicates {
         }
     );
 
-    ## Gather bam files in contig order
-    my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
-    my $store_outfile_path   = $outfile_path_prefix . $outfile_suffix;
-    my $store_outfile_suffix = $outfile_suffix;
-
-    picardtools_gatherbamfiles(
-        {
-            create_index     => q{true},
-            filehandle       => $filehandle,
-            infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx4g},
-            outfile_path         => $outfile_path_prefix . $outfile_suffix,
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $temp_directory,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Close filehandles
     close $xargsfilehandle;
     close $filehandle;
@@ -479,17 +456,7 @@ sub analysis_markduplicates {
             }
         );
 
-        set_recipe_outfile_in_sample_info(
-            {
-                infile           => $outfile_name_prefix . $store_outfile_suffix,
-                path             => $store_outfile_path,
-                recipe_name      => $recipe_name . $UNDERSCORE . q{alignment},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
+        ## Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         set_recipe_metafile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
@@ -638,7 +605,7 @@ sub analysis_markduplicates_rna {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools

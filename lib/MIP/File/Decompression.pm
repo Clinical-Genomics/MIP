@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ decompress_files };
@@ -130,6 +130,10 @@ sub decompress_files {
 
     my @commands =
       $decompress_api{$program}{method}->( { %{ $decompress_api{$program}{arg_href} } } );
+
+    if ( defined $filehandle ) {
+        say {$filehandle} $NEWLINE;
+    }
 
     return @commands;
 }
