@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -44,6 +43,7 @@ BEGIN {
       set_gene_panel
       set_infile_info
       set_most_complete_vcf
+      set_no_dry_run_parameters
       set_parameter_in_sample_info
       set_processing_metafile_in_sample_info
       set_recipe_metafile_in_sample_info
@@ -1169,6 +1169,69 @@ sub set_most_complete_vcf {
 
             $sample_info_href->{$vcf_file_key}{research}{path} = $path;
         }
+    }
+    return;
+}
+
+sub set_no_dry_run_parameters {
+
+## Function : Set parameters for true run i.e. not a dry run
+## Returns  :
+## Arguments: $analysis_date    => Analysis date
+##          : $is_dry_run_all   => Dry run boolean
+##          : $mip_version      => MIP version
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_date;
+    my $is_dry_run_all;
+    my $mip_version;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_date,
+            strict_type => 1,
+        },
+        is_dry_run_all => {
+            allow       => [ 0, 1, undef ],
+            required    => 1,
+            store       => \$is_dry_run_all,
+            strict_type => 1,
+        },
+        mip_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_version,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ($is_dry_run_all);
+
+    my %no_dry_run_info = (
+        analysisrunstatus => q{not_finished},
+        analysis_date     => $analysis_date,
+        mip_version       => $mip_version,
+    );
+
+  PARAMETER_NAME:
+    while ( my ( $parameter_name, $value ) = each %no_dry_run_info ) {
+
+        $sample_info_href->{$parameter_name} = $value;
     }
     return;
 }
