@@ -1,3 +1,4 @@
+---
 recipe:
   pedigree_check:
     path: t/data/643594-miptest/analysis/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf

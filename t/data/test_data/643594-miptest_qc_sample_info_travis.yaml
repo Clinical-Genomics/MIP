@@ -1,3 +1,4 @@
+---
 recipe:
   pedigree_check:
     path: /home/travis/build/Clinical-Genomics/MIP/t/data/643594-miptest/test_data/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf

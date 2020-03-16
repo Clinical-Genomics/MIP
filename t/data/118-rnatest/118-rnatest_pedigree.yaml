@@ -1,3 +1,4 @@
+---
 default_gene_panels:
   - IEM
 case: '118-rnatest'
