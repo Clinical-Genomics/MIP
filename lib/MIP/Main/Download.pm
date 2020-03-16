@@ -40,10 +40,9 @@ use MIP::Parameter qw{
   set_default
 };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
+use MIP::Pipeline qw{ run_download_pipeline };
 use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Recipes::Parse qw{ parse_recipes };
-use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
-use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 
 BEGIN {
     use base qw{ Exporter };
@@ -258,25 +257,12 @@ sub mip_download {
 q{Will write sbatch install instructions for references to individual sbatch scripts}
     );
 
-    my $pipeline_type = $active_parameter{download_pipeline_type};
+    run_download_pipeline( { active_parameter_href => \%active_parameter, } );
 
-    ## Create dispatch table of pipelines
-    my %pipeline = (
-        rd_dna => \&pipeline_download_rd_dna,
-        rd_rna => \&pipeline_download_rd_rna,
-    );
-
-    $log->info( q{Pipeline download type: } . $pipeline_type );
-    $pipeline{$pipeline_type}->(
-        {
-            active_parameter_href => \%active_parameter,
-            temp_directory        => $active_parameter{temp_directory},
-        }
-    );
     return;
 }
 
-##Investigate potential autodie error
+## Investigate potential autodie error
 if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
 
     if ( $EVAL_ERROR->matches(q{default}) ) {
