@@ -74,7 +74,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Gnu::Bash});
+    my @modules = (q{MIP::Program::Gnu::Bash});
 
   MODULE:
     for my $module (@modules) {
@@ -82,11 +82,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Bash qw{ gnu_unset };
+use MIP::Program::Gnu::Bash qw{ gnu_unset };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test gnu_unset from Bash.pm v}
-      . $MIP::Gnu::Bash::VERSION
+      . $MIP::Program::Gnu::Bash::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

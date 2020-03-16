@@ -126,8 +126,8 @@ sub download_genomic_superdups {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };

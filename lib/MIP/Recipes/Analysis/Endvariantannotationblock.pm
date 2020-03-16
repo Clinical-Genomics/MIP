@@ -152,7 +152,7 @@ sub analysis_endvariantannotationblock {
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };

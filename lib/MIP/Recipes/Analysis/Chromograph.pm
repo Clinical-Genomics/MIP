@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
@@ -148,7 +148,6 @@ sub analysis_chromograph {
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
-
     my %io = get_io_files(
         {
             id             => $sample_id,
@@ -224,8 +223,18 @@ sub analysis_chromograph {
         {
             coverage_file_path => $infile_path,
             filehandle         => $filehandle,
-            outdir_path        => $outfile_path_prefix,
+            outdir_path        => catdir( $outfile_path_prefix, q{coverage} ),
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => catdir( $outfile_path_prefix, q{ideogram} ),
         }
     );
     say {$filehandle} $NEWLINE;
@@ -377,7 +386,7 @@ sub analysis_chromograph_proband {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
     use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Upd qw{ upd_call };
@@ -424,6 +433,8 @@ sub analysis_chromograph_proband {
         }
     );
 
+    ## Switch from case id to sample id for the outfiles since this is done per sample
+    $infile_name_prefix =~ s/$case_id/$sample_id/xms;
     %io = (
         %io,
         parse_io_outfiles(
@@ -510,8 +521,10 @@ sub analysis_chromograph_proband {
   CALL_TYPE:
     foreach my $call_type (@call_types) {
 
-        my $upd_oufile_prefix_path   = $outfile_path_prefix . $UNDERSCORE . $call_type;
-        my $upd_outfile_path         = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $upd_oufile_prefix_path = $outfile_path_prefix . $UNDERSCORE . $call_type;
+        my $upd_outfile_path       = $upd_oufile_prefix_path . $upd_outfile_suffix;
+        my $sort_outfile_path =
+          $upd_oufile_prefix_path . $UNDERSCORE . q{sorted} . $upd_outfile_suffix;
         my $ucsc_outfile_prefix_path = catfile( $outfile_path_prefix, $call_type );
 
         upd_call(
@@ -522,7 +535,7 @@ sub analysis_chromograph_proband {
                 filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 mother_id    => $family_member_id{mother},
-                outfile_path => $upd_oufile_prefix_path,
+                outfile_path => $upd_outfile_path,
                 proband_id   => $sample_id,
             }
         );
@@ -533,8 +546,8 @@ sub analysis_chromograph_proband {
             {
                 filehandle   => $filehandle,
                 keys_ref     => [ q{1,1}, q{2,2n} ],
-                infile_path  => $upd_oufile_prefix_path,
-                outfile_path => $upd_outfile_path,
+                infile_path  => $upd_outfile_path,
+                outfile_path => $sort_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -544,7 +557,7 @@ sub analysis_chromograph_proband {
             {
                 contigs_size_file_path => $contigs_size_file_path,
                 filehandle             => $filehandle,
-                infile_path            => $upd_outfile_path,
+                infile_path            => $sort_outfile_path,
                 outfile_path           => $ucsc_outfile_prefix_path . $DOT . q{bb},
             }
         );
@@ -556,7 +569,7 @@ sub analysis_chromograph_proband {
         {
             coverage_file_path => $tiddit_cov_infile_path,
             filehandle         => $filehandle,
-            outdir_path        => $outfile_path_prefix,
+            outdir_path        => catdir( $outfile_path_prefix, q{coverage} ),
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
         }
     );
@@ -566,7 +579,7 @@ sub analysis_chromograph_proband {
     chromograph(
         {
             filehandle            => $filehandle,
-            outdir_path           => $outfile_path_prefix,
+            outdir_path           => catdir( $outfile_path_prefix, q{upd_regions} ),
             upd_regions_file_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{regions}
@@ -579,11 +592,21 @@ sub analysis_chromograph_proband {
     chromograph(
         {
             filehandle          => $filehandle,
-            outdir_path         => $outfile_path_prefix,
+            outdir_path         => catdir( $outfile_path_prefix, q{upd_sites} ),
             upd_sites_file_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{sites}
               . $upd_outfile_suffix,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Generate chromosome ideograms
+    chromograph(
+        {
+            filehandle     => $filehandle,
+            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
+            outdir_path    => catdir( $outfile_path_prefix, q{ideogram} ),
         }
     );
     say {$filehandle} $NEWLINE;

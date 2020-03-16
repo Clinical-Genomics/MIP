@@ -136,7 +136,7 @@ sub analysis_gatk_cnnscorevariants {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Gatk qw{ gatk_cnnscorevariants };

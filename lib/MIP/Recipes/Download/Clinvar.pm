@@ -123,7 +123,7 @@ sub download_clinvar {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Bcftools qw{ bcftools_annotate };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };

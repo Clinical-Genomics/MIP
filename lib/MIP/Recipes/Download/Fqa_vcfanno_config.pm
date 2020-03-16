@@ -123,7 +123,7 @@ sub download_fqa_vcfanno_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv};
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

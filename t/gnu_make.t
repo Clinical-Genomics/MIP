@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Gnu::Software::Gnu_make});
+    my @modules = (q{MIP::Program::Gnu::Software::Gnu_make});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_make qw{gnu_make };
+use MIP::Program::Gnu::Software::Gnu_make qw{gnu_make };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test gnu_make from Software.pm v}
-      . $MIP::Gnu::Software::Gnu_make::VERSION
+      . $MIP::Program::Gnu::Software::Gnu_make::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

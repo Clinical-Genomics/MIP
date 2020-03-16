@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -37,6 +37,7 @@ BEGIN {
       samtools_create_chromosome_files
       samtools_depth
       samtools_faidx
+      samtools_flagstat
       samtools_idxstats
       samtools_index
       samtools_merge
@@ -360,6 +361,75 @@ sub samtools_faidx {
             commands_ref => \@commands,
             filehandle   => $filehandle,
             separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub samtools_flagstat {
+
+## Function : Perl wrapper for writing samtools flag stat recipe to $filehandle. Based on samtools 1.10 (using htslib 1.10).
+## Returns  : @commands
+## Arguments: $filehandle             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ samtools flagstat };
+
+    push @commands, $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
         }
     );
     return @commands;

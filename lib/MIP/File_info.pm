@@ -24,13 +24,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_alt_loci_contigs
       set_bam_contigs
       set_dict_contigs
+      set_file_tag
       set_human_genome_reference_features
       set_primary_contigs
     };
@@ -189,6 +190,57 @@ sub set_dict_contigs {
             dict_file_path => $dict_file_path,
         }
     );
+
+    return;
+}
+
+sub set_file_tag {
+
+## Function : Set the file tag depending on id, branch and recipe
+## Returns  :
+## Arguments: $file_info_href => Info on files hash {REF}
+##          : $file_tag       => File tag to set
+##          : $id             => To change id for case or sample
+##          : $recipe_name    => Recipe to add file tag for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $file_tag;
+    my $id;
+    my $recipe_name;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_tag => {
+            required    => 1,
+            store       => \$file_tag,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{$id}{$recipe_name}{file_tag} = $file_tag;
 
     return;
 }

@@ -17,7 +17,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $AMPERSAND $DOT $EMPTY_STR $NEWLINE $SPACE };
-use MIP::Gnu::Coreutils qw{ gnu_rm };
+use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
 
 BEGIN {
     require Exporter;
@@ -88,7 +88,7 @@ sub delete_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Processmanagement::Processes qw{ print_wait };
 
     my $process_batches_count = 1;

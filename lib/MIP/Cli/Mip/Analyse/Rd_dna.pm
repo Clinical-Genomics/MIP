@@ -1752,6 +1752,16 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
+        q{chromograph_cytoband_file} => (
+            cmd_aliases   => [qw{ ccf }],
+            cmd_tags      => [q{Default: grch37_cytoband.bed}],
+            documentation => q{Cytoband bed file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{frequency_filter} => (
             cmd_aliases   => [qw{ fqf }],
             cmd_tags      => [q{Analysis recipe switch}],

@@ -5,9 +5,9 @@ FROM clinicalgenomics/mip:latest
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip:latest"
-LABEL version="1"
+LABEL version="2"
 LABEL software="chromograph"
-LABEL software.version="0.1.2"
+LABEL software.version="91f0988"
 LABEL extra.binaries="chromograph"
 
 ################## MAINTAINER ######################
@@ -23,6 +23,7 @@ RUN git clone https://github.com/mikaell/chromograph.git /opt/conda/share/chromo
 
 ## Move to chromograph directory
 RUN cd /opt/conda/share/chromograph && \
+    git checkout 91f0988 && \
     python -m pip install --editable .
 
 WORKDIR /data/

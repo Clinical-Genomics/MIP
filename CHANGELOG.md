@@ -6,12 +6,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Turned off bcftools_mpileup by default
 - Replaced sambamba sort with samtools sort after alignment
 - Replaced recipe picartools_mergesamfiles with samtools_merge
+- Replaced sambamba flagstat with samtools flagstat in markduplicates recipe
 
 **Tools**
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
+
+## [8.2.4]
+- Chromograph patch
+
+## [8.2.3]
+- Chromograph now creates ideograms over the chromosomes
+- Proband chromograph files are named with sample id instead of case id
+- Increases java memory for picardtools markduplicates
 
 ## [8.2.2]
 - Fixes a crash in MIP caused by not looping over the Y chromosomes for females in the GATK SplitNCigarReads recipe
