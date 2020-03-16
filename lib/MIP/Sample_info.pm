@@ -1229,9 +1229,15 @@ sub set_no_dry_run_parameters {
     );
 
   PARAMETER_NAME:
-    while ( my ( $parameter_name, $value ) = each %no_dry_run_info ) {
+    while ( my ( $parameter_name, $parameter_value ) = each %no_dry_run_info ) {
 
-        $sample_info_href->{$parameter_name} = $value;
+        set_in_sample_info(
+            {
+                key              => $parameter_name,
+                sample_info_href => $sample_info_href,
+                value            => $parameter_value,
+            }
+        );
     }
     return;
 }
