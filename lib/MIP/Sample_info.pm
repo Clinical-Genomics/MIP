@@ -1175,7 +1175,7 @@ sub set_most_complete_vcf {
 
 sub set_in_sample_info {
 
-##Function : Sets key and value to sample info
+##Function : Sets key and value in sample info
 ##Returns  :
 ##Arguments: $key              => Key to add
 ##         : $sample_info_href => Info on samples and case hash {REF}
