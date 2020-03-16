@@ -514,9 +514,10 @@ sub mip_analyse {
     ## Write job_ids to file
     write_job_ids_to_file(
         {
-            active_parameter_href => \%active_parameter,
-            date_time_stamp       => $date_time_stamp,
-            job_id_href           => \%job_id,
+            case_id         => $active_parameter{case_id},
+            date_time_stamp => $date_time_stamp,
+            job_id_href     => \%job_id,
+            log_file        => $active_parameter{log_file},
         }
     );
 

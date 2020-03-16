@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -52,6 +52,7 @@ BEGIN {
       clear_sample_id_job_id_dependency_tree
       clear_case_id_job_id_dependency_tree
       clear_all_job_ids_within_chain_key_dependency_tree
+      get_all_job_ids
       limit_job_id_string
       print_wait
       submit_recipe
@@ -1596,6 +1597,34 @@ sub clear_all_job_ids_within_chain_key_dependency_tree {
     return;
 }
 
+sub get_all_job_ids {
+
+## Function : Get all job_ids
+## Returns  : @job_ids
+## Arguments: $job_id_href => Job id hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+
+    my $tmpl = {
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $job_id_href->{ALL} );
+
+    return @{ $job_id_href->{ALL}{ALL} };
+}
+
 sub limit_job_id_string {
 
 ## Function : Limit number of job_ids in job_id chain
@@ -1849,31 +1878,38 @@ sub submit_recipe {
 
 sub write_job_ids_to_file {
 
-## Function : Write job_ids to file
+## Function : Write all job_ids to file
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $date_time_stamp       => The date and time
-##          : $job_id_href           => Job id hash {REF}
+## Arguments: $case_id         => Case id
+##          : $date_time_stamp => The date and time
+##          : $log_file        => Log file
+##          : $job_id_href     => Job id hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $case_id;
     my $date_time_stamp;
+    my $log_file;
     my $job_id_href;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        case_id => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$case_id,
             strict_type => 1,
         },
         date_time_stamp => {
             defined     => 1,
             required    => 1,
             store       => \$date_time_stamp,
+            strict_type => 1,
+        },
+        log_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$log_file,
             strict_type => 1,
         },
         job_id_href => {
@@ -1894,15 +1930,15 @@ sub write_job_ids_to_file {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $log_dir      = dirname( $active_parameter_href->{log_file} );
+    my $log_dir      = dirname($log_file);
     my $job_ids_file = catfile( $log_dir,
         q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
 
-    ## Remove all undef elements
-    my @job_ids = grep { defined } @{ $job_id_href->{ALL}{ALL} };
+    ## Remove all undef elements from return array of all job_ids
+    my @job_ids = grep { defined } get_all_job_ids( { job_id_href => $job_id_href, } );
 
     ## Writes a YAML hash to file
-    my %out_job_id = ( $active_parameter_href->{case_id} => [@job_ids], );
+    my %out_job_id = ( $case_id => [@job_ids], );
     write_to_file(
         {
             data_href => \%out_job_id,

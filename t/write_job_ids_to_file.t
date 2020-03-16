@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,18 +62,17 @@ diag(   q{Test write_job_ids_to_file from Processes.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Given a log file when no job ids
-my $case_id          = q{case_1};
-my %active_parameter = (
-    case_id  => $case_id,
-    log_file => catfile( $Bin, q{a_test.log} ),
-);
+my $case_id         = q{case_1};
 my $date_time_stamp = q{1999-12-31T12:00:00};
 my %job_id;
+my $log_file = catfile( $Bin, q{a_test.log} );
+
 my $is_ok = write_job_ids_to_file(
     {
-        active_parameter_href => \%active_parameter,
-        date_time_stamp       => $date_time_stamp,
-        job_id_href           => \%job_id,
+        case_id         => $case_id,
+        date_time_stamp => $date_time_stamp,
+        job_id_href     => \%job_id,
+        log_file        => $log_file,
     }
 );
 
@@ -84,9 +83,10 @@ is( $is_ok, undef, q{Skip when no job ids} );
 %job_id = ( ALL => { ALL => [ qw{ job_id_1 job_id_2 }, undef, ], }, );
 $is_ok  = write_job_ids_to_file(
     {
-        active_parameter_href => \%active_parameter,
-        date_time_stamp       => $date_time_stamp,
-        job_id_href           => \%job_id,
+        case_id         => $case_id,
+        date_time_stamp => $date_time_stamp,
+        job_id_href     => \%job_id,
+        log_file        => $log_file,
     }
 );
 
@@ -94,10 +94,11 @@ $is_ok  = write_job_ids_to_file(
 ok( $is_ok, q{Wrote job ids file for job ids} );
 
 ## Then job_id file should exist
-my $log_dir = dirname( $active_parameter{log_file} );
+my $log_dir = dirname($log_file);
 my $job_ids_file =
   catfile( $log_dir, q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
 ok( -e $job_ids_file, q{Created file} );
+
 ## Clean-up
 remove_tree($job_ids_file);
 
