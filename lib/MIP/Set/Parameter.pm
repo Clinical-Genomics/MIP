@@ -25,14 +25,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
       set_container_bind_paths
       set_nist_file_name_path
-      set_no_dry_run_parameters
       set_parameter_to_broadcast
       set_programs_for_installation
       set_recipe_mode
@@ -144,70 +143,6 @@ sub set_nist_file_name_path {
         }
     }
     return 1;
-}
-
-sub set_no_dry_run_parameters {
-
-## Function : Set parameters for true run i.e. not a dry run
-## Returns  :
-## Arguments: $analysis_date    => Analysis date
-##          : $is_dry_run_all   => Dry run boolean
-##          : $mip_version      => MIP version
-##          : $sample_info_href => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_date;
-    my $is_dry_run_all;
-    my $mip_version;
-    my $sample_info_href;
-
-    my $tmpl = {
-        analysis_date => {
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_date,
-            strict_type => 1,
-        },
-        is_dry_run_all => {
-            allow       => [ 0, 1, undef ],
-            required    => 1,
-            store       => \$is_dry_run_all,
-            strict_type => 1,
-        },
-        mip_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$mip_version,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ($is_dry_run_all);
-
-    my %no_dry_run_info = (
-        analysisrunstatus => q{not_finished},
-        analysis_date     => $analysis_date,
-        mip_version       => $mip_version,
-    );
-
-  KEY_VALUE_PAIR:
-    while ( my ( $key, $value ) = each %no_dry_run_info ) {
-
-        $sample_info_href->{$key} = $value;
-    }
-
-    return;
 }
 
 sub set_parameter_to_broadcast {

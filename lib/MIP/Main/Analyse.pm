@@ -65,10 +65,7 @@ use MIP::Pipeline qw{ run_analyse_pipeline };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
-use MIP::Sample_info qw{ reload_previous_pedigree_info };
-use MIP::Set::Parameter qw{
-  set_no_dry_run_parameters
-};
+use MIP::Sample_info qw{ reload_previous_pedigree_info set_no_dry_run_parameters };
 use MIP::Store qw{ store_files };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
@@ -79,7 +76,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.51;
+    our $VERSION = 1.52;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
