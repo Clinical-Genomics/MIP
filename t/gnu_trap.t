@@ -71,7 +71,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Bash');
+    my @modules = ('MIP::Program::Gnu::Bash');
 
     for my $module (@modules) {
 
@@ -79,10 +79,10 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Bash qw(gnu_trap);
+use MIP::Program::Gnu::Bash qw(gnu_trap);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_trap $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test gnu_trap $MIP::Program::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
 my @function_base_commands = 'trap';

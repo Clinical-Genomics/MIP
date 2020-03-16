@@ -1463,7 +1463,7 @@ sub bcftools_create_reheader_samples_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_printf };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_printf };
 
     ## Create new sample names file
     say {$filehandle} q{## Create new sample(s) names file};

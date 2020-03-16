@@ -2,7 +2,7 @@
 bash_set_errexit: 1
 bash_set_pipefail: 1
 load_env:
-  MIP_rd_dna:
+  mip_rd_dna:
     method: conda
     mip:
 project_id: development
@@ -94,6 +94,7 @@ reference:
   gnomad:
     - r2.0.1
     - r2.1.1
+    - r2.1.1_sv
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -694,6 +695,14 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.1.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/vcf/genomes/
+      r2.1.1_sv:
+        file: gnomad_v2_sv.sites.vcf.gz
+        file_index: gnomad_v2_sv.sites.vcf.gz.tbi
+        outfile: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz
+        outfile_index: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz.tbi
+        outfile_decompress: gzip
+        outfile_index_decompress: gzip
+        url_prefix: https://storage.googleapis.com/gnomad-public/papers/2019-sv/
     grch38:
       r2.1.1:
         file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz

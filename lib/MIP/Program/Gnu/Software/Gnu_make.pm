@@ -1,4 +1,4 @@
-package MIP::Gnu::Software::Gnu_make;
+package MIP::Program::Gnu::Software::Gnu_make;
 
 use strict;
 use warnings;

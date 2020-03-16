@@ -28,11 +28,8 @@ use MIP::Constants
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ set_default };
+use MIP::Pipeline qw{ run_install_pipeline };
 use MIP::Set::Parameter qw{ set_conda_path };
-
-## Recipes
-use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
-use MIP::Recipes::Pipeline::Install_rd_rna qw{ pipeline_install_rd_rna };
 
 ## Constants
 Readonly my $THREE     => 3;
@@ -42,7 +39,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.12;
+    our $VERSION = 2.13;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -180,20 +177,8 @@ sub mip_install {
     $active_parameter{process}  = lc $process;
     $active_parameter{pipeline} = $pipeline;
 
-    ## Create dispatch table of pipelines
-    my %pipeline_table = (
-        install_rd_dna => \&pipeline_install_rd_dna,
-        install_rd_rna => \&pipeline_install_rd_rna,
-    );
+    run_install_pipeline( { active_parameter_href => \%active_parameter, } );
 
-    $log->info( q{Pipeline type: } . $pipeline );
-    $pipeline_table{$pipeline}->(
-        {
-            active_parameter_href => \%active_parameter,
-            quiet                 => $active_parameter{quiet},
-            verbose               => $active_parameter{verbose},
-        }
-    );
     return;
 }
 

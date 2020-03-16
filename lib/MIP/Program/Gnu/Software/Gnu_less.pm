@@ -1,4 +1,4 @@
-package MIP::Gnu::Software::Gnu_less;
+package MIP::Program::Gnu::Software::Gnu_less;
 
 use strict;
 use warnings;

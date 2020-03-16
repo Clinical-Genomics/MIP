@@ -135,7 +135,7 @@ sub analysis_cadd {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
@@ -510,7 +510,7 @@ sub analysis_cadd_gb_38 {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Gzip qw{ gzip };

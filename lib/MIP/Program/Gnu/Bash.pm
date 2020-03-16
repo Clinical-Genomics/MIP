@@ -1,4 +1,4 @@
-package MIP::Gnu::Bash;
+package MIP::Program::Gnu::Bash;
 
 use strict;
 use warnings;

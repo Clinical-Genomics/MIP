@@ -122,7 +122,7 @@ sub download_cadd_whole_genome_snvs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

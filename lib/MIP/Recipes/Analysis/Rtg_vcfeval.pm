@@ -141,7 +141,7 @@ sub analysis_rtg_vcfeval {
 
     use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };

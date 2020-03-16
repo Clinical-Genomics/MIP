@@ -22,13 +22,14 @@ use Readonly;
 ## MIPs lib/
 use MIP::Active_parameter qw{
   check_recipe_mode
+  set_load_env_environment
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path
 };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
-  qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::Environment::Cluster qw{ check_max_core_number };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::Io::Read qw{ read_from_file };
@@ -39,15 +40,14 @@ use MIP::Parameter qw{
   set_default
 };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
+use MIP::Pipeline qw{ run_download_pipeline };
 use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
-use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
-use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -270,6 +270,8 @@ sub mip_download {
         }
     );
 
+    set_load_env_environment( { active_parameter_href => \%active_parameter, } );
+
     ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
     parse_download_reference_parameter(
         { reference_href => \%{ $active_parameter{reference} }, } );
@@ -287,25 +289,12 @@ sub mip_download {
 q{Will write sbatch install instructions for references to individual sbatch scripts}
     );
 
-    my $pipeline_type = $active_parameter{download_pipeline_type};
+    run_download_pipeline( { active_parameter_href => \%active_parameter, } );
 
-    ## Create dispatch table of pipelines
-    my %pipeline = (
-        rd_dna => \&pipeline_download_rd_dna,
-        rd_rna => \&pipeline_download_rd_rna,
-    );
-
-    $log->info( q{Pipeline download type: } . $pipeline_type );
-    $pipeline{$pipeline_type}->(
-        {
-            active_parameter_href => \%active_parameter,
-            temp_directory        => $active_parameter{temp_directory},
-        }
-    );
     return;
 }
 
-##Investigate potential autodie error
+## Investigate potential autodie error
 if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
 
     if ( $EVAL_ERROR->matches(q{default}) ) {

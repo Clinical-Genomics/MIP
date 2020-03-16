@@ -146,7 +146,7 @@ sub build_capture_file_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };

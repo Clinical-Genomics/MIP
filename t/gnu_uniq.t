@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Coreutils} => [qw{ gnu_uniq }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_uniq }],
+        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Coreutils qw{ gnu_uniq };
+use MIP::Program::Gnu::Coreutils qw{ gnu_uniq };
 
 diag(   q{Test gnu_uniq from Coreutils.pm v}
-      . $MIP::Gnu::Coreutils::VERSION
+      . $MIP::Program::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
