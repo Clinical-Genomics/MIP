@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -422,9 +422,9 @@ sub check_rd_dna {
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Reference qw{ update_exome_target_bed };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters
-      qw{  update_exome_target_bed update_vcfparser_outfile_counter };
+    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
