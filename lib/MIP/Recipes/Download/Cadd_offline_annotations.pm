@@ -122,7 +122,7 @@ sub download_cadd_offline_annotations {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes

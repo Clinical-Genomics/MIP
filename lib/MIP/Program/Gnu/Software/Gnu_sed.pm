@@ -1,4 +1,4 @@
-package MIP::Gnu::Software::Gnu_sed;
+package MIP::Program::Gnu::Software::Gnu_sed;
 
 use Carp;
 use charnames qw{ :full :short };

@@ -70,7 +70,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = (q{MIP::Gnu::Coreutils});
+    my @modules = (q{MIP::Program::Gnu::Coreutils});
 
   MODULES:
     for my $module (@modules) {
@@ -78,11 +78,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw{gnu_ln};
+use MIP::Program::Gnu::Coreutils qw{gnu_ln};
 use MIP::Test::Commands qw{test_function};
 
 diag(   q{Test gnu_ln }
-      . $MIP::Gnu::Coreutils::VERSION
+      . $MIP::Program::Gnu::Coreutils::VERSION
       . q{, Perl }
       . $PERL_VERSION
       . $SPACE

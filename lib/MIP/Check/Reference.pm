@@ -63,7 +63,7 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
     my %vt_regexp;
 

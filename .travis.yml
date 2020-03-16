@@ -36,7 +36,7 @@ install:
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
   - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
-  - conda install -n mip_rd-rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+  - conda install -n mip_rd_rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
   ## Test MIP rd_dna
@@ -62,7 +62,7 @@ script:
   ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
   ## Set-up test coverage for mip_analyse_rna.test
-  - conda activate mip_rd-rna
+  - conda activate mip_rd_rna
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
   ## Get some coverage statistics
   - cover

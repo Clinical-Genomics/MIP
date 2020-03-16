@@ -128,7 +128,7 @@ sub analysis_bcftools_merge {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_merge bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

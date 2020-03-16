@@ -1,4 +1,4 @@
-package MIP::Gnu::Software::Gnu_grep;
+package MIP::Program::Gnu::Software::Gnu_grep;
 
 use 5.026;
 use Carp;

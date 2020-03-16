@@ -44,9 +44,9 @@ use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPAC
 use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
-use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Store qw{ parse_store_files set_analysis_files_to_store };
 use MIP::File::Path qw{ check_allowed_temp_directory };
+use MIP::Io::Recipes qw{ build_file_prefix_tag };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -446,12 +446,20 @@ sub mip_analyse {
     );
 
 ## Creates all fileendings as the samples is processed depending on the chain of modules activated
+    my @order_recipes = get_cache(
+        {
+            parameter_href => \%parameter,
+            parameter_name => q{order_recipes_ref},
+        }
+    );
     build_file_prefix_tag(
         {
             active_parameter_href => \%active_parameter,
+            case_id               => $active_parameter{case_id},
             file_info_href        => \%file_info,
-            order_recipes_ref     => \@{ $parameter{cache}{order_recipes_ref} },
+            order_recipes_ref     => \@order_recipes,
             parameter_href        => \%parameter,
+            sample_ids_ref        => $active_parameter{sample_ids},
         }
     );
 
@@ -514,9 +522,10 @@ sub mip_analyse {
     ## Write job_ids to file
     write_job_ids_to_file(
         {
-            active_parameter_href => \%active_parameter,
-            date_time_stamp       => $date_time_stamp,
-            job_id_href           => \%job_id,
+            case_id         => $active_parameter{case_id},
+            date_time_stamp => $date_time_stamp,
+            job_id_href     => \%job_id,
+            log_file        => $active_parameter{log_file},
         }
     );
 
@@ -546,10 +555,6 @@ sub mip_analyse {
     $log->info( q{Wrote: } . $active_parameter{store_file} );
     return;
 }
-
-######################
-####Sub routines######
-######################
 
 ##Investigate potential autodie error
 if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
