@@ -21,14 +21,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
-use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -339,17 +338,16 @@ sub check_pedigree_vs_user_input_sample_ids {
 
 sub create_fam_file {
 
-## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
+## Function : Create ".fam" file to be used in variant calling analyses
 ## Returns  :
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $case_id               => Case_id
-##          : $execution_mode        => Either system (direct) or via sbatch
-##          : $fam_file_path         => Case file path
-##          : $filehandle            => Filehandle to write to {Optional unless execution_mode=sbatch}
-##          : $include_header        => Include header ("1") or not ("0")
-##          : $log                   => Log object
-##          : $parameter_href        => Hash with paremters from yaml file {REF}
-##          : $sample_info_href      => Info on samples and case hash {REF}
+## Arguments: $case_id          => Case_id
+##          : $execution_mode   => Either system (direct) or via sbatch
+##          : $fam_file_path    => Case file path
+##          : $filehandle       => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $include_header   => Include header ("1") or not ("0")
+##          : $parameter_href   => Hash with paremters from yaml file {REF}
+##          : $sample_ids_ref   => Sample ids {REF}
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -357,8 +355,8 @@ sub create_fam_file {
     my $active_parameter_href;
     my $fam_file_path;
     my $filehandle;
-    my $log;
     my $parameter_href;
+    my $sample_ids_ref;
     my $sample_info_href;
 
     ## Default(s)
@@ -367,20 +365,14 @@ sub create_fam_file {
     my $include_header;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        case_id => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        case_id => {
-            default     => $arg_href->{active_parameter_href}{case_id},
             store       => \$case_id,
             strict_type => 1,
         },
         execution_mode => {
-            allow       => [qw{sbatch system}],
+            allow       => [qw{ sbatch system }],
             default     => q{sbatch},
             store       => \$execution_mode,
             strict_type => 1,
@@ -400,14 +392,16 @@ sub create_fam_file {
             store       => \$include_header,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         parameter_href => {
             default     => {},
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
             strict_type => 1,
         },
         sample_info_href => {
@@ -421,96 +415,35 @@ sub create_fam_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @fam_headers = ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
+    use MIP::Sample_info qw{ set_in_sample_info };
 
-    my @pedigree_lines;
-    my $header;
-
-    ## Add @fam_headers
-    if ($include_header) {
-
-        push @pedigree_lines, join $TAB, @fam_headers;
-    }
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        my $sample_line = $case_id;
-
-      HEADER:
-        foreach my $header (@fam_headers) {
-
-            if ( defined $parameter_href->{cache}{$sample_id}{ q{plink_} . $header } ) {
-
-                $sample_line .=
-                  $TAB . $parameter_href->{cache}{$sample_id}{ q{plink_} . $header };
-            }
-            elsif ( defined $sample_info_href->{sample}{$sample_id}{$header} ) {
-
-                $sample_line .=
-                  $TAB . $sample_info_href->{sample}{$sample_id}{$header};
-            }
+    my @fam_lines = _build_fam_file_line(
+        {
+            case_id          => $case_id,
+            include_header   => $include_header,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $sample_ids_ref,
+            sample_info_href => $sample_info_href,
         }
-        push @pedigree_lines, $sample_line;
-    }
+    );
 
-    ## Execute directly
-    if ( $execution_mode eq q{system} ) {
-
-        # Create anonymous filehandle
-        my $filehandle_sys = IO::Handle->new();
-
-        ## Create dir if it does not exists
-        make_path( dirname($fam_file_path) );
-
-        open $filehandle_sys, q{>}, $fam_file_path
-          or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
-
-        ## Adds the information from the samples in pedigree_lines, separated by \n
-      LINE:
-        foreach my $line (@pedigree_lines) {
-
-            say {$filehandle_sys} $line;
+    _write_fam_file(
+        {
+            execution_mode => $execution_mode,
+            fam_file_path  => $fam_file_path,
+            fam_lines_ref  => \@fam_lines,
+            filehandle     => $filehandle,
         }
-        $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
-        close $filehandle_sys;
-    }
+    );
 
-    if ( $execution_mode eq q{sbatch} ) {
-
-        ## Check to see if file already exists
-        if ( not -f $fam_file_path ) {
-
-            if ($filehandle) {
-
-                say {$filehandle} q{#Generating '.fam' file};
-
-                ## Get parameters
-                my @strings = map { $_ . q{\n} } @pedigree_lines;
-                gnu_echo(
-                    {
-                        enable_interpretation => 1,
-                        filehandle            => $filehandle,
-                        no_trailing_newline   => 1,
-                        outfile_path          => $fam_file_path,
-                        strings_ref           => \@strings,
-                    }
-                );
-                say {$filehandle} $NEWLINE;
-            }
-            else {
-
-                $log->fatal(
-q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
-                      . q{filehandle to write to. Please supply filehandle to subroutine call}
-                );
-                exit 1;
-            }
+    ## Add newly created case file to sample_info
+    set_in_sample_info(
+        {
+            key              => q{pedigree_minimal},
+            sample_info_href => $sample_info_href,
+            value            => $fam_file_path,
         }
-    }
-
-    ## Add newly created case file to qc_sample_info
-    $sample_info_href->{pedigree_minimal} = $fam_file_path;
+    );
 
     return;
 }
@@ -1720,6 +1653,303 @@ sub _parse_trio_members {
         );
         return 1;
     }
+    return;
+}
+
+sub _build_fam_file_line {
+
+## Function : Build fam file lines for each sample
+## Returns  : @fam_lines
+## Arguments: $case_id          => Case_id
+##          : $include_header   => Include header ("1") or not ("0")
+##          : $parameter_href   => Hash with paremters from yaml file {REF}
+##          : $sample_ids_ref   => Sample ids {REF}
+##          : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $sample_ids_ref;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $case_id;
+    my $include_header;
+
+    my $tmpl = {
+        case_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        include_header => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$include_header,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_cache };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    my @fam_headers = ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
+
+    my $header;
+    my @fam_lines;
+
+    ## Add fam file headers
+    if ($include_header) {
+
+        push @fam_lines, join $TAB, @fam_headers;
+    }
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        my %cache_sample_id_attribute = get_cache(
+            {
+                parameter_href => $parameter_href,
+                parameter_name => $sample_id,
+            }
+        );
+
+        my %pedigree_sample_id_attributes = get_pedigree_sample_id_attributes(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Build sample line string
+        my $sample_line = $case_id;
+
+      HEADER:
+        foreach my $header (@fam_headers) {
+
+            if ( defined $cache_sample_id_attribute{ q{plink_} . $header } ) {
+
+                $sample_line .= $TAB . $cache_sample_id_attribute{ q{plink_} . $header };
+            }
+            elsif ( defined $pedigree_sample_id_attributes{$header} ) {
+
+                $sample_line .= $TAB . $pedigree_sample_id_attributes{$header};
+            }
+        }
+        push @fam_lines, $sample_line;
+    }
+    return @fam_lines;
+}
+
+sub _write_fam_file {
+
+## Function : Write pedigree info to file in fam format
+## Returns  :
+## Arguments: $execution_mode => Either system (direct) or via sbatch
+##          : $fam_file_path  => Case file path
+##          : $fam_lines_ref  => Fam lines to write
+##          : $filehandle     => Filehandle to write to {Optional unless execution_mode=sbatch}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fam_file_path;
+    my $fam_lines_ref;
+    my $filehandle;
+
+    ## Default(s)
+    my $execution_mode;
+
+    my $tmpl = {
+        execution_mode => {
+            allow       => [qw{ sbatch system }],
+            default     => q{sbatch},
+            store       => \$execution_mode,
+            strict_type => 1,
+        },
+        fam_lines_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_lines_ref,
+            strict_type => 1,
+        },
+        fam_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %execution_mode_map = (
+        system => {
+            method   => \&_write_fam_file_to_system,
+            arg_href => {
+                fam_file_path => $fam_file_path,
+                fam_lines_ref => $fam_lines_ref,
+            },
+        },
+        sbatch => {
+            method   => \&_write_fam_file_to_sbatch,
+            arg_href => {
+                fam_file_path => $fam_file_path,
+                fam_lines_ref => $fam_lines_ref,
+                filehandle    => $filehandle,
+            },
+        },
+    );
+
+    $execution_mode_map{$execution_mode}{method}
+      ->( { %{ $execution_mode_map{$execution_mode}{arg_href} } } );
+
+    return;
+}
+
+sub _write_fam_file_to_sbatch {
+
+## Function : Write pedigree info to file in fam format to sbatch file
+## Returns  :
+## Arguments: $fam_file_path => Case file path
+##          : $fam_lines_ref => Fam lines to write
+##          : $filehandle    => Filehandle to write to {Optional unless execution_mode=sbatch}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fam_file_path;
+    my $fam_lines_ref;
+    my $filehandle;
+
+    my $tmpl = {
+        fam_lines_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_lines_ref,
+            strict_type => 1,
+        },
+        fam_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
+
+    ## Return if file already exists
+    return if ( -f $fam_file_path );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    say {$filehandle} q{#Generating '.fam' file};
+
+    ## Get parameters
+    my @strings = map { $_ . q{\n} } @{$fam_lines_ref};
+    gnu_echo(
+        {
+            enable_interpretation => 1,
+            filehandle            => $filehandle,
+            no_trailing_newline   => 1,
+            outfile_path          => $fam_file_path,
+            strings_ref           => \@strings,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _write_fam_file_to_system {
+
+## Function : Write pedigree info to file in fam format to system
+## Returns  :
+## Arguments: $fam_file_path => Case file path
+##          : $fam_lines_ref => Fam lines to write
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fam_file_path;
+    my $fam_lines_ref;
+
+    my $tmpl = {
+        fam_lines_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_lines_ref,
+            strict_type => 1,
+        },
+        fam_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fam_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    # Create anonymous filehandle
+    my $filehandle_sys = IO::Handle->new();
+
+    ## Create dir if it does not exists
+    make_path( dirname($fam_file_path) );
+
+    open $filehandle_sys, q{>}, $fam_file_path
+      or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
+
+    ## Adds the information from the samples in fam_lines, separated by \n
+  LINE:
+    foreach my $line ( @{$fam_lines_ref} ) {
+
+        say {$filehandle_sys} $line;
+    }
+    $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
+    close $filehandle_sys;
+
     return;
 }
 

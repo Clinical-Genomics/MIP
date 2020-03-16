@@ -25,7 +25,7 @@ use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -88,7 +88,7 @@ my %sample_info_test_hash = (
     case => q{118},
 );
 
-my %active_parameter_test_hash = (
+my %active_parameter = (
     case_id    => q{118},
     sample_ids => [qw{ 118-1-2A 118-2-2U 118-2-1U }],
   ),
@@ -101,7 +101,7 @@ my $filehandle;
 
 ## Create temp logger for Pedigree.pm
 my $test_log_path = catfile( $test_dir, q{test.log} );
-$active_parameter_test_hash{log_file} = $test_log_path;
+$active_parameter{log_file} = $test_log_path;
 
 my $log = test_log( {} );
 
@@ -128,12 +128,12 @@ for my $execution_mode (@execution_modes) {
     # Run the create fam file test
     create_fam_file(
         {
-            active_parameter_href => \%active_parameter_test_hash,
-            execution_mode        => $execution_mode,
-            fam_file_path         => $test_fam_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            sample_info_href      => \%sample_info_test_hash,
+            case_id          => $active_parameter{case_id},
+            execution_mode   => $execution_mode,
+            fam_file_path    => $test_fam_file_path,
+            filehandle       => $filehandle,
+            sample_ids_ref   => $active_parameter{sample_ids},
+            sample_info_href => \%sample_info_test_hash,
         }
     );
 
@@ -169,9 +169,9 @@ for my $execution_mode (@execution_modes) {
     my @expected_pedigree_lines;
 
   SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_test_hash{sample_ids} } ) {
+    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        my $sample_line = $active_parameter_test_hash{case_id};
+        my $sample_line = $active_parameter{case_id};
 
       HEADER:
         foreach my $header ( split $TAB, $expected_header ) {
@@ -196,27 +196,5 @@ for my $execution_mode (@execution_modes) {
     unlink $test_fam_file_path
       or carp qq{Could not unlink $test_fam_file_path};
 }
-
-## Given no filehandle when in sbatch mode
-# Run the create fam file test
-trap {
-    create_fam_file(
-        {
-            active_parameter_href => \%active_parameter_test_hash,
-            execution_mode        => q{sbatch},
-            fam_file_path         => $test_fam_file_path,
-            log                   => $log,
-            sample_info_href      => \%sample_info_test_hash,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if no filehandle supplied in sbatch mode} );
-like(
-    $trap->stderr,
-    qr/Please \s+ supply \s+ filehandle \s+ to/xms,
-    q{Throw fatal log message if no filehandle supplied in sbatch mode}
-);
 
 done_testing();

@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -20,7 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.01;
@@ -33,8 +34,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $GENOME_BUILD_VERSION => 37;
 
 BEGIN {
 
@@ -44,7 +44,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ set_parameter_in_sample_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -61,34 +61,68 @@ diag(   q{Test set_parameter_in_sample_info from Sample_info.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @add_keys = qw{ analysis_type expected_coverage };
-
-my %active_parameter = (
-    analysis_type => {
-        sample_1 => q{wgs},
-        sample_2 => q{wes},
-    },
-    expected_coverage => {
-        sample_1 => 1,
-        sample_2 => 1,
-    },
+## Given parameter paths
+my %active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter},
+    }
 );
-my %sample_info;
 
-## Given parameters in active_parameters
-PARAMETER:
-foreach my $key_to_add (@add_keys) {
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+    }
+);
 
-    set_parameter_in_sample_info(
-        {
-            active_parameter_href => \%active_parameter,
-            key_to_add            => $key_to_add,
-            sample_info_href      => \%sample_info,
-        }
-    );
-}
+$active_parameter{human_genome_reference} = catfile(qw{ a test path genome build});
+$active_parameter{log_file}               = catfile(qw{ a test dir and log_path});
+$active_parameter{pedigree_file}          = catfile(qw{ a test pedigree path });
 
-## Then add these to sample_info hash
-is_deeply( \%active_parameter, \%sample_info, q{Added keys to sample info} );
+my %file_info = (
+    human_genome_reference_source  => q{grch},
+    human_genome_reference_version => $GENOME_BUILD_VERSION,
+);
+
+set_parameter_in_sample_info(
+    {
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+## Then these entries should be set in sample info
+is(
+    $sample_info{human_genome_build}{path},
+    $active_parameter{human_genome_reference},
+    q{Added genome build path}
+);
+is(
+    $sample_info{human_genome_build}{source},
+    $file_info{human_genome_reference_source},
+    q{Added genome build source}
+);
+is(
+    $sample_info{human_genome_build}{version},
+    $file_info{human_genome_reference_version},
+    q{Added genome build version}
+);
+is(
+    $sample_info{pedigree_file}{path},
+    $active_parameter{pedigree_file},
+    q{Added pedigree path}
+);
+is(
+    $sample_info{log_file_dir},
+    dirname( dirname( $active_parameter{log_file} ) ),
+    q{Added log dir path}
+);
+is(
+    $sample_info{last_log_file_path},
+    $active_parameter{log_file},
+    q{Added log file path}
+);
+
+ok( $sample_info{has_trio}, q{Added has_trio} );
 
 done_testing();

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -137,7 +137,7 @@ sub check_dragen_rd_dna {
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -302,7 +302,7 @@ sub check_dragen_rd_dna {
     );
 
     ## Add to sample info
-    set_in_sample_info(
+    set_parameter_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
@@ -423,13 +423,13 @@ sub check_rd_dna {
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Reference qw{ update_exome_target_bed };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters
-      qw{  update_exome_target_bed update_vcfparser_outfile_counter };
+    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -689,7 +689,7 @@ sub check_rd_dna {
     );
 
     ## Add to sample info
-    set_in_sample_info(
+    set_parameter_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
@@ -792,7 +792,7 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::Get::File qw{ get_select_file_contigs };
-    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
@@ -929,7 +929,7 @@ sub check_rd_dna_vcf_rerun {
     );
 
     ## Add to sample info
-    set_in_sample_info(
+    set_parameter_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
@@ -1041,7 +1041,7 @@ sub check_rd_rna {
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
-    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
@@ -1170,7 +1170,7 @@ sub check_rd_rna {
     );
 
     ## Add to sample info
-    set_in_sample_info(
+    set_parameter_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,

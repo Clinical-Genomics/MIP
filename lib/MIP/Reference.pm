@@ -25,11 +25,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_human_genome_file_endings
+    our @EXPORT_OK = qw{
+      check_human_genome_file_endings
       get_dict_contigs
+      update_exome_target_bed
       write_contigs_size_file
     };
 }
@@ -197,6 +199,60 @@ sub get_dict_contigs {
     $log->fatal(
         q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
     exit 1;
+}
+
+sub update_exome_target_bed {
+
+## Function : Update exome_target_bed files with human genome reference source and version
+## Returns  :
+## Arguments: $exome_target_bed_file_href     => Exome target bed {REF}
+##          : $human_genome_reference_source  => Human genome reference source
+##          : $human_genome_reference_version => Human genome reference version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $exome_target_bed_file_href;
+    my $human_genome_reference_source;
+    my $human_genome_reference_version;
+
+    my $tmpl = {
+        exome_target_bed_file_href =>
+          { required => 1, store => \$exome_target_bed_file_href, },
+        human_genome_reference_source => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_source,
+            strict_type => 1,
+        },
+        human_genome_reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  EXOME_FILE:
+    foreach my $exome_target_bed_file ( keys %{$exome_target_bed_file_href} ) {
+
+        my $original_file_name = $exome_target_bed_file;
+
+        ## Replace with actual version
+        if ( $exome_target_bed_file =~
+            s/genome_reference_source/$human_genome_reference_source/xsm
+            && $exome_target_bed_file =~ s/_version/$human_genome_reference_version/xsm )
+        {
+
+            ## The delete operator returns the value being deleted
+            ## i.e. updating hash key while preserving original info
+            $exome_target_bed_file_href->{$exome_target_bed_file} =
+              delete $exome_target_bed_file_href->{$original_file_name};
+        }
+    }
+    return;
 }
 
 sub write_contigs_size_file {

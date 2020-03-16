@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -237,12 +237,12 @@ sub analysis_peddy {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $case_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $case_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
