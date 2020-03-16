@@ -30,7 +30,7 @@ sub build_file_prefix_tag {
 ## Function : Build the file tags depending on which recipes are used by the user to relevant chain.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id {REF}
+##          : $case_id               => Case id
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $order_recipes_ref     => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
