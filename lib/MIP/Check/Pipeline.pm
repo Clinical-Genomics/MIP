@@ -405,7 +405,8 @@ sub check_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_mutually_exclusive_parameters
+    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters };
+    use MIP::Check::Parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_select_file_contigs
@@ -434,7 +435,6 @@ sub check_rd_dna {
     check_mutually_exclusive_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
         }
     );
 

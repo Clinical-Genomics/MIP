@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="BlobFish"
 LABEL software.version="0.0.2"
 LABEL extra.binaries="BlobFish.py, BlobFish.R"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install --channel bioconda --channel conda-forge bioconductor-tximport python=2.7 bioconductor-deseq2=1.22.1 r-readr r-optparse
 

@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="BootstrapAnn"
 LABEL software.version="df02f35"
 LABEL extra.binaries="BootstrapAnn.py"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install pip python=2.7 numpy scipy
 

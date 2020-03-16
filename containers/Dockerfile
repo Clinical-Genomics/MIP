@@ -13,10 +13,8 @@ LABEL about.documentation="https://clinical-genomics.gitbook.io/project-mip/"
 LABEL about.license_file="https://github.com/Clinical-Genomics/MIP/blob/master/LICENSE"
 LABEL about.license="MIT License (MIT)"
 LABEL about.tags="Clinical,variants,analysis,pipeline"
-
-################## MAINTAINER ######################
-MAINTAINER Henrik Stranneheim <henrik.stranneheim@scilifelab.se>
-MAINTAINER Anders Jemt <anders.jemt@scilifelab.se>
+LABEL maintainer="Henrik Stranneheim <henrik.stranneheim@scilifelab.se>"
+LABEL maintainer="Anders Jemt <anders.jemt@scilifelab.se>"
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -29,7 +27,7 @@ deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-security main restricted univ
     cat /etc/apt/sources.list
 
 RUN apt-get update --fix-missing && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         build-essential \
         coreutils \
         dialog \
