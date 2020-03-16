@@ -40,13 +40,11 @@ sub build_file_prefix_tag {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $case_id;
     my $file_info_href;
     my $order_recipes_ref;
     my $parameter_href;
     my $sample_ids_ref;
-
-    ## Default(s)
-    my $case_id;
 
     my $tmpl = {
         active_parameter_href => {
