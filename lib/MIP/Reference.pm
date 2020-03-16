@@ -205,7 +205,7 @@ sub update_exome_target_bed {
 
 ## Function : Update exome_target_bed files with human genome reference source and version
 ## Returns  :
-## Arguments: $exome_target_bed_file_href     => Exome target bed
+## Arguments: $exome_target_bed_file_href     => Exome target bed {REF}
 ##          : $human_genome_reference_source  => Human genome reference source
 ##          : $human_genome_reference_version => Human genome reference version
 
