@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -188,8 +188,9 @@ sub download_gnomad {
 
 ## Map of key names to keep from reference vcf
     my %info_key = (
-        q{r2.0.1} => [ qw{AF AF_POPMAX}, ],
-        q{r2.1.1} => [ qw{AF AF_popmax}, ],
+        q{r2.0.1}    => [ qw{AF AF_POPMAX}, ],
+        q{r2.1.1}    => [ qw{AF AF_popmax}, ],
+        q{r2.1.1_sv} => [ qw{AF POPMAX_AF}, ],
     );
 
     my $reformated_outfile = join $UNDERSCORE,

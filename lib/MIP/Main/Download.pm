@@ -22,13 +22,14 @@ use Readonly;
 ## MIPs lib/
 use MIP::Active_parameter qw{
   check_recipe_mode
+  set_load_env_environment
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path
 };
 use MIP::Check::Download qw{ check_user_reference };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
-  qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::Environment::Cluster qw{ check_max_core_number };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::Io::Read qw{ read_from_file };
@@ -268,6 +269,8 @@ sub mip_download {
             recipes_ref           => \@{ $parameter{cache}{recipe} },
         }
     );
+
+    set_load_env_environment( { active_parameter_href => \%active_parameter, } );
 
     ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
     parse_download_reference_parameter(
