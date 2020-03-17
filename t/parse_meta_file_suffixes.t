@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,7 +40,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference} => [qw{ check_object_suffixes_to_build }],
+        q{MIP::Reference} => [qw{ parse_meta_file_suffixes }],
         q{MIP::Io::Read}         => [qw{ read_from_file }],
         q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
@@ -48,11 +48,11 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Reference qw{ check_object_suffixes_to_build };
+use MIP::Reference qw{ parse_meta_file_suffixes };
 use MIP::Io::Read qw{ read_from_file };
 
-diag(   q{Test check_object_suffixes_to_build from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+diag(   q{Test parse_meta_file_suffixes from Reference.pm v}
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,7 +98,7 @@ my $parameter      = $active_parameter{$parameter_name};
 PATH:
 for my $path ( keys %{$parameter} ) {
 
-    check_object_suffixes_to_build(
+    parse_meta_file_suffixes(
         {
             active_parameter_href => \%active_parameter,
             file_name             => $path,
@@ -124,7 +124,7 @@ $parameter = $active_parameter{$parameter_name};
 PATH:
 for my $path ( keys %{$parameter} ) {
 
-    check_object_suffixes_to_build(
+    parse_meta_file_suffixes(
         {
             active_parameter_href => \%active_parameter,
             file_name             => $path,
