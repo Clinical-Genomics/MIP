@@ -98,8 +98,8 @@ my %required_argument = (
         input           => q{reference.fa},
         expected_output => q{-ref} . $SPACE . q{reference.fa},
     },
-    output_prefix => {
-        input           => q{HappyKangaroo},
+    outputfile_path => {
+        input           => q{HappyKangaroo.vcf},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.vcf},
     },
 
@@ -118,8 +118,8 @@ my %specific_argument = (
         input           => q{reference.fa},
         expected_output => q{-ref} . $SPACE . q{reference.fa},
     },
-    output_prefix => {
-        input           => q{HappyKangaroo},
+    outputfile_path => {
+        input           => q{HappyKangaroo.vcf},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.vcf},
     },
 );

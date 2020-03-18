@@ -94,8 +94,8 @@ my %required_argument = (
         input           => q{input.tab},
         expected_output => q{-refTEs} . $SPACE . q{input.tab},
     },
-    output_prefix => {
-        input           => q{HappyKangaroo},
+    outputfile_path => {
+        input           => q{HappyKangaroo.bed},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.bed},
     },
 
@@ -110,8 +110,8 @@ my %specific_argument = (
         input           => q{input.tab},
         expected_output => q{-refTEs} . $SPACE . q{input.tab},
     },
-    output_prefix => {
-        input           => q{HappyKangaroo},
+    outputfile_path => {
+        input           => q{HappyKangaroo.bed},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.bed},
     },
 );
