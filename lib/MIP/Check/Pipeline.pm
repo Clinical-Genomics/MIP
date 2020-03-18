@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -414,7 +414,7 @@ sub check_rd_dna {
       check_vep_api_cache_versions
       check_vep_plugin
     };
-    use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
+    use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
@@ -423,7 +423,7 @@ sub check_rd_dna {
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
-    use MIP::Reference qw{ update_exome_target_bed };
+    use MIP::Reference qw{ parse_exome_target_bed };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Update::Recipes
@@ -439,7 +439,7 @@ sub check_rd_dna {
     );
 
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
-    update_exome_target_bed(
+    parse_exome_target_bed(
         {
             exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
             human_genome_reference_source =>
@@ -457,19 +457,6 @@ sub check_rd_dna {
             parameter_href        => $parameter_href,
         }
     );
-
-    ## Check that supplied target file ends with ".bed" and otherwise croaks
-  TARGET_FILE:
-    foreach my $target_bed_file ( keys %{ $active_parameter_href->{exome_target_bed} } ) {
-
-        check_target_bed_file_suffix(
-            {
-                log            => $log,
-                parameter_name => q{exome_target_bed},
-                path           => $target_bed_file,
-            }
-        );
-    }
 
     ## Update the expected number of outfiles after vcfparser
     update_vcfparser_outfile_counter(
