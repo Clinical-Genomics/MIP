@@ -69,7 +69,6 @@ use MIP::Sample_info qw{
   set_no_dry_run_parameters
   write_sample_info_to_file };
 use MIP::Store qw{ store_files };
-use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
 
 BEGIN {
