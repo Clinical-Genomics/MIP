@@ -83,15 +83,6 @@ gatk_use_new_qual_calculator:
   data_type: SCALAR
   default: 1
   type: recipe_argument
-genomic_set:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  mandatory: no
-  reference: reference_dir
-  type: path
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
