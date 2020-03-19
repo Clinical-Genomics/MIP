@@ -67,7 +67,6 @@ use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{ reload_previous_pedigree_info set_no_dry_run_parameters };
 use MIP::Store qw{ store_files };
-use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
 
 BEGIN {

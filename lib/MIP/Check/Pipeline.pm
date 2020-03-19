@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -122,6 +122,7 @@ sub check_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
       check_vep_custom_annotation
@@ -135,7 +136,6 @@ sub check_dragen_rd_dna {
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
 
@@ -160,8 +160,7 @@ sub check_dragen_rd_dna {
     );
 
     ## Update the expected number of outfiles after vcfparser
-    update_vcfparser_outfile_counter(
-        { active_parameter_href => $active_parameter_href, } );
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Collect select file contigs to loop over downstream
     if ( $active_parameter_href->{vcfparser_select_file} ) {
@@ -405,7 +404,8 @@ sub check_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters };
+    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters
+      set_vcfparser_outfile_counter };
     use MIP::Check::Parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -425,7 +425,6 @@ sub check_rd_dna {
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ update_exome_target_bed };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -472,8 +471,7 @@ sub check_rd_dna {
     }
 
     ## Update the expected number of outfiles after vcfparser
-    update_vcfparser_outfile_counter(
-        { active_parameter_href => $active_parameter_href, } );
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
     if ( $active_parameter_href->{vcfparser_select_file} ) {
@@ -783,6 +781,7 @@ sub check_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
       check_select_file_contigs
       check_vep_custom_annotation
@@ -795,7 +794,6 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
-    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -818,8 +816,7 @@ sub check_rd_dna_vcf_rerun {
     );
 
     ## Update the expected number of outfiles after vcfparser
-    update_vcfparser_outfile_counter(
-        { active_parameter_href => $active_parameter_href, } );
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
     if ( $active_parameter_href->{vcfparser_select_file} ) {
