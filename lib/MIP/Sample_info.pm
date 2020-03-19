@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -49,6 +49,7 @@ BEGIN {
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info
       set_in_sample_info
+      write_sample_info_to_file
     };
 
 }
@@ -1686,6 +1687,52 @@ sub set_parameter_in_sample_info {
             sample_info_href      => $sample_info_href,
         }
     );
+
+    return;
+}
+
+sub write_sample_info_to_file {
+
+## Function : Write sample info to file
+## Returns  :
+## Arguments: $sample_info_file => Sample info file to write to
+##          : $sample_info_href => Records on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_file;
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_file => { strict_type => 1, store => \$sample_info_file },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Io::Write qw{ write_to_file };
+
+    return if ( not $sample_info_file );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Writes a YAML hash to file
+    write_to_file(
+        {
+            data_href => $sample_info_href,
+            format    => q{yaml},
+            path      => $sample_info_file,
+        }
+    );
+    $log->info( q{Wrote: } . $sample_info_file );
 
     return;
 }

@@ -46,7 +46,6 @@ use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Path qw{ check_allowed_temp_directory };
 use MIP::Io::Recipes qw{ build_file_prefix_tag };
-use MIP::Io::Write qw{ write_to_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
   check_recipe_vs_binary_name
@@ -65,7 +64,10 @@ use MIP::Pipeline qw{ run_analyse_pipeline };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
-use MIP::Sample_info qw{ reload_previous_pedigree_info set_no_dry_run_parameters };
+use MIP::Sample_info qw{
+  reload_previous_pedigree_info
+  set_no_dry_run_parameters
+  write_sample_info_to_file };
 use MIP::Store qw{ store_files };
 use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 use MIP::Validate::Case qw{ check_sample_ids };
@@ -76,7 +78,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.52;
+    our $VERSION = 1.53;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -503,18 +505,12 @@ sub mip_analyse {
 
     ## Write QC for recipes used in analysis
     # Write sample info to yaml file
-    if ( $active_parameter{sample_info_file} ) {
-
-        ## Writes a YAML hash to file
-        write_to_file(
-            {
-                data_href => \%sample_info,
-                format    => q{yaml},
-                path      => $active_parameter{sample_info_file},
-            }
-        );
-        $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
-    }
+    write_sample_info_to_file(
+        {
+            sample_info_file => $active_parameter{sample_info_file},
+            sample_info_href => \%sample_info,
+        }
+    );
 
     ## Write job_ids to file
     write_job_ids_to_file(
