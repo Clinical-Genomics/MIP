@@ -20,10 +20,10 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,16 +39,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Reference}      => [qw{ update_exome_target_bed }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Reference}      => [qw{ parse_exome_target_bed }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Reference qw{ update_exome_target_bed };
+use MIP::Reference qw{ parse_exome_target_bed };
 
-diag(   q{Test update_exome_target_bed from Reference.pm v}
+diag(   q{Test parse_exome_target_bed from Reference.pm v}
       . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -56,6 +56,8 @@ diag(   q{Test update_exome_target_bed from Reference.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+my $log = test_log({no_screen => 1,});
 
 ## Test hashes
 my %file_info = (
@@ -71,7 +73,7 @@ my %active_parameter = (
     },
 );
 
-update_exome_target_bed(
+parse_exome_target_bed(
     {
         exome_target_bed_file_href     => $active_parameter{exome_target_bed},
         human_genome_reference_source  => $file_info{human_genome_reference_source},

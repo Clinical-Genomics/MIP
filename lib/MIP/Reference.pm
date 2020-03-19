@@ -25,15 +25,48 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_exome_target_bed_suffix
       check_human_genome_file_endings
       get_dict_contigs
-      update_exome_target_bed
+      parse_exome_target_bed
       write_contigs_size_file
     };
+}
+
+sub check_exome_target_bed_suffix {
+
+## Function : Check that supplied exome target file ends with ".bed" or exit
+## Returns  :
+## Arguments: $path => Path to check for ".bed" file ending
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $path;
+
+    my $tmpl =
+      { path => { defined => 1, required => 1, store => \$path, strict_type => 1, }, };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ( $path !~ m{[.]bed$}xsm ) {
+
+        $log->fatal(
+            q{Could not find intendended '.bed file ending' for target file: }
+              . $path
+              . q{ in parameter '--exome_target_bed'},
+            $NEWLINE
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_human_genome_file_endings {
@@ -201,9 +234,10 @@ sub get_dict_contigs {
     exit 1;
 }
 
-sub update_exome_target_bed {
+sub parse_exome_target_bed {
 
-## Function : Update exome_target_bed files with human genome reference source and version
+## Function : Update exome_target_bed files with human genome reference source and version.
+##          : Check for correct file suffix
 ## Returns  :
 ## Arguments: $exome_target_bed_file_href     => Exome target bed {REF}
 ##          : $human_genome_reference_source  => Human genome reference source
@@ -251,6 +285,13 @@ sub update_exome_target_bed {
             $exome_target_bed_file_href->{$exome_target_bed_file} =
               delete $exome_target_bed_file_href->{$original_file_name};
         }
+
+        ## Check that supplied target file ends with ".bed" and otherwise croaks
+        check_exome_target_bed_suffix(
+            {
+                path => $exome_target_bed_file,
+            }
+        );
     }
     return;
 }
