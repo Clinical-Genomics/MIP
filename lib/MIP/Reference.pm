@@ -301,7 +301,7 @@ sub parse_meta_file_suffixes {
     my $build_status = 0;
 
     ## Get parameter object type i.e file or directory
-    my $object_type = get_parameter_attribute(
+    my $system_object_type = get_parameter_attribute(
         {
             attribute      => q{exists_check},
             parameter_href => $parameter_href,
@@ -315,7 +315,7 @@ sub parse_meta_file_suffixes {
         my ($exist) = check_filesystem_objects_existance(
             {
                 object_name    => catfile( $file_name . $file_suffix ),
-                object_type    => $object_type,
+                object_type    => $system_object_type,
                 parameter_name => $parameter_name,
             }
         );
