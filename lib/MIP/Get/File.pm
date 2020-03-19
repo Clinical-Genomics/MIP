@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,7 +39,6 @@ BEGIN {
       get_path_entries
       get_read_length
       get_sample_ids_from_vcf
-      get_select_file_contigs
     };
 }
 
@@ -701,76 +700,6 @@ sub get_read_length {
 
     ## Return read length
     return $process_return{stdouts_ref}[0];
-}
-
-sub get_select_file_contigs {
-
-## Function : Collects sequences contigs used in select file
-## Returns  :
-## Arguments: $log              => Log object
-##          : $select_file_path => Select file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $select_file_path;
-
-    my $tmpl = {
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        select_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$select_file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Child_process qw{ child_process };
-
-    # Execute perl
-    my $find_contig_name = q?perl -nae ?;
-
-    # Get contig name
-    $find_contig_name .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
-
-    # Alias capture
-    $find_contig_name .= q?my $contig_name = $1; ?;
-
-    # Write contig name and comma
-    $find_contig_name .= q?print $contig_name, q{,};} ?;
-
-    # Quit if #CHROM found in line
-    $find_contig_name .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
-
-    # Returns a comma seperated string of sequence contigs from file
-    my $find_contig_cmd = qq{$find_contig_name $select_file_path};
-
-    # System call
-    my %process_return = child_process(
-        {
-            commands_ref => [ $find_contig_cmd, ],
-            process_type => q{open3},
-        }
-    );
-
-    # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $process_return{stdouts_ref} };
-
-    if ( not @contigs ) {
-
-        $log->fatal(
-            q{Could not detect any '##contig' in meta data header in select file: }
-              . $select_file_path );
-        exit 1;
-    }
-    return @contigs;
 }
 
 sub get_sample_ids_from_vcf {
