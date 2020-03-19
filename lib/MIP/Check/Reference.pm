@@ -24,12 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_if_processed_by_vt
-      check_object_suffixes_to_build
       check_parameter_metafiles
       check_references_for_vt };
 }
@@ -133,98 +132,6 @@ sub check_if_processed_by_vt {
     return uniq(@to_process_references);
 }
 
-sub check_object_suffixes_to_build {
-
-## Function : Checks files to be built by combining object name prefix with suffix.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $object_suffixes_ref    => Reference to the object suffix to be added to the object name prefix {REF}
-##          : $file_name             => File name
-##          : $parameter_href        => Parameter hash {REF}
-##          : $parameter_name        => MIP parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $object_suffixes_ref;
-    my $file_name;
-    my $parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        object_suffixes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$object_suffixes_ref,
-            strict_type => 1,
-        },
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw{ check_filesystem_objects_existance };
-
-    ## Count the number of files that exists
-    my $existence_check_counter = 0;
-
-    ## Get parameter object type i.e file or directory
-    my $object_type = $parameter_href->{$parameter_name}{exists_check};
-
-  FILE_SUFFIX:
-    foreach my $file_suffix ( @{$object_suffixes_ref} ) {
-
-        my ($exist) = check_filesystem_objects_existance(
-            {
-                object_name    => catfile( $file_name . $file_suffix ),
-                object_type    => $object_type,
-                parameter_name => $parameter_name,
-            }
-        );
-        ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $exist;
-    }
-
-    ## Files need to be built
-    if ( $existence_check_counter != scalar @{$object_suffixes_ref} ) {
-
-        $parameter_href->{$parameter_name}{build_file} = 1;
-    }
-    else {
-
-        # All file exist in this check
-        $parameter_href->{$parameter_name}{build_file} = 0;
-    }
-    return;
-}
-
 sub check_parameter_metafiles {
 
 ## Function : Checks parameter metafile exists
@@ -266,6 +173,8 @@ sub check_parameter_metafiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Reference qw{ parse_meta_file_suffixes };
+
   PARAMETER:
     foreach my $parameter_name ( keys %{$file_info_href} ) {
 
@@ -292,11 +201,11 @@ sub check_parameter_metafiles {
                 for my $path ( keys %{$parameter} ) {
 
                     ## Checks files to be built by combining filename stub with fileendings
-                    check_object_suffixes_to_build(
+                    parse_meta_file_suffixes(
                         {
                             active_parameter_href => $active_parameter_href,
                             file_name             => $path,
-                            object_suffixes_ref =>
+                            meta_file_suffixes_ref =>
                               \@{ $file_info_href->{$parameter_name} },
                             parameter_href => $parameter_href,
                             parameter_name => $parameter_name,
@@ -312,13 +221,14 @@ sub check_parameter_metafiles {
             else {
 
                 ## Checks files to be built by combining filename stub with fileendings
-                check_object_suffixes_to_build(
+                parse_meta_file_suffixes(
                     {
                         active_parameter_href => $active_parameter_href,
                         file_name => $active_parameter_href->{human_genome_reference},
-                        object_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
-                        parameter_href      => $parameter_href,
-                        parameter_name      => $parameter_name,
+                        meta_file_suffixes_ref =>
+                          \@{ $file_info_href->{$parameter_name} },
+                        parameter_href => $parameter_href,
+                        parameter_name => $parameter_name,
                     }
                 );
             }

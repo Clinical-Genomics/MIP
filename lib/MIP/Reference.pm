@@ -32,6 +32,7 @@ BEGIN {
       check_exome_target_bed_suffix
       check_human_genome_file_endings
       get_dict_contigs
+      parse_meta_file_suffixes
       parse_exome_target_bed
       write_contigs_size_file
     };
@@ -232,6 +233,111 @@ sub get_dict_contigs {
     $log->fatal(
         q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
     exit 1;
+}
+
+sub parse_meta_file_suffixes {
+
+## Function : Checks files to be built by combining object name prefix with suffix.
+## Returns  :
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $file_name              => File name
+##          : $meta_file_suffixes_ref => Reference to the meta file suffixes to be added to the file name {REF}
+##          : $parameter_href         => Parameter hash {REF}
+##          : $parameter_name         => MIP parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_name;
+    my $meta_file_suffixes_ref;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        meta_file_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_file_suffixes_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
+    use MIP::Parameter qw{ get_parameter_attribute set_parameter_build_file_status };
+
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+
+    my $build_status = 0;
+
+    ## Get parameter object type i.e file or directory
+    my $system_object_type = get_parameter_attribute(
+        {
+            attribute      => q{exists_check},
+            parameter_href => $parameter_href,
+            parameter_name => $parameter_name,
+        }
+    );
+
+  FILE_SUFFIX:
+    foreach my $file_suffix ( @{$meta_file_suffixes_ref} ) {
+
+        my ($exist) = check_filesystem_objects_existance(
+            {
+                object_name    => catfile( $file_name . $file_suffix ),
+                object_type    => $system_object_type,
+                parameter_name => $parameter_name,
+            }
+        );
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exist;
+    }
+
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @{$meta_file_suffixes_ref} ) {
+
+        $build_status = 1;
+    }
+
+    # Set build status for parameter
+    set_parameter_build_file_status(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => $parameter_name,
+            status         => $build_status,
+        }
+    );
+    return;
 }
 
 sub parse_exome_target_bed {
