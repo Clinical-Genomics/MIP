@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Update::Parameters} => [qw{ update_vcfparser_outfile_counter }],
+        q{MIP::Active_parameter} => [qw{ set_vcfparser_outfile_counter }],
         q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
+use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
 
-diag(   q{Test update_vcfparser_outfile_counter from Parameters.pm v}
-      . $MIP::Update::Parameters::VERSION
+diag(   q{Test set_vcfparser_outfile_counter from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,21 +58,25 @@ diag(   q{Test update_vcfparser_outfile_counter from Parameters.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Test the number of oufiles when vcfparser is used with select file and sv_vcfparser without.
+## Given a vcfparser select file
 my %active_parameter_test = (
     sv_vcfparser          => { type => q{recipe} },
     vcfparser_ar          => { type => q{recipe} },
     vcfparser_select_file => 1,
 );
 
-update_vcfparser_outfile_counter( { active_parameter_href => \%active_parameter_test, } );
+## When vcfparser is used with select file and sv_vcfparser without.
+set_vcfparser_outfile_counter( { active_parameter_href => \%active_parameter_test, } );
 
+## Then vcfparser_outfile_count should be 2
 is( $active_parameter_test{vcfparser_outfile_count},
-    2, q{vcfparser_ar used with a select file -> 2 outfiles. Test passed.} );
-is( $active_parameter_test{sv_vcfparser_outfile_count},
-    1, q{sv_vcfparser used without a select file -> 1 outfile. Test passed.} );
+    2, q{vcfparser_ar used with a select file -> 2 outfiles} );
 
-# Test the number of oufiles when both vcfparser and sv_vcfparser are used with select files.
+## Then sv_vcfparser_outfile_count should be 1
+is( $active_parameter_test{sv_vcfparser_outfile_count},
+    1, q{sv_vcfparser used without a select file -> 1 outfile} );
+
+## Given a vcfparser select file and sv vcfparser select file
 %active_parameter_test = (
     sv_vcfparser             => { type => q{recipe} },
     vcfparser_ar             => { type => q{recipe} },
@@ -83,11 +84,15 @@ is( $active_parameter_test{sv_vcfparser_outfile_count},
     vcfparser_select_file    => 1,
 );
 
-update_vcfparser_outfile_counter( { active_parameter_href => \%active_parameter_test, } );
+## When both vcfparser and sv_vcfparser are used with select files.
+set_vcfparser_outfile_counter( { active_parameter_href => \%active_parameter_test, } );
 
+## Then vcfparser_outfile_count should be 2
 is( $active_parameter_test{vcfparser_outfile_count},
-    2, q{vcfparser_ar used with a select file -> 2 outfiles. Test passed.} );
+    2, q{vcfparser_ar used with a select file -> 2 outfiles} );
+
+## Then sv_vcfparser_outfile_count should be 2
 is( $active_parameter_test{sv_vcfparser_outfile_count},
-    2, q{sv_vcfparser used with a select file -> 2 outfiles. Test passed.} );
+    2, q{sv_vcfparser used with a select file -> 2 outfiles} );
 
 done_testing();

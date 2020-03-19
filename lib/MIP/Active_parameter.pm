@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -60,6 +60,7 @@ BEGIN {
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
+      set_vcfparser_outfile_counter
       update_recipe_mode_for_start_with_option
       update_recipe_mode_with_dry_run_all
       update_reference_parameters
@@ -1535,6 +1536,57 @@ sub set_recipe_resource {
     return;
 }
 
+sub set_vcfparser_outfile_counter {
+
+## Function : Determine the number of outfile after vcfparser
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Create link
+    my %vcfparser_select_file = (
+        sv_vcfparser => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
+        vcfparser_ar => { vcfparser_select_file    => q{vcfparser_outfile_count} },
+    );
+
+## Determine if to expect select outfile for vcfparser and sv_vcfparser
+  RECIPE:
+    foreach my $recipe ( keys %vcfparser_select_file ) {
+
+        next RECIPE if ( not $active_parameter_href->{$recipe} );
+
+      FILES:
+        while ( my ( $parameter_name, $parameter_name_counter ) =
+            each %{ $vcfparser_select_file{$recipe} } )
+        {
+
+            $active_parameter_href->{$parameter_name_counter} =
+              _set_vcfparser_file_counter(
+                {
+                    parameter_name => $active_parameter_href->{$parameter_name},
+                }
+              );
+        }
+    }
+    return;
+}
+
 sub update_recipe_mode_for_start_with_option {
 
 ## Function : Update recipe mode depending on recipe to start with
@@ -1935,6 +1987,31 @@ sub _set_other_and_male_gender {
     $active_parameter_href->{found_other}++;
     push @{ $active_parameter_href->{gender}{others} }, $sample_id;
     return;
+}
+
+sub _set_vcfparser_file_counter {
+
+## Function : Return the expected number of outputfile(s) after vcfparser
+## Returns  : 1 | 2
+## Arguments: $parameter_name => Vcfparser select file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_name;
+
+    my $tmpl =
+      { parameter_name => { required => 1, store => \$parameter_name, strict_type => 1, },
+      };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
+    # No select file was given
+    return 1 if ( not defined $parameter_name );
+
+    ## Select file was given
+    return 2;
 }
 
 1;
