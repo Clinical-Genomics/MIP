@@ -205,7 +205,7 @@ sub check_parameter_metafiles {
                         {
                             active_parameter_href => $active_parameter_href,
                             file_name             => $path,
-                            object_suffixes_ref =>
+                            meta_file_suffixes_ref =>
                               \@{ $file_info_href->{$parameter_name} },
                             parameter_href => $parameter_href,
                             parameter_name => $parameter_name,
@@ -225,9 +225,10 @@ sub check_parameter_metafiles {
                     {
                         active_parameter_href => $active_parameter_href,
                         file_name => $active_parameter_href->{human_genome_reference},
-                        object_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
-                        parameter_href      => $parameter_href,
-                        parameter_name      => $parameter_name,
+                        meta_file_suffixes_ref =>
+                          \@{ $file_info_href->{$parameter_name} },
+                        parameter_href => $parameter_href,
+                        parameter_name => $parameter_name,
                     }
                 );
             }

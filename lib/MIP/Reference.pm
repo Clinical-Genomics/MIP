@@ -206,18 +206,18 @@ sub parse_meta_file_suffixes {
 
 ## Function : Checks files to be built by combining object name prefix with suffix.
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_name             => File name
-##          : $object_suffixes_ref   => Reference to the object suffix to be added to the object name prefix {REF}
-##          : $parameter_href        => Parameter hash {REF}
-##          : $parameter_name        => MIP parameter name
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $file_name              => File name
+##          : $meta_file_suffixes_ref => Reference to the meta file suffixes to be added to the file name {REF}
+##          : $parameter_href         => Parameter hash {REF}
+##          : $parameter_name         => MIP parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_name;
-    my $object_suffixes_ref;
+    my $meta_file_suffixes_ref;
     my $parameter_href;
     my $parameter_name;
 
@@ -235,11 +235,11 @@ sub parse_meta_file_suffixes {
             store       => \$file_name,
             strict_type => 1,
         },
-        object_suffixes_ref => {
+        meta_file_suffixes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$object_suffixes_ref,
+            store       => \$meta_file_suffixes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -277,7 +277,7 @@ sub parse_meta_file_suffixes {
     );
 
   FILE_SUFFIX:
-    foreach my $file_suffix ( @{$object_suffixes_ref} ) {
+    foreach my $file_suffix ( @{$meta_file_suffixes_ref} ) {
 
         my ($exist) = check_filesystem_objects_existance(
             {
@@ -291,7 +291,7 @@ sub parse_meta_file_suffixes {
     }
 
     ## Files need to be built
-    if ( $existence_check_counter != scalar @{$object_suffixes_ref} ) {
+    if ( $existence_check_counter != scalar @{$meta_file_suffixes_ref} ) {
 
         $build_status = 1;
     }

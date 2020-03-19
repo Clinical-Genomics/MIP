@@ -40,9 +40,9 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Reference} => [qw{ parse_meta_file_suffixes }],
-        q{MIP::Io::Read}         => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Reference}      => [qw{ parse_meta_file_suffixes }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -100,11 +100,11 @@ for my $path ( keys %{$parameter} ) {
 
     parse_meta_file_suffixes(
         {
-            active_parameter_href => \%active_parameter,
-            file_name             => $path,
-            object_suffixes_ref   => \@{ $file_info{$parameter_name} },
-            parameter_href        => \%parameter,
-            parameter_name        => $parameter_name,
+            active_parameter_href  => \%active_parameter,
+            file_name              => $path,
+            meta_file_suffixes_ref => \@{ $file_info{$parameter_name} },
+            parameter_href         => \%parameter,
+            parameter_name         => $parameter_name,
         }
     );
 }
@@ -126,11 +126,11 @@ for my $path ( keys %{$parameter} ) {
 
     parse_meta_file_suffixes(
         {
-            active_parameter_href => \%active_parameter,
-            file_name             => $path,
-            object_suffixes_ref   => \@{ $file_info{$parameter_name} },
-            parameter_href        => \%parameter,
-            parameter_name        => $parameter_name,
+            active_parameter_href  => \%active_parameter,
+            file_name              => $path,
+            meta_file_suffixes_ref => \@{ $file_info{$parameter_name} },
+            parameter_href         => \%parameter,
+            parameter_name         => $parameter_name,
         }
     );
 }
