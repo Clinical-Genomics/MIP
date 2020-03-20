@@ -124,17 +124,17 @@ sub check_dragen_rd_dna {
 
     use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
-      check_select_file_contigs
       check_vep_custom_annotation
       check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::File_info qw{ parse_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -163,26 +163,12 @@ sub check_dragen_rd_dna {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Collect select file contigs to loop over downstream
-    if ( $active_parameter_href->{vcfparser_select_file} ) {
-
-        ## Collects sequences contigs used in select file
-        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
-            {
-                log => $log,
-                select_file_path =>
-                  catfile( $active_parameter_href->{vcfparser_select_file} ),
-            }
-        );
-
-        ## Check that select file contigs is a subset of primary contigs
-        check_select_file_contigs(
-            {
-                contigs_ref             => $file_info_href->{contigs},
-                select_file_contigs_ref => $file_info_href->{select_file_contigs},
-                log                     => $log,
-            }
-        );
-    }
+    parse_select_file_contigs(
+        {
+            file_info_href   => $file_info_href,
+            select_file_path => $active_parameter_href->{vcfparser_select_file},
+        }
+    );
 
     ## Check that VEP directory and VEP cache match
     check_vep_api_cache_versions(
@@ -409,7 +395,6 @@ sub check_rd_dna {
     use MIP::Check::Parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_select_file_contigs
       check_vep_custom_annotation
       check_vep_api_cache_versions
       check_vep_plugin
@@ -418,12 +403,12 @@ sub check_rd_dna {
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::File_info qw{ parse_select_file_contigs };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
-    use MIP::Reference qw{ parse_exome_target_bed };
+    use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
@@ -461,26 +446,12 @@ sub check_rd_dna {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
-    if ( $active_parameter_href->{vcfparser_select_file} ) {
-
-## Collects sequences contigs used in select file
-        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
-            {
-                log => $log,
-                select_file_path =>
-                  catfile( $active_parameter_href->{vcfparser_select_file} ),
-            }
-        );
-
-        ## Check that select file contigs is a subset of primary contigs
-        check_select_file_contigs(
-            {
-                contigs_ref             => $file_info_href->{contigs},
-                select_file_contigs_ref => $file_info_href->{select_file_contigs},
-                log                     => $log,
-            }
-        );
-    }
+    parse_select_file_contigs(
+        {
+            file_info_href   => $file_info_href,
+            select_file_path => $active_parameter_href->{vcfparser_select_file},
+        }
+    );
 
     ## Check that VEP directory and VEP cache match
     check_vep_api_cache_versions(
@@ -770,14 +741,14 @@ sub check_rd_dna_vcf_rerun {
 
     use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
     use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
-      check_select_file_contigs
       check_vep_custom_annotation
       check_vep_api_cache_versions
       check_vep_plugin };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::File_info qw{ parse_select_file_contigs };
+    use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
@@ -806,25 +777,12 @@ sub check_rd_dna_vcf_rerun {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
-    if ( $active_parameter_href->{vcfparser_select_file} ) {
-
-## Collects sequences contigs used in select file
-        @{ $file_info_href->{select_file_contigs} } = get_select_file_contigs(
-            {
-                log => $log,
-                select_file_path =>
-                  catfile( $active_parameter_href->{vcfparser_select_file} ),
-            }
-        );
-        ## Check that select file contigs is a subset of primary contigs
-        check_select_file_contigs(
-            {
-                contigs_ref             => $file_info_href->{contigs},
-                select_file_contigs_ref => $file_info_href->{select_file_contigs},
-                log                     => $log,
-            }
-        );
-    }
+    parse_select_file_contigs(
+        {
+            file_info_href   => $file_info_href,
+            select_file_path => $active_parameter_href->{vcfparser_select_file},
+        }
+    );
 
     ## Check that VEP directory and VEP cache match
     check_vep_api_cache_versions(

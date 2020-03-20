@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -169,11 +169,12 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
-        write_contigs_size_file   => \&_write_contigs_size_file,
         get_dict_contigs          => \&_get_dict_contigs,
+        get_select_contigs        => \&_get_select_contigs,
         get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
+        write_contigs_size_file   => \&_write_contigs_size_file,
     );
 
     ## Stores commands depending on input parameters
@@ -249,6 +250,29 @@ sub _get_dict_contigs {
     $get_dict_contigs .= q?print $contig_name, q{,};} }'?;
 
     return $get_dict_contigs;
+}
+
+sub _get_select_contigs {
+
+## Function : Return contig names from file header
+## Returns  : $get_select_contigs
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Get contig name
+    my $get_select_contigs .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
+
+    # Alias capture
+    $get_select_contigs .= q?my $contig_name = $1; ?;
+
+    # Write contig name and comma
+    $get_select_contigs .= q?print $contig_name, q{,};} ?;
+
+    # Quit if "#CHROM" found in line
+    $get_select_contigs .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
+
+    return $get_select_contigs;
 }
 
 sub _synonyms_grch37_to_grch38 {

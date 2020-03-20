@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,6 +34,8 @@ BEGIN {
       set_file_tag
       set_human_genome_reference_features
       set_primary_contigs
+      set_select_file_contigs
+      parse_select_file_contigs
     };
 }
 
@@ -400,4 +402,106 @@ sub set_primary_contigs {
     return;
 }
 
+sub set_select_file_contigs {
+
+## Function : Set select file contigs
+## Returns  :
+## Arguments: $file_info_href          => File info hash {REF}
+##          : $select_file_contigs_ref => Primary contig hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $select_file_contigs_ref;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        select_file_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_contigs_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set select contig sets
+    @{ $file_info_href->{select_file_contigs} } = @{$select_file_contigs_ref};
+
+    return;
+}
+
+sub parse_select_file_contigs {
+
+## Function : Parse select file contigs
+## Returns  :
+## Arguments: $file_info_href   => File info hash {REF}
+##          : $select_file_path => Select file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $select_file_path;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        select_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Contigs qw{ check_select_file_contigs };
+    use MIP::Reference qw{ get_select_file_contigs };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ($select_file_path) {
+
+        ## Collects sequences contigs used in select file
+        my @select_file_contigs = get_select_file_contigs(
+            {
+                select_file_path => $select_file_path,
+            }
+        );
+
+        ## Set in file_info hash
+        set_select_file_contigs(
+            {
+                file_info_href          => $file_info_href,
+                select_file_contigs_ref => \@select_file_contigs,
+            }
+        );
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+            }
+        );
+    }
+
+    return 1;
+}
 1;

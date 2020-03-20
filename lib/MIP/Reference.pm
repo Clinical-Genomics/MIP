@@ -32,6 +32,7 @@ BEGIN {
       check_exome_target_bed_suffix
       check_human_genome_file_endings
       get_dict_contigs
+      get_select_file_contigs
       parse_meta_file_suffixes
       parse_exome_target_bed
       write_contigs_size_file
@@ -234,6 +235,64 @@ sub get_dict_contigs {
         q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
     exit 1;
 }
+
+sub get_select_file_contigs {
+
+## Function : Collects sequences contigs used in select file
+## Returns  : @contigs
+## Arguments: $select_file_path => Select file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $select_file_path;
+
+    my $tmpl = {
+        select_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Build regexp to get contig names
+    my @get_select_contigs_cmds = perl_nae_oneliners(
+        {
+            oneliner_name  => q{get_select_contigs},
+            stdinfile_path => $select_file_path,
+        }
+    );
+
+    # System call
+    my %process_return = child_process(
+        {
+            commands_ref => \@get_select_contigs_cmds,
+            process_type => q{open3},
+        }
+    );
+
+    # Save contigs
+    my @contigs = split $COMMA, join $COMMA, @{ $process_return{stdouts_ref} };
+
+    if ( not @contigs ) {
+
+        $log->fatal(
+            q{Could not detect any '##contig' in meta data header in select file: }
+              . $select_file_path );
+        exit 1;
+    }
+    return @contigs;
+}
+
 
 sub parse_meta_file_suffixes {
 

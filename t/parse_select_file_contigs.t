@@ -16,8 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Reference}      => [qw{ get_select_file_contigs }],
+        q{MIP::File_info}      => [qw{ parse_select_file_contigs }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Reference qw{ get_select_file_contigs };
+use MIP::File_info qw{ parse_select_file_contigs };
 
-diag(   q{Test get_select_file_contigs from File.pm v}
-      . $MIP::Reference::VERSION
+diag(   q{Test parse_select_file_contigs from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,42 +57,23 @@ diag(   q{Test get_select_file_contigs from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $AUTOSOMAL_CONTIG_NR => 22;
+my $log = test_log( { no_screen => 0, } );
 
-## Creates log object
-my $log = test_log( {} );
+## Given a vcfparser select file path and contigs
+my %file_info =
+  ( contigs => [qw{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT }], );
 
-## Given proper input data
-my %file_info;
-my $select_file_path =
+my $vcfparser_select_file_path =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 
-@{ $file_info{select_file_contigs} } = get_select_file_contigs(
+my $is_ok = parse_select_file_contigs(
     {
-        select_file_path => $select_file_path,
+        file_info_href   => \%file_info,
+        select_file_path => $vcfparser_select_file_path,
     }
 );
-my @expected_contigs = ( 1 .. $AUTOSOMAL_CONTIG_NR, qw{ X Y MT} );
 
-## Then return the expected contigs
-is_deeply( \@{ $file_info{select_file_contigs} },
-    \@expected_contigs, q{Got select file contigs} );
-
-## Given inproper file path
-my $wrong_file = catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
-
-trap {
-    get_select_file_contigs(
-        {
-            select_file_path => $wrong_file,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if contigs cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if contigs cannot be found} );
+## Then
+ok( $is_ok, q{Parsed select file contigs} );
 
 done_testing();
