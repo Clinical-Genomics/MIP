@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -171,6 +171,7 @@ sub perl_nae_oneliners {
     my %oneliner = (
         get_dict_contigs          => \&_get_dict_contigs,
         get_select_contigs        => \&_get_select_contigs,
+        get_select_contigs_by_col => \&_get_select_contigs_by_col,
         get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
@@ -261,7 +262,7 @@ sub _get_select_contigs {
     my ($arg_href) = @_;
 
     # Get contig name
-    my $get_select_contigs .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
+    my $get_select_contigs = q?'if ($_=~/ contig=(\w+) /xsm) { ?;
 
     # Alias capture
     $get_select_contigs .= q?my $contig_name = $1; ?;
@@ -271,6 +272,39 @@ sub _get_select_contigs {
 
     # Quit if "#CHROM" found in line
     $get_select_contigs .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
+
+    return $get_select_contigs;
+}
+
+sub _get_select_contigs_by_col {
+
+## Function : Return contig names from column one of bed file
+## Returns  : $get_select_contigs
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Initilize hash
+    my $get_select_contigs = q?'my %contig; ?;
+
+    # Loop per line
+    $get_select_contigs .= q?while (<>) { ?;
+
+    # Get contig name
+    $get_select_contigs .= q?my ($contig_name) = $_=~/(\w+)/sxm; ?;
+
+    # Skip if on black list
+    $get_select_contigs .=
+      q?next if($contig_name =~/browser|contig|chromosome|gene_panel|track/); ?;
+
+    # Set contig name in hash
+    $get_select_contigs .= q?if($contig_name) { $contig{$contig_name}=undef } } ?;
+
+    # Print contig names to string
+    $get_select_contigs .= q?print join ",", sort keys %contig; ?;
+
+    # Exit perl program
+    $get_select_contigs .= q?last;' ?;
 
     return $get_select_contigs;
 }

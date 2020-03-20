@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,13 +76,15 @@ my $select_file_path =
     }
 );
 my @expected_contigs = ( 1 .. $AUTOSOMAL_CONTIG_NR, qw{ X Y MT} );
+@expected_contigs = sort @expected_contigs;
 
 ## Then return the expected contigs
 is_deeply( \@{ $file_info{select_file_contigs} },
     \@expected_contigs, q{Got select file contigs} );
 
-## Given inproper file path
-my $wrong_file = catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
+## Given bed file with no contigs
+my $wrong_file =
+  catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test_no_contigs.txt } );
 
 trap {
     get_select_file_contigs(
