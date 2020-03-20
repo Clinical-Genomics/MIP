@@ -12,7 +12,7 @@ use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
 ## MIPs lib/
-use MIP::Constants qw{ %PRIMARY_CONTIG };
+use MIP::Constants qw{ $LOG_NAME %PRIMARY_CONTIG $SPACE };
 
 BEGIN {
 
@@ -23,8 +23,61 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_contigs };
+    our @EXPORT_OK = qw{ check_select_file_contigs set_contigs };
 
+}
+
+sub check_select_file_contigs {
+
+## Function : Check that select file contigs is a subset of primary contigs
+## Returns  :
+## Arguments: $contigs_ref             => Primary contigs of the human genome reference
+##          : $select_file_contigs_ref => Select file contigs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $select_file_contigs_ref;
+
+    my $tmpl = {
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        select_file_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_contigs_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Check that select file contigs are a subset of primary contigs
+    my @unique_select_contigs =
+      array_minus( @{$select_file_contigs_ref}, @{$contigs_ref} );
+
+    if (@unique_select_contigs) {
+
+        $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
+            @unique_select_contigs );
+        $log->fatal(
+            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
+            @{$contigs_ref} );
+        exit 1;
+    }
+    return 1;
 }
 
 sub set_contigs {
