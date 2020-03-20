@@ -151,7 +151,7 @@ recipe_core_number:
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
-    samtools_merge: 13
+    samtools_merge: 2
     split_fastq_file: 4
     variant_integrity_ar: 1
     version_collect_ar: 1
@@ -196,7 +196,7 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bwa_mem: 30
+    bwa_mem: 3
     bcftools_mpileup: 40
     cadd_ar: 10
     endvariantannotationblock: 2
@@ -222,7 +222,7 @@ recipe_time:
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 10
-    samtools_merge: 10
+    samtools_merge: 2
     split_fastq_file: 10
     varianteffectpredictor: 10
     variant_integrity_ar: 1
