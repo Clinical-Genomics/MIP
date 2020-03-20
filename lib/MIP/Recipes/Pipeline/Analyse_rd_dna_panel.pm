@@ -155,7 +155,6 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
-    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -212,7 +211,6 @@ sub pipeline_analyse_rd_dna_panel {
         gzip_fastq         => \&analysis_gzip_fastq,
         multiqc_ar         => \&analysis_multiqc,
         samtools_merge     => \&analysis_samtools_merge_panel,
-        split_fastq_file   => \&analysis_split_fastq_file,
         version_collect_ar => \&analysis_mip_vercollect,
     );
 
@@ -281,8 +279,6 @@ sub pipeline_analyse_rd_dna_panel {
             );
         }
 
-        ## Special case
-        exit if ( $recipe eq q{split_fastq_file} );
     }
     return;
 }
