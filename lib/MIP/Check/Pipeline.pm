@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $LOG_NAME $SPACE };
 
 BEGIN {
     require Exporter;
@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_dragen_rd_dna check_rd_dna check_rd_dna_vcf_rerun check_rd_rna };
+      qw{ check_dragen_rd_dna check_rd_dna check_rd_dna_panel check_rd_dna_vcf_rerun check_rd_rna };
 }
 
 sub check_dragen_rd_dna {
@@ -670,6 +670,303 @@ sub check_rd_dna {
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             sample_info_href        => $sample_info_href,
+        }
+    );
+
+    ## Add to sample info
+    set_parameter_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
+}
+
+sub check_rd_dna_panel {
+
+## Function : Rare disease panel DNA pipeline specific checks and parsing
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
+##          : $parameter_href                  => Parameter hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $infile_both_strands_prefix_href;
+    my $infile_lane_prefix_href;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_both_strands_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters };
+    use MIP::Check::Parameter qw{
+      check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
+      check_vep_custom_annotation
+      check_vep_api_cache_versions
+      check_vep_plugin
+    };
+    use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
+    use MIP::Check::Reference qw{ check_parameter_metafiles };
+    use MIP::Config qw{ write_mip_config };
+    use MIP::File::Format::Reference qw{ write_references };
+    use MIP::Parse::Parameter
+      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
+    use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Reference qw{ update_exome_target_bed };
+    use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
+    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Check mutually exclusive parameters and croak if mutually enabled
+    check_mutually_exclusive_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
+    update_exome_target_bed(
+        {
+            exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
+            human_genome_reference_source =>
+              $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Check that supplied target file ends with ".bed" and otherwise croaks
+  TARGET_FILE:
+    foreach my $target_bed_file ( keys %{ $active_parameter_href->{exome_target_bed} } ) {
+
+        check_target_bed_file_suffix(
+            {
+                log            => $log,
+                parameter_name => q{exome_target_bed},
+                path           => $target_bed_file,
+            }
+        );
+    }
+
+    ## Update the expected number of outfiles after vcfparser
+    update_vcfparser_outfile_counter(
+        { active_parameter_href => $active_parameter_href, } );
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    check_vep_plugin(
+        {
+            log             => $log,
+            parameter_name  => q{vep_plugin},
+            vep_plugin_href => \%{ $active_parameter_href->{vep_plugin} },
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type expected_coverage }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
+    check_sample_id_in_hash_parameter_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ exome_target_bed infile_dirs }],
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check that the supplied gatk sample map file paths exists
+    check_gatk_sample_map_paths(
+        {
+            log             => $log,
+            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+        }
+    );
+
+    ## Parse parameters with TOML config files
+    parse_toml_config_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+        }
+    );
+
+    parse_nist_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+        }
+    );
+
+    if ( $active_parameter_href->{verbose} ) {
+
+        set_parameter_to_broadcast(
+            {
+                active_parameter_href => $active_parameter_href,
+                broadcasts_ref        => $broadcasts_ref,
+                order_parameters_ref  => $order_parameters_ref,
+            }
+        );
+    }
+
+    ## Broadcast set parameters info
+    foreach my $parameter_info ( @{$broadcasts_ref} ) {
+
+        $log->info($parameter_info);
+    }
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
+    parse_prioritize_variant_callers(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            remove_keys_ref       => [qw{ associated_recipe }],
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            log                   => $log,
+        }
+    );
+
+    ## Reformat file names to MIP format, get file name info and add info to sample_info
+    parse_fastq_infiles(
+        {
+            active_parameter_href           => $active_parameter_href,
+            file_info_href                  => $file_info_href,
+            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
+            infile_lane_prefix_href         => $infile_lane_prefix_href,
+            log                             => $log,
+            sample_info_href                => $sample_info_href,
         }
     );
 

@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -63,7 +63,7 @@ sub get_overall_analysis_type {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my @analysis_types = qw{ dragen_rd_dna vrn wes wgs wts };
+    my @analysis_types = qw{ dragen_rd_dna panel vrn wes wgs wts };
 
   ANALYSIS:
     foreach my $analysis_type (@analysis_types) {
