@@ -67,11 +67,13 @@ sub retroseq_call {
             strict_type => 1,
         },
         outputfile_path => {
+            defined     => 1,
             required    => 1,
             store       => \$outputfile_path,
             strict_type => 1,
         },
         reference_fasta_path => {
+            defined     => 1,
             required    => 1,
             store       => \$reference_fasta_path,
             strict_type => 1,
@@ -169,6 +171,7 @@ sub retroseq_discover {
             strict_type => 1,
         },
         outputfile_path => {
+            defined     => 1,
             required    => 1,
             store       => \$outputfile_path,
             strict_type => 1,
