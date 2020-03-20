@@ -24,6 +24,7 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 use MIP::Test::Writefile qw{ write_toml_config };
 
