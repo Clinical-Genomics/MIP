@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -267,7 +267,7 @@ sub get_select_file_contigs {
     ## Build regexp to get contig names
     my @get_select_contigs_cmds = perl_nae_oneliners(
         {
-            oneliner_name  => q{get_select_contigs},
+            oneliner_name  => q{get_select_contigs_by_col},
             stdinfile_path => $select_file_path,
         }
     );
@@ -292,7 +292,6 @@ sub get_select_file_contigs {
     }
     return @contigs;
 }
-
 
 sub parse_meta_file_suffixes {
 

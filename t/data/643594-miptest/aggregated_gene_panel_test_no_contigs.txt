@@ -1,0 +1,27 @@
+##gene_panel=TEST,version=1.0,updated_at=2016-12-08,display_name=gene_panel_test
+##contig=1
+##contig=2
+##contig=3
+##contig=4
+##contig=5
+##contig=6
+##contig=7
+##contig=8
+##contig=9
+##contig=10
+##contig=11
+##contig=12
+##contig=13
+##contig=14
+##contig=15
+##contig=16
+##contig=17
+##contig=18
+##contig=19
+##contig=20
+##contig=21
+##contig=22
+##contig=X
+##contig=Y
+##contig=MT
+#chromosome	gene_start	gene_stop	hgnc_id	hgnc_symbol
