@@ -3,51 +3,51 @@
 ### Enable/activate MIP
 mip:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: 1
   type: mip
 # This is the root path on the cluster
 cluster_constant_path:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   type: path
 case_id:
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   type: mip
 ### Project specific
 email_types:
   associated_recipe:
-   - mip
+    - mip
   data_type: ARRAY
   mandatory: no
   default:
-   - FAIL
+    - FAIL
   type: mip
 bwa_mem:
   associated_recipe:
-   - mip
+    - mip
   chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
-   - bwa
-   - samtools
-   - sambamba
+    - bwa
+    - samtools
+    - sambamba
   recipe_type: aligners
   file_endings:
-   - .bam
+    - .bam
   remove_redundant_file: yes
   remove_redundant_file_setting: single
   type: recipe
 bwa_mem_rapid_db:
   associated_recipe:
-   - bwa_mem
+    - bwa_mem
   build_file: 0
   data_type: SCALAR
   exists_check: file
@@ -55,13 +55,13 @@ bwa_mem_rapid_db:
   type: path
 load_env:
   associated_recipe:
-   - mip
+    - mip
   data_type: HASH
   mandatory: no
   type: mip
 supported_capture_kit:
   associated_recipe:
-   - mip
+    - mip
   data_type: HASH
   default:
     nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed

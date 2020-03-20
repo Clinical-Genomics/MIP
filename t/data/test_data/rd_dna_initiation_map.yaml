@@ -1,78 +1,78 @@
 ---
 CHAIN_ALL:
   - CHAIN_MAIN:
-     - gzip_fastq
+    - gzip_fastq
   # Parallel chain (branch)
   - CHAIN_SPLITFASTQ:
-     - split_fastq_file
+    - split_fastq_file
   - CHAIN_FASTQ:
-     - fastqc_ar
+    - fastqc_ar
   - CHAIN_MAIN:
-     - bwa_mem
-     - samtools_merge
-     - markduplicates
-     - gatk_baserecalibration
-     # Parallel chains (branches), which inherit from MAIN in initiation
-     - CHAIN_CHSEX:
-        - chanjo_sexcheck
-     - CHAIN_STSUBSMT:
-        - samtools_subsample_mt
-     - CHAIN_SBCOV:
-        - sambamba_depth
-     - CHAIN_PTMME:
-        - picardtools_collectmultiplemetrics
-     - CHAIN_PTCHSM:
-        - picardtools_collecthsmetrics
-     - CHAIN_SV:
-        # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
-        - PARALLEL:
-           - cnvnator_ar
-           - expansionhunter
-           - manta
-           - tiddit
-           - DELLY_CALL:
-              - delly_call
-              - delly_reformat
-        - sv_combinevariantcallsets
-        - sv_annotate
-        - sv_varianteffectpredictor
-        - sv_vcfparser
-        - sv_rankvariant
-        - sv_reformat
-        - vcf2cytosure_ar
+    - bwa_mem
+    - samtools_merge
+    - markduplicates
+    - gatk_baserecalibration
+    # Parallel chains (branches), which inherit from MAIN in initiation
+    - CHAIN_CHSEX:
+      - chanjo_sexcheck
+    - CHAIN_STSUBSMT:
+      - samtools_subsample_mt
+    - CHAIN_SBCOV:
+      - sambamba_depth
+    - CHAIN_PTMME:
+      - picardtools_collectmultiplemetrics
+    - CHAIN_PTCHSM:
+      - picardtools_collecthsmetrics
+    - CHAIN_SV:
+      # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
+      - PARALLEL:
+        - cnvnator_ar
+        - expansionhunter
+        - manta
+        - tiddit
+        - DELLY_CALL:
+          - delly_call
+          - delly_reformat
+      - sv_combinevariantcallsets
+      - sv_annotate
+      - sv_varianteffectpredictor
+      - sv_vcfparser
+      - sv_rankvariant
+      - sv_reformat
+      - vcf2cytosure_ar
   - CHAIN_MAIN:
-     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
-     - PARALLEL:
-        - bcftools_mpileup
-        - GATK_HAPLOTYPECALLER:
-           - gatk_haplotypecaller
-           - gatk_genotypegvcfs
-           - gatk_gathervcfs
-           - gatk_variantrecalibration
-     - gatk_combinevariantcallsets
-     # Parallel chains (branches), which inherit from MAIN in initiation
-     - CHAIN_PEDDY:
-        - peddy_ar
-     - CHAIN_PLINK:
-        - plink
-     - CHAIN_VINTEGRITY:
-        - variant_integrity_ar
-     - CHAIN_RTEVAL:
-        - rtg_vcfeval
-     - CHAIN_GATKEVALALL:
-        - gatk_variantevalall
+    # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
+    - PARALLEL:
+      - bcftools_mpileup
+      - GATK_HAPLOTYPECALLER:
+        - gatk_haplotypecaller
+        - gatk_genotypegvcfs
+        - gatk_gathervcfs
+        - gatk_variantrecalibration
+    - gatk_combinevariantcallsets
+    # Parallel chains (branches), which inherit from MAIN in initiation
+    - CHAIN_PEDDY:
+      - peddy_ar
+    - CHAIN_PLINK:
+      - plink
+    - CHAIN_VINTEGRITY:
+      - variant_integrity_ar
+    - CHAIN_RTEVAL:
+      - rtg_vcfeval
+    - CHAIN_GATKEVALALL:
+      - gatk_variantevalall
   - CHAIN_MAIN:
-     - prepareforvariantannotationblock
-     - rhocall_ar
-     - vt_ar
-     - frequency_filter
-     - cadd_ar
-     - varianteffectpredictor
-     - vcfparser_ar
-     - rankvariant
-     - endvariantannotationblock
-     - CHAIN_GATKEVALEXO:
-        - gatk_variantevalexome
+    - prepareforvariantannotationblock
+    - rhocall_ar
+    - vt_ar
+    - frequency_filter
+    - cadd_ar
+    - varianteffectpredictor
+    - vcfparser_ar
+    - rankvariant
+    - endvariantannotationblock
+    - CHAIN_GATKEVALEXO:
+      - gatk_variantevalexome
   - qccollect_ar
   - multiqc_ar
   - varg_ar

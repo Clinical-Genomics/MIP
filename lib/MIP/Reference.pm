@@ -25,16 +25,50 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_exome_target_bed_suffix
       check_human_genome_file_endings
       get_dict_contigs
       get_select_file_contigs
-      update_exome_target_bed
+      parse_meta_file_suffixes
+      parse_exome_target_bed
       write_contigs_size_file
     };
+}
+
+sub check_exome_target_bed_suffix {
+
+## Function : Check that supplied exome target file ends with ".bed" or exit
+## Returns  :
+## Arguments: $path => Path to check for ".bed" file ending
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $path;
+
+    my $tmpl =
+      { path => { defined => 1, required => 1, store => \$path, strict_type => 1, }, };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ( $path !~ m{[.]bed$}xsm ) {
+
+        $log->fatal(
+            q{Could not find intendended '.bed file ending' for target file: }
+              . $path
+              . q{ in parameter '--exome_target_bed'},
+            $NEWLINE
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_human_genome_file_endings {
@@ -262,9 +296,116 @@ sub get_select_file_contigs {
     return @contigs;
 }
 
-sub update_exome_target_bed {
 
-## Function : Update exome_target_bed files with human genome reference source and version
+sub parse_meta_file_suffixes {
+
+## Function : Checks files to be built by combining object name prefix with suffix.
+## Returns  :
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $file_name              => File name
+##          : $meta_file_suffixes_ref => Reference to the meta file suffixes to be added to the file name {REF}
+##          : $parameter_href         => Parameter hash {REF}
+##          : $parameter_name         => MIP parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_name;
+    my $meta_file_suffixes_ref;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        meta_file_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_file_suffixes_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
+    use MIP::Parameter qw{ get_parameter_attribute set_parameter_build_file_status };
+
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+
+    my $build_status = 0;
+
+    ## Get parameter object type i.e file or directory
+    my $system_object_type = get_parameter_attribute(
+        {
+            attribute      => q{exists_check},
+            parameter_href => $parameter_href,
+            parameter_name => $parameter_name,
+        }
+    );
+
+  FILE_SUFFIX:
+    foreach my $file_suffix ( @{$meta_file_suffixes_ref} ) {
+
+        my ($exist) = check_filesystem_objects_existance(
+            {
+                object_name    => catfile( $file_name . $file_suffix ),
+                object_type    => $system_object_type,
+                parameter_name => $parameter_name,
+            }
+        );
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exist;
+    }
+
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @{$meta_file_suffixes_ref} ) {
+
+        $build_status = 1;
+    }
+
+    # Set build status for parameter
+    set_parameter_build_file_status(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => $parameter_name,
+            status         => $build_status,
+        }
+    );
+    return;
+}
+
+sub parse_exome_target_bed {
+
+## Function : Update exome_target_bed files with human genome reference source and version.
+##          : Check for correct file suffix
 ## Returns  :
 ## Arguments: $exome_target_bed_file_href     => Exome target bed {REF}
 ##          : $human_genome_reference_source  => Human genome reference source
@@ -312,6 +453,13 @@ sub update_exome_target_bed {
             $exome_target_bed_file_href->{$exome_target_bed_file} =
               delete $exome_target_bed_file_href->{$original_file_name};
         }
+
+        ## Check that supplied target file ends with ".bed" and otherwise croaks
+        check_exome_target_bed_suffix(
+            {
+                path => $exome_target_bed_file,
+            }
+        );
     }
     return;
 }

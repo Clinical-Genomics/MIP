@@ -17,7 +17,8 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
+use MIP::Constants
+  qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
 
 BEGIN {
 
@@ -25,14 +26,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_file_version_exist
       check_future_filesystem_for_directory
       check_gatk_sample_map_paths
-      check_target_bed_file_suffix
       check_vcfanno_toml
     };
 }
@@ -199,52 +199,6 @@ sub check_gatk_sample_map_paths {
         exit 1;
     }
     close $filehandle;
-    return 1;
-}
-
-sub check_target_bed_file_suffix {
-
-## Function : Check that supplied target file ends with ".bed" and otherwise exists.
-## Returns  :
-## Arguments: $log            => Log object
-##          : $parameter_name => MIP parameter name
-##          : $path           => Path to check for ".bed" file ending
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $parameter_name;
-    my $path;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $path !~ m{[.]bed$}xsm ) {
-
-        $log->fatal(
-            q{Could not find intendended '.bed file ending' for target file: }
-              . $path
-              . q{ in parameter '-}
-              . $parameter_name . q{'},
-            $NEWLINE
-        );
-        exit 1;
-    }
     return 1;
 }
 
