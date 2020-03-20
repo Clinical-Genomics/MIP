@@ -265,19 +265,16 @@ sub get_select_file_contigs {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Build regexp to get contig names
-    my @perl_commands = perl_nae_oneliners(
+    my @get_select_contigs_cmds = perl_nae_oneliners(
         {
             oneliner_name  => q{get_select_contigs},
             stdinfile_path => $select_file_path,
         }
     );
 
-    my @get_select_contigs_cmds = join $SPACE, ( @perl_commands, );
-
     # System call
     my %process_return = child_process(
         {
-            #commands_ref => [ $find_contig_cmd, ],
             commands_ref => \@get_select_contigs_cmds,
             process_type => q{open3},
         }
