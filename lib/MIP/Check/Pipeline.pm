@@ -603,16 +603,24 @@ sub check_rd_dna {
         }
     );
 
-    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-        {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            file_info_href          => $file_info_href,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
-            log                     => $log,
-        }
+## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array
+    my %contig_sort_map = (
+        select_file_contigs        => q{contigs},
+        sorted_select_file_contigs => q{contigs_size_ordered},
     );
+    while ( my ( $contigs_set_name, $sort_reference ) = each %contig_sort_map ) {
+
+        @{ $file_info_href->{$contigs_set_name} } = size_sort_select_file_contigs(
+            {
+                consensus_analysis_type =>
+                  $parameter_href->{cache}{consensus_analysis_type},
+                file_info_href          => $file_info_href,
+                hash_key_sort_reference => $sort_reference,
+                hash_key_to_sort        => q{select_file_contigs},
+                log                     => $log,
+            }
+        );
+    }
 
     ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
     parse_infiles(
