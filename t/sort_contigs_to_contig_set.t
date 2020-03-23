@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Update::Contigs} => [qw{ sort_contigs_to_contig_set }],
+        q{MIP::Contigs} => [qw{ sort_contigs_to_contig_set }],
         q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Contigs qw{ sort_contigs_to_contig_set };
+use MIP::Contigs qw{ sort_contigs_to_contig_set };
 
 diag(   q{Test sort_contigs_to_contig_set from Contigs.pm v}
-      . $MIP::Update::Contigs::VERSION
+      . $MIP::Contigs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
