@@ -608,7 +608,6 @@ sub analysis_run_bwa_mem {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
-    use MIP::Program::Sambamba qw{ sambamba_sort };
     use MIP::Sample_info qw{
       get_rg_header_line
       get_sequence_run_type

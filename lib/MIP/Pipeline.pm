@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -145,6 +145,7 @@ sub run_analyse_pipeline {
     use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna
       qw{ pipeline_analyse_dragen_rd_dna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
+    use MIP::Recipes::Pipeline::Analyse_rd_dna_panel qw{ pipeline_analyse_rd_dna_panel };
     use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
       qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -156,6 +157,7 @@ sub run_analyse_pipeline {
     my %pipeline = (
         dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
         mixed         => \&pipeline_analyse_rd_dna,
+        panel         => \&pipeline_analyse_rd_dna_panel,
         vrn           => \&pipeline_analyse_rd_dna_vcf_rerun,
         wes           => \&pipeline_analyse_rd_dna,
         wgs           => \&pipeline_analyse_rd_dna,

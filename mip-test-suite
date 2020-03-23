@@ -18,5 +18,7 @@ perl t/mip_analyse_rd_dna_vcf_rerun.test
 
 perl t/mip_analyse_dragen_rd_dna.test
 
+perl t/mip_analyse_rd_dna_panel.test
+
 ## RNA
 perl t/mip_analyse_rd_rna.test

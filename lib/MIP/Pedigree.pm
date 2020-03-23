@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -238,7 +238,7 @@ sub check_pedigree_sample_allowed_values {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %allowed_values = (
-        analysis_type => [qw{ dragen_rd_dna vrn wes wgs wts }],
+        analysis_type => [qw{ dragen_rd_dna panel vrn wes wgs wts }],
         phenotype     => [qw{ affected unaffected unknown }],
         sex           => [qw{ female male other unknown }],
     );
