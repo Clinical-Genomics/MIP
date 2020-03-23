@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -444,16 +444,24 @@ sub parse_select_file_contigs {
 
 ## Function : Parse select file contigs
 ## Returns  :
-## Arguments: $file_info_href   => File info hash {REF}
-##          : $select_file_path => Select file path
+## Arguments: $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
+##          : $file_info_href          => File info hash {REF}
+##          : $select_file_path        => Select file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $consensus_analysis_type;
     my $file_info_href;
     my $select_file_path;
 
     my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -471,7 +479,7 @@ sub parse_select_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Contigs qw{ check_select_file_contigs };
+    use MIP::Contigs qw{ check_select_file_contigs sort_contigs_to_contig_set };
     use MIP::Reference qw{ get_select_file_contigs };
 
     ## Retrieve logger object
@@ -500,8 +508,23 @@ sub parse_select_file_contigs {
                 select_file_contigs_ref => $file_info_href->{select_file_contigs},
             }
         );
-    }
 
+        ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+        my %contig_sort_map = (
+            select_file_contigs        => q{contigs},
+            sorted_select_file_contigs => q{contigs_size_ordered},
+        );
+        while ( my ( $contigs_set_name, $sort_reference ) = each %contig_sort_map ) {
+
+            @{ $file_info_href->{$contigs_set_name} } = sort_contigs_to_contig_set(
+                {
+                    consensus_analysis_type    => $consensus_analysis_type,
+                    sort_contigs_ref           => $file_info_href->{select_file_contigs},
+                    sort_reference_contigs_ref => $file_info_href->{$sort_reference},
+                }
+            );
+        }
+    }
     return 1;
 }
 1;
