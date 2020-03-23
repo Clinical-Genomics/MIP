@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -157,10 +157,10 @@ sub check_analysis_type_to_pipeline {
             strict_type => 1,
         },
         pipeline => {
-            allow       => [qw{ dragen_rd_dna rd_dna rd_dna_vcf_rerun rd_rna}],
-            defined     => 1,
-            required    => 1,
-            store       => \$pipeline,
+            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna}],
+            defined  => 1,
+            required => 1,
+            store    => \$pipeline,
             strict_type => 1,
         },
     };
@@ -173,6 +173,7 @@ sub check_analysis_type_to_pipeline {
     my %analysis_pipeline_map = (
         dragen_rd_dna => q{dragen_rd_dna},
         mixed         => q{rd_dna},
+        panel         => q{rd_dna_panel},
         vrn           => q{rd_dna_vcf_rerun},
         wes           => q{rd_dna},
         wgs           => q{rd_dna},
