@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -479,9 +479,8 @@ sub parse_select_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Contigs qw{ check_select_file_contigs };
+    use MIP::Contigs qw{ check_select_file_contigs sort_contigs_to_contig_set };
     use MIP::Reference qw{ get_select_file_contigs };
-    use MIP::Update::Contigs qw{ sort_contigs_to_contig_set };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -519,10 +518,9 @@ sub parse_select_file_contigs {
 
             @{ $file_info_href->{$contigs_set_name} } = sort_contigs_to_contig_set(
                 {
-                    consensus_analysis_type => $consensus_analysis_type,
-                    file_info_href          => $file_info_href,
-                    hash_key_sort_reference => $sort_reference,
-                    hash_key_to_sort        => q{select_file_contigs},
+                    consensus_analysis_type    => $consensus_analysis_type,
+                    sort_contigs_ref           => $file_info_href->{select_file_contigs},
+                    sort_reference_contigs_ref => $file_info_href->{$sort_reference},
                 }
             );
         }

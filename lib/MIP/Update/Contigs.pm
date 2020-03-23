@@ -16,135 +16,19 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
-use List::MoreUtils qw { any };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $LOG_NAME };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ sort_contigs_to_contig_set update_contigs_for_run };
-}
-
-sub sort_contigs_to_contig_set {
-
-## Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-## Returns  : @sorted_contigs
-## Arguments: $consensus_analysis_type => Consensus analysis_type {REF}
-##          : $file_info_href          => File info hash {REF}
-##          : $hash_key_sort_reference => The hash keys sort reference
-##          : $hash_key_to_sort        => The keys to sort
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $consensus_analysis_type;
-    my $file_info_href;
-    my $hash_key_sort_reference;
-    my $hash_key_to_sort;
-
-    my $tmpl = {
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        hash_key_sort_reference => {
-            defined     => 1,
-            required    => 1,
-            store       => \$hash_key_sort_reference,
-            strict_type => 1,
-        },
-        hash_key_to_sort => {
-            defined     => 1,
-            required    => 1,
-            store       => \$hash_key_to_sort,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    my @sorted_contigs;
-
-    ## Sanity check
-    if ( not exists $file_info_href->{$hash_key_to_sort} ) {
-
-        $log->fatal(q{Hash key to sort does not exist in supplied hash });
-        exit 1;
-    }
-    if ( not exists $file_info_href->{$hash_key_sort_reference} ) {
-
-        $log->fatal(q{Hash key for reference does not exist in supplied hash });
-        exit 1;
-    }
-
-    ## Sort the contigs depending on reference array
-  REF_ELEMENT:
-    foreach my $element ( @{ $file_info_href->{$hash_key_sort_reference} } ) {
-
-        ## If present in hash of array to sort push to sorted_contigs
-        if (
-            not check_element_exist_hash_of_array(
-                {
-                    element  => $element,
-                    hash_ref => $file_info_href,
-                    key      => $hash_key_to_sort,
-                }
-            )
-          )
-        {
-
-            push @sorted_contigs, $element;
-        }
-    }
-
-    ## Test if all contigs collected from select file was sorted by reference contig array
-    if ( @sorted_contigs
-        and scalar @{ $file_info_href->{$hash_key_to_sort} } != scalar @sorted_contigs )
-    {
-
-      SORT_ELEMENT:
-        foreach my $element ( @{ $file_info_href->{$hash_key_to_sort} } ) {
-
-            ## If element is not part of array
-            if ( not any { $_ eq $element } @sorted_contigs ) {
-
-                ## Special case when analysing wes since Mitochondrial contigs have no baits in exome capture kits
-                next SORT_ELEMENT
-                  if (  $consensus_analysis_type eq q{wes}
-                    and $element =~ / MT$ | M$ /sxm );
-
-                $log->fatal( q{Could not detect '##contig'= }
-                      . $element
-                      . q{ from meta data header in '-vcfparser_select_file' in reference contigs collected from '-human_genome_reference'}
-                );
-                exit 1;
-            }
-        }
-    }
-    return @sorted_contigs;
+    our @EXPORT_OK = qw{ update_contigs_for_run };
 }
 
 sub update_contigs_for_run {
