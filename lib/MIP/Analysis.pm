@@ -28,10 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_analysis_type_to_pipeline
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
     };
@@ -133,6 +134,63 @@ sub get_vcf_parser_analysis_suffix {
         push @analysis_suffixes, $EMPTY_STR;
     }
     return @analysis_suffixes;
+}
+
+sub check_analysis_type_to_pipeline {
+
+## Function : Check if consensus analysis type is compatible with the pipeline
+## Returns  :
+## Arguments: $analysis_type => Analysis type
+##          : $pipeline      => Pipeline
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_type;
+    my $pipeline;
+
+    my $tmpl = {
+        analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_type,
+            strict_type => 1,
+        },
+        pipeline => {
+            allow       => [qw{ dragen_rd_dna rd_dna rd_dna_vcf_rerun rd_rna}],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %analysis_pipeline_map = (
+        dragen_rd_dna => q{dragen_rd_dna},
+        mixed         => q{rd_dna},
+        vrn           => q{rd_dna_vcf_rerun},
+        wes           => q{rd_dna},
+        wgs           => q{rd_dna},
+        wts           => q{rd_rna},
+    );
+
+    if ( $analysis_pipeline_map{$analysis_type} ne $pipeline ) {
+
+        $log->fatal(
+qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline}
+        );
+        $log->fatal(
+qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type}
+        );
+        $log->fatal(q{Aborting run});
+        exit 1;
+    }
+    return 1;
 }
 
 1;
