@@ -38,7 +38,7 @@ use MIP::Active_parameter qw{
   set_parameter_reference_dir_path
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
-use MIP::Analysis qw{ get_overall_analysis_type };
+use MIP::Analysis qw{ check_analysis_type_to_pipeline get_overall_analysis_type };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Contigs qw{ set_contigs };
@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.53;
+    our $VERSION = 1.54;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -91,6 +91,7 @@ Readonly my %RECIPE_PARAMETERS_TO_CHECK => (
     ],
     elements => [qw{ associated_recipe decompose_normalize_references }],
 );
+Readonly my $MINUS_ONE => -1;
 
 sub mip_analyse {
 
@@ -270,6 +271,12 @@ sub mip_analyse {
     );
 
 ### Checks
+    check_analysis_type_to_pipeline(
+        {
+            pipeline      => lc _parent_module( {} ),
+            analysis_type => $consensus_analysis_type,
+        }
+    );
 
 ## Parse existence of files and directories
     parse_parameter_files(
@@ -549,6 +556,21 @@ if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
 elsif ($EVAL_ERROR) {
 
     say {*STDERR} q{A non-autodie exception.};
+}
+
+sub _parent_module {
+
+## Function : Returns the name of the module that called this one
+## Returns  : $parent_module
+## Arguments:
+
+    ## Get full path to module
+    my $parent_module = ( caller 1 )[0];
+
+    ## Isolate module
+    $parent_module = ( split /::/xms, $parent_module )[$MINUS_ONE];
+
+    return $parent_module;
 }
 
 1;

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -129,6 +129,7 @@ sub get_dependency_tree_from_definition_file {
                 qw{
                   dragen_rd_dna
                   rd_dna
+                  rd_dna_panel
                   rd_dna_vcf_rerun
                   rd_rna }
             ],
@@ -178,6 +179,7 @@ sub get_parameter_definition_file_paths {
                   mip
                   not_required
                   rd_dna
+                  rd_dna_panel
                   rd_dna_vcf_rerun
                   rd_rna
                   required
@@ -201,6 +203,7 @@ sub get_parameter_definition_file_paths {
         mip              => [qw{ mip }],
         not_required     => [qw { not_required }],
         rd_dna           => [qw{ mip analyse rd_dna }],
+        rd_dna_panel     => [qw{ mip analyse rd_dna_panel }],
         rd_dna_vcf_rerun => [qw{ mip analyse rd_dna_vcf_rerun }],
         rd_rna           => [qw{ mip analyse rd_rna }],
         required         => [qw { required }],
@@ -291,6 +294,7 @@ sub get_parameter_from_definition_files {
                   mip
                   not_required
                   rd_dna
+                  rd_dna_panel
                   rd_dna_vcf_rerun
                   rd_rna
                   required
