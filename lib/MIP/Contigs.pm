@@ -1,15 +1,19 @@
 package MIP::Contigs;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
+
+## CPANM
 use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use List::Util qw{ any };
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME %PRIMARY_CONTIG $SPACE };
@@ -20,10 +24,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_select_file_contigs set_contigs };
+    our @EXPORT_OK = qw{ check_select_file_contigs
+      set_contigs
+      sort_contigs_to_contig_set
+    };
 
 }
 
@@ -162,6 +169,98 @@ sub set_contigs {
         );
     }
     return;
+}
+
+sub sort_contigs_to_contig_set {
+
+## Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+## Returns  : @sorted_contigs
+## Arguments: $consensus_analysis_type    => Consensus analysis_type {REF}
+##          : $sort_contigs_ref           => Contigs to sort according to reference contig set
+##          : $sort_reference_contigs_ref => Contigs to use as reference map when sorting
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $sort_contigs_ref;
+    my $sort_reference_contigs_ref;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        sort_contigs_ref => {
+            default  => [],
+            required => 1,
+            store    => \$sort_contigs_ref,
+        },
+        sort_reference_contigs_ref => {
+            default  => [],
+            defined  => 1,
+            required => 1,
+            store    => \$sort_reference_contigs_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @sorted_contigs;
+
+    ## Sanity check
+    if ( not @{$sort_contigs_ref} ) {
+
+        $log->fatal(q{Nothing to sort in supplied sort contigs set });
+        exit 1;
+    }
+    if ( not @{$sort_reference_contigs_ref} ) {
+
+        $log->fatal(q{No contigs to use in supplied sort reference contig set });
+        exit 1;
+    }
+
+    ## Sort the contigs depending on reference array
+  REF_ELEMENT:
+    foreach my $element ( @{$sort_reference_contigs_ref} ) {
+
+        ## If present in hash of array to sort push to @sorted_contigs
+        if ( any { $_ eq $element } @{$sort_contigs_ref} ) {
+
+            push @sorted_contigs, $element;
+        }
+    }
+
+    ## Test if all contigs collected from select file was sorted by reference contig array
+    if ( @sorted_contigs
+        and scalar @{$sort_contigs_ref} != scalar @sorted_contigs )
+    {
+
+      SORT_ELEMENT:
+        foreach my $element ( @{$sort_contigs_ref} ) {
+
+            ## If element is not part of array
+            if ( not any { $_ eq $element } @sorted_contigs ) {
+
+                ## Special case when analysing wes since Mitochondrial contigs have no baits in exome capture kits
+                next SORT_ELEMENT
+                  if (  $consensus_analysis_type eq q{wes}
+                    and $element =~ / MT$ | M$ /sxm );
+
+                $log->fatal( q{Could not detect 'contig'= }
+                      . $element
+                      . q{ from column 1 in '-vcfparser_select_file' in reference contigs collected from '-human_genome_reference'}
+                );
+                exit 1;
+            }
+        }
+    }
+    return @sorted_contigs;
 }
 
 1;

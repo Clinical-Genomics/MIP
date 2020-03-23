@@ -64,15 +64,16 @@ my $log = test_log( {} );
 my $consensus_analysis_type = q{wes};
 
 ## Given a reference hash of array, when no hash of array to sort exists
-my %file_info = ( contigs_size_ordered => [qw{ chr1 chr2 chr3 chrM}], );
+my %file_info = ( contigs_size_ordered => [qw{ chr1 chr2 chr3 chrM}],
+select_file_contigs => [],
+);
 
 trap {
     sort_contigs_to_contig_set(
         {
             consensus_analysis_type => $consensus_analysis_type,
-            file_info_href          => \%file_info,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
+            sort_contigs_ref        => $file_info{select_file_contigs},
+            sort_reference_contigs_ref => $file_info{contigs_size_ordered},
         }
     )
 };
@@ -83,15 +84,15 @@ like( $trap->stderr, qr/FATAL/xms,
     q{Throw fatal log message if hash key to sort does not exist in supplied hash} );
 
 ## Given a hash of array to sort, when no hash of array as reference exists
-%file_info = ( select_file_contigs => [qw{chr2 chr1 chrM chr3}], );
+%file_info = ( contigs_size_ordered => [],
+select_file_contigs => [qw{chr2 chr1 chrM chr3}], );
 
 trap {
     sort_contigs_to_contig_set(
         {
             consensus_analysis_type => $consensus_analysis_type,
-            file_info_href          => \%file_info,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
+            sort_contigs_ref        => $file_info{select_file_contigs},
+            sort_reference_contigs_ref => $file_info{contigs_size_ordered},
         }
     )
 };
@@ -111,9 +112,8 @@ like( $trap->stderr, qr/FATAL/xms,
 @{ $file_info{sorted_select_file_contigs} } = sort_contigs_to_contig_set(
     {
         consensus_analysis_type => $consensus_analysis_type,
-        file_info_href          => \%file_info,
-        hash_key_sort_reference => q{contigs_size_ordered},
-        hash_key_to_sort        => q{select_file_contigs},
+        sort_contigs_ref        => $file_info{select_file_contigs},
+        sort_reference_contigs_ref => $file_info{contigs_size_ordered},
     }
 );
 
@@ -137,9 +137,8 @@ trap {
     sort_contigs_to_contig_set(
         {
             consensus_analysis_type => $consensus_analysis_type,
-            file_info_href          => \%file_info,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
+            sort_contigs_ref        => $file_info{select_file_contigs},
+            sort_reference_contigs_ref => $file_info{contigs_size_ordered},
         }
     )
 };
@@ -158,9 +157,8 @@ like( $trap->stderr, qr/FATAL/xms,
 @{ $file_info{sorted_select_file_contigs} } = sort_contigs_to_contig_set(
     {
         consensus_analysis_type => $consensus_analysis_type,
-        file_info_href          => \%file_info,
-        hash_key_sort_reference => q{contigs_size_ordered},
-        hash_key_to_sort        => q{select_file_contigs},
+        sort_contigs_ref        => $file_info{select_file_contigs},
+        sort_reference_contigs_ref => $file_info{contigs_size_ordered},
     }
 );
 
