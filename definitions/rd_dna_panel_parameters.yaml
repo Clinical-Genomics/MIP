@@ -143,7 +143,7 @@ recipe_core_number:
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
     gzip_fastq: 0
-    markduplicates: 13
+    markduplicates: 1
     multiqc_ar: 1
     picardtools_collecthsmetrics: 1
     picardtools_collectmultiplemetrics: 1
@@ -372,43 +372,12 @@ markduplicates:
   outfile_suffix: ".bam"
   program_executables:
     - picard
-    - sambamba
   type: recipe
-markduplicates_picardtools_markduplicates:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 markduplicates_picardtools_opt_dup_dist:
   associated_recipe:
     - markduplicates
   data_type: SCALAR
   default: 2500
-  type: recipe_argument
-markduplicates_sambamba_markdup:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-markduplicates_sambamba_markdup_hash_table_size:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 262144
-  type: recipe_argument
-markduplicates_sambamba_markdup_io_buffer_size:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 2048
-  type: recipe_argument
-markduplicates_sambamba_markdup_overflow_list_size:
-  associated_recipe:
-    - markduplicates
-  data_type: SCALAR
-  default: 200000
   type: recipe_argument
 ## GATK BAM Calibration
 gatk_baserecalibration:
