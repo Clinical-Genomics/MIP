@@ -502,8 +502,6 @@ sub analysis_markduplicates_panel {
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
-##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
