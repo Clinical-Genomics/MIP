@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -151,6 +151,8 @@ sub pipeline_analyse_rd_dna_panel {
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration
+      qw{ analysis_gatk_baserecalibration_panel };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
@@ -206,14 +208,15 @@ sub pipeline_analyse_rd_dna_panel {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus  => \&analysis_analysisrunstatus,
-        bwa_mem            => undef,                             # Depends on genome build
-        fastqc_ar          => \&analysis_fastqc,
-        gzip_fastq         => \&analysis_gzip_fastq,
-        markduplicates     => \&analysis_markduplicates_panel,
-        multiqc_ar         => \&analysis_multiqc,
-        samtools_merge     => \&analysis_samtools_merge_panel,
-        version_collect_ar => \&analysis_mip_vercollect,
+        analysisrunstatus => \&analysis_analysisrunstatus,
+        bwa_mem           => undef,                          # Depends on genome build
+        fastqc_ar         => \&analysis_fastqc,
+        gatk_baserecalibration => \&analysis_gatk_baserecalibration_panel,
+        gzip_fastq             => \&analysis_gzip_fastq,
+        markduplicates         => \&analysis_markduplicates_panel,
+        multiqc_ar             => \&analysis_multiqc,
+        samtools_merge         => \&analysis_samtools_merge_panel,
+        version_collect_ar     => \&analysis_mip_vercollect,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)

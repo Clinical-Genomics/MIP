@@ -134,7 +134,7 @@ recipe_core_number:
     fastqc_ar: 0
     frequency_annotation: 13
     frequency_filter: 13
-    gatk_baserecalibration: 13
+    gatk_baserecalibration: 1
     gatk_combinevariantcallsets: 1
     gatk_gathervcfs: 1
     gatk_genotypegvcfs: 1

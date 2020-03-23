@@ -26,11 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rna };
+      qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_panel analysis_gatk_baserecalibration_rna };
 
 }
 
@@ -497,6 +497,321 @@ sub analysis_gatk_baserecalibration {
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $store_outfile_path,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{cram},
+                id               => $sample_id,
+                path             => $store_outfile_path,
+                path_index       => $store_outfile_path . $DOT . q{crai},
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        submit_recipe(
+            {
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
+                job_id_href             => $job_id_href,
+                job_reservation_name    => $active_parameter_href->{job_reservation_name},
+                log                     => $log,
+                recipe_file_path        => $recipe_file_path,
+                sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
+            }
+        );
+    }
+    return 1;
+}
+
+sub analysis_gatk_baserecalibration_panel {
+
+## Function : GATK baserecalibrator/GatherBQSRReports/ApplyBQSR to recalibrate bases before variant calling. BaseRecalibrator/GatherBQSRReports/ApplyBQSR will be executed within the same sbatch script.
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $parameter_href;
+    my $recipe_name;
+    my $sample_info_href;
+    my $sample_id;
+
+    ## Default(s)
+    my $case_id;
+    my $profile_base_command;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Gatk qw{ gatk_applybqsr gatk_baserecalibrator };
+    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path        = $io{in}{file_path};
+
+    my %rec_atr = get_recipe_attributes(
+        {
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $job_id_chain       = $rec_atr{chain};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my %recipe_resource    = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+    my $core_number = $recipe_resource{core_number};
+
+    ## Outpaths
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
+            }
+        )
+    );
+
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = $io{out}{file_path};
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $filehandle = IO::Handle->new();
+
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            temp_directory                  => $active_parameter_href->{temp_directory},
+        }
+    );
+
+    ### SHELL:
+
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
+        {
+            core_number               => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
+        }
+    );
+
+    ## GATK BaseRecalibrator
+    say {$filehandle} q{## GATK BaseRecalibrator};
+
+    my $base_quality_score_recalibration_file = $outfile_path_prefix . $DOT . q{grp};
+    gatk_baserecalibrator(
+        {
+            filehandle           => $filehandle,
+            infile_path          => $infile_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            known_sites_ref =>
+              \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
+            memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path       => $base_quality_score_recalibration_file,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $active_parameter_href->{temp_directory},
+            verbosity          => $active_parameter_href->{gatk_logging_level},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## GATK ApplyBQSR
+    say {$filehandle} q{## GATK ApplyBQSR};
+
+    gatk_applybqsr(
+        {
+            base_quality_score_recalibration_file =>
+              $base_quality_score_recalibration_file,
+            filehandle           => $filehandle,
+            infile_path          => $infile_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            verbosity            => $active_parameter_href->{gatk_logging_level},
+            read_filters_ref =>
+              \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
+            referencefile_path => $referencefile_path,
+            static_quantized_quals_ref =>
+              \@{ $active_parameter_href->{gatk_baserecalibration_static_quantized_quals}
+              },
+            outfile_path       => $outfile_path,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $active_parameter_href->{temp_directory},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Create BAM to CRAM for long term storage
+    my $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
+
+    say {$filehandle} q{## Convert BAM to CRAM for long term storage};
+    samtools_view(
+        {
+            filehandle         => $filehandle,
+            infile_path        => $outfile_path,
+            outfile_path       => $store_outfile_path,
+            output_format      => q{cram},
+            referencefile_path => $referencefile_path,
+            thread_number      => $parallel_processes,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Index CRAM
+    samtools_index(
+        {
+            filehandle  => $filehandle,
+            infile_path => $store_outfile_path,
+        }
+    );
+
+    close $filehandle;
+
+    if ( $recipe_mode == 1 ) {
+
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                infile           => $outfile_name_prefix,
+                path             => $store_outfile_path,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
