@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Parameter qw{ get_cache };
 
 BEGIN {
     require Exporter;
@@ -135,7 +135,7 @@ sub check_dragen_rd_dna {
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs };
-    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
 
@@ -163,10 +163,17 @@ sub check_dragen_rd_dna {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Collect select file contigs to loop over downstream
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     parse_select_file_contigs(
         {
-            file_info_href   => $file_info_href,
-            select_file_path => $active_parameter_href->{vcfparser_select_file},
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+            select_file_path        => $active_parameter_href->{vcfparser_select_file},
         }
     );
 
@@ -242,17 +249,6 @@ sub check_dragen_rd_dna {
             file_info_href      => $file_info_href,
             found_male          => $active_parameter_href->{found_male},
             log                 => $log,
-        }
-    );
-
-    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-        {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            file_info_href          => $file_info_href,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
-            log                     => $log,
         }
     );
 
@@ -409,7 +405,7 @@ sub check_rd_dna {
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed };
-    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -446,10 +442,17 @@ sub check_rd_dna {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     parse_select_file_contigs(
         {
-            file_info_href   => $file_info_href,
-            select_file_path => $active_parameter_href->{vcfparser_select_file},
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+            select_file_path        => $active_parameter_href->{vcfparser_select_file},
         }
     );
 
@@ -603,17 +606,6 @@ sub check_rd_dna {
         }
     );
 
-    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-        {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            file_info_href          => $file_info_href,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
-            log                     => $log,
-        }
-    );
-
     ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
     parse_infiles(
         {
@@ -751,7 +743,7 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Contigs qw{ update_contigs_for_run };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -777,10 +769,17 @@ sub check_rd_dna_vcf_rerun {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
 ## Collect select file contigs to loop over downstream
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     parse_select_file_contigs(
         {
-            file_info_href   => $file_info_href,
-            select_file_path => $active_parameter_href->{vcfparser_select_file},
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+            select_file_path        => $active_parameter_href->{vcfparser_select_file},
         }
     );
 
@@ -856,17 +855,6 @@ sub check_rd_dna_vcf_rerun {
             file_info_href      => $file_info_href,
             found_male          => $active_parameter_href->{found_male},
             log                 => $log,
-        }
-    );
-
-    ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-        {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            file_info_href          => $file_info_href,
-            hash_key_sort_reference => q{contigs_size_ordered},
-            hash_key_to_sort        => q{select_file_contigs},
-            log                     => $log,
         }
     );
 
