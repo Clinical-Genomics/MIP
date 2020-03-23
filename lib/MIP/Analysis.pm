@@ -32,7 +32,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      check_analysis_type_compatibility
+      check_analysis_type_to_pipeline
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
     };
@@ -136,7 +136,7 @@ sub get_vcf_parser_analysis_suffix {
     return @analysis_suffixes;
 }
 
-sub check_analysis_type_compatibility {
+sub check_analysis_type_to_pipeline {
 
 ## Function : Check if consensus analysis type is compatible with the pipeline
 ## Returns  :
@@ -170,8 +170,6 @@ sub check_analysis_type_compatibility {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my @analysis_types = qw{ dragen_rd_dna vrn wes wgs wts };
-
     my %analysis_pipeline_map = (
         dragen_rd_dna => q{dragen_rd_dna},
         mixed         => q{rd_dna},
@@ -184,7 +182,7 @@ sub check_analysis_type_compatibility {
     if ( $analysis_pipeline_map{$analysis_type} ne $pipeline ) {
 
         $log->fatal(
-qq{Analysis type: $analysis_type is not compatiple with MIP pipeline: $pipeline}
+qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline}
         );
         $log->fatal(
 qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type}

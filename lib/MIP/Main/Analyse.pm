@@ -38,7 +38,7 @@ use MIP::Active_parameter qw{
   set_parameter_reference_dir_path
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
-use MIP::Analysis qw{ check_analysis_type_compatibility get_overall_analysis_type };
+use MIP::Analysis qw{ check_analysis_type_to_pipeline get_overall_analysis_type };
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Contigs qw{ set_contigs };
@@ -271,7 +271,7 @@ sub mip_analyse {
     );
 
 ### Checks
-    check_analysis_type_compatibility(
+    check_analysis_type_to_pipeline(
         {
             pipeline      => lc _parent_module( {} ),
             analysis_type => $consensus_analysis_type,

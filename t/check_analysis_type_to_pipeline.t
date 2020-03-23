@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Analysis}       => [qw{ check_analysis_type_compatibility }],
+        q{MIP::Analysis}       => [qw{ check_analysis_type_to_pipeline }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Analysis qw{ check_analysis_type_compatibility };
+use MIP::Analysis qw{ check_analysis_type_to_pipeline };
 
-diag(   q{Test check_analysis_type_compatibility from Analysis.pm v}
+diag(   q{Test check_analysis_type_to_pipeline from Analysis.pm v}
       . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -61,7 +61,7 @@ diag(   q{Test check_analysis_type_compatibility from Analysis.pm v}
 my $log = test_log( {} );
 
 ## Given compatible analysis type
-my $is_ok = check_analysis_type_compatibility(
+my $is_ok = check_analysis_type_to_pipeline(
     {
         analysis_type => q{wgs},
         pipeline      => q{rd_dna},
@@ -73,7 +73,7 @@ ok( $is_ok, q{Analysis type and pipeline is compatible} );
 
 ## Given a incompatible analysis type
 trap {
-    check_analysis_type_compatibility(
+    check_analysis_type_to_pipeline(
         {
             analysis_type => q{wts},
             pipeline      => q{rd_dna},
