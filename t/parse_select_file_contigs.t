@@ -60,16 +60,21 @@ diag(   q{Test parse_select_file_contigs from File_info.pm v}
 my $log = test_log( { no_screen => 0, } );
 
 ## Given a vcfparser select file path and contigs
-my %file_info =
-  ( contigs => [qw{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT }], );
+my $consensus_analysis_type = q{wes};
+my %file_info               = (
+    contigs => [qw{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT }],
+    contigs_size_ordered =>
+      [qw{ 1 2 3 4 5 6 7 X 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 Y MT }]
+);
 
 my $vcfparser_select_file_path =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 
 my $is_ok = parse_select_file_contigs(
     {
-        file_info_href   => \%file_info,
-        select_file_path => $vcfparser_select_file_path,
+        consensus_analysis_type => $consensus_analysis_type,
+        file_info_href          => \%file_info,
+        select_file_path        => $vcfparser_select_file_path,
     }
 );
 
