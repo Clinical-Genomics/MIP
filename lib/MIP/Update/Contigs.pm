@@ -21,6 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $LOG_NAME };
 
 BEGIN {
     require Exporter;
@@ -30,18 +31,17 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ size_sort_select_file_contigs update_contigs_for_run };
+    our @EXPORT_OK = qw{ sort_contigs_to_contig_set update_contigs_for_run };
 }
 
-sub size_sort_select_file_contigs {
+sub sort_contigs_to_contig_set {
 
 ## Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ## Returns  : @sorted_contigs
 ## Arguments: $consensus_analysis_type => Consensus analysis_type {REF}
-##          : $file_info_href              => File info hash {REF}
-##          : $hash_key_sort_reference     => The hash keys sort reference
-##          : $hash_key_to_sort            => The keys to sort
-##          : $log                         => Log object
+##          : $file_info_href          => File info hash {REF}
+##          : $hash_key_sort_reference => The hash keys sort reference
+##          : $hash_key_to_sort        => The keys to sort
 
     my ($arg_href) = @_;
 
@@ -50,7 +50,6 @@ sub size_sort_select_file_contigs {
     my $file_info_href;
     my $hash_key_sort_reference;
     my $hash_key_to_sort;
-    my $log;
 
     my $tmpl = {
         consensus_analysis_type => {
@@ -78,16 +77,14 @@ sub size_sort_select_file_contigs {
             store       => \$hash_key_to_sort,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my @sorted_contigs;
 

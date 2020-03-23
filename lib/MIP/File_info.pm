@@ -444,16 +444,24 @@ sub parse_select_file_contigs {
 
 ## Function : Parse select file contigs
 ## Returns  :
-## Arguments: $file_info_href   => File info hash {REF}
-##          : $select_file_path => Select file path
+## Arguments: $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
+##          : $file_info_href          => File info hash {REF}
+##          : $select_file_path        => Select file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $consensus_analysis_type;
     my $file_info_href;
     my $select_file_path;
 
     my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -473,6 +481,7 @@ sub parse_select_file_contigs {
 
     use MIP::Contigs qw{ check_select_file_contigs };
     use MIP::Reference qw{ get_select_file_contigs };
+    use MIP::Update::Contigs qw{ sort_contigs_to_contig_set };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -500,8 +509,24 @@ sub parse_select_file_contigs {
                 select_file_contigs_ref => $file_info_href->{select_file_contigs},
             }
         );
-    }
 
+        ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+        my %contig_sort_map = (
+            select_file_contigs        => q{contigs},
+            sorted_select_file_contigs => q{contigs_size_ordered},
+        );
+        while ( my ( $contigs_set_name, $sort_reference ) = each %contig_sort_map ) {
+
+            @{ $file_info_href->{$contigs_set_name} } = sort_contigs_to_contig_set(
+                {
+                    consensus_analysis_type => $consensus_analysis_type,
+                    file_info_href          => $file_info_href,
+                    hash_key_sort_reference => $sort_reference,
+                    hash_key_to_sort        => q{select_file_contigs},
+                }
+            );
+        }
+    }
     return 1;
 }
 1;

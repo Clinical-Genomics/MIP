@@ -170,7 +170,6 @@ sub perl_nae_oneliners {
     ## Oneliner dispatch table
     my %oneliner = (
         get_dict_contigs          => \&_get_dict_contigs,
-        get_select_contigs        => \&_get_select_contigs,
         get_select_contigs_by_col => \&_get_select_contigs_by_col,
         get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
@@ -251,29 +250,6 @@ sub _get_dict_contigs {
     $get_dict_contigs .= q?print $contig_name, q{,};} }'?;
 
     return $get_dict_contigs;
-}
-
-sub _get_select_contigs {
-
-## Function : Return contig names from file header
-## Returns  : $get_select_contigs
-## Arguments:
-
-    my ($arg_href) = @_;
-
-    # Get contig name
-    my $get_select_contigs = q?'if ($_=~/ contig=(\w+) /xsm) { ?;
-
-    # Alias capture
-    $get_select_contigs .= q?my $contig_name = $1; ?;
-
-    # Write contig name and comma
-    $get_select_contigs .= q?print $contig_name, q{,};} ?;
-
-    # Quit if "#CHROM" found in line
-    $get_select_contigs .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
-
-    return $get_select_contigs;
 }
 
 sub _get_select_contigs_by_col {
