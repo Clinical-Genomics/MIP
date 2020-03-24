@@ -50,7 +50,7 @@ singularity:
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker://clinicalgenomics/expansionhunter:3.1.2
+    uri: docker://clinicalgenomics/expansionhunter:3.2.2
   fastqc:
     executable:
       fastqc:
