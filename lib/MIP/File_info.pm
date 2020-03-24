@@ -24,10 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_parameter_metafiles
       set_alt_loci_contigs
       set_bam_contigs
       set_dict_contigs
@@ -37,6 +38,116 @@ BEGIN {
       set_select_file_contigs
       parse_select_file_contigs
     };
+}
+
+sub check_parameter_metafiles {
+
+## Function : Checks parameter metafile exists
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $file_info_href        => File info hash {REF}
+##          : $parameter_href        => Holds all parameters
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Reference qw{ parse_meta_file_suffixes };
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$file_info_href} ) {
+
+        ## Active parameter
+        my $parameter = $active_parameter_href->{$parameter_name};
+
+        next PARAMETER if ( not $parameter );
+
+        my @associated_recipes = get_parameter_attribute(
+            {
+                attribute      => q{associated_recipe},
+                parameter_href => $parameter_href,
+                parameter_name => $parameter_name,
+            }
+        );
+        ## Find any active recipe among associated recipes
+        my $has_active_recipe =
+          grep { defined and $_ >= 1 } @{$active_parameter_href}{@associated_recipes};
+
+        next PARAMETER if ( not $has_active_recipe );
+
+        if ( ref $parameter eq q{HASH} ) {
+
+          PATH:
+            for my $path ( keys %{$parameter} ) {
+
+                ## Checks files to be built by combining filename stub with fileendings
+                parse_meta_file_suffixes(
+                    {
+                        active_parameter_href => $active_parameter_href,
+                        file_name             => $path,
+                        meta_file_suffixes_ref =>
+                          \@{ $file_info_href->{$parameter_name} },
+                        parameter_href => $parameter_href,
+                        parameter_name => $parameter_name,
+                    }
+                );
+
+                ## If single $path needs building - build for all as switch
+                ## is set on parameter_name and not path
+                my $build_status = get_parameter_attribute(
+                    {
+                        attribute      => q{build_file},
+                        parameter_href => $parameter_href,
+                        parameter_name => $parameter_name,
+                    }
+                );
+                next PARAMETER if ($build_status);
+            }
+            next PARAMETER;
+        }
+
+        ## Checks files to be built by combining filename stub with fileendings
+        parse_meta_file_suffixes(
+            {
+                active_parameter_href => $active_parameter_href,
+                file_name             => $active_parameter_href->{human_genome_reference},
+                meta_file_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
+                parameter_href         => $parameter_href,
+                parameter_name         => $parameter_name,
+            }
+        );
+    }
+    return;
 }
 
 sub set_alt_loci_contigs {

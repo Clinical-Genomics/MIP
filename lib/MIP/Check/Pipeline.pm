@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -128,10 +128,9 @@ sub check_dragen_rd_dna {
       check_vep_custom_annotation
       check_vep_api_cache_versions
       check_vep_plugin };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::File_info qw{ parse_select_file_contigs };
+    use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
@@ -397,10 +396,9 @@ sub check_rd_dna {
       check_vep_plugin
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::File_info qw{ parse_select_file_contigs };
+    use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -744,9 +742,10 @@ sub check_rd_dna_panel {
       check_vep_plugin
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
+    use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
+    use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -1020,10 +1019,9 @@ sub check_rd_dna_vcf_rerun {
       check_vep_custom_annotation
       check_vep_api_cache_versions
       check_vep_plugin };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
-    use MIP::File_info qw{ parse_select_file_contigs };
+    use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
@@ -1249,9 +1247,9 @@ sub check_rd_rna {
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter
       qw{ check_recipe_fastq_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path };
-    use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
+    use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
