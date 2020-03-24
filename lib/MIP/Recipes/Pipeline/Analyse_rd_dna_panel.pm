@@ -157,6 +157,10 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
+      qw{ analysis_picardtools_collecthsmetrics };
+    use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
+      qw{ analysis_picardtools_collectmultiplemetrics };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
@@ -209,16 +213,19 @@ sub pipeline_analyse_rd_dna_panel {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus => \&analysis_analysisrunstatus,
-        bwa_mem           => undef,                          # Depends on genome build
-        fastqc_ar         => \&analysis_fastqc,
-        gatk_baserecalibration => \&analysis_gatk_baserecalibration_panel,
-        gzip_fastq             => \&analysis_gzip_fastq,
-        markduplicates         => \&analysis_markduplicates_panel,
-        multiqc_ar             => \&analysis_multiqc,
+        analysisrunstatus            => \&analysis_analysisrunstatus,
+        bwa_mem                      => undef,
+        fastqc_ar                    => \&analysis_fastqc,
+        gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
+        gzip_fastq                   => \&analysis_gzip_fastq,
+        markduplicates               => \&analysis_markduplicates_panel,
+        multiqc_ar                   => \&analysis_multiqc,
+        picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
+        picardtools_collectmultiplemetrics =>
+          \&analysis_picardtools_collectmultiplemetrics,
         sambamba_depth         => \&analysis_sambamba_depth,
-        samtools_merge         => \&analysis_samtools_merge_panel,
-        version_collect_ar     => \&analysis_mip_vercollect,
+        samtools_merge     => \&analysis_samtools_merge_panel,
+        version_collect_ar => \&analysis_mip_vercollect,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
