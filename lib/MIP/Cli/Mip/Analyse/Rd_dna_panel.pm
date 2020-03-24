@@ -295,27 +295,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{split_fastq_file} => (
-            cmd_aliases   => [qw{ sfq }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Split fastq files in batches of X reads and exits},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{split_fastq_file_read_batch} => (
-            cmd_aliases   => [qw{ sfqrdb }],
-            cmd_flag      => q{spt_fsq_rd_bt},
-            cmd_tags      => [q{Default: 25,000,000}],
-            documentation => q{Number of sequence reads to place in each batch},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_aliases   => [qw{ gz }],
             cmd_tags      => [q{Analysis recipe switch}],
