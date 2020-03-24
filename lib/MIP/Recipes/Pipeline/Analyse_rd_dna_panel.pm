@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -157,6 +157,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
@@ -215,6 +216,7 @@ sub pipeline_analyse_rd_dna_panel {
         gzip_fastq             => \&analysis_gzip_fastq,
         markduplicates         => \&analysis_markduplicates_panel,
         multiqc_ar             => \&analysis_multiqc,
+        sambamba_depth         => \&analysis_sambamba_depth,
         samtools_merge         => \&analysis_samtools_merge_panel,
         version_collect_ar     => \&analysis_mip_vercollect,
     );
