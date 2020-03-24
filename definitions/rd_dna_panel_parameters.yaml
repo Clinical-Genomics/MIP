@@ -53,7 +53,6 @@ expected_coverage:
 ## genomeAnalysisToolKitPath
 gatk_logging_level:
   associated_recipe:
-    - bcftools_mpileup
     - gatk_baserecalibration
     - gatk_combinevariantcallsets
     - gatk_gathervcfs
@@ -84,7 +83,6 @@ gatk_use_new_qual_calculator:
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - gatk_baserecalibration
     - gatk_haplotypecaller
@@ -104,7 +102,6 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - gatk_baserecalibration
     - gatk_haplotypecaller
@@ -128,7 +125,6 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_mpileup: 16
     bwa_mem: 36
     endvariantannotationblock: 1
     fastqc_ar: 0
@@ -152,7 +148,6 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    split_fastq_file: 4
     variant_integrity_ar: 1
     version_collect_ar: 1
     vt_ar: 13
@@ -181,7 +176,6 @@ recipe_memory:
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     sambamba_depth: 10
-    split_fastq_file: 2
     varianteffectpredictor: 7
   type: mip
 set_recipe_memory:
@@ -197,7 +191,6 @@ recipe_time:
   default:
     analysisrunstatus: 1
     bwa_mem: 3
-    bcftools_mpileup: 40
     cadd_ar: 10
     endvariantannotationblock: 2
     fastqc_ar: 10
@@ -223,7 +216,6 @@ recipe_time:
     sacct: 1
     sambamba_depth: 10
     samtools_merge: 2
-    split_fastq_file: 10
     varianteffectpredictor: 10
     variant_integrity_ar: 1
     version_collect_ar: 1
@@ -247,7 +239,6 @@ infile_dirs:
 picardtools_path:
   associated_recipe:
     - bwa_mem
-    - markduplicates
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
   data_type: SCALAR
@@ -259,24 +250,6 @@ replace_iupac:
   default: 0
   type: mip
 ### Programs
-split_fastq_file:
-  analysis_mode: sample
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  outfile_suffix: ".fastq.gz"
-  program_executables:
-    - pigz
-    - split
-  type: recipe
-split_fastq_file_read_batch:
-  associated_recipe:
-    - split_fastq_file
-  data_type: SCALAR
-  default: 25000000
-  type: recipe_argument
 ## Gzip
 gzip_fastq:
   analysis_mode: sample
@@ -498,37 +471,6 @@ picardtools_collecthsmetrics:
   default: 1
   file_tag: _collecthsmetrics
   type: recipe
-## Bcftools
-bcftools_mpileup:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _mpileup
-  program_executables:
-    - bcftools
-  recipe_type: variant_callers
-  outfile_suffix: ".vcf"
-  type: recipe
-bcftools_mpileup_constrain:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  mandatory: no
-  type: recipe_argument
-bcftools_mpileup_filter_variant:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-bcftools_mpileup_keep_unnormalised:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -583,7 +525,7 @@ gatk_haplotypecaller_pcr_indel_model:
   associated_recipe:
     - gatk_haplotypecaller
   data_type: SCALAR
-  default: "NONE"
+  default: "CONSERVATIVE"
   type: recipe_argument
 gatk_haplotypecaller_snp_known_set:
   associated_recipe:
