@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -156,6 +156,10 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Gatk_haplotypecaller
       qw{ analysis_gatk_haplotypecaller_panel};
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
+    use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
+    use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
+    use MIP::Recipes::Analysis::Gatk_variantrecalibration
+      qw{ analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
@@ -220,6 +224,9 @@ sub pipeline_analyse_rd_dna_panel {
         fastqc_ar                    => \&analysis_fastqc,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
         gatk_haplotypecaller         => \&analysis_gatk_haplotypecaller_panel,
+        gatk_gathervcfs              => \&analysis_gatk_gathervcfs,
+        gatk_genotypegvcfs           => \&analysis_gatk_genotypegvcfs,
+        gatk_variantrecalibration    => \&analysis_gatk_variantrecalibration_wes,
         gzip_fastq                   => \&analysis_gzip_fastq,
         markduplicates               => \&analysis_markduplicates_panel,
         multiqc_ar                   => \&analysis_multiqc,

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -37,7 +37,7 @@ BEGIN {
 
 sub analysis_gatk_variantrecalibration_wes {
 
-## Function : GATK VariantRecalibrator/ApplyRecalibration analysis recipe for wes data
+## Function : GATK VariantRecalibrator/ApplyRecalibration analysis recipe for wes and panel data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -169,7 +169,6 @@ sub analysis_gatk_variantrecalibration_wes {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $enable_indel_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
@@ -235,9 +234,9 @@ sub analysis_gatk_variantrecalibration_wes {
         }
     );
 
-    ## Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
+    ### Split to enable submission to &sample_info_qc later
+    #my ( $volume, $directory, $stderr_file ) =
+    #  splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
@@ -265,102 +264,100 @@ sub analysis_gatk_variantrecalibration_wes {
     # Exome will be processed using mode BOTH since there are to few INDELS
     # to use in the recalibration model even though using 30 exome BAMS in
     # Haplotypecaller step.
-    my @modes = q{BOTH};
+    my $mode = q{BOTH};
 
     my $select_infile_path;
     my $norm_infile_path;
-  MODE:
-    foreach my $mode (@modes) {
 
-        say {$filehandle} q{## GATK VariantRecalibrator};
+    say {$filehandle} q{## GATK VariantRecalibrator};
 
-        ## Get parameters
-        my $max_gaussian_level;
-        my @ts_tranches =
-          @{ $active_parameter_href->{gatk_variantrecalibration_ts_tranches} };
-        my @annotations =
-          @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
+    ## Get parameters
+    my $max_gaussian_level;
+    my @ts_tranches =
+      @{ $active_parameter_href->{gatk_variantrecalibration_ts_tranches} };
+    my @annotations =
+      @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
 
-        ### Special case: Not to be used with hybrid capture
-        ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-        @annotations = delete_contig_elements(
-            {
-                elements_ref       => \@annotations,
-                remove_contigs_ref => [qw{ DP }],
-            }
-        );
-        my @snv_resources =
-          _build_gatk_resource_command( { resources_href => $resource_snv_href, } );
-        my @indel_resources =
-          _build_gatk_resource_command( { resources_href => $resource_indel_href, } );
-
-        # Create distinct set i.e. no duplicates.
-        my @resources = uniq( @indel_resources, @snv_resources );
-
-        ## Use hard filtering
-        if (   $enable_snv_max_gaussians_filter
-            || $enable_indel_max_gaussians_filter )
+    ### Special case: Not to be used with hybrid capture
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    @annotations = delete_contig_elements(
         {
-
-            $max_gaussian_level = $MAX_GAUSSIAN_LEVEL;
+            elements_ref       => \@annotations,
+            remove_contigs_ref => [qw{ DP }],
         }
+    );
+    my @snv_resources =
+      _build_gatk_resource_command( { resources_href => $resource_snv_href, } );
+    my @indel_resources =
+      _build_gatk_resource_command( { resources_href => $resource_indel_href, } );
 
-        my $recal_file_path = $outfile_path_prefix . $DOT . q{intervals};
-        gatk_variantrecalibrator(
-            {
-                annotations_ref      => \@annotations,
-                filehandle           => $filehandle,
-                infile_path          => $infile_path,
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                max_gaussian_level   => $max_gaussian_level,
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                mode                 => $mode,
-                outfile_path         => $recal_file_path,
-                referencefile_path   => $referencefile_path,
-                resources_ref        => \@resources,
-                rscript_file_path    => $recal_file_path . $DOT . q{plots.R},
-                temp_directory       => $temp_directory,
-                tranches_file_path   => $recal_file_path . $DOT . q{tranches},
-                ts_tranches_ref      => \@ts_tranches,
-                verbosity            => $active_parameter_href->{gatk_logging_level},
-            }
-        );
-        say {$filehandle} $NEWLINE;
+    # Create distinct set i.e. no duplicates.
+    my @resources = uniq( @indel_resources, @snv_resources );
 
-        ## GATK ApplyVQSR
-        say {$filehandle} q{## GATK ApplyVQSR};
+    ## Use hard filtering
+    if (   $enable_snv_max_gaussians_filter
+        || $enable_indel_max_gaussians_filter )
+    {
 
-        ## Get parameters
-        my $ts_filter_level;
-        ## Exome analysis use combined reference for more power
-
-        ## Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
-        $ts_filter_level =
-          $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
-
-        my $apply_vqsr_outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . q{apply} . $outfile_suffix;
-        gatk_applyvqsr(
-            {
-                filehandle           => $filehandle,
-                infile_path          => $infile_path,
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                mode                 => $mode,
-                outfile_path         => $apply_vqsr_outfile_path,
-                recal_file_path      => $recal_file_path,
-                referencefile_path   => $referencefile_path,
-                temp_directory       => $temp_directory,
-                tranches_file_path   => $recal_file_path . $DOT . q{tranches},
-                ts_filter_level      => $ts_filter_level,
-                verbosity            => $active_parameter_href->{gatk_logging_level},
-            }
-        );
-        say {$filehandle} $NEWLINE;
-        ## Set infiles for next step(s)
-        $select_infile_path = $apply_vqsr_outfile_path;
-        $norm_infile_path   = $apply_vqsr_outfile_path;
+        $max_gaussian_level = $MAX_GAUSSIAN_LEVEL;
     }
+
+    my $recal_file_path = $outfile_path_prefix . $DOT . q{intervals};
+    gatk_variantrecalibrator(
+        {
+            annotations_ref      => \@annotations,
+            filehandle           => $filehandle,
+            infile_path          => $infile_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            max_gaussian_level   => $max_gaussian_level,
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            mode                 => $mode,
+            outfile_path         => $recal_file_path,
+            referencefile_path   => $referencefile_path,
+            resources_ref        => \@resources,
+            rscript_file_path    => $recal_file_path . $DOT . q{plots.R},
+            temp_directory       => $temp_directory,
+            tranches_file_path   => $recal_file_path . $DOT . q{tranches},
+            ts_tranches_ref      => \@ts_tranches,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## GATK ApplyVQSR
+    say {$filehandle} q{## GATK ApplyVQSR};
+
+    ## Get parameters
+    my $ts_filter_level;
+    ## Exome and panel analysis use combined reference for more power
+
+    ## Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
+    $ts_filter_level =
+      $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
+
+    my $apply_vqsr_outfile_path =
+      $outfile_path_prefix . $UNDERSCORE . q{apply} . $outfile_suffix;
+    gatk_applyvqsr(
+        {
+            filehandle           => $filehandle,
+            infile_path          => $infile_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            mode                 => $mode,
+            outfile_path         => $apply_vqsr_outfile_path,
+            recal_file_path      => $recal_file_path,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
+            tranches_file_path   => $recal_file_path . $DOT . q{tranches},
+            ts_filter_level      => $ts_filter_level,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Set infiles for next step(s)
+    $select_infile_path = $apply_vqsr_outfile_path;
+    $norm_infile_path   = $apply_vqsr_outfile_path;
 
     if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
 

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_gathervcfs };
@@ -236,8 +236,8 @@ sub analysis_gatk_gathervcfs {
     ## Produce a bcf compressed and index from vcf
     if ( $active_parameter_href->{gatk_gathervcfs_bcf_file} ) {
 
-        # Exome analysis
-        if ( $consensus_analysis_type eq q{wes} ) {
+        # Exome or panel analysis
+        if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
             say {$filehandle} q{### Remove extra reference samples};
             say {$filehandle} q{## GATK SelectVariants};
