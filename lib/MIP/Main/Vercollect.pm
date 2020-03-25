@@ -31,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{1.0.3};
+    our $VERSION = q{1.0.4};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vercollect };
@@ -67,7 +67,7 @@ sub mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Executable qw{ get_binary_version };
+    use MIP::Environment::Executable qw{ get_binaries_versions };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -99,7 +99,7 @@ sub mip_vercollect {
 
     ## Get/update executable versions
     %binary_info =
-      ( %binary_info, get_binary_version( { binary_info_href => \%binary_path, } ) );
+      ( %binary_info, get_binaries_versions( { binary_info_href => \%binary_path, } ) );
 
     ## Writes a binary hash to file
     write_to_file(

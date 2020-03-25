@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Environment::Executable} => [qw{ get_binary_version }],
+        q{MIP::Environment::Executable} => [qw{ get_binaries_versions }],
         q{MIP::Test::Fixtures}          => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Environment::Executable qw{ get_binary_version };
+use MIP::Environment::Executable qw{ get_binaries_versions };
 
-diag(   q{Test get_binary_version from Executable.pm v}
+diag(   q{Test get_binaries_versions from Executable.pm v}
       . $MIP::Environment::Executable::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -66,7 +66,7 @@ my $binary      = q{mip};
 my $binary_path = catfile( $Bin, qw{ data modules miniconda envs mip_travis bin mip } );
 my %binary_info = ( $binary => $binary_path, );
 
-my %binary_version = get_binary_version( { binary_info_href => \%binary_info, } );
+my %binary_version = get_binaries_versions( { binary_info_href => \%binary_info, } );
 
 my %expected_binary_version = (
     mip => {
@@ -82,7 +82,7 @@ is_deeply( \%binary_version, \%expected_binary_version, q{Got binary version} );
 $binary_info{just_to_enable_testing} = q{does_not_exist};
 
 trap {
-    get_binary_version( { binary_info_href => \%binary_info, } )
+    get_binaries_versions( { binary_info_href => \%binary_info, } )
 };
 
 like( $trap->stderr, qr/Could\s+not\s+find\s+version/xms, q{Throw warning} );
