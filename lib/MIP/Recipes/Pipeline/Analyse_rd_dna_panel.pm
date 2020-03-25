@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -153,6 +153,8 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_panel };
+    use MIP::Recipes::Analysis::Gatk_haplotypecaller
+      qw{ analysis_gatk_haplotypecaller_panel};
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
@@ -217,13 +219,14 @@ sub pipeline_analyse_rd_dna_panel {
         bwa_mem                      => undef,
         fastqc_ar                    => \&analysis_fastqc,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
+        gatk_haplotypecaller         => \&analysis_gatk_haplotypecaller_panel,
         gzip_fastq                   => \&analysis_gzip_fastq,
         markduplicates               => \&analysis_markduplicates_panel,
         multiqc_ar                   => \&analysis_multiqc,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        sambamba_depth         => \&analysis_sambamba_depth,
+        sambamba_depth     => \&analysis_sambamba_depth,
         samtools_merge     => \&analysis_samtools_merge_panel,
         version_collect_ar => \&analysis_mip_vercollect,
     );

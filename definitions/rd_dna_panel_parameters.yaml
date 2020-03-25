@@ -125,7 +125,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bwa_mem: 36
+    bwa_mem: 12
     endvariantannotationblock: 1
     fastqc_ar: 0
     frequency_annotation: 13
@@ -134,7 +134,7 @@ recipe_core_number:
     gatk_combinevariantcallsets: 1
     gatk_gathervcfs: 1
     gatk_genotypegvcfs: 1
-    gatk_haplotypecaller: 16
+    gatk_haplotypecaller: 1
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
@@ -190,25 +190,25 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bwa_mem: 3
+    bwa_mem: 2
     cadd_ar: 10
     endvariantannotationblock: 2
     fastqc_ar: 10
     frequency_annotation: 1
     frequency_filter: 2
-    gatk_baserecalibration: 20
+    gatk_baserecalibration: 5
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
     gatk_gathervcfs: 2
-    gatk_haplotypecaller: 30
+    gatk_haplotypecaller: 5
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
     gzip_fastq: 2
-    markduplicates: 20
+    markduplicates: 5
     multiqc_ar: 5
-    picardtools_collecthsmetrics: 10
-    picardtools_collectmultiplemetrics: 10
+    picardtools_collecthsmetrics: 5
+    picardtools_collectmultiplemetrics: 5
     prepareforvariantannotationblock: 5
     qccollect_ar: 1
     rankvariant: 10
