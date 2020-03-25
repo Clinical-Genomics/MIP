@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -295,27 +295,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{split_fastq_file} => (
-            cmd_aliases   => [qw{ sfq }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Split fastq files in batches of X reads and exits},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{split_fastq_file_read_batch} => (
-            cmd_aliases   => [qw{ sfqrdb }],
-            cmd_flag      => q{spt_fsq_rd_bt},
-            cmd_tags      => [q{Default: 25,000,000}],
-            documentation => q{Number of sequence reads to place in each batch},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_aliases   => [qw{ gz }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -589,46 +568,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Qc metrics calculation for capture},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{bcftools_mpileup} => (
-            cmd_aliases   => [qw{ bmp }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant calling using bcftools mpileup},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_constrain} => (
-            cmd_aliases   => [qw{ bmpcon }],
-            cmd_flag      => q{bcftools_mpileup_constrain},
-            documentation => q{Use contrain in trio calling},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_filter_variant} => (
-            cmd_aliases   => [qw{ bmpfv }],
-            cmd_flag      => q{bcftools_mpileup_fil_var},
-            documentation => q{Use standard bcftools filters},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_keep_unnormalised} => (
-            cmd_aliases   => [qw{ bmpkn }],
-            cmd_flag      => q{bcftools_mpileup_keep_unn},
-            documentation => q{Do not normalise variants},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
@@ -964,7 +903,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_prio_cal},
             documentation => q{Prioritization order of variant callers},
             is            => q{rw},
-            isa           => enum( [qw{ gatk bcftools }] ),
+            isa           => enum( [qw{ gatk }] ),
         )
     );
 
