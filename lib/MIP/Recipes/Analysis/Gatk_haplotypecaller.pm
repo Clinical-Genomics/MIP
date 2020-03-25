@@ -357,9 +357,7 @@ sub analysis_gatk_haplotypecaller {
                 stderrfile_path => $stderrfile_path,
                 temp_directory  => $temp_directory,
                 verbosity       => $active_parameter_href->{gatk_logging_level},
-                use_new_qual_calculator =>
-                  $active_parameter_href->{gatk_use_new_qual_calculator},
-                xargs_mode => 1,
+                xargs_mode      => 1,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -696,8 +694,6 @@ sub analysis_gatk_haplotypecaller_panel {
               $STANDARD_MIN_CONFIDENCE_THRSD,
             temp_directory => $active_parameter_href->{temp_directory},
             verbosity      => $active_parameter_href->{gatk_logging_level},
-            use_new_qual_calculator =>
-              $active_parameter_href->{gatk_use_new_qual_calculator},
         }
     );
     say {$filehandle} $NEWLINE;
