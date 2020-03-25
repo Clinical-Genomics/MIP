@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,7 +35,6 @@ BEGIN {
       get_programs_for_shell_installation
       get_recipe_resources
       get_recipe_attributes
-      get_vep_version
     };
 }
 
@@ -513,48 +512,6 @@ sub get_recipe_resources {
     ## Return recipe resource hash
     return %recipe_resource;
 
-}
-
-sub get_vep_version {
-
-## Function : Get version of VEP API in use
-## Returns  : $vep_version
-## Arguments: $vep_bin_path => Path to vep binary
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vep_bin_path;
-
-    my $tmpl = {
-        vep_bin_path => {
-            default     => q{vep},
-            defined     => 1,
-            store       => \$vep_bin_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Child_process qw{ child_process };
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-
-    my @perl_commands = perl_nae_oneliners(
-        {
-            oneliner_name => q{get_vep_version},
-        }
-    );
-    my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
-
-    my %process_return = child_process(
-        {
-            commands_ref => \@get_vep_version_cmds,
-            process_type => q{open3},
-        }
-    );
-
-    return $process_return{stdouts_ref}[0];
 }
 
 1;

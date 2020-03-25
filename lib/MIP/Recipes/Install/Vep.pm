@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -258,24 +258,26 @@ sub _get_vep_version_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $vep_version_cmd = q{vep} . $SPACE . $PIPE . $SPACE;
+    use MIP::Environment::Executable qw{ build_binary_version_cmd get_executable };
 
-    ## get perl oneliner to capture version number from output
-    my @perl_commands = perl_nae_oneliners(
+    my $binary     = q{vep};
+    my %executable = get_executable( { executable_name => $binary, } );
+
+    my @version_cmds = build_binary_version_cmd(
         {
-            oneliner_name => q{get_vep_version},
+            binary_path    => $binary,
+            version_cmd    => $executable{version_cmd},
+            version_regexp => $executable{version_regexp},
         }
     );
-
-    $vep_version_cmd .= join $SPACE, @perl_commands;
 
     my @vep_version_cmds = singularity_exec(
         {
             singularity_container          => $container_path,
-            singularity_container_cmds_ref => [$vep_version_cmd],
+            singularity_container_cmds_ref => \@version_cmds,
         }
     );
-    $vep_version_cmd = join $SPACE, @vep_version_cmds;
+    my $vep_version_cmd = join $SPACE, @vep_version_cmds;
 
     return $BACKTICK . $vep_version_cmd . $BACKTICK;
 }

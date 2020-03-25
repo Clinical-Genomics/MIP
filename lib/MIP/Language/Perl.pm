@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -171,7 +171,6 @@ sub perl_nae_oneliners {
     my %oneliner = (
         get_dict_contigs          => \&_get_dict_contigs,
         get_select_contigs_by_col => \&_get_select_contigs_by_col,
-        get_vep_version           => \&_get_vep_version,
         synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
         write_contigs_size_file   => \&_write_contigs_size_file,
@@ -214,19 +213,6 @@ sub perl_nae_oneliners {
         }
     );
     return @commands;
-}
-
-sub _get_vep_version {
-
-## Function : Return predifined one liners for getting vep version
-## Returns  : $get_vep_version
-## Arguments:
-
-    my ($arg_href) = @_;
-
-    my $get_vep_version = q?'if($_=~/ensembl-vep\s+:\s(\d+)/xms) {print $1;}'?;
-
-    return $get_vep_version;
 }
 
 sub _get_dict_contigs {
