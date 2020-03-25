@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -139,10 +139,6 @@ my %specific_argument = (
         input           => $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
         expected_output => q{--standard-min-confidence-threshold-for-calling }
           . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
-    },
-    use_new_qual_calculator => {
-        input           => 1,
-        expected_output => q{--use-new-qual-calculator},
     },
 );
 

@@ -76,13 +76,6 @@ gatk_path:
     - gatk_variantevalexome
   data_type: SCALAR
   type: path
-gatk_use_new_qual_calculator:
-  associated_recipe:
-    - gatk_haplotypecaller
-    - gatk_genotypegvcfs
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:

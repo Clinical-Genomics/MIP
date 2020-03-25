@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -632,7 +632,7 @@ sub analysis_gatk_baserecalibration_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -736,11 +736,24 @@ sub analysis_gatk_baserecalibration_panel {
     ## GATK BaseRecalibrator
     say {$filehandle} q{## GATK BaseRecalibrator};
 
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash
+    my $exome_target_bed_file = get_exom_target_bed_file(
+        {
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            log                   => $log,
+            sample_id             => $sample_id,
+        }
+    );
+    my $padded_interval_list_ending = $file_info_href->{exome_target_bed}[1];
+    my $padded_exome_target_bed_file =
+      $exome_target_bed_file . $padded_interval_list_ending;
+
     my $base_quality_score_recalibration_file = $outfile_path_prefix . $DOT . q{grp};
     gatk_baserecalibrator(
         {
             filehandle           => $filehandle,
             infile_path          => $infile_path,
+            intervals_ref        => [$padded_exome_target_bed_file],
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             known_sites_ref =>
               \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
@@ -762,6 +775,7 @@ sub analysis_gatk_baserecalibration_panel {
               $base_quality_score_recalibration_file,
             filehandle           => $filehandle,
             infile_path          => $infile_path,
+            intervals_ref        => [$padded_exome_target_bed_file],
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             verbosity            => $active_parameter_href->{gatk_logging_level},

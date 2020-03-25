@@ -97,12 +97,6 @@ gatk_path:
     - gatk_variantfiltration
   data_type: SCALAR
   type: path
-gatk_use_new_qual_calculator:
-  associated_recipe:
-    - gatk_haplotypecaller
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 infile_dirs:
   associated_recipe:
     - mip
