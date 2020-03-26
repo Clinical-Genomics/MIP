@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -258,7 +258,7 @@ sub analysis_gatk_genotypegvcfs {
                     stream         => q{in},
                 }
             );
-            if ( $consensus_analysis_type eq q{wes} ) {
+            if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
                 push @sample_vcf_path_lines,
                   $sample_id . $TAB . $sample_io{in}{file_path} . $NEWLINE;
@@ -289,7 +289,7 @@ sub analysis_gatk_genotypegvcfs {
         say {$filehandle} q{## GATK GenomicsDBImport};
 
         ## Files to import into GenomicsDB
-        if ( $consensus_analysis_type eq q{wes} ) {
+        if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
             $sample_name_map_path =
               catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
