@@ -121,8 +121,8 @@ recipe_core_number:
     bwa_mem: 12
     endvariantannotationblock: 1
     fastqc_ar: 0
-    frequency_annotation: 13
-    frequency_filter: 13
+    frequency_annotation: 1
+    frequency_filter: 1
     gatk_baserecalibration: 1
     gatk_combinevariantcallsets: 1
     gatk_gathervcfs: 1
@@ -188,7 +188,7 @@ recipe_time:
     endvariantannotationblock: 2
     fastqc_ar: 10
     frequency_annotation: 1
-    frequency_filter: 2
+    frequency_filter: 1
     gatk_baserecalibration: 5
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
@@ -202,12 +202,11 @@ recipe_time:
     multiqc_ar: 5
     picardtools_collecthsmetrics: 5
     picardtools_collectmultiplemetrics: 5
-    prepareforvariantannotationblock: 5
     qccollect_ar: 1
     rankvariant: 10
     rtg_vcfeval: 1
     sacct: 1
-    sambamba_depth: 10
+    sambamba_depth: 1
     samtools_merge: 2
     varianteffectpredictor: 10
     variant_integrity_ar: 1
@@ -734,38 +733,6 @@ gatk_combinevariants_prioritize_caller:
   data_type: SCALAR
   mandatory: no
   type: recipe_argument
-prepareforvariantannotationblock:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: ""
-  outfile_suffix: ".vcf.gz"
-  type: recipe
-## rhocall
-rhocall_ar:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _rhocall
-  program_executables:
-    - rhocall
-    - bcftools
-  outfile_suffix: ".vcf"
-  type: recipe
-rhocall_frequency_file:
-  associated_recipe:
-    - rhocall_ar
-    - frequency_annotation
-  data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 ## VT
 vt_ar:
   analysis_mode: case
