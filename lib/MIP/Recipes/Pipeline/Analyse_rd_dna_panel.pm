@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -174,6 +174,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
+    use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -245,6 +246,7 @@ sub pipeline_analyse_rd_dna_panel {
         samtools_merge       => \&analysis_samtools_merge_panel,
         variant_integrity_ar => \&analysis_variant_integrity,
         version_collect_ar   => \&analysis_mip_vercollect,
+        vt_ar                => \&analysis_vt_panel,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)

@@ -33,7 +33,6 @@ CHAIN_ALL:
     - CHAIN_GATKEVALALL:
       - gatk_variantevalall
   - CHAIN_MAIN:
-    - prepareforvariantannotationblock
     - vt_ar
     - frequency_annotation
     - frequency_filter
