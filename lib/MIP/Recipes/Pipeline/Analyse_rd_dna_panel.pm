@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -153,11 +153,14 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_panel };
+    use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
+      qw{ analysis_gatk_combinevariantcallsets };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller
       qw{ analysis_gatk_haplotypecaller_panel};
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
     use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
+    use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
@@ -167,8 +170,10 @@ sub pipeline_analyse_rd_dna_panel {
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
+    use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
+    use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -223,9 +228,11 @@ sub pipeline_analyse_rd_dna_panel {
         bwa_mem                      => undef,
         fastqc_ar                    => \&analysis_fastqc,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
+        gatk_combinevariantcallsets  => \&analysis_gatk_combinevariantcallsets,
         gatk_haplotypecaller         => \&analysis_gatk_haplotypecaller_panel,
         gatk_gathervcfs              => \&analysis_gatk_gathervcfs,
         gatk_genotypegvcfs           => \&analysis_gatk_genotypegvcfs,
+        gatk_variantevalall          => \&analysis_gatk_variantevalall,
         gatk_variantrecalibration    => \&analysis_gatk_variantrecalibration_wes,
         gzip_fastq                   => \&analysis_gzip_fastq,
         markduplicates               => \&analysis_markduplicates_panel,
@@ -233,9 +240,11 @@ sub pipeline_analyse_rd_dna_panel {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        sambamba_depth     => \&analysis_sambamba_depth,
-        samtools_merge     => \&analysis_samtools_merge_panel,
-        version_collect_ar => \&analysis_mip_vercollect,
+        rtg_vcfeval          => \&analysis_rtg_vcfeval,
+        sambamba_depth       => \&analysis_sambamba_depth,
+        samtools_merge       => \&analysis_samtools_merge_panel,
+        variant_integrity_ar => \&analysis_variant_integrity,
+        version_collect_ar   => \&analysis_mip_vercollect,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
