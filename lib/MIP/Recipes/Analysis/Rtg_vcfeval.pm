@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -279,7 +279,7 @@ sub analysis_rtg_vcfeval {
           $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
 
         ## For WES - intersect reference according to capture kit
-        if ( $sample_id_analysis_type eq q{wes} ) {
+        if ( $sample_id_analysis_type =~ /wes|panel/xms ) {
 
             my $bedtools_outfile_path =
               catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.bed} );
