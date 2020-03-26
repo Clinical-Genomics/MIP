@@ -467,7 +467,6 @@ sub analysis_vt_panel {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
