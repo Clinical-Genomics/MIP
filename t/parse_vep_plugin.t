@@ -62,7 +62,7 @@ diag(   q{Test parse_vep_plugin from Active_parameter.pm v}
 
 my $log = test_log( { no_screen => 1, } );
 
-## Given an undefine vep plugin hash
+## Given a vep plugin hash
 my %active_parameter_href = (
     vep_plugin => {
         dbNSFP => {
