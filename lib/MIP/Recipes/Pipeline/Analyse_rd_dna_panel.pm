@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -150,6 +150,7 @@ sub pipeline_analyse_rd_dna_panel {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd_panel };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_annotation
       qw{ analysis_frequency_annotation_panel };
@@ -230,6 +231,7 @@ sub pipeline_analyse_rd_dna_panel {
     my %analysis_recipe = (
         analysisrunstatus            => \&analysis_analysisrunstatus,
         bwa_mem                      => undef,
+        cadd_ar                      => \&analysis_cadd_panel,
         fastqc_ar                    => \&analysis_fastqc,
         frequency_annotation         => \&analysis_frequency_annotation_panel,
         frequency_filter             => \&analysis_frequency_filter_panel,
