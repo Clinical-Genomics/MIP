@@ -261,8 +261,8 @@ sub _check_vep_custom_annotation_options {
   REQ_OPTION:
     foreach my $required_option (@required_options) {
 
-        if (   not exists $custom_ann_option_href->{$required_option}
-            or not defined $custom_ann_option_href->{$required_option} )
+        if (    not exists $custom_ann_option_href->{$required_option}
+            and not defined $custom_ann_option_href->{$required_option} )
         {
 
             $log->fatal( q{Vep custom annotation option hash: }
