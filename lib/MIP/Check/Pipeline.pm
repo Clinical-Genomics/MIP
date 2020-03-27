@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME };
@@ -140,6 +141,9 @@ sub check_dragen_rd_dna {
       check_vep_custom_annotation
     };
 
+    ## Constants
+    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
         {
@@ -192,11 +196,10 @@ sub check_dragen_rd_dna {
         }
     );
 
-    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
     parse_vep_plugin(
         {
             active_parameter_href => $active_parameter_href,
-            mip_vep_plugins_ref   => \@mip_vep_plugins,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
         }
     );
 
@@ -409,6 +412,9 @@ sub check_rd_dna {
       check_vep_custom_annotation
     };
 
+    ## Constants
+    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
         {
@@ -468,11 +474,10 @@ sub check_rd_dna {
         }
     );
 
-    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
     parse_vep_plugin(
         {
             active_parameter_href => $active_parameter_href,
-            mip_vep_plugins_ref   => \@mip_vep_plugins,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
         }
     );
 
@@ -1022,6 +1027,9 @@ sub check_rd_dna_vcf_rerun {
       check_vep_custom_annotation
     };
 
+    ## Constants
+    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
         {
@@ -1074,11 +1082,10 @@ sub check_rd_dna_vcf_rerun {
         }
     );
 
-    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
     parse_vep_plugin(
         {
             active_parameter_href => $active_parameter_href,
-            mip_vep_plugins_ref   => \@mip_vep_plugins,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
         }
     );
 
