@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +40,7 @@ BEGIN {
       get_user_supplied_pedigree_parameter
       parse_program_executables
       parse_recipe_resources
+      parse_vep_plugin
       set_binary_path
       set_default_analysis_type
       set_default_conda_path
@@ -690,6 +691,53 @@ sub parse_recipe_resources {
           );
     }
 
+    return 1;
+}
+
+sub parse_vep_plugin {
+
+## Function : Parse VEP plugin options
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $mip_vep_plugins_ref   => MIP VEP plugin parameter names
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $mip_vep_plugins_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        mip_vep_plugins_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_vep_plugins_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Vep qw{ check_vep_plugin };
+
+  PLUGIN_PARAM:
+    foreach my $parameter_name ( @{$mip_vep_plugins_ref} ) {
+
+        check_vep_plugin(
+            {
+                parameter_name  => $parameter_name,
+                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+            }
+        );
+    }
     return 1;
 }
 

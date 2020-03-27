@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -123,9 +123,8 @@ sub check_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
-    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
-      check_vep_plugin };
+    use MIP::Active_parameter qw{ parse_vep_plugin set_vcfparser_outfile_counter };
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -136,7 +135,10 @@ sub check_dragen_rd_dna {
     use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
-    use MIP::Vep qw{ check_vep_api_cache_versions check_vep_custom_annotation };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -190,18 +192,13 @@ sub check_dragen_rd_dna {
         }
     );
 
-    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
-  PLUGIN_PARAM:
-    foreach my $parameter_name (@mip_plugin_parameters) {
-
-        check_vep_plugin(
-            {
-                log             => $log,
-                parameter_name  => $parameter_name,
-                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
-            }
-        );
-    }
+    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@mip_vep_plugins,
+        }
+    );
 
     if ( $active_parameter_href->{verbose} ) {
 
@@ -384,12 +381,14 @@ sub check_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters
-      set_vcfparser_outfile_counter };
+    use MIP::Active_parameter qw{
+      check_mutually_exclusive_parameters
+      parse_vep_plugin
+      set_vcfparser_outfile_counter
+    };
     use MIP::Check::Parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_vep_plugin
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Config qw{ write_mip_config };
@@ -405,7 +404,10 @@ sub check_rd_dna {
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
-    use MIP::Vep qw{ check_vep_api_cache_versions check_vep_custom_annotation };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -466,18 +468,13 @@ sub check_rd_dna {
         }
     );
 
-    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
-  PLUGIN_PARAM:
-    foreach my $parameter_name (@mip_plugin_parameters) {
-
-        check_vep_plugin(
-            {
-                log             => $log,
-                parameter_name  => $parameter_name,
-                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
-            }
-        );
-    }
+    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@mip_vep_plugins,
+        }
+    );
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -728,12 +725,13 @@ sub check_rd_dna_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter
-      qw{ check_mutually_exclusive_parameters set_vcfparser_outfile_counter };
+    use MIP::Active_parameter qw{ check_mutually_exclusive_parameters
+      parse_vep_plugin
+      set_vcfparser_outfile_counter
+    };
     use MIP::Check::Parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_vep_plugin
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Check::Reference qw{  };
@@ -746,7 +744,10 @@ sub check_rd_dna_panel {
     use MIP::Reference qw{ parse_exome_target_bed };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
-    use MIP::Vep qw{ check_vep_api_cache_versions check_vep_custom_annotation };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -795,11 +796,10 @@ sub check_rd_dna_panel {
         }
     );
 
-    check_vep_plugin(
+    parse_vep_plugin(
         {
-            log             => $log,
-            parameter_name  => q{vep_plugin},
-            vep_plugin_href => \%{ $active_parameter_href->{vep_plugin} },
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => [qw{ vep_plugin }],
         }
     );
 
@@ -1008,9 +1008,8 @@ sub check_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ set_vcfparser_outfile_counter };
-    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter
-      check_vep_plugin };
+    use MIP::Active_parameter qw{ parse_vep_plugin set_vcfparser_outfile_counter };
+    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -1018,7 +1017,10 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::Vep qw{ check_vep_api_cache_versions check_vep_custom_annotation };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -1072,18 +1074,13 @@ sub check_rd_dna_vcf_rerun {
         }
     );
 
-    my @mip_plugin_parameters = qw{ sv_vep_plugin vep_plugin };
-  PLUGIN_PARAM:
-    foreach my $parameter_name (@mip_plugin_parameters) {
-
-        check_vep_plugin(
-            {
-                log             => $log,
-                parameter_name  => $parameter_name,
-                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
-            }
-        );
-    }
+    my @mip_vep_plugins = qw{ sv_vep_plugin vep_plugin };
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@mip_vep_plugins,
+        }
+    );
 
     if ( $active_parameter_href->{verbose} ) {
 

@@ -24,12 +24,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_vep_api_cache_versions
       check_vep_custom_annotation
+      check_vep_plugin
     };
 }
 
@@ -177,6 +178,64 @@ sub check_vep_custom_annotation {
                 object_name    => $ann,
                 object_type    => q{file},
                 parameter_name => q{vep_custom_annotation},
+                path           => $value_href->{path},
+            }
+        );
+    }
+    return 1;
+}
+
+sub check_vep_plugin {
+
+## Function : Check VEP plugin options
+## Returns  : 0 or 1
+## Arguments: $parameter_name  => Parameter name
+##          : $vep_plugin_href => VEP plugin annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_name;
+    my $vep_plugin_href;
+
+    my $tmpl = {
+        parameter_name => {
+            defined  => 1,
+            required => 1,
+            store    => \$parameter_name,
+        },
+        vep_plugin_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw { check_filesystem_objects_and_index_existance };
+
+    ## Nothing to check
+    return 0 if ( not keys %{$vep_plugin_href} );
+
+  PLUGIN:
+    while ( my ( $plugin, $value_href ) = each %{$vep_plugin_href} ) {
+
+        my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
+        croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        next PLUGIN if ( not exists $value_href->{path} );
+
+        next PLUGIN if ( not exists $value_href->{exists_check} );
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                object_name    => $plugin,
+                object_type    => $value_href->{exists_check},
+                parameter_name => $parameter_name,
                 path           => $value_href->{path},
             }
         );

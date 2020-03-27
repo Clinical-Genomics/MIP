@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -44,8 +44,6 @@ BEGIN {
       check_recipe_fastq_compatibility
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
-      check_vep_api_cache_versions
-      check_vep_plugin
     };
 }
 
@@ -938,71 +936,6 @@ sub check_sample_id_in_hash_parameter_path {
                 exit 1;
             }
         }
-    }
-    return 1;
-}
-
-sub check_vep_plugin {
-
-## Function : Check VEP plugin options
-## Returns  : 0 or 1
-## Arguments: $log             => Log object
-##          : $parameter_name  => Parameter name
-##          : $vep_plugin_href => VEP plugin annotation {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $parameter_name;
-    my $vep_plugin_href;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_name => {
-            defined  => 1,
-            required => 1,
-            store    => \$parameter_name,
-        },
-        vep_plugin_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$vep_plugin_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw { check_filesystem_objects_and_index_existance };
-
-    ## Nothing to check
-    return 0 if ( not keys %{$vep_plugin_href} );
-
-  PLUGIN:
-    while ( my ( $plugin, $value_href ) = each %{$vep_plugin_href} ) {
-
-        my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
-        croak($err_msg) if ( ref $value_href ne q{HASH} );
-
-        next PLUGIN if ( not exists $value_href->{path} );
-
-        next PLUGIN if ( not exists $value_href->{exists_check} );
-
-        ## Check path object exists
-        check_filesystem_objects_and_index_existance(
-            {
-                object_name    => $plugin,
-                object_type    => $value_href->{exists_check},
-                parameter_name => $parameter_name,
-                path           => $value_href->{path},
-            }
-        );
     }
     return 1;
 }
