@@ -119,6 +119,7 @@ recipe_core_number:
   default:
     analysisrunstatus: 1
     bwa_mem: 12
+    cadd_ar: 1
     endvariantannotationblock: 1
     fastqc_ar: 0
     frequency_annotation: 1
@@ -184,7 +185,7 @@ recipe_time:
   default:
     analysisrunstatus: 1
     bwa_mem: 2
-    cadd_ar: 10
+    cadd_ar: 2
     endvariantannotationblock: 2
     fastqc_ar: 10
     frequency_annotation: 1

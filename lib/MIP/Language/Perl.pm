@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $SPACE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,10 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
+
+Readonly my $MINUS_ONE => -1;
 
 sub perl_base {
 
@@ -95,6 +97,7 @@ sub perl_nae_oneliners {
 ## Returns  : @commands
 ## Arguments: $autosplit              => Turns on autosplit mode when used with a -n or -p
 ##          : $command_line           => Enter one line of program
+##          : $escape_oneliner        => Escape perl oneliner cmd
 ##          : $filehandle             => Filehandle to write to
 ##          : $n                      => Iterate over filename arguments
 ##          : $oneliner_cmd           => Command to execute
@@ -107,6 +110,7 @@ sub perl_nae_oneliners {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $escape_oneliner;
     my $filehandle;
     my $oneliner_cmd;
     my $oneliner_name;
@@ -131,6 +135,11 @@ sub perl_nae_oneliners {
             allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$command_line,
+            strict_type => 1,
+        },
+        escape_oneliner => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$escape_oneliner,
             strict_type => 1,
         },
         filehandle => {
@@ -185,11 +194,22 @@ sub perl_nae_oneliners {
         }
     );
 
-    if ( defined $oneliner_name and exists $oneliner{$oneliner_name} ) {
+    if (    defined $oneliner_name
+        and exists $oneliner{$oneliner_name}
+        and not $oneliner_cmd )
+    {
 
-        push @commands, $oneliner{$oneliner_name}->();
+        $oneliner_cmd = $oneliner{$oneliner_name}->();
     }
-    elsif ($oneliner_cmd) {
+
+    if ( $oneliner_cmd and $escape_oneliner ) {
+
+        $oneliner_cmd = $BACKWARD_SLASH . $oneliner_cmd;
+        substr $oneliner_cmd, $MINUS_ONE, 0, $BACKWARD_SLASH;
+
+    }
+
+    if ($oneliner_cmd) {
 
         push @commands, $oneliner_cmd;
     }
@@ -280,13 +300,13 @@ sub _synonyms_grch37_to_grch38 {
     my ($arg_href) = @_;
 
     ## Add "chr" prefix to chromosome name and rename "M" to "MT"
-    my $modify_chr_prefix = q?\'if($_=~s/^M/chrMT/g) {} ?;
+    my $modify_chr_prefix = q?'if($_=~s/^M/chrMT/g) {} ?;
 
     ## Add "chr" prefix to chromosome name
     $modify_chr_prefix .= q?elsif ($_=~s/^(.+)/chr$1/g) {} ?;
 
 ## Print line
-    $modify_chr_prefix .= q?print $_\'?;
+    $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;
 }
@@ -300,13 +320,13 @@ sub _synonyms_grch38_to_grch37 {
     my ($arg_href) = @_;
 
 ## Remove "chr" prefix from chromosome name and rename "MT" to "M"
-    my $modify_chr_prefix = q?\'if($_=~s/^chrMT/M/g) {} ?;
+    my $modify_chr_prefix = q?'if($_=~s/^chrMT/M/g) {} ?;
 
 ## Remove "chr" prefix from chromosome name
     $modify_chr_prefix .= q?elsif ($_=~s/^chr(.+)/$1/g) {} ?;
 
 ## Print line
-    $modify_chr_prefix .= q?print $_\'?;
+    $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;
 }

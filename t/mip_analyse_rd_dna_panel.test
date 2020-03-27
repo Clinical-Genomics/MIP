@@ -114,7 +114,6 @@ my $cmds_ref = [
     $toml_config_path,
     q{--pedigree},
     catfile( $cluster_constant_path, qw{ 643594-miptest 643594-panel_pedigree.yaml } ),
-
 ];
 
 my %process_return = child_process(
