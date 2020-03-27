@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -151,6 +151,9 @@ sub pipeline_analyse_rd_dna_panel {
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Frequency_annotation
+      qw{ analysis_frequency_annotation_panel };
+    use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter_panel };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_panel };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -228,6 +231,8 @@ sub pipeline_analyse_rd_dna_panel {
         analysisrunstatus            => \&analysis_analysisrunstatus,
         bwa_mem                      => undef,
         fastqc_ar                    => \&analysis_fastqc,
+        frequency_annotation         => \&analysis_frequency_annotation_panel,
+        frequency_filter             => \&analysis_frequency_filter_panel,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
         gatk_combinevariantcallsets  => \&analysis_gatk_combinevariantcallsets,
         gatk_haplotypecaller         => \&analysis_gatk_haplotypecaller_panel,
