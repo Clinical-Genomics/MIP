@@ -536,7 +536,7 @@ sub check_sample_id_in_hash_parameter {
 
 sub get_active_parameter_attribute {
 
-## Function : Get actvie parameter attribute
+## Function : Get active parameter attribute
 ## Returns  : $attribute
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $attribute             => Attribute to return
