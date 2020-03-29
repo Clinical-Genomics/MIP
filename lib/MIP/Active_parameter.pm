@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,6 +35,8 @@ BEGIN {
       check_mutually_exclusive_parameters
       check_parameter_files
       check_recipe_mode
+      check_sample_id_in_hash_parameter
+      get_active_parameter_attribute
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_user_supplied_pedigree_parameter
@@ -420,6 +422,169 @@ sub check_recipe_mode {
         exit 1;
     }
     return 1;
+}
+
+sub check_sample_id_in_hash_parameter {
+
+## Function : Check sample_id provided in hash parameter is included in the
+##          : analysis and only represented once
+## Returns  : 1
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_names_ref;
+    my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_names_ref,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+
+        ## Skip undef parameters in current analysis
+        next PARAMETER
+          if ( not defined $active_parameter_href->{$parameter_name} );
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+            my $sample_id_value = get_active_parameter_attribute(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    attribute             => $sample_id,
+                    parameter_name        => $parameter_name,
+                }
+            );
+            my $is_mandatory = get_parameter_attribute(
+                {
+                    attribute      => q{mandatory},
+                    parameter_href => $parameter_href,
+                    parameter_name => $parameter_name,
+                }
+            );
+
+            ## Check that a value is defined
+            next SAMPLE_ID if ( defined $sample_id_value );
+
+            ## Not mandatory - skip
+            next PARAMETER
+              if ( defined $is_mandatory and $is_mandatory eq q{no} );
+
+            my %parameter_name_hash = get_active_parameter_attribute(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_name        => $parameter_name,
+                }
+            );
+            my $parameter_name_sample_ids = join $COMMA . $SPACE,
+              ( keys %parameter_name_hash );
+
+            $log->fatal( q{Could not find value for }
+                  . $sample_id
+                  . q{ for parameter '--}
+                  . $parameter_name
+                  . $SINGLE_QUOTE
+                  . q{. Provided sample_ids for parameter are: }
+                  . $parameter_name_sample_ids );
+            exit 1;
+        }
+    }
+    return 1;
+}
+
+sub get_active_parameter_attribute {
+
+## Function : Get active parameter attribute
+## Returns  : $attribute
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $attribute             => Attribute to return
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $attribute;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return entire parameter attribute hash if no specific attribute key supplied
+    return %{ $active_parameter_href->{$parameter_name} } if ( not defined $attribute );
+
+    ## Unpack
+    my $parameter_attribute = $active_parameter_href->{$parameter_name}{$attribute};
+
+    return if ( not defined $parameter_attribute );
+
+    return @{$parameter_attribute} if ( ref $parameter_attribute eq q{ARRAY} );
+
+    return %{$parameter_attribute} if ( ref $parameter_attribute eq q{HASH} );
+
+    ## Return scalar parameter attribute value
+    return $parameter_attribute;
 }
 
 sub get_not_allowed_temp_dirs {

@@ -341,6 +341,7 @@ sub get_parameter_attribute {
                   exists_check
                   file_tag
                   is_reference
+                  mandatory
                   outfile_suffix
                   program_executables
                   recipe_type

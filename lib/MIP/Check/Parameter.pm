@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.38;
+    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -42,7 +42,6 @@ BEGIN {
       check_nist_version
       check_prioritize_variant_callers
       check_recipe_fastq_compatibility
-      check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
     };
 }
@@ -731,101 +730,6 @@ sub check_prioritize_variant_callers {
                   . join( $COMMA, @variant_caller_aliases )
                   . $SINGLE_QUOTE );
             exit 1;
-        }
-    }
-    return 1;
-}
-
-sub check_sample_id_in_hash_parameter {
-
-## Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_names_ref;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_names_ref,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        ## Skip undef parameters in current analysis
-        next PARAMETER
-          if ( not defined $active_parameter_href->{$parameter_name} );
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-            ## Unpack
-            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
-            my $is_mandatory    = $parameter_href->{$parameter_name}{mandatory};
-
-            ## Check that a value exists
-            if ( not defined $sample_id_value ) {
-
-                next PARAMETER
-                  if ( defined $is_mandatory and $is_mandatory eq q{no} );
-
-                $log->fatal(
-                    q{Could not find value for }
-                      . $sample_id
-                      . q{ for parameter '--}
-                      . $parameter_name
-                      . $SINGLE_QUOTE
-                      . q{. Provided sample_ids for parameter are: }
-                      . join $COMMA
-                      . $SPACE,
-                    ( keys %{ $active_parameter_href->{$parameter_name} } )
-                );
-                exit 1;
-            }
         }
     }
     return 1;
