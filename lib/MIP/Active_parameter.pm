@@ -493,15 +493,15 @@ sub check_sample_id_in_hash_parameter {
             my $sample_id_value = get_active_parameter_attribute(
                 {
                     active_parameter_href => $active_parameter_href,
-                    parameter_name        => $parameter_name,
                     attribute             => $sample_id,
+                    parameter_name        => $parameter_name,
                 }
             );
             my $is_mandatory = get_parameter_attribute(
                 {
+                    attribute      => q{mandatory},
                     parameter_href => $parameter_href,
                     parameter_name => $parameter_name,
-                    attribute      => q{mandatory},
                 }
             );
 
