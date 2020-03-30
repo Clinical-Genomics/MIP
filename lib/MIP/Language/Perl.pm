@@ -180,7 +180,7 @@ sub perl_nae_oneliners {
     my %oneliner = (
         get_dict_contigs                   => \&_get_dict_contigs,
         get_select_contigs_by_col          => \&_get_select_contigs_by_col,
-        remove_decomposed_asterisk_entries => \&_remove_decomposed_asterisk_entries,
+        remove_decomposed_asterisk_records => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38          => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37          => \&_synonyms_grch38_to_grch37,
         write_contigs_size_file            => \&_write_contigs_size_file,
@@ -292,9 +292,9 @@ sub _get_select_contigs_by_col {
     return $get_select_contigs;
 }
 
-sub _remove_decomposed_asterisk_entries {
+sub _remove_decomposed_asterisk_records {
 
-## Function : Remove decomposed '*' entries
+## Function : Remove decomposed '*' records
 ## Returns  : $remove_star_regexp
 ## Arguments:
 
@@ -303,7 +303,7 @@ sub _remove_decomposed_asterisk_entries {
     ## As long as the fourth column isn't an asterisk
     my $remove_star_regexp = q?'unless( $F[4] eq q{*} ) { ?;
 
-    ## Print line
+    ## Print record
     $remove_star_regexp .= q?print $_ }'?;
 
     return $remove_star_regexp;

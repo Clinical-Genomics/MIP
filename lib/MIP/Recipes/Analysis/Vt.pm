@@ -316,7 +316,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                 {
                     escape_oneliner        => 1,
                     filehandle             => $xargsfilehandle,
-                    oneliner_name          => q{remove_decomposed_asterisk_entries},
+                    oneliner_name          => q{remove_decomposed_asterisk_records},
                     stdinfile_path         => $outfile_path{$contig},
                     stdoutfile_path        => $removed_outfile_path,
                     stderrfile_path_append => $stderr_contig_path,
@@ -582,7 +582,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         perl_nae_oneliners(
             {
                 filehandle      => $filehandle,
-                oneliner_name   => q{remove_decomposed_asterisk_entries},
+                oneliner_name   => q{remove_decomposed_asterisk_records},
                 stdinfile_path  => $outfile_path,
                 stdoutfile_path => $removed_outfile_path,
             }
