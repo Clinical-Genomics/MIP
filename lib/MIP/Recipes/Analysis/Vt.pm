@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt analysis_vt_panel };
@@ -146,6 +146,7 @@ sub analysis_vt {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -307,18 +308,21 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
             # Update file tag
             my $alt_file_tag = $UNDERSCORE . q{nostar};
-
             my $removed_outfile_path =
               $outfile_path_prefix . $alt_file_tag . $DOT . $contig . $outfile_suffix;
-            _remove_decomposed_asterisk_entries_xargs(
+            my $stderr_contig_path =
+              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+            perl_nae_oneliners(
                 {
-                    contig                 => $contig,
-                    infile_path            => $outfile_path{$contig},
-                    outfile_path           => $removed_outfile_path,
-                    xargsfilehandle        => $xargsfilehandle,
-                    xargs_file_path_prefix => $xargs_file_path_prefix,
+                    escape_oneliner        => 1,
+                    filehandle             => $xargsfilehandle,
+                    oneliner_name          => q{remove_decomposed_asterisk_records},
+                    stdinfile_path         => $outfile_path{$contig},
+                    stdoutfile_path        => $removed_outfile_path,
+                    stderrfile_path_append => $stderr_contig_path,
                 }
             );
+            print {$xargsfilehandle} $SPACE . $SEMICOLON . $SPACE;
 
             gnu_mv(
                 {
@@ -328,7 +332,6 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                 }
             );
             say {$xargsfilehandle} $NEWLINE;
-
         }
     }
 
@@ -462,6 +465,7 @@ sub analysis_vt_panel {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -575,11 +579,12 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
         my $removed_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{nostar} . $outfile_suffix;
-        _remove_decomposed_asterisk_entries(
+        perl_nae_oneliners(
             {
-                filehandle   => $filehandle,
-                infile_path  => $outfile_path,
-                outfile_path => $removed_outfile_path,
+                filehandle      => $filehandle,
+                oneliner_name   => q{remove_decomposed_asterisk_records},
+                stdinfile_path  => $outfile_path,
+                stdoutfile_path => $removed_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -623,139 +628,6 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         );
     }
     return 1;
-}
-
-sub _remove_decomposed_asterisk_entries_xargs {
-
-## Function : Remove decomposed '*' entries
-## Returns  :
-## Arguments: $contig                 => Contig
-##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path
-##          : $xargsfilehandle        => XARGS file handle
-##          : $xargs_file_path_prefix => Xargs file path prefix
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $contig;
-    my $infile_path;
-    my $outfile_path;
-    my $xargsfilehandle;
-    my $xargs_file_path_prefix;
-
-    my $tmpl = {
-        contig => {
-            defined  => 1,
-            required => 1,
-            store    => \$contig,
-        },
-        infile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$infile_path,
-        },
-        outfile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$outfile_path,
-        },
-        xargsfilehandle => {
-            defined  => 1,
-            required => 1,
-            store    => \$xargsfilehandle,
-        },
-        xargs_file_path_prefix => {
-            defined  => 1,
-            required => 1,
-            store    => \$xargs_file_path_prefix,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Execute perl
-    my $remove_star_regexp = q?perl -nae \'?;
-
-    ## Print if line does not contain asterisk
-    $remove_star_regexp .= q?unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;
-
-    ## Print regexp
-    print {$xargsfilehandle} $remove_star_regexp;
-
-    ## Print infile
-    print {$xargsfilehandle} $infile_path . $SPACE;
-
-    ## Print outfile
-    print {$xargsfilehandle} q{>} . $SPACE . $outfile_path . $SPACE;
-
-    ## Print stderr file
-    print {$xargsfilehandle} q{2>>}
-      . $SPACE
-      . $xargs_file_path_prefix
-      . $DOT
-      . $contig
-      . $DOT
-      . q{stderr.txt}
-      . $SPACE;
-
-    # Redirect xargs output to recipe specific stderr file
-    print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-    return;
-}
-
-sub _remove_decomposed_asterisk_entries {
-
-## Function : Remove decomposed '*' entries
-## Returns  :
-## Arguments: $filehandle   => Filehandle
-##          : $infile_path  => Infile path
-##          : $outfile_path => Outfile path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $infile_path;
-    my $outfile_path;
-
-    my $tmpl = {
-        filehandle => {
-            defined  => 1,
-            required => 1,
-            store    => \$filehandle,
-        },
-        infile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$infile_path,
-        },
-        outfile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$outfile_path,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Execute perl
-    my $remove_star_regexp = q?perl -nae '?;
-
-    ## Print if line does not contain asterisk
-    $remove_star_regexp .= q?unless($F[4] eq q{*}) {print $_}' ?;
-
-    ## Print regexp
-    print {$filehandle} $remove_star_regexp;
-
-    ## Print infile
-    print {$filehandle} $infile_path . $SPACE;
-
-    ## Print outfile
-    print {$filehandle} q{>} . $SPACE . $outfile_path . $SPACE;
-
-    return;
 }
 
 1;

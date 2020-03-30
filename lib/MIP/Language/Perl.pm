@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -97,7 +97,7 @@ sub perl_nae_oneliners {
 ## Returns  : @commands
 ## Arguments: $autosplit              => Turns on autosplit mode when used with a -n or -p
 ##          : $command_line           => Enter one line of program
-##          : $escape_oneliner        => Escape perl oneliner cmd
+##          : $escape_oneliner        => Escape perl oneliner program
 ##          : $filehandle             => Filehandle to write to
 ##          : $n                      => Iterate over filename arguments
 ##          : $oneliner_cmd           => Command to execute
@@ -178,11 +178,12 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
-        get_dict_contigs          => \&_get_dict_contigs,
-        get_select_contigs_by_col => \&_get_select_contigs_by_col,
-        synonyms_grch37_to_grch38 => \&_synonyms_grch37_to_grch38,
-        synonyms_grch38_to_grch37 => \&_synonyms_grch38_to_grch37,
-        write_contigs_size_file   => \&_write_contigs_size_file,
+        get_dict_contigs                   => \&_get_dict_contigs,
+        get_select_contigs_by_col          => \&_get_select_contigs_by_col,
+        remove_decomposed_asterisk_records => \&_remove_decomposed_asterisk_records,
+        synonyms_grch37_to_grch38          => \&_synonyms_grch37_to_grch38,
+        synonyms_grch38_to_grch37          => \&_synonyms_grch38_to_grch37,
+        write_contigs_size_file            => \&_write_contigs_size_file,
     );
 
     ## Stores commands depending on input parameters
@@ -289,6 +290,23 @@ sub _get_select_contigs_by_col {
     $get_select_contigs .= q?last;' ?;
 
     return $get_select_contigs;
+}
+
+sub _remove_decomposed_asterisk_records {
+
+## Function : Remove decomposed '*' records
+## Returns  : $remove_star_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## As long as the fourth column isn't an asterisk
+    my $remove_star_regexp = q?'unless( $F[4] eq q{*} ) { ?;
+
+    ## Print record
+    $remove_star_regexp .= q?print $_ }'?;
+
+    return $remove_star_regexp;
 }
 
 sub _synonyms_grch37_to_grch38 {
