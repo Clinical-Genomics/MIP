@@ -577,8 +577,6 @@ sub check_sample_id_in_hash_parameter_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ get_active_parameter_attribute };
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -611,13 +609,12 @@ sub check_sample_id_in_hash_parameter_path {
                 next SAMPLE_ID if ( $seen{$sample_id} < 2 );
 
                 $log->fatal(
-                    q{Sample_id: }
+                        q{Sample_id: }
                       . $sample_id
                       . q{ is not uniqe in '--}
                       . $parameter_name . q{': }
                       . $path . q{=}
-                      . join $COMMA,
-                    @parameter_samples,
+                      . $sample_ids_str,
                 );
                 exit 1;
             }
