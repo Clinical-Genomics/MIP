@@ -178,8 +178,9 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
-    use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
+    use MIP::Recipes::Build::Rd_dna qw{ build_rd_dna_meta_files };
 
     ### Pipeline specific checks
     check_rd_dna_panel(
@@ -248,12 +249,13 @@ sub pipeline_analyse_rd_dna_panel {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        rtg_vcfeval          => \&analysis_rtg_vcfeval,
-        sambamba_depth       => \&analysis_sambamba_depth,
-        samtools_merge       => \&analysis_samtools_merge_panel,
-        variant_integrity_ar => \&analysis_variant_integrity,
-        version_collect_ar   => \&analysis_mip_vercollect,
-        vt_ar                => \&analysis_vt_panel,
+        rtg_vcfeval            => \&analysis_rtg_vcfeval,
+        sambamba_depth         => \&analysis_sambamba_depth,
+        samtools_merge         => \&analysis_samtools_merge_panel,
+        variant_integrity_ar   => \&analysis_variant_integrity,
+        varianteffectpredictor => \&analysis_vep_rna,
+        version_collect_ar     => \&analysis_mip_vercollect,
+        vt_ar                  => \&analysis_vt_panel,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)

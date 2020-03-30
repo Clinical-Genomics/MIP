@@ -831,6 +831,22 @@ vep_features:
     - tsl
     - uniprot
   type: recipe_argument
+vep_plugin:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: HASH
+  is_reference: 1
+  mandatory: no
+  type: recipe_argument
+vep_plugins_dir_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  is_reference: 1
+  mandatory: no
+  type: path
+  update_path: absolute_path
 ## MultiQC
 multiqc_ar:
   analysis_mode: case

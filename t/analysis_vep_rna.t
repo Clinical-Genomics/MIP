@@ -112,6 +112,7 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+$parameter{cache}{consensus_analysis_type} = q{wts};
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
