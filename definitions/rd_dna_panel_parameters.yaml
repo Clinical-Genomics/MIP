@@ -143,6 +143,7 @@ recipe_core_number:
     sambamba_depth: 1
     samtools_merge: 2
     variant_integrity_ar: 1
+    varianteffectpredictor: 1
     version_collect_ar: 1
     vt_ar: 1
     vt_core: 1
@@ -209,7 +210,7 @@ recipe_time:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    varianteffectpredictor: 10
+    varianteffectpredictor: 4
     variant_integrity_ar: 1
     version_collect_ar: 1
     vcfparser_ar: 5

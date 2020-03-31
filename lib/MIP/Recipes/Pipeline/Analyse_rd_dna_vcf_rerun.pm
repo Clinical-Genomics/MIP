@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -168,7 +168,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
+      qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
@@ -237,7 +237,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
         sv_varianteffectpredictor => undef,                    # Depends on analysis type,
         sv_vcfparser              => undef,                    # Depends on analysis type
-        varianteffectpredictor    => \&analysis_vep,
+        varianteffectpredictor    => \&analysis_vep_wgs,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
         version_collect_ar => \&analysis_mip_vercollect,

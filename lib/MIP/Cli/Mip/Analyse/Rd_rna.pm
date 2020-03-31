@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.33;
+our $VERSION = 1.34;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -907,6 +907,16 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             isa           => ArrayRef [Str],
         )
     );
+
+    option(
+        q{vep_plugins_dir_path} => (
+            cmd_aliases   => [qw{ veppldp }],
+            documentation => q{Path to directory with VEP plugins},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 

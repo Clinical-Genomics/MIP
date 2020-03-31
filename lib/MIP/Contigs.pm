@@ -27,7 +27,8 @@ BEGIN {
     our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_select_file_contigs
+    our @EXPORT_OK = qw{
+      check_select_file_contigs
       set_contigs
       sort_contigs_to_contig_set
     };
