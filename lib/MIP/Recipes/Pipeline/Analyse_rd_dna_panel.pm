@@ -178,7 +178,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
     use MIP::Recipes::Build::Rd_dna qw{ build_rd_dna_meta_files };
 
@@ -253,7 +253,7 @@ sub pipeline_analyse_rd_dna_panel {
         sambamba_depth         => \&analysis_sambamba_depth,
         samtools_merge         => \&analysis_samtools_merge_panel,
         variant_integrity_ar   => \&analysis_variant_integrity,
-        varianteffectpredictor => \&analysis_vep_rna,
+        varianteffectpredictor => \&analysis_vep,
         version_collect_ar     => \&analysis_mip_vercollect,
         vt_ar                  => \&analysis_vt_panel,
     );

@@ -46,16 +46,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Vep} => [qw{ analysis_vep_rna }],
+        q{MIP::Recipes::Analysis::Vep} => [qw{ analysis_vep_wgs }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
+use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
 
-diag(   q{Test analysis_vep_rna from Vep.pm v}
+diag(   q{Test analysis_vep_wgs from Vep.pm v}
       . $MIP::Recipes::Analysis::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -88,6 +88,12 @@ $active_parameter{vep_custom_annotation}{a_ref} = {
     annotation_type          => q{exact},
 };
 $active_parameter{vep_directory_cache} = q{a_cache};
+$active_parameter{vep_plugin}{dbNSFP} = {
+    path       => q{a_path},
+    parameters => [qw{ param_1 param_2 }],
+};
+$active_parameter{vep_features} = [qw{ refseq }];
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -112,12 +118,11 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{cache}{consensus_analysis_type} = q{wts};
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_vep_rna(
+my $is_ok = analysis_vep_wgs(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,

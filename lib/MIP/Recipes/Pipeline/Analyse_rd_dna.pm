@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -211,7 +211,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
@@ -317,7 +317,7 @@ sub pipeline_analyse_rd_dna {
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
         varg_ar                => \&analysis_varg,
-        varianteffectpredictor => \&analysis_vep,
+        varianteffectpredictor => \&analysis_vep_wgs,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,
         vcfparser_ar           => \&analysis_mip_vcfparser,

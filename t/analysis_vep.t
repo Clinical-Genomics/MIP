@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -80,20 +80,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{vep_custom_annotation}{a_ref} = {
-    path                     => q{a_path},
-    key                      => q{a_key},
-    file_type                => q{bed},
-    force_report_coordinates => 0,
-    annotation_type          => q{exact},
-};
 $active_parameter{vep_directory_cache} = q{a_cache};
-$active_parameter{vep_plugin}{dbNSFP} = {
-    path       => q{a_path},
-    parameters => [qw{ param_1 param_2 }],
-};
-$active_parameter{vep_features} = [qw{ refseq }];
-
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -118,7 +105,9 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{cache}{consensus_analysis_type} = q{wts};
+$parameter{$recipe_name}{outfile_suffix}   = q{.vcf};
+$active_parameter{vep_features}            = [qw{ refseq }];
 
 my %sample_info;
 

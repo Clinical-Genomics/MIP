@@ -32,16 +32,22 @@ BEGIN {
     our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_vep analysis_vep_rna analysis_vep_sv_wes analysis_vep_sv_wgs };
+    our @EXPORT_OK = qw{
+      analysis_vep
+      analysis_vep_wgs
+      analysis_vep_sv_wes
+      analysis_vep_sv_wgs
+    };
 
 }
 
 ## Constants
 Readonly my $ANNOTATION_DISTANCE    => $ANALYSIS{ANNOTATION_DISTANCE};
 Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
+Readonly my $BUFFER_SIZE            => 20_000;
+Readonly my $BUFFER_SIZE_SV         => 100;
 
-sub analysis_vep {
+sub analysis_vep_wgs {
 
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
@@ -306,16 +312,11 @@ sub analysis_vep {
 
     ## Get parameters
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     # VEP plugins
     my @plugins =
@@ -355,7 +356,7 @@ sub analysis_vep {
         variant_effect_predictor(
             {
                 assembly               => $assembly_version,
-                buffer_size            => 20_000,
+                buffer_size            => $BUFFER_SIZE,
                 cache_directory        => $active_parameter_href->{vep_directory_cache},
                 custom_annotations_ref => \@custom_annotations,
                 distance               => $distance,
@@ -680,16 +681,11 @@ sub analysis_vep_sv_wes {
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP plugins
     my @plugins =
@@ -712,7 +708,7 @@ sub analysis_vep_sv_wes {
     variant_effect_predictor(
         {
             assembly           => $assembly_version,
-            buffer_size        => 100,
+            buffer_size        => $BUFFER_SIZE_SV,
             cache_directory    => $active_parameter_href->{vep_directory_cache},
             filehandle         => $filehandle,
             fork               => $VEP_FORK_NUMBER,
@@ -1028,16 +1024,11 @@ sub analysis_vep_sv_wgs {
       $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP plugins
     my @plugins =
@@ -1105,7 +1096,7 @@ sub analysis_vep_sv_wgs {
         variant_effect_predictor(
             {
                 assembly           => $assembly_version,
-                buffer_size        => 100,
+                buffer_size        => $BUFFER_SIZE_SV,
                 cache_directory    => $active_parameter_href->{vep_directory_cache},
                 distance           => $distance,
                 filehandle         => $xargsfilehandle,
@@ -1173,9 +1164,9 @@ sub analysis_vep_sv_wgs {
     return 1;
 }
 
-sub analysis_vep_rna {
+sub analysis_vep {
 
-## Function : Varianteffectpredictor performs effect predictions and annotation of variantsi from RNA-seq data.
+## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -1272,6 +1263,7 @@ sub analysis_vep_rna {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::List qw{ get_splitted_lists };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
@@ -1377,26 +1369,23 @@ sub analysis_vep_rna {
     );
 
     ## Get contigs
-    my %primary_contig = Readonly::Clone %PRIMARY_CONTIG;
-    my @mt = grep { /M/xms } @{ $primary_contig{$genome_reference_version}{contigs} };
-    my @contigs =
-      grep { not m/M/xms } @{ $primary_contig{$genome_reference_version}{contigs} };
+    my ( $mt_contig_ref, $contigs_ref ) = get_splitted_lists(
+        {
+            regexp   => qr/M/,
+            list_ref => $file_info_href->{bam_contigs},
+        }
+    );
 
     ## Get plugins
     my @plugins =
       _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{vep_plugin}, } );
 
     # Get VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP features
     my ( @vep_features_ref, @vep_features_mt_ref );
@@ -1418,7 +1407,7 @@ sub analysis_vep_rna {
     variant_effect_predictor(
         {
             assembly               => $assembly_version,
-            buffer_size            => 20_000,
+            buffer_size            => $BUFFER_SIZE,
             cache_directory        => $active_parameter_href->{vep_directory_cache},
             custom_annotations_ref => \@custom_annotations,
             distance               => $ANNOTATION_DISTANCE,
@@ -1431,7 +1420,7 @@ sub analysis_vep_rna {
             plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
             plugins_ref            => \@plugins,
             reference_path         => $active_parameter_href->{human_genome_reference},
-            regions_ref            => \@contigs,
+            regions_ref            => $contigs_ref,
             synonyms_file_path     => $vep_synonyms_file_path,
             vep_features_ref       => \@vep_features_ref,
         }
@@ -1442,7 +1431,7 @@ sub analysis_vep_rna {
     variant_effect_predictor(
         {
             assembly               => $assembly_version,
-            buffer_size            => 20_000,
+            buffer_size            => $BUFFER_SIZE,
             cache_directory        => $active_parameter_href->{vep_directory_cache},
             custom_annotations_ref => \@custom_annotations,
             distance               => $ANNOTATION_DISTANCE_MT,
@@ -1456,7 +1445,7 @@ sub analysis_vep_rna {
             plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
             plugins_ref            => \@plugins,
             reference_path         => $active_parameter_href->{human_genome_reference},
-            regions_ref            => \@mt,
+            regions_ref            => $mt_contig_ref,
             synonyms_file_path     => $vep_synonyms_file_path,
             stdoutfile_path_append => $outfile_path,
             vep_features_ref       => \@vep_features_mt_ref,
@@ -1522,8 +1511,7 @@ sub _get_custom_annotation_cmds {
 
     my $tmpl = {
         vep_custom_annotation_href => {
-            default     => {},
-            defined     => 1,
+            default     => $arg_href->{vep_custom_annotation_href} ||= undef,
             required    => 1,
             store       => \$vep_custom_annotation_href,
             strict_type => 1,
@@ -1531,6 +1519,8 @@ sub _get_custom_annotation_cmds {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $vep_custom_annotation_href );
 
     my @custom_annotations;
     my @order_custom_options =
