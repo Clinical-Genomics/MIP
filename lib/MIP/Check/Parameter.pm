@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.39;
+    our $VERSION = 1.40;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -42,7 +42,6 @@ BEGIN {
       check_nist_version
       check_prioritize_variant_callers
       check_recipe_fastq_compatibility
-      check_sample_id_in_hash_parameter_path
     };
 }
 
@@ -730,115 +729,6 @@ sub check_prioritize_variant_callers {
                   . join( $COMMA, @variant_caller_aliases )
                   . $SINGLE_QUOTE );
             exit 1;
-        }
-    }
-    return 1;
-}
-
-sub check_sample_id_in_hash_parameter_path {
-
-## Function : Check sample_id provided in hash path parameter is included in the analysis and only represented once
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_names_ref;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_names_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_names_ref,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        # Hash to test duplicate sample_ids later
-        my %seen;
-
-      SAMPLE_STR:
-        foreach my $sample_id_str ( keys %{ $active_parameter_href->{$parameter_name} } )
-        {
-
-            ## Get sample ids for parameter
-            my @parameter_samples =
-              split $COMMA,
-              $active_parameter_href->{$parameter_name}{$sample_id_str};
-
-          SAMPLE_ID:
-            foreach my $sample_id (@parameter_samples) {
-
-                # Increment instance to check duplicates later
-                $seen{$sample_id}++;
-
-                ## Check sample_id are unique
-                if ( $seen{$sample_id} > 1 ) {
-
-                    $log->fatal(
-                        q{Sample_id: }
-                          . $sample_id
-                          . q{ is not uniqe in '--}
-                          . $parameter_name . q{': }
-                          . $sample_id_str . q{=}
-                          . join $COMMA,
-                        @parameter_samples,
-                    );
-                    exit 1;
-                }
-            }
-        }
-        ## Check all sample ids are present in parameter string
-      SAMPLE_ID:
-        foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-            ## If sample_id is not present in parameter_name hash
-            if ( not any { $_ eq $sample_id } ( keys %seen ) ) {
-
-                $log->fatal(
-                    q{Could not detect }
-                      . $sample_id
-                      . q{ for '--}
-                      . $parameter_name
-                      . q{'. Provided sample_ids are: }
-                      . join $COMMA
-                      . $SPACE,
-                    ( keys %seen ),
-                );
-                exit 1;
-            }
         }
     }
     return 1;

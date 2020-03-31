@@ -36,6 +36,7 @@ BEGIN {
       check_parameter_files
       check_recipe_mode
       check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
       get_active_parameter_attribute
       get_not_allowed_temp_dirs
       get_package_env_attributes
@@ -528,6 +529,114 @@ sub check_sample_id_in_hash_parameter {
                   . $SINGLE_QUOTE
                   . q{. Provided sample_ids for parameter are: }
                   . $parameter_name_sample_ids );
+            exit 1;
+        }
+    }
+    return 1;
+}
+
+sub check_sample_id_in_hash_parameter_path {
+
+## Function : Check sample_id provided in hash path parameter is included in the
+##          : analysis and only represented once
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_names_ref;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_names_ref,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+
+        # Hash to test duplicate sample_ids later
+        my %seen;
+
+        my %parameter_name_hash = get_active_parameter_attribute(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            }
+        );
+
+      PATH:
+        while ( my ( $path, $sample_ids_str ) = each %parameter_name_hash ) {
+
+            ## Get sample ids for parameter from string
+            my @parameter_samples = split $COMMA, $sample_ids_str;
+
+          SAMPLE_ID:
+            foreach my $sample_id (@parameter_samples) {
+
+                # Increment instance to check duplicates later
+                $seen{$sample_id}++;
+
+                ## Check sample_id are unique
+                next SAMPLE_ID if ( $seen{$sample_id} < 2 );
+
+                $log->fatal(
+                        q{Sample_id: }
+                      . $sample_id
+                      . q{ is not uniqe in '--}
+                      . $parameter_name . q{': }
+                      . $path . q{=}
+                      . $sample_ids_str,
+                );
+                exit 1;
+            }
+        }
+
+        ## Check all sample ids are present in parameter string
+      SAMPLE_ID:
+        foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+            ## If sample_id is not present in parameter_name hash
+            next SAMPLE_ID if ( exists $seen{$sample_id} );
+
+            my $seen_sample_ids = join $COMMA . $SPACE, ( keys %seen );
+
+            $log->fatal(
+                    q{Could not detect }
+                  . $sample_id
+                  . q{ for '--}
+                  . $parameter_name
+                  . q{'. Provided sample_ids are: }
+                  . $seen_sample_ids,
+            );
             exit 1;
         }
     }

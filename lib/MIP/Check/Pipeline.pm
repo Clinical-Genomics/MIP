@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -389,11 +389,9 @@ sub check_rd_dna {
     use MIP::Active_parameter qw{
       check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
       parse_vep_plugin
       set_vcfparser_outfile_counter
-    };
-    use MIP::Check::Parameter qw{
-      check_sample_id_in_hash_parameter_path
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Config qw{ write_mip_config };
@@ -497,7 +495,6 @@ sub check_rd_dna {
     check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             parameter_names_ref   => [qw{ exome_target_bed infile_dirs }],
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
@@ -734,11 +731,9 @@ sub check_rd_dna_panel {
     use MIP::Active_parameter qw{
       check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
       parse_vep_plugin
       set_vcfparser_outfile_counter
-    };
-    use MIP::Check::Parameter qw{
-      check_sample_id_in_hash_parameter_path
     };
     use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Check::Reference qw{  };
@@ -824,7 +819,6 @@ sub check_rd_dna_panel {
     check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             parameter_names_ref   => [qw{ exome_target_bed infile_dirs }],
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
@@ -1243,10 +1237,13 @@ sub check_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ check_sample_id_in_hash_parameter };
+    use MIP::Active_parameter qw{
+      check_sample_id_in_hash_parameter
+    check_sample_id_in_hash_parameter_path
+  };
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter
-      qw{ check_recipe_fastq_compatibility check_sample_id_in_hash_parameter_path };
+      qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
@@ -1281,7 +1278,6 @@ sub check_rd_rna {
     check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs }],
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
