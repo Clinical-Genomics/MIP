@@ -320,7 +320,7 @@ sub get_absolute_path {
 
 sub get_file_line_by_line {
 
-## Function  : Read file line by line and return array where is element is a line
+## Function  : Read file line by line and return array where each element is a line
 ## Returns   : \@lines
 ## Arguments : $chomp => Remove any end-of-line character sequences
 ##           : $path  => File path to read
