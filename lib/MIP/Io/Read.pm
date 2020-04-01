@@ -64,7 +64,7 @@ sub read_from_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Path qw{ get_file_line_by_line };
+    use MIP::File::Path qw{ get_file_line_by_line };
     use MIP::Toml qw{ load_toml };
     use MIP::Yaml qw{ load_yaml };
 

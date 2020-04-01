@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,7 +36,6 @@ BEGIN {
       get_bin_file_path
       get_conda_bin_dir_path
       get_conda_path
-      get_file_line_by_line
       is_binary_in_path
     };
 }
@@ -299,43 +298,6 @@ sub get_conda_path {
 
     ## Return path to conda main directory
     return catdir(@conda_path_dirs);
-}
-
-sub get_file_line_by_line {
-
-## Function  : Read file line by line and return array where is element is a line
-## Returns   : \@lines
-## Arguments : $chomp => Remove any end-of-line character sequences
-##           : $path  => File path to read
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $path;
-
-    ## Default(s)
-    my $chomp;
-
-    my $tmpl = {
-        chomp => {
-            default     => 0,
-            store       => \$chomp,
-            strict_type => 1,
-        },
-        path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Path::Tiny qw{ path };
-
-    my @lines = path($path)->lines_utf8( { chomp => $chomp, } );
-    return \@lines;
 }
 
 sub is_binary_in_path {

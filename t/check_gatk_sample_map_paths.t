@@ -17,15 +17,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,11 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-Readonly my $TAB   => qq{\t};
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_log test_import };
@@ -46,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}    => [qw{ check_gatk_sample_map_paths }],
+        q{MIP::Gatk}           => [qw{ check_gatk_sample_map_paths }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_gatk_sample_map_paths };
+use MIP::Gatk qw{ check_gatk_sample_map_paths };
 
-diag(   q{Test check_gatk_sample_map_paths from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test check_gatk_sample_map_paths from Gatk.pm v}
+      . $MIP::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,7 +63,6 @@ my $log      = test_log( {} );
 my $test_dir = File::Temp->newdir();
 
 ## Given a sample file with paths that exists
-#my $gatk_genotypegvcfs_ref_gvcf = catfile($Bin, qw{ data references grch37_gatk_merged_reference_samples.txt });
 my $gatk_genotypegvcfs_ref_gvcf = catfile( $test_dir, q{sample_map_file.txt} );
 
 ## Create anonymous filehandle
@@ -86,7 +80,6 @@ close $filehandle;
 
 my $is_ok = check_gatk_sample_map_paths(
     {
-        log             => $log,
         sample_map_path => $gatk_genotypegvcfs_ref_gvcf,
     }
 );
@@ -96,6 +89,7 @@ ok( $is_ok, q{Found all paths in sample_map_path} );
 ## Given a non existing file path with trailing garbage
 open $filehandle, q{>>}, $gatk_genotypegvcfs_ref_gvcf
   or $log->logdie( q{Cannot open '} . $gatk_genotypegvcfs_ref_gvcf . q{': } . $OS_ERROR );
+
 ## Write to file
 say {$filehandle} q{sample_1} . $TAB
   . catfile( $Bin, q{not_a_file_path} . $TAB . q{garbage} );
@@ -105,7 +99,6 @@ close $filehandle;
 trap {
     check_gatk_sample_map_paths(
         {
-            log             => $log,
             sample_map_path => $gatk_genotypegvcfs_ref_gvcf,
         }
     )

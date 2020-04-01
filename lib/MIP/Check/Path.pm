@@ -17,7 +17,7 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
+use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 
 BEGIN {
 
@@ -31,7 +31,6 @@ BEGIN {
     our @EXPORT_OK = qw{
       check_file_version_exist
       check_future_filesystem_for_directory
-      check_gatk_sample_map_paths
       check_vcfanno_toml
     };
 }
@@ -127,74 +126,6 @@ sub check_future_filesystem_for_directory {
     $dir_check_command .= join $SPACE, @mkdir_commands;
 
     return $dir_check_command;
-}
-
-sub check_gatk_sample_map_paths {
-
-## Function : Check that the supplied gatk sample map file paths exists
-## Returns  :
-## Arguments: $log             => Log object
-##          : $sample_map_path => Sample map path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $sample_map_path;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        sample_map_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_map_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Constants
-    Readonly my $RECORD_SEPARATOR => qq{\t};
-    Readonly my $FIELD_COUNTER    => 2;
-
-    my @lines = read_from_file(
-        {
-            chomp  => 1,
-            format => q{line_by_line},
-            path   => $sample_map_path,
-        }
-    );
-
-  LINE:
-    foreach my $line (@lines) {
-
-        ## Get sample and file path (and check proper format)
-        my ( $sample, $file_path, $unexpected_data ) =
-          split $RECORD_SEPARATOR, $line, $FIELD_COUNTER + 1;
-
-        ## Make sure that we get what we expect
-        if ( defined $unexpected_data ) {
-
-            carp q{Unexpected trailing garbage at end of line '} . $line . q{':},
-              $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
-        }
-
-        ## Path exists
-        next LINE if ( -e $file_path );
-
-        $log->fatal( q{The supplied file path: }
-              . $file_path
-              . q{ from sample map file: }
-              . $sample_map_path
-              . q{ does not exist} );
-        exit 1;
-    }
-    return 1;
 }
 
 sub check_vcfanno_toml {

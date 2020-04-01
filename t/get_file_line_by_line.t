@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Environment::Path} => [qw{ get_file_line_by_line }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
+        q{MIP::File::Path}     => [qw{ get_file_line_by_line }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Environment::Path qw{ get_file_line_by_line };
+use MIP::File::Path qw{ get_file_line_by_line };
 
 diag(   q{Test get_file_line_by_line from Path.pm v}
-      . $MIP::Environment::Path::VERSION
+      . $MIP::File::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
