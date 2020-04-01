@@ -17,8 +17,7 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants
-  qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
+use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $NEWLINE $OPEN_BRACKET $SPACE $TAB };
 
 BEGIN {
 
@@ -163,20 +162,16 @@ sub check_gatk_sample_map_paths {
     Readonly my $RECORD_SEPARATOR => qq{\t};
     Readonly my $FIELD_COUNTER    => 2;
 
-    ## Create anonymous filehandle
-    my $filehandle = IO::Handle->new();
-
-    open $filehandle, q{<}, $sample_map_path
-      or $log->logdie( q{Cannot open '} . $sample_map_path . q{': } . $OS_ERROR );
+    my @lines = read_from_file(
+        {
+            chomp  => 1,
+            format => q{line_by_line},
+            path   => $sample_map_path,
+        }
+    );
 
   LINE:
-    while (<$filehandle>) {
-
-        ## Remove newline
-        chomp;
-
-        ## Unpack line
-        my $line = $_;
+    foreach my $line (@lines) {
 
         ## Get sample and file path (and check proper format)
         my ( $sample, $file_path, $unexpected_data ) =
@@ -188,6 +183,7 @@ sub check_gatk_sample_map_paths {
             carp q{Unexpected trailing garbage at end of line '} . $line . q{':},
               $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
         }
+
         ## Path exists
         next LINE if ( -e $file_path );
 
@@ -198,7 +194,6 @@ sub check_gatk_sample_map_paths {
               . q{ does not exist} );
         exit 1;
     }
-    close $filehandle;
     return 1;
 }
 

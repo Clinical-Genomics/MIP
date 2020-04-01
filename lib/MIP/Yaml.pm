@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_yaml write_yaml };
@@ -31,8 +31,8 @@ BEGIN {
 
 sub load_yaml {
 
-## Function : Loads a YAML file into an arbitrary hash and returns it.
-## Returns  : %yaml
+## Function : Loads a YAML file into an arbitrary hash and returns reference to hash
+## Returns  : \%yaml
 ## Arguments: $path => Yaml file path to load
 
     my ($arg_href) = @_;
@@ -62,7 +62,7 @@ sub load_yaml {
 
     close $YAML;
 
-    return %yaml;
+    return \%yaml;
 }
 
 sub write_yaml {

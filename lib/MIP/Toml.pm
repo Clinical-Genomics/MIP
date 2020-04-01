@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_toml };
@@ -28,8 +28,8 @@ BEGIN {
 
 sub load_toml {
 
-## Function : Loads a TOML file into an arbitrary hash and returns it.
-## Returns  : %toml
+## Function : Loads a TOML file into an arbitrary hash and returns reference to hash
+## Returns  : \%toml
 ## Arguments: $path => Toml file path
 
     my ($arg_href) = @_;
@@ -56,7 +56,7 @@ sub load_toml {
     # Load file info into hash
     my %toml = %{ $parser_toml->parse_file($path) };
 
-    return %toml;
+    return \%toml;
 }
 
 1;

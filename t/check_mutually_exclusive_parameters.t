@@ -16,16 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-use Test::Trap;
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
