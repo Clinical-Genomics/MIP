@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -187,7 +187,7 @@ sub check_mutually_exclusive_parameters {
       EXCLUSIVE_PARAM:
         foreach my $exclusive_parameter ( @{$exclusive_parameters_ref} ) {
 
-            # Not active exclusive aprameter no need to check
+            # Not active exclusive parameter no need to check
             next EXCLUSIVE_PARAM
               if ( not $active_parameter_href->{$exclusive_parameter} );
 

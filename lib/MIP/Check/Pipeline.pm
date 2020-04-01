@@ -393,10 +393,10 @@ sub check_rd_dna {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
+    use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -503,7 +503,6 @@ sub check_rd_dna {
     ## Check that the supplied gatk sample map file paths exists
     check_gatk_sample_map_paths(
         {
-            log             => $log,
             sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
@@ -735,11 +734,11 @@ sub check_rd_dna_panel {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Check::Path qw{ check_gatk_sample_map_paths };
     use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
+    use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parse::Parameter
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -827,7 +826,6 @@ sub check_rd_dna_panel {
     ## Check that the supplied gatk sample map file paths exists
     check_gatk_sample_map_paths(
         {
-            log             => $log,
             sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
@@ -1239,11 +1237,10 @@ sub check_rd_rna {
 
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
-    check_sample_id_in_hash_parameter_path
-  };
+      check_sample_id_in_hash_parameter_path
+    };
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
-    use MIP::Check::Parameter
-      qw{ check_recipe_fastq_compatibility  };
+    use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
