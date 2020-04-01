@@ -59,6 +59,8 @@ sub check_gatk_sample_map_paths {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
+    my @missing_files;
+
     my @lines = read_from_file(
         {
             chomp  => 1,
@@ -77,21 +79,27 @@ sub check_gatk_sample_map_paths {
         ## Make sure that we get what we expect
         if ( defined $unexpected_data ) {
 
-            carp q{Unexpected trailing garbage at end of line '} . $line . q{':},
-              $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
+            $log->logcarp(
+                q{Unexpected trailing garbage at end of line '} . $line . q{':},
+                $NEWLINE . $TAB . $unexpected_data . $NEWLINE );
         }
 
         ## Path exists
         next LINE if ( -e $file_path );
 
-        $log->fatal( q{The supplied file path: }
-              . $file_path
-              . q{ from sample map file: }
-              . $sample_map_path
-              . q{ does not exist} );
-        exit 1;
+        my $error_msg =
+            q{The supplied file path: }
+          . $file_path
+          . q{ from sample map file: }
+          . $sample_map_path
+          . q{ does not exist};
+        push @missing_files, $error_msg;
     }
-    return 1;
+    return 1 if ( not @missing_files );
+
+    ## Broadcast missing files
+    map { $log->fatal($_) } @missing_files;
+    exit 1;
 }
 
 1;

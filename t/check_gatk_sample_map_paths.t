@@ -93,6 +93,7 @@ open $filehandle, q{>>}, $gatk_genotypegvcfs_ref_gvcf
 ## Write to file
 say {$filehandle} q{sample_1} . $TAB
   . catfile( $Bin, q{not_a_file_path} . $TAB . q{garbage} );
+say {$filehandle} q{sample_1} . $TAB . catfile( $Bin, q{not_a_file_path_again} );
 
 close $filehandle;
 
