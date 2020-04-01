@@ -92,11 +92,7 @@ sub read_from_file {
 
         return %{$data_ref};
     }
-    if ( ref $data_ref eq q{ARRAY} ) {
-
         return @{$data_ref};
-    }
-    return;
 }
 
 1;
