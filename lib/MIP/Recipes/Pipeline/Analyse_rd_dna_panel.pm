@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -168,6 +168,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
+    use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -254,6 +255,7 @@ sub pipeline_analyse_rd_dna_panel {
         samtools_merge         => \&analysis_samtools_merge_panel,
         variant_integrity_ar   => \&analysis_variant_integrity,
         varianteffectpredictor => \&analysis_vep,
+        vcfparser_ar           => \&analysis_mip_vcfparser_panel,
         version_collect_ar     => \&analysis_mip_vercollect,
         vt_ar                  => \&analysis_vt_panel,
     );

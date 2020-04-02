@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -82,7 +78,7 @@ my $not_exist = check_element_exist_hash_of_array(
     }
 );
 
-is( $not_exist, 1, q{Element not part of hash of arrays} );
+is( $not_exist, undef, q{Element not part of hash of arrays} );
 
 my $exist = check_element_exist_hash_of_array(
     {
@@ -92,6 +88,6 @@ my $exist = check_element_exist_hash_of_array(
     }
 );
 
-is( $exist, undef, q{Element is part of hash of arrays} );
+is( $exist, 1, q{Element is part of hash of arrays} );
 
 done_testing();
