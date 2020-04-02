@@ -17,7 +17,7 @@ use List::MoreUtils qw{ any };
 use Readonly;
 
 ## MIPs lib
-use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $LOG_NAME $OPEN_BRACKET $SPACE };
+use MIP::Constants qw{ $AMPERSAND $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 
 BEGIN {
 

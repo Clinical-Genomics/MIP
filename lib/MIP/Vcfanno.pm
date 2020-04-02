@@ -88,6 +88,7 @@ sub check_vcfanno_toml {
         }
         if (@missing_annotations) {
 
+            ## Broadcast missing files
             foreach my $error_msg (@missing_annotations) {
                 $log->fatal($error_msg);
             }
