@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,7 +42,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}                => [qw{ check_vcfanno_toml }],
+        q{MIP::Vcfanno}                    => [qw{ check_vcfanno_toml }],
         q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
         q{MIP::Environment::Child_process} => [qw{ child_process }],
     );
@@ -50,11 +50,11 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_vcfanno_toml };
+use MIP::Vcfanno qw{ check_vcfanno_toml };
 use MIP::Environment::Child_process qw{ child_process };
 
-diag(   q{Test check_vcfanno_toml from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test check_vcfanno_toml from Vcfanno.pm v}
+      . $MIP::Vcfanno::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,7 +99,6 @@ my %process_return = child_process(
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
-        log               => $log,
         parameter_name    => q{fqa_vcfanno_config},
         vcfanno_file_toml => $test_fqa_vcfanno_config,
     }
@@ -118,7 +117,6 @@ my $faulty_fqa_vcfanno_config_file = catfile( $Bin,
 trap {
     check_vcfanno_toml(
         {
-            log               => $log,
             parameter_name    => q{fqa_vcfanno_config},
             vcfanno_file_toml => $faulty_fqa_vcfanno_config_file,
         }

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,7 +33,6 @@ BEGIN {
       parse_infiles
       parse_nist_parameters
       parse_prioritize_variant_callers
-      parse_toml_config_parameters
     };
 
 }
@@ -442,57 +441,6 @@ sub parse_prioritize_variant_callers {
         else {
             ## No active callers at all
             return;
-        }
-    }
-    return 1;
-}
-
-sub parse_toml_config_parameters {
-
-## Function : Parse parameters with TOML config files
-## Returns  : 1
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $log                   => Log object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Path qw{ check_vcfanno_toml };
-
-    ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-    my %toml_config_parameter = ( frequency_filter => q{fqa_vcfanno_config}, );
-  CONFIG_FILE:
-    while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
-
-        if ( $active_parameter_href->{$recipe_name} ) {
-
-            check_vcfanno_toml(
-                {
-                    log               => $log,
-                    parameter_name    => $parameter_name,
-                    vcfanno_file_toml => $active_parameter_href->{$parameter_name},
-                }
-            );
         }
     }
     return 1;
