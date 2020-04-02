@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_gatk_sample_map_paths };
@@ -98,7 +98,9 @@ sub check_gatk_sample_map_paths {
     return 1 if ( not @missing_files );
 
     ## Broadcast missing files
-    map { $log->fatal($_) } @missing_files;
+    foreach my $error_msg (@missing_files) {
+        $log->fatal($error_msg);
+    }
     exit 1;
 }
 

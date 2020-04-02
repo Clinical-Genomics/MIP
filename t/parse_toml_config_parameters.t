@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,7 +42,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Parameter}           => [qw{ parse_toml_config_parameters }],
+        q{MIP::Vcfanno}                    => [qw{ parse_toml_config_parameters }],
         q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
         q{MIP::Environment::Child_process} => [qw{ child_process }],
     );
@@ -51,10 +51,10 @@ BEGIN {
 }
 
 use MIP::Environment::Child_process qw{ child_process };
-use MIP::Parse::Parameter qw{ parse_toml_config_parameters };
+use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
-diag(   q{Test parse_toml_config_parameters from Parameter.pm v}
-      . $MIP::Parse::Parameter::VERSION
+diag(   q{Test parse_toml_config_parameters from Vcfanno.pm v}
+      . $MIP::Vcfanno::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -104,7 +104,6 @@ my %active_parameter = (
 
 my $is_ok = parse_toml_config_parameters(
     {
-        log                   => $log,
         active_parameter_href => \%active_parameter,
     }
 );

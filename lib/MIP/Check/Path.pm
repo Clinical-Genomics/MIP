@@ -25,13 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_file_version_exist
       check_future_filesystem_for_directory
-      check_vcfanno_toml
     };
 }
 
@@ -126,83 +125,6 @@ sub check_future_filesystem_for_directory {
     $dir_check_command .= join $SPACE, @mkdir_commands;
 
     return $dir_check_command;
-}
-
-sub check_vcfanno_toml {
-
-## Function : Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-## Returns  :
-## Arguments: $log               => Log object
-##          : $parameter_name    => Name of parameter
-##          : $vcfanno_file_toml => Toml config file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $parameter_name;
-    my $vcfanno_file_toml;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        vcfanno_file_toml => {
-            defined     => 1,
-            required    => 1,
-            store       => \$vcfanno_file_toml,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw{ check_filesystem_objects_and_index_existance };
-    use MIP::Io::Read qw{ read_from_file };
-
-    my %vcfanno_config = read_from_file(
-        {
-            path   => $vcfanno_file_toml,
-            format => q{toml},
-        }
-    );
-    my @vcfanno_features = qw{ file fields ops };
-    my $err_msg = q{ is not defined or empty vcfanno toml features. Please check file: }
-      . $vcfanno_file_toml;
-  ANNOTATION:
-
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
-
-      FEATURE:
-        foreach my $feature (@vcfanno_features) {
-
-            ## Check mandatory feature keys for vcfanno
-            if ( not defined $annotation_href->{$feature} ) {
-
-                $log->fatal( q{Feature: } . $feature . $err_msg );
-                exit 1;
-            }
-        }
-
-        ## Check path object exists
-        check_filesystem_objects_and_index_existance(
-            {
-                object_name    => q{file},
-                object_type    => q{file},
-                parameter_name => $parameter_name,
-                path           => $annotation_href->{file},
-            }
-        );
-    }
-    return 1;
 }
 
 1;
