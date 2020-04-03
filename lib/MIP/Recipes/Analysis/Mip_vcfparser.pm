@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -602,6 +602,7 @@ sub analysis_mip_vcfparser_panel {
 
     my @vcfparser_analysis_suffixes = get_vcf_parser_analysis_suffix(
         {
+            analysis_type           => $parameter_href->{cache}{consensus_analysis_type},
             vcfparser_outfile_count => $active_parameter_href->{vcfparser_outfile_count},
         }
     );

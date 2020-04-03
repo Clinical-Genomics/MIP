@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -59,10 +59,10 @@ sub check_analysis_type_to_pipeline {
             strict_type => 1,
         },
         pipeline => {
-            allow       => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna}],
-            defined     => 1,
-            required    => 1,
-            store       => \$pipeline,
+            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna}],
+            defined  => 1,
+            required => 1,
+            store    => \$pipeline,
             strict_type => 1,
         },
     };
@@ -157,14 +157,20 @@ sub get_vcf_parser_analysis_suffix {
 
 ## Function : Get the vcf parser analysis suffix
 ## Returns  : @analysis_suffixes
-## Arguments: $vcfparser_outfile_count => Number of user supplied vcf parser outfiles
+## Arguments: $analysis_type           => Analysis type
+##          : $vcfparser_outfile_count => Number of user supplied vcf parser outfiles
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
+    my $analysis_type;
     my $vcfparser_outfile_count;
 
     my $tmpl = {
+        analysis_type => {
+            store       => \$analysis_type,
+            strict_type => 1,
+        },
         vcfparser_outfile_count => {
             defined     => 1,
             required    => 1,
@@ -176,6 +182,12 @@ sub get_vcf_parser_analysis_suffix {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     Readonly my $VCFPARSER_OUTFILE_COUNT => $vcfparser_outfile_count - 1;
+
+    my $analysis_type_suffix = $EMPTY_STR;
+    if ( defined $analysis_type and $analysis_type eq q{panel} ) {
+
+        $analysis_type_suffix = q{all};
+    }
 
     my @analysis_suffixes;
 
@@ -189,7 +201,7 @@ sub get_vcf_parser_analysis_suffix {
             push @analysis_suffixes, q{selected};
             next;
         }
-        push @analysis_suffixes, $EMPTY_STR;
+        push @analysis_suffixes, $analysis_type_suffix;
     }
     return @analysis_suffixes;
 }

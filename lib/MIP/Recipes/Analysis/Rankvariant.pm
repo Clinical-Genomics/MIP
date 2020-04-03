@@ -27,13 +27,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-
 }
+
+Readonly my $FOUR => 4;
 
 sub analysis_rankvariant {
 
@@ -177,8 +178,7 @@ sub analysis_rankvariant {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -287,8 +287,9 @@ sub analysis_rankvariant {
     );
 
     ## Get parameters
-    ## Track which genmod modules has been processed
-    my $genmod_module = $EMPTY_STR;
+    ## Output stream
+    my $genmod_outfile_path = catfile( dirname( devnull() ), q{stdout} );
+    my $genmod_indata       = $DASH;
 
     my $use_vep;
     ## Use VEP annotations in compound models
@@ -302,22 +303,10 @@ sub analysis_rankvariant {
     ## Process per contig
     while ( my ( $contig_index, $infile_path ) = each %infile_path ) {
 
-        ## Get parameters
-        # Restart for next contig
-        $genmod_module = $EMPTY_STR;
-
-        ## Infile
-        my $genmod_indata = $infile_path;
-
-        ## Output stream
-        my $genmod_outfile_path =
-          catfile( dirname( devnull() ), q{stdout} );
-
         my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig_index;
 
         ## Genmod Annotate
-        $genmod_module = $UNDERSCORE . q{annotate};
-
+        my $genmod_module = $UNDERSCORE . q{annotate};
         my $annotate_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
 
@@ -327,7 +316,7 @@ sub analysis_rankvariant {
                 cadd_file_paths_ref =>
                   \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
                 filehandle       => $xargsfilehandle,
-                infile_path      => $genmod_indata,
+                infile_path      => $infile_path,
                 outfile_path     => $genmod_outfile_path,
                 spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
                 stderrfile_path  => $annotate_stderrfile_path,
@@ -335,68 +324,61 @@ sub analysis_rankvariant {
                 verbosity           => q{v},
             }
         );
-
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
-
-        # Preparation for next module
-        $genmod_indata = $DASH;
 
         ## Genmod Models
         $genmod_module .= $UNDERSCORE . q{models};
-
         my $models_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_models(
             {
                 filehandle   => $xargsfilehandle,
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
                 infile_path  => $genmod_indata,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                outfile_path => $genmod_outfile_path,
                 reduced_penetrance_file_path =>
                   $active_parameter_href->{genmod_models_reduced_penetrance_file},
                 stderrfile_path     => $models_stderrfile_path,
                 temp_directory_path => $temp_directory,
-                thread_number       => 4,
+                thread_number       => $FOUR,
                 vep                 => $use_vep,
                 verbosity           => q{v},
                 whole_gene          => $active_parameter_href->{genmod_models_whole_gene},
             }
         );
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Score
         $genmod_module .= $UNDERSCORE . q{score};
-
         my $score_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_score(
             {
                 case_file            => $case_file_path,
                 case_type            => $active_parameter_href->{genmod_models_case_type},
                 filehandle           => $xargsfilehandle,
                 infile_path          => $genmod_indata,
-                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
+                outfile_path         => $genmod_outfile_path,
                 rank_result          => 1,
                 rank_model_file_path => $active_parameter_href->{rank_model_file},
                 stderrfile_path      => $score_stderrfile_path,
                 verbosity            => q{v},
             }
         );
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Compound
         $genmod_module .= q{_compound};
-
         my $compound_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_compound(
             {
                 filehandle          => $xargsfilehandle,
-                infile_path         => $genmod_indata,
+                infile_path         => $DASH,
                 outfile_path        => $outfile_path{$contig_index},
                 stderrfile_path     => $compound_stderrfile_path,
                 temp_directory_path => $temp_directory,
@@ -600,8 +582,7 @@ sub analysis_rankvariant_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -938,8 +919,7 @@ sub analysis_rankvariant_sv {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -1332,8 +1312,7 @@ sub analysis_rankvariant_sv_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1639,7 +1639,7 @@ sub gatk_concatenate_variants {
             strict_type => 1,
         },
         outfile_suffix => {
-            allow       => [qw{ .vcf .selected.vcf }],
+            allow       => [qw{ .all.vcf .vcf .selected.vcf }],
             default     => q{.vcf},
             store       => \$outfile_suffix,
             strict_type => 1,

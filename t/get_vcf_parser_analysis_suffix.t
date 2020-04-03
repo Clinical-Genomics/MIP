@@ -16,6 +16,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -23,7 +24,7 @@ use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -57,23 +58,42 @@ diag(   q{Test get_vcf_parser_analysis_suffix from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @expected_suffix    = ($EMPTY_STR);
-my @expected_sv_suffix = ( $EMPTY_STR, q{selected} );
+Readonly my $TWO => 2;
+
+my @expected_suffixes       = ($EMPTY_STR);
+my @expected_sv_suffixes    = ( $EMPTY_STR, q{selected} );
+my @expected_panel_suffixes = qw{ all selected };
 
 ## Given research outfile
-my $vcfparser_outfile_count = 1;
-my @analysis_suffix         = get_vcf_parser_analysis_suffix(
-    { vcfparser_outfile_count => $vcfparser_outfile_count, } );
+my @analysis_suffixes = get_vcf_parser_analysis_suffix(
+    {
+        vcfparser_outfile_count => 1,
+    }
+);
 
 ## Then return only $EMPTY_STR suffix
-is_deeply( \@analysis_suffix, \@expected_suffix, q{Get single analysis suffix} );
+is_deeply( \@analysis_suffixes, \@expected_suffixes, q{Get single analysis suffix} );
 
 ## Given research and select outfiles
-my $sv_vcfparser_outfile_count = 2;
-my @analysis_sv_suffix         = get_vcf_parser_analysis_suffix(
-    { vcfparser_outfile_count => $sv_vcfparser_outfile_count, } );
+my @analysis_sv_suffixes = get_vcf_parser_analysis_suffix(
+    {
+        vcfparser_outfile_count => $TWO,
+    }
+);
 
 ## Then return both suffixes
-is_deeply( \@analysis_sv_suffix, \@expected_sv_suffix, q{Get both analysis suffixes} );
+is_deeply( \@analysis_sv_suffixes, \@expected_sv_suffixes,
+    q{Get both analysis suffixes} );
+
+my @analysis_panel_suffixes = get_vcf_parser_analysis_suffix(
+    {
+        analysis_type           => q{panel},
+        vcfparser_outfile_count => $TWO,
+    }
+);
+
+## Then return both suffixes
+is_deeply( \@analysis_panel_suffixes, \@expected_panel_suffixes,
+    q{Get both panel suffixes} );
 
 done_testing();
