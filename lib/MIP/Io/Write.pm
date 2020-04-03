@@ -69,18 +69,19 @@ sub write_to_file {
 
     my %file_api = (
         toml => {
-            method   => \&write_toml,
             arg_href => {
                 path      => $path,
                 data_href => $data_href,
             },
+            method => \&write_toml,
+
         },
         yaml => {
-            method   => \&write_yaml,
             arg_href => {
                 path      => $path,
                 data_href => $data_href,
             },
+            method => \&write_yaml,
         },
     );
 
