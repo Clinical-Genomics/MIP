@@ -144,6 +144,7 @@ recipe_core_number:
     samtools_merge: 2
     variant_integrity_ar: 1
     varianteffectpredictor: 1
+    vcfparser_ar: 1
     version_collect_ar: 1
     vt_ar: 1
     vt_core: 1
@@ -172,6 +173,7 @@ recipe_memory:
     picardtools_collectmultiplemetrics: 8
     sambamba_depth: 10
     varianteffectpredictor: 7
+    vcfparser_ar: 7
   type: mip
 set_recipe_memory:
   associated_recipe:
@@ -213,7 +215,7 @@ recipe_time:
     varianteffectpredictor: 4
     variant_integrity_ar: 1
     version_collect_ar: 1
-    vcfparser_ar: 5
+    vcfparser_ar: 1
     vt_ar: 2
     vt_core: 2
   type: mip

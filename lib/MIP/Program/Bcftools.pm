@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -452,8 +452,6 @@ sub bcftools_concat {
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $rm_dups                => Output duplicate records present in multiple files only once: <snps|indels|both|all|none>
-##          : $samples_file_path      => File of samples to annotate
-##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
@@ -466,8 +464,6 @@ sub bcftools_concat {
     my $infile_paths_ref;
     my $outfile_path;
     my $regions_ref;
-    my $samples_file_path;
-    my $samples_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -502,12 +498,6 @@ sub bcftools_concat {
             store       => \$rm_dups,
             strict_type => 1,
         },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
-        samples_ref       => {
-            default     => [],
-            store       => \$samples_ref,
-            strict_type => 1,
-        },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -527,13 +517,11 @@ sub bcftools_concat {
     ## Bcftools base args
     @commands = bcftools_base(
         {
-            commands_ref      => \@commands,
-            outfile_path      => $outfile_path,
-            output_type       => $output_type,
-            regions_ref       => $regions_ref,
-            samples_file_path => $samples_file_path,
-            samples_ref       => $samples_ref,
-            threads           => $threads,
+            commands_ref => \@commands,
+            outfile_path => $outfile_path,
+            output_type  => $output_type,
+            regions_ref  => $regions_ref,
+            threads      => $threads,
         }
     );
 
@@ -1142,8 +1130,8 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle, },
-        infile_path => { store => \$infile_path, strict_type => 1, },
+        filehandle   => { store => \$filehandle, },
+        infile_path  => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
             allow       => [qw{ + - }],
             store       => \$multiallelic,
