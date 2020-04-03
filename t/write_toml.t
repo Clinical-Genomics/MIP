@@ -18,14 +18,15 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
 use Readonly;
+use TOML::Tiny qw{ to_toml };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $DOT $DOUBLE_QUOTE $NEWLINE $SINGLE_QUOTE $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Io::Write}      => [qw{ write_to_file }],
+        q{MIP::Toml}           => [qw{ load_toml write_toml }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Io::Write qw{ write_to_file };
+use MIP::Toml qw{ load_toml write_toml };
 
-diag(   q{Test write_to_file from Write.pm v}
-      . $MIP::Io::Write::VERSION
+diag(   q{Test write_toml from Toml.pm v}
+      . $MIP::Toml::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,40 +60,37 @@ diag(   q{Test write_to_file from Write.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $test_dir = File::Temp->newdir();
+my $test_dir       = File::Temp->newdir();
+my $toml_file_path = catfile( $test_dir, q{ap_test.Toml} );
 
-## Given a hash when writing in YAML format
-my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my $yaml_file_path   = catfile( $test_dir, q{write_yaml_to_file_test.yaml} );
-
-write_to_file(
+## Given a toml file to load
+my $hash_ref = load_toml(
     {
-        data_href => \%active_parameter,
-        format    => q{yaml},
-        path      => $yaml_file_path,
+        path => catfile(
+            $Bin,
+            qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
+        ),
     }
 );
 
-## Then yaml file should exist
-ok( -e $yaml_file_path, q{Created yaml file} );
-
-## Given a hash when writing in TOML format
-my $toml_file_path = catfile( $test_dir, q{write_toml_to_file_test.yaml} );
-
-my %toml_hash = (
-    hash  => q{toml},
-    array => [qw{ toml toml }],
-);
-
-write_to_file(
+write_toml(
     {
-        data_href => \%toml_hash,
-        format    => q{toml},
+        data_href => $hash_ref,
         path      => $toml_file_path,
     }
 );
 
-## Then yaml file should exist
-ok( -e $toml_file_path, q{Created toml file} );
+## Then Toml file should exist
+ok( -e $toml_file_path, q{Created Toml file} );
+
+## When loading toml file
+my $written_toml_hash_ref = load_toml(
+    {
+        path => $toml_file_path,
+    }
+);
+
+## Then hash from serialized toml should contain keys
+ok( keys %{$written_toml_hash_ref}, q{Loaded serialized toml file} );
 
 done_testing();
