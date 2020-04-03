@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_nist_file_exists }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Reference}      => [qw{ check_nist_file_exists }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_nist_file_exists };
+use MIP::Reference qw{ check_nist_file_exists };
 
-diag(   q{Test check_nist_file_exists from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_nist_file_exists from Reference.pm v}
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -90,7 +86,6 @@ my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
 my $is_ok = check_nist_file_exists(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         nist_parameters_ref   => \@nist_parameters,
     }
 );
@@ -105,7 +100,6 @@ trap {
     check_nist_file_exists(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             nist_parameters_ref   => \@nist_parameters,
         }
     )
