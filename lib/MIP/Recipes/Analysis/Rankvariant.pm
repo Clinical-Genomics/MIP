@@ -378,7 +378,7 @@ sub analysis_rankvariant {
         genmod_compound(
             {
                 filehandle          => $xargsfilehandle,
-                infile_path         => $DASH,
+                infile_path         => $genmod_indata,
                 outfile_path        => $outfile_path{$contig_index},
                 stderrfile_path     => $compound_stderrfile_path,
                 temp_directory_path => $temp_directory,
