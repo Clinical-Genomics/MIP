@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -46,17 +46,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Parameter} => [qw{ set_parameter_to_broadcast}],
+        q{MIP::Analysis}       => [qw{ set_parameter_to_broadcast}],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
+use MIP::Analysis qw{ set_parameter_to_broadcast };
 
-diag(   q{Test set_parameter_to_broadcast from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_parameter_to_broadcast from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,10 +66,10 @@ diag(   q{Test set_parameter_to_broadcast from Parameter.pm v}
 
 ## Given different containers to broadcast
 my %active_parameter = (
-    Basil   => [ qw{ Don't mention the war }, ],
-    cast    => { starring => [qw{ John_Cleese Prunella_Scales Andrew_Sachs }], },
+    Basil   => [ qw{Don't mention the war}, ],
+    cast    => { starring => [qw{John_Cleese Prunella_Scales Andrew_Sachs}], },
     employe => [
-        qw{ receptionist cleaner },
+        qw{receptionist cleaner},
         {
             servant => {
                 from => q{Barcelona},
@@ -77,11 +77,12 @@ my %active_parameter = (
         }
     ],
     Fawlty => { Towers => { genre => q{sitcom}, }, },
-    rooms  => [ q{ground_floor}, [ qw{ room_101 room_102}, ], ],
+    rooms  => [ q{ground_floor}, [ qw{room_101 room_102}, ], ],
     Manuel => {
         line => q{Que},
     },
-    Sybil => q{Ooohh, I knoooow},
+    Sybil   => q{Ooohh, I knoooow},
+    verbose => q{BBC2 - 1975-1979},
 );
 
 # Add a order to the broadcast
