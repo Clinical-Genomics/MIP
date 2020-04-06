@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -32,12 +31,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $HASH_OF_HASH_INDEX   => 3;
-Readonly my $HASH_OF_ARRAY_INDEX  => 4;
-Readonly my $ARRAY_OF_HASH_INDEX  => 5;
-Readonly my $ARRAY_OF_ARRAY_INDEX => 6;
 
 BEGIN {
 
