@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -129,7 +129,7 @@ sub check_dragen_rd_dna {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Analysis qw{ set_parameter_to_broadcast };
+    use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -205,19 +205,13 @@ sub check_dragen_rd_dna {
         }
     );
 
-    set_parameter_to_broadcast(
+    broadcast_parameters(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             order_parameters_ref  => $order_parameters_ref,
         }
     );
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
 
     ## Write references for this analysis to yaml
     write_references(
@@ -390,7 +384,7 @@ sub check_rd_dna {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Analysis qw{ set_parameter_to_broadcast };
+    use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -519,19 +513,13 @@ sub check_rd_dna {
         }
     );
 
-    set_parameter_to_broadcast(
+    broadcast_parameters(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             order_parameters_ref  => $order_parameters_ref,
         }
     );
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
 
     ## Write references for this analysis to yaml
     write_references(
@@ -728,7 +716,7 @@ sub check_rd_dna_panel {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Analysis qw{ set_parameter_to_broadcast };
+    use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
@@ -839,19 +827,13 @@ sub check_rd_dna_panel {
         }
     );
 
-    set_parameter_to_broadcast(
+    broadcast_parameters(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             order_parameters_ref  => $order_parameters_ref,
         }
     );
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
 
     ## Write references for this analysis to yaml
     write_references(
@@ -1002,7 +984,7 @@ sub check_rd_dna_vcf_rerun {
       parse_vep_plugin
       set_vcfparser_outfile_counter
     };
-    use MIP::Analysis qw{ set_parameter_to_broadcast };
+    use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -1075,19 +1057,13 @@ sub check_rd_dna_vcf_rerun {
         }
     );
 
-    set_parameter_to_broadcast(
+    broadcast_parameters(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             order_parameters_ref  => $order_parameters_ref,
         }
     );
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
 
     ## Write references for this analysis to yaml
     write_references(
@@ -1227,7 +1203,7 @@ sub check_rd_rna {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
     };
-    use MIP::Analysis qw{ set_parameter_to_broadcast };
+    use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
@@ -1284,19 +1260,13 @@ sub check_rd_rna {
         }
     );
 
-    set_parameter_to_broadcast(
+    broadcast_parameters(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             order_parameters_ref  => $order_parameters_ref,
         }
     );
-
-    ## Broadcast set parameters info
-    foreach my $parameter_info ( @{$broadcasts_ref} ) {
-
-        $log->info($parameter_info);
-    }
 
     ## Write references for this analysis to yaml
     write_references(

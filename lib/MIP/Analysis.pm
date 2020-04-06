@@ -29,15 +29,76 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      broadcast_parameters
       check_analysis_type_to_pipeline
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
       set_parameter_to_broadcast
     };
+}
+
+sub broadcast_parameters {
+
+## Function : Broadcast parameters to user
+## Returns  : 1
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $order_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    set_parameter_to_broadcast(
+        {
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            order_parameters_ref  => $order_parameters_ref,
+        }
+    );
+
+    ## Broadcast set parameters info
+    foreach my $parameter_info ( @{$broadcasts_ref} ) {
+
+        $log->info($parameter_info);
+    }
+    return 1;
 }
 
 sub check_analysis_type_to_pipeline {
