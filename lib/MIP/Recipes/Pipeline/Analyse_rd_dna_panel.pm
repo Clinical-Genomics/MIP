@@ -170,6 +170,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
+    use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -253,7 +254,6 @@ sub pipeline_analyse_rd_dna_panel {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        qccollect_ar           => \&analysis_mip_qccollect,
         rankvariant            => \&analysis_rankvariant,
         rtg_vcfeval            => \&analysis_rtg_vcfeval,
         sambamba_depth         => \&analysis_sambamba_depth,

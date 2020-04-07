@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -151,7 +151,6 @@ sub analysis_endvariantannotationblock {
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Sample_info qw{ set_file_path_to_store
-      set_most_complete_vcf
       set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -283,7 +282,8 @@ sub analysis_endvariantannotationblock {
                     filehandle       => $filehandle,
                     filter_file_path => catfile(
                         $reference_dir,
-                        $active_parameter_href->{sv_reformat_remove_genes_file}
+                        $active_parameter_href
+                          ->{endvariantannotationblock_remove_genes_file}
                     ),
                     infile_path     => $outfile_paths[$analysis_suffix_index],
                     stdoutfile_path => $grep_outfile_path,
@@ -297,73 +297,52 @@ sub analysis_endvariantannotationblock {
               {reformat_remove_genes_file}{$metafile_tag}{path} = $grep_outfile_path;
         }
 
-        if ( $active_parameter_href->{rankvariant_binary_file} ) {
-
-            my $bgzip_outfile_path =
-              $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
-            ## Compress or decompress original file or stream to outfile (if supplied)
-            htslib_bgzip(
-                {
-                    filehandle      => $filehandle,
-                    infile_path     => $outfile_paths[$analysis_suffix_index],
-                    stdoutfile_path => $bgzip_outfile_path,
-                    write_to_stdout => 1,
-                }
-            );
-            say {$filehandle} $NEWLINE;
-
-            ## Index file using tabix
-            htslib_tabix(
-                {
-                    filehandle  => $filehandle,
-                    force       => 1,
-                    infile_path => $bgzip_outfile_path,
-                    preset      => q{vcf},
-                }
-            );
-            say {$filehandle} $NEWLINE;
-        }
-
-        ## Adds the most complete vcf file to sample_info
-        set_most_complete_vcf(
+        my $bgzip_outfile_path = $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
+        ## Compress or decompress original file or stream to outfile (if supplied)
+        htslib_bgzip(
             {
-                active_parameter_href     => $active_parameter_href,
-                path                      => $outfile_paths[$analysis_suffix_index],
-                recipe_name               => $recipe_name,
-                sample_info_href          => $sample_info_href,
-                vcfparser_outfile_counter => $analysis_suffix_index,
+                filehandle      => $filehandle,
+                infile_path     => $outfile_paths[$analysis_suffix_index],
+                stdoutfile_path => $bgzip_outfile_path,
+                write_to_stdout => 1,
             }
         );
+        say {$filehandle} $NEWLINE;
+
+        ## Index file using tabix
+        htslib_tabix(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => $bgzip_outfile_path,
+                preset      => q{vcf},
+            }
+        );
+        say {$filehandle} $NEWLINE;
 
         if ( $recipe_mode == 1 ) {
 
+            my $path = $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
             set_recipe_metafile_in_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     recipe_name      => $recipe_name,
                     metafile_tag     => $metafile_tag,
-                    path             => $outfile_paths[$analysis_suffix_index],
+                    path             => $path,
                 }
             );
 
-            if ( $active_parameter_href->{rankvariant_binary_file} ) {
-
-                my $path = $outfile_paths[$analysis_suffix_index] . $DOT . q{gz};
-                $sample_info_href->{vcf_binary_file}{$metafile_tag}{path} =
-                  $path;
-
-                set_file_path_to_store(
-                    {
-                        format           => q{vcf},
-                        id               => $case_id,
-                        path             => $path,
-                        path_index       => $path . $DOT . q{tbi},
-                        recipe_name      => $recipe_name,
-                        sample_info_href => $sample_info_href,
-                        tag              => $metafile_tag,
-                    }
-                );
-            }
+            set_file_path_to_store(
+                {
+                    format           => q{vcf},
+                    id               => $case_id,
+                    path             => $path,
+                    path_index       => $path . $DOT . q{tbi},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $metafile_tag,
+                }
+            );
         }
     }
 

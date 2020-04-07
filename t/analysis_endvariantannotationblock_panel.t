@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Endvariantannotationblock} =>
-          [qw{ analysis_endvariantannotationblock }],
+          [qw{ analysis_endvariantannotationblock_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
@@ -50,9 +50,9 @@ BEGIN {
 }
 
 use MIP::Recipes::Analysis::Endvariantannotationblock
-  qw{ analysis_endvariantannotationblock };
+  qw{ analysis_endvariantannotationblock_panel };
 
-diag(   q{Test analysis_endvariantannotationblock from Endvariantannotationblock.pm v}
+diag( q{Test analysis_endvariantannotationblock_panel from Endvariantannotationblock.pm v}
       . $MIP::Recipes::Analysis::Endvariantannotationblock::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -77,8 +77,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{vcfparser_outfile_count}                     = 2;
-$active_parameter{endvariantannotationblock_remove_genes_file} = q{a_file};
+$active_parameter{vcfparser_outfile_count} = 2;
 
 my %file_info = test_mip_hashes(
     {
@@ -100,11 +99,11 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf.gz};
 
 my %sample_info;
 
-my $is_ok = analysis_endvariantannotationblock(
+my $is_ok = analysis_endvariantannotationblock_panel(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
