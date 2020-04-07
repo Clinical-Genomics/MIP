@@ -70,19 +70,19 @@ sub read_from_file {
 
     my %file_api = (
         line_by_line => {
-            method   => \&get_file_line_by_line,
             arg_href => {
                 chomp => $chomp,
                 path  => $path,
             },
+            method => \&get_file_line_by_line,
         },
         toml => {
-            method   => \&load_toml,
             arg_href => { path => $path },
+            method   => \&load_toml,
         },
         yaml => {
-            method   => \&load_yaml,
             arg_href => { path => $path, },
+            method   => \&load_yaml,
         },
     );
 
@@ -92,7 +92,7 @@ sub read_from_file {
 
         return %{$data_ref};
     }
-        return @{$data_ref};
+    return @{$data_ref};
 }
 
 1;

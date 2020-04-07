@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ write_to_file };
@@ -48,16 +48,16 @@ sub write_to_file {
             store       => \$data_href,
             strict_type => 1,
         },
-        path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$path,
-            strict_type => 1,
-        },
         format => {
             allow       => [qw{ toml yaml }],
             default     => 1,
             store       => \$format,
+            strict_type => 1,
+        },
+        path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$path,
             strict_type => 1,
         },
     };
@@ -65,14 +65,23 @@ sub write_to_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Yaml qw{ write_yaml };
+    use MIP::Toml qw{ write_toml };
 
     my %file_api = (
-        yaml => {
-            method   => \&write_yaml,
+        toml => {
             arg_href => {
                 path      => $path,
                 data_href => $data_href,
             },
+            method => \&write_toml,
+
+        },
+        yaml => {
+            arg_href => {
+                path      => $path,
+                data_href => $data_href,
+            },
+            method => \&write_yaml,
         },
     );
 
