@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -61,7 +61,6 @@ BEGIN {
       set_exome_target_bed
       set_gender_sample_ids
       set_load_env_environment
-      set_nist_file_name_path
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
       set_recipe_resource
