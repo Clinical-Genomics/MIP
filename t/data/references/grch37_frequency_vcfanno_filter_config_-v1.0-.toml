@@ -13,3 +13,9 @@ file="/mnt/hds/proj/cust003/develop/mip_references/grch37_gnomad.genomes_-r2.1.1
 fields = ["AF", "AF_POPMAX"]
 ops=["self", "self"]
 names=["GNOMADAF", "GNOMADAF_POPMAX"]
+
+[[annotation]]
+file="/mnt/hds/proj/cust003/develop/mip_references/grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz"
+names=["CADD"]
+ops=["mean"]
+columns=[6]
