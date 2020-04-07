@@ -207,7 +207,7 @@ recipe_time:
     picardtools_collecthsmetrics: 5
     picardtools_collectmultiplemetrics: 5
     qccollect_ar: 1
-    rankvariant: 10
+    rankvariant: 1
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 1

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -175,6 +175,7 @@ sub pipeline_analyse_rd_dna_panel {
       qw{ analysis_picardtools_collecthsmetrics };
     use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
       qw{ analysis_picardtools_collectmultiplemetrics };
+    use MIP::Recipes::Analysis::Rankvariant qw{ analysis_rankvariant };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
@@ -250,6 +251,7 @@ sub pipeline_analyse_rd_dna_panel {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
+        rankvariant            => \&analysis_rankvariant,
         rtg_vcfeval            => \&analysis_rtg_vcfeval,
         sambamba_depth         => \&analysis_sambamba_depth,
         samtools_merge         => \&analysis_samtools_merge_panel,

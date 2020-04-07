@@ -230,7 +230,7 @@ sub get_first_level_keys_order_from_definition_file {
 
 ## Function : Adds the order of first level keys from definition file to array
 ## Returns  : @order_keys
-## Arguments: $file_path => File path to yaml file
+## Arguments: $file_path => File path to definition file
 
     my ($arg_href) = @_;
 
@@ -248,24 +248,37 @@ sub get_first_level_keys_order_from_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Filehandles
-    my $filehandle = IO::Handle->new();
+    use MIP::Io::Read qw{ read_from_file };
 
-    open $filehandle, q{<}, $file_path
-      or croak( q{Cannot open}
-          . $DOT
-          . $SINGLE_QUOTE
-          . $file_path
-          . $SINGLE_QUOTE
-          . $COLON
-          . $SPACE
-          . $OS_ERROR
-          . $NEWLINE );
+    ## Hold the order of the first level keys from definition file
+    my @order_keys;
 
-    my @order_keys =
-      _parse_definition_file_first_level_keys( { filehandle => $filehandle, } );
+    my @lines = read_from_file(
+        {
+            chomp  => 1,
+            format => q{line_by_line},
+            path   => $file_path,
+        }
+    );
 
-    close $filehandle;
+  LINE:
+    while ( my ( $line_index, $line ) = each @lines ) {
+
+        ## Next line if header
+        next LINE if ( $line_index == 0 && $line =~ /\A [-]{3}/sxm );
+
+        ## Next line if comment
+        next LINE if ( $line =~ /\A [#]{1}/sxm );
+
+        ## First level key
+        my ($key) = $line =~ /\A (\w+):/sxm;
+
+        if ($key) {
+
+            push @order_keys, $key;
+            next LINE;
+        }
+    }
     return @order_keys;
 }
 
@@ -336,47 +349,6 @@ sub get_parameter_from_definition_files {
         );
     }
     return %parameter;
-}
-
-sub _parse_definition_file_first_level_keys {
-
-## Function : Get order of first level keys from definition file
-## Returns  : @order_keys
-## Arguments: $filehandle => Filehandle to read
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-
-    my $tmpl = { filehandle => { store => \$filehandle, }, };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Hold the order of the first level keys from definition file
-    my @order_keys;
-
-  LINE:
-    while ( my $line = <$filehandle> ) {
-
-        chomp $line;
-
-        ## Next line if header
-        next LINE if ( $INPUT_LINE_NUMBER == 1 && $line =~ /\A [-]{3}/sxm );
-
-        ## Next line if commment
-        next LINE if ( $line =~ /\A [#]{1}/sxm );
-
-        ## First level key
-        my ($key) = $line =~ /\A (\w+):/sxm;
-
-        if ($key) {
-
-            push @order_keys, $key;
-            next LINE;
-        }
-    }
-    return @order_keys;
 }
 
 1;
