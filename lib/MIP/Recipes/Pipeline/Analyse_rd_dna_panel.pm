@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -151,6 +151,8 @@ sub pipeline_analyse_rd_dna_panel {
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd_panel };
+    use MIP::Recipes::Analysis::Endvariantannotationblock
+      qw{ analysis_endvariantannotationblock_panel };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_annotation
       qw{ analysis_frequency_annotation_panel };
@@ -168,7 +170,6 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_panel };
-    use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -235,6 +236,7 @@ sub pipeline_analyse_rd_dna_panel {
         analysisrunstatus            => \&analysis_analysisrunstatus,
         bwa_mem                      => undef,
         cadd_ar                      => \&analysis_cadd_panel,
+        endvariantannotationblock    => \&analysis_endvariantannotationblock_panel,
         fastqc_ar                    => \&analysis_fastqc,
         frequency_annotation         => \&analysis_frequency_annotation_panel,
         frequency_filter             => \&analysis_frequency_filter_panel,
@@ -251,6 +253,7 @@ sub pipeline_analyse_rd_dna_panel {
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
+        qccollect_ar           => \&analysis_mip_qccollect,
         rankvariant            => \&analysis_rankvariant,
         rtg_vcfeval            => \&analysis_rtg_vcfeval,
         sambamba_depth         => \&analysis_sambamba_depth,
