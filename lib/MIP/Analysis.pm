@@ -59,7 +59,7 @@ sub check_analysis_type_to_pipeline {
             strict_type => 1,
         },
         pipeline => {
-            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna}],
+            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna }],
             defined  => 1,
             required => 1,
             store    => \$pipeline,

@@ -557,6 +557,7 @@ sub analysis_mip_vcfparser_panel {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::List qw{ get_splitted_lists };
+    use MIP::Parameter qw{ get_cache };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_view_and_index_vcf };
@@ -600,9 +601,15 @@ sub analysis_mip_vcfparser_panel {
         }
     );
 
+    my $analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     my @vcfparser_analysis_suffixes = get_vcf_parser_analysis_suffix(
         {
-            analysis_type           => $parameter_href->{cache}{consensus_analysis_type},
+            analysis_type           => $analysis_type,
             vcfparser_outfile_count => $active_parameter_href->{vcfparser_outfile_count},
         }
     );

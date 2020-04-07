@@ -1639,7 +1639,7 @@ sub gatk_concatenate_variants {
             strict_type => 1,
         },
         outfile_suffix => {
-            allow       => [qw{ .all.vcf .vcf .selected.vcf }],
+            allow       => [qw{ .all.vcf .selected.vcf .vcf }],
             default     => q{.vcf},
             store       => \$outfile_suffix,
             strict_type => 1,
