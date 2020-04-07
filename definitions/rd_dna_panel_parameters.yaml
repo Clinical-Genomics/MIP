@@ -162,7 +162,7 @@ recipe_memory:
   data_type: HASH
   default:
     cadd_ar: 4
-    endvariantannotationblock: 8
+    endvariantannotationblock: 2
     frequency_annotation: 3
     gatk_baserecalibration: 10
     gatk_gathervcfs: 7
@@ -189,7 +189,7 @@ recipe_time:
     analysisrunstatus: 1
     bwa_mem: 2
     cadd_ar: 2
-    endvariantannotationblock: 2
+    endvariantannotationblock: 1
     fastqc_ar: 10
     frequency_annotation: 1
     frequency_filter: 1
@@ -1184,23 +1184,8 @@ endvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: ""
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   type: recipe
-rankvariant_binary_file:
-  associated_recipe:
-    - endvariantannotationblock
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-endvariantannotationblock_remove_genes_file:
-  associated_recipe:
-    - endvariantannotationblock
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  mandatory: no
-  reference: reference_dir
-  type: path
 ## QCCollect
 qccollect_ar:
   analysis_mode: case

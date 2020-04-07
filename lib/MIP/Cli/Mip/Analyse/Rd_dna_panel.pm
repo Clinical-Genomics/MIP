@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1259,16 +1259,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{rankvariant_binary_file} => (
-            cmd_aliases => [qw{ ravbf }],
-            documentation =>
-              q{Produce binary file from the rank variant chromosomal sorted vcfs},
-            is  => q{rw},
-            isa => Bool,
-        )
-    );
-
-    option(
         q{rank_model_file} => (
             cmd_aliases   => [qw{ ravrm }],
             documentation => q{Rank model config file},
@@ -1284,16 +1274,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{End variant annotation block by concatenating files},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{endvariantannotationblock_remove_genes_file} => (
-            cmd_aliases   => [qw{ evabrgf }],
-            cmd_flag      => q{endvarannbl_rem_gen_f},
-            documentation => q{Remove variants with hgnc_ids from file},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

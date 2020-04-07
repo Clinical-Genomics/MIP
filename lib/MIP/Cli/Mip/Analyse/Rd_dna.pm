@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.49;
+our $VERSION = 1.50;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1999,16 +1999,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Allow compound pairs in intronic regions},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{rankvariant_binary_file} => (
-            cmd_aliases => [qw{ ravbf }],
-            documentation =>
-              q{Produce binary file from the rank variant chromosomal sorted vcfs},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

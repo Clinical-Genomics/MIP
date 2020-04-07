@@ -1961,12 +1961,6 @@ endvariantannotationblock:
   file_tag: ""
   outfile_suffix: ".vcf"
   type: recipe
-rankvariant_binary_file:
-  associated_recipe:
-    - endvariantannotationblock
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 endvariantannotationblock_remove_genes_file:
   associated_recipe:
     - endvariantannotationblock
