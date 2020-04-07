@@ -389,11 +389,11 @@ sub check_rd_dna {
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter
-      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
-    use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed };
+    use MIP::Reference
+      qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
@@ -722,10 +722,9 @@ sub check_rd_dna_panel {
     use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter
-      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
     use MIP::Parse::File qw{ parse_fastq_infiles };
-    use MIP::Reference qw{ parse_exome_target_bed };
+    use MIP::Reference qw{ parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -823,7 +822,6 @@ sub check_rd_dna_panel {
     parse_nist_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
         }
     );
 

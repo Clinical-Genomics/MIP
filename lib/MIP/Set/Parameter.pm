@@ -30,7 +30,6 @@ BEGIN {
     our @EXPORT_OK = qw{
       set_conda_path
       set_container_bind_paths
-      set_nist_file_name_path
       set_programs_for_installation
       set_recipe_mode
     };
@@ -84,63 +83,6 @@ sub set_conda_path {
       catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
 
     return;
-}
-
-sub set_nist_file_name_path {
-
-## Function : Set nist file name path by adding reference directory
-## Returns  : 1
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $nist_parameters_ref   => Nist parameters to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $nist_parameters_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        nist_parameters_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$nist_parameters_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Unpack
-    my $reference_dir = $active_parameter_href->{reference_dir};
-
-  NIST_PARAMETER:
-    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
-
-        # Alias
-        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
-
-      NIST_VERSION:
-        foreach my $nist_version ( keys %{$nist_href} ) {
-
-          NIST_FILE:
-            while ( my ( $nist_id, $file_name ) = each %{ $nist_href->{$nist_version} } )
-            {
-
-                ## Add reference directory to path
-                $nist_href->{$nist_version}{$nist_id} =
-                  catfile( $reference_dir, $file_name );
-            }
-        }
-    }
-    return 1;
 }
 
 sub set_programs_for_installation {

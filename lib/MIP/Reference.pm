@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
+use List::MoreUtils qw { all any };
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE };
@@ -25,16 +25,24 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_exome_target_bed_suffix
       check_human_genome_file_endings
+      check_nist_file_name
+      check_nist_nist_id
+      check_nist_sample_id
+      check_nist_version
       get_dict_contigs
+      get_nist_file
       get_select_file_contigs
       parse_meta_file_suffixes
+      parse_nist_parameters
+      parse_nist_files
       parse_exome_target_bed
+      set_nist_file_name_path
       write_contigs_size_file
     };
 }
@@ -177,6 +185,253 @@ sub check_human_genome_file_endings {
     return;
 }
 
+sub check_nist_file_name {
+
+## Function : Check nist file name is defined in nist parameters
+## Returns  : 1
+## Arguments: $file_name      => File name to check
+##          : $nist_id        => Nist id
+##          : $nist_parameter => Nist parameter to check
+##          : $nist_version   => Nist version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $nist_id;
+    my $nist_parameter;
+    my $nist_version;
+
+    my $tmpl = {
+        file_name => {
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        nist_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id,
+            strict_type => 1,
+        },
+        nist_parameter => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameter,
+            strict_type => 1,
+        },
+        nist_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Require that a file name is defined
+    if ( not defined $file_name ) {
+
+        $log->fatal(
+            q{Please supply a file name for option: } . join q{=>},
+            ( $nist_parameter, $nist_version, $nist_id )
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_nist_nist_id {
+
+## Function : Check nist_ids hash contains supplied nist_id in nist parameters
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $nist_id_href          => Nist ids
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $nist_id_href;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        nist_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id_href,
+            strict_type => 1,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %seen;
+
+  NIST_ID:
+    foreach my $nist_id ( values %{$nist_id_href} ) {
+
+      NIST_PARAMETER:
+        foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+            # Alias
+            my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+          NIST_VERSION:
+            foreach my $nist_version ( keys %{$nist_href} ) {
+
+                next NIST_VERSION
+                  if ( not exists $nist_href->{$nist_version}{$nist_id} );
+                $seen{$nist_id}++;
+            }
+        }
+        next NIST_ID if ( $seen{$nist_id} );
+
+        $log->fatal(
+q{Supplied nist id:  $nist_id for option --nist_id is not a defined nist_id supplied in nist options: }
+              . join $SPACE,
+            @{$nist_parameters_ref}
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_nist_sample_id {
+
+## Function : Check nist_ids contain supplied sample_ids
+## Returns  : 1
+## Arguments: $nist_id_href   => Nist ids
+##          : $sample_ids_ref => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $nist_id_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        nist_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{$nist_id_href} ) {
+
+        ## Find supplied sample id
+        next SAMPLE_ID if ( any { $_ eq $sample_id } @{$sample_ids_ref} );
+
+        $log->fatal(
+            q{Supplied sample id for option --nist_id }
+              . q{ is not one of the included sample ids: }
+              . join $SPACE,
+            @{$sample_ids_ref}
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_nist_version {
+
+## Function : Check nist_versions contain supplied nist_version in nist parameters
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack
+    my @nist_versions = @{ $active_parameter_href->{nist_versions} };
+
+  NIST_PARAMETER:
+    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+        # Alias
+        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+        ## Check that version exists in nist hashes
+        next NIST_PARAMETER
+          if ( all { exists $nist_href->{$_} } @nist_versions );
+
+        $log->fatal(
+            q{One or more nist versions }
+              . ( join $SPACE, @nist_versions )
+              . q{ does not exist in nist parameters: }
+              . join $SPACE,
+            @{$nist_parameters_ref}
+        );
+        exit 1;
+    }
+    return 1;
+}
+
 sub get_dict_contigs {
 
 ## Function : Collects sequence contigs used in analysis from human genome sequence
@@ -234,6 +489,49 @@ sub get_dict_contigs {
     $log->fatal(
         q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
     exit 1;
+}
+
+sub get_nist_file {
+
+## Function : Get nist file
+## Returns  : 1
+## Arguments: $nist_href     => Nist hash to set file path in
+##          : $nist_id       => Nist id
+##          : $nist_version  => Nist version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $nist_href;
+    my $nist_id;
+    my $nist_version;
+
+    my $tmpl = {
+        nist_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_href,
+            strict_type => 1,
+        },
+        nist_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id,
+            strict_type => 1,
+        },
+        nist_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return nist file
+    return $nist_href->{$nist_version}{$nist_id};
 }
 
 sub get_select_file_contigs {
@@ -398,6 +696,163 @@ sub parse_meta_file_suffixes {
     return;
 }
 
+sub parse_nist_files {
+
+## Function : Parse nist files
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_filesystem_objects_and_index_existance };
+
+    ## Unpack
+    my $reference_dir = $active_parameter_href->{reference_dir};
+
+  NIST_PARAMETER:
+    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+        # Alias
+        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+      NIST_VERSION:
+        foreach my $nist_version ( keys %{$nist_href} ) {
+
+          NIST_FILE:
+            while ( my ( $nist_id, $file_name ) = each %{ $nist_href->{$nist_version} } )
+            {
+
+                check_nist_file_name(
+                    {
+                        file_name      => $file_name,
+                        nist_id        => $nist_id,
+                        nist_parameter => $nist_parameter,
+                        nist_version   => $nist_version,
+                    }
+                );
+
+                set_nist_file_name_path(
+                    {
+                        file_name     => $file_name,
+                        nist_href     => $nist_href,
+                        nist_id       => $nist_id,
+                        nist_version  => $nist_version,
+                        reference_dir => $reference_dir,
+                    }
+                );
+
+                my $nist_file_path = get_nist_file(
+                    {
+                        nist_href    => $nist_href,
+                        nist_id      => $nist_id,
+                        nist_version => $nist_version,
+                    }
+                );
+                ## Check path object exists
+                check_filesystem_objects_and_index_existance(
+                    {
+                        object_name    => ( join q{=>}, ( $nist_version, $nist_id ) ),
+                        object_type    => q{file},
+                        parameter_name => $nist_parameter,
+                        path           => $nist_file_path,
+                    }
+                );
+            }
+        }
+    }
+    return 1;
+}
+
+sub parse_nist_parameters {
+
+## Function : Parse nist parameters. Check and add reference directory to file_names.
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return
+      if ( not $active_parameter_href->{rtg_vcfeval} );
+
+    # Unpack
+    my %nist_id         = %{ $active_parameter_href->{nist_id} };
+    my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+
+    ## Check nist_ids contain supplied sample_ids
+    check_nist_sample_id(
+        {
+            nist_id_href   => \%nist_id,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
+        }
+    );
+
+    ## Check nist_ids contain supplied nist_id in nist parameter
+    check_nist_nist_id(
+        {
+            active_parameter_href => $active_parameter_href,
+            nist_id_href          => \%nist_id,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Check nist_versions contain supplied nist_version in nist parameters
+    check_nist_version(
+        {
+            active_parameter_href => $active_parameter_href,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Parse nist files
+    parse_nist_files(
+        {
+            active_parameter_href => $active_parameter_href,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    return 1;
+}
+
 sub parse_exome_target_bed {
 
 ## Function : Update exome_target_bed files with human genome reference source and version.
@@ -458,6 +913,67 @@ sub parse_exome_target_bed {
         );
     }
     return;
+}
+
+sub set_nist_file_name_path {
+
+## Function : Set nist file name path by adding reference directory
+## Returns  : 1
+## Arguments: $file_name     => File name to prepend reference dir to
+##          : $nist_href     => Nist hash to set file path in
+##          : $nist_id       => Nist id
+##          : $nist_version  => Nist version
+##          : $reference_dir => Reference dir path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $nist_href;
+    my $nist_id;
+    my $nist_version;
+    my $reference_dir;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        nist_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_href,
+            strict_type => 1,
+        },
+        nist_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id,
+            strict_type => 1,
+        },
+        nist_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_version,
+            strict_type => 1,
+        },
+        reference_dir => => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add reference directory to path
+    $nist_href->{$nist_version}{$nist_id} =
+      catfile( $reference_dir, $file_name );
+    return 1;
 }
 
 sub write_contigs_size_file {

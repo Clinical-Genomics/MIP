@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Parameter} => [qw{ set_nist_file_name_path }],
+        q{MIP::Reference}      => [qw{ set_nist_file_name_path }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Parameter qw{ set_nist_file_name_path };
+use MIP::Reference qw{ set_nist_file_name_path };
 
-diag(   q{Test set_nist_file_name_path from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_nist_file_name_path from Reference.pm v}
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,22 +58,21 @@ diag(   q{Test set_nist_file_name_path from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given nist info
-my %active_parameter = (
-    nist_call_set_vcf =>
-      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
-    nist_call_set_bed =>
-      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
-    nist_id       => { sample_1 => q{NA12878}, },
-    nist_versions => [qw{ 3.3.2 }],
-    reference_dir => catdir( $Bin, qw{ data references } ),
-    sample_ids    => [qw{ sample_1 }],
-);
-my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+my %nist = ( nist_call_set_vcf =>
+      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, }, );
+my $file_name      = q{grch37_nist_hg001_-na12878_v3.3.2-.vcf};
+my $nist_id        = q{NA12878};
+my $nist_parameter = q{nist_call_set_vcf};
+my $nist_version   = q{3.3.2};
+my $reference_dir  = catdir( $Bin, qw{ data references } );
 
 my $is_ok = set_nist_file_name_path(
     {
-        active_parameter_href => \%active_parameter,
-        nist_parameters_ref   => \@nist_parameters,
+        file_name     => $file_name,
+        nist_href     => $nist{nist_call_set_vcf},
+        nist_id       => $nist_id,
+        nist_version  => $nist_version,
+        reference_dir => $reference_dir,
     }
 );
 
@@ -85,10 +80,9 @@ my $is_ok = set_nist_file_name_path(
 ok( $is_ok, q{Set nist file name path in nist hash parameters} );
 
 ## Then reference dir should have been prepended to file name
-my $expected_path =
-  catdir( $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.vcf} );
+my $expected_path = catdir( $reference_dir, qw{ grch37_nist_hg001_-na12878_v3.3.2-.vcf} );
 
-is( $active_parameter{nist_call_set_vcf}{q{3.3.2}}{NA12878},
+is( $nist{nist_call_set_vcf}{q{3.3.2}}{NA12878},
     $expected_path, q{Set path using reference dir} );
 
 done_testing();
