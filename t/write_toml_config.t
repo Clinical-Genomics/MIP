@@ -41,6 +41,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
+        q{MIP::Io::Read}        => [qw{ read_from_file }],
         q{MIP::Test::Writefile} => [qw{ write_toml_config }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
@@ -48,6 +49,7 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Test::Writefile qw{ write_toml_config };
 
 diag(   q{Test write_toml_config from Writefile.pm v}
@@ -78,13 +80,14 @@ write_toml_config(
 ## Then new config file should have been created
 ok( -e $toml_config_path, q{Created test toml config path} );
 
-## Create Path::Tiny object
-$toml_config_path = path($toml_config_path);
+my %toml = read_from_file(
+    {
+        format => q{toml},
+        path   => $toml_config_path,
+    }
+);
 
-## Read into memory
-my $file_content = $toml_config_path->slurp_utf8;
-
-my ($replaced_template_path) = $file_content =~ /$test_reference_path/ms;
+my ($replaced_template_path) = $toml{annotation}[0]{file} =~ /$test_reference_path/msx;
 
 ## Then the created file should have replaced "TEST_REFERENCES!" in the config
 ok( $replaced_template_path, q{Replaced template reference path} );
