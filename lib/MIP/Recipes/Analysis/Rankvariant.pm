@@ -312,14 +312,11 @@ sub analysis_rankvariant {
 
         genmod_annotate(
             {
-                annotate_region => $active_parameter_href->{genmod_annotate_regions},
-                cadd_file_paths_ref =>
-                  \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                filehandle       => $xargsfilehandle,
-                infile_path      => $infile_path,
-                outfile_path     => $genmod_outfile_path,
-                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path  => $annotate_stderrfile_path,
+                annotate_region     => $active_parameter_href->{genmod_annotate_regions},
+                filehandle          => $xargsfilehandle,
+                infile_path         => $infile_path,
+                outfile_path        => $genmod_outfile_path,
+                stderrfile_path     => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
@@ -715,14 +712,11 @@ sub analysis_rankvariant_unaffected {
 
         genmod_annotate(
             {
-                annotate_region => $active_parameter_href->{genmod_annotate_regions},
-                cadd_file_paths_ref =>
-                  \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                filehandle       => $xargsfilehandle,
-                infile_path      => $genmod_indata,
-                outfile_path     => $genmod_outfile_path,
-                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path  => $annotate_stderrfile_path,
+                annotate_region     => $active_parameter_href->{genmod_annotate_regions},
+                filehandle          => $xargsfilehandle,
+                infile_path         => $genmod_indata,
+                outfile_path        => $genmod_outfile_path,
+                stderrfile_path     => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
