@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -166,10 +166,11 @@ sub analysis_gatk_baserecalibration {
     use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info qw{ set_file_path_to_store
+    use MIP::Sample_info qw{
+      set_file_path_to_store
       set_recipe_outfile_in_sample_info
       set_recipe_metafile_in_sample_info
-      set_processing_metafile_in_sample_info };
+    };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -487,16 +488,6 @@ sub analysis_gatk_baserecalibration {
                 infile           => $outfile_name_prefix,
                 path             => $store_outfile_path,
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $store_outfile_path,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

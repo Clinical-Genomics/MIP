@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -139,8 +139,7 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Gatk qw{ gatk_combinevariants };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -325,26 +324,17 @@ sub analysis_gatk_combinevariantcallsets {
             }
         );
 
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $outfile_path,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
             my $bcf_suffix = $DOT . q{bcf};
-            my $most_complete_bcf_key =
-              q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
             my $bcf_file_path = $outfile_path_prefix . $bcf_suffix;
-            set_processing_metafile_in_sample_info(
+            set_file_path_to_store(
                 {
-                    metafile_tag     => $most_complete_bcf_key,
+                    format           => q{bcf},
+                    id               => $case_id,
                     path             => $bcf_file_path,
+                    path_index       => $bcf_file_path . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );

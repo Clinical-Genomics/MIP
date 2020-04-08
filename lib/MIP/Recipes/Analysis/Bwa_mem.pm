@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -151,7 +151,6 @@ sub analysis_bwa_mem {
       get_rg_header_line
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
-      set_processing_metafile_in_sample_info
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -419,17 +418,6 @@ sub analysis_bwa_mem {
 
         if ( $recipe_mode == 1 ) {
 
-            my $most_complete_format_key =
-              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            set_processing_metafile_in_sample_info(
-                {
-                    metafile_tag     => $most_complete_format_key,
-                    path             => $outfile_path,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
             if (    $active_parameter_href->{bwa_mem_cram}
                 and $outfile_suffix ne q{.cram} )
             {
@@ -611,7 +599,6 @@ sub analysis_run_bwa_mem {
     use MIP::Sample_info qw{
       get_rg_header_line
       get_sequence_run_type
-      set_processing_metafile_in_sample_info
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -857,17 +844,6 @@ sub analysis_run_bwa_mem {
         close $filehandle;
 
         if ( $recipe_mode == 1 ) {
-
-            my $most_complete_format_key =
-              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            set_processing_metafile_in_sample_info(
-                {
-                    metafile_tag     => $most_complete_format_key,
-                    path             => $outfile_path,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
 
             if (    $active_parameter_href->{bwa_mem_cram}
                 and $outfile_suffix ne q{.cram} )

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -42,7 +42,6 @@ BEGIN {
       set_file_path_to_store
       set_gene_panel
       set_infile_info
-      set_most_complete_vcf
       set_no_dry_run_parameters
       set_parameter_in_sample_info
       set_processing_metafile_in_sample_info
@@ -1098,80 +1097,6 @@ sub set_infile_info {
     }
 
     return $lane_tracker;
-}
-
-sub set_most_complete_vcf {
-
-## Function : Sets the most complete vcf file to sample_info
-## Returns  :
-## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
-##          : $path                      => Path to file
-##          : $recipe_name               => Recipe name
-##          : $sample_info_href          => Info on samples and case hash {REF}
-##          : $vcf_file_key              => Key for labelling most complete vcf
-##          : $vcfparser_outfile_counter => Number of outfile files from in vcfParser (select, range)
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $path;
-    my $recipe_name;
-    my $sample_info_href;
-
-    ## Default(s)
-    my $vcf_file_key;
-    my $vcfparser_outfile_counter;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
-        recipe_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_name,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-        vcf_file_key => {
-            allow   => [qw{ vcf_file vcf_binary_file sv_vcf_file sv_vcf_binary_file }],
-            default => q{vcf_file},
-            store   => \$vcf_file_key,
-            strict_type => 1,
-        },
-        vcfparser_outfile_counter => {
-            default     => 0,
-            store       => \$vcfparser_outfile_counter,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $active_parameter_href->{$recipe_name} == 1 ) {
-
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            $sample_info_href->{$vcf_file_key}{clinical}{path} = $path;
-        }
-        else {
-
-            $sample_info_href->{$vcf_file_key}{research}{path} = $path;
-        }
-    }
-    return;
 }
 
 sub set_no_dry_run_parameters {

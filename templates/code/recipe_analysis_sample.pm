@@ -243,17 +243,6 @@ sub analysis_RECIPE_NAME {
             }
         );
 
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $outfile_path,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
         submit_recipe(
             {

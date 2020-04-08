@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -936,7 +936,7 @@ sub analysis_mip_vcfparser_sv_wes {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Mip qw{ mip_vcfparser };
-    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -1262,7 +1262,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Mip qw{ mip_vcfparser };
-    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
