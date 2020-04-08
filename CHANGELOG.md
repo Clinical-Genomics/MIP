@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Develop]
+- Moved annotationof CADD and SPIDEX to vcfanno´s toml config
+- Removed CADD and SPIDEX annotations from Rankvariants recipe, CLI and parameters
 - Turned off bcftools_mpileup by default
 - Replaced sambamba sort with samtools sort after alignment
 - Replaced recipe picartools_mergesamfiles with samtools_merge
@@ -15,6 +17,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
+
+**References**
+- grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
+- grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.4-.toml
 
 ## [8.2.4]
 - Chromograph patch
