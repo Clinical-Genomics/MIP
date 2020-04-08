@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -128,10 +128,10 @@ sub check_dragen_rd_dna {
       check_sample_id_in_hash_parameter
       parse_vep_plugin
       set_vcfparser_outfile_counter
+      write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
-    use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
@@ -383,10 +383,10 @@ sub check_rd_dna {
       check_sample_id_in_hash_parameter_path
       parse_vep_plugin
       set_vcfparser_outfile_counter
+      write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
-    use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
@@ -715,11 +715,11 @@ sub check_rd_dna_panel {
       check_sample_id_in_hash_parameter_path
       parse_vep_plugin
       set_vcfparser_outfile_counter
+      write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
-    use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
@@ -981,10 +981,10 @@ sub check_rd_dna_vcf_rerun {
       check_sample_id_in_hash_parameter
       parse_vep_plugin
       set_vcfparser_outfile_counter
+      write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
-    use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -1200,12 +1200,12 @@ sub check_rd_rna {
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
-    use MIP::File::Format::Reference qw{ write_references };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };

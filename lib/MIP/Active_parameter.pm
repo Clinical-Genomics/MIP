@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -69,6 +69,7 @@ BEGIN {
       update_recipe_mode_with_dry_run_all
       update_reference_parameters
       update_to_absolute_path
+      write_references
     };
 }
 
@@ -2196,6 +2197,96 @@ sub update_to_absolute_path {
             }
         );
     }
+    return;
+}
+
+sub write_references {
+
+## Function : Write references for this analysis to yaml
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $outfile_path          => Outfile path for reference yaml file
+##          : $parameter_href        => Holds all parameters
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $outfile_path;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Io::Write qw{ write_to_file };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    ## Retrieve logger object
+    my $log = retrieve_log(
+        {
+            log_name => $LOG_NAME,
+        }
+    );
+    my %reference;
+
+  PARAMETER:
+    while ( my ( $parameter_name, $parameter_value ) = each %{$active_parameter_href} ) {
+
+        my $is_reference = get_parameter_attribute(
+            {
+                attribute      => q{is_reference},
+                parameter_href => $parameter_href,
+                parameter_name => $parameter_name,
+            }
+        );
+        ## Only defined reference parameters
+        if ($is_reference) {
+
+            if ( ref $parameter_value eq q{HASH} ) {
+                $reference{$parameter_name} = \%{$parameter_value};
+                next PARAMETER;
+            }
+            if ( ref $parameter_value eq q{ARRAY} ) {
+                $reference{$parameter_name} = \@{$parameter_value};
+                next PARAMETER;
+            }
+            $reference{$parameter_name} = $parameter_value;
+        }
+    }
+
+    # Writes hash to file
+    write_to_file(
+        {
+            data_href => \%reference,
+            format    => q{yaml},
+            path      => $outfile_path,
+        }
+    );
+    $log->info( q{Wrote reference YAML file to: } . $outfile_path );
+
     return;
 }
 
