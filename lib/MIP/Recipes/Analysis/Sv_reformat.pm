@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -150,8 +150,8 @@ sub analysis_reformat_sv {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };
-    use MIP::Sample_info qw{ set_file_path_to_store
-      set_most_complete_vcf
+    use MIP::Sample_info qw{
+      set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -340,35 +340,6 @@ sub analysis_reformat_sv {
 
             my $outfile_path = $outfile_paths[$infile_index];
 
-            set_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_path,
-                    recipe_name           => $recipe_name,
-                    sample_info_href      => $sample_info_href,
-                    vcf_file_key          => q{sv}
-                      . $UNDERSCORE
-                      . substr( $outfile_suffixes[0], 1 )
-                      . $UNDERSCORE . q{file},
-                    vcfparser_outfile_counter => $infile_index,
-                }
-            );
-            set_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_path . $DOT . q{gz},
-                    recipe_name           => $recipe_name,
-                    sample_info_href      => $sample_info_href,
-                    vcf_file_key          => q{sv}
-                      . $UNDERSCORE
-                      . substr( $outfile_suffixes[0], 1 )
-                      . $UNDERSCORE
-                      . q{binary_file},
-                    vcfparser_outfile_counter => $infile_index,
-                }
-            );
-
-            # Save clinical candidate list path
             set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $metafile_tag,
