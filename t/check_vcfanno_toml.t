@@ -43,9 +43,9 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Child_process} => [qw{child_process}],
-        q{MIP::Vcfanno}                    => [qw{check_vcfanno_toml}],
         q{MIP::Test::Fixtures}             => [qw{test_log test_standard_cli}],
         q{MIP::Toml}                       => [qw{ load_toml write_toml }],
+        q{MIP::Vcfanno}                    => [qw{check_vcfanno_toml}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
