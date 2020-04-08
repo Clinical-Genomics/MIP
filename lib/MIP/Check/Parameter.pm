@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.41;
+    our $VERSION = 1.42;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,7 +35,6 @@ BEGIN {
       check_allowed_array_values
       check_infile_contain_sample_id
       check_infiles
-      check_prioritize_variant_callers
       check_recipe_fastq_compatibility
     };
 }
@@ -274,122 +273,6 @@ sub check_infiles {
 q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
         );
         exit 1;
-    }
-    return 1;
-}
-
-sub check_prioritize_variant_callers {
-
-## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-##          : $parameter_name        => Parameter name
-##          : $variant_callers_ref   => Variant callers to check {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-    my $parameter_name;
-    my $variant_callers_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        variant_callers_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$variant_callers_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @priority_order_names =
-      split $COMMA, $active_parameter_href->{$parameter_name};
-
-    ## Alias
-    my @variant_caller_aliases;
-
-    ## Check that all active variant callers have a priority order
-  CALLER:
-    foreach my $variant_caller ( @{$variant_callers_ref} ) {
-
-        ## Only use first part of name
-        my ($variant_caller_alias) = split /_/sxm, $variant_caller;
-        push @variant_caller_aliases, $variant_caller_alias;
-
-        ## Only active recipes
-        if ( $active_parameter_href->{$variant_caller} ) {
-
-            ## If variant caller alias is not part of priority order names
-            if ( not any { $_ eq $variant_caller_alias } @priority_order_names ) {
-
-                $log->fatal( $parameter_name
-                      . q{ does not contain active variant caller: '}
-                      . $variant_caller_alias
-                      . $SINGLE_QUOTE );
-                exit 1;
-            }
-        }
-        else {
-            ## Only NOT active recipes
-
-            ## If variant caller alias is part of priority order names
-            if ( any { $_ eq $variant_caller_alias } @priority_order_names ) {
-
-                $log->fatal( $parameter_name
-                      . q{ contains deactivated variant caller: '}
-                      . $variant_caller_alias
-                      . $SINGLE_QUOTE );
-                exit 1;
-            }
-        }
-    }
-
-    ## Check that prioritize string contains valid variant call names
-  PRIO_CALL:
-    foreach my $prioritize_call (@priority_order_names) {
-
-        # If priority order names is not part of variant caller alias
-        if ( not any { $_ eq $prioritize_call } @variant_caller_aliases ) {
-
-            $log->fatal( $parameter_name . q{: '}
-                  . $prioritize_call
-                  . q{' does not match any supported variant caller: '}
-                  . join( $COMMA, @variant_caller_aliases )
-                  . $SINGLE_QUOTE );
-            exit 1;
-        }
     }
     return 1;
 }
