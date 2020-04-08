@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9
+- gatk: 4.1.3.0 -> 4.1.5.0
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
