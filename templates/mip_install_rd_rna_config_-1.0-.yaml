@@ -27,7 +27,7 @@ singularity:
   gatk4:
     executable:
       gatk:
-    uri: docker://broadinstitute/gatk:4.1.3.0
+    uri: docker://broadinstitute/gatk:4.1.6.0
   gffcompare:
     executable:
       gffcompare:

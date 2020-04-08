@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2293,7 +2293,7 @@ sub gatk_genotypegvcfs {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.5.0.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
@@ -2303,6 +2303,7 @@ sub gatk_haplotypecaller {
 ##          : $infile_path                                   => Infile paths
 ##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                          => Use java large pages
+###         : $linked_de_bruijn_graph                        => Use linked de bruijn graph assembly mode
 ##          : $memory_allocation                             => Memory allocation to run Gatk
 ##          : $num_ref_samples_if_no_call                    => Number of hom-ref genotypes to infer at sites not present in a panel
 ##          : $outfile_path                                  => Outfile path
@@ -2343,6 +2344,7 @@ sub gatk_haplotypecaller {
     ## Default(s)
     my $emit_ref_confidence;
     my $java_use_large_pages;
+    my $linked_de_bruijn_graph;
     my $verbosity;
     my $xargs_mode;
 
@@ -2388,6 +2390,12 @@ sub gatk_haplotypecaller {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        linked_de_bruijn_graph => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$linked_de_bruijn_graph,
             strict_type => 1,
         },
         memory_allocation => {
@@ -2517,6 +2525,10 @@ sub gatk_haplotypecaller {
           q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
     }
 
+    if ($linked_de_bruijn_graph) {
+        push @commands, q{--linked-de-bruijn-graph};
+    }
+
     ## No soft clipped bases
     if ($dont_use_soft_clipped_bases) {
 
@@ -2568,7 +2580,7 @@ sub gatk_haplotypecaller {
 
 sub gatk_indexfeaturefile {
 
-## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $filehandle. Based on GATK 4.0.10.
+## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $filehandle. Based on GATK 4.1.6.
 ## Returns  : @commands
 ## Arguments: $filehandle           => Filehandle to write to
 ##          : $infile_path          => Path to feature file
@@ -2647,7 +2659,7 @@ sub gatk_indexfeaturefile {
 
     push @commands, q{IndexFeatureFile};
 
-    push @commands, q{--feature-file} . $SPACE . $infile_path;
+    push @commands, q{--input} . $SPACE . $infile_path;
 
     ## Add common options
     gatk_common_options(
