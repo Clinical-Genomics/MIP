@@ -42,9 +42,10 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Vcfanno}                    => [qw{ check_vcfanno_toml }],
-        q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
-        q{MIP::Environment::Child_process} => [qw{ child_process }],
+        q{MIP::Environment::Child_process} => [qw{child_process}],
+        q{MIP::Test::Fixtures}             => [qw{test_log test_standard_cli}],
+        q{MIP::Toml}                       => [qw{ load_toml write_toml }],
+        q{MIP::Vcfanno}                    => [qw{check_vcfanno_toml}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -52,6 +53,7 @@ BEGIN {
 
 use MIP::Vcfanno qw{ check_vcfanno_toml };
 use MIP::Environment::Child_process qw{ child_process };
+use MIP::Toml qw{ load_toml write_toml };
 
 diag(   q{Test check_vcfanno_toml from Vcfanno.pm v}
       . $MIP::Vcfanno::VERSION
@@ -75,24 +77,26 @@ my $fqa_vcfanno_config =
 
 # For the actual test
 my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
-    qw{ grch37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
+    qw{ grch37_frequency_vcfanno_filter_config_test_check_vcfanno_-v1.0-.toml  } );
 
-my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
-
-## Replace line starting with "file=" with dynamic file path
-my $parse_path =
-    q?perl -nae 'chomp;if($_=~/file=/) {say STDOUT q{file="?
-  . $file_path
-  . q?"};} else {say STDOUT $_}' ?;
-
-## Parse original file and create new config for test
-my $command_string = join $SPACE,
-  ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
-
-my %process_return = child_process(
+my $toml_href = load_toml(
     {
-        commands_ref => [ $command_string, ],
-        process_type => q{open3},
+        path => $fqa_vcfanno_config,
+    }
+);
+
+## Set test file paths
+$toml_href->{annotation}[0]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+$toml_href->{annotation}[1]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.1.1_sv-.vcf } );
+$toml_href->{annotation}[2]{file} =
+  catfile( $Bin, qw{ data references grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz } );
+
+write_toml(
+    {
+        data_href => $toml_href,
+        path      => $test_fqa_vcfanno_config,
     }
 );
 

@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -794,16 +794,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{genmod_annotate_cadd_files} => (
-            cmd_aliases   => [qw{ ravcad }],
-            cmd_flag      => q{genmod_ann_cadd_fs},
-            documentation => q{CADD score files},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{genmod_annotate_regions} => (
             cmd_aliases => [qw{ ravanr }],
             cmd_flag    => q{genmod_ann_reg},
@@ -811,16 +801,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
             isa => Bool,
-        )
-    );
-
-    option(
-        q{genmod_annotate_spidex_file} => (
-            cmd_aliases   => [qw{ ravspi }],
-            cmd_flag      => q{genmod_ann_spidex_f},
-            documentation => q{Spidex database for alternative splicing},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

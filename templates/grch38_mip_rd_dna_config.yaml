@@ -22,7 +22,7 @@ outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
 expansionhunter_variant_catalog_file_path: grch38_expansionhunter_variant_catalog_-3.1.2-.json
-fqf_vcfanno_config: grch38_frequency_vcfanno_filter_config_-v1.1-.toml
+fqf_vcfanno_config: grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 gatk_baserecalibration_known_sites:
   - grch38_dbsnp_-146-.vcf.gz
   - grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
@@ -40,9 +40,6 @@ gatk_variantrecalibration_resource_snv:
   grch38_1000g_snps_high_confidence_-phase1-.vcf.gz: "1000G,known=false,training=true,truth=false,prior=10.0"
 gatk_varianteval_dbsnp: grch38_variant_-gold_standard_dbsnp-.vcf.gz
 gatk_varianteval_gold: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
-genmod_annotate_cadd_files:
-  - grch38_cadd_whole_genome_snvs_-v1.5-.tsv.gz
-  - grch38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
 genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 human_genome_reference: grch38_homo_sapiens_-assembly-.fasta
 manta_call_regions_file_path: grch38_manta_call_regions_-1.0-.bed.gz

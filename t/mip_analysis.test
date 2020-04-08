@@ -53,7 +53,7 @@ BEGIN {
 my ( $config_file, $infile );
 my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.07;
+our $VERSION = 2.08;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -296,7 +296,7 @@ sub test_modules {
     push @ARGV, qw{ -verbose 2 };
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     return;
 }
@@ -458,11 +458,8 @@ sub read_infile_vcf {
             ## Test Rankvariants
             _test_rankvariants_in_vcf_header(
                 {
-                    genmod_annotate_cadd_files_ref =>
-                      \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
                     rankvariant_mode       => $active_parameter_href->{rankvariant},
                     sample_ids_ref         => \@{ $active_parameter_href->{sample_ids} },
-                    spidex_file            => $active_parameter_href->{spidex_file},
                     unaffected_samples_ref => \@{ $parameter_href->{cache}{unaffected} },
                     vcf_header_href        => \%vcf_header,
                 }
@@ -1415,29 +1412,20 @@ sub _test_rankvariants_in_vcf_header {
 
 ## Function : Test if rankvariants info keys are present in vcf header
 ## Returns  :
-## Arguments: $genmod_annotate_cadd_files_ref => Cadd files annotate via genmod
-##          : $rankvariant_mode               => Rankvariant_Mode description
-##          : $sample_ids_ref                 => Array ref description {REF}
-##          : $spidex_file                    => Spidex file
-##          : $unaffected_samples_ref         => Number of unaffected individuals in analysis
-##          : $vcf_header_href                => Vcf header info {REF}
+## Arguments: $rankvariant_mode       => Rankvariant_Mode description
+##          : $sample_ids_ref         => Array ref description {REF}
+##          : $unaffected_samples_ref => Number of unaffected individuals in analysis
+##          : $vcf_header_href        => Vcf header info {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $genmod_annotate_cadd_files_ref;
     my $rankvariant_mode;
     my $sample_ids_ref;
-    my $spidex_file;
     my $unaffected_samples_ref;
     my $vcf_header_href;
 
     my $tmpl = {
-        genmod_annotate_cadd_files_ref => {
-            default     => [],
-            store       => \$genmod_annotate_cadd_files_ref,
-            strict_type => 1,
-        },
         rankvariant_mode => {
             allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
@@ -1450,10 +1438,6 @@ sub _test_rankvariants_in_vcf_header {
             defined     => 1,
             required    => 1,
             store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-        spidex_file => {
-            store       => \$spidex_file,
             strict_type => 1,
         },
         vcf_header_href => {
@@ -1491,17 +1475,6 @@ sub _test_rankvariants_in_vcf_header {
     foreach my $genmod_key (@genmod_keys) {
 
         ok( defined $vcf_header_href->{INFO}{$genmod_key}, q{Genmod: } . $genmod_key );
-    }
-
-    ## Spidex key from genmodAnnotate
-    if ($spidex_file) {
-
-        ok( defined $vcf_header_href->{INFO}{SPIDEX}, q{Genmod annotate: SPIDEX key} );
-    }
-    ## CADD key from genmodAnnotate
-    if ( @{$genmod_annotate_cadd_files_ref} ) {
-
-        ok( defined $vcf_header_href->{INFO}{CADD}, q{Genmod annotate: CADD key} );
     }
     return;
 }

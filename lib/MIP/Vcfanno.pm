@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_vcfanno_toml parse_toml_config_parameters };
@@ -70,7 +70,11 @@ sub check_vcfanno_toml {
             path   => $vcfanno_file_toml,
         }
     );
-    my @vcfanno_features = qw{ file fields ops };
+    my %vcfanno_feature = (
+        vcf   => [qw{ file fields ops }],
+        other => [qw{ columns file names ops }],
+    );
+
     my $err_msg = q{ is not defined or empty vcfanno toml features. Please check file: }
       . $vcfanno_file_toml;
     my @missing_annotations;
@@ -78,8 +82,13 @@ sub check_vcfanno_toml {
   ANNOTATION:
     foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
+        my $file_format = q{other};
+        if ( $annotation_href->{file} =~ qr/[.]vcf | [.]vcf[.]gz/xsm ) {
+            $file_format = q{vcf};
+        }
+
       FEATURE:
-        foreach my $feature (@vcfanno_features) {
+        foreach my $feature ( @{ $vcfanno_feature{$file_format} } ) {
 
             ## Check mandatory feature keys for vcfanno
             next FEATURE if ( defined $annotation_href->{$feature} );

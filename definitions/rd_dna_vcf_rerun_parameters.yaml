@@ -714,29 +714,12 @@ rankvariant:
   program_executables:
     - genmod
   type: recipe
-genmod_annotate_cadd_files:
-  associated_recipe:
-    - rankvariant
-  data_type: ARRAY
-  exists_check: file
-  is_reference: 1
-  mandatory: no
-  reference: reference_dir
-  type: path
 genmod_annotate_regions:
   associated_recipe:
     - rankvariant
   data_type: SCALAR
   default: 1
   type: recipe_argument
-genmod_annotate_spidex_file:
-  associated_recipe:
-    - rankvariant
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
