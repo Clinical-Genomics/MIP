@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE $UNDERSCORE};
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,14 +40,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qccollect}      => [qw{ check_qc_metric define_evaluate_metric }],
+        q{MIP::Qccollect}      => [qw{ check_qc_metric }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qccollect qw{ check_qc_metric define_evaluate_metric };
+use MIP::Qccollect qw{ check_qc_metric };
 
 diag(   q{Test check_qc_metric from Qccollect.pm v}
       . $MIP::Qccollect::VERSION
@@ -59,10 +59,12 @@ diag(   q{Test check_qc_metric from Qccollect.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $PCT_ADAPTER_PASS             => 0.0001;
+Readonly my $PCT_ADAPTER_EVAL             => 0.0005;
 Readonly my $PCT_ADAPTER_FAIL             => 0.0010;
-Readonly my $PERCENTAGE_MAPPED_READS_PASS => 99;
+Readonly my $PCT_ADAPTER_PASS             => 0.0001;
+Readonly my $PERCENTAGE_MAPPED_READS_EVAL => 95;
 Readonly my $PERCENTAGE_MAPPED_READS_FAIL => 90;
+Readonly my $PERCENTAGE_MAPPED_READS_PASS => 99;
 
 ## Given sample id and metric to evaluate when requirement lesser than fulfilled
 my $sample_id = q{ADM1059A1};
@@ -77,20 +79,14 @@ my %sample_info = test_mip_hashes(
     }
 );
 
-## Defines recipes, metrics and thresholds to evaluate
-my %evaluate_metric = define_evaluate_metric(
-    {
-        sample_info_href => \%sample_info,
-    }
-);
-
+my $reference_metric_href = { lt => $PERCENTAGE_MAPPED_READS_EVAL };
 check_qc_metric(
     {
         metric                => $metric_lt,
         qc_data_href          => \%qc_data,
         qc_metric_value       => $PERCENTAGE_MAPPED_READS_PASS,
         recipe                => $recipe_lt,
-        reference_metric_href => $evaluate_metric{$sample_id}{$recipe_lt}{$metric_lt},
+        reference_metric_href => $reference_metric_href,
     }
 );
 
@@ -105,7 +101,7 @@ check_qc_metric(
         qc_data_href          => \%qc_data,
         qc_metric_value       => $PERCENTAGE_MAPPED_READS_FAIL,
         recipe                => $recipe_lt,
-        reference_metric_href => $evaluate_metric{$sample_id}{$recipe_lt}{$metric_lt},
+        reference_metric_href => $reference_metric_href,
     }
 );
 
@@ -126,13 +122,14 @@ is_deeply( \%qc_data, \%expected_evaluation,
 my $metric_gt = q{PCT_ADAPTER};
 my $recipe_gt = q{collectmultiplemetrics};
 
+$reference_metric_href = { gt => $PCT_ADAPTER_EVAL };
 check_qc_metric(
     {
         metric                => $metric_gt,
         qc_data_href          => \%qc_data,
         qc_metric_value       => $PCT_ADAPTER_PASS,
         recipe                => $recipe_gt,
-        reference_metric_href => $evaluate_metric{$sample_id}{$recipe_gt}{$metric_gt},
+        reference_metric_href => $reference_metric_href,
     }
 );
 
@@ -147,7 +144,7 @@ check_qc_metric(
         qc_data_href          => \%qc_data,
         qc_metric_value       => $PCT_ADAPTER_FAIL,
         recipe                => $recipe_gt,
-        reference_metric_href => $evaluate_metric{$sample_id}{$recipe_gt}{$metric_gt},
+        reference_metric_href => $reference_metric_href,
     }
 );
 $status = q{FAILED:} . $recipe_gt . $UNDERSCORE . $metric_gt . $COLON . $PCT_ADAPTER_FAIL;

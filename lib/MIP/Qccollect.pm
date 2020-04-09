@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,7 +39,10 @@ BEGIN {
       parse_sample_qc_metric
       plink_gender_check
       plink_relation_check
-      relation_check };
+      relation_check
+      set_case_eval_metrics
+      set_sample_eval_metrics
+    };
 }
 
 sub check_qc_metric {
@@ -381,14 +385,22 @@ sub define_evaluate_metric {
 
 ## Function  : Sets recipes, metrics and thresholds to be evaluated
 ## Returns   :
-## Arguments : $sample_info_href => Info on samples and case hash {REF}
+## Arguments : eval_metric_file  => File with evaluation metrics
+##           : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $eval_metric_file;
     my $sample_info_href;
 
     my $tmpl = {
+        eval_metric_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_file,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -400,52 +412,42 @@ sub define_evaluate_metric {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+    use MIP::Io::Read qw{ read_from_file };
 
-    ## Constants
-    Readonly my $FRACTION_DUPLICATES         => 0.2;
-    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
-    Readonly my $FRACTION_OF_ERRORS          => 0.06;
-    Readonly my $PCT_ADAPTER                 => 0.0005;
-    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
-    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
-    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
+    my %eval_metric = read_from_file(
+        {
+            format => q{yaml},
+            path   => $eval_metric_file,
+        }
+    );
 
-    my %evaluate_metric;
+    ## Hash to store relevant metrics
+    my %analysis_eval_metric;
 
+    ## Case level
+    set_case_eval_metrics(
+        {
+            analysis_eval_metric_href => \%analysis_eval_metric,
+            eval_metric_href          => \%eval_metric,
+            sample_info_href          => $sample_info_href,
+        }
+    );
+
+    ## Sample level
   SAMPLE_ID:
     foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
-        $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
-          $PERCENTAGE_MAPPED_READS;
-        $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
-          $PCT_TARGET_BASES_10X;
-        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
-          $PCT_PF_READS_ALIGNED;
-        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
-          $PCT_ADAPTER;
-        $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
-          $FRACTION_DUPLICATES;
-        $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
-          $FRACTION_OF_ERRORS;
-        $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
-          $FRACTION_OF_COMMON_VARIANTS;
-
-        ## Get sample id expected_coverage
-        my $expected_coverage = get_pedigree_sample_id_attributes(
+        set_sample_eval_metrics(
             {
-                attribute        => q{expected_coverage},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
+                analysis_eval_metric_href => \%analysis_eval_metric,
+                eval_metric_href          => \%eval_metric,
+                sample_id                 => $sample_id,
+                sample_info_href          => $sample_info_href,
             }
         );
-        if ($expected_coverage) {
-
-            $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
-              $expected_coverage;
-        }
     }
-    return %evaluate_metric;
+
+    return %analysis_eval_metric;
 }
 
 sub evaluate_case_qc_parameters {
@@ -1075,6 +1077,159 @@ sub relation_check {
             );
         }
     }
+    return;
+}
+
+sub set_case_eval_metrics {
+
+## Function : Set evaluation metrics on case level
+## Returns  :
+## Arguments: $analysis_eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $eval_metric_href          => Hash with evaluation metrics {ref}
+##          : $sample_info_href          => Hash with sample info {ref}
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $analysis_eval_metric_href;
+    my $eval_metric_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_eval_metric_href,
+            strict_type => 1,
+        },
+        eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    use MIP::Analysis qw{ get_overall_analysis_type };
+
+    my $consensus_analysis_type = get_overall_analysis_type(
+        {
+            analysis_type_href => $sample_info_href->{analysis_type},
+        }
+    );
+
+  CASE_RECIPE_OUTFILE:
+    foreach my $case_recipe_outfile ( keys %{ $sample_info_href->{recipe} } ) {
+
+        if (
+            any { $_ eq $case_recipe_outfile }
+            ( keys %{ $eval_metric_href->{$consensus_analysis_type} } )
+          )
+        {
+
+            $analysis_eval_metric_href->{$case_recipe_outfile} =
+              $eval_metric_href->{$consensus_analysis_type}{$case_recipe_outfile};
+        }
+    }
+
+    return;
+}
+
+sub set_sample_eval_metrics {
+
+## function : Set evaluation metrics on sample level
+## returns  :
+## arguments: $analysis_eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $eval_metric_href          => Hash with evaluation metrics {ref}
+##          : $sample_id                 => Sample id
+##          : $sample_info_href          => Hash with sample info {ref}
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $analysis_eval_metric_href;
+    my $eval_metric_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_eval_metric_href,
+            strict_type => 1,
+        },
+        eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    ## Get analysis type and expected_coverage for sample
+    my %sample_attribute = get_pedigree_sample_id_attributes(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    my $analysis_type     = $sample_attribute{analysis_type};
+    my $expected_coverage = $sample_attribute{expected_coverage};
+
+  SAMPLE_RECIPE_OUTFILE:
+    foreach my $sample_recipe_outfile (
+        keys %{ $sample_info_href->{sample}{$sample_id}{recipe} } )
+    {
+
+        if (
+            any { $_ eq $sample_recipe_outfile }
+            ( keys %{ $eval_metric_href->{$analysis_type} } )
+          )
+        {
+
+            $analysis_eval_metric_href->{$sample_id}{$sample_recipe_outfile} =
+              $eval_metric_href->{$analysis_type}{$sample_recipe_outfile};
+        }
+    }
+
+    ## Special case foir expected coverage
+    if ($expected_coverage) {
+
+        $eval_metric_href->{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
+          $expected_coverage;
+    }
+
     return;
 }
 

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -104,6 +104,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    eval_metric_file => {
+        input           => catfile(q{metrics.yaml}),
+        expected_output => q{--eval_metric_file} . $SPACE . catfile(q{metrics.yaml}),
+    },
     infile_path => {
         input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
         expected_output => q{--sample_info_file}

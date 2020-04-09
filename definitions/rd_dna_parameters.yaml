@@ -1969,11 +1969,20 @@ qccollect_ar:
   file_tag: _qc_metrics
   outfile_suffix: ".yaml"
   type: recipe
+qccollect_eval_metric_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: qc_eval_metric_-v1.0-.yaml
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_v1.18.yaml
+  default: qc_regexp_-v1.24-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

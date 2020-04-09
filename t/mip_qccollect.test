@@ -35,6 +35,8 @@ our $VERSION = 1.00;
 ## Set paths
 my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
 my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
+my $eval_metric_file =
+  catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.0-.yaml } );
 my $mip_path      = catfile( dirname($Bin), q{mip} );
 my $log_file_path = catfile( cwd(),         q{qc_metrics_qccollect.log} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
@@ -78,7 +80,8 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 my $cmds_ref = [
     q{perl},           $mip_path,
     qw{ qccollect},    q{--log_file},
-    $log_file_path,    q{--regexp_file},
+    $log_file_path,    q{--eval_metric_file},
+    $eval_metric_file, q{--regexp_file},
     $regexp_file_path, q{--sample_info_file},
     $sample_info_file, q{--evaluate_plink_gender},
     q{--outfile},      $outfile,

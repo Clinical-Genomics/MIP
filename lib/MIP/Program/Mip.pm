@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_download mip_qccollect mip_vcfparser mip_vercollect };
@@ -144,7 +144,8 @@ sub mip_qccollect {
 
 ## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $eval_metric_file        => Mip qc evaluation metrics file
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $log_file_path          => Log file path
 ##          : $outfile_path           => Outfile path
@@ -157,6 +158,7 @@ sub mip_qccollect {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $eval_metric_file;
     my $filehandle;
     my $infile_path;
     my $log_file_path;
@@ -170,6 +172,10 @@ sub mip_qccollect {
     my $skip_evaluation;
 
     my $tmpl = {
+        eval_metric_file => {
+            store       => \$eval_metric_file,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
         },
@@ -217,32 +223,25 @@ sub mip_qccollect {
     ## Stores commands depending on input parameters
     my @commands = qw{ mip qccollect};
 
-    ## Options
+    if ($eval_metric_file) {
+
+        push @commands, q{--eval_metric_file} . $SPACE . $eval_metric_file;
+    }
+
     if ($log_file_path) {
 
         push @commands, q{--log_file} . $SPACE . $log_file_path;
     }
 
-    if ($regexp_file_path) {
+    push @commands, q{--outfile} . $SPACE . $outfile_path;
 
-        push @commands, q{--regexp_file} . $SPACE . $regexp_file_path;
-    }
+    push @commands, q{--regexp_file} . $SPACE . $regexp_file_path;
+
+    push @commands, q{--sample_info_file} . $SPACE . $infile_path;
 
     if ($skip_evaluation) {
 
         push @commands, q{--skip_evaluation};
-    }
-
-    ## Infile
-    if ($infile_path) {
-
-        push @commands, q{--sample_info_file} . $SPACE . $infile_path;
-    }
-
-    ## Outfile
-    if ($outfile_path) {
-
-        push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
     push @commands,

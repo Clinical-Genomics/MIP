@@ -25,6 +25,7 @@ genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_cmms_-v1.28-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
+qccollect_eval_metric_file: qc_eval_metric_-v1.0-.yaml
 qccollect_regexp_file: qc_regexp_-v1.24-.yaml
 ### Analysis
 ### Programs
