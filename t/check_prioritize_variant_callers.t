@@ -76,8 +76,8 @@ my %parameter = (
 
 my $is_ok = check_prioritize_variant_callers(
     {
-        active_parameter_href      => \%active_parameter,
-        parameter_name             => q{gatk_combinevariants_prioritize_caller},
+        active_parameter_href => \%active_parameter,
+        priority_name_str => $active_parameter{gatk_combinevariants_prioritize_caller},
         variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
     }
 );
@@ -91,8 +91,9 @@ $active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk};
 trap {
     check_prioritize_variant_callers(
         {
-            active_parameter_href      => \%active_parameter,
-            parameter_name             => q{gatk_combinevariants_prioritize_caller},
+            active_parameter_href => \%active_parameter,
+            priority_name_str =>
+              $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
         }
     )
@@ -113,8 +114,9 @@ $active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk,bcftools};
 trap {
     check_prioritize_variant_callers(
         {
-            active_parameter_href      => \%active_parameter,
-            parameter_name             => q{gatk_combinevariants_prioritize_caller},
+            active_parameter_href => \%active_parameter,
+            priority_name_str =>
+              $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
         }
     )
@@ -136,8 +138,9 @@ $active_parameter{gatk_combinevariants_prioritize_caller} =
 trap {
     check_prioritize_variant_callers(
         {
-            active_parameter_href      => \%active_parameter,
-            parameter_name             => q{gatk_combinevariants_prioritize_caller},
+            active_parameter_href => \%active_parameter,
+            priority_name_str =>
+              $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
         }
     )

@@ -167,14 +167,14 @@ sub check_prioritize_variant_callers {
 ##          : match a supported variant caller
 ## Returns  :
 ## Arguments: $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $parameter_name             => Parameter name
+##          : $priority_name_str          => Comma separated priority name str
 ##          : $variant_caller_recipes_ref => Variant caller recipes to check {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name;
+    my $priority_name_str;
     my $variant_caller_recipes_ref;
 
     my $tmpl = {
@@ -185,10 +185,10 @@ sub check_prioritize_variant_callers {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name => {
+        priority_name_str => {
             defined     => 1,
             required    => 1,
-            store       => \$parameter_name,
+            store       => \$priority_name_str,
             strict_type => 1,
         },
         variant_caller_recipes_ref => {
@@ -205,8 +205,7 @@ sub check_prioritize_variant_callers {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my @priority_order_names =
-      split $COMMA, $active_parameter_href->{$parameter_name};
+    my @priority_order_names = split $COMMA, $priority_name_str;
 
     my %variant_caller_map;
   RECIPE_NAME:
@@ -227,7 +226,7 @@ sub check_prioritize_variant_callers {
             ## If variant caller alias is not part of priority order names
             if ( not any { $_ eq $variant_caller } @priority_order_names ) {
 
-                $log->fatal( $parameter_name
+                $log->fatal( $priority_name_str
                       . q{ does not contain active variant caller: '}
                       . $variant_caller
                       . $SINGLE_QUOTE );
@@ -237,7 +236,7 @@ sub check_prioritize_variant_callers {
         elsif ( any { $_ eq $variant_caller } @priority_order_names ) {
             ## If variant caller alias is part of priority order names
 
-            $log->fatal( $parameter_name
+            $log->fatal( $priority_name_str
                   . q{ contains deactivated variant caller: '}
                   . $variant_caller
                   . $SINGLE_QUOTE );
@@ -253,7 +252,7 @@ sub check_prioritize_variant_callers {
         next PRIO_NAME if ( any { $_ eq $priority_name } values %variant_caller_map );
 
         my $variant_callers_str = join $COMMA, values %variant_caller_map;
-        $log->fatal( $parameter_name . q{: '}
+        $log->fatal( $priority_name_str . q{: '}
               . $priority_name
               . q{' does not match any supported variant caller: '}
               . $variant_callers_str
@@ -433,8 +432,9 @@ sub parse_prioritize_variant_callers {
 
             check_prioritize_variant_callers(
                 {
-                    active_parameter_href      => $active_parameter_href,
-                    parameter_name             => $prioritize_parameter_name,
+                    active_parameter_href => $active_parameter_href,
+                    priority_name_str =>
+                      $active_parameter_href->{$prioritize_parameter_name},
                     variant_caller_recipes_ref => \@variant_caller_recipes,
                 }
             );
