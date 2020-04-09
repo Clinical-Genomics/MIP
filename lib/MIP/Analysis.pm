@@ -167,6 +167,7 @@ sub check_prioritize_variant_callers {
 ##          : match a supported variant caller
 ## Returns  :
 ## Arguments: $active_parameter_href      => Active parameters for this analysis hash {REF}
+##          : $parameter_href             => Holds all parameters {REF}
 ##          : $priority_name_str          => Comma separated priority name str
 ##          : $variant_caller_recipes_ref => Variant caller recipes to check {REF}
 
@@ -174,6 +175,7 @@ sub check_prioritize_variant_callers {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $parameter_href;
     my $priority_name_str;
     my $variant_caller_recipes_ref;
 
@@ -183,6 +185,13 @@ sub check_prioritize_variant_callers {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
         },
         priority_name_str => {
@@ -202,6 +211,8 @@ sub check_prioritize_variant_callers {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parameter qw{ get_parameter_attribute };
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -211,9 +222,13 @@ sub check_prioritize_variant_callers {
   RECIPE_NAME:
     foreach my $recipe_name ( @{$variant_caller_recipes_ref} ) {
 
-        ## Use first part of name to get corresponding variant caller
-        my ($variant_caller) = split /_/sxm, $recipe_name;
-        $variant_caller_map{$recipe_name} = $variant_caller;
+        $variant_caller_map{$recipe_name} = get_parameter_attribute(
+            {
+                attribute      => q{variant_caller},
+                parameter_href => $parameter_href,
+                parameter_name => $recipe_name,
+            }
+        );
     }
 
     ## Check that all active variant callers have a priority order
@@ -249,7 +264,8 @@ sub check_prioritize_variant_callers {
     foreach my $priority_name (@priority_order_names) {
 
         # If priority order names is part of variant callers
-        next PRIO_NAME if ( any { $_ eq $priority_name } values %variant_caller_map );
+        next PRIO_NAME
+          if ( any { $_ eq $priority_name } values %variant_caller_map );
 
         my $variant_callers_str = join $COMMA, values %variant_caller_map;
         $log->fatal( $priority_name_str . q{: '}
@@ -433,6 +449,7 @@ sub parse_prioritize_variant_callers {
             check_prioritize_variant_callers(
                 {
                     active_parameter_href => $active_parameter_href,
+                    parameter_href        => $parameter_href,
                     priority_name_str =>
                       $active_parameter_href->{$prioritize_parameter_name},
                     variant_caller_recipes_ref => \@variant_caller_recipes,

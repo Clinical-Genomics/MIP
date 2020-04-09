@@ -589,6 +589,7 @@ gatk_variantrecalibration:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+  variant_caller: haplotypecaller
 gatk_calculategenotypeposteriors:
   associated_recipe:
     - gatk_variantrecalibration

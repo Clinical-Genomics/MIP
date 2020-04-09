@@ -64,15 +64,18 @@ my $log = test_log( {} );
 ## Given no structural active callers, when priority string is ok
 my %active_parameter = (
     bcftools_mpileup                       => 1,
-    gatk_combinevariants_prioritize_caller => q{gatk,bcftools},
+    gatk_combinevariants_prioritize_caller => q{haplotypecaller,mpileup},
     gatk_variantrecalibration              => 1,
 );
 
 my %parameter = (
-    cache => {
+    bcftools_mpileup => { variant_caller => q{mpileup}, },
+    delly            => { variant_caller => q{delly}, },
+    cache            => {
         structural_variant_callers => [qw{ delly }],
         variant_callers            => [qw{ bcftools_mpileup gatk_variantrecalibration}],
     },
+    gatk_variantrecalibration => { variant_caller => q{haplotypecaller}, },
 );
 
 trap {

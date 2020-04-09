@@ -67,7 +67,7 @@ qccollect_regexp_file: qc_regexp_-v1.24-.yaml
 ### Analysis
 ## Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: gatk,bcftools
+gatk_combinevariants_prioritize_caller: haplotypecaller
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 rankvariant_binary_file: 1
 sv_genmod_models_case_type: cmms

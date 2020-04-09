@@ -64,19 +64,22 @@ my $log = test_log( {} );
 ## Given active callers, when priority string is ok
 my %active_parameter = (
     bcftools_mpileup                       => 1,
-    gatk_combinevariants_prioritize_caller => q{gatk,bcftools},
+    gatk_combinevariants_prioritize_caller => q{haplotypecaller,mpileup},
     gatk_variantrecalibration              => 1,
 );
 
 my %parameter = (
-    cache => {
+    bcftools_mpileup => { variant_caller => q{mpileup}, },
+    cache            => {
         variant_callers => [qw{ bcftools_mpileup gatk_variantrecalibration}],
     },
+    gatk_variantrecalibration => { variant_caller => q{haplotypecaller}, },
 );
 
 my $is_ok = check_prioritize_variant_callers(
     {
         active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
         priority_name_str => $active_parameter{gatk_combinevariants_prioritize_caller},
         variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
     }
@@ -86,12 +89,13 @@ my $is_ok = check_prioritize_variant_callers(
 ok( $is_ok, q{Passed} );
 
 ## Given a priority string with missing variant caller
-$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk};
+$active_parameter{gatk_combinevariants_prioritize_caller} = q{haplotypecaller};
 
 trap {
     check_prioritize_variant_callers(
         {
             active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
             priority_name_str =>
               $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
@@ -109,12 +113,13 @@ like(
 
 ## Given an not activated variant caller
 $active_parameter{bcftools_mpileup}                       = 0;
-$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk,bcftools};
+$active_parameter{gatk_combinevariants_prioritize_caller} = q{haplotypecaller,mpileup};
 
 trap {
     check_prioritize_variant_callers(
         {
             active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
             priority_name_str =>
               $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },
@@ -133,12 +138,13 @@ like(
 ## Given an other variant caller, when not part of priority string
 $active_parameter{bcftools_mpileup} = 1;
 $active_parameter{gatk_combinevariants_prioritize_caller} =
-  q{gatk,bcftools, NOT_A_VARIANT_CALLER};
+  q{haplotypecaller,mpileup, NOT_A_VARIANT_CALLER};
 
 trap {
     check_prioritize_variant_callers(
         {
             active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
             priority_name_str =>
               $active_parameter{gatk_combinevariants_prioritize_caller},
             variant_caller_recipes_ref => \@{ $parameter{cache}{variant_callers} },

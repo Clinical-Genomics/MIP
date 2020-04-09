@@ -43,3 +43,13 @@ reference:
   key_data_type: SCALAR
   values:
     - reference_dir
+variant_caller:
+  key_data_type: SCALAR
+  values:
+    - cnvnator
+    - delly
+    - expansionhunter
+    - haplotypecaller
+    - manta
+    - tiddit
+    - mpileup
