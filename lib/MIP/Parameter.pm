@@ -347,6 +347,7 @@ sub get_parameter_attribute {
                   recipe_type
                   reference
                   type
+                  variant_caller
                   }
             ],
             store       => \$attribute,

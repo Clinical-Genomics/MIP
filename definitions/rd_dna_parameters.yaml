@@ -670,6 +670,7 @@ cnvnator_ar:
     - samtools
   recipe_type: structural_variant_callers
   type: recipe
+  variant_caller: cnvnator
 cnv_bin_size:
   associated_recipe:
     - cnvnator_ar
@@ -700,6 +701,7 @@ delly_reformat:
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
+  variant_caller: delly
 delly_exclude_file:
   associated_recipe:
     - delly_call
@@ -734,6 +736,7 @@ expansionhunter:
     - stranger
   recipe_type: repeats_variant_callers
   type: recipe
+  variant_caller: expansionhunter
 expansionhunter_variant_catalog_file_path:
   associated_recipe:
     - expansionhunter
@@ -756,6 +759,7 @@ manta:
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
+  variant_caller: manta
 manta_call_regions_file_path:
   associated_recipe:
     - manta
@@ -778,6 +782,7 @@ tiddit:
     - TIDDIT.py
   recipe_type: structural_variant_callers
   type: recipe
+  variant_caller: tiddit
 tiddit_coverage_bin_size:
   associated_recipe:
     - tiddit
@@ -1126,6 +1131,7 @@ bcftools_mpileup:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+  variant_caller: mpileup
 bcftools_mpileup_constrain:
   associated_recipe:
     - bcftools_mpileup
@@ -1266,6 +1272,7 @@ gatk_variantrecalibration:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+  variant_caller: haplotypecaller
 gatk_calculategenotypeposteriors:
   associated_recipe:
     - gatk_variantrecalibration

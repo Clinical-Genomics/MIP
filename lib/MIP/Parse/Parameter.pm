@@ -24,14 +24,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       parse_conda_env_name
       parse_download_reference_parameter
       parse_infiles
-      parse_prioritize_variant_callers
     };
 
 }
@@ -255,89 +254,6 @@ sub parse_infiles {
 
             # Indent for visability
             $log->info( qq{\t\t}, $file );
-        }
-    }
-    return 1;
-}
-
-sub parse_prioritize_variant_callers {
-
-## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Parameter qw{ check_prioritize_variant_callers };
-
-    my %priority_call_parameter = (
-        variant_callers            => q{gatk_combinevariants_prioritize_caller},
-        structural_variant_callers => q{sv_svdb_merge_prioritize},
-    );
-
-    while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
-        each %priority_call_parameter )
-    {
-
-        ## Check if we have any active callers
-        my $activate_caller_tracker = 0;
-
-      CALLER:
-        foreach my $variant_caller ( @{ $parameter_href->{cache}{$variant_caller_type} } )
-        {
-
-            if ( $active_parameter_href->{$variant_caller} ) {
-
-                $activate_caller_tracker++;
-            }
-        }
-        if ($activate_caller_tracker) {
-
-            check_prioritize_variant_callers(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    log                   => $log,
-                    parameter_href        => $parameter_href,
-                    parameter_name        => $prioritize_parameter_name,
-                    variant_callers_ref =>
-                      \@{ $parameter_href->{cache}{$variant_caller_type} },
-                }
-            );
-        }
-        else {
-            ## No active callers at all
-            return;
         }
     }
     return 1;

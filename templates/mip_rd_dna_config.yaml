@@ -47,7 +47,7 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
-gatk_combinevariants_prioritize_caller: gatk
+gatk_combinevariants_prioritize_caller: haplotypecaller
 gatk_path: /opt/conda/opt/gatk-3.8
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml

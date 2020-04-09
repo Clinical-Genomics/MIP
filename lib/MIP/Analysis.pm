@@ -29,14 +29,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       broadcast_parameters
       check_analysis_type_to_pipeline
+      check_prioritize_variant_callers
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
+      parse_prioritize_variant_callers
       set_parameter_to_broadcast
     };
 }
@@ -159,6 +161,123 @@ qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis 
     return 1;
 }
 
+sub check_prioritize_variant_callers {
+
+## Function : Check that all active variant callers have a prioritization order and that the prioritization elements
+##          : match a supported variant caller
+## Returns  :
+## Arguments: $active_parameter_href      => Active parameters for this analysis hash {REF}
+##          : $parameter_href             => Holds all parameters {REF}
+##          : $priority_name_str          => Comma separated priority name str
+##          : $variant_caller_recipes_ref => Variant caller recipes to check {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $priority_name_str;
+    my $variant_caller_recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        priority_name_str => {
+            defined     => 1,
+            required    => 1,
+            store       => \$priority_name_str,
+            strict_type => 1,
+        },
+        variant_caller_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$variant_caller_recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @priority_order_names = split $COMMA, $priority_name_str;
+
+    my %variant_caller_map;
+  RECIPE_NAME:
+    foreach my $recipe_name ( @{$variant_caller_recipes_ref} ) {
+
+        $variant_caller_map{$recipe_name} = get_parameter_attribute(
+            {
+                attribute      => q{variant_caller},
+                parameter_href => $parameter_href,
+                parameter_name => $recipe_name,
+            }
+        );
+    }
+
+    ## Check that all active variant callers have a priority order
+  RECIPE_NAME:
+    while ( my ( $recipe_name, $variant_caller ) = each %variant_caller_map ) {
+
+        ## Only active recipes
+        if ( $active_parameter_href->{$recipe_name} ) {
+
+            ## If variant caller alias is not part of priority order names
+            if ( not any { $_ eq $variant_caller } @priority_order_names ) {
+
+                $log->fatal( $priority_name_str
+                      . q{ does not contain active variant caller: '}
+                      . $variant_caller
+                      . $SINGLE_QUOTE );
+                exit 1;
+            }
+        }
+        elsif ( any { $_ eq $variant_caller } @priority_order_names ) {
+            ## If variant caller alias is part of priority order names
+
+            $log->fatal( $priority_name_str
+                  . q{ contains deactivated variant caller: '}
+                  . $variant_caller
+                  . $SINGLE_QUOTE );
+            exit 1;
+        }
+    }
+
+    ## Check that prioritize string contains valid variant call names
+  PRIO_NAME:
+    foreach my $priority_name (@priority_order_names) {
+
+        # If priority order names is part of variant callers
+        next PRIO_NAME
+          if ( any { $_ eq $priority_name } values %variant_caller_map );
+
+        my $variant_callers_str = join $COMMA, values %variant_caller_map;
+        $log->fatal( $priority_name_str . q{: '}
+              . $priority_name
+              . q{' does not match any supported variant caller: '}
+              . $variant_callers_str
+              . $SINGLE_QUOTE );
+        exit 1;
+    }
+    return 1;
+}
+
 sub get_overall_analysis_type {
 
 ## Function : Detect if all samples has the same analysis type and return consensus or mixed
@@ -267,6 +386,83 @@ sub get_vcf_parser_analysis_suffix {
         push @analysis_suffixes, $analysis_type_suffix;
     }
     return @analysis_suffixes;
+}
+
+sub parse_prioritize_variant_callers {
+
+## Function : Parse prioritization string of variant callers merging recipes
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Analysis qw{ check_prioritize_variant_callers };
+    use MIP::Parameter qw{ get_cache };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %priority_call_parameter = (
+        variant_callers            => q{gatk_combinevariants_prioritize_caller},
+        structural_variant_callers => q{sv_svdb_merge_prioritize},
+    );
+
+  PRIO_PARAMETER:
+    while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
+        each %priority_call_parameter )
+    {
+
+        my @variant_caller_recipes = get_cache(
+            {
+                parameter_href => $parameter_href,
+                parameter_name => $variant_caller_type,
+            }
+        );
+
+        ## Check if we have any active callers
+        if ( @{$active_parameter_href}{@variant_caller_recipes} ) {
+
+            check_prioritize_variant_callers(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_href        => $parameter_href,
+                    priority_name_str =>
+                      $active_parameter_href->{$prioritize_parameter_name},
+                    variant_caller_recipes_ref => \@variant_caller_recipes,
+                }
+            );
+            next PRIO_PARAMETER;
+        }
+
+        $log->warn(
+qq{Could not find any active variant caller recipes for parameter: $prioritize_parameter_name}
+        );
+    }
+    return 1;
 }
 
 sub set_parameter_to_broadcast {

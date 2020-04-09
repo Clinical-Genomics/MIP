@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -385,11 +385,11 @@ sub check_rd_dna {
       set_vcfparser_outfile_counter
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference
@@ -530,11 +530,11 @@ sub check_rd_dna {
         }
     );
 
-    ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
+    ## Check that all active variant callers have a prioritization order and that the prioritization elements match a
+    ## supported variant caller
     parse_prioritize_variant_callers(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             parameter_href        => $parameter_href,
         }
     );
@@ -717,12 +717,12 @@ sub check_rd_dna_panel {
       set_vcfparser_outfile_counter
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
     use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Reference qw{ parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -846,7 +846,6 @@ sub check_rd_dna_panel {
     parse_prioritize_variant_callers(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             parameter_href        => $parameter_href,
         }
     );
