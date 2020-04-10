@@ -558,12 +558,12 @@ sub set_parameter_to_broadcast {
 
 sub update_prioritize_flag {
 
-##Function : Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
-##Returns  :
-##Arguments: $consensus_analysis_type => Consensus analysis_type
-##         : $parameter_href          => Parameter hash {REF}
-##         : $prioritize_key          => Prioritize key to update
-##         : $recipes_ref             => Recipes to update {REF}
+## Function : Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
+## Returns  : $prioritize_key
+## Arguments: $consensus_analysis_type => Consensus analysis_type
+##          : $parameter_href          => Parameter hash {REF}
+##          : $prioritize_key          => Prioritize key to update
+##          : $recipes_ref             => Recipes to update {REF}
 
     my ($arg_href) = @_;
 

@@ -57,10 +57,9 @@ diag(   q{Test update_prioritize_flag from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @recipes   = qw{ cnvnator_ar delly_call delly_reformat tiddit };
+my @recipes   = qw{ cnvnator_ar delly_reformat tiddit };
 my %parameter = (
     cnvnator_ar    => { variant_caller => q{cnvnator}, },
-    delly_call     => { variant_caller => q{delly}, },
     delly_reformat => { variant_caller => q{delly}, },
     manta          => { variant_caller => q{manta}, },
     tiddit         => { variant_caller => q{tiddit}, },
