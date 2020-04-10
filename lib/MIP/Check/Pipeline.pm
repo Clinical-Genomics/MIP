@@ -406,7 +406,7 @@ sub check_rd_dna {
 
     ## Constants
     Readonly my @MIP_VEP_PLUGINS            => qw{ sv_vep_plugin vep_plugin };
-    Readonly my $WGS_VARIANT_CALLER_RECIPES => [qw{ cnvnator_ar delly_reformat tiddit }];
+    Readonly my $ONLY_WGS_VARIANT_CALLER_RECIPES => [qw{ cnvnator_ar delly_reformat tiddit }];
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -546,7 +546,7 @@ sub check_rd_dna {
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
             parameter_href          => $parameter_href,
             prioritize_key          => $active_parameter_href->{sv_svdb_merge_prioritize},
-            recipes_ref             => $WGS_VARIANT_CALLER_RECIPES,
+            recipes_ref             => $ONLY_WGS_VARIANT_CALLER_RECIPES,
         }
     );
 
