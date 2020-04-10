@@ -88,15 +88,15 @@ my %sample_info = test_mip_hashes(
 ## Defines recipes, metrics and thresholds to evaluate
 my %evaluate_metric = (
     $sample_id => {
-        $infile => {
-            $recipe => {
-                $metric => $PERCENTAGE_MAPPED_READS_EVAL,
-                ,
+        $recipe => {
+            $metric => {
+                lt => $PERCENTAGE_MAPPED_READS_EVAL,
             },
         },
     },
 );
 
+## Then 
 my $is_ok = parse_sample_recipe_qc_metric(
     {
         evaluate_metric_href => \%evaluate_metric,

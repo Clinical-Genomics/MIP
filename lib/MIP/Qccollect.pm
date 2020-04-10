@@ -784,8 +784,7 @@ sub parse_sample_qc_metric {
         }
 
         ## No header data for metric
-        next METRIC
-          if ( not exists $qc_data_recipe_href->{header} );
+        next METRIC if ( not exists $qc_data_recipe_href->{header} );
 
       HEADER:
         for my $data_header ( keys %{ $qc_data_recipe_href->{header} } ) {

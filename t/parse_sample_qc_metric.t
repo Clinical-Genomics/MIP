@@ -66,6 +66,8 @@ Readonly my $PERCENTAGE_MAPPED_READS_PASS => 99;
 ## Given sample qc data when metric lacks a header
 my $infile    = q{an_infile};
 my $metric    = q{percentage_mapped_reads};
+my $header_recipe = q{collecthsmetrics};
+my $header_metric = q{PCT_TARGET_BASES_10X};
 my $recipe    = q{bamstats};
 my $sample_id = q{ADM1059A1};
 my %qc_data   = (
@@ -89,10 +91,14 @@ my %sample_info = test_mip_hashes(
 ## Defines recipes, metrics and thresholds to evaluate
 my %evaluate_metric = (
     $sample_id => {
-        $infile => {
-            $recipe => {
-                $metric => $PERCENTAGE_MAPPED_READS_EVAL,
-                ,
+        $recipe => {
+            $metric => {
+                lt => $PERCENTAGE_MAPPED_READS_EVAL,
+            },
+        },
+        $header_recipe => {
+            $header_metric => {
+                lt => $PCT_TARGET_BASES_10X,
             },
         },
     },
@@ -110,10 +116,8 @@ my $is_ok = parse_sample_qc_metric(
 ok( $is_ok, q{Parsed sample qc data metrics} );
 
 ## Given sample qc data when metric has a header
-my $header_recipe = q{collecthsmetrics};
 my $data_header   = q{first_of_pair};
-$qc_data{sample}{$sample_id}{$infile}{$header_recipe}{header}{$data_header}
-  {PCT_TARGET_BASES_10X} = $PCT_TARGET_BASES_10X;
+$qc_data{sample}{$sample_id}{$infile}{$header_recipe}{header}{$data_header}{$header_metric} = $PCT_TARGET_BASES_10X;
 
 ## Alias
 my $qc_data_header_recipe_href =
