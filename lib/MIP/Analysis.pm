@@ -22,14 +22,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $EMPTY_STR $CLOSE_BRACE $CLOSE_BRACKET $LOG_NAME $OPEN_BRACE $OPEN_BRACKET $SINGLE_QUOTE $SPACE };
+  qw{ $COMMA $EMPTY_STR $CLOSE_BRACE $CLOSE_BRACKET $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SINGLE_QUOTE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,6 +41,7 @@ BEGIN {
       parse_prioritize_variant_callers
       set_parameter_to_broadcast
       update_prioritize_flag
+      update_recipe_mode_for_analysis_type
     };
 }
 
@@ -629,6 +630,81 @@ sub update_prioritize_flag {
     ## Update prioritize parameter
     $prioritize_key = join $COMMA, @variant_callers;
     return $prioritize_key;
+}
+
+sub update_recipe_mode_for_analysis_type {
+
+##Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
+##Returns  :
+##Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##         : $consensus_analysis_type => Consensus analysis_type
+##         : $recipes_ref             => Recipes to update {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $consensus_analysis_type;
+    my $recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $consensus_analysis_type eq q{wgs} );
+
+    my @warning_msgs;
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  RECIPE:
+    foreach my $recipe ( @{$recipes_ref} ) {
+
+        ## Update recipe mode
+        $active_parameter_href->{$recipe} = 0;
+
+        my $warning_msg =
+            q{Turned off: }
+          . $recipe
+          . q{ as it is not applicable for }
+          . $consensus_analysis_type
+          . q{ analysis}
+          . $NEWLINE;
+
+        push @warning_msgs, $warning_msg;
+    }
+
+    ## Broadcast
+    if (@warning_msgs) {
+
+      WARNING_MSG:
+        foreach my $warning_msg (@warning_msgs) {
+            $log->warn($warning_msg);
+        }
+    }
+    return @warning_msgs;
 }
 
 sub _parse_parameter_to_broadcast {

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -148,6 +148,13 @@ sub check_dragen_rd_dna {
     Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
         {
@@ -171,12 +178,6 @@ sub check_dragen_rd_dna {
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Collect select file contigs to loop over downstream
-    my $consensus_analysis_type = get_cache(
-        {
-            parameter_href => $parameter_href,
-            parameter_name => q{consensus_analysis_type},
-        }
-    );
     parse_select_file_contigs(
         {
             consensus_analysis_type => $consensus_analysis_type,
@@ -385,8 +386,12 @@ sub check_rd_dna {
       set_vcfparser_outfile_counter
       write_references
     };
-    use MIP::Analysis
-      qw{ broadcast_parameters parse_prioritize_variant_callers update_prioritize_flag };
+    use MIP::Analysis qw{
+      broadcast_parameters
+      parse_prioritize_variant_callers
+      update_prioritize_flag
+      update_recipe_mode_for_analysis_type
+    };
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
@@ -396,7 +401,6 @@ sub check_rd_dna {
     use MIP::Reference
       qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::Update::Recipes qw{ update_recipe_mode_for_analysis_type };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -405,9 +409,20 @@ sub check_rd_dna {
     use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
-    Readonly my $ONLY_WGS_VARIANT_CALLER_RECIPES => [qw{ cnvnator_ar delly_reformat tiddit }];
+    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES =>
+      qw{ cnvnator_ar delly_reformat tiddit };
+    Readonly my @ONLY_WGS_RECIPIES =>
+      qw{ cnvnator_ar delly_call delly_reformat expansionhunter
+      samtools_subsample_mt smncopynumbercaller tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -439,13 +454,7 @@ sub check_rd_dna {
     ## Update the expected number of outfiles after vcfparser
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
-## Collect select file contigs to loop over downstream
-    my $consensus_analysis_type = get_cache(
-        {
-            parameter_href => $parameter_href,
-            parameter_name => q{consensus_analysis_type},
-        }
-    );
+    ## Collect select file contigs to loop over downstream
     parse_select_file_contigs(
         {
             consensus_analysis_type => $consensus_analysis_type,
@@ -544,10 +553,10 @@ sub check_rd_dna {
     ## Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
     $active_parameter_href->{sv_svdb_merge_prioritize} = update_prioritize_flag(
         {
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            consensus_analysis_type => $consensus_analysis_type,
             parameter_href          => $parameter_href,
             prioritize_key          => $active_parameter_href->{sv_svdb_merge_prioritize},
-            recipes_ref             => $ONLY_WGS_VARIANT_CALLER_RECIPES,
+            recipes_ref             => \@ONLY_WGS_VARIANT_CALLER_RECIPES,
         }
     );
 
@@ -555,12 +564,8 @@ sub check_rd_dna {
     update_recipe_mode_for_analysis_type(
         {
             active_parameter_href   => $active_parameter_href,
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
-            log                     => $log,
-            recipes_ref             => [
-                qw{ cnvnator_ar delly_call delly_reformat expansionhunter
-                  samtools_subsample_mt smncopynumbercaller tiddit }
-            ],
+            consensus_analysis_type => $consensus_analysis_type,
+            recipes_ref             => \@ONLY_WGS_RECIPIES,
         }
     );
 
@@ -1001,6 +1006,12 @@ sub check_rd_dna_vcf_rerun {
     Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
         {
@@ -1023,13 +1034,7 @@ sub check_rd_dna_vcf_rerun {
     ## Update the expected number of outfiles after vcfparser
     set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
-## Collect select file contigs to loop over downstream
-    my $consensus_analysis_type = get_cache(
-        {
-            parameter_href => $parameter_href,
-            parameter_name => q{consensus_analysis_type},
-        }
-    );
+    ## Collect select file contigs to loop over downstream
     parse_select_file_contigs(
         {
             consensus_analysis_type => $consensus_analysis_type,
