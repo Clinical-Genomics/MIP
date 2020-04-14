@@ -17,17 +17,16 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,7 +44,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Config}         => [qw{ write_mip_config }],
         q{MIP::Io::Read}       => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,17 +62,8 @@ diag(   q{Test write_mip_config from Config.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir      = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
 ## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{TEST},
-    }
-);
+my $log = test_log( {} );
 
 ## Given a config file path
 my %active_parameter = (
@@ -86,7 +76,6 @@ trap {
     write_mip_config(
         {
             active_parameter_href => \%active_parameter,
-            log                   => $log,
             remove_keys_ref       => [qw{ associated_program }],
             sample_info_href      => \%sample_info,
         }
@@ -109,11 +98,11 @@ my %config_parameter = read_from_file(
 
 is_deeply( \%config_parameter, \%active_parameter, q{Wrote config file} );
 
-## Then the path of the config should be transfered to sample_info
+## Then the path of the config should be transferred to sample_info
 is(
     $sample_info{config_file_analysis},
     $active_parameter{config_file_analysis},
-    q{Transfered config file analysis path to sample_info}
+    q{Transferred config file analysis path to sample_info}
 );
 
 ## Clean-up

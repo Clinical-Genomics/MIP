@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -145,7 +145,8 @@ sub check_dragen_rd_dna {
     };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -227,7 +228,7 @@ sub check_dragen_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
     );
@@ -405,7 +406,8 @@ sub check_rd_dna {
     use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -565,8 +567,7 @@ sub check_rd_dna {
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
     );
@@ -732,6 +733,9 @@ sub check_rd_dna_panel {
     };
     use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
+    ## Constants
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -855,7 +859,7 @@ sub check_rd_dna_panel {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
     );
@@ -994,7 +998,8 @@ sub check_rd_dna_vcf_rerun {
     };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -1076,7 +1081,7 @@ sub check_rd_dna_vcf_rerun {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
     );
@@ -1213,6 +1218,9 @@ sub check_rd_rna {
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
 
+    ## Constants
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
         {
@@ -1288,7 +1296,7 @@ sub check_rd_rna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_recipe }],
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
     );
