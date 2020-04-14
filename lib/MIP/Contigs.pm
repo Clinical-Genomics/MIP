@@ -24,11 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_select_file_contigs
+      delete_contig_elements
       set_contigs
       sort_contigs_to_contig_set
     };
@@ -86,6 +87,60 @@ sub check_select_file_contigs {
         exit 1;
     }
     return 1;
+}
+
+sub delete_contig_elements {
+
+## Function : Return new cleansed contig array without remove contigs elements while leaving original contigs_ref
+##            untouched
+## Returns  : @cleansed_contigs
+## Arguments: contigs_ref         => Contigs array to remove element(s) from {REF}
+##          : $remove_contigs_ref => Remove these contigs {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $remove_contigs_ref;
+
+    my $tmpl = {
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        remove_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$remove_contigs_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %contig_to_remove = map { $_ => 1 } @{$remove_contigs_ref};
+
+    ### Make sure that contig is removed independent of genome source i.e prefix or not
+    ## If contigs has prefix
+    if ( defined $contigs_ref->[0]
+        && $contigs_ref->[0] =~ / ^chr /xsm )
+    {
+
+        ## And remove contigs has not
+        if ( defined $remove_contigs_ref->[0]
+            && $remove_contigs_ref->[0] !~ / ^chr /xsm )
+        {
+
+            ## Add prefix to keys to match contigs prefix
+            %contig_to_remove = map { q{chr} . $_ => 1 } @{$remove_contigs_ref};
+        }
+    }
+    my @cleansed_contigs = grep { not $contig_to_remove{$_} } @{$contigs_ref};
+    return @cleansed_contigs;
 }
 
 sub set_contigs {
