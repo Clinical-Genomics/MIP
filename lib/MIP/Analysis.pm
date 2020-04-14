@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +40,7 @@ BEGIN {
       get_vcf_parser_analysis_suffix
       parse_prioritize_variant_callers
       set_parameter_to_broadcast
+      update_prioritize_flag
     };
 }
 
@@ -443,8 +444,11 @@ sub parse_prioritize_variant_callers {
             }
         );
 
-        ## Check if we have any active callers
-        if ( @{$active_parameter_href}{@variant_caller_recipes} ) {
+        ## Check if we have any active recipes for callers
+        my $has_active_recipe =
+          grep { defined and $_ >= 1 } @{$active_parameter_href}{@variant_caller_recipes};
+
+        if ($has_active_recipe) {
 
             check_prioritize_variant_callers(
                 {
@@ -550,6 +554,81 @@ sub set_parameter_to_broadcast {
         }
     }
     return;
+}
+
+sub update_prioritize_flag {
+
+## Function : Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
+## Returns  : $prioritize_key
+## Arguments: $consensus_analysis_type => Consensus analysis_type
+##          : $parameter_href          => Parameter hash {REF}
+##          : $prioritize_key          => Prioritize key to update
+##          : $recipes_ref             => Recipes to update {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $parameter_href;
+    my $prioritize_key;
+    my $recipes_ref;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        prioritize_key => {
+            store       => \$prioritize_key,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    return if ( $consensus_analysis_type eq q{wgs} );
+
+    return if ( not $prioritize_key );
+
+    ## Split string into array
+    my @variant_callers = split $COMMA, $prioritize_key;
+
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
+
+        my $exclude_variant_caller = get_parameter_attribute(
+            {
+                attribute      => q{variant_caller},
+                parameter_href => $parameter_href,
+                parameter_name => $recipe_name,
+            }
+        );
+
+        ## Keep variant_callers which are not in recipes supplied
+        @variant_callers = grep { not $_ eq $exclude_variant_caller } @variant_callers;
+    }
+
+    ## Update prioritize parameter
+    $prioritize_key = join $COMMA, @variant_callers;
+    return $prioritize_key;
 }
 
 sub _parse_parameter_to_broadcast {

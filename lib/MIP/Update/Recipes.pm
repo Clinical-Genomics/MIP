@@ -19,71 +19,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      update_prioritize_flag
+
       update_recipe_mode_for_analysis_type
       update_recipe_mode_for_pedigree
     };
-}
-
-sub update_prioritize_flag {
-
-##Function : Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
-##Returns  :
-##Arguments: $consensus_analysis_type => Consensus analysis_type
-##         : $prioritize_key          => Prioritize key to update
-##         : $recipes_ref             => Recipes to update {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $consensus_analysis_type;
-    my $prioritize_key;
-    my $recipes_ref;
-
-    my $tmpl = {
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-        prioritize_key => {
-            store       => \$prioritize_key,
-            strict_type => 1,
-        },
-        recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipes_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if (   $consensus_analysis_type ne q{wgs}
-        && $prioritize_key )
-    {
-
-        ## Split string into array
-        my @callers = split $COMMA, $prioritize_key;
-
-      CALLER:
-        foreach my $caller ( @{$recipes_ref} ) {
-
-            ## Remove all wgs specific callers
-            @callers = grep { $caller !~ /^$_/sxm } @callers;
-        }
-
-        ## Update sv_svdb_merge_prioritize flag
-        $prioritize_key = join q{,}, @callers;
-    }
-    return $prioritize_key;
 }
 
 sub update_recipe_mode_for_analysis_type {

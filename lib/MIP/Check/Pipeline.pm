@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -385,7 +385,8 @@ sub check_rd_dna {
       set_vcfparser_outfile_counter
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
+    use MIP::Analysis
+      qw{ broadcast_parameters parse_prioritize_variant_callers update_prioritize_flag };
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
@@ -395,8 +396,7 @@ sub check_rd_dna {
     use MIP::Reference
       qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::Update::Recipes
-      qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
+    use MIP::Update::Recipes qw{ update_recipe_mode_for_analysis_type };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -405,7 +405,8 @@ sub check_rd_dna {
     use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @MIP_VEP_PLUGINS            => qw{ sv_vep_plugin vep_plugin };
+    Readonly my $ONLY_WGS_VARIANT_CALLER_RECIPES => [qw{ cnvnator_ar delly_reformat tiddit }];
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -543,8 +544,9 @@ sub check_rd_dna {
     $active_parameter_href->{sv_svdb_merge_prioritize} = update_prioritize_flag(
         {
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            parameter_href          => $parameter_href,
             prioritize_key          => $active_parameter_href->{sv_svdb_merge_prioritize},
-            recipes_ref => [qw{ cnvnator_ar delly_call delly_reformat tiddit }],
+            recipes_ref             => $ONLY_WGS_VARIANT_CALLER_RECIPES,
         }
     );
 
