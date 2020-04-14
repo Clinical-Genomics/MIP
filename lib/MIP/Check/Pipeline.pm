@@ -227,7 +227,6 @@ sub check_dragen_rd_dna {
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
@@ -858,7 +857,6 @@ sub check_rd_dna_panel {
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
@@ -1080,7 +1078,6 @@ sub check_rd_dna_vcf_rerun {
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
@@ -1295,7 +1292,6 @@ sub check_rd_rna {
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
             remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
             sample_info_href      => $sample_info_href,
         }
