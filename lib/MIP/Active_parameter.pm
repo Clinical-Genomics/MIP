@@ -700,7 +700,7 @@ sub get_active_parameter_attribute {
 
 sub get_matching_values_key {
 
-## Function : Return the key if the hash value and query match
+## Function : Return the key if the hash value exists
 ## Returns  : "key pointing to matched value"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $parameter_name        => MIP parameter name
