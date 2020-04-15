@@ -132,12 +132,12 @@ sub delete_contig_elements {
     ### Make sure that contig is removed independent of genome source i.e prefix or not
     ## If contigs has prefix
     if ( defined $contigs_ref->[0]
-        && $contigs_ref->[0] =~ / ^chr /xsm )
+        && $contigs_ref->[0] =~ / \A chr /xsm )
     {
 
         ## And remove contigs has not
         if ( defined $remove_contigs_ref->[0]
-            && $remove_contigs_ref->[0] !~ / ^chr /xsm )
+            && $remove_contigs_ref->[0] !~ / \A chr /xsm )
         {
 
             ## Add prefix to keys to match contigs prefix
