@@ -739,8 +739,25 @@ sub get_matching_values_key {
 
     return if ( not exists $active_parameter_href->{$parameter_name} );
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @collapsed_values;
+
     ## Values are now keys and vice versa
     my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
+
+  PAIR:
+    while ( my ( $key, $value ) = each %{ $active_parameter_href->{$parameter_name} } ) {
+
+        next PAIR if ( exists $reversed{$value} and $reversed{$value} eq $key );
+
+        push @collapsed_values, $value;
+    }
+    if (@collapsed_values) {
+        $log->warn(qq{Found duplicated values in parameter: $parameter_name });
+        $log->warn( q{Duplicated values: } . join $SPACE, @collapsed_values );
+    }
 
     return $reversed{$query_value} if ( exists $reversed{$query_value} );
 
