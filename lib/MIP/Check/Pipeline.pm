@@ -390,7 +390,7 @@ sub check_rd_dna {
       broadcast_parameters
       parse_prioritize_variant_callers
       update_prioritize_flag
-      update_recipe_mode_for_analysis_type
+      update_recipe_mode_for_wes
     };
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
@@ -561,7 +561,7 @@ sub check_rd_dna {
     );
 
     ## Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
-    update_recipe_mode_for_analysis_type(
+    update_recipe_mode_for_wes(
         {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
