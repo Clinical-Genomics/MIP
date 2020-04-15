@@ -108,6 +108,11 @@ set_sample_eval_metrics(
 
 my %expected = (
     ADM1059A1 => {
+        collecthsmetrics => {
+            MEAN_TARGET_COVERAGE => {
+                lt => 150,
+            },
+        },
         collectmultiplemetrics => {
             PCT_PF_READS_ALIGNED => {
                 lt => $PCT_PF_READS_ALIGNED,

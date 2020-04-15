@@ -144,7 +144,7 @@ sub mip_qccollect {
 
 ## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
 ## Returns  : @commands
-## Arguments: $eval_metric_file        => Mip qc evaluation metrics file
+## Arguments: $eval_metric_file       => Mip qc evaluation metrics file
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $log_file_path          => Log file path

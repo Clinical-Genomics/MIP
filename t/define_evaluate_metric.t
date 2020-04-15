@@ -69,6 +69,7 @@ my %sample_info = test_mip_hashes(
         mip_hash_name => q{qc_sample_info},
     }
 );
+
 ## Given a file with evaluation metrics
 my $eval_metric_file =
   catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.0-.yaml} );
@@ -83,6 +84,26 @@ my %evaluate_metric = define_evaluate_metric(
 
 my %expected = (
     ADM1059A1 => {
+        collecthsmetrics => {
+            MEAN_TARGET_COVERAGE => {
+                lt => 150,
+            },
+        },
+        collectmultiplemetrics => {
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
+            },
+            PCT_ADAPTER => {
+                gt => $PCT_ADAPTER,
+            },
+        },
+    },
+    ADM1059A2 => {
+        collecthsmetrics => {
+            MEAN_TARGET_COVERAGE => {
+                lt => 150,
+            },
+        },
         collectmultiplemetrics => {
             PCT_PF_READS_ALIGNED => {
                 lt => $PCT_PF_READS_ALIGNED,
@@ -95,6 +116,13 @@ my %expected = (
     variant_integrity_ar_mendel => {
         fraction_of_errors => {
             gt => $VARIANT_INTEGRITY_AR_MENDEL,
+        },
+    },
+    ADM1059A3 => {
+        collecthsmetrics => {
+            MEAN_TARGET_COVERAGE => {
+                lt => 150,
+            },
         },
     },
 );

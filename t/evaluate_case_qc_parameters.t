@@ -58,8 +58,7 @@ diag(   q{Test evaluate_case_qc_parameters from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $FRACTION_OF_COMMON_VARIANTS      => 0.3;
-Readonly my $FRACTION_OF_COMMON_VARIANTS_EVAL => 0.55;
+Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.3;
 
 ## Given
 my $metric_lt = q{fraction_of_common_variants};

@@ -24,8 +24,7 @@ use Modern::Perl qw{ 2018 };
 use MIP::Constants qw{ $LOG_NAME };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Io::Write qw{ write_to_file };
-use MIP::Qccollect
-  qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
+use MIP::Qccollect qw{ evaluate_analysis };
 use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
 BEGIN {
@@ -171,31 +170,14 @@ sub mip_qccollect {
         }
     );
 
-    if ( not $skip_evaluation and $eval_metric_file ) {
-
-        ## Defines recipes, metrics and thresholds to evaluate
-        my %evaluate_metric = define_evaluate_metric(
-            {
-                eval_metric_file => $eval_metric_file,
-                sample_info_href => \%sample_info,
-            }
-        );
-
-        ## Evaluate the metrics
-        evaluate_case_qc_parameters(
-            {
-                evaluate_metric_href => \%evaluate_metric,
-                qc_data_href         => \%qc_data,
-            }
-        );
-
-        evaluate_sample_qc_parameters(
-            {
-                evaluate_metric_href => \%evaluate_metric,
-                qc_data_href         => \%qc_data,
-            }
-        );
-    }
+    evaluate_analysis(
+        {
+            eval_metric_file => $eval_metric_file,
+            qc_data_href     => \%qc_data,
+            sample_info_href => \%sample_info,
+            skip_evaluation  => $skip_evaluation,
+        }
+    );
 
     ## Writes a qc data hash to file
     write_to_file(

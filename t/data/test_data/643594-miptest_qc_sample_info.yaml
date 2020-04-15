@@ -43,6 +43,13 @@ sample:
     father: 0
     mother: 0
     phenotype: unaffected
+    recipe:
+      chanjo_sexcheck:
+        ADM1059A2_lanes_1_sorted_md_brecal_sex:
+          path: t/data/643594-miptest/analysis/ADM1059A2/chanjo_sexcheck/ADM1059A2_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A2_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A2/picardtools_collectmultiplemetrics/ADM1059A2_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics
     sample_id: ADM1059A2
     sample_name: ADM1059A2
     sex: male
@@ -54,6 +61,13 @@ sample:
     father: 0
     mother: 0
     phenotype: unaffected
+    recipe:
+      chanjo_sexcheck:
+        ADM1059A3_lanes_1_sorted_md_brecal_sex:
+          path: t/data/643594-miptest/analysis/ADM1059A3/chanjo_sexcheck/ADM1059A3_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A3_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A3/picardtools_collectmultiplemetrics/ADM1059A3_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics
     sample_id: ADM1059A3
     sample_name: ADM1059A3
     sex: unknown
