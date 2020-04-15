@@ -87,8 +87,8 @@ sub update_contigs_for_run {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List
-      qw{ delete_contig_elements delete_non_wes_contig delete_male_contig };
+    use MIP::Contigs qw{ delete_contig_elements };
+    use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 
     my @exclude_contig_arrays = (
         \@{ $file_info_href->{bam_contigs} },
@@ -98,13 +98,13 @@ sub update_contigs_for_run {
         \@{ $file_info_href->{select_file_contigs} },
     );
 
-  ARRAY_REF:
-    foreach my $array_ref (@exclude_contig_arrays) {
+  CONTIG_REF:
+    foreach my $contigs_ref (@exclude_contig_arrays) {
 
         ## Delete user specified contigs from contigs array
-        @{$array_ref} = delete_contig_elements(
+        @{$contigs_ref} = delete_contig_elements(
             {
-                elements_ref       => $array_ref,
+                contigs_ref        => $contigs_ref,
                 remove_contigs_ref => $exclude_contigs_ref,
             }
         );

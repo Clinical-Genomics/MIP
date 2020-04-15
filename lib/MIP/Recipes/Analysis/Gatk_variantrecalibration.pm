@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -134,7 +134,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
@@ -279,10 +279,10 @@ sub analysis_gatk_variantrecalibration_wes {
       @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
 
     ### Special case: Not to be used with hybrid capture
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    ## Removes an element from array and return new array while leaving orginal contigs_ref untouched
     @annotations = delete_contig_elements(
         {
-            elements_ref       => \@annotations,
+            contigs_ref        => \@annotations,
             remove_contigs_ref => [qw{ DP }],
         }
     );
@@ -612,7 +612,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
@@ -798,10 +798,10 @@ sub analysis_gatk_variantrecalibration_wgs {
         ## Special case: Not to be used with hybrid capture. NOTE: Disabled when analysing wes + wgs in the same run
         if ( $consensus_analysis_type ne q{wgs} ) {
 
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+            ## Removes an element from array and return new array while leaving orginal contigs_ref untouched
             @annotations = delete_contig_elements(
                 {
-                    elements_ref       => \@annotations,
+                    contigs_ref        => \@annotations,
                     remove_contigs_ref => [qw{ DP }],
                 }
             );
@@ -821,7 +821,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             ## MQ annotation not part of GATK BP for INDEL
             @annotations = delete_contig_elements(
                 {
-                    elements_ref       => \@annotations,
+                    contigs_ref        => \@annotations,
                     remove_contigs_ref => [qw{ MQ }],
                 }
             );

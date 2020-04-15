@@ -19,73 +19,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ delete_contig_elements  delete_male_contig delete_non_wes_contig };
-}
-
-sub delete_contig_elements {
-
-## Function : Removes contig elements from array and return new contig array while leaving orginal elements_ref untouched.
-## Returns  : @cleansed_contigs
-## Arguments: $elements_ref       => Array to remove an element from {REF}
-##          : $remove_contigs_ref => Remove these contigs {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $remove_contigs_ref;
-
-    my $tmpl = {
-        elements_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$elements_ref,
-            strict_type => 1,
-        },
-        remove_contigs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$remove_contigs_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Copy array for sequencial removal
-    my @cleansed_contigs  = @{$elements_ref};
-    my @contigs_to_remove = @{$remove_contigs_ref};
-
-    ### Make sure that contig is removed independent of genome source i.e prefix or not
-    ## If contigs has prefix
-    if ( defined $elements_ref->[0]
-        && $elements_ref->[0] =~ / ^chr /xsm )
-    {
-
-        ## And remove contigs has not
-        if ( defined $remove_contigs_ref->[0]
-            && $remove_contigs_ref->[0] !~ / ^chr /xsm )
-        {
-
-            ## Add prefix to remove contigs to match contigs prefix
-            @contigs_to_remove = map { q{chr} . $_ } @contigs_to_remove;
-        }
-    }
-
-  CONTIG:
-    foreach my $remove_contig (@contigs_to_remove) {
-
-        ## Keep order of contigs i.e. do not use hash look-up
-        @cleansed_contigs = grep { $_ ne $remove_contig } @cleansed_contigs;
-
-    }
-    return @cleansed_contigs;
+    our @EXPORT_OK = qw{ delete_male_contig delete_non_wes_contig };
 }
 
 sub delete_male_contig {
@@ -138,6 +75,7 @@ sub delete_male_contig {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
+    use MIP::Contigs qw{ delete_contig_elements };
 
     my @contigs = @{$contigs_ref};
 
@@ -146,7 +84,7 @@ sub delete_male_contig {
 
         @contigs = delete_contig_elements(
             {
-                elements_ref       => \@contigs,
+                contigs_ref        => \@contigs,
                 remove_contigs_ref => $contig_names_ref,
             }
         );
@@ -209,8 +147,9 @@ sub delete_non_wes_contig {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_allowed_array_values };
     use MIP::Analysis qw{ get_overall_analysis_type };
+    use MIP::Check::Parameter qw{ check_allowed_array_values };
+    use MIP::Contigs qw{ delete_contig_elements };
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
@@ -226,7 +165,7 @@ sub delete_non_wes_contig {
 
         @contigs = delete_contig_elements(
             {
-                elements_ref       => \@contigs,
+                contigs_ref        => \@contigs,
                 remove_contigs_ref => $contig_names_ref,
             }
         );

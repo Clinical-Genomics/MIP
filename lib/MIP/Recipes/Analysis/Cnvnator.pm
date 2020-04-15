@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -157,7 +157,7 @@ sub analysis_cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -254,17 +254,17 @@ sub analysis_cnvnator {
     ### SHELL:
 
     ### Update contigs
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    ## Removes an element from array and return new array while leaving orginal contigs_ref untouched
     # Skip contig MT as it is not applicable in this analysis
     my @size_ordered_contigs = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
     my @contigs = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs} },
+            contigs_ref        => \@{ $file_info_href->{contigs} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
