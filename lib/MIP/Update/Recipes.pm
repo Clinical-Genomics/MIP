@@ -12,103 +12,19 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $LOG_NAME $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-
-      update_recipe_mode_for_analysis_type
       update_recipe_mode_for_pedigree
     };
-}
-
-sub update_recipe_mode_for_analysis_type {
-
-##Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
-##Returns  :
-##Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $consensus_analysis_type => Consensus analysis_type
-##         : $log                     => Log
-##         : $recipes_ref             => Recipes to update {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $consensus_analysis_type;
-    my $log;
-    my $recipes_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipes_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $consensus_analysis_type ne q{wgs} ) {
-
-        my @warning_msgs;
-
-      RECIPE:
-        foreach my $recipe ( @{$recipes_ref} ) {
-
-            ## Update recipe mode
-            $active_parameter_href->{$recipe} = 0;
-
-            my $warning_msg =
-                q{Turned off: }
-              . $recipe
-              . q{ as it is not applicable for }
-              . $consensus_analysis_type
-              . q{ analysis}
-              . $NEWLINE;
-
-            push @warning_msgs, $warning_msg;
-        }
-
-        ## Broadcast
-        if (@warning_msgs) {
-
-          WARNING_MSG:
-            foreach my $warning_msg (@warning_msgs) {
-                $log->warn($warning_msg);
-            }
-
-            return @warning_msgs;
-        }
-    }
-    return;
 }
 
 sub update_recipe_mode_for_pedigree {
