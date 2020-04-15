@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1328,9 +1328,19 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{qccollect_eval_metric_file} => (
+            cmd_aliases   => [qw{ qccemf }],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.0-.yaml}],
+            documentation => q{File containing Qccollect evaluation metrics},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{qccollect_regexp_file} => (
             cmd_aliases => [qw{ qccref }],
-            cmd_tags    => [q{Default: qc_regexp_-v1.18-.yaml}],
+            cmd_tags    => [q{Default: qc_regexp_-v1.24-.yaml}],
             documentation =>
 q{Regular expression file containing the regular expression to be used for each program},
             is  => q{rw},

@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,29 +17,36 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_qc_metric
       chanjo_gender_check
       define_evaluate_metric
+      evaluate_analysis
       evaluate_case_qc_parameters
       evaluate_sample_qc_parameters
       get_case_pairwise_comparison
+      get_eval_expression
       get_parent_ids
       parse_sample_recipe_qc_metric
       parse_sample_qc_metric
       plink_gender_check
       plink_relation_check
-      relation_check };
+      relation_check
+      set_case_eval_metrics
+      set_eval_expression
+      set_sample_eval_metrics
+      set_in_analysis_eval_metric
+    };
 }
 
 sub check_qc_metric {
@@ -381,14 +389,22 @@ sub define_evaluate_metric {
 
 ## Function  : Sets recipes, metrics and thresholds to be evaluated
 ## Returns   :
-## Arguments : $sample_info_href => Info on samples and case hash {REF}
+## Arguments : eval_metric_file  => File with evaluation metrics
+##           : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $eval_metric_file;
     my $sample_info_href;
 
     my $tmpl = {
+        eval_metric_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_file,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -400,52 +416,134 @@ sub define_evaluate_metric {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+    use Clone qw{ clone };
+    use MIP::Io::Read qw{ read_from_file };
 
-    ## Constants
-    Readonly my $FRACTION_DUPLICATES         => 0.2;
-    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
-    Readonly my $FRACTION_OF_ERRORS          => 0.06;
-    Readonly my $PCT_ADAPTER                 => 0.0005;
-    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
-    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
-    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
+    my %eval_metric = read_from_file(
+        {
+            format => q{yaml},
+            path   => $eval_metric_file,
+        }
+    );
 
-    my %evaluate_metric;
+    ## Hash to store relevant metrics
+    my %analysis_eval_metric;
 
+    ## Case level
+    set_case_eval_metrics(
+        {
+            analysis_eval_metric_href => \%analysis_eval_metric,
+            eval_metric_href          => \%eval_metric,
+            sample_info_href          => $sample_info_href,
+        }
+    );
+
+    ## Sample level
   SAMPLE_ID:
     foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
-        $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
-          $PERCENTAGE_MAPPED_READS;
-        $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
-          $PCT_TARGET_BASES_10X;
-        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
-          $PCT_PF_READS_ALIGNED;
-        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
-          $PCT_ADAPTER;
-        $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
-          $FRACTION_DUPLICATES;
-        $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
-          $FRACTION_OF_ERRORS;
-        $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
-          $FRACTION_OF_COMMON_VARIANTS;
+        my %clone_eval_metric = %{ clone( \%eval_metric ) };
 
-        ## Get sample id expected_coverage
-        my $expected_coverage = get_pedigree_sample_id_attributes(
+        set_sample_eval_metrics(
             {
-                attribute        => q{expected_coverage},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
+                analysis_eval_metric_href => \%analysis_eval_metric,
+                eval_metric_href          => \%clone_eval_metric,
+                sample_id                 => $sample_id,
+                sample_info_href          => $sample_info_href,
             }
         );
-        if ($expected_coverage) {
-
-            $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
-              $expected_coverage;
-        }
     }
-    return %evaluate_metric;
+    return %analysis_eval_metric;
+}
+
+sub evaluate_analysis {
+
+## Function  : Read in aevaluate metrics and evaluate on sample and case level
+## Returns   :
+## Arguments : eval_metric_file  => File with evaluation metrics
+##           : qc_data_href      => QC data {REF}
+##           : $sample_info_href => Info on samples and case hash {REF}
+##           : $skip_evaluation  => Skip evaluation
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $eval_metric_file;
+    my $qc_data_href;
+    my $sample_info_href;
+    my $skip_evaluation;
+
+    my $tmpl = {
+        eval_metric_file => {
+            store       => \$eval_metric_file,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        skip_evaluation => {
+            allow       => [ undef, 0, 1 ],
+            required    => 1,
+            store       => \$skip_evaluation,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ($skip_evaluation) {
+
+        $log->info(q{Skipping QC evaluation});
+        return;
+    }
+
+    ## Defines recipes, metrics and thresholds to evaluate
+    my %evaluate_metric = define_evaluate_metric(
+        {
+            eval_metric_file => $eval_metric_file,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    ## Exit if there aren't any evaluation metrics
+    if ( not %evaluate_metric ) {
+        $log->warn(
+qq{Supplied eval_metric_file, $eval_metric_file, contains no evaluation metrics that are relevant to the analysis}
+        );
+        $log->warn(qq{Skipping QC evaluation});
+        return;
+    }
+
+    ## Evaluate the metrics
+    evaluate_case_qc_parameters(
+        {
+            evaluate_metric_href => \%evaluate_metric,
+            qc_data_href         => $qc_data_href,
+        }
+    );
+
+    evaluate_sample_qc_parameters(
+        {
+            evaluate_metric_href => \%evaluate_metric,
+            qc_data_href         => $qc_data_href,
+        }
+    );
+
+    return 1;
 }
 
 sub evaluate_case_qc_parameters {
@@ -782,8 +880,7 @@ sub parse_sample_qc_metric {
         }
 
         ## No header data for metric
-        next METRIC
-          if ( not exists $qc_data_recipe_href->{header} );
+        next METRIC if ( not exists $qc_data_recipe_href->{header} );
 
       HEADER:
         for my $data_header ( keys %{ $qc_data_recipe_href->{header} } ) {
@@ -1076,6 +1173,289 @@ sub relation_check {
         }
     }
     return;
+}
+
+sub set_case_eval_metrics {
+
+## Function : Set evaluation metrics on case level
+## Returns  :
+## Arguments: $analysis_eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $eval_metric_href          => Hash with evaluation metrics {ref}
+##          : $sample_info_href          => Hash with sample info {ref}
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $analysis_eval_metric_href;
+    my $eval_metric_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_eval_metric_href,
+            strict_type => 1,
+        },
+        eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    use MIP::Analysis qw{ get_overall_analysis_type };
+
+    my $consensus_analysis_type = get_overall_analysis_type(
+        {
+            analysis_type_href => $sample_info_href->{analysis_type},
+        }
+    );
+    my $pipeline_eval_metric_href = $eval_metric_href->{$consensus_analysis_type};
+
+  RECIPE_OUTFILE:
+    foreach my $recipe ( keys %{ $sample_info_href->{recipe} } ) {
+
+        if ( any { $_ eq $recipe } ( keys %{$pipeline_eval_metric_href} ) ) {
+
+            my %eval_expression = get_eval_expression(
+                {
+                    eval_metric_href => $pipeline_eval_metric_href,
+                    recipe           => $recipe,
+                }
+            );
+
+            set_eval_expression(
+                {
+                    analysis_eval_metric_href => $analysis_eval_metric_href,
+                    recipe                    => $recipe,
+                    eval_expression_href      => \%eval_expression,
+                }
+            );
+        }
+    }
+    return;
+}
+
+sub set_sample_eval_metrics {
+
+## function : Set evaluation metrics on sample level
+## returns  :
+## arguments: $analysis_eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $eval_metric_href          => Hash with evaluation metrics {ref}
+##          : $sample_id                 => Sample id
+##          : $sample_info_href          => Hash with sample info {ref}
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $analysis_eval_metric_href;
+    my $eval_metric_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_eval_metric_href,
+            strict_type => 1,
+        },
+        eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    ## Get info from sample info hash
+    my %sample_attribute = get_pedigree_sample_id_attributes(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    my $analysis_type             = $sample_attribute{analysis_type};
+    my $expected_coverage         = $sample_attribute{expected_coverage};
+    my %recipe                    = %{ $sample_attribute{recipe} };
+    my $pipeline_eval_metric_href = $eval_metric_href->{$analysis_type};
+
+  RECIPE_OUTFILE:
+    foreach my $recipe ( keys %recipe ) {
+
+        if ( any { $_ eq $recipe } ( keys %{$pipeline_eval_metric_href} ) ) {
+
+            my %eval_expression = get_eval_expression(
+                {
+                    eval_metric_href => $pipeline_eval_metric_href,
+                    recipe           => $recipe,
+                }
+            );
+
+            set_eval_expression(
+                {
+                    analysis_eval_metric_href => $analysis_eval_metric_href,
+                    recipe                    => $recipe,
+                    eval_expression_href      => \%eval_expression,
+                    sample_id                 => $sample_id,
+                }
+            );
+        }
+    }
+
+    ## Special case foir expected coverage
+    if ($expected_coverage) {
+
+        my %eval_expression = (
+            MEAN_TARGET_COVERAGE => {
+                lt => $expected_coverage,
+            },
+        );
+        set_eval_expression(
+            {
+                analysis_eval_metric_href => $analysis_eval_metric_href,
+                recipe                    => q{collecthsmetrics},
+                eval_expression_href      => \%eval_expression,
+                sample_id                 => $sample_id,
+            }
+        );
+    }
+
+    return;
+}
+
+sub set_eval_expression {
+
+## function : Set evaluation expression in hash
+## returns  :
+## arguments: $analysis_eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $eval_expression_href      => Hash with evaluation expression {ref}
+##          : $recipe                    => Recipe
+##          : $sample_id                 => Sample id
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $analysis_eval_metric_href;
+    my $eval_expression_href;
+    my $recipe;
+    my $sample_id;
+
+    my $tmpl = {
+        analysis_eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_eval_metric_href,
+            strict_type => 1,
+        },
+        eval_expression_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_expression_href,
+            strict_type => 1,
+        },
+        recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    if ($sample_id) {
+
+        $analysis_eval_metric_href->{$sample_id}{$recipe} = $eval_expression_href;
+        return;
+    }
+
+    $analysis_eval_metric_href->{$recipe} = $eval_expression_href;
+    return;
+}
+
+sub get_eval_expression {
+
+## function : Get evaluation expression
+## returns  : %recipe_eval_metric
+## arguments: $eval_metric_href => Hash with evaluation metrics for the analysis {ref}
+##          : $recipe           => Recipe
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## flatten argument(s)
+    my $eval_metric_href;
+    my $recipe;
+    my $sample_id;
+
+    my $tmpl = {
+        eval_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$eval_metric_href,
+            strict_type => 1,
+        },
+        recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{could not parse arguments!};
+
+    if ($sample_id) {
+
+        return %{ $eval_metric_href->{$sample_id}{$recipe} };
+    }
+
+    return %{ $eval_metric_href->{$recipe} };
 }
 
 1;

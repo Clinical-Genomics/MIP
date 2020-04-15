@@ -21,11 +21,11 @@ use autodie qw{ open close :all };
 use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME };
 use MIP::Io::Read qw{ read_from_file };
-use MIP::Qccollect
-  qw{ define_evaluate_metric evaluate_case_qc_parameters evaluate_sample_qc_parameters };
-use MIP::Qc_data qw{ set_qc_data_recipe_info };
 use MIP::Io::Write qw{ write_to_file };
+use MIP::Qccollect qw{ evaluate_analysis };
+use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
 BEGIN {
 
@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{2.1.7};
+    our $VERSION = q{2.1.8};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect };
@@ -43,8 +43,8 @@ sub mip_qccollect {
 
 ## Function : Execute mip qccollect of data metrics
 ## Returns  :
-## Arguments: $evaluate_plink_gender => Evaluate plink gender
-##          : $log                   => Log object
+## Arguments: $eval_metric_file      => File with evaluation metrics
+##          : $evaluate_plink_gender => Evaluate plink gender
 ##          : $outfile               => Data metric output file
 ##          : $regexp_file           => Regular expression file
 ##          : $sample_info_file      => Sample info file
@@ -53,22 +53,21 @@ sub mip_qccollect {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $eval_metric_file;
     my $evaluate_plink_gender;
-    my $log;
     my $outfile;
     my $regexp_file;
     my $sample_info_file;
     my $skip_evaluation;
 
     my $tmpl = {
+        eval_metric_file => {
+            store       => \$eval_metric_file,
+            strict_type => 1,
+        },
         evaluate_plink_gender => {
             store       => \$evaluate_plink_gender,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         outfile => {
             defined     => 1,
@@ -95,6 +94,9 @@ sub mip_qccollect {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Save final output data
     my %qc_data;
@@ -168,30 +170,14 @@ sub mip_qccollect {
         }
     );
 
-    ## Defines recipes, metrics and thresholds to evaluate
-    my %evaluate_metric = define_evaluate_metric(
+    evaluate_analysis(
         {
+            eval_metric_file => $eval_metric_file,
+            qc_data_href     => \%qc_data,
             sample_info_href => \%sample_info,
+            skip_evaluation  => $skip_evaluation,
         }
     );
-
-    if ( not $skip_evaluation ) {
-
-        ## Evaluate the metrics
-        evaluate_case_qc_parameters(
-            {
-                evaluate_metric_href => \%evaluate_metric,
-                qc_data_href         => \%qc_data,
-            }
-        );
-
-        evaluate_sample_qc_parameters(
-            {
-                evaluate_metric_href => \%evaluate_metric,
-                qc_data_href         => \%qc_data,
-            }
-        );
-    }
 
     ## Writes a qc data hash to file
     write_to_file(

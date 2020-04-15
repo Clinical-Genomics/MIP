@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -197,15 +197,15 @@ sub analysis_mip_qccollect {
     ### SHELL:
 
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
-
     mip_qccollect(
         {
+            eval_metric_file => $active_parameter_href->{qccollect_eval_metric_file},
+            filehandle       => $filehandle,
             infile_path      => $infile_path,
-            outfile_path     => $outfile_path,
             log_file_path    => $log_file_path,
+            outfile_path     => $outfile_path,
             regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
             skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
-            filehandle       => $filehandle,
         }
     );
     say {$filehandle} $NEWLINE;
