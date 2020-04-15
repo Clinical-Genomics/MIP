@@ -132,7 +132,7 @@ sub delete_contig_elements {
 
         ## And remove contigs has not
         if ( defined $remove_contigs_ref->[0]
-            && $remove_contigs_ref->[0] !~ / ^chr /xsm )
+            && $remove_contigs_ref->[0] !~ / \A chr /xsm )
         {
 
             ## Add prefix to keys to match contigs prefix
