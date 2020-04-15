@@ -58,8 +58,8 @@ diag(   q{Test delete_contig_elements from Contigs.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given contigs, when no prefix
-my @contigs        = qw{ 1 2 3 4 Y};
-my @remove_contigs = qw{ 2 4 Y};
+my @contigs        = qw{ 1 2 3 4 Y MT };
+my @remove_contigs = qw{ 2 4 Y MT };
 
 my @cleansed_contigs = delete_contig_elements(
     {
@@ -75,7 +75,7 @@ my @expected_contigs = qw{ 1 3 };
 is_deeply( \@cleansed_contigs, \@expected_contigs, q{Removed contigs} );
 
 ## Given contigs, when prefix
-my @chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY};
+my @chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY chrM };
 
 @cleansed_contigs = delete_contig_elements(
     {
@@ -91,8 +91,8 @@ my @chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY};
 is_deeply( \@cleansed_contigs, \@expected_contigs, q{Removed contigs with chr prefix} );
 
 ## Given contigs, when prefix in remove
-@chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY};
-my @chr_remove_contigs = qw{ chr1 chrY };
+@chr_contigs = qw{ chr1 chr2 chr3 chr4 chrY chrM };
+my @chr_remove_contigs = qw{ chr1 chrY chrM };
 
 @cleansed_contigs = delete_contig_elements(
     {

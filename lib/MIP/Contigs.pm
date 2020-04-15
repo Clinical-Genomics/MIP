@@ -124,6 +124,11 @@ sub delete_contig_elements {
 
     my %contig_to_remove = map { $_ => 1 } @{$remove_contigs_ref};
 
+    ## Special case for Mitochondria
+    if ( exists $contig_to_remove{MT} ) {
+        $contig_to_remove{M} = 1;
+    }
+
     ### Make sure that contig is removed independent of genome source i.e prefix or not
     ## If contigs has prefix
     if ( defined $contigs_ref->[0]
@@ -136,7 +141,7 @@ sub delete_contig_elements {
         {
 
             ## Add prefix to keys to match contigs prefix
-            %contig_to_remove = map { q{chr} . $_ => 1 } @{$remove_contigs_ref};
+            %contig_to_remove = map { q{chr} . $_ => 1 } keys %contig_to_remove;
         }
     }
     my @cleansed_contigs = grep { not $contig_to_remove{$_} } @{$contigs_ref};
