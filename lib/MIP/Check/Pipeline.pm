@@ -613,6 +613,7 @@ sub check_rd_dna {
     parse_fastq_for_gender(
         {
             active_parameter_href   => $active_parameter_href,
+            consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             sample_info_href        => $sample_info_href,
