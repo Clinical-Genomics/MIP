@@ -15,10 +15,10 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
 ## MIPs lib/
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+## MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -135,6 +135,16 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{with_singularity} => (
+            cmd_aliases => [qw{ wsi }],
+            documentation =>
+              q{Run programs inside a singularity container where available},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 

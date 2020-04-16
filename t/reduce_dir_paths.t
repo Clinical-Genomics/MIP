@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,6 +64,7 @@ my @test_paths = (
     catdir(qw{ dir_a dir_c dir_d }), catdir(qw{ dir_a }),
     catdir(qw{ dir_b dir_c }),       catdir(qw{ dir_b dir_c dir_d }),
     catdir(qw{ dir_b dir_e dir_d }), catdir(qw{ dir_d dir_a }),
+    undef,
 );
 
 my @return_paths = reduce_dir_paths( { dir_paths_ref => \@test_paths, } );
