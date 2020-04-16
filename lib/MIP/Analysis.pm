@@ -438,7 +438,7 @@ sub parse_prioritize_variant_callers {
     {
 
         ## Skip if not part of pipeline
-        next if ( not $parameter_href->{$prioritize_parameter_name} );
+        next PRIO_PARAMETER if ( not $parameter_href->{$prioritize_parameter_name} );
 
         my @variant_caller_recipes = get_cache(
             {
