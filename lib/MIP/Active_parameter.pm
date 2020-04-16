@@ -755,8 +755,9 @@ sub get_matching_values_key {
         push @collapsed_values, $value;
     }
     if (@collapsed_values) {
-        $log->warn(qq{Found duplicated values in parameter: $parameter_name });
-        $log->warn( q{Duplicated values: } . join $SPACE, @collapsed_values );
+        $log->fatal(qq{Found duplicated values in parameter: $parameter_name });
+        $log->fatal( q{Duplicated values: } . join $SPACE, @collapsed_values );
+        exit 1;
     }
 
     return $reversed{$query_value} if ( exists $reversed{$query_value} );

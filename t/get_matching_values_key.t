@@ -117,11 +117,12 @@ trap {
     )
 };
 
-## Then warn for duplicates
+## Then exit for duplicates
+ok( $trap->exit, q{Exit if duplicates are found} );
 like(
     $trap->stderr,
     qr/Found\s+duplicated\s+values/xms,
-    q{Throw warning for duplicates values}
+    q{Throw fatal for duplicates values}
 );
 
 done_testing();
