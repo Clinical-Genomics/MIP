@@ -189,7 +189,7 @@ sub delete_non_wes_contig {
                     );
                 }
             ],
-            default     => [qw{ M MT }],
+            default     => [qw{ chrM M MT }],
             store       => \$contig_names_ref,
             strict_type => 1,
         },
