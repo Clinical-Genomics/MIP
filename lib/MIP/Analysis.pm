@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -436,6 +436,9 @@ sub parse_prioritize_variant_callers {
     while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
         each %priority_call_parameter )
     {
+
+        ## Skip if not part of pipeline
+        next if ( not $parameter_href->{$prioritize_parameter_name} );
 
         my @variant_caller_recipes = get_cache(
             {
