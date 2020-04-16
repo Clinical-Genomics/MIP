@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -326,8 +326,6 @@ sub slurm_build_sbatch_header {
     my $email_types_ref;
     my $separator;
 
-    use MIP::Check::Parameter qw{ check_allowed_array_values };
-
     my $tmpl = {
         core_number => {
             allow       => qr{ \A\d+\z }xms,
@@ -397,6 +395,7 @@ sub slurm_build_sbatch_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::List qw{ check_allowed_array_values };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     ## Build sbatch header

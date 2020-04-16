@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -272,8 +272,6 @@ sub setup_script {
     my $slurm_quality_of_service;
     my $temp_directory;
 
-    use MIP::Check::Parameter qw{ check_allowed_array_values };
-
     my $tmpl = {
         active_parameter_href => {
             default     => {},
@@ -417,6 +415,7 @@ sub setup_script {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Path qw{ check_file_version_exist };
+    use MIP::List qw{ check_allowed_array_values };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
     use MIP::Language::Shell

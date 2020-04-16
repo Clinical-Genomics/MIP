@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -581,11 +581,10 @@ sub check_rd_dna {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            found_male              => $active_parameter_href->{found_male},
         }
     );
 
