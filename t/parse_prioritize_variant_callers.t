@@ -75,7 +75,9 @@ my %parameter = (
         structural_variant_callers => [qw{ delly }],
         variant_callers            => [qw{ bcftools_mpileup gatk_variantrecalibration}],
     },
-    gatk_variantrecalibration => { variant_caller => q{haplotypecaller}, },
+    gatk_variantrecalibration              => { variant_caller => q{haplotypecaller}, },
+    gatk_combinevariants_prioritize_caller => 1,
+    sv_svdb_merge_prioritize               => 1,
 );
 
 trap {
