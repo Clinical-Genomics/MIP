@@ -183,7 +183,7 @@ sub delete_non_wes_contig {
                 sub {
                     check_allowed_array_values(
                         {
-                            allowed_values_ref => [qw{ M MT }],
+                            allowed_values_ref => [qw{ chrM M MT }],
                             values_ref         => $arg_href->{contig_names_ref},
                         }
                     );
