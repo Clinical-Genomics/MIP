@@ -27,12 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.42;
+    our $VERSION = 1.43;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
-      check_allowed_array_values
       check_infile_contain_sample_id
       check_infiles
       check_recipe_fastq_compatibility
@@ -76,57 +75,6 @@ q{The parameter "project_id" must be set when a sbatch installation has been req
         );
         exit 1;
     }
-    return 1;
-}
-
-sub check_allowed_array_values {
-
-## Function : Check that the array values are allowed
-## Returns  :
-## Arguments: $allowed_values_ref => Allowed values for parameter {REF}
-##          : $values_ref         => Values for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $allowed_values_ref;
-    my $values_ref;
-
-    my $tmpl = {
-        allowed_values_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$allowed_values_ref,
-            strict_type => 1,
-        },
-        values_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$values_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %is_allowed;
-
-    # Remake allowed values into keys in is_allowed hash
-    map { $is_allowed{$_} = undef } @{$allowed_values_ref};
-
-  VALUES:
-    foreach my $value ( @{$values_ref} ) {
-
-        # Test if value is allowed
-        if ( not exists $is_allowed{$value} ) {
-
-            return 0;
-        }
-    }
-
-    # All ok
     return 1;
 }
 

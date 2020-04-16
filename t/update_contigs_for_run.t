@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +34,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA         => q{,};
 Readonly my $MIN_CONTIG_NR => 1;
 Readonly my $MAX_CONTIG_NR => 6;
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $SPACE         => q{ };
 
 BEGIN {
 
@@ -70,9 +68,6 @@ my $log = test_log( {} );
 my $found_male      = 0;
 my @exclude_contigs = qw{ 1 2 3 4};
 
-## Define analysis type
-my %active_parameter = ( analysis_type => { sample_1 => q{wes}, }, );
-
 my %file_info = (
     bam_contigs              => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
     bam_contigs_size_ordered => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
@@ -83,11 +78,10 @@ my %file_info = (
 
 update_contigs_for_run(
     {
-        file_info_href      => \%file_info,
-        exclude_contigs_ref => \@exclude_contigs,
-        analysis_type_href  => \%{ $active_parameter{analysis_type} },
-        found_male          => $found_male,
-        log                 => $log,
+        consensus_analysis_type => q{wes},
+        exclude_contigs_ref     => \@exclude_contigs,
+        file_info_href          => \%file_info,
+        found_male              => $found_male,
     }
 );
 

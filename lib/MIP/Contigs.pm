@@ -24,12 +24,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_select_file_contigs
       delete_contig_elements
+      delete_non_wes_contig
       set_contigs
       sort_contigs_to_contig_set
     };
@@ -146,6 +147,69 @@ sub delete_contig_elements {
     }
     my @cleansed_contigs = grep { not $contig_to_remove{$_} } @{$contigs_ref};
     return @cleansed_contigs;
+}
+
+sub delete_non_wes_contig {
+
+## Function : Delete contig chrM | MT from contigs array if consensus analysis type is wes
+## Returns  : @contigs
+## Arguments: $consensus_analysis_type => Consensus analysis_type
+##          : $contigs_ref             => Contigs array to update {REF}
+##          : $contig_names_ref        => Contig names to remove {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $contigs_ref;
+    my $contig_names_ref;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        contig_names_ref => {
+            allow => [
+                sub {
+                    check_allowed_array_values(
+                        {
+                            allowed_values_ref => [qw{ chrM M MT }],
+                            values_ref         => $arg_href->{contig_names_ref},
+                        }
+                    );
+                }
+            ],
+            default     => [qw{ chrM M MT }],
+            store       => \$contig_names_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::List qw{ check_allowed_array_values };
+    use MIP::Contigs qw{ delete_contig_elements };
+
+    return @{$contigs_ref} if ( $consensus_analysis_type eq q{wgs} );
+
+    ## Removes contig M | chrMT from contigs
+    my @contigs = delete_contig_elements(
+        {
+            contigs_ref        => \@{$contigs_ref},
+            remove_contigs_ref => $contig_names_ref,
+        }
+    );
+    return @contigs;
 }
 
 sub set_contigs {

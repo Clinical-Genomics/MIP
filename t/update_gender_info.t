@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,8 +71,8 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => q{bwa_mem},
     }
 );
-
-my %file_info = test_mip_hashes(
+my $consensus_analysis_type = q{wgs};
+my %file_info               = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
@@ -82,10 +82,11 @@ my $y_read_count = $MALE_THRESHOLD + 1;
 
 my $is_ok = update_gender_info(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        sample_id             => $sample_id,
-        y_read_count          => $y_read_count,
+        active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
+        file_info_href          => \%file_info,
+        sample_id               => $sample_id,
+        y_read_count            => $y_read_count,
     }
 );
 
@@ -102,10 +103,11 @@ $y_read_count = $FEMALE_THRESHOLD;
 
 update_gender_info(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        sample_id             => $sample_id,
-        y_read_count          => $y_read_count,
+        active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
+        file_info_href          => \%file_info,
+        sample_id               => $sample_id,
+        y_read_count            => $y_read_count,
     }
 );
 

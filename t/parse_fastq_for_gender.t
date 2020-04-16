@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,7 +67,8 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => q{bwa_mem},
     }
 );
-my $sample_id = $active_parameter{sample_ids}[2];
+my $consensus_analysis_type = q{wgs};
+my $sample_id               = $active_parameter{sample_ids}[2];
 $active_parameter{found_other} = 0;
 my %file_info = test_mip_hashes(
     {
@@ -93,6 +94,7 @@ my %sample_info = (
 my $is_gender_other = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         sample_info_href        => \%sample_info,
@@ -110,6 +112,7 @@ $active_parameter{gender}{others} = [$sample_id];
 $is_gender_other = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         sample_info_href        => \%sample_info,

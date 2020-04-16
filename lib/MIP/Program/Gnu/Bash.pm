@@ -21,7 +21,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -175,8 +175,6 @@ sub gnu_trap {
     my $stderrfile_path;
     my $stderrfile_path_append;
 
-    use MIP::Check::Parameter qw(check_allowed_array_values);
-
     my $tmpl = {
         filehandle => {
             store => \$filehandle,
@@ -211,6 +209,8 @@ sub gnu_trap {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::List qw(check_allowed_array_values);
 
     my @commands = qw{ trap };
 

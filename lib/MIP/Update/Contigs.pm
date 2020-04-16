@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ update_contigs_for_run };
@@ -35,27 +35,24 @@ sub update_contigs_for_run {
 
 ## Function : Update contigs depending on settings in run
 ## Returns  :
-## Arguments: $analysis_type_href  => Analysis_type hash {REF}
-##          : $exclude_contigs_ref => Exclude contigs from analysis {REF}
-##          : $file_info_href      => File info hash {REF}
-##          : $found_male          => Male was included in the analysis
-##          : $log                 => Log object
+## Arguments: $consensus_analysis_type => Consensus analysis_type
+##          : $exclude_contigs_ref     => Exclude contigs from analysis {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $found_male              => Male was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $analysis_type_href;
+    my $consensus_analysis_type;
     my $exclude_contigs_ref;
     my $file_info_href;
     my $found_male;
-    my $log;
 
     my $tmpl = {
-        analysis_type_href => {
-            default     => {},
+        consensus_analysis_type => {
             defined     => 1,
             required    => 1,
-            store       => \$analysis_type_href,
+            store       => \$consensus_analysis_type,
             strict_type => 1,
         },
         exclude_contigs_ref => {
@@ -78,19 +75,14 @@ sub update_contigs_for_run {
             store       => \$found_male,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Contigs qw{ delete_contig_elements };
-    use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
+    use MIP::Contigs qw{ delete_contig_elements delete_non_wes_contig };
+    use MIP::Delete::List qw{ delete_male_contig };
 
-    my @exclude_contig_arrays = (
+    my @contig_sets = (
         \@{ $file_info_href->{bam_contigs} },
         \@{ $file_info_href->{bam_contigs_size_ordered} },
         \@{ $file_info_href->{contigs} },
@@ -99,7 +91,7 @@ sub update_contigs_for_run {
     );
 
   CONTIG_REF:
-    foreach my $contigs_ref (@exclude_contig_arrays) {
+    foreach my $contigs_ref (@contig_sets) {
 
         ## Delete user specified contigs from contigs array
         @{$contigs_ref} = delete_contig_elements(
@@ -108,25 +100,12 @@ sub update_contigs_for_run {
                 remove_contigs_ref => $exclude_contigs_ref,
             }
         );
-    }
-
-    my @wes_contig_arrays = (
-        \@{ $file_info_href->{bam_contigs} },
-        \@{ $file_info_href->{bam_contigs_size_ordered} },
-        \@{ $file_info_href->{contigs} },
-        \@{ $file_info_href->{contigs_size_ordered} },
-        \@{ $file_info_href->{select_file_contigs} },
-    );
-
-  ARRAY_REF:
-    foreach my $array_ref (@wes_contig_arrays) {
 
         ## Delete contig chrM|MT from contigs array if consensus analysis type is wes
-        @{$array_ref} = delete_non_wes_contig(
+        @{$contigs_ref} = delete_non_wes_contig(
             {
-                analysis_type_href => $analysis_type_href,
-                contigs_ref        => $array_ref,
-                log                => $log,
+                consensus_analysis_type => $consensus_analysis_type,
+                contigs_ref             => $contigs_ref,
             }
         );
     }

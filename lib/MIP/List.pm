@@ -22,7 +22,48 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_splitted_lists };
+    our @EXPORT_OK = qw{ check_allowed_array_values get_splitted_lists };
+}
+
+sub check_allowed_array_values {
+
+## Function : Check that the array values are allowed
+## Returns  :
+## Arguments: $allowed_values_ref => Allowed values for parameter {REF}
+##          : $values_ref         => Values for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allowed_values_ref;
+    my $values_ref;
+
+    my $tmpl = {
+        allowed_values_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$allowed_values_ref,
+            strict_type => 1,
+        },
+        values_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$values_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+
+    # Check if arrays contains allowed values
+    return 0 if ( array_minus( @{$values_ref}, @{$allowed_values_ref} ) );
+
+    # All ok
+    return 1;
 }
 
 sub get_splitted_lists {
