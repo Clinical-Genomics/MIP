@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -192,14 +192,14 @@ sub parse_infiles {
 
     use MIP::Active_parameter qw{ get_matching_values_key };
     use MIP::Check::Parameter qw{ check_infiles };
-    use MIP::Get::File qw{ get_files };
+    use MIP::File::Path qw{ get_file_names };
     use MIP::Set::File qw{ set_infiles };
 
     ## Collect input files governed by sample_ids
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        ## Return the key if the hash value and query match
+        ## Return the key if the hash value exists
         my $infile_directory = get_matching_values_key(
             {
                 active_parameter_href => $active_parameter_href,
@@ -216,7 +216,7 @@ sub parse_infiles {
         );
 
         ## Get the file(s) from filesystem
-        my @infiles = get_files(
+        my @infiles = get_file_names(
             {
                 file_directory   => $infile_directory,
                 rule_name        => q{*.fastq*},
