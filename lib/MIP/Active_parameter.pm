@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,6 +38,7 @@ BEGIN {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       get_active_parameter_attribute
+      get_matching_values_key
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_user_supplied_pedigree_parameter
@@ -695,6 +696,73 @@ sub get_active_parameter_attribute {
 
     ## Return scalar parameter attribute value
     return $parameter_attribute;
+}
+
+sub get_matching_values_key {
+
+## Function : Return the key if the hash value exists
+## Returns  : "key pointing to matched value"
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => MIP parameter name
+##          : $query_value           => Value to query in the hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+    my $query_value;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        query_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$query_value,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $active_parameter_href->{$parameter_name} );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @collapsed_values;
+
+    ## Values are now keys and vice versa
+    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
+
+  PAIR:
+    while ( my ( $key, $value ) = each %{ $active_parameter_href->{$parameter_name} } ) {
+
+        next PAIR if ( exists $reversed{$value} and $reversed{$value} eq $key );
+
+        push @collapsed_values, $value;
+    }
+    if (@collapsed_values) {
+        $log->fatal(qq{Found duplicated values in parameter: $parameter_name });
+        $log->fatal( q{Duplicated values: } . join $SPACE, @collapsed_values );
+        exit 1;
+    }
+
+    return $reversed{$query_value} if ( exists $reversed{$query_value} );
+
+    return;
 }
 
 sub get_not_allowed_temp_dirs {

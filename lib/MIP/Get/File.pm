@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,7 +34,6 @@ BEGIN {
       get_fastq_file_header_info
       get_files
       get_io_files
-      get_matching_values_key
       get_merged_infile_prefix
       get_path_entries
       get_read_length
@@ -470,57 +469,6 @@ sub get_io_files {
         }
     );
     return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
-}
-
-sub get_matching_values_key {
-
-## Function : Return the key if the hash value and query match
-## Returns  : "key pointing to matched value"
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => MIP parameter name
-##          : $query_value           => Value to query in the hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-    my $query_value;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        query_value => {
-            defined     => 1,
-            required    => 1,
-            store       => \$query_value,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not exists $active_parameter_href->{$parameter_name} );
-
-    ## Values are now keys and vice versa
-    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
-
-    if ( exists $reversed{$query_value} ) {
-
-        return $reversed{$query_value};
-    }
-    return;
 }
 
 sub get_merged_infile_prefix {
