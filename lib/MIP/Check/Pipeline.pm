@@ -236,11 +236,11 @@ sub check_dragen_rd_dna {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            found_male              => $active_parameter_href->{found_male},
+            log                     => $log,
         }
     );
 
@@ -268,6 +268,7 @@ sub check_dragen_rd_dna {
     parse_fastq_for_gender(
         {
             active_parameter_href   => $active_parameter_href,
+            consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             sample_info_href        => $sample_info_href,
@@ -1011,6 +1012,7 @@ sub check_rd_dna_vcf_rerun {
             parameter_name => q{consensus_analysis_type},
         }
     );
+
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
         {
@@ -1092,11 +1094,11 @@ sub check_rd_dna_vcf_rerun {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            found_male              => $active_parameter_href->{found_male},
+            log                     => $log,
         }
     );
 
@@ -1224,6 +1226,13 @@ sub check_rd_rna {
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
         {
@@ -1306,11 +1315,11 @@ sub check_rd_rna {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            found_male              => $active_parameter_href->{found_male},
+            log                     => $log,
         }
     );
 

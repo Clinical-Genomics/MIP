@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -271,6 +271,7 @@ sub parse_fastq_for_gender {
 ## Function : Parse fastq infiles for gender. Update contigs depending on results.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $consensus_analysis_type => Consensus analysis_type
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -279,6 +280,7 @@ sub parse_fastq_for_gender {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $consensus_analysis_type;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $sample_info_href;
@@ -289,6 +291,12 @@ sub parse_fastq_for_gender {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
             strict_type => 1,
         },
         file_info_href => {
@@ -399,10 +407,11 @@ sub parse_fastq_for_gender {
         ## Update gender info in active_parameter and update contigs depending on results
         update_gender_info(
             {
-                active_parameter_href => $active_parameter_href,
-                file_info_href        => $file_info_href,
-                sample_id             => $sample_id,
-                y_read_count          => $y_read_count,
+                active_parameter_href   => $active_parameter_href,
+                consensus_analysis_type => $consensus_analysis_type,
+                file_info_href          => $file_info_href,
+                sample_id               => $sample_id,
+                y_read_count            => $y_read_count,
             }
         );
     }
@@ -413,15 +422,17 @@ sub update_gender_info {
 
 ## Function : Update gender info in active_parameter and update contigs depending on results.
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_info_href        => File info hash {REF}
-##          : $sample_id             => Sample id
-##          : $y_read_count          => Y read count
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $consensus_analysis_type => Consensus analysis_type
+##          : $file_info_href          => File info hash {REF}
+##          : $sample_id               => Sample id
+##          : $y_read_count            => Y read count
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $consensus_analysis_type;
     my $file_info_href;
     my $sample_id;
     my $y_read_count;
@@ -432,6 +443,12 @@ sub update_gender_info {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
             strict_type => 1,
         },
         file_info_href => {
@@ -481,11 +498,10 @@ sub update_gender_info {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            found_male              => $active_parameter_href->{found_male},
         }
     );
     return 1;
