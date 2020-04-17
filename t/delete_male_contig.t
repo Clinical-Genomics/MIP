@@ -66,9 +66,8 @@ my $is_male = 0;
 
 my @no_male_contigs = delete_male_contig(
     {
-        contigs_ref      => \@contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => $is_male,
+        contigs_ref => \@contigs,
+        found_male  => $is_male,
     }
 );
 
@@ -83,9 +82,8 @@ $is_male = 1;
 
 my @has_male_contigs = delete_male_contig(
     {
-        contigs_ref      => \@contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => $is_male,
+        contigs_ref => \@contigs,
+        found_male  => $is_male,
     }
 );
 

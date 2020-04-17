@@ -218,14 +218,12 @@ sub delete_male_contig {
 
 ## Function : Delete contig chrY | Y from contigs array if no male or other found
 ## Returns  : @contigs
-## Arguments: $contigs_ref      => Contigs array to update {REF}
-##          : $contig_names_ref => Contig names to remove {REF}
-##          : $found_male       => Male(s) was included in the analysis
+## Arguments: $contigs_ref => Contigs array to update {REF}
+##          : $found_male  => Male(s) was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $contig_names_ref;
     my $contigs_ref;
     my $found_male;
 
@@ -235,21 +233,6 @@ sub delete_male_contig {
             defined     => 1,
             required    => 1,
             store       => \$contigs_ref,
-            strict_type => 1,
-        },
-        contig_names_ref => {
-            allow => [
-                sub {
-                    check_allowed_array_values(
-                        {
-                            allowed_values_ref => [qw{ Y chrY }],
-                            values_ref         => $arg_href->{contig_names_ref},
-                        }
-                    );
-                }
-            ],
-            default     => [qw{ Y }],
-            store       => \$contig_names_ref,
             strict_type => 1,
         },
         found_male => {
@@ -263,16 +246,13 @@ sub delete_male_contig {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::List qw{ check_allowed_array_values };
-    use MIP::Contigs qw{ delete_contig_elements };
-
     return @{$contigs_ref} if ($found_male);
 
     ## Removes contig Y | chrY from contigs if no males or 'other' found in analysis
     my @contigs = delete_contig_elements(
         {
             contigs_ref        => $contigs_ref,
-            remove_contigs_ref => $contig_names_ref,
+            remove_contigs_ref => [qw{ Y chrY }],
         }
     );
     return @contigs;
