@@ -24,15 +24,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_select_file_contigs
       delete_contig_elements
       delete_non_wes_contig
+      delete_male_contig
       set_contigs
       sort_contigs_to_contig_set
+      update_contigs_for_run
     };
 
 }
@@ -212,6 +214,50 @@ sub delete_non_wes_contig {
     return @contigs;
 }
 
+sub delete_male_contig {
+
+## Function : Delete contig chrY | Y from contigs array if no male or other found
+## Returns  : @contigs
+## Arguments: $contigs_ref => Contigs array to update {REF}
+##          : $found_male  => Male(s) was included in the analysis
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $found_male;
+
+    my $tmpl = {
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        found_male => {
+            allow       => qr{\A \d+ \z}sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$found_male,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return @{$contigs_ref} if ($found_male);
+
+    ## Removes contig Y | chrY from contigs if no males or 'other' found in analysis
+    my @contigs = delete_contig_elements(
+        {
+            contigs_ref        => $contigs_ref,
+            remove_contigs_ref => [qw{ Y chrY }],
+        }
+    );
+    return @contigs;
+}
+
 sub set_contigs {
 
 ## Function : Set contig prefix and contig names depending on reference used.
@@ -386,6 +432,102 @@ sub sort_contigs_to_contig_set {
         }
     }
     return @sorted_contigs;
+}
+
+sub update_contigs_for_run {
+
+## Function : Update contigs depending on settings in run
+## Returns  :
+## Arguments: $consensus_analysis_type => Consensus analysis_type
+##          : $exclude_contigs_ref     => Exclude contigs from analysis {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $found_male              => Male was included in the analysis
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $exclude_contigs_ref;
+    my $file_info_href;
+    my $found_male;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        exclude_contigs_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$exclude_contigs_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        found_male => {
+            allow       => qr{\A \d+ \z}sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$found_male,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @contig_sets = (
+        \@{ $file_info_href->{bam_contigs} },
+        \@{ $file_info_href->{bam_contigs_size_ordered} },
+        \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{select_file_contigs} },
+    );
+
+  CONTIG_REF:
+    foreach my $contigs_ref (@contig_sets) {
+
+        ## Delete user specified contigs from contigs array
+        @{$contigs_ref} = delete_contig_elements(
+            {
+                contigs_ref        => $contigs_ref,
+                remove_contigs_ref => $exclude_contigs_ref,
+            }
+        );
+
+        ## Delete contig chrM|MT from contigs array if consensus analysis type is wes
+        @{$contigs_ref} = delete_non_wes_contig(
+            {
+                consensus_analysis_type => $consensus_analysis_type,
+                contigs_ref             => $contigs_ref,
+            }
+        );
+    }
+
+    my @male_contig_arrays = (
+        \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{select_file_contigs} },
+    );
+
+  ARRAY_REF:
+    foreach my $male_contigs_ref (@male_contig_arrays) {
+
+        ## Removes contig_names from contigs array if no male or 'other' found
+        @{$male_contigs_ref} = delete_male_contig(
+            {
+                contigs_ref => $male_contigs_ref,
+                found_male  => $found_male,
+            }
+        );
+    }
+    return;
 }
 
 1;

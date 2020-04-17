@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -132,12 +132,12 @@ sub check_dragen_rd_dna {
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs };
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -394,6 +394,7 @@ sub check_rd_dna {
       update_recipe_mode_for_wes
     };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parse::Parameter qw{ parse_infiles };
@@ -401,7 +402,6 @@ sub check_rd_dna {
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference
       qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -994,10 +994,10 @@ sub check_rd_dna_vcf_rerun {
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
     use MIP::Vep qw{
       check_vep_api_cache_versions
       check_vep_custom_annotation
@@ -1216,13 +1216,13 @@ sub check_rd_rna {
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
