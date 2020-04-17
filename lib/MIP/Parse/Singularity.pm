@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_sing_bind_paths reduce_dir_paths };
@@ -127,8 +127,10 @@ sub reduce_dir_paths {
     my @dir_paths;
 
     ## Split to dir path to array
-    DIR_PATH:
+  DIR_PATH:
     foreach my $dir_path ( @{$dir_paths_ref} ) {
+
+        next DIR_PATH if ( not defined $dir_path );
 
         push @dir_paths, [ splitdir($dir_path) ];
     }
