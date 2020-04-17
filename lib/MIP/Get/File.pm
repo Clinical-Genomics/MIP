@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 use List::MoreUtils qw{ any };
-use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
@@ -26,13 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_exom_target_bed_file
       get_fastq_file_header_info
-      get_files
       get_io_files
       get_merged_infile_prefix
       get_path_entries
@@ -214,71 +212,6 @@ q{Could not detect required sample sequencing run info from fastq file header - 
     }
 
     return %fastq_header_info;
-}
-
-sub get_files {
-
-## Function : Get the file(s) from filesystem
-## Returns  : @files
-## Arguments: $file_directory   => File directory
-##          : $rule_name        => Rule name string
-##          : $rule_skip_subdir => Rule skip sub directories
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_directory;
-    my $rule_name;
-    my $rule_skip_subdir;
-
-    my $tmpl = {
-        file_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_directory,
-            strict_type => 1,
-        },
-        rule_name => {
-            store       => \$rule_name,
-            strict_type => 1,
-        },
-        rule_skip_subdir => {
-            store       => \$rule_skip_subdir,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @files;
-
-    ## Get all files in supplied indirectories
-    my $rule = Path::Iterator::Rule->new;
-
-    ### Set rules
-    ## Ignore if sub directory
-    if ($rule_skip_subdir) {
-
-        $rule->skip_subdirs($rule_skip_subdir);
-    }
-
-    ## Look for particular file name
-    if ($rule_name) {
-
-        $rule->name($rule_name);
-    }
-
-    # Initilize iterator
-    my $iter = $rule->iter($file_directory);
-
-  DIRECTORY:
-    while ( my $file = $iter->() ) {
-
-        my ( $volume, $directory, $file_name ) = splitpath($file);
-        push @files, $file_name;
-    }
-
-    return @files;
 }
 
 sub get_io_files {

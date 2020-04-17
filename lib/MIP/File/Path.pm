@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -32,6 +33,7 @@ BEGIN {
       check_filesystem_objects_and_index_existance
       check_gzipped
       get_absolute_path
+      get_file_names
       get_file_line_by_line
     };
 }
@@ -316,6 +318,73 @@ sub get_absolute_path {
           . $parameter_name . q{: }
           . $path
           . q{. Please check the supplied path!} );
+}
+
+sub get_file_names {
+
+## Function : Get the file(s) from the filesystem
+## Returns  : @file_names
+## Arguments: $file_directory   => File directory
+##          : $rule_name        => Rule name string
+##          : $rule_skip_subdir => Rule skip sub directories
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_directory;
+    my $rule_name;
+    my $rule_skip_subdir;
+
+    my $tmpl = {
+        file_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_directory,
+            strict_type => 1,
+        },
+        rule_name => {
+            store       => \$rule_name,
+            strict_type => 1,
+        },
+        rule_skip_subdir => {
+            store       => \$rule_skip_subdir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Path::Iterator::Rule;
+
+    my @file_names;
+
+    ## Get all files in supplied indirectories
+    my $rule = Path::Iterator::Rule->new;
+
+    ### Set rules
+    ## Ignore if sub directory
+    if ($rule_skip_subdir) {
+
+        $rule->skip_subdirs($rule_skip_subdir);
+    }
+
+    ## Look for particular file name
+    if ($rule_name) {
+
+        $rule->name($rule_name);
+    }
+
+    # Initilize iterator
+    my $iter = $rule->iter($file_directory);
+
+  DIRECTORY:
+    while ( my $file_path = $iter->() ) {
+
+        my $file_name = splitpath($file_path);
+
+        push @file_names, $file_name;
+    }
+    return @file_names;
 }
 
 sub get_file_line_by_line {
