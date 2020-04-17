@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -472,7 +472,7 @@ sub update_gender_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
+    use MIP::Contigs qw{ update_contigs_for_run };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
