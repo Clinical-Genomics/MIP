@@ -264,7 +264,6 @@ sub delete_male_contig {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::List qw{ check_allowed_array_values };
-    use MIP::Contigs qw{ delete_contig_elements };
 
     return @{$contigs_ref} if ($found_male);
 
