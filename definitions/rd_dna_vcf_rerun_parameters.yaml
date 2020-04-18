@@ -25,8 +25,8 @@ decompose_normalize_references:
     - mip
   data_type: ARRAY
   default:
-    - fqa_vcfanno_config
-    - sv_fqa_vcfanno_config
+    - vta_vcfanno_config
+    - sv_vta_vcfanno_config
   type: mip
 gatk_logging_level:
   associated_recipe:
@@ -71,7 +71,7 @@ recipe_core_number:
   default:
     analysisrunstatus: 1
     endvariantannotationblock: 1
-    frequency_annotation: 13
+    variant_annotation: 13
     frequency_filter: 13
     rhocall_ar: 15
     sacct: 1
@@ -94,7 +94,7 @@ recipe_memory:
     # Per process
     cadd_ar: 3
     endvariantannotationblock: 8
-    frequency_annotation: 7
+    variant_annotation: 7
     rhocall_ar: 2
     sv_reformat: 24
     sv_varianteffectpredictor: 9
@@ -108,7 +108,7 @@ recipe_time:
     analysisrunstatus: 1
     cadd_ar: 10
     endvariantannotationblock: 2
-    frequency_annotation: 1
+    variant_annotation: 1
     frequency_filter: 2
     prepareforvariantannotationblock: 5
     rankvariant: 10
@@ -162,7 +162,7 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_fqa_vcfanno_config:
+sv_vta_vcfanno_config:
   associated_recipe:
     - sv_annotate
   data_type: SCALAR
@@ -490,7 +490,7 @@ vt_core:
     - bgzip
     - tabix
   type: recipe
-frequency_annotation:
+variant_annotation:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -502,9 +502,9 @@ frequency_annotation:
     - bcftools
     - vcfanno
   type: recipe
-fqa_vcfanno_config:
+vta_vcfanno_config:
   associated_recipe:
-    - frequency_annotation
+    - variant_annotation
   data_type: SCALAR
   exists_check: file
   is_reference: 1

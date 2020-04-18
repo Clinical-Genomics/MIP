@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 $VERBOSE = test_standard_cli(
     {
@@ -118,13 +118,13 @@ is( $active_parameter{bcftools_mpileup_filter_variant},
     0, q{Set default for scalar parameter} );
 
 my @expected_decompose_normalize_references = qw{
-  fqa_vcfanno_config
+  vta_vcfanno_config
   gatk_baserecalibration_known_sites
   gatk_haplotypecaller_snp_known_set
   gatk_variantrecalibration_resource_indel
   gatk_varianteval_gold
   gatk_varianteval_dbsnp
-  sv_fqa_vcfanno_config
+  sv_vta_vcfanno_config
 };
 is_deeply(
     \@{ $active_parameter{decompose_normalize_references} },

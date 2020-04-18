@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,19 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Frequency_annotation} =>
-          [qw{ analysis_frequency_annotation_panel }],
+        q{MIP::Recipes::Analysis::Variant_annotation} =>
+          [qw{ analysis_variant_annotation_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Frequency_annotation
-  qw{ analysis_frequency_annotation_panel };
+use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation_panel };
 
-diag(   q{Test analysis_frequency_annotation_panel from Frequency_annotation.pm v}
-      . $MIP::Recipes::Analysis::Frequency_annotation::VERSION
+diag(   q{Test analysis_variant_annotation_panel from Variant_annotation.pm v}
+      . $MIP::Recipes::Analysis::Variant_annotation::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,7 +63,7 @@ diag(   q{Test analysis_frequency_annotation_panel from Frequency_annotation.pm 
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{frequency_annotation};
+my $recipe_name    = q{variant_annotation};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -77,7 +76,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{fqa_vcfanno_config} = catfile( $Bin,
+$active_parameter{vta_vcfanno_config} = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_annotation_config_-v1.0-.toml } );
 
 my %file_info = test_mip_hashes(
@@ -104,7 +103,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf.gz};
 
 my %sample_info;
 
-my $is_ok = analysis_frequency_annotation_panel(
+my $is_ok = analysis_variant_annotation_panel(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,

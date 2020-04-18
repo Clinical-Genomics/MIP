@@ -34,7 +34,7 @@ CHAIN_ALL:
       - gatk_variantevalall
   - CHAIN_MAIN:
     - vt_ar
-    - frequency_annotation
+    - variant_annotation
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

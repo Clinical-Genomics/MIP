@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -99,7 +99,6 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
-    use MIP::Recipes::Download::Fqa_vcfanno_config qw{ download_fqa_vcfanno_config };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
     use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
@@ -118,10 +117,11 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
     use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
-    use MIP::Recipes::Download::Sv_fqa_vcfanno_config
-      qw{ download_sv_fqa_vcfanno_config };
+    use MIP::Recipes::Download::Sv_vta_vcfanno_config
+      qw{ download_sv_vta_vcfanno_config };
     use MIP::Recipes::Download::Vcf2cytosure_blacklist_regions
       qw{ download_vcf2cytosure_blacklist_regions };
+    use MIP::Recipes::Download::Vta_vcfanno_config qw{ download_vta_vcfanno_config };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -148,7 +148,6 @@ sub pipeline_download_rd_dna {
         dbsnp                          => \&download_dbsnp,
         delly_exclude                  => \&download_delly_exclude,
         expansionhunter                => \&download_expansionhunter,
-        fqa_vcfanno_config             => \&download_fqa_vcfanno_config,
         gatk_mitochondrial_ref         => \&download_gatk_mitochondrial_ref,
         genbank_haplogroup             => \&download_genbank_haplogroup,
         genomic_superdups              => \&download_genomic_superdups,
@@ -163,8 +162,9 @@ sub pipeline_download_rd_dna {
         reduced_penetrance             => \&download_reduced_penetrance,
         scout_exons                    => \&download_scout_exons,
         svrank_model                   => \&download_svrank_model,
-        sv_fqa_vcfanno_config          => \&download_sv_fqa_vcfanno_config,
+        sv_vta_vcfanno_config          => \&download_sv_vta_vcfanno_config,
         vcf2cytosure_blacklist_regions => \&download_vcf2cytosure_blacklist_regions,
+        vta_vcfanno_config             => \&download_vta_vcfanno_config,
     );
 
     # Storing job_ids from SLURM, however currently all are independent

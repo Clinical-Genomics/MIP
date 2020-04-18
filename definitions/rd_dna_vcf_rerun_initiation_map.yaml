@@ -13,7 +13,7 @@ CHAIN_ALL:
     - prepareforvariantannotationblock
     - rhocall_ar
     - vt_ar
-    - frequency_annotation
+    - variant_annotation
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

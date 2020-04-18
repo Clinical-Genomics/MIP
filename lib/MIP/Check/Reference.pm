@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -186,8 +186,8 @@ sub check_references_for_vt {
 
     ## TOML parameters
     my %toml = (
-        fqa_vcfanno_config    => 1,
-        sv_fqa_vcfanno_config => 1,
+        vta_vcfanno_config    => 1,
+        sv_vta_vcfanno_config => 1,
     );
 
   PARAMETER_NAME:

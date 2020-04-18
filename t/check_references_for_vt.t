@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,10 +62,10 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 my %active_parameter_test = (
-    fqa_vcfanno_config => catfile(
+    vta_vcfanno_config => catfile(
         $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
     ),
-    frequency_annotation               => 1,
+    variant_annotation                 => 1,
     gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
         catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf } ),
@@ -88,8 +88,8 @@ my %active_parameter_test = (
 );
 
 my %parameter_test = (
-    fqa_vcfanno_config => {
-        associated_recipe => [qw{ frequency_annotation }],
+    vta_vcfanno_config => {
+        associated_recipe => [qw{ variant_annotation }],
         data_type         => q{SCALAR},
     },
     gatk_baserecalibration_known_sites => {
@@ -105,7 +105,7 @@ my %parameter_test = (
 );
 
 my @vt_references_test =
-  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel };
+  qw{ vta_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel };
 
 my @refs_to_process = check_references_for_vt(
     {

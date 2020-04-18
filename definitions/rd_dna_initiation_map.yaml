@@ -69,7 +69,7 @@ CHAIN_ALL:
     - prepareforvariantannotationblock
     - rhocall_ar
     - vt_ar
-    - frequency_annotation
+    - variant_annotation
     - CHAIN_RHOCALL_VIZ:
       - rhocall_viz
     - CHAIN_CHROMOGRAPH:

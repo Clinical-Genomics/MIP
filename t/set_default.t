@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,7 +68,7 @@ my %active_parameter = (
     conda_path             => catdir( $Bin, qw{ data modules miniconda } ),
     case_id                => 1,
     expansionhunter        => 1,
-    frequency_annotation   => 0,
+    variant_annotation     => 0,
     human_genome_reference => catfile(qw{ a test grch37_human_genom_reference.fasta }),
     load_env               => {
         test_env => {

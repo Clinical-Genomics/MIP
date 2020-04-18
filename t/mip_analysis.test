@@ -53,7 +53,7 @@ BEGIN {
 my ( $config_file, $infile );
 my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.08;
+our $VERSION = 2.09;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -441,7 +441,7 @@ sub read_infile_vcf {
                 {
                     fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
                     recipe_mode         => $active_parameter_href->{frequency_filter},
-                    toml_file_path      => $active_parameter_href->{fqa_vcfanno_config},
+                    toml_file_path      => $active_parameter_href->{vta_vcfanno_config},
                     vcf_header_href     => \%vcf_header,
                 }
             );
@@ -709,7 +709,7 @@ sub read_sv_infile_vcf {
                 {
                     fqf_annotations_ref => $active_parameter_href->{sv_fqa_annotations},
                     recipe_mode         => $active_parameter_href->{sv_annotate},
-                    toml_file_path  => $active_parameter_href->{sv_fqa_vcfanno_config},
+                    toml_file_path  => $active_parameter_href->{sv_vta_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );

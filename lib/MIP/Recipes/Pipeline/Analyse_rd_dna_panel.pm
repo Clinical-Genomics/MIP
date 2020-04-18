@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -154,8 +154,6 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock_panel };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Frequency_annotation
-      qw{ analysis_frequency_annotation_panel };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter_panel };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_panel };
@@ -182,6 +180,8 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
+    use MIP::Recipes::Analysis::Variant_annotation
+      qw{ analysis_variant_annotation_panel };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
@@ -240,7 +240,6 @@ sub pipeline_analyse_rd_dna_panel {
         cadd_ar                      => \&analysis_cadd_panel,
         endvariantannotationblock    => \&analysis_endvariantannotationblock_panel,
         fastqc_ar                    => \&analysis_fastqc,
-        frequency_annotation         => \&analysis_frequency_annotation_panel,
         frequency_filter             => \&analysis_frequency_filter_panel,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
         gatk_combinevariantcallsets  => \&analysis_gatk_combinevariantcallsets,
@@ -260,6 +259,7 @@ sub pipeline_analyse_rd_dna_panel {
         rtg_vcfeval            => \&analysis_rtg_vcfeval,
         sambamba_depth         => \&analysis_sambamba_depth,
         samtools_merge         => \&analysis_samtools_merge_panel,
+        variant_annotation     => \&analysis_variant_annotation_panel,
         variant_integrity_ar   => \&analysis_variant_integrity,
         varianteffectpredictor => \&analysis_vep,
         vcfparser_ar           => \&analysis_mip_vcfparser_panel,
