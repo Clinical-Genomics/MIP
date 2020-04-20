@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,17 +71,17 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqa_vcfanno_config =
+my $vta_vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
+my $test_vta_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_parse_toml_-v1.0-.toml  } );
 
 my $toml_href = load_toml(
     {
-        path => $fqa_vcfanno_config,
+        path => $vta_vcfanno_config,
     }
 );
 
@@ -96,14 +96,14 @@ $toml_href->{annotation}[2]{file} =
 write_toml(
     {
         data_href => $toml_href,
-        path      => $test_fqa_vcfanno_config,
+        path      => $test_vta_vcfanno_config,
     }
 );
 
 ## Given a toml config file
 my %active_parameter = (
     frequency_filter   => 1,
-    fqa_vcfanno_config => $test_fqa_vcfanno_config,
+    vta_vcfanno_config => $test_vta_vcfanno_config,
 );
 
 my $is_ok = parse_toml_config_parameters(
@@ -116,6 +116,6 @@ my $is_ok = parse_toml_config_parameters(
 ok( $is_ok, q{Passed parsing for toml file} );
 
 ## Clean-up
-rmtree($test_fqa_vcfanno_config);
+rmtree($test_vta_vcfanno_config);
 
 done_testing();

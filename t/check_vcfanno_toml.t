@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,17 +71,17 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqa_vcfanno_config =
+my $vta_vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
+my $test_vta_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_check_vcfanno_-v1.0-.toml  } );
 
 my $toml_href = load_toml(
     {
-        path => $fqa_vcfanno_config,
+        path => $vta_vcfanno_config,
     }
 );
 
@@ -96,15 +96,15 @@ $toml_href->{annotation}[2]{file} =
 write_toml(
     {
         data_href => $toml_href,
-        path      => $test_fqa_vcfanno_config,
+        path      => $test_vta_vcfanno_config,
     }
 );
 
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
-        parameter_name    => q{fqa_vcfanno_config},
-        vcfanno_file_toml => $test_fqa_vcfanno_config,
+        parameter_name    => q{vta_vcfanno_config},
+        vcfanno_file_toml => $test_vta_vcfanno_config,
     }
 );
 
@@ -112,17 +112,17 @@ my $is_ok = check_vcfanno_toml(
 ok( $is_ok, q{Passed check for toml file} );
 
 ## Clean-up
-rmtree($test_fqa_vcfanno_config);
+rmtree($test_vta_vcfanno_config);
 
 ## Given a toml config file, when mandatory features are absent
-my $faulty_fqa_vcfanno_config_file = catfile( $Bin,
+my $faulty_vta_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
 trap {
     check_vcfanno_toml(
         {
-            parameter_name    => q{fqa_vcfanno_config},
-            vcfanno_file_toml => $faulty_fqa_vcfanno_config_file,
+            parameter_name    => q{vta_vcfanno_config},
+            vcfanno_file_toml => $faulty_vta_vcfanno_config_file,
         }
     )
 };

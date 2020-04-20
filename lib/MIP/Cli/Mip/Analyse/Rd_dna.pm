@@ -157,18 +157,18 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{frequency_annotation} => (
-            cmd_aliases   => [qw{ fqa }],
+        q{variant_annotation} => (
+            cmd_aliases   => [qw{ vta }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Annotate vcf with allele frequencies},
+            documentation => q{Annotate vcf},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
-        q{fqa_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqavac }],
+        q{vta_vcfanno_config} => (
+            cmd_aliases   => [qw{ vtavac }],
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
             isa           => Str,
@@ -800,7 +800,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{sv_fqa_vcfanno_config} => (
+        q{sv_vta_vcfanno_config} => (
             cmd_aliases   => [qw{ svfqav }],
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},

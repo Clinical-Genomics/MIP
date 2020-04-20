@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -163,7 +163,6 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
@@ -209,6 +208,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
+    use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
@@ -276,7 +276,6 @@ sub pipeline_analyse_rd_dna {
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,
-        frequency_annotation        => \&analysis_frequency_annotation,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
         gatk_gathervcfs             => \&analysis_gatk_gathervcfs,
@@ -318,6 +317,7 @@ sub pipeline_analyse_rd_dna {
         tiddit_coverage        => \&analysis_tiddit_coverage,
         varg_ar                => \&analysis_varg,
         varianteffectpredictor => \&analysis_vep_wgs,
+        variant_annotation     => \&analysis_variant_annotation,
         variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,
         vcfparser_ar           => \&analysis_mip_vcfparser,

@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Sv_fqa_vcfanno_config;
+package MIP::Recipes::Download::Vta_vcfanno_config;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,22 +30,22 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_sv_fqa_vcfanno_config };
+    our @EXPORT_OK = qw{ download_vta_vcfanno_config };
 
 }
 
-sub download_sv_fqa_vcfanno_config {
+sub download_vta_vcfanno_config {
 
-## Function : Download SV frequency vcfanno config
+## Function : Download vta_vcfanno_config
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
-##          : $quiet                 => Quiet (no output)
 ##          : $recipe_name           => Recipe name
 ##          : $reference_href        => Reference hash {REF}
 ##          : $reference_version     => Reference version
+##          : $quiet                 => Quiet (no output)
 ##          : $temp_directory        => Temporary directory for recipe
 ##          : $verbose               => Verbosity
 
@@ -88,12 +89,6 @@ sub download_sv_fqa_vcfanno_config {
             store       => \$profile_base_command,
             strict_type => 1,
         },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -111,6 +106,12 @@ sub download_sv_fqa_vcfanno_config {
             defined     => 1,
             required    => 1,
             store       => \$reference_version,
+            strict_type => 1,
+        },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
             strict_type => 1,
         },
         temp_directory => {
@@ -131,7 +132,7 @@ sub download_sv_fqa_vcfanno_config {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};

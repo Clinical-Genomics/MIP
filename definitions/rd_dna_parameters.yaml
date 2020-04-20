@@ -27,13 +27,13 @@ decompose_normalize_references:
     - mip
   data_type: ARRAY
   default:
-    - fqa_vcfanno_config
+    - vta_vcfanno_config
     - gatk_baserecalibration_known_sites
     - gatk_haplotypecaller_snp_known_set
     - gatk_variantrecalibration_resource_indel
     - gatk_varianteval_gold
     - gatk_varianteval_dbsnp
-    - sv_fqa_vcfanno_config
+    - sv_vta_vcfanno_config
   type: mip
 exome_target_bed:
   associated_recipe:
@@ -143,7 +143,7 @@ recipe_core_number:
     endvariantannotationblock: 1
     expansionhunter: 0
     fastqc_ar: 0
-    frequency_annotation: 13
+    variant_annotation: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
@@ -204,7 +204,7 @@ recipe_memory:
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
-    frequency_annotation: 3
+    variant_annotation: 3
     gatk_baserecalibration: 10
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
@@ -249,7 +249,7 @@ recipe_time:
     endvariantannotationblock: 2
     expansionhunter: 2
     fastqc_ar: 10
-    frequency_annotation: 1
+    variant_annotation: 1
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
@@ -802,7 +802,7 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_fqa_vcfanno_config:
+sv_vta_vcfanno_config:
   associated_recipe:
     - sv_annotate
   data_type: SCALAR
@@ -1409,7 +1409,7 @@ rhocall_ar:
 rhocall_frequency_file:
   associated_recipe:
     - rhocall_ar
-    - frequency_annotation
+    - variant_annotation
   data_type: SCALAR
   default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
   exists_check: file
@@ -1469,7 +1469,7 @@ vt_core:
     - bgzip
     - tabix
   type: recipe
-frequency_annotation:
+variant_annotation:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -1481,9 +1481,9 @@ frequency_annotation:
     - bcftools
     - vcfanno
   type: recipe
-fqa_vcfanno_config:
+vta_vcfanno_config:
   associated_recipe:
-    - frequency_annotation
+    - variant_annotation
   data_type: SCALAR
   exists_check: file
   is_reference: 1

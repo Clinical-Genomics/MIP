@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Frequency_annotation;
+package MIP::Recipes::Analysis::Variant_annotation;
 
 use 5.026;
 use Carp;
@@ -26,15 +26,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ analysis_frequency_annotation analysis_frequency_annotation_panel };
+      qw{ analysis_variant_annotation analysis_variant_annotation_panel };
 
 }
 
-sub analysis_frequency_annotation {
+sub analysis_variant_annotation {
 
 ## Function : Annotate vcf with allelle frequencies
 ## Returns  :
@@ -242,7 +242,7 @@ sub analysis_frequency_annotation {
                 filehandle           => $xargsfilehandle,
                 infile_path          => $infile_path{$contig},
                 stderrfile_path      => $stderrfile_path,
-                toml_configfile_path => $active_parameter_href->{fqa_vcfanno_config},
+                toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
             }
         );
 
@@ -350,7 +350,7 @@ sub analysis_frequency_annotation {
     return 1;
 }
 
-sub analysis_frequency_annotation_panel {
+sub analysis_variant_annotation_panel {
 
 ## Function : Annotate vcf with allelle frequencies
 ## Returns  :
@@ -531,7 +531,7 @@ sub analysis_frequency_annotation_panel {
         {
             filehandle           => $filehandle,
             infile_path          => $infile_path,
-            toml_configfile_path => $active_parameter_href->{fqa_vcfanno_config},
+            toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
         }
     );
     print {$filehandle} $PIPE . $SPACE;

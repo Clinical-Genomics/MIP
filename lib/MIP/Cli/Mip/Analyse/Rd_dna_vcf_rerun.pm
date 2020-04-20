@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.28;
+our $VERSION = 1.29;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -209,7 +209,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{sv_fqa_vcfanno_config} => (
+        q{sv_vta_vcfanno_config} => (
             cmd_aliases   => [qw{ svfqav }],
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
@@ -559,18 +559,18 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{frequency_annotation} => (
-            cmd_aliases   => [qw{ fqa }],
+        q{variant_annotation} => (
+            cmd_aliases   => [qw{ vta }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Annotate vcf with allele frequencies},
+            documentation => q{Annotate vcf},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
-        q{fqa_vcfanno_config} => (
-            cmd_aliases   => [qw{ fqavac }],
+        q{vta_vcfanno_config} => (
+            cmd_aliases   => [qw{ vtavac }],
             documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
             isa           => Str,
