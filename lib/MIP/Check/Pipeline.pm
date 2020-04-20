@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -380,7 +380,6 @@ sub check_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{
-      check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       parse_vep_plugin
@@ -422,13 +421,6 @@ sub check_rd_dna {
         {
             parameter_href => $parameter_href,
             parameter_name => q{consensus_analysis_type},
-        }
-    );
-
-    ## Check mutually exclusive parameters and croak if mutually enabled
-    check_mutually_exclusive_parameters(
-        {
-            active_parameter_href => $active_parameter_href,
         }
     );
 
@@ -718,7 +710,6 @@ sub check_rd_dna_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{
-      check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       parse_vep_plugin
@@ -745,13 +736,6 @@ sub check_rd_dna_panel {
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Check mutually exclusive parameters and croak if mutually enabled
-    check_mutually_exclusive_parameters(
-        {
-            active_parameter_href => $active_parameter_href,
-        }
-    );
 
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     parse_exome_target_bed(

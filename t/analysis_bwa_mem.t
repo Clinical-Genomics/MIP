@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,11 +79,10 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{platform}                       = q{ILLUMINA};
-$active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
-$active_parameter{bwa_mem_cram}                   = 1;
-$active_parameter{bwa_mem_bamstats}               = 1;
-$active_parameter{human_genome_reference}         = q{grch37_homo_sapiens_-d5-.fasta};
+$active_parameter{platform}               = q{ILLUMINA};
+$active_parameter{bwa_mem_cram}           = 1;
+$active_parameter{bwa_mem_bamstats}       = 1;
+$active_parameter{human_genome_reference} = q{grch37_homo_sapiens_-d5-.fasta};
 
 my %file_info = test_mip_hashes(
     {

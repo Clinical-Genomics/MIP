@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -292,7 +292,7 @@ sub analysis_bwa_mem {
         ### BWA MEM
         say {$filehandle} q{## Aligning reads with }
           . $recipe_name
-          . q{ and sorting via Sambamba};
+          . q{ and sorting via Samtools};
 
         ### Get parameters
 
@@ -733,7 +733,7 @@ sub analysis_run_bwa_mem {
         ### BWA MEM
         say {$filehandle} q{## Aligning reads with }
           . $recipe_name
-          . q{ and sorting via Sambamba};
+          . q{ and sorting via Samtools};
 
         ### Get parameters
 

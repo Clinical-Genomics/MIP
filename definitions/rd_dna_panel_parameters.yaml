@@ -308,12 +308,6 @@ bwa_mem_hla:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-bwa_sambamba_sort_memory_limit:
-  associated_recipe:
-    - bwa_mem
-  data_type: SCALAR
-  default: 64G
-  type: recipe_argument
 bwa_soft_clip_sup_align:
   associated_recipe:
     - bwa_mem

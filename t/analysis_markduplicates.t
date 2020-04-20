@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +75,6 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{markduplicates_picardtools_markduplicates} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -127,28 +126,5 @@ my $is_ok = analysis_markduplicates(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using picardtools} );
-
-## Given sambamba_markdup
-$active_parameter{markduplicates_sambamba_markdup}                    = 1;
-$active_parameter{markduplicates_sambamba_markdup_hash_table_size}    = 1;
-$active_parameter{markduplicates_sambamba_markdup_io_buffer_size}     = 1;
-$active_parameter{markduplicates_sambamba_markdup_overflow_list_size} = 1;
-
-$is_ok = analysis_markduplicates(
-    {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using sambamba} );
 
 done_testing();
