@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -191,9 +191,9 @@ sub parse_infiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_matching_values_key };
-    use MIP::Check::Parameter qw{ check_infiles };
     use MIP::File::Path qw{ get_file_names };
     use MIP::Set::File qw{ set_infiles };
+    use MIP::Validate::Case qw{ check_infiles };
 
     ## Collect input files governed by sample_ids
   SAMPLE_ID:
@@ -229,7 +229,6 @@ sub parse_infiles {
             {
                 infiles_ref      => \@infiles,
                 infile_directory => $infile_directory,
-                log              => $log,
                 sample_id        => $sample_id,
             }
         );
