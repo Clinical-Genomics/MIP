@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Replaced recipe picartools_mergesamfiles with samtools_merge
 - Replaced sambamba flagstat with samtools flagstat in markduplicates recipe
 - Rename frequency_annotation to variant_annotation
+- Removed option to run sambamba markduplicates for markduplicates recipe
 
 **Tools**
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)

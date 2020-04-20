@@ -27,12 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_load_env_packages
-      check_mutually_exclusive_parameters
       check_parameter_files
       check_recipe_mode
       check_sample_id_in_hash_parameter
@@ -142,61 +141,6 @@ sub check_load_env_packages {
               . $package
               . q{' in MIP as either recipe or program_executables};
             croak($err_msg);
-        }
-    }
-    return 1;
-}
-
-sub check_mutually_exclusive_parameters {
-
-## Function : Check mutually exclusive parameters and croak if mutually enabled
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    # Mutually exclusive parameters
-    my %mutally_exclusive_params =
-      ( markduplicates_picardtools_markduplicates =>
-          [qw{ markduplicates_sambamba_markdup }] );
-
-  PARAMETER:
-    while ( my ( $parameter, $exclusive_parameters_ref ) =
-        each %mutally_exclusive_params )
-    {
-
-        # Not active parameter no need to check
-        next PARAMETER if ( not $active_parameter_href->{$parameter} );
-
-      EXCLUSIVE_PARAM:
-        foreach my $exclusive_parameter ( @{$exclusive_parameters_ref} ) {
-
-            # Not active exclusive parameter no need to check
-            next EXCLUSIVE_PARAM
-              if ( not $active_parameter_href->{$exclusive_parameter} );
-
-            $log->fatal(
-qq{Enable either $parameter or $exclusive_parameter as they are mutually exclusive}
-            );
-            exit 1;
         }
     }
     return 1;
