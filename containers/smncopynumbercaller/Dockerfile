@@ -5,7 +5,7 @@ FROM clinicalgenomics/mip:2.0
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip:2.0"
-LABEL version="1"
+LABEL version="2"
 LABEL software="SMNCopyNumberCaller"
 LABEL software.version="1.0"
 LABEL extra.binaries="smn_caller"
