@@ -20,6 +20,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
+- SMNCopyNumberCaller: 4b2c1ad -> 1.0
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
