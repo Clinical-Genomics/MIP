@@ -224,11 +224,7 @@ reference_feature:
   cadd_gnomad_genomes:
     grch37:
       v1.4:
-       eck: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
-        outfile: grch37_frequency_vcfanno_filter_config_-v1.4-.toml
-        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/file: gnomad.genomes.r2.0.1.sites.tsv.gz
+        file: gnomad.genomes.r2.0.1.sites.tsv.gz
         file_index: gnomad.genomes.r2.0.1.sites.tsv.gz.tbi
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
