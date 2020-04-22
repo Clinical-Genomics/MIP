@@ -26,6 +26,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.4-.toml
+- grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.5-.toml
+- grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
+- grch37_loqusdb_sv_-2020-04-20.vcf
 
 ## [8.2.4]
 - Chromograph patch
