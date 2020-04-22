@@ -42,7 +42,7 @@ singularity:
   multiqc:
     executable:
       multiqc:
-    uri: docker://ewels/multiqc:v1.7
+    uri: docker://ewels/multiqc:1.8
   picard:
     executable:
       picard: "no_executable_in_image"
