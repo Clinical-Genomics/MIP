@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,6 +77,9 @@ my %active_parameter = (
               catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }),
         },
     },
+    some_array => [
+        catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }), undef
+    ],
 );
 
 ## Given a cluster_constant_path when containing case_id!
@@ -105,7 +108,7 @@ is(
 );
 
 ## Given parameters with dynamic parameters
-my @order_parameters = qw{ pedigree_file sample_info_file sv_vep_plugin };
+my @order_parameters = qw{ pedigree_file sample_info_file some_array sv_vep_plugin };
 
 my %dynamic_parameter = (
     cluster_constant_path  => $active_parameter{cluster_constant_path},
@@ -145,4 +148,7 @@ my $updated_sv_vep_loftool = catfile(qw{ root dir_1 dir_2 case_1 analysis loftoo
 is( $active_parameter{sv_vep_plugin}{LofTool}{path},
     $updated_sv_vep_loftool, q{Updated sv_vep_plugin loftool path} );
 
+my $some_array_ref =
+  [ catfile(qw{ root dir_1 dir_2 case_1 analysis loftool.txt }), undef ];
+is_deeply( $active_parameter{some_array}, $some_array_ref, q{Updtated array reference} );
 done_testing();

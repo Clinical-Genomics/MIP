@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ update_dynamic_config_parameters };
@@ -64,36 +64,79 @@ sub update_dynamic_config_parameters {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    use Data::Printer;
 
+    ## Return if variable isn't in use
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
+    ## Value is HASH
     if ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
 
       KEY:
         foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } ) {
+
+            next KEY if ( not defined $active_parameter_href->{$parameter_name}{$key} );
+
+            if (   ref $active_parameter_href->{$parameter_name}{$key} eq q{HASH}
+                or ref $active_parameter_href->{$parameter_name}{$key} eq q{ARRAY} )
+            {
+
+                update_dynamic_config_parameters(
+                    {
+                        active_parameter_href =>
+                          $active_parameter_href->{$parameter_name},
+                        dynamic_parameter_href => $dynamic_parameter_href,
+                        parameter_name         => $key,
+                    }
+                );
+            }
 
           DYNAMIC_PARAMETER:
             while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
                 each %{$dynamic_parameter_href} )
             {
 
-                next KEY if ( not $active_parameter_href->{$parameter_name}{$key} );
-
                 ## Replace dynamic config parameters with actual value that is now set from cmd or config
                 $active_parameter_href->{$parameter_name}{$key} =~
-                  s/$dynamic_parameter_value!/$dynamic_parameter_value/smgi;
+                  s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
             }
-
-            update_dynamic_config_parameters(
-                {
-                    active_parameter_href  => $active_parameter_href->{$parameter_name},
-                    dynamic_parameter_href => $dynamic_parameter_href,
-                    parameter_name         => $key,
-                }
-            );
         }
     }
+    ## Value is ARRAY
+    elsif ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
+      ELEMENT:
+        while ( my ( $element_index, $element ) =
+            each @{ $active_parameter_href->{$parameter_name} } )
+        {
+
+            next ELEMENT if ( not $element );
+
+            if ( ref $element eq q{HASH} or ref $element eq q{ARRAY} ) {
+
+                update_dynamic_config_parameters(
+                    {
+                        active_parameter_href =>
+                          $active_parameter_href->{$parameter_name},
+                        dynamic_parameter_href => $dynamic_parameter_href,
+                        parameter_name         => $element,
+                    }
+                );
+            }
+
+          DYNAMIC_PARAMETER:
+            while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
+                each %{$dynamic_parameter_href} )
+            {
+
+                ## Replace dynamic config parameters with actual value that is now set from cmd or config
+                $active_parameter_href->{$parameter_name}[$element_index] =~
+                  s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
+
+            }
+        }
+    }
+    ## Value is SCALAR
   DYNAMIC_PARAMETER:
     while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
         each %{$dynamic_parameter_href} )
@@ -101,7 +144,7 @@ sub update_dynamic_config_parameters {
 
         ## Replace dynamic config parameters with actual value that is now set from cmd or config
         $active_parameter_href->{$parameter_name} =~
-          s/$dynamic_parameter_name!/$dynamic_parameter_value/smgi;
+          s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
     }
     return;
 }
