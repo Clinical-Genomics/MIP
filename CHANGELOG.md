@@ -18,12 +18,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - fastqc: 0.11.8-0 -> 0.11.9
 - gatk: 4.1.3.0 -> 4.1.6.0
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
+- multiqc: 1.7 -> 1.8
 - picard: 2.20.7 -> 2.22.0 (DNA)
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
+- SMNCopyNumberCaller: 4b2c1ad -> 1.0
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.4-.toml
+- grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.5-.toml
+- grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
+- grch37_loqusdb_sv_-2020-04-20.vcf
 
 ## [8.2.4]
 - Chromograph patch

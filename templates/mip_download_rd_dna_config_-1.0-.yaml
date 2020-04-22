@@ -52,9 +52,6 @@ reference:
     - 3.0.0
     - 3.0.1
     - 3.1.2
-  vta_vcfanno_config:
-    - v1.3
-    - v1.4
   gatk_mitochondrial_ref:
     - v0_m_amb
     - v0_m_ann
@@ -119,6 +116,10 @@ reference:
     - v1.2
   vcf2cytosure_blacklist_regions:
     - 1.0
+  vta_vcfanno_config:
+    - v1.3
+    - v1.4
+    - v1.5
 reference_feature:
   human_reference:
     grch37:
@@ -476,22 +477,6 @@ reference_feature:
         outfile_check: grch38_expansionhunter_variant_catalog_-3.1.2-.json.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/disease_loci/ExpansionHunter-v3.1.2/
-  vta_vcfanno_config:
-    grch37:
-      v1.3:
-        file: grch37_frequency_vcfanno_filter_config_-v1.3-.toml
-        file_check: grch37_frequency_vcfanno_filter_config_-v1.3-.toml.md5
-        outfile: grch37_frequency_vcfanno_filter_config_-v1.3-.toml
-        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.3-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
-      v1.4:
-        file: grch37_frequency_vcfanno_filter_config_-v1.4-.toml
-        file_check: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
-        outfile: grch37_frequency_vcfanno_filter_config_-v1.4-.toml
-        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   gatk_mitochondrial_ref:
     grch38:
       v0_m_amb:
@@ -837,3 +822,26 @@ reference_feature:
         outfile_check: grch37_cytosure_blacklist_-1.0-.bed.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
+  vta_vcfanno_config:
+    grch37:
+      v1.3:
+        file: grch37_frequency_vcfanno_filter_config_-v1.3-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.3-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.3-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.3-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+      v1.4:
+        file: grch37_frequency_vcfanno_filter_config_-v1.4-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.4-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.4-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+      v1.5:
+        file: grch37_frequency_vcfanno_filter_config_-v1.5-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.5-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.5-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.5-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
