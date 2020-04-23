@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,6 +33,7 @@ BEGIN {
       set_bam_contigs
       set_dict_contigs
       set_file_tag
+      set_infiles
       set_human_genome_reference_features
       set_primary_contigs
       set_select_file_contigs
@@ -355,6 +356,62 @@ sub set_file_tag {
 
     $file_info_href->{$id}{$recipe_name}{file_tag} = $file_tag;
 
+    return;
+}
+
+sub set_infiles {
+
+## Function : Set the infile features i.e. dir and infiles
+## Returns  :
+## Arguments: $file_info_href   => File info hash {REF}
+##          : $infile_directory => Infile directory
+##          : $infiles_ref      => Infiles to check {REF}
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $infiles_ref;
+    my $infile_directory;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        infile_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Set inputdir path hash
+    $file_info_href->{$sample_id}{mip_infiles_dir} = $infile_directory;
+
+    ## Set infiles in hash
+    $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
     return;
 }
 
