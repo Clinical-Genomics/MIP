@@ -64,7 +64,6 @@ sub update_dynamic_config_parameters {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    use Data::Printer;
 
     ## Return if variable isn't in use
     return if ( not defined $active_parameter_href->{$parameter_name} );
@@ -132,7 +131,6 @@ sub update_dynamic_config_parameters {
                 ## Replace dynamic config parameters with actual value that is now set from cmd or config
                 $active_parameter_href->{$parameter_name}[$element_index] =~
                   s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
-
             }
         }
     }
