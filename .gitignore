@@ -1,2 +1,8 @@
+*.sh
+*.log
+*.swp
+*.out
+!mip_install_perl.sh
+mip_log/
 **/.idea
 .gitignore
