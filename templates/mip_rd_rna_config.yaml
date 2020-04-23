@@ -27,4 +27,4 @@ arriba_blacklist_path: /arriba_v1.1.0/database/blacklist_hg19_hs37d5_GRCh37_2018
 arriba_cytoband_path: /arriba_v1.1.0/database/cytobands_hg19_hs37d5_GRCh37_2018-02-23.tsv
 arriba_proteindomain_path: /arriba_v1.1.0/database/protein_domains_hg19_hs37d5_GRCh37_2018-03-06.gff3
 picardtools_path: /usr/picard
-vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-97/cache/
+vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-99/cache/

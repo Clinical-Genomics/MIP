@@ -108,4 +108,4 @@ singularity:
   vep:
     executable:
       vep:
-    uri: docker://ensemblorg/ensembl-vep:release_97.4
+    uri: docker://ensemblorg/ensembl-vep:release_99.2

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,7 +67,8 @@ my $log = test_log( {} );
 ## Given matching vep API and cache version
 my $vep_binary_path =
   catdir( $Bin, qw{ data modules miniconda envs mip_travis bin vep } );
-my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data cache } );
+my $vep_directory_cache =
+  catdir( $Bin, qw{ data references ensembl-tools-data-99 cache } );
 
 ## When comparing API and cache version
 my $match = check_vep_api_cache_versions(
@@ -81,7 +82,7 @@ my $match = check_vep_api_cache_versions(
 ok( $match, q{Return on matching versions} );
 
 ## Given non matching API and cache
-$vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data cache2 } );
+$vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-99 cache2 } );
 
 ## When comparing API and cache version
 trap {
