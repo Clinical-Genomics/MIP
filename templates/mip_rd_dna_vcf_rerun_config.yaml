@@ -20,10 +20,10 @@ outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
-vta_vcfanno_config: grch37_frequency_vcfanno_filter_config_-v1.5-.toml
+vta_vcfanno_config: grch37_frequency_vcfanno_filter_config_-v1.6-.toml
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_cmms_-v1.28-.ini
+rank_model_file: rank_model_-v1.29-.ini
 sv_vta_vcfanno_config: grch37_sv_frequency_vcfanno_filter_config_-v1.2-.toml
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.8-.ini

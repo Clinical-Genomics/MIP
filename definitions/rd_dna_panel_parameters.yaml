@@ -197,7 +197,7 @@ recipe_time:
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
     gatk_gathervcfs: 2
-    gatk_haplotypecaller: 5
+    gatk_haplotypecaller: 10
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10

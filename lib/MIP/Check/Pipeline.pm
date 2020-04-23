@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -240,7 +240,6 @@ sub check_dragen_rd_dna {
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
             found_male              => $active_parameter_href->{found_male},
-            log                     => $log,
         }
     );
 
@@ -513,7 +512,6 @@ sub check_rd_dna {
     parse_nist_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            log                   => $log,
         }
     );
 
@@ -1083,7 +1081,6 @@ sub check_rd_dna_vcf_rerun {
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
             found_male              => $active_parameter_href->{found_male},
-            log                     => $log,
         }
     );
 
@@ -1304,7 +1301,6 @@ sub check_rd_rna {
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
             found_male              => $active_parameter_href->{found_male},
-            log                     => $log,
         }
     );
 

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_vcfanno_toml parse_toml_config_parameters };
@@ -32,20 +32,30 @@ sub check_vcfanno_toml {
 
 ## Function : Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
 ## Returns  :
-## Arguments: $parameter_name    => Name of parameter
-##          : $vcfanno_file_toml => Toml config file
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_names_ref   => Name of parameters {REF}
+##          : $vcfanno_file_toml     => Toml config file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_name;
+    my $active_parameter_href;
+    my $parameter_names_ref;
     my $vcfanno_file_toml;
 
     my $tmpl = {
-        parameter_name => {
+        active_parameter_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$parameter_name,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_names_ref => {
+            defined     => 1,
+            default     => [],
+            required    => 1,
+            store       => \$parameter_names_ref,
             strict_type => 1,
         },
         vcfanno_file_toml => {
@@ -109,11 +119,29 @@ sub check_vcfanno_toml {
             {
                 object_name    => q{file},
                 object_type    => q{file},
-                parameter_name => $parameter_name,
+                parameter_name => $parameter_names_ref->[0],
                 path           => $annotation_href->{file},
             }
         );
     }
+
+    ## Check for function file
+    if ( $vcfanno_config{functions} and $vcfanno_config{functions}{file} ) {
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                object_name    => q{file},
+                object_type    => q{file},
+                parameter_name => $parameter_names_ref->[1],
+                path           => $vcfanno_config{functions}{file},
+            }
+        );
+        ## Set path in active parameter
+        $active_parameter_href->{ $parameter_names_ref->[1] } =
+          $vcfanno_config{functions}{file};
+    }
+
     return 1;
 }
 
@@ -142,19 +170,21 @@ sub parse_toml_config_parameters {
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
     my %toml_config_parameter = (
-        frequency_filter => q{vta_vcfanno_config},
-        sv_annotate      => q{sv_vta_vcfanno_config},
+        variant_annotation => [qw{ vta_vcfanno_config vta_vcfanno_functions }],
+        sv_annotate        => [qw{ sv_vta_vcfanno_config sv_vta_vcfanno_functions }],
     );
 
   CONFIG_FILE:
-    while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
+    while ( my ( $recipe_name, $parameter_names_ref ) = each %toml_config_parameter ) {
 
         next CONFIG_FILE if ( not $active_parameter_href->{$recipe_name} );
 
         check_vcfanno_toml(
             {
-                parameter_name    => $parameter_name,
-                vcfanno_file_toml => $active_parameter_href->{$parameter_name},
+                active_parameter_href => $active_parameter_href,
+                parameter_names_ref   => $parameter_names_ref,
+                vcfanno_file_toml =>
+                  $active_parameter_href->{ $parameter_names_ref->[0] },
             }
         );
     }
