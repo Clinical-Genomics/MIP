@@ -23,11 +23,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_file_compression_features set_infiles set_io_files set_merged_infile_prefix };
+      qw{ set_file_compression_features set_io_files set_merged_infile_prefix };
 }
 
 sub set_file_compression_features {
@@ -66,62 +66,6 @@ sub set_file_compression_features {
         $read_file_command = q{cat};
     }
     return $is_compressed, $read_file_command;
-}
-
-sub set_infiles {
-
-## Function : Set the infile features i.e. dir and infiles
-## Returns  :
-## Arguments: $file_info_href   => File info hash {REF}
-##          : $infile_directory => Infile directory
-##          : $infiles_ref      => Infiles to check {REF}
-##          : $sample_id        => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $infiles_ref;
-    my $infile_directory;
-    my $sample_id;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infiles_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$infiles_ref,
-            strict_type => 1,
-        },
-        infile_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_directory,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Set inputdir path hash
-    $file_info_href->{$sample_id}{mip_infiles_dir} = $infile_directory;
-
-    ## Set infiles in hash
-    $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
-    return;
 }
 
 sub set_io_files {
