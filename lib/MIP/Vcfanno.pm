@@ -40,8 +40,8 @@ sub check_vcfanno_toml {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_names_ref;
-    my $vcfanno_file_toml;
+    my $vcfanno_config_name;
+    my $vcfanno_functions;
 
     my $tmpl = {
         active_parameter_href => {
@@ -51,17 +51,16 @@ sub check_vcfanno_toml {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_names_ref => {
+        vcfanno_config_name => {
             defined     => 1,
-            default     => [],
             required    => 1,
-            store       => \$parameter_names_ref,
+            store       => \$vcfanno_config_name,
             strict_type => 1,
         },
-        vcfanno_file_toml => {
+        vcfanno_functions => {
             defined     => 1,
             required    => 1,
-            store       => \$vcfanno_file_toml,
+            store       => \$vcfanno_functions,
             strict_type => 1,
         },
     };
@@ -74,6 +73,7 @@ sub check_vcfanno_toml {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
+    my $vcfanno_file_toml = $active_parameter_href->{$vcfanno_config_name};
     my %vcfanno_config = read_from_file(
         {
             format => q{toml},
@@ -119,7 +119,7 @@ sub check_vcfanno_toml {
             {
                 object_name    => q{file},
                 object_type    => q{file},
-                parameter_name => $parameter_names_ref->[0],
+                parameter_name => $vcfanno_config_name,
                 path           => $annotation_href->{file},
             }
         );
@@ -133,13 +133,12 @@ sub check_vcfanno_toml {
             {
                 object_name    => q{file},
                 object_type    => q{file},
-                parameter_name => $parameter_names_ref->[1],
+                parameter_name => $vcfanno_functions,
                 path           => $vcfanno_config{functions}{file},
             }
         );
         ## Set path in active parameter
-        $active_parameter_href->{ $parameter_names_ref->[1] } =
-          $vcfanno_config{functions}{file};
+        $active_parameter_href->{$vcfanno_functions} = $vcfanno_config{functions}{file};
     }
 
     return 1;
@@ -174,17 +173,18 @@ sub parse_toml_config_parameters {
         sv_annotate        => [qw{ sv_vta_vcfanno_config sv_vta_vcfanno_functions }],
     );
 
-  CONFIG_FILE:
+  RECIPE:
     while ( my ( $recipe_name, $parameter_names_ref ) = each %toml_config_parameter ) {
 
-        next CONFIG_FILE if ( not $active_parameter_href->{$recipe_name} );
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
+
+        my ($vcfanno_config_name, $vcfanno_functions ) = @{ $active_parameter_href->{$parameter_names_ref} };
 
         check_vcfanno_toml(
             {
                 active_parameter_href => $active_parameter_href,
-                parameter_names_ref   => $parameter_names_ref,
-                vcfanno_file_toml =>
-                  $active_parameter_href->{ $parameter_names_ref->[0] },
+                vcfanno_config_name   => $vcfanno_config_name,
+                vcfanno_functions => $vcfanno_functions,
             }
         );
     }

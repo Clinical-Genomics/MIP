@@ -102,14 +102,14 @@ write_toml(
     }
 );
 
-my %acctive_parameter;
+my %active_parameter = ( vta_vcfanno_config => $test_vta_vcfanno_config, );
 
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
-        active_parameter_href => \%acctive_parameter,
-        parameter_names_ref   => [qw{ vta_vcfanno_config vta_vcfanno_functions }],
-        vcfanno_file_toml     => $test_vta_vcfanno_config,
+        active_parameter_href => \%active_parameter,
+        vcfanno_config_name => q{vta_vcfanno_config},
+        vcfanno_functions => q{vta_vcfanno_functions},
     }
 );
 
@@ -123,12 +123,13 @@ rmtree($test_vta_vcfanno_config);
 my $faulty_vta_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
+$active_parameter{vta_vcfanno_config} = $faulty_vta_vcfanno_config_file;
 trap {
     check_vcfanno_toml(
         {
-            active_parameter_href => \%acctive_parameter,
-            parameter_names_ref   => [qw{ vta_vcfanno_config vta_vcfanno_functions }],
-            vcfanno_file_toml     => $faulty_vta_vcfanno_config_file,
+            active_parameter_href => \%active_parameter,
+            vcfanno_config_name => q{vta_vcfanno_config},
+            vcfanno_functions => q{vta_vcfanno_functions},
         }
     )
 };
