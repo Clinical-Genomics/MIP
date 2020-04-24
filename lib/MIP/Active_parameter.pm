@@ -42,8 +42,8 @@ BEGIN {
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_user_supplied_pedigree_parameter
-      parse_program_executables
       parse_infiles
+      parse_program_executables
       parse_recipe_resources
       parse_vep_plugin
       set_binary_path
@@ -849,83 +849,6 @@ sub get_user_supplied_pedigree_parameter {
     return %is_user_supplied;
 }
 
-sub parse_program_executables {
-
-## Function : Checking commands in your path and executable
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ set_binary_path };
-    use MIP::Environment::Path qw{ check_binary_in_path };
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
-
-        ## Only check path(s) for parameters with "type" key
-        next PARAMETER
-          if ( not exists $parameter_href->{$parameter_name}{type} );
-
-        ## Only check path(s) for parameters with type value eq "recipe"
-        next PARAMETER
-          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
-
-        ## Only check path(s) for active recipes
-        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
-
-        ## Alias
-        my $program_executables_ref =
-          \@{ $parameter_href->{$parameter_name}{program_executables} };
-
-      PROGRAM:
-        foreach my $program ( @{$program_executables_ref} ) {
-
-            my $binary_path = check_binary_in_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    program_name          => $parameter_name,
-                }
-            );
-
-            ## Set to use downstream
-            set_binary_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    binary_path           => $binary_path,
-                }
-            );
-        }
-    }
-    return;
-}
-
 sub parse_infiles {
 
 ## Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
@@ -1028,6 +951,83 @@ sub parse_infiles {
         }
     }
     return 1;
+}
+
+sub parse_program_executables {
+
+## Function : Checking commands in your path and executable
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_binary_path };
+    use MIP::Environment::Path qw{ check_binary_in_path };
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
+
+        ## Only check path(s) for parameters with "type" key
+        next PARAMETER
+          if ( not exists $parameter_href->{$parameter_name}{type} );
+
+        ## Only check path(s) for parameters with type value eq "recipe"
+        next PARAMETER
+          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
+
+        ## Only check path(s) for active recipes
+        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
+
+        ## Alias
+        my $program_executables_ref =
+          \@{ $parameter_href->{$parameter_name}{program_executables} };
+
+      PROGRAM:
+        foreach my $program ( @{$program_executables_ref} ) {
+
+            my $binary_path = check_binary_in_path(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    binary                => $program,
+                    program_name          => $parameter_name,
+                }
+            );
+
+            ## Set to use downstream
+            set_binary_path(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    binary                => $program,
+                    binary_path           => $binary_path,
+                }
+            );
+        }
+    }
+    return;
 }
 
 sub parse_recipe_resources {
