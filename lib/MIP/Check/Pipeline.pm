@@ -126,6 +126,7 @@ sub check_dragen_rd_dna {
 
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
+      parse_infiles
       parse_vep_plugin
       set_vcfparser_outfile_counter
       write_references
@@ -134,7 +135,6 @@ sub check_dragen_rd_dna {
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
-    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs };
@@ -248,7 +248,6 @@ sub check_dragen_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
-            log                   => $log,
         }
     );
 
@@ -381,6 +380,7 @@ sub check_rd_dna {
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      parse_infiles
       parse_vep_plugin
       set_vcfparser_outfile_counter
       write_references
@@ -395,7 +395,6 @@ sub check_rd_dna {
     use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference
@@ -584,7 +583,6 @@ sub check_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
-            log                   => $log,
         }
     );
 
@@ -710,6 +708,7 @@ sub check_rd_dna_panel {
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      parse_infiles
       parse_vep_plugin
       set_vcfparser_outfile_counter
       write_references
@@ -719,7 +718,6 @@ sub check_rd_dna_panel {
     use MIP::Config qw{ write_mip_config };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Reference qw{ parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -857,7 +855,6 @@ sub check_rd_dna_panel {
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
-            log                   => $log,
         }
     );
 
@@ -1191,6 +1188,7 @@ sub check_rd_rna {
     use MIP::Active_parameter qw{
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      parse_infiles
       write_references
     };
     use MIP::Analysis qw{ broadcast_parameters };
@@ -1199,7 +1197,6 @@ sub check_rd_rna {
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::File_info qw{ check_parameter_metafiles };
-    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -1309,7 +1306,6 @@ sub check_rd_rna {
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
-            log                   => $log,
         }
     );
 
