@@ -250,6 +250,7 @@ recipe_core_number:
     svrank_model: 1
     sv_vta_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
+    vcfanno_functions: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -299,6 +300,7 @@ recipe_time:
     svrank_model: 1
     sv_vta_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
+    vcfanno_functions: 1
   type: mip
 reduced_penetrance:
   analysis_mode: case
@@ -341,6 +343,13 @@ sv_vta_vcfanno_config:
   default: 1
   type: recipe
 vcf2cytosure_blacklist_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_functions:
   analysis_mode: case
   associated_recipe:
     - mip

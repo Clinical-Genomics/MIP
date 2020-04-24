@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -387,8 +387,9 @@ sub analysis_sv_annotate {
         say {$filehandle} q{## Remove common variants};
         vcfanno(
             {
-                filehandle  => $filehandle,
-                infile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                filehandle   => $filehandle,
+                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                luafile_path => $active_parameter_href->{sv_fqa_vcfanno_functions},
                 stderrfile_path_append => $stderrfile_path,
                 toml_configfile_path   => $active_parameter_href->{sv_vta_vcfanno_config},
             }

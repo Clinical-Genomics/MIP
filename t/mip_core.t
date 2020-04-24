@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 our $USAGE = build_usage( {} );
 
@@ -275,7 +275,7 @@ sub test_modules {
 
     ## Execution of programs
     use IPC::Cmd qw{ can_run run };
-    ok( can_run(q{perl}), q{Can run IPC::Cmd} );
+    ok( can_run(q{perl}),                        q{Can run IPC::Cmd} );
     ok( my $bool = IPC::Cmd->can_capture_buffer, q{IPC::Cmd can capture buffer} );
 
     return;
@@ -338,7 +338,7 @@ sub mip_scripts {
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
               qc_regexp_-v1.24-.yaml
-              rank_model_cmms_-v1.28-.ini
+              rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
               }
         ],

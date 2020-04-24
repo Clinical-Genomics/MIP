@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -86,6 +86,8 @@ my $toml_href = load_toml(
 );
 
 ## Set test file paths
+$toml_href->{functions}{file} =
+  catfile( $Bin, qw{ data references vcfanno_functions_-v1.0-.lua } );
 $toml_href->{annotation}[0]{file} =
   catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
 $toml_href->{annotation}[1]{file} =
@@ -100,11 +102,14 @@ write_toml(
     }
 );
 
+my %active_parameter = ( vta_vcfanno_config => $test_vta_vcfanno_config, );
+
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
-        parameter_name    => q{vta_vcfanno_config},
-        vcfanno_file_toml => $test_vta_vcfanno_config,
+        active_parameter_href => \%active_parameter,
+        vcfanno_config_name => q{vta_vcfanno_config},
+        vcfanno_functions => q{vta_vcfanno_functions},
     }
 );
 
@@ -118,11 +123,13 @@ rmtree($test_vta_vcfanno_config);
 my $faulty_vta_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
+$active_parameter{vta_vcfanno_config} = $faulty_vta_vcfanno_config_file;
 trap {
     check_vcfanno_toml(
         {
-            parameter_name    => q{vta_vcfanno_config},
-            vcfanno_file_toml => $faulty_vta_vcfanno_config_file,
+            active_parameter_href => \%active_parameter,
+            vcfanno_config_name => q{vta_vcfanno_config},
+            vcfanno_functions => q{vta_vcfanno_functions},
         }
     )
 };

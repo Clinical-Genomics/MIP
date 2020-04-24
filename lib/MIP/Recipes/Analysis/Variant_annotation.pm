@@ -26,11 +26,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_variant_annotation analysis_variant_annotation_panel };
+    our @EXPORT_OK = qw{ analysis_variant_annotation analysis_variant_annotation_panel };
 
 }
 
@@ -241,6 +240,7 @@ sub analysis_variant_annotation {
             {
                 filehandle           => $xargsfilehandle,
                 infile_path          => $infile_path{$contig},
+                luafile_path         => $active_parameter_href->{vta_vcfanno_functions},
                 stderrfile_path      => $stderrfile_path,
                 toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
             }
@@ -531,6 +531,7 @@ sub analysis_variant_annotation_panel {
         {
             filehandle           => $filehandle,
             infile_path          => $infile_path,
+            luafile_path         => $active_parameter_href->{vta_vcfanno_functions},
             toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
         }
     );
