@@ -531,8 +531,8 @@ sub analysis_variant_annotation_panel {
         {
             filehandle           => $filehandle,
             infile_path          => $infile_path,
-            toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
             luafile_path         => $active_parameter_href->{vta_vcfanno_functions},
+            toml_configfile_path => $active_parameter_href->{vta_vcfanno_config},
         }
     );
     print {$filehandle} $PIPE . $SPACE;
