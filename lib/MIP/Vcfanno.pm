@@ -33,8 +33,8 @@ sub check_vcfanno_toml {
 ## Function : Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_names_ref   => Name of parameters {REF}
-##          : $vcfanno_file_toml     => Toml config file
+##          : $vcfanno_config_name   => Name of vcfanno config
+##          : $vcfanno_functions     => Name of vcfanno functions
 
     my ($arg_href) = @_;
 
