@@ -23,49 +23,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ set_file_compression_features set_io_files set_merged_infile_prefix };
-}
-
-sub set_file_compression_features {
-
-## Function : Set file compression features
-## Returns  : $is_compressed, $read_file_command
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw{ check_gzipped };
-
-    my $read_file_command = q{gzip -d -c};
-
-    ## Check if a file is gzipped.
-    my $is_compressed = check_gzipped( { file_name => $file_name, } );
-
-    ## Not compressed
-    if ( not $is_compressed ) {
-
-        ## File needs compression before starting analysis
-        $read_file_command = q{cat};
-    }
-    return $is_compressed, $read_file_command;
+    our @EXPORT_OK = qw{ set_io_files set_merged_infile_prefix };
 }
 
 sub set_io_files {

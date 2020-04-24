@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -134,6 +134,7 @@ sub analysis_gzip_fastq {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Environment::Cluster qw{ check_max_core_number };
+    use MIP::File_info qw{ get_is_sample_files_compressed get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -141,8 +142,14 @@ sub analysis_gzip_fastq {
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## No uncompressed fastq infiles
-    return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
+    my $is_files_compressed = get_is_sample_files_compressed(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+    ## No uncompressed fastq infiles for this sample_id
+    return if ($is_files_compressed);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);

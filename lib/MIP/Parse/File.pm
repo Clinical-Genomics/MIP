@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -101,8 +101,8 @@ sub parse_fastq_infiles {
 
     use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
+    use MIP::File_info qw{ parse_file_compression_features };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
-    use MIP::Set::File qw{ set_file_compression_features };
     use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
@@ -125,16 +125,14 @@ sub parse_fastq_infiles {
             # Is file interleaved
             my $is_interleaved;
 
-            ## Set compression features
-            my ( $is_file_compressed, $read_file_command ) =
-              set_file_compression_features( { file_name => $file_name, } );
-
-            ## If not compressed
-            if ( not $is_file_compressed ) {
-
-                ## Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
-                $file_info_href->{is_file_uncompressed}{$sample_id}++;
-            }
+            ## Parse compression features
+            my $read_file_command = parse_file_compression_features(
+                {
+                    file_info_href => $file_info_href,
+                    file_name      => $file_name,
+                    sample_id      => $sample_id,
+                }
+            );
 
             ## Parse infile according to filename convention
             my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
