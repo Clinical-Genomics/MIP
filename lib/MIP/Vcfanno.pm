@@ -74,7 +74,7 @@ sub check_vcfanno_toml {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my $vcfanno_file_toml = $active_parameter_href->{$vcfanno_config_name};
-    my %vcfanno_config = read_from_file(
+    my %vcfanno_config    = read_from_file(
         {
             format => q{toml},
             path   => $vcfanno_file_toml,
@@ -178,13 +178,13 @@ sub parse_toml_config_parameters {
 
         next RECIPE if ( not $active_parameter_href->{$recipe_name} );
 
-        my ($vcfanno_config_name, $vcfanno_functions ) = @{ $active_parameter_href->{$parameter_names_ref} };
+        my ( $vcfanno_config_name, $vcfanno_functions ) = @{$parameter_names_ref};
 
         check_vcfanno_toml(
             {
                 active_parameter_href => $active_parameter_href,
                 vcfanno_config_name   => $vcfanno_config_name,
-                vcfanno_functions => $vcfanno_functions,
+                vcfanno_functions     => $vcfanno_functions,
             }
         );
     }
