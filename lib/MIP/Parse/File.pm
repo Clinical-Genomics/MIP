@@ -101,7 +101,8 @@ sub parse_fastq_infiles {
 
     use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
-    use MIP::File_info qw{ parse_file_compression_features };
+    use MIP::File_info
+      qw{ parse_file_compression_features parse_files_compression_status };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
     use MIP::Sample_info qw{ set_infile_info };
 
@@ -269,6 +270,14 @@ q{Will add fake date '20010101' to follow file convention since this is not reco
                 );
             }
         }
+
+        parse_files_compression_status(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+
     }
     return;
 }

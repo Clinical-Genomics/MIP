@@ -64,14 +64,14 @@ my $sample_id = q{a_sample_id};
 my %file_info = (
     $sample_id => {
         $file_name => {
-            is_file_uncompressed => 1,
-            read_file_command    => q{gzip -d -c},
+            is_file_compressed => 1,
+            read_file_command  => q{gzip -d -c},
         },
     },
 );
 my %attribute = (
-    is_file_uncompressed => 1,
-    read_file_command    => q{gzip -d -c},
+    is_file_compressed => 1,
+    read_file_command  => q{gzip -d -c},
 );
 
 while ( my ( $attribute, $attribute_value ) = each %attribute ) {
@@ -106,11 +106,11 @@ is_deeply( \%got_attribute_href, \%attribute,
     q{Returned sample id file name attribute hash} );
 
 ## Given a undefined attribute in file_info hash
-delete $file_info{$sample_id}{$file_name}{is_file_uncompressed};
+delete $file_info{$sample_id}{$file_name}{is_file_compressed};
 
 my $got_attribute = get_sample_file_attribute(
     {
-        attribute      => q{is_file_uncompressed},
+        attribute      => q{is_file_compressed},
         file_info_href => \%file_info,
         file_name      => $file_name,
         sample_id      => $sample_id,

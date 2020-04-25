@@ -39,16 +39,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File_info}      => [qw{ parse_file_compression_features }],
+        q{MIP::File_info}      => [qw{ parse_files_compression_status }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File_info qw{ parse_file_compression_features };
+use MIP::File_info qw{ parse_files_compression_status };
 
-diag(   q{Test parse_file_compression_features from File_info.pm v}
+diag(   q{Test parse_files_compression_status from File_info.pm v}
       . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,42 +58,51 @@ diag(   q{Test parse_file_compression_features from File_info.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given uncompressed file
-my %file_info;
-my $file_name = q{a_file.fastq};
-my $sample_id = q{a_sample_id};
+my $not_compressed_file = q{a_file.fastq};
+my $sample_id           = q{a_sample_id};
+my %file_info           = (
+    $sample_id => {
+        mip_infiles => [ $not_compressed_file, ],
+        $not_compressed_file => { is_file_compressed => 0, }
+    },
+);
 
-parse_file_compression_features(
+parse_files_compression_status(
     {
         file_info_href => \%file_info,
-        file_name      => $file_name,
         sample_id      => $sample_id,
     }
 );
 
 ## Then return false
-is( $file_info{$sample_id}{$file_name}{is_file_compressed},
-    0, q{File was not compressed} );
-
-## Then set read command to handle uncompressed file
-is( $file_info{$sample_id}{$file_name}{read_file_command},
-    q{cat}, q{Set read file command for uncompressed file} );
+is( $file_info{is_files_compressed}{$sample_id}, 0, q{All files were not compressed} );
 
 ## Given compressed file
-$file_name .= q{a_file.fastq.gz};
+my $compressed_file = q{a_file.fastq.gz};
+push @{ $file_info{$sample_id}{mip_infiles} }, $compressed_file;
+$file_info{$sample_id}{$compressed_file}{is_file_compressed} = 1;
 
-parse_file_compression_features(
+parse_files_compression_status(
     {
         file_info_href => \%file_info,
-        file_name      => $file_name,
+        sample_id      => $sample_id,
+    }
+);
+
+## Then return false
+is( $file_info{is_files_compressed}{$sample_id}, 0, q{Not all files were compressed} );
+
+## Given only a compressed file
+$file_info{$sample_id}{mip_infiles} = [$compressed_file];
+delete $file_info{$sample_id}{$not_compressed_file};
+
+parse_files_compression_status(
+    {
+        file_info_href => \%file_info,
         sample_id      => $sample_id,
     }
 );
 
 ## Then return true
-is( $file_info{$sample_id}{$file_name}{is_file_compressed}, 1, q{File was compressed} );
-
-## Then set read command to handle uncompressed file
-is( $file_info{$sample_id}{$file_name}{read_file_command},
-    q{gzip -d -c}, q{Set read file command for compressed file} );
-
+ok( $file_info{is_files_compressed}{$sample_id}, q{All files were compressed} );
 done_testing();

@@ -42,6 +42,7 @@ BEGIN {
       set_sample_file_attribute
       set_select_file_contigs
       parse_file_compression_features
+      parse_files_compression_status
       parse_select_file_contigs
     };
 }
@@ -217,7 +218,7 @@ sub get_sample_file_attribute {
     my $tmpl = {
         attribute => {
             allow => [
-                qw{ is_file_uncompressed
+                qw{ is_file_compressed
                   read_file_command
                   }
             ],
@@ -253,7 +254,8 @@ sub get_sample_file_attribute {
         return %{ $file_info_href->{$sample_id}{$file_name} };
     }
     ## Get attribute
-    my $stored_attribute = $file_info_href->{$sample_id}{$file_name}{$attribute};
+    my $stored_attribute =
+      $file_info_href->{$sample_id}{$file_name}{$attribute};
 
     ## Return requested attribute
     return $stored_attribute;
@@ -261,7 +263,7 @@ sub get_sample_file_attribute {
 
 sub parse_file_compression_features {
 
-## Function : Set file compression features
+## Function : Parse file compression features
 ## Returns  : $attribute{read_file_command}
 ## Arguments: $file_info_href => File info hash {REF}
 ##          : $file_name      => File name
@@ -311,37 +313,8 @@ sub parse_file_compression_features {
     ## Gzipped
     if ($is_gzipped) {
 
-        my $is_files_compressed = get_is_sample_files_compressed(
-            {
-                file_info_href => $file_info_href,
-                sample_id      => $sample_id,
-            }
-        );
-
-        if ( not defined $is_files_compressed ) {
-
-            ## Set is_files_compressed per sample global boolean
-            set_is_sample_files_compressed(
-                {
-                    compression_status => 1,
-                    file_info_href     => $file_info_href,
-                    sample_id          => $sample_id,
-                }
-            );
-
-        }
         $attribute{is_file_compressed} = 1;
         $attribute{read_file_command}  = q{gzip -d -c};
-    }
-    else {
-        ## Set is_files_compressed per sample global boolean
-        set_is_sample_files_compressed(
-            {
-                compression_status => 0,
-                file_info_href     => $file_info_href,
-                sample_id          => $sample_id,
-            }
-        );
     }
 
   ATTRIBUTES:
@@ -358,6 +331,72 @@ sub parse_file_compression_features {
         );
     }
     return $attribute{read_file_command};
+}
+
+sub parse_files_compression_status {
+
+## Function : Parse files compression status
+## Returns  :
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $is_compressed      = 0;
+    my $compression_status = 0;
+
+    ## Unpack
+    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
+  FILE_NAME:
+    foreach my $file_name (@infiles) {
+
+        my $is_file_compressed = get_sample_file_attribute(
+            {
+                attribute      => q{is_file_compressed},
+                file_info_href => $file_info_href,
+                file_name      => $file_name,
+                sample_id      => $sample_id,
+            }
+        );
+        next FILE_NAME if ( not $is_file_compressed );
+
+        $is_compressed++;
+    }
+    if ( $is_compressed == @infiles ) {
+        $compression_status = 1;
+    }
+    ## Set is_files_compressed per sample global boolean
+    set_is_sample_files_compressed(
+        {
+            compression_status => $compression_status,
+            file_info_href     => $file_info_href,
+            sample_id          => $sample_id,
+        }
+    );
+    return;
 }
 
 sub set_alt_loci_contigs {
