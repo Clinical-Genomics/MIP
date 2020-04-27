@@ -62,7 +62,7 @@ my %file_info;
 my $file_name = q{a_file.fastq};
 my $sample_id = q{a_sample_id};
 
-parse_file_compression_features(
+my $read_file_command = parse_file_compression_features(
     {
         file_info_href => \%file_info,
         file_name      => $file_name,
@@ -78,10 +78,13 @@ is( $file_info{$sample_id}{$file_name}{is_file_compressed},
 is( $file_info{$sample_id}{$file_name}{read_file_command},
     q{cat}, q{Set read file command for uncompressed file} );
 
+## Then returned read command should be for uncompressed files
+is( $read_file_command, q{cat}, q{Returned read file command for uncompressed files} );
+
 ## Given compressed file
 $file_name .= q{a_file.fastq.gz};
 
-parse_file_compression_features(
+$read_file_command = parse_file_compression_features(
     {
         file_info_href => \%file_info,
         file_name      => $file_name,
@@ -95,5 +98,9 @@ is( $file_info{$sample_id}{$file_name}{is_file_compressed}, 1, q{File was compre
 ## Then set read command to handle uncompressed file
 is( $file_info{$sample_id}{$file_name}{read_file_command},
     q{gzip -d -c}, q{Set read file command for compressed file} );
+
+## Then returned read command should be for uncompressed files
+is( $read_file_command, q{gzip -d -c},
+    q{Returned read file command for compressed files} );
 
 done_testing();
