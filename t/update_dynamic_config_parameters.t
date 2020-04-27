@@ -75,9 +75,8 @@ foreach my $parameter_name (@dynamic_parameters) {
     ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
     update_dynamic_config_parameters(
         {
-            active_parameter_href  => \%active_parameter,
+            active_parameter_ref   => \$active_parameter{$parameter_name},
             dynamic_parameter_href => { case_id => $active_parameter{case_id}, },
-            parameter_name         => $parameter_name,
         }
     );
 }

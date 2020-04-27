@@ -235,10 +235,9 @@ sub parse_dynamic_config_parameters {
         ## Updates the dynamic config parameters using supplied $case_id
         update_dynamic_config_parameters(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_ref => \$active_parameter_href->{$dynamic_param_name},
                 dynamic_parameter_href =>
                   { case_id => $active_parameter_href->{case_id}, },
-                parameter_name => $dynamic_param_name,
             }
         );
     }
