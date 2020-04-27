@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_file_compression_features }],
+        q{MIP::File_info}      => [qw{ set_is_sample_files_compressed }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_file_compression_features };
+use MIP::File_info qw{ set_is_sample_files_compressed };
 
-diag(   q{Test set_file_compression_features from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test set_is_sample_files_compressed from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,28 +57,18 @@ diag(   q{Test set_file_compression_features from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given uncompressed file
-my $file_name = q{a_file.fastq};
+## Given a sample id compression status
+my %file_info;
+my $sample_id = q{a_sample_id};
+set_is_sample_files_compressed(
+    {
+        compression_status => 1,
+        file_info_href     => \%file_info,
+        sample_id          => $sample_id,
+    }
+);
 
-my ( $is_file_compressed, $read_file_command ) =
-  set_file_compression_features( { file_name => $file_name, } );
-
-## Then return false
-is( $is_file_compressed, 0, q{File was not compressed} );
-
-## Then set read command to handle uncompressed file
-is( $read_file_command, q{cat}, q{Set read file command for uncompressed file} );
-
-## Given compressed file
-$file_name .= q{.gz};
-
-( $is_file_compressed, $read_file_command ) =
-  set_file_compression_features( { file_name => $file_name, } );
-
-## Then return true
-ok( $is_file_compressed, q{File was compressed} );
-
-## Then set read command to handle uncompressed file
-is( $read_file_command, q{gzip -d -c}, q{Set read file command for compressed file} );
+## Then compression status should be set to true
+ok( $file_info{is_files_compressed}{$sample_id}, q{Set compression status to true} );
 
 done_testing();

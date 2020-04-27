@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -83,7 +83,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$file_info{is_file_uncompressed}{$sample_id} = 1;
+$file_info{is_files_compressed}{$sample_id} = 0;
 
 my $infile_prefix      = q{an_infile_prefix};
 my %infile_lane_prefix = ( $sample_id => [q{an_infile_prefix}] );

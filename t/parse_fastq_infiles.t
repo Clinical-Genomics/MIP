@@ -18,15 +18,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +34,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -97,7 +93,7 @@ parse_fastq_infiles(
 );
 
 ## Then return undef
-is( $file_info{is_file_uncompressed}{ADM1059A1}, undef, q{No files uncompressed} );
+is( $file_info{is_files_compressed}{ADM1059A1}, 1, q{All files compressed} );
 
 ## Given uncompressed file
 push @{ $active_parameter{sample_ids} }, q{ADM1059A2};
@@ -118,10 +114,8 @@ parse_fastq_infiles(
 );
 
 ## Then return true
-ok(
-    $file_info{is_file_uncompressed}{ADM1059A2},
-    q{Files uncompressed and got run info from headers}
-);
+is( $file_info{is_files_compressed}{ADM1059A2},
+    0, q{Files uncompressed and got run info from headers} );
 
 ## Given wts analysis type
 $active_parameter{analysis_type}{ADM1059A2} = q{wts};

@@ -24,19 +24,25 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_metafiles
+      get_is_sample_files_compressed
+      get_sample_file_attribute
       set_alt_loci_contigs
       set_bam_contigs
       set_dict_contigs
       set_file_tag
       set_infiles
+      set_is_sample_files_compressed
       set_human_genome_reference_features
       set_primary_contigs
+      set_sample_file_attribute
       set_select_file_contigs
+      parse_file_compression_features
+      parse_files_compression_status
       parse_select_file_contigs
     };
 }
@@ -148,6 +154,248 @@ sub check_parameter_metafiles {
             }
         );
     }
+    return;
+}
+
+sub get_is_sample_files_compressed {
+
+## Function : Get sample files compression status
+## Returns  : 0 | 1
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Data::Diver qw{ Dive };
+
+    if ( defined Dive( $file_info_href, ( q{is_files_compressed}, $sample_id ) ) ) {
+
+        ## Return files compression status
+        return $file_info_href->{is_files_compressed}{$sample_id};
+    }
+    return;
+}
+
+sub get_sample_file_attribute {
+
+## Function : Get sample file attributes
+## Returns  :
+## Arguments: $attribute       => Attribute key
+##          : $file_info_href  => File info hash {REF}
+##          : $file_name       => File name
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $file_info_href;
+    my $file_name;
+    my $sample_id;
+
+    my $tmpl = {
+        attribute => {
+            allow => [
+                qw{ is_file_compressed
+                  read_file_command
+                  }
+            ],
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( not $attribute ) {
+
+        ## Return entire file name hash
+        return %{ $file_info_href->{$sample_id}{$file_name} };
+    }
+    ## Get attribute
+    my $stored_attribute =
+      $file_info_href->{$sample_id}{$file_name}{$attribute};
+
+    ## Return requested attribute
+    return $stored_attribute;
+}
+
+sub parse_file_compression_features {
+
+## Function : Parse file compression features
+## Returns  : $attribute{read_file_command}
+## Arguments: $file_info_href => File info hash {REF}
+##          : $file_name      => File name
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $file_name;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_gzipped };
+
+    my %attribute = (
+        is_file_compressed => 0,
+        read_file_command  => q{cat},
+    );
+
+    ## Check if a file is gzipped.
+    my $is_gzipped = check_gzipped( { file_name => $file_name, } );
+
+    ## Gzipped
+    if ($is_gzipped) {
+
+        $attribute{is_file_compressed} = 1;
+        $attribute{read_file_command}  = q{gzip -d -c};
+    }
+
+  ATTRIBUTES:
+    while ( my ( $attribute, $attribute_value ) = each %attribute ) {
+
+        set_sample_file_attribute(
+            {
+                attribute       => $attribute,
+                attribute_value => $attribute_value,
+                file_info_href  => $file_info_href,
+                file_name       => $file_name,
+                sample_id       => $sample_id,
+            }
+        );
+    }
+    return $attribute{read_file_command};
+}
+
+sub parse_files_compression_status {
+
+## Function : Parse files compression status
+## Returns  :
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $is_compressed      = 0;
+    my $compression_status = 0;
+
+    ## Unpack
+    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
+  FILE_NAME:
+    foreach my $file_name (@infiles) {
+
+        my $is_file_compressed = get_sample_file_attribute(
+            {
+                attribute      => q{is_file_compressed},
+                file_info_href => $file_info_href,
+                file_name      => $file_name,
+                sample_id      => $sample_id,
+            }
+        );
+        next FILE_NAME if ( not $is_file_compressed );
+
+        $is_compressed++;
+    }
+    if ( $is_compressed == @infiles ) {
+        $compression_status = 1;
+    }
+    ## Set is_files_compressed per sample global boolean
+    set_is_sample_files_compressed(
+        {
+            compression_status => $compression_status,
+            file_info_href     => $file_info_href,
+            sample_id          => $sample_id,
+        }
+    );
     return;
 }
 
@@ -359,62 +607,6 @@ sub set_file_tag {
     return;
 }
 
-sub set_infiles {
-
-## Function : Set the infile features i.e. dir and infiles
-## Returns  :
-## Arguments: $file_info_href   => File info hash {REF}
-##          : $infile_directory => Infile directory
-##          : $infiles_ref      => Infiles to check {REF}
-##          : $sample_id        => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $infiles_ref;
-    my $infile_directory;
-    my $sample_id;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infiles_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$infiles_ref,
-            strict_type => 1,
-        },
-        infile_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_directory,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Set inputdir path hash
-    $file_info_href->{$sample_id}{mip_infiles_dir} = $infile_directory;
-
-    ## Set infiles in hash
-    $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
-    return;
-}
-
 sub set_human_genome_reference_features {
 
 ## Function : Detect version and source of the human_genome_reference: Source (hg19 or grch) as well as compression status.
@@ -524,6 +716,106 @@ sub set_human_genome_reference_features {
     return;
 }
 
+sub set_infiles {
+
+## Function : Set the infile features i.e. dir and infiles
+## Returns  :
+## Arguments: $file_info_href   => File info hash {REF}
+##          : $infile_directory => Infile directory
+##          : $infiles_ref      => Infiles to check {REF}
+##          : $sample_id        => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $infiles_ref;
+    my $infile_directory;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        infile_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Set inputdir path hash
+    $file_info_href->{$sample_id}{mip_infiles_dir} = $infile_directory;
+
+    ## Set infiles in hash
+    $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
+    return;
+}
+
+sub set_is_sample_files_compressed {
+
+## Function : Set sample files compression status
+## Returns  :
+## Arguments: $compression_status => Compression status to set
+##          : $file_info_href     => File info hash {REF}
+##          : $sample_id          => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $compression_status;
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        compression_status => {
+            allow       => [ 0, 1 ],
+            defined     => 1,
+            required    => 1,
+            store       => \$compression_status,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{is_files_compressed}{$sample_id} = $compression_status;
+    return;
+}
+
 sub set_primary_contigs {
 
 ## Function : Set primary contigs
@@ -567,6 +859,65 @@ sub set_primary_contigs {
     ## Set primary contig sets
     @{ $file_info_href->{$primary_contig_set_name} } = @{$primary_contigs_ref};
 
+    return;
+}
+
+sub set_sample_file_attribute {
+
+## Function : Set sample file attributes
+## Returns  :
+## Arguments: $attribute       => Attribute key
+##          : $attribute_value => Attribute value
+##          : $file_info_href  => File info hash {REF}
+##          : $file_name       => File name
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $attribute_value;
+    my $file_info_href;
+    my $file_name;
+    my $sample_id;
+
+    my $tmpl = {
+        attribute => {
+            defined     => 1,
+            required    => 1,
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        attribute_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$attribute_value,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{$sample_id}{$file_name}{$attribute} = $attribute_value;
     return;
 }
 
