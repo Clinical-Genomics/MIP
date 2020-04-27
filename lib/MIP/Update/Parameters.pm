@@ -68,33 +68,6 @@ sub update_dynamic_config_parameters {
 
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
-    if ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
-
-      KEY:
-        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } ) {
-
-          DYNAMIC_PARAMETER:
-            while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
-                each %{$dynamic_parameter_href} )
-            {
-
-                next KEY if ( not $active_parameter_href->{$parameter_name}{$key} );
-
-                ## Replace dynamic config parameters with actual value that is now set from cmd or config
-                $active_parameter_href->{$parameter_name}{$key} =~
-                  s/$dynamic_parameter_value!/$dynamic_parameter_value/xsmgi;
-            }
-
-            update_dynamic_config_parameters(
-                {
-                    active_parameter_href  => $active_parameter_href->{$parameter_name},
-                    dynamic_parameter_href => $dynamic_parameter_href,
-                    parameter_name         => $key,
-                }
-            );
-        }
-    }
-
   DYNAMIC_PARAMETER:
     while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
         each %{$dynamic_parameter_href} )

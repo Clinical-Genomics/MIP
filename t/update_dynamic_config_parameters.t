@@ -63,21 +63,6 @@ my %active_parameter = (
     cluster_constant_path  => catfile(qw{ root dir_1 dir_2 case_id! }),
     analysis_constant_path => q{analysis},
     case_id                => q{case_1},
-    pedigree_file    => catfile(qw{ cluster_constant_path! case_id!_pedigree.yaml }),
-    sample_info_file => catfile(
-        qw{ cluster_constant_path! analysis_constant_path! case_id!_qc_sample_info.yaml }
-    ),
-    sv_vep_plugin => {
-        ExACpLI => {
-            exists_check => q{file},
-            path => catfile(qw{ cluster_constant_path! analysis_constant_path! pli.txt }),
-        },
-        LofTool => {
-            exists_check => q{file},
-            path =>
-              catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }),
-        },
-    },
 );
 
 ## Given a cluster_constant_path when containing case_id!
