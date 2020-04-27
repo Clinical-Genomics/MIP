@@ -121,5 +121,5 @@ my $some_array_ref = [
     { a_hash       => catfile(qw{ root dir_1 dir_2 case_1 }) },
     { another_hash => [ catfile(qw{ root dir_1 dir_2 case_1 }) ] }
 ];
-is_deeply( $active_parameter{some_array}, $some_array_ref, q{Updtated array reference} );
+is_deeply( $active_parameter{some_array}, $some_array_ref, q{Updated array reference} );
 done_testing();

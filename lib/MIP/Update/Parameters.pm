@@ -57,8 +57,6 @@ sub update_dynamic_config_parameters {
             strict_type => 1,
         },
         parameter_name => {
-            defined     => 1,
-            required    => 1,
             store       => \$parameter_name,
             strict_type => 1,
         },
@@ -86,7 +84,6 @@ sub update_with_dynamic_config_parameters {
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
 ##          : $dynamic_parameter_href => Map of dynamic parameters
-##          : $parameter_name         => MIP Parameter to update
 
     my ($arg_href) = @_;
 
@@ -96,13 +93,8 @@ sub update_with_dynamic_config_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-
-            #default     => {},
-            #defined     => 1,
             required => 1,
             store    => \$active_parameter_href,
-
-            #strict_type => 1,
         },
         dynamic_parameter_href => {
             default     => {},
@@ -138,15 +130,13 @@ sub update_with_dynamic_config_parameters {
                 );
             }
 
-          DYNAMIC_PARAMETER:
-            while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
-                each %{$dynamic_parameter_href} )
-            {
-
-                ## Replace dynamic config parameters with actual value that is now set from cmd or config
-                $active_parameter_href->{$key} =~
-                  s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
-            }
+            update_dynamic_config_parameters(
+                {
+                    active_parameter_href  => $active_parameter_href,
+                    dynamic_parameter_href => $dynamic_parameter_href,
+                    parameter_name         => $key,
+                }
+            );
         }
     }
     ##  ARRAY
