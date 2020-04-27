@@ -47,7 +47,8 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
+use MIP::Update::Parameters
+  qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
 
 diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
       . $MIP::Update::Parameters::VERSION
@@ -77,9 +78,6 @@ my %active_parameter = (
               catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }),
         },
     },
-    some_array => [
-        catfile(qw{ cluster_constant_path! analysis_constant_path! loftool.txt }), undef
-    ],
 );
 
 ## Given a cluster_constant_path when containing case_id!
@@ -106,49 +104,4 @@ is(
     $updated_cluster_constant_path,
     q{Updated cluster constant path with case_id}
 );
-
-## Given parameters with dynamic parameters
-my @order_parameters = qw{ pedigree_file sample_info_file some_array sv_vep_plugin };
-
-my %dynamic_parameter = (
-    cluster_constant_path  => $active_parameter{cluster_constant_path},
-    analysis_constant_path => $active_parameter{analysis_constant_path},
-    case_id                => $active_parameter{case_id},
-);
-
-## Loop through all parameters and update info
-PARAMETER:
-foreach my $parameter_name (@order_parameters) {
-
-    ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-    update_dynamic_config_parameters(
-        {
-            active_parameter_href  => \%active_parameter,
-            dynamic_parameter_href => \%dynamic_parameter,
-            parameter_name         => $parameter_name,
-        }
-    );
-}
-
-## Then all parameters containing dynamic parameters should have been updated
-my $updated_pedigree_file = catfile(qw{ root dir_1 dir_2 case_1 case_1_pedigree.yaml });
-is( $active_parameter{pedigree_file},
-    $updated_pedigree_file, q{Updated pedigree file path} );
-
-my $updated_sample_info_file =
-  catfile(qw{ root dir_1 dir_2 case_1 analysis case_1_qc_sample_info.yaml });
-is( $active_parameter{sample_info_file},
-    $updated_sample_info_file, q{Updated sample_info_file path} );
-
-my $updated_sv_vep_pli = catfile(qw{ root dir_1 dir_2 case_1 analysis pli.txt });
-is( $active_parameter{sv_vep_plugin}{ExACpLI}{path},
-    $updated_sv_vep_pli, q{Updated sv_vep_plugin pli path} );
-
-my $updated_sv_vep_loftool = catfile(qw{ root dir_1 dir_2 case_1 analysis loftool.txt });
-is( $active_parameter{sv_vep_plugin}{LofTool}{path},
-    $updated_sv_vep_loftool, q{Updated sv_vep_plugin loftool path} );
-
-my $some_array_ref =
-  [ catfile(qw{ root dir_1 dir_2 case_1 analysis loftool.txt }), undef ];
-is_deeply( $active_parameter{some_array}, $some_array_ref, q{Updtated array reference} );
 done_testing();
