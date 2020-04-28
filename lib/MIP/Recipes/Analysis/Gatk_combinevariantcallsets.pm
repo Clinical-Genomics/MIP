@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -140,7 +140,7 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Gatk qw{ gatk_combinevariants };
     use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
+      qw{ set_file_path_to_store set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -345,6 +345,16 @@ sub analysis_gatk_combinevariantcallsets {
                 {
                     metafile_tag     => $most_complete_bcf_key,
                     path             => $bcf_file_path,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+            set_file_path_to_store(
+                {
+                    format           => q{bcf},
+                    id               => $case_id,
+                    path             => $bcf_file_path,
+                    path_index       => $bcf_file_path . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
