@@ -22,23 +22,7 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ fastq_file_name_regexp };
-}
-
-sub fastq_file_name_regexp {
-
-## Function : Define MIP fastq file name formats matching regexp
-## Returns  : %mip_file_name_regexp
-## Arguments:
-
-    my ($arg_href) = @_;
-
-    my %mip_file_name_regexp = (
-        features => [qw{ lane date flowcell infile_sample_id index direction }],
-        regexp   => q?(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq?,
-    );
-
-    return %mip_file_name_regexp;
+    our @EXPORT_OK = qw{  };
 }
 
 1;

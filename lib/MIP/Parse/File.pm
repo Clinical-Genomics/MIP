@@ -25,11 +25,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_file_suffix parse_io_outfiles };
+    our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
 
 }
 
@@ -101,6 +100,7 @@ sub parse_fastq_infiles {
 
     use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
+    use MIP::Fastq qw{ parse_fastq_infiles_format };
     use MIP::File_info
       qw{ parse_file_compression_features parse_files_compression_status };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
@@ -203,10 +203,6 @@ sub parse_fastq_infiles {
             }
             else {
                 ## No regexp match i.e. file does not follow filename convention
-
-                $log->warn( q{Could not detect MIP file name convention for file: }
-                      . $file_name
-                      . q{.} );
                 $log->warn(q{Will try to find mandatory information from fastq header.});
 
                 ## Check that file name at least contains sample id
@@ -280,51 +276,6 @@ q{Will add fake date '20010101' to follow file convention since this is not reco
 
     }
     return;
-}
-
-sub parse_fastq_infiles_format {
-
-## Function : Parse infile according to MIP filename convention
-## Returns  : %infile_info or undef
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Mip qw{ fastq_file_name_regexp };
-
-    # Store file name features
-    my %file_info;
-
-    ## Define MIP fastq file name formats matching regexp
-    my %mip_file_name_regexp = fastq_file_name_regexp();
-
-    # Parse file name
-    my @file_features = $file_name =~ /$mip_file_name_regexp{regexp}/sxm;
-
-  FEATURE:
-    while ( my ( $index, $feature ) = each @{ $mip_file_name_regexp{features} } ) {
-
-        ## Return undef if not all expected features found
-        return if ( not $file_features[$index] );
-
-        # Store feature
-        $file_info{$feature} = $file_features[$index];
-    }
-    return %file_info;
 }
 
 sub parse_file_suffix {
