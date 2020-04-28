@@ -7,7 +7,7 @@
 - Automatic and continuous test suite
 
 ### Expected outcome:
-- [] Installation, unit and integration test suite pass
+- [ ] Installation, unit and integration test suite pass
 
 ### Review:
 - [ ] Code review
