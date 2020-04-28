@@ -225,7 +225,8 @@ sub parse_dynamic_config_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
+    use MIP::Update::Parameters
+      qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
 
     ## Loop through all config dynamic parameters and update value
   DYNAMIC_PARAM:
@@ -234,10 +235,9 @@ sub parse_dynamic_config_parameters {
         ## Updates the dynamic config parameters using supplied $case_id
         update_dynamic_config_parameters(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_ref => \$active_parameter_href->{$dynamic_param_name},
                 dynamic_parameter_href =>
                   { case_id => $active_parameter_href->{case_id}, },
-                parameter_name => $dynamic_param_name,
             }
         );
     }
@@ -249,19 +249,13 @@ sub parse_dynamic_config_parameters {
         case_id                => $active_parameter_href->{case_id},
     );
 
-    ## Loop through all parameters and update info
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$parameter_href} ) {
-
-        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-        update_dynamic_config_parameters(
-            {
-                active_parameter_href  => $active_parameter_href,
-                dynamic_parameter_href => \%dynamic_parameter,
-                parameter_name         => $parameter_name,
-            }
-        );
-    }
+    ## Go through all active parameters and update info
+    update_with_dynamic_config_parameters(
+        {
+            active_parameter_href  => $active_parameter_href,
+            dynamic_parameter_href => \%dynamic_parameter,
+        }
+    );
     return 1;
 }
 
