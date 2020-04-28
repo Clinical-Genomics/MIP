@@ -660,7 +660,7 @@ sub set_file_path_to_store {
 
     my $tmpl = {
         format => {
-            allow       => [qw{ fastq bam bcf bed cram meta vcf }],
+            allow       => [qw{ fastq bam bcf bed cram meta tar vcf }],
             defined     => 1,
             required    => 1,
             store       => \$format,
