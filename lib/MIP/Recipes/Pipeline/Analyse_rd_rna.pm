@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -163,6 +163,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rna };
+    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
@@ -232,6 +233,7 @@ sub pipeline_analyse_rd_rna {
         multiqc_ar                => \&analysis_multiqc,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
         preseq_ar                 => \&analysis_preseq,
+        qccollect_ar              => \&analysis_mip_qccollect,
         rseqc                     => \&analysis_rseqc,
         sacct                     => \&analysis_sacct,
         salmon_quant              => \&analysis_salmon_quant,

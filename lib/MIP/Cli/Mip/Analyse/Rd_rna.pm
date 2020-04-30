@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.34;
+our $VERSION = 1.35;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -748,6 +748,57 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         )
     );
 
+    option(
+        q{qccollect_ar} => (
+            cmd_aliases   => [qw{ qcc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collect QC metrics from recipes output},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{qccollect_eval_metric_file} => (
+            cmd_aliases   => [qw{ qccemf }],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            documentation => q{File containing Qccollect evaluation metrics},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{qccollect_regexp_file} => (
+            cmd_aliases => [qw{ qccref }],
+            cmd_tags    => [q{Default: qc_regexp_-v1.24-.yaml}],
+            documentation =>
+q{Regular expression file containing the regular expression to be used for each program},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_sampleinfo_file} => (
+            cmd_aliases => [qw{ qccsi }],
+            cmd_tags =>
+              [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
+            documentation =>
+              q{Sample info file containing info on what to parse from this analysis run},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_skip_evaluation} => (
+            cmd_aliases   => [qw{ qccske }],
+            documentation => q{Skip evaluation step in qccollect},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
     option(
         q{multiqc_ar} => (
             cmd_aliases => [qw{ mqc }],

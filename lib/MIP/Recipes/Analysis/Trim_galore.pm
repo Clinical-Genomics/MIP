@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -158,6 +158,7 @@ sub analysis_trim_galore {
         }
     );
     my @infile_paths         = @{ $io{in}{file_paths} };
+    my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
 
     my $job_id_chain = get_recipe_attributes(
@@ -203,6 +204,9 @@ sub analysis_trim_galore {
         )
     );
     my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my $outdata_dir_path      = $io{out}{dir_path};
+    my @qc_outfile_paths =
+      map { catfile( $outdata_dir_path, $_ . q{_trimming_report.txt} ) } @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -250,6 +254,7 @@ sub analysis_trim_galore {
 
     # Keep track of paired end files
     my $paired_end_tracker = 0;
+    my %qc_files;
 
   INFILE_PREFIX:
     foreach my $infile_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -263,8 +268,10 @@ sub analysis_trim_galore {
             }
         );
 
-        ## Infile(s)
+        ## Get files
         my @fastq_files = $infile_paths[$paired_end_tracker];
+        $qc_files{ $infile_names[$paired_end_tracker] } =
+          $qc_outfile_paths[$paired_end_tracker];
 
         my $paired_reads;
 
@@ -276,6 +283,8 @@ sub analysis_trim_galore {
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
             push @fastq_files, $infile_paths[$paired_end_tracker];
+            $qc_files{ $infile_names[$paired_end_tracker] } =
+              $qc_outfile_paths[$paired_end_tracker];
         }
 
         my $stderrfile_path =
@@ -296,6 +305,7 @@ sub analysis_trim_galore {
 
         ## Increment paired end tracker
         $paired_end_tracker++;
+
     }
     say {$filehandle} q{wait};
 
@@ -318,6 +328,21 @@ sub analysis_trim_galore {
                 sample_info_href => $sample_info_href,
             }
         );
+
+      FASTQ_INFILE:
+        foreach my $fastq_infile ( keys %qc_files ) {
+
+            ## Collect QC metadata info for later use
+            set_recipe_outfile_in_sample_info(
+                {
+                    infile           => $fastq_infile,
+                    path             => $qc_files{$fastq_infile},
+                    recipe_name      => q{trim_galore_stats},
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {

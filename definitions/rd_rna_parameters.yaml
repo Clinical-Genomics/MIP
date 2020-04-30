@@ -140,6 +140,7 @@ recipe_time:
     multiqc_ar: 1
     picardtools_mergesamfiles: 2
     preseq_ar: 2
+    qccollect_ar: 1
     rseqc: 3
     sacct: 1
     salmon_quant: 5
@@ -197,6 +198,7 @@ recipe_core_number:
     markduplicates: 16
     picardtools_mergesamfiles: 13
     preseq_ar: 1
+    qccollect_ar: 1
     rseqc: 1
     sacct: 1
     salmon_quant: 20
@@ -847,6 +849,46 @@ vep_plugins_dir_path:
   mandatory: no
   type: path
   update_path: absolute_path
+## QCCollect
+qccollect_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _qc_metrics
+  outfile_suffix: ".yaml"
+  type: recipe
+qccollect_eval_metric_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: qc_eval_metric_-v1.1-.yaml
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+qccollect_regexp_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: qc_regexp_-v1.24-.yaml
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+qccollect_sampleinfo_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  type: recipe_argument
+  update_path: absolute_path
+qccollect_skip_evaluation:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 ## MultiQC
 multiqc_ar:
   analysis_mode: case

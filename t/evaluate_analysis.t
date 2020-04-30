@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -81,7 +81,7 @@ my %sample_info = test_mip_hashes(
 );
 
 my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.0-.yaml} );
+  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.1-.yaml} );
 
 ## Then set the relevant evaluation metrics for the analysis
 my $is_ok = evaluate_analysis(

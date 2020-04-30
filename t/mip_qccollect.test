@@ -36,7 +36,7 @@ our $VERSION = 1.00;
 my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
 my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
 my $eval_metric_file =
-  catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.0-.yaml } );
+  catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.1-.yaml } );
 my $mip_path      = catfile( dirname($Bin), q{mip} );
 my $log_file_path = catfile( cwd(),         q{qc_metrics_qccollect.log} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
