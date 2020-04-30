@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,7 +34,6 @@ BEGIN {
       get_io_files
       get_merged_infile_prefix
       get_path_entries
-      get_read_length
       get_sample_ids_from_vcf
     };
 }
@@ -520,67 +519,6 @@ sub get_path_entries {
         }
     }
     return;
-}
-
-sub get_read_length {
-
-## Function : Collect read length from an infile
-## Returns  : $read_length
-## Arguments: $file_path => File to parse
-##          : $read_file => Command used to read file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-    my $read_file_command;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        read_file_command => {
-            defined     => 1,
-            required    => 1,
-            store       => \$read_file_command,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Child_process qw{ child_process };
-
-    ## Prints sequence length and exits
-    # Execute perl
-    my $seq_length_regexp = q?perl -ne '?;
-
-    # Skip header line
-    $seq_length_regexp .= q?if ($_!~/@/) {?;
-
-    # Remove newline
-    $seq_length_regexp .= q?chomp;?;
-
-    # Count chars
-    $seq_length_regexp .= q?my $seq_length = length;?;
-
-    # Print and exit
-    $seq_length_regexp .= q?print $seq_length;last;}' ?;
-
-    my $read_length_cmd = qq{$read_file_command $file_path | $seq_length_regexp;};
-
-    my %process_return = child_process(
-        {
-            commands_ref => [$read_length_cmd],
-            process_type => q{open3},
-        }
-    );
-
-    ## Return read length
-    return $process_return{stdouts_ref}[0];
 }
 
 sub get_sample_ids_from_vcf {
