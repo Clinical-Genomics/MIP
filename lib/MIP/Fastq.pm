@@ -22,10 +22,63 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_fastq_infiles_format };
+    our @EXPORT_OK = qw{ get_read_length parse_fastq_infiles_format };
+}
+
+sub get_read_length {
+
+## Function : Collect read length from a fastq infile
+## Returns  : $read_length
+## Arguments: $file_path => File to parse
+##          : $read_file => Command used to read file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $read_file_command;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        read_file_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    ## Build regexp to find read length
+    my @perl_commands = perl_nae_oneliners(
+        {
+            oneliner_name => q{get_fastq_read_length},
+        }
+    );
+
+    my $read_length_cmd = qq{$read_file_command $file_path | @perl_commands};
+
+    my %process_return = child_process(
+        {
+            commands_ref => [$read_length_cmd],
+            process_type => q{ipc_cmd_run},
+        }
+    );
+
+    ## Return read length
+    return $process_return{stdouts_ref}[0];
 }
 
 sub parse_fastq_infiles_format {
