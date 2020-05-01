@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1001,12 +1001,14 @@ sub set_infile_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Fastq qw{ define_mip_fastq_file_features };
+
     my $parsed_date = Time::Piece->strptime( $date, q{%y%m%d} );
     $parsed_date = $parsed_date->ymd;
 
     my ( $mip_file_format, $mip_file_format_with_direction,
         $original_file_name_prefix, $run_barcode )
-      = _file_name_formats(
+      = define_mip_fastq_file_features(
         {
             date               => $date,
             direction          => $direction,
@@ -1660,95 +1662,6 @@ sub write_sample_info_to_file {
     $log->info( q{Wrote: } . $sample_info_file );
 
     return;
-}
-
-sub _file_name_formats {
-
-## Function : Define format using information derived from infile name.
-## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
-## Arguments: $date               => Flow-cell sequencing date
-##          : $direction          => Sequencing read direction
-##          : $original_file_name => Original file name
-##          : $flowcell           => Flow-cell id
-##          : $index              => The DNA library preparation molecular barcode
-##          : $lane               => Flow-cell lane
-##          : $sample_id          => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $date;
-    my $direction;
-    my $flowcell;
-    my $index;
-    my $lane;
-    my $original_file_name;
-    my $sample_id;
-
-    my $tmpl = {
-        date => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date,
-            strict_type => 1,
-        },
-        direction => {
-            allow       => [ 1, 2 ],
-            defined     => 1,
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
-        flowcell => {
-            defined     => 1,
-            required    => 1,
-            store       => \$flowcell,
-            strict_type => 1,
-        },
-        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane  => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane,
-            strict_type => 1,
-        },
-        original_file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$original_file_name,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $mip_file_format =
-        $sample_id
-      . $UNDERSCORE
-      . $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $index
-      . $UNDERSCORE . q{lane}
-      . $lane;
-
-    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
-
-    my $original_file_name_prefix = substr $original_file_name, 0,
-      index $original_file_name, q{.fastq};
-
-    my $run_barcode =
-      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
-    return $mip_file_format, $mip_file_format_with_direction,
-      $original_file_name_prefix, $run_barcode;
 }
 
 sub _update_sample_info_hash_pedigree_data {
