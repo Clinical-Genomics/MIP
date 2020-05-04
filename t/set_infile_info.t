@@ -23,6 +23,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
@@ -36,11 +37,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA       => q{,};
-Readonly my $DOT         => q{.};
 Readonly my $READ_LENGTH => 151;
-Readonly my $SPACE       => q{ };
-Readonly my $UNDERSCORE  => q{_};
 
 BEGIN {
 
@@ -56,6 +53,7 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::Fastq qw{ define_mip_fastq_file_features };
 use MIP::Sample_info qw{ set_infile_info };
 
 diag(   q{Test set_infile_info from Sample_info.pm v}
@@ -95,7 +93,7 @@ my %sample_info;
 ## Define file formats
 my ( $mip_file_format, $mip_file_format_with_direction,
     $original_file_name_prefix, $run_barcode )
-  = _file_name_formats(
+  = define_mip_fastq_file_features(
     {
         date               => $infile_info{date},
         direction          => $infile_info{direction},
@@ -241,7 +239,7 @@ for my $sample_id ( keys %file_info ) {
                 $mip_file_format, $mip_file_format_with_direction,
                 $original_file_name_prefix, $run_barcode
               )
-              = _file_name_formats(
+              = define_mip_fastq_file_features(
                 {
                     date      => $infile_info{date},
                     direction => $infile_info{direction},
@@ -352,92 +350,3 @@ is_deeply(
 );
 
 done_testing();
-
-sub _file_name_formats {
-
-## Function : Define format using information derived from infile name.
-## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
-## Arguments: $date                            => Flow-cell sequencing date
-##          : $direction                       => Sequencing read direction
-##          : $original_file_name              => Original file name
-##          : $flowcell                        => Flow-cell id
-##          : $index                           => The DNA library preparation molecular barcode
-##          : $lane                            => Flow-cell lane
-##          : $sample_id                       => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $date;
-    my $direction;
-    my $flowcell;
-    my $index;
-    my $lane;
-    my $original_file_name;
-    my $sample_id;
-
-    my $tmpl = {
-        date => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date,
-            strict_type => 1,
-        },
-        direction => {
-            allow       => [ 1, 2 ],
-            defined     => 1,
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
-        flowcell => {
-            defined     => 1,
-            required    => 1,
-            store       => \$flowcell,
-            strict_type => 1,
-        },
-        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane  => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane,
-            strict_type => 1,
-        },
-        original_file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$original_file_name,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $mip_file_format =
-        $sample_id
-      . $UNDERSCORE
-      . $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $index
-      . $UNDERSCORE . q{lane}
-      . $lane;
-
-    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
-
-    my $original_file_name_prefix =
-      substr( $original_file_name, 0, index( $original_file_name, q{.fastq} ) );
-
-    my $run_barcode =
-      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
-    return $mip_file_format, $mip_file_format_with_direction,
-      $original_file_name_prefix, $run_barcode;
-}
