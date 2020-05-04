@@ -25,7 +25,8 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ define_mip_fastq_file_features get_read_length parse_fastq_infiles_format };
+    our @EXPORT_OK =
+      qw{ define_mip_fastq_file_features get_read_length parse_fastq_infiles_format };
 }
 
 sub define_mip_fastq_file_features {
