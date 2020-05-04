@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -111,6 +111,22 @@ sub regexp_to_yaml {
     my %regexp;
 
     ## Add to %regexp to enable print in YAML
+
+    # Return Uniquely mapped reads %
+    $regexp{star_log}{percentage_uniquely_mapped_reads} =
+q?perl -nae 'if(m/Uniquely\smapped\sreads\s%\s\|\t(\d+\.\d+) /xms) {print $1; last;}' ?;
+
+    ## Return percentage of reads with adapters
+    $regexp{trim_galore_stats}{percentage_reads_with_adapter} =
+q?perl -nae 'if( m/Reads\swith\sadapters[^(]+\((\d+\.\d+) /xms ){ print $1; last;}' ?;
+
+    ## Return percentage of reads after trimming
+    $regexp{trim_galore_stats}{percentage_reads_after_trimming} =
+      q?perl -nae 'if( m/Reads\swritten\s\([^(]+\((\d+\.\d+) /xms ){ print $1; last;}' ?;
+
+    ## Return percentage of bp remaining after trimming
+    $regexp{trim_galore_stats}{percentage_bp_after_trimming} =
+      q?perl -nae 'if( m/Total\swritten\s\([^(]+\((\d+\.\d+) /xms ){ print $1; last;}' ?;
 
     # Return Encoding
     $regexp{fastqc_ar}{encoding} =

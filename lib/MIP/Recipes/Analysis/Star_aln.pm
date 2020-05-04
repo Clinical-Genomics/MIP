@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln analysis_star_aln_mixed };
@@ -369,14 +369,12 @@ sub analysis_star_aln {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        my $star_aln_log = $outfile_path_prefix . $DOT . q{Log.final.out};
-        set_recipe_metafile_in_sample_info(
+        my $qc_stats_outfile_path = $outfile_path_prefix . $DOT . q{Log.final.out};
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name,
-                metafile_tag     => q{log},
-                path             => $star_aln_log,
-                recipe_name      => $recipe_name,
+                path             => $qc_stats_outfile_path,
+                recipe_name      => q{star_log},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

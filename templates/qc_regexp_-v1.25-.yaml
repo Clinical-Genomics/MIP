@@ -42,6 +42,8 @@ plink_sexcheck:
   sample_sexcheck: "perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\\s+/,$_);push(@sexCheckFactor,$temp[2].\":\".$temp[4]); print $sexCheckFactor[0], \"\\t\"; }' "
 relation_check:
   sample_relation_check: "perl -nae 'print $_;' "
+star_log:
+  percentage_uniquely_mapped_reads: "perl -nae 'if(m/Uniquely\\smapped\\sreads\\s%\\s\\|\\t(\\d+\\.\\d+) /xms) {print $1; last;}' "
 sv_varianteffectpredictor:
   assembly: "perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\\S+)/) {print $1;last;}' "
   cache: "perl -nae 'if($_=~/##VEP=\\w+\\s+cache=(\\S+)/) {print $1;last;}' "
@@ -54,6 +56,10 @@ sv_varianteffectpredictor:
   version: "perl -nae 'if($_=~/##VEP=\"(\\w+)\"/) {print $1;last;}' "
 sv_vcfparser:
   version: "perl -nae 'if($_=~/##Software=<ID=mip,Version=(\\d+.\\d+.\\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' "
+trim_galore_stats:
+  percentage_bp_after_trimming: "perl -nae 'if( m/Total\\swritten\\s\\([^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
+  percentage_reads_after_trimming: "perl -nae 'if( m/Reads\\swritten\\s\\([^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
+  percentage_reads_with_adapter: "perl -nae 'if( m/Reads\\swith\\sadapters[^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
 variant_integrity_ar_father:
   common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
   fraction_of_common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
@@ -102,3 +108,4 @@ variantevalall: &1
 variantevalexome: *1
 vcfparser_ar:
   version: "perl -nae 'if($_=~/##Software=<ID=mip,Version=(\\d+.\\d+.\\d+)/) {print $1;last;}' "
+
