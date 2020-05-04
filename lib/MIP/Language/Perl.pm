@@ -179,6 +179,7 @@ sub perl_nae_oneliners {
     ## Oneliner dispatch table
     my %oneliner = (
         get_dict_contigs                   => \&_get_dict_contigs,
+        get_fastq_read_length              => \&_get_fastq_read_length,
         get_select_contigs_by_col          => \&_get_select_contigs_by_col,
         remove_decomposed_asterisk_records => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38          => \&_synonyms_grch37_to_grch38,
@@ -257,6 +258,31 @@ sub _get_dict_contigs {
     $get_dict_contigs .= q?print $contig_name, q{,};} }'?;
 
     return $get_dict_contigs;
+}
+
+sub _get_fastq_read_length {
+
+## Function : Return read length from a fastq infile
+## Returns  : $get_fastq_read_length
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Prints sequence length and exits
+
+    # Skip header line
+    my $read_length_regexp = q?'if ($_!~/@/) {?;
+
+    # Remove newline
+    $read_length_regexp .= q?chomp;?;
+
+    # Count chars
+    $read_length_regexp .= q?my $seq_length = length;?;
+
+    # Print and exit
+    $read_length_regexp .= q?print $seq_length;last;}' ?;
+
+    return $read_length_regexp;
 }
 
 sub _get_select_contigs_by_col {

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File}      => [qw{ get_read_length }],
+        q{MIP::Fastq}          => [qw{ get_read_length }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::File qw{ get_read_length };
+use MIP::Fastq qw{ get_read_length };
 
-diag(   q{Test get_read_length from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_read_length from Fastq.pm v}
+      . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
