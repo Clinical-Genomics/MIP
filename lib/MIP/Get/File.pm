@@ -25,12 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_exom_target_bed_file
-      get_fastq_file_header_info
       get_io_files
       get_merged_infile_prefix
       get_path_entries
@@ -117,100 +116,6 @@ sub get_exom_target_bed_file {
         $NEWLINE
     );
     exit 1;
-}
-
-sub get_fastq_file_header_info {
-
-## Function : Get run info from fastq file header
-## Returns  : @fastq_info_headers
-## Arguments: $file_path         => File path to parse
-##          : $log               => Log object
-##          : $read_file_command => Command used to read file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-    my $log;
-    my $read_file_command;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        read_file_command => {
-            defined     => 1,
-            required    => 1,
-            store       => \$read_file_command,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Child_process qw{ child_process };
-    use MIP::File::Format::Casava qw{ casava_header_regexp };
-
-    my $fastq_info_header_string;
-
-    my %fastq_header_info;
-
-    my %casava_header_regexp = casava_header_regexp();
-    my %regexp;
-
-    ## Select relevant regexps from hash
-    @regexp{qw{ 1.4 1.8 }} = @casava_header_regexp{qw{ 1.4 1.8 }};
-
-  REGEXP:
-    while ( my ( $casava_version, $regexp ) = each %regexp ) {
-
-        ## Define cmd
-        my $get_header_cmd = qq{$read_file_command $file_path | $regexp;};
-
-        ## Collect fastq header info
-        my %process_return = child_process(
-            {
-                commands_ref => [$get_header_cmd],
-                process_type => q{open3},
-            }
-        );
-
-        $fastq_info_header_string = $process_return{stdouts_ref}[0];
-
-        ## If successful regexp
-        if ($fastq_info_header_string) {
-
-            # Get features
-            my @features =
-              @{ $casava_header_regexp{ $casava_version . q{_header_features} } };
-
-            # Parse header string into array
-            my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
-
-            # Add to hash to be returned
-            @fastq_header_info{@features} = @fastq_info_headers;
-            last REGEXP;
-        }
-    }
-
-    if ( not $fastq_info_header_string ) {
-
-        $log->fatal( q{Error parsing file header: } . $file_path );
-        $log->fatal(
-q{Could not detect required sample sequencing run info from fastq file header - Please proved MIP file in MIP file convention format to proceed}
-        );
-        exit 1;
-    }
-
-    return %fastq_header_info;
 }
 
 sub get_io_files {

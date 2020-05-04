@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File}      => [qw{ get_fastq_file_header_info }],
+        q{MIP::Fastq}          => [qw{ get_fastq_file_header_info }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::File qw{ get_fastq_file_header_info };
+use MIP::Fastq qw{ get_fastq_file_header_info };
 
-diag(   q{Test get_fastq_file_header_info from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_fastq_file_header_info from Fastq.pm v}
+      . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,7 +64,6 @@ Readonly my $LANE             => 7;
 Readonly my $LANE_V_1_8       => 8;
 Readonly my $RUN_NUMBER       => 41;
 Readonly my $RUN_NUMBER_V_1_8 => 255;
-Readonly my $SPACE            => q{ };
 Readonly my $TILE             => 1110;
 Readonly my $TILE_V_1_8       => 1101;
 Readonly my $X_POS            => 21_797;
@@ -83,19 +82,18 @@ my $read_file_command         = q{gzip -d -c};
 my %fastq_info_header = get_fastq_file_header_info(
     {
         file_path         => catfile( $directory, $file_format_illumina_v1_4 ),
-        log               => $log,
         read_file_command => $read_file_command,
     }
 );
 my %expected_header_element_v1_4 = (
-    instrument_id => q{@ST-E00266},
-    run_number    => $RUN_NUMBER,
+    direction     => 1,
     flowcell      => q{H2V7FCCXX},
+    instrument_id => q{@ST-E00266},
     lane          => $LANE,
+    run_number    => $RUN_NUMBER,
     tile          => $TILE,
     x_pos         => $X_POS,
     y_pos         => $Y_POS,
-    direction     => 1,
 );
 
 ## Then return expected_header_elements for < v1.4
@@ -111,22 +109,21 @@ my $file_format_illumina_v1_8 = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.
 %fastq_info_header = get_fastq_file_header_info(
     {
         file_path         => catfile( $directory, $file_format_illumina_v1_8 ),
-        log               => $log,
         read_file_command => $read_file_command,
     }
 );
 my %expected_header_element_v1_8 = (
-    instrument_id => q{@ST-E00269},
-    run_number    => $RUN_NUMBER_V_1_8,
+    control_bit   => 0,
+    direction     => 1,
+    filtered      => q{N},
     flowcell      => q{HHJJCCCXY},
+    index         => q{NAATGCGC},
+    instrument_id => q{@ST-E00269},
     lane          => $LANE_V_1_8,
+    run_number    => $RUN_NUMBER_V_1_8,
     tile          => $TILE_V_1_8,
     x_pos         => $X_POS_V_1_8,
     y_pos         => $Y_POS_V_1_8,
-    direction     => 1,
-    filtered      => q{N},
-    control_bit   => 0,
-    index         => q{NAATGCGC},
 );
 
 ## Then return expected_header_elements for > v1.8
@@ -144,7 +141,6 @@ trap {
     get_fastq_file_header_info(
         {
             file_path         => catfile( $directory, $file_bad_format ),
-            log               => $log,
             read_file_command => q{cat},
         }
     )
@@ -152,7 +148,10 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if format cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if format cannot be found } );
+like(
+    $trap->stderr,
+    qr/Error \s+ parsing \s+ file \s+ header/xms,
+    q{Throw fatal log message if format cannot be found }
+);
 
 done_testing();

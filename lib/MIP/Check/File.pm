@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -32,7 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => q{3};
+Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => 3;
 Readonly my $MAX_RANDOM_NUMBER              => 10_000;
 
 sub check_ids_in_dna_vcf {
@@ -325,7 +325,7 @@ sub check_interleaved {
   REGEXP:
     foreach my $regexp (@regexps) {
 
-        ## Build regexp to find contig names
+        ## Build regexp to find header features
         my @perl_commands = perl_nae_oneliners(
             {
                 oneliner_name => $regexp,
