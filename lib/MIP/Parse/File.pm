@@ -98,9 +98,9 @@ sub parse_fastq_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
-    use MIP::Fastq qw{ get_fastq_file_header_info get_read_length parse_fastq_infiles_format };
+    use MIP::Fastq
+      qw{ check_interleaved get_fastq_file_header_info get_read_length parse_fastq_infiles_format };
     use MIP::File_info
       qw{ parse_file_compression_features parse_files_compression_status };
     use MIP::Sample_info qw{ set_infile_info };
@@ -149,7 +149,6 @@ sub parse_fastq_infiles {
             $is_interleaved = check_interleaved(
                 {
                     file_path         => catfile( $infiles_dir, $file_name ),
-                    log               => $log,
                     read_file_command => $read_file_command,
                 }
             );

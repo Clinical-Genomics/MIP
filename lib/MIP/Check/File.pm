@@ -5,7 +5,6 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use List::Util qw { any sum };
 use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
@@ -27,13 +26,11 @@ BEGIN {
     our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ check_ids_in_dna_vcf check_file_md5sum check_mip_process_files check_interleaved };
+    our @EXPORT_OK = qw{ check_ids_in_dna_vcf check_file_md5sum check_mip_process_files };
 }
 
 ## Constants
-Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => 3;
-Readonly my $MAX_RANDOM_NUMBER              => 10_000;
+Readonly my $MAX_RANDOM_NUMBER => 10_000;
 
 sub check_ids_in_dna_vcf {
 
@@ -277,100 +274,6 @@ sub check_mip_process_files {
     say {$filehandle} q?done ?, $NEWLINE;
 
     return 1;
-}
-
-sub check_interleaved {
-
-## Function : Detect if fastq file is interleaved
-## Returns  : "1(=interleaved)"
-## Arguments: $file_path         => File to parse
-##          : $read_file_command => Command used to read file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-    my $read_file_command;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        read_file_command => {
-            defined     => 1,
-            required    => 1,
-            store       => \$read_file_command,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Child_process qw{ child_process };
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Select relevant regexps to use
-    my @regexps =
-      qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
-
-    ## Store return from regexp
-    my $fastq_read_direction;
-
-  REGEXP:
-    foreach my $regexp (@regexps) {
-
-        ## Build regexp to find header features
-        my @perl_commands = perl_nae_oneliners(
-            {
-                oneliner_name => $regexp,
-            }
-        );
-        my $fastq_info_headers_cmd = qq{$read_file_command $file_path | @perl_commands;};
-
-        my %return = child_process(
-            {
-                commands_ref => [$fastq_info_headers_cmd],
-                process_type => q{ipc_cmd_run},
-            }
-        );
-
-        $fastq_read_direction = $return{stdouts_ref}[0];
-        last REGEXP if ($fastq_read_direction);
-    }
-
-    if ( not $fastq_read_direction ) {
-
-        $log->fatal( q{Malformed fastq file: } . $file_path );
-        $log->fatal(q{Could not find a read direction });
-        exit 1;
-    }
-
-    my @fastq_read_directions = split //sxm, $fastq_read_direction;
-
-    if ( any { /[^123]/sxm } @fastq_read_directions ) {
-
-        $log->fatal(q{Malformed fastq file!});
-        $log->fatal(
-            q{Read direction is: } . join q{ and },
-            @fastq_read_directions
-              . q{, allowed entries are '1', '2', '3'. Please check fastq file}
-              . $file_path
-        );
-        exit 1;
-    }
-
-    if ( sum(@fastq_read_directions) == $SUM_FOR_INTERLEAVED_DIRECTIONS ) {
-
-        $log->info( q{Found interleaved fastq file: } . $file_path );
-        return 1;
-    }
-    return;
 }
 
 sub _write_md5sum_check_file {

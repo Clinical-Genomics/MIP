@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::File}    => [qw{ check_interleaved }],
+        q{MIP::Fastq}          => [qw{ check_interleaved }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::File qw{ check_interleaved };
+use MIP::Fastq qw{ check_interleaved };
 
-diag(   q{Test check_interleaved from File.pm v}
-      . $MIP::Check::File::VERSION
+diag(   q{Test check_interleaved from Fastq.pm v}
+      . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
