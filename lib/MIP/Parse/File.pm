@@ -100,10 +100,10 @@ sub parse_fastq_infiles {
 
     use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
-    use MIP::Fastq qw{ parse_fastq_infiles_format };
+    use MIP::Fastq qw{ get_read_length parse_fastq_infiles_format };
     use MIP::File_info
       qw{ parse_file_compression_features parse_files_compression_status };
-    use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
+    use MIP::Get::File qw{ get_fastq_file_header_info };
     use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
