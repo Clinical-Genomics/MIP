@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,6 @@ diag(   q{Test check_interleaved from File.pm v}
 my $log = test_log( {} );
 
 ## Given interleaved file, when casava version less than 1.4
-my $sample_id = q{ADM1059A1};
 my $directory = catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
 my $interleaved_file  = q{2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz};
 my $read_file_command = q{gzip -d -c};
@@ -71,7 +70,6 @@ my @returns = trap {
     check_interleaved(
         {
             file_path         => catfile( $directory, $interleaved_file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -87,7 +85,6 @@ $interleaved_file = q{2_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
     check_interleaved(
         {
             file_path         => catfile( $directory, $interleaved_file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -104,7 +101,6 @@ $interleaved_file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
     check_interleaved(
         {
             file_path         => catfile( $directory, $interleaved_file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -120,7 +116,6 @@ $interleaved_file = q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
     check_interleaved(
         {
             file_path         => catfile( $directory, $interleaved_file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -138,7 +133,6 @@ trap {
     check_interleaved(
         {
             file_path         => catfile( $directory, $interleaved_file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -146,8 +140,11 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if interleaved file format cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if interleaved file format cannot be found} );
+like(
+    $trap->stderr,
+    qr/Read \s+ direction \s+ is/xms,
+    q{Throw fatal log message if interleaved file format cannot be found}
+);
 
 ## Given malformed file
 $directory = catdir( $Bin, qw{ data 643594-miptest } );
@@ -158,7 +155,6 @@ trap {
     check_interleaved(
         {
             file_path         => catfile( $directory, $file ),
-            log               => $log,
             read_file_command => $read_file_command,
         }
     )
@@ -166,6 +162,10 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if malformed file} );
-like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if malformed file} );
+like(
+    $trap->stderr,
+    qr/Malformed \s+ fastq \s+ file/xms,
+    q{Throw fatal log message if malformed file}
+);
 
 done_testing();

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -32,8 +32,8 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $THREE             => q{3};
-Readonly my $MAX_RANDOM_NUMBER => 10_000;
+Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => q{3};
+Readonly my $MAX_RANDOM_NUMBER              => 10_000;
 
 sub check_ids_in_dna_vcf {
 
@@ -284,14 +284,12 @@ sub check_interleaved {
 ## Function : Detect if fastq file is interleaved
 ## Returns  : "1(=interleaved)"
 ## Arguments: $file_path         => File to parse
-##          : $log               => Log object
 ##          : $read_file_command => Command used to read file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_path;
-    my $log;
     my $read_file_command;
 
     my $tmpl = {
@@ -300,11 +298,6 @@ sub check_interleaved {
             required    => 1,
             store       => \$file_path,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         read_file_command => {
             defined     => 1,
@@ -316,15 +309,15 @@ sub check_interleaved {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Casava qw{ casava_header_regexp };
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
 
-    my %casava_header_regexp = casava_header_regexp();
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Select relevant regexps from hash
-    my @regexps = (
-        $casava_header_regexp{q{1.4_interleaved}},
-        $casava_header_regexp{q{1.8_interleaved}},
-    );
+    ## Select relevant regexps to use
+    my @regexps =
+      qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
 
     ## Store return from regexp
     my $fastq_read_direction;
@@ -332,9 +325,22 @@ sub check_interleaved {
   REGEXP:
     foreach my $regexp (@regexps) {
 
-        my $fastq_info_headers_cmd = qq{$read_file_command $file_path | $regexp;};
+        ## Build regexp to find contig names
+        my @perl_commands = perl_nae_oneliners(
+            {
+                oneliner_name => $regexp,
+            }
+        );
+        my $fastq_info_headers_cmd = qq{$read_file_command $file_path | @perl_commands;};
 
-        $fastq_read_direction = `$fastq_info_headers_cmd`;
+        my %return = child_process(
+            {
+                commands_ref => [$fastq_info_headers_cmd],
+                process_type => q{ipc_cmd_run},
+            }
+        );
+
+        $fastq_read_direction = $return{stdouts_ref}[0];
         last REGEXP if ($fastq_read_direction);
     }
 
@@ -358,7 +364,8 @@ sub check_interleaved {
         );
         exit 1;
     }
-    if ( sum(@fastq_read_directions) == $THREE ) {
+
+    if ( sum(@fastq_read_directions) == $SUM_FOR_INTERLEAVED_DIRECTIONS ) {
 
         $log->info( q{Found interleaved fastq file: } . $file_path );
         return 1;

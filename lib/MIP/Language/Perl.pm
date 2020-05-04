@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -178,13 +178,17 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
-        get_dict_contigs                   => \&_get_dict_contigs,
-        get_fastq_read_length              => \&_get_fastq_read_length,
-        get_select_contigs_by_col          => \&_get_select_contigs_by_col,
-        remove_decomposed_asterisk_records => \&_remove_decomposed_asterisk_records,
-        synonyms_grch37_to_grch38          => \&_synonyms_grch37_to_grch38,
-        synonyms_grch38_to_grch37          => \&_synonyms_grch38_to_grch37,
-        write_contigs_size_file            => \&_write_contigs_size_file,
+        get_dict_contigs                     => \&_get_dict_contigs,
+        q{get_fastq_header_v1.4}             => \&_get_fastq_header_v1_4,
+        q{get_fastq_header_v1.4_interleaved} => \&_get_fastq_header_v1_4_interleaved,
+        q{get_fastq_header_v1.8}             => \&_get_fastq_header_v1_8,
+        q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
+        get_fastq_read_length                => \&_get_fastq_read_length,
+        get_select_contigs_by_col            => \&_get_select_contigs_by_col,
+        remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
+        synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
+        synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
+        write_contigs_size_file              => \&_write_contigs_size_file,
     );
 
     ## Stores commands depending on input parameters
@@ -258,6 +262,122 @@ sub _get_dict_contigs {
     $get_dict_contigs .= q?print $contig_name, q{,};} }'?;
 
     return $get_dict_contigs;
+}
+
+sub _get_fastq_header_v1_4 {
+
+## Function : Return header element for fastq file format version 1.4
+## Returns  : $get_fastq_header_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Remove newline
+    my $get_fastq_header_regexp = q?'chomp; ?;
+
+    ## Get header features
+    $get_fastq_header_regexp .=
+q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction) = /^(@[^:]*):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)[\/](\d+)/; ?;
+
+    ## If  we found correct header version
+    $get_fastq_header_regexp .= q?if($instrument_id) { ?;
+
+    # Print header features
+    $get_fastq_header_regexp .=
+q?print join " ", ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction);} ?;
+
+    # Process line one and then exit
+    $get_fastq_header_regexp .= q?if($.=1) {last;}' ?;
+
+    return $get_fastq_header_regexp;
+}
+
+sub _get_fastq_header_v1_4_interleaved {
+
+## Function : Return header element for fastq file format version 1.8
+## Returns  : $get_fastq_header_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Remove newline
+    my $get_fastq_header_regexp = q?'chomp; ?;
+
+    ## If line one or five
+    $get_fastq_header_regexp .= q?if($.==1 or $.==5) { ?;
+
+    ## Get header features
+    $get_fastq_header_regexp .=
+q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction) = /^(@[^:]*):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)[\/](\d+)/; ?;
+
+    ## If  we found correct header version
+    $get_fastq_header_regexp .= q?if($instrument_id) { ?;
+
+    # Print direction feature
+    $get_fastq_header_regexp .= q?print $direction;} } ?;
+
+    # Process to line six and then exit
+    $get_fastq_header_regexp .= q?elsif ($.==6) {last;}' ?;
+
+    return $get_fastq_header_regexp;
+}
+
+sub _get_fastq_header_v1_8 {
+
+## Function : Return header element for fastq interleaved file format version 1.4
+## Returns  : $get_fastq_header_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Remove newline
+    my $get_fastq_header_regexp = q?'chomp; ?;
+
+    ## Get header features
+    $get_fastq_header_regexp .=
+q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction, $filtered, $control_bit, $index,) = /^(@[^:]*):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)\s(\d+):(\w+):(\d+):(\w+)/; ?;
+
+    ## If  we found correct header version
+    $get_fastq_header_regexp .= q?if($instrument_id) { ?;
+
+    # Print header features
+    $get_fastq_header_regexp .=
+q?print join " ", ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction, $filtered, $control_bit, $index); } ?;
+
+    # Process line one and then exit
+    $get_fastq_header_regexp .= q?if($.=1) {last;}' ?;
+
+    return $get_fastq_header_regexp;
+}
+
+sub _get_fastq_header_v1_8_interleaved {
+
+## Function : Return header element for fastq interleaved file format version 1.8
+## Returns  : $get_fastq_header_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Remove newline
+    my $get_fastq_header_regexp = q?'chomp; ?;
+
+    ## If line one or five
+    $get_fastq_header_regexp .= q?if($.==1 or $.==5) { ?;
+
+    ## Get header features
+    $get_fastq_header_regexp .=
+q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction, $filtered, $control_bit, $index,) = /^(@[^:]*):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)\s(\d+):(\w+):(\d+):(\w+)/; ?;
+
+    ## If  we found correct header version
+    $get_fastq_header_regexp .= q?if($instrument_id) { ?;
+
+    # Print direction feature
+    $get_fastq_header_regexp .= q?print $direction;} } ?;
+
+    # Process to line six and then exit
+    $get_fastq_header_regexp .= q?elsif ($.==6) {last;}' ?;
+
+    return $get_fastq_header_regexp;
 }
 
 sub _get_fastq_read_length {
