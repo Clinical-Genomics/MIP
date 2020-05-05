@@ -266,7 +266,7 @@ sub _get_dict_contigs {
 
 sub _get_fastq_header_v1_4 {
 
-## Function : Return header element for fastq file format version 1.4
+## Function : Return regexp for header elements for fastq file format version 1.4
 ## Returns  : $get_fastq_header_regexp
 ## Arguments:
 
@@ -294,7 +294,7 @@ q?print join " ", ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos,
 
 sub _get_fastq_header_v1_4_interleaved {
 
-## Function : Return header element for fastq file format version 1.8
+## Function : Return reg exp to get read direction for interleaved fastq file format version 1.4
 ## Returns  : $get_fastq_header_regexp
 ## Arguments:
 
@@ -324,7 +324,7 @@ q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $dir
 
 sub _get_fastq_header_v1_8 {
 
-## Function : Return header element for fastq interleaved file format version 1.4
+## Function : Return regexp for header elements for fastq interleaved file format version 1.8
 ## Returns  : $get_fastq_header_regexp
 ## Arguments:
 
@@ -352,7 +352,7 @@ q?print join " ", ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos,
 
 sub _get_fastq_header_v1_8_interleaved {
 
-## Function : Return header element for fastq interleaved file format version 1.8
+## Function : Return read direction for interleaved fastq file format version 1.8
 ## Returns  : $get_fastq_header_regexp
 ## Arguments:
 
