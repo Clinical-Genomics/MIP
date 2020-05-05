@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use List::Util qw { any sum };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,9 +14,10 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DASH $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -25,8 +27,129 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ define_mip_fastq_file_features get_read_length parse_fastq_infiles_format };
+    our @EXPORT_OK = qw{
+      casava_header_features
+      check_interleaved
+      define_mip_fastq_file_features
+      get_fastq_file_header_info
+      get_read_length
+      parse_fastq_infiles_format };
+}
+
+## Constants
+Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => 3;
+
+sub casava_header_features {
+
+## Function : Define casava fastq file header formats features
+## Returns  : %casava_header_feature
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    my %casava_header_feature = (
+        q{1.4} =>
+          [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
+        q{1.8} => [
+            qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction filtered control_bit index }
+        ],
+    );
+
+    return %casava_header_feature;
+}
+
+sub check_interleaved {
+
+## Function : Detect if fastq file is interleaved
+## Returns  : "1(=interleaved)"
+## Arguments: $file_path         => File to parse
+##          : $read_file_command => Command used to read file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $read_file_command;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        read_file_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Select relevant regexps to use
+    my @regexps =
+      qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
+
+    ## Store return from regexp
+    my $fastq_read_direction;
+
+  REGEXP:
+    foreach my $regexp (@regexps) {
+
+        ## Build regexp to find header features
+        my @perl_commands = perl_nae_oneliners(
+            {
+                oneliner_name => $regexp,
+            }
+        );
+        my $fastq_info_headers_cmd = qq{$read_file_command $file_path | @perl_commands;};
+
+        my %return = child_process(
+            {
+                commands_ref => [$fastq_info_headers_cmd],
+                process_type => q{ipc_cmd_run},
+            }
+        );
+
+        $fastq_read_direction = $return{stdouts_ref}[0];
+        last REGEXP if ($fastq_read_direction);
+    }
+
+    if ( not $fastq_read_direction ) {
+
+        $log->fatal( q{Malformed fastq file: } . $file_path );
+        $log->fatal(q{Could not find a read direction });
+        exit 1;
+    }
+
+    my @fastq_read_directions = split //sxm, $fastq_read_direction;
+
+    if ( any { /[^123]/sxm } @fastq_read_directions ) {
+
+        $log->fatal(q{Malformed fastq file!});
+        $log->fatal(
+            q{Read direction is: } . join q{ and },
+            @fastq_read_directions
+              . q{, allowed entries are '1', '2', '3'. Please check fastq file}
+              . $file_path
+        );
+        exit 1;
+    }
+
+    if ( sum(@fastq_read_directions) == $SUM_FOR_INTERLEAVED_DIRECTIONS ) {
+
+        $log->info( q{Found interleaved fastq file: } . $file_path );
+        return 1;
+    }
+    return;
 }
 
 sub define_mip_fastq_file_features {
@@ -109,6 +232,104 @@ sub define_mip_fastq_file_features {
 
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
+}
+
+sub get_fastq_file_header_info {
+
+## Function : Get run info from fastq file header
+## Returns  : @fastq_info_headers
+## Arguments: $file_path         => File path to parse
+##          : $read_file_command => Command used to read file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $read_file_command;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        read_file_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Fastq qw{ casava_header_features };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %casava_header_regexp = casava_header_features();
+
+    my $fastq_info_header_string;
+
+    my %fastq_header_info;
+
+    my %regexp;
+
+    ## Select relevant regexps to use
+    @regexp{qw{ 1.4 1.8 }} = qw{ get_fastq_header_v1.4 get_fastq_header_v1.8 };
+
+  REGEXP:
+    while ( my ( $casava_version, $regexp ) = each %regexp ) {
+
+        ## Build regexp to find header features
+        my @perl_commands = perl_nae_oneliners(
+            {
+                oneliner_name => $regexp,
+            }
+        );
+
+        ## Define cmd
+        my $get_header_cmd = qq{$read_file_command $file_path | @perl_commands;};
+
+        ## Collect fastq header info
+        my %process_return = child_process(
+            {
+                commands_ref => [$get_header_cmd],
+                process_type => q{ipc_cmd_run},
+            }
+        );
+
+        $fastq_info_header_string = $process_return{stdouts_ref}[0];
+
+        ## If successful regexp
+        if ($fastq_info_header_string) {
+
+            # Get header features
+            my @features = @{ $casava_header_regexp{$casava_version} };
+
+            # Split header string into array
+            my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
+
+            # Add to hash to be returned
+            @fastq_header_info{@features} = @fastq_info_headers;
+            last REGEXP;
+        }
+    }
+
+    if ( not $fastq_info_header_string ) {
+
+        $log->fatal( q{Error parsing file header: } . $file_path );
+        $log->fatal(
+q{Could not detect required sample sequencing run info from fastq file header }
+              . $DASH
+              . q{Please proved MIP file in MIP file convention format to proceed} );
+        exit 1;
+    }
+
+    return %fastq_header_info;
 }
 
 sub get_read_length {

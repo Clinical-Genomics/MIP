@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -98,12 +98,11 @@ sub parse_fastq_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_interleaved };
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
-    use MIP::Fastq qw{ get_read_length parse_fastq_infiles_format };
+    use MIP::Fastq
+      qw{ check_interleaved get_fastq_file_header_info get_read_length parse_fastq_infiles_format };
     use MIP::File_info
       qw{ parse_file_compression_features parse_files_compression_status };
-    use MIP::Get::File qw{ get_fastq_file_header_info };
     use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
@@ -150,7 +149,6 @@ sub parse_fastq_infiles {
             $is_interleaved = check_interleaved(
                 {
                     file_path         => catfile( $infiles_dir, $file_name ),
-                    log               => $log,
                     read_file_command => $read_file_command,
                 }
             );
@@ -217,7 +215,6 @@ sub parse_fastq_infiles {
                 my %fastq_info_header = get_fastq_file_header_info(
                     {
                         file_path         => catfile( $infiles_dir, $file_name ),
-                        log               => $log,
                         read_file_command => $read_file_command,
                     }
                 );
