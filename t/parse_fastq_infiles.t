@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -134,9 +134,6 @@ trap {
     );
 };
 
-## Special case as it seems to make trap work with prove and not exit - Unclear why this works
-say {*STDOUT} $SPACE;
-
 ## Then exit and throw fatal log message
 ok( $trap->exit, q{Exit if wts and interleaved fastq} );
 like(
@@ -166,9 +163,6 @@ trap {
         }
     );
 };
-
-## Special case as it seems to make trap work with prove and not exit - Unclear why this works
-say {*STDOUT} $SPACE;
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if sample_id in file name cannot be found} );
