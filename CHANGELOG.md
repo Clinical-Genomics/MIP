@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [8.2.5]
 - Adds output files to store for gatk_combinevariants, sambamba depth, chromograph recipes
+- Use MIPs bcftools singularity image in the conda env when checking references 
 
 ## [8.2.4]
 - Chromograph patch

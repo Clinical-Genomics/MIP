@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,10 +61,12 @@ diag(   q{Test check_if_processed_by_vt from Reference.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Given no reference path
-my $return = check_if_processed_by_vt(
+my $bcftools_binary_path = q{bcftools};
+my $return               = check_if_processed_by_vt(
     {
-        reference_file_path => q{file_does_not_exists},
-        log                 => $log,
+        bcftools_binary_path => $bcftools_binary_path,
+        reference_file_path  => q{file_does_not_exists},
+        log                  => $log,
     }
 );
 is( $return, undef, q{No reference file to check} );
@@ -76,8 +78,9 @@ my $reference_file_path_no_vt =
 ## Check if vt has processed references using regexp
 my @checked_references = check_if_processed_by_vt(
     {
-        reference_file_path => $reference_file_path_no_vt,
-        log                 => $log,
+        bcftools_binary_path => $bcftools_binary_path,
+        reference_file_path  => $reference_file_path_no_vt,
+        log                  => $log,
     }
 );
 
@@ -91,8 +94,9 @@ my $reference_file_path_vt =
 ## Check if vt has processed references using regexp
 @checked_references = check_if_processed_by_vt(
     {
-        reference_file_path => $reference_file_path_vt,
-        log                 => $log,
+        bcftools_binary_path => $bcftools_binary_path,
+        reference_file_path  => $reference_file_path_vt,
+        log                  => $log,
     }
 );
 
