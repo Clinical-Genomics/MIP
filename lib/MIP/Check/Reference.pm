@@ -110,7 +110,8 @@ sub check_if_processed_by_vt {
         my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
 
         ## Detect if vt program has processed reference
-        my $ret = `$export_cmd; bcftools view $reference_file_path | $regexp; $unset_cmd`;
+        my $ret =
+`$export_cmd; $bcftools_binary_path view $reference_file_path | $regexp; $unset_cmd`;
 
         ## No trace of vt processing found
         if ( not $ret ) {
@@ -192,7 +193,7 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
-    ## Use MIP own bcftools
+    ## Use MIPs own bcftools
     my $bcftools_binary_path = $active_parameter_href->{binary_path}{bcftools};
 
     ## TOML parameters
