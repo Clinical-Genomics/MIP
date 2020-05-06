@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,16 +36,24 @@ sub check_if_processed_by_vt {
 
 ## Function : Check if vt has processed references using regexp
 ## Returns  : @process_references
-## Arguments: $log                 => Log object
-##          : $reference_file_path => The reference file path
+## Arguments: $bcftools_binary_path => Path to bcftools binary
+##          : $log                  => Log object
+##          : $reference_file_path  => The reference file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bcftools_binary_path;
     my $log;
     my $reference_file_path;
 
     my $tmpl = {
+        bcftools_binary_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bcftools_binary_path,
+            strict_type => 1,
+        },
         log => {
             defined  => 1,
             required => 1,
@@ -184,6 +192,9 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
+    ## Use MIP own bcftools
+    my $bcftools_binary_path = $active_parameter_href->{binary_path}{bcftools};
+
     ## TOML parameters
     my %toml = (
         vta_vcfanno_config    => 1,
@@ -213,6 +224,7 @@ sub check_references_for_vt {
 
                     _parse_vcfanno_toml_path(
                         {
+                            bcftools_binary_path      => $bcftools_binary_path,
                             log                       => $log,
                             seen_href                 => \%seen,
                             toml_file_path            => $annotation_file,
@@ -225,8 +237,9 @@ sub check_references_for_vt {
                     ## Check if vt has processed references using regexp
                     @checked_references = check_if_processed_by_vt(
                         {
-                            log                 => $log,
-                            reference_file_path => $annotation_file,
+                            bcftools_binary_path => $bcftools_binary_path,
+                            log                  => $log,
+                            reference_file_path  => $annotation_file,
                         }
                     );
                     push @to_process_references, @checked_references;
@@ -246,8 +259,9 @@ sub check_references_for_vt {
                         ## Check if vt has processed references using regexp
                         @checked_references = check_if_processed_by_vt(
                             {
-                                log                 => $log,
-                                reference_file_path => $annotation_file,
+                                bcftools_binary_path => $bcftools_binary_path,
+                                log                  => $log,
+                                reference_file_path  => $annotation_file,
                             }
                         );
                     }
@@ -268,8 +282,9 @@ sub check_references_for_vt {
                         ## Check if vt has processed references using regexp
                         @checked_references = check_if_processed_by_vt(
                             {
-                                log                 => $log,
-                                reference_file_path => $annotation_file,
+                                bcftools_binary_path => $bcftools_binary_path,
+                                log                  => $log,
+                                reference_file_path  => $annotation_file,
                             }
                         );
                     }
@@ -286,7 +301,8 @@ sub _parse_vcfanno_toml_path {
 
 ## Function : Parse TOML config for path to check with vt
 ## Returns  :
-## Arguments: $log                       => Log object
+## Arguments: $bcftools_binary_path      => Path to bcftools binary
+##          : $log                       => Log object
 ##          : $seen_href                 => Avoid checking the same reference multiple times
 ##          : $toml_file_path            => Toml config file path
 ##          : $to_process_references_ref => Store references to process later
@@ -294,12 +310,19 @@ sub _parse_vcfanno_toml_path {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bcftools_binary_path;
     my $log;
     my $seen_href;
     my $toml_file_path;
     my $to_process_references_ref;
 
     my $tmpl = {
+        bcftools_binary_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bcftools_binary_path,
+            strict_type => 1,
+        },
         log       => { store => \$log, },
         seen_href => {
             default     => {},
@@ -350,8 +373,9 @@ sub _parse_vcfanno_toml_path {
             ## Check if vt has processed references using regexp
             my @checked_references = check_if_processed_by_vt(
                 {
-                    log                 => $log,
-                    reference_file_path => $annotation_file_path,
+                    bcftools_binary_path => $bcftools_binary_path,
+                    log                  => $log,
+                    reference_file_path  => $annotation_file_path,
                 }
             );
             push @{$to_process_references_ref}, @checked_references;
