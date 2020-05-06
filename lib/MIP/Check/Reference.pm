@@ -69,6 +69,7 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Child_process qw{ child_process };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
     my %vt_regexp;
@@ -110,11 +111,18 @@ sub check_if_processed_by_vt {
         my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
 
         ## Detect if vt program has processed reference
-        my $ret =
-`$export_cmd; $bcftools_binary_path view $reference_file_path | $regexp; $unset_cmd`;
+        my $check_vt_cmd =
+qq{$export_cmd; $bcftools_binary_path view $reference_file_path | $regexp; $unset_cmd};
+
+        my %process_return = child_process(
+            {
+                commands_ref => [$check_vt_cmd],
+                process_type => q{ipc_cmd_run},
+            }
+        );
 
         ## No trace of vt processing found
-        if ( not $ret ) {
+        if ( not $process_return{stdouts_ref}[0] ) {
 
             ## Add reference for downstream processing
             push @to_process_references, $reference_file_path;
