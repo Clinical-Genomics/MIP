@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,11 +64,11 @@ my $log = test_log( {} );
 
 ## Given compressed file, when proper data
 my %active_parameter = (
-    sample_ids    => [qw{ ADM1059A1 }],
     analysis_type => {
         ADM1059A1 => q{wgs},
         ADM1059A2 => q{wgs},
     },
+    sample_ids => [qw{ ADM1059A1 }],
 );
 my %file_info = (
     ADM1059A1 => {
@@ -116,31 +116,6 @@ parse_fastq_infiles(
 ## Then return true
 is( $file_info{is_files_compressed}{ADM1059A2},
     0, q{Files uncompressed and got run info from headers} );
-
-## Given wts analysis type
-$active_parameter{analysis_type}{ADM1059A2} = q{wts};
-push @{ $file_info{ADM1059A2}{mip_infiles} }, qw{ 1_171118_interleaved.fastq };
-
-trap {
-    parse_fastq_infiles(
-        {
-            active_parameter_href           => \%active_parameter,
-            file_info_href                  => \%file_info,
-            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_lane_prefix_href         => \%infile_lane_prefix,
-            log                             => $log,
-            sample_info_href                => \%sample_info,
-        }
-    );
-};
-
-## Then exit and throw fatal log message
-ok( $trap->exit, q{Exit if wts and interleaved fastq} );
-like(
-    $trap->stderr,
-    qr/MIP\s+ rd_rna \s+ does \s+ not \s+ support/xms,
-    q{Throw fatal log message if wts and fastq file is interleaved}
-);
 
 ## Remove ADM1059A2 from processing
 pop @{ $active_parameter{sample_ids} };

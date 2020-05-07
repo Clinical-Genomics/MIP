@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -92,6 +92,21 @@ while ( my ( $attribute, $attribute_value ) = each %attribute ) {
           . $attribute_value );
 }
 
+## Given a no attribute and file name in call
+my %got_sample_href = get_sample_file_attribute(
+    {
+        file_info_href => \%file_info,
+        sample_id      => $sample_id,
+    }
+);
+
+## Then return entire file info sample id hash
+is_deeply(
+    \%got_sample_href,
+    \%{ $file_info{$sample_id} },
+    q{Returned file info for sample id }
+);
+
 ## Given a no attribute in call
 my %got_attribute_href = get_sample_file_attribute(
     {
@@ -104,7 +119,6 @@ my %got_attribute_href = get_sample_file_attribute(
 ## Then return entire sample id attribute hash
 is_deeply( \%got_attribute_href, \%attribute,
     q{Returned sample id file name attribute hash} );
-
 ## Given a undefined attribute in file_info hash
 delete $file_info{$sample_id}{$file_name}{is_file_compressed};
 

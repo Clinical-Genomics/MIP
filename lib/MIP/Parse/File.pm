@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $SPACE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $LOG_NAME $SPACE };
 
 BEGIN {
 
@@ -101,8 +101,11 @@ sub parse_fastq_infiles {
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
     use MIP::Fastq
       qw{ check_interleaved get_fastq_file_header_info get_read_length parse_fastq_infiles_format };
-    use MIP::File_info
-      qw{ parse_file_compression_features parse_files_compression_status };
+    use MIP::File_info qw{
+      get_sample_file_attribute
+      parse_file_compression_features
+      parse_files_compression_status
+      set_sample_file_attribute };
     use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
@@ -111,19 +114,19 @@ sub parse_fastq_infiles {
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
 
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
         ## Unpack
-        my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
+        my $infiles_dir = $file_info_sample{mip_infiles_dir};
 
       INFILE:
         while ( my ( $file_index, $file_name ) =
-            each @{ $file_info_href->{$sample_id}{mip_infiles} } )
+            each @{ $file_info_sample{mip_infiles} } )
         {
-
-            # Sequence read length
-            my $read_length;
-
-            # Is file interleaved
-            my $is_interleaved;
 
             ## Parse compression features
             my $read_file_command = parse_file_compression_features(
@@ -138,7 +141,7 @@ sub parse_fastq_infiles {
             my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
             ## Get sequence read length from file
-            $read_length = get_read_length(
+            $infile_info{read_length} = get_read_length(
                 {
                     file_path         => catfile( $infiles_dir, $file_name ),
                     read_file_command => $read_file_command,
@@ -146,25 +149,30 @@ sub parse_fastq_infiles {
             );
 
             ## Is file interleaved and have proper read direction
-            $is_interleaved = check_interleaved(
+            $infile_info{is_interleaved} = check_interleaved(
                 {
                     file_path         => catfile( $infiles_dir, $file_name ),
                     read_file_command => $read_file_command,
                 }
             );
 
-            ## STAR does not support interleaved fastq files
-            if ( ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wts} )
-                and $is_interleaved )
-            {
-                $log->fatal(q{MIP rd_rna does not support interleaved fastq files});
-                $log->fatal(
-                    q{Please deinterleave: } . catfile( $infiles_dir, $file_name ) );
-                exit 1;
+            ## Transfer to file_info hash
+          ATTRIBUTE:
+            while ( my ( $attribute, $attribute_value ) = each %infile_info ) {
+
+                set_sample_file_attribute(
+                    {
+                        attribute       => $attribute,
+                        attribute_value => $attribute_value,
+                        file_info_href  => $file_info_href,
+                        file_name       => $file_name,
+                        sample_id       => $sample_id,
+                    }
+                );
             }
 
             ## If filename convention is followed
-            if ( keys %infile_info ) {
+            if ( exists $infile_info{direction} ) {
 
                 ## Check that the sample_id provided and sample_id in infile name match.
                 check_infile_contain_sample_id(
@@ -190,10 +198,10 @@ sub parse_fastq_infiles {
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
-                        is_interleaved          => $is_interleaved,
+                        is_interleaved          => $infile_info{is_interleaved},
                         lane                    => $infile_info{lane},
                         lane_tracker            => $lane_tracker,
-                        read_length             => $read_length,
+                        read_length             => $infile_info{read_length},
                         sample_id               => $infile_info{infile_sample_id},
                         sample_info_href        => $sample_info_href,
                     }
@@ -239,10 +247,10 @@ sub parse_fastq_infiles {
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
-                        is_interleaved          => $is_interleaved,
+                        is_interleaved          => $infile_info{is_interleaved},
                         lane                    => $fastq_info_header{lane},
                         lane_tracker            => $lane_tracker,
-                        read_length             => $read_length,
+                        read_length             => $infile_info{read_length},
                         sample_id               => $sample_id,
                         sample_info_href        => $sample_info_href,
                     }
