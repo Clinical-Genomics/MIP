@@ -47,7 +47,7 @@ BEGIN {
 
 sub pipeline_install {
 
-## Function : Install recipes for rd_dna pipeline
+## Function : Install recipes for mip pipelines
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $quiet                 => Be quiet

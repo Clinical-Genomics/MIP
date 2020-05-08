@@ -5,6 +5,7 @@
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/develop/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/issues)
+[![CodeFactor](https://www.codefactor.io/repository/github/clinical-genomics/mip/badge)](https://www.codefactor.io/repository/github/clinical-genomics/mip)
 
 MIP enables identification of potential disease causing variants from sequencing data.
 
@@ -112,7 +113,7 @@ We recommend miniconda for installing perl and cpanm libraries. However, perlbre
 Installation instructions and setting up specific cpanm libraries using perlbrew can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
 
 #### Automated Installation \(Linux x86\_64\)
-Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline follows a similar syntax.
+Below are instructions for installing the Mutation Identification Pipeline (MIP).
 
 ##### 1.Clone the official git repository
 
@@ -123,7 +124,7 @@ $ cd MIP
 ##### 2.Install required perl modules from cpan to a specified conda environment
 
 ```Bash
-$ bash mip_install_perl.sh -e [mip_rd-dna] -p [$HOME/miniconda3]
+$ bash mip_install_perl.sh -e [mip] -p [$HOME/miniconda3]
 ```  
 
 ##### 3.Test conda and mip installation files (optional, but recommended)
@@ -134,7 +135,7 @@ $ perl t/mip_install.test
 
 ##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install --environment_name [mip_rd-dna] --reference_dir [$HOME/mip_references]
+$ perl mip install --environment_name [mip] --reference_dir [$HOME/mip_references]
 ```
 This will generate a bash script called "mip.sh" in your working directory.
 
@@ -164,11 +165,11 @@ $ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
-  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environment. If you are using the default environment names the load_env part of the config should look like this:
+  A starting point for the config is provided in MIP's template directory. You will have to modify the load_env keys to whatever you named the environment. If you are using the default environment name the load_env part of the config should look like this:
 
   ```Yml
   load_env:
-    mip_rd-dna:
+    mip:
       mip:
       method: conda
   ```
@@ -188,13 +189,13 @@ You can always supply `mip [process] [pipeline] --help` to list all available pa
 
 Example usage:
 ```Bash
-$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U --star_with_recipe samtools_merge --config 3_config.yaml
+$ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U --start_with_recipe samtools_merge --config 3_config.yaml
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config.
+Aside from a conda environment, MIP uses singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config.
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml

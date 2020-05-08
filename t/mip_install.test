@@ -100,6 +100,7 @@ use Test::More;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 
 our $USAGE = build_usage( {} );
 
@@ -162,12 +163,15 @@ foreach my $installation_mode (@installation_modes) {
 
     push @mode_cmds, $installation_mode;
 
-    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-        command => \@mode_cmds,
-        verbose => $verbose
+    my %process_return = child_process(
+        {
+            commands_ref => \@mode_cmds,
+            process_type => q{ipc_cmd_run},
+            verbose => $verbose,
+        }
     );
 
-    ok( $success, qq{Executed install $installation_mode} );
+    ok( $process_return{sucess}, qq{Executed install $installation_mode} );
 
     ## Test that mip.sh has been created
     ok( -e catfile( getcwd(), q{mip.sh} ), q{Located mip.sh} );

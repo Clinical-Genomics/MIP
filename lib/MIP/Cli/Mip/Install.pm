@@ -19,7 +19,6 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use MooseX::Types::Structured qw{ Dict Optional };
 
 ## MIPs lib/
-#use MIP::Cli::Utils qw{ run };
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };

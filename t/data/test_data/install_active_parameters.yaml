@@ -183,8 +183,6 @@ singularity:
   chanjo:
     executable:
       chanjo: ~
-    pipeline:
-      - rd_dna
     uri: docker://clinicalgenomics/chanjo:4.2.0
   chromograph:
     executable:
