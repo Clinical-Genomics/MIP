@@ -167,11 +167,11 @@ foreach my $installation_mode (@installation_modes) {
         {
             commands_ref => \@mode_cmds,
             process_type => q{ipc_cmd_run},
-            verbose => $verbose,
+            verbose      => $verbose,
         }
     );
 
-    ok( $process_return{sucess}, qq{Executed install $installation_mode} );
+    ok( $process_return{success}, qq{Executed install $installation_mode} );
 
     ## Test that mip.sh has been created
     ok( -e catfile( getcwd(), q{mip.sh} ), q{Located mip.sh} );
