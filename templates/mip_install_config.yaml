@@ -8,6 +8,19 @@ shell:
   mip_scripts:
     version: Your current MIP version
 singularity:
+  arriba:
+    executable:
+      arriba: /arriba_v1.1.0/arriba
+      draw_fusions.R: /arriba_v1.1.0/draw_fusions.R
+    uri: docker://uhrigs/arriba:1.1.0
+  blobfish:
+    executable:
+      BlobFish.py:
+    uri: docker://clinicalgenomics/blobfish:0.0.2
+  bootstrapann:
+    executable:
+      BootstrapAnn.py:
+    uri: docker://clinicalgenomics/bootstrapann:df02f35
   bwa:
     executable:
       bwa:
@@ -42,6 +55,8 @@ singularity:
   chanjo:
     executable:
       chanjo:
+    pipeline:
+      - rd_dna
     uri: docker://clinicalgenomics/chanjo:4.2.0
   chromograph:
     executable:
@@ -71,6 +86,10 @@ singularity:
     executable:
       genmod:
     uri: docker://clinicalgenomics/genmod:3.7.3
+  gffcompare:
+    executable:
+      gffcompare:
+    uri: docker://clinicalgenomics/gffcompare:0.11.2
   htslib:
     executable:
       bcftools:
@@ -95,22 +114,38 @@ singularity:
     executable:
       picard: "no_executable_in_image"
     uri: docker://broadinstitute/picard:2.22.4
-  utilities:
-    executable:
-      pigz:
-    uri: docker://clinicalgenomics/utilities:latest
   plink:
     executable:
       plink2:
     uri: docker://clinicalgenomics/plink:1.90b3.35
+  preseq:
+    executable:
+      preseq:
+    uri: docker://clinicalgenomics/preseq:2.0.3
   rhocall:
     executable:
       rhocall:
     uri: docker://clinicalgenomics/rhocall:0.5.1
+  rseqc:
+    executable:
+      bam2wig.py:
+      bam_stat.py:
+      geneBody_coverage2.py:
+      infer_experiment.py:
+      inner_distance.py:
+      junction_annotation.py:
+      junction_saturation.py:
+      read_distribution.py:
+      read_duplication.py:
+    uri: library://jemten/mip_containers/rseqc:3.0.1
   rtg-tools:
     executable:
       rtg:
     uri: docker://realtimegenomics/rtg-tools:3.10.1
+  salmon:
+    executable:
+      salmon:
+    uri: docker://clinicalgenomics/salmon:0.12.0
   sambamba:
     executable:
       sambamba:
@@ -119,10 +154,30 @@ singularity:
     executable:
       smn_caller.py:
     uri: docker://clinicalgenomics/smncopynumbercaller:4b2c1ad
+  star:
+    executable:
+      STAR:
+    uri: library://jemten/mip_containers/star:2.7.3a
+  star-fusion:
+    executable:
+      blastn:
+      gtf_file_to_feature_seqs.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/gtf_file_to_feature_seqs.pl
+      hmmpress:
+      make_super_locus.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/make_super_locus.pl
+      makeblastdb:
+      prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl
+      remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
+      restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
+      STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
+    uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.8.0/star-fusion.v1.8.0.simg
   stranger:
     executable:
       stranger:
     uri: docker://clinicalgenomics/stranger:0.5.5
+  stringtie:
+    executable:
+      stringtie:
+    uri: library://jemten/mip_containers/stringtie:2.0.3
   svdb:
     executable:
       svdb:
@@ -140,6 +195,11 @@ singularity:
     executable:
       upd:
     uri: docker://clinicalgenomics/upd:0.1
+  utilities:
+    executable:
+      gtf2bed:
+      pigz:
+    uri: docker://clinicalgenomics/utilities:latest
   varg:
     executable:
       varg:

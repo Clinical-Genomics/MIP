@@ -27,16 +27,11 @@ install:
   ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
   ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --envn mip_travis --select_program mip_scripts python
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
   ## Install MIP rare disease
-  - bash mip.sh
-  ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --select_program mip_scripts python
-  ## Install MIP rna
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
   - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
-  - conda install -n mip_rd_rna --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
   ## Test MIP rd_dna
@@ -64,7 +59,6 @@ script:
   ## Set-up test coverage for mip_analyse_rd_dna_panel.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_panel.test
   ## Set-up test coverage for mip_analyse_rna.test
-  - conda activate mip_rd_rna
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
   ## Get some coverage statistics
   - cover

@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -124,8 +124,7 @@ sub install_mip_scripts {
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml
               mip_dragen_rd_dna_config.yaml
-              mip_install_rd_dna_config_-1.0-.yaml
-              mip_install_rd_rna_config_-1.0-.yaml
+              mip_install_config.yaml
               mip_log.yaml
               mip_rd_dna_config.yaml
               mip_rd_dna_vcf_rerun_config.yaml

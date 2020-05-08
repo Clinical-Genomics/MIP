@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -174,8 +174,6 @@ sub get_parameter_definition_file_paths {
                   download_rd_dna
                   download_rd_rna
                   install
-                  install_rd_dna
-                  install_rd_rna
                   mip
                   not_required
                   rd_dna
@@ -198,8 +196,7 @@ sub get_parameter_definition_file_paths {
         download         => [qw{ mip download }],
         download_rd_dna  => [qw{ mip download download_rd_dna }],
         download_rd_rna  => [qw{ mip download download_rd_rna }],
-        install_rd_dna   => [qw{ mip install install_rd_dna }],
-        install_rd_rna   => [qw{ mip install install_rd_rna }],
+        install          => [qw{ mip install }],
         mip              => [qw{ mip }],
         not_required     => [qw { not_required }],
         rd_dna           => [qw{ mip analyse rd_dna }],
@@ -302,8 +299,6 @@ sub get_parameter_from_definition_files {
                   download_rd_dna
                   download_rd_rna
                   install
-                  install_rd_dna
-                  install_rd_rna
                   mip
                   not_required
                   rd_dna

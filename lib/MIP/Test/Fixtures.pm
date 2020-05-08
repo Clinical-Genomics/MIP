@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -188,9 +188,7 @@ sub test_mip_hashes {
                   dependency_tree_rna
                   download_active_parameter
                   file_info
-                  install_parameter
-                  install_rd_dna_active_parameter
-                  install_rd_rna_active_parameter
+                  install_active_parameter
                   io
                   job_id
                   pedigree
@@ -229,17 +227,14 @@ sub test_mip_hashes {
         download_active_parameter =>
           catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
         file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
-        install_rd_dna_active_parameter =>
-          catfile( $Bin, qw{ data test_data install_rd_dna_active_parameters.yaml } ),
-        install_rd_rna_active_parameter =>
-          catfile( $Bin, qw{ data test_data install_rd_rna_active_parameters.yaml } ),
+        install_active_parameter =>
+          catfile( $Bin, qw{ data test_data install_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
         qc_sample_info =>
           catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
-
     );
 
     my %hash_to_return = read_from_file(

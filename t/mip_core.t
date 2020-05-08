@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 our $USAGE = build_usage( {} );
 
@@ -301,8 +301,7 @@ sub mip_scripts {
             qw{ analyse_parameters.yaml
               download_rd_dna_parameters.yaml
               download_rd_rna_parameters.yaml
-              install_rd_dna_parameters.yaml
-              install_rd_rna_parameters.yaml
+              install_parameters.yaml
               required_parameters.yaml
               mip_parameters.yaml
               not_required_parameters.yaml
@@ -330,8 +329,7 @@ sub mip_scripts {
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml
               mip_dragen_rd_dna_config.yaml
-              mip_install_rd_dna_config_-1.0-.yaml
-              mip_install_rd_rna_config_-1.0-.yaml
+              mip_install_config.yaml
               mip_log.yaml
               mip_rd_dna_config.yaml
               mip_rd_dna_vcf_rerun_config.yaml

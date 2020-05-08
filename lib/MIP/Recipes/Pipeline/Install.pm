@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Install_rd_dna;
+package MIP::Recipes::Pipeline::Install;
 
 use 5.026;
 use Carp;
@@ -39,13 +39,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_install_rd_dna };
+    our @EXPORT_OK = qw{ pipeline_install };
 }
 
-sub pipeline_install_rd_dna {
+sub pipeline_install {
 
 ## Function : Install recipes for rd_dna pipeline
 ## Returns  :

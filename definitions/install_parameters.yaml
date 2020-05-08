@@ -29,10 +29,26 @@ custom_default_parameters:
     - shell_install
     - skip_programs
   type: mip
+environment_name:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: mip
+  mandatory: no
+  type: mip
 pip:
   associated_recipe:
     - mip
   data_type: HASH
+  mandatory: no
+  type: mip
+pipelines:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - rd_dna
+    - rd_rna
   mandatory: no
   type: mip
 prefer_shell:
@@ -83,6 +99,76 @@ reference_dir:
   mandatory: no
   type: path
   update_path: absolute_path
+rd_dna:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - bedtools
+    - bwa
+    - bwakit
+    - cadd
+    - chanjo
+    - chromograph
+    - cnvnator
+    - delly
+    - expansionhunter
+    - fastqc
+    - gatk
+    - gatk4
+    - genmod
+    - htslib
+    - manta
+    - mip_scripts
+    - multiqc
+    - peddy
+    - picard
+    - python
+    - rtg-tools
+    - sambamba
+    - smncopynumbercaller
+    - stranger
+    - svdb
+    - tiddit
+    - ucsc
+    - upd
+    - varg
+    - variant_integrity
+    - vcf2cytosure
+    - vcfanno
+    - vep
+    - vt
+  mandatory: no
+  type: mip
+rd_rna:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - arriba
+    - blobfish
+    - bootstrapann
+    - fastqc
+    - gatk4
+    - gffcompare
+    - htslib
+    - mip_scripts
+    - multiqc
+    - picard
+    - preseq
+    - python
+    - rseqc
+    - salmon
+    - sambamba
+    - star
+    - star-fusion
+    - stringtie
+    - trim-galore
+    - ucsc
+    - utilities
+    - vep
+  mandatory: no
+  type: mip
 sbatch_mode:
   associated_recipe:
     - mip

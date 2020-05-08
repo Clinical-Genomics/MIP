@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed option to run sambamba markduplicates for markduplicates recipe
 - Added SpliceAI annotation
 - Collect and evaluate QC metrics generated in the RNA pipeline
+- Per default MIP now installs all programs needed for the different pipelines into one conda environment
 
 **Tools**
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)

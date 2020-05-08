@@ -120,7 +120,7 @@ Below are instructions for installing MIP for analysis of rare diseases. Install
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-##### 2.Install required perl modules from cpan
+##### 2.Install required perl modules from cpan to a specified conda environment
 
 ```Bash
 $ bash mip_install_perl.sh -e [mip_rd-dna] -p [$HOME/miniconda3]
@@ -134,17 +134,15 @@ $ perl t/mip_install.test
 
 ##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rd_dna
+$ perl mip install --environment_name [mip_rd-dna] --reference_dir [$HOME/mip_references]
 ```
 This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
-By default the batch script will attempt to install the MIP dependencies in a conda environment called mip_rd-dna
+  By default the batch script will attempt to install the MIP dependencies in a conda environment called 'mip'. It is possible to specify the name of the environment using the ``--environment_name`` flag.
 
-It is possible to specify the name of the environment using the ``--environment_name`` flag. E.g. --environment_name MIP``.   
-
-  - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
+  - For a full list of available options and parameters, run: ``$ perl mip install --help``
+  - For a full list of parameter defaults, run: ``$ perl mip install --ppd``
 
 ##### 5.Run the bash script
 
@@ -158,7 +156,7 @@ A conda environment will be created where MIP with all dependencies will be inst
 
 ##### 6.Test your MIP installation (optional, but recommended)
 
-Make sure to activate your MIP conda base environment before executing prove.
+Make sure to activate your MIP conda environment before executing prove.
 
 ```Bash
 $ prove t -r
@@ -196,7 +194,7 @@ $ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config. 
+Aside from conda environments, MIP can also use singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config.
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml
