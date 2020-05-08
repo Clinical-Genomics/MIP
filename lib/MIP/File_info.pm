@@ -201,7 +201,7 @@ sub get_is_sample_files_compressed {
 sub get_sample_file_attribute {
 
 ## Function : Get sample file attributes
-## Returns  :
+## Returns  : %{ $file_info_href->{$sample_id} } | %{ $file_info_href->{$sample_id}{$file_name} } | $attribute
 ## Arguments: $attribute       => Attribute key
 ##          : $file_info_href  => File info hash {REF}
 ##          : $file_name       => File name
