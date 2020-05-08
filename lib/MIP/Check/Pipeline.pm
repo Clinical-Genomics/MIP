@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1201,6 +1201,7 @@ sub check_rd_rna {
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
+    use MIP::Star qw{ check_interleaved_files_for_star };
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
@@ -1318,6 +1319,13 @@ sub check_rd_rna {
             infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
+        }
+    );
+
+    check_interleaved_files_for_star(
+        {
+            file_info_href => $file_info_href,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
         }
     );
 

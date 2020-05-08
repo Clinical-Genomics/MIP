@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -201,7 +201,7 @@ sub get_is_sample_files_compressed {
 sub get_sample_file_attribute {
 
 ## Function : Get sample file attributes
-## Returns  :
+## Returns  : %{ $file_info_href->{$sample_id} } | %{ $file_info_href->{$sample_id}{$file_name} } | $attribute
 ## Arguments: $attribute       => Attribute key
 ##          : $file_info_href  => File info hash {REF}
 ##          : $file_name       => File name
@@ -218,8 +218,16 @@ sub get_sample_file_attribute {
     my $tmpl = {
         attribute => {
             allow => [
-                qw{ is_file_compressed
+                qw{ date
+                  direction
+                  flowcell
+                  index
+                  infile_sample_id
+                  is_file_compressed
+                  is_interleaved
+                  lane
                   read_file_command
+                  read_length
                   }
             ],
             store       => \$attribute,
@@ -233,8 +241,6 @@ sub get_sample_file_attribute {
             strict_type => 1,
         },
         file_name => {
-            defined     => 1,
-            required    => 1,
             store       => \$file_name,
             strict_type => 1,
         },
@@ -248,6 +254,11 @@ sub get_sample_file_attribute {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    if ( not $attribute and not $file_name ) {
+
+        ## Return entire sample_id hash
+        return %{ $file_info_href->{$sample_id} };
+    }
     if ( not $attribute ) {
 
         ## Return entire file name hash
@@ -889,7 +900,6 @@ sub set_sample_file_attribute {
             strict_type => 1,
         },
         attribute_value => {
-            defined     => 1,
             required    => 1,
             store       => \$attribute_value,
             strict_type => 1,
@@ -916,6 +926,9 @@ sub set_sample_file_attribute {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return if nothing to set
+    return if ( not defined $attribute_value );
 
     $file_info_href->{$sample_id}{$file_name}{$attribute} = $attribute_value;
     return;

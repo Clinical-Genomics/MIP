@@ -3,14 +3,29 @@ ADM1059A1:
   mip_infiles_dir: infile_dir
   mip_infiles:
     - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
+  7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq:
+    date: 161011
+    direction: 1
+    flowcell: HHJJCCCXY
+    index: NAATGCGC
+    infile_sample_id: ADM1059A1
+    is_file_compressed: 0
+    is_interleaved: 1
+    lane: 7
+    read_file_command: cat
+    read_length: 151
 ADM1059A2:
   mip_infiles_dir: infile_dir
   mip_infiles:
     - ADM1059A2.fastq
+  ADM1059A2.fastq:
+    is_file_compressed: 0
 ADM1059A3:
   mip_infiles_dir: infile_dir
   mip_infiles:
     - ADM1059A3.fastq
+  ADM1059A3.fastq:
+    is_file_compressed: 0
 bwa_build_reference:
   - .bwt
   - .ann
