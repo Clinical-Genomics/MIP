@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,8 +63,7 @@ diag(   q{Test get_install_parameter_attribute from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given parameters with scalar, array and hashes
-my %parameter =
-  test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
 
 ## Hash attribute
 my %singularity_container = get_install_parameter_attribute(
@@ -101,7 +100,7 @@ my $bash_set_errexit = get_install_parameter_attribute(
 );
 
 ## Then scalar attribute value should be returned
-is( 0, $bash_set_errexit, q{Got scalar attibute} );
+is( 1, $bash_set_errexit, q{Got scalar attibute} );
 
 ## Given non-existing key
 my $does_not_exist = q{this key does not exist};

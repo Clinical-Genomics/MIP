@@ -39,7 +39,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.13;
+    our $VERSION = 2.14;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -93,12 +93,6 @@ sub mip_install {
     # Catches name of current script
     my $script = _this_sub();
 
-    ## Catches name of the calling module
-    my $process = _parent_module();
-
-    ## Build pipeline name
-    my $pipeline = q{install} . $UNDERSCORE . lc $process;
-
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
         {
@@ -133,7 +127,7 @@ sub mip_install {
         }
     );
 
-## Get log object and set log file in active parameters unless already set from cmd
+    ## Get log object and set log file in active parameters unless already set from cmd
     my $log = get_log(
         {
             active_parameter_href => \%active_parameter,
@@ -172,12 +166,12 @@ sub mip_install {
         }
     );
 
-    ## Store script, process and pipeline for broadcasting later
-    $active_parameter{script}   = $script;
-    $active_parameter{process}  = lc $process;
-    $active_parameter{pipeline} = $pipeline;
-
-    run_install_pipeline( { active_parameter_href => \%active_parameter, } );
+    run_install_pipeline(
+        {
+            active_parameter_href => \%active_parameter,
+            pipeline              => lc $script,
+        }
+    );
 
     return;
 }
@@ -195,21 +189,6 @@ sub _this_sub {
     $this_sub = ( split /::/xms, $this_sub )[$MINUS_ONE];
 
     return $this_sub;
-}
-
-sub _parent_module {
-
-## Function : Returns the name of the module that called this one
-## Returns  : $parent_module
-## Arguments:
-
-    ## Get full path to module
-    my $parent_module = ( caller 1 )[0];
-
-    ## Isolate module
-    $parent_module = ( split /::/xms, $parent_module )[$MINUS_ONE];
-
-    return $parent_module;
 }
 
 1;

@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use List::Util qw{ uniq };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.34;
+    our $VERSION = 1.35;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -126,6 +127,19 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
         );
         exit 1;
     }
+
+    ## Set programs to install depending on pipeline
+    if ( scalar @{ $active_parameter_href->{select_programs} } == 0 ) {
+
+      PIPELINE:
+        foreach my $pipeline ( @{ $active_parameter_href->{pipelines} } ) {
+
+            push @{ $active_parameter_href->{select_programs} },
+              @{ $active_parameter_href->{$pipeline} };
+        }
+    }
+    @{ $active_parameter_href->{select_programs} } =
+      uniq @{ $active_parameter_href->{select_programs} };
 
     ## Get programs that are to be installed via shell
     my @shell_programs_to_install = get_programs_for_shell_installation(

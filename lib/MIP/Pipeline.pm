@@ -15,14 +15,14 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME };
+use MIP::Constants qw{ $LOG_NAME $SPACE};
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -236,11 +236,13 @@ sub run_install_pipeline {
 ## Function : Run install pipeline recipe
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this install hash {REF}
+##          : $pipeline              => Pipeline
 
     my ($arg_href) = @_;
 
 ## Flatten argument(s)
     my $active_parameter_href;
+    my $pipeline;
 
     my $tmpl = {
         active_parameter_href => {
@@ -250,26 +252,29 @@ sub run_install_pipeline {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
+        pipeline => {
+            allow       => [q{mip_install}],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
-    use MIP::Recipes::Pipeline::Install_rd_rna qw{ pipeline_install_rd_rna };
+    use MIP::Recipes::Pipeline::Install qw{ pipeline_install };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack
-    my $pipeline = $active_parameter_href->{pipeline};
-
     ## Create dispatch table of pipelines
-    my %pipeline_table = (
-        install_rd_dna => \&pipeline_install_rd_dna,
-        install_rd_rna => \&pipeline_install_rd_rna,
-    );
+    my %pipeline_table = ( mip_install => \&pipeline_install, );
 
-    $log->info( q{Pipeline type: } . $pipeline );
+    $log->info(
+        q{Installing pipelines: } . join $SPACE,
+        @{ $active_parameter_href->{pipelines} }
+    );
     $pipeline_table{$pipeline}->(
         {
             active_parameter_href => $active_parameter_href,
