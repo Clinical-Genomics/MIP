@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -99,13 +99,12 @@ sub parse_fastq_infiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
-    use MIP::Fastq
-      qw{ check_interleaved get_fastq_file_header_info get_read_length parse_fastq_infiles_format };
+    use MIP::Fastq qw{ get_fastq_file_header_info };
     use MIP::File_info qw{
       get_sample_file_attribute
-      parse_file_compression_features
       parse_files_compression_status
-      set_sample_file_attribute };
+      parse_sample_fastq_file_attributes
+    };
     use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
@@ -128,48 +127,14 @@ sub parse_fastq_infiles {
             each @{ $file_info_sample{mip_infiles} } )
         {
 
-            ## Parse compression features
-            my $read_file_command = parse_file_compression_features(
+            my %infile_info = parse_sample_fastq_file_attributes(
                 {
                     file_info_href => $file_info_href,
                     file_name      => $file_name,
+                    infiles_dir    => $infiles_dir,
                     sample_id      => $sample_id,
                 }
             );
-
-            ## Parse infile according to filename convention
-            my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
-
-            ## Get sequence read length from file
-            $infile_info{read_length} = get_read_length(
-                {
-                    file_path         => catfile( $infiles_dir, $file_name ),
-                    read_file_command => $read_file_command,
-                }
-            );
-
-            ## Is file interleaved and have proper read direction
-            $infile_info{is_interleaved} = check_interleaved(
-                {
-                    file_path         => catfile( $infiles_dir, $file_name ),
-                    read_file_command => $read_file_command,
-                }
-            );
-
-            ## Transfer to file_info hash
-          ATTRIBUTE:
-            while ( my ( $attribute, $attribute_value ) = each %infile_info ) {
-
-                set_sample_file_attribute(
-                    {
-                        attribute       => $attribute,
-                        attribute_value => $attribute_value,
-                        file_info_href  => $file_info_href,
-                        file_name       => $file_name,
-                        sample_id       => $sample_id,
-                    }
-                );
-            }
 
             ## If filename convention is followed
             if ( exists $infile_info{direction} ) {
@@ -223,7 +188,7 @@ sub parse_fastq_infiles {
                 my %fastq_info_header = get_fastq_file_header_info(
                     {
                         file_path         => catfile( $infiles_dir, $file_name ),
-                        read_file_command => $read_file_command,
+                        read_file_command => $infile_info{read_file_command},
                     }
                 );
 
