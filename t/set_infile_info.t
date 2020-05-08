@@ -27,7 +27,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -178,10 +178,6 @@ my %expected_result = (
         },
     },
 );
-
-## Then return true for detecting Undetermined in flowcell name
-ok( $file_info{undetermined_in_file_name}{$mip_file_format},
-    q{Tracked undetermined in file name} );
 
 ## Then add the lane info
 is_deeply(

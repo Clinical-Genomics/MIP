@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1028,13 +1028,6 @@ sub set_infile_info {
 
 # Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
-
-        ## Detect Undetermined in flowcell id
-        if ( $flowcell =~ /Undetermined/ixsm ) {
-
-            ## Set Undetermined to true for file
-            $file_info_href->{undetermined_in_file_name}{$mip_file_format} = 1;
-        }
 
         my %direction_one_metric = (
             interleaved       => $is_interleaved,
