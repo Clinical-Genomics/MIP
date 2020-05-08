@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname fileparse };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -24,13 +25,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_metafiles
       get_is_sample_files_compressed
       get_sample_file_attribute
+      parse_file_compression_features
+      parse_files_compression_status
+      parse_sample_fastq_file_attributes
+      parse_select_file_contigs
       set_alt_loci_contigs
       set_bam_contigs
       set_dict_contigs
@@ -41,9 +46,6 @@ BEGIN {
       set_primary_contigs
       set_sample_file_attribute
       set_select_file_contigs
-      parse_file_compression_features
-      parse_files_compression_status
-      parse_select_file_contigs
     };
 }
 
@@ -408,6 +410,100 @@ sub parse_files_compression_status {
         }
     );
     return;
+}
+
+sub parse_sample_fastq_file_attributes {
+
+## Function : Parse sample fastq file attributes
+## Returns  : %infile_info
+## Arguments: $file_info_href => File info hash {REF}
+##          : $file_name      => Fast file name
+##          : $infiles_dir    => Sample infile dir of fastq files
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $file_name;
+    my $infiles_dir;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        infiles_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_dir,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Fastq qw{ check_interleaved get_read_length parse_fastq_infiles_format };
+
+    ## Parse infile according to filename convention
+    my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+
+    ## Parse compression features
+    $infile_info{read_file_command} = parse_file_compression_features(
+        {
+            file_info_href => $file_info_href,
+            file_name      => $file_name,
+            sample_id      => $sample_id,
+        }
+    );
+
+    ## Get sequence read length from file
+    $infile_info{read_length} = get_read_length(
+        {
+            file_path         => catfile( $infiles_dir, $file_name ),
+            read_file_command => $infile_info{read_file_command},
+        }
+    );
+
+    ## Is file interleaved and have proper read direction
+    $infile_info{is_interleaved} = check_interleaved(
+        {
+            file_path         => catfile( $infiles_dir, $file_name ),
+            read_file_command => $infile_info{read_file_command},
+        }
+    );
+
+    ## Transfer to file_info hash
+  ATTRIBUTE:
+    while ( my ( $attribute, $attribute_value ) = each %infile_info ) {
+
+        set_sample_file_attribute(
+            {
+                attribute       => $attribute,
+                attribute_value => $attribute_value,
+                file_info_href  => $file_info_href,
+                file_name       => $file_name,
+                sample_id       => $sample_id,
+            }
+        );
+    }
+    return %infile_info;
 }
 
 sub set_alt_loci_contigs {
