@@ -25,12 +25,13 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 ## Set paths
 my $conda_path = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -77,9 +78,14 @@ my $cmds_ref = [
     $config_file, q{--conda_path}, $conda_path,           qw{ --dra },
 ];
 
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip download rd_rna sbatch mode} );
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip download rd_rna sbatch mode} );
 
 ## Clean-up
 my @clenup_dirs = qw{ mip_download mip_log };

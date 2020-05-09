@@ -25,14 +25,14 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Script::Utils qw{ help };
-use MIP::Environment::Child_process qw{ child_process };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 ## Set paths
 my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
