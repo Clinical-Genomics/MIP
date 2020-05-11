@@ -25,12 +25,13 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 ## Constants
 Readonly my $SELECT_FEATURE_MATCHING_COLUMN => 3;
@@ -89,9 +90,14 @@ my $cmds_ref = [
     $select_outfile,
 ];
 
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip vcfparser} );
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip vcfparser} );
 
 ok( -f $select_outfile, q{Checking for select file} );
 

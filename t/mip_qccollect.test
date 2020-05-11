@@ -25,22 +25,22 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 ## Set paths
-my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
-my $conda_path            = catdir( $cluster_constant_path, qw{ modules miniconda} );
+my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
 my $eval_metric_file =
   catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.1-.yaml } );
 my $mip_path      = catfile( dirname($Bin), q{mip} );
 my $log_file_path = catfile( cwd(),         q{qc_metrics_qccollect.log} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
-my $regexp_file_path    = catfile( $test_reference_path, q{qc_regexp_-v1.23-.yaml} );
+my $regexp_file_path    = catfile( $test_reference_path, q{qc_regexp_-v1.25-.yaml} );
 my $sample_info_file    = catfile( $cluster_constant_path,
     qw{ test_data 643594-miptest_qc_sample_info_travis.yaml } );
 my $outfile = catfile( cwd(), q{qc_metrics.yaml} );
@@ -87,9 +87,14 @@ my $cmds_ref = [
     q{--outfile},      $outfile,
 ];
 
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip qccollect} );
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip qccollect} );
 
 ok( -f $outfile, q{Checking for outfile} );
 
