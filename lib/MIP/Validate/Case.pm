@@ -26,7 +26,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_infiles check_sample_ids };
+    our @EXPORT_OK = qw{ check_infiles check_infile_contain_sample_id check_sample_ids };
 }
 
 sub check_infiles {
@@ -92,6 +92,76 @@ qq{Could not find any fastq files in supplied infiles directory: $infile_directo
         $log->fatal(
 q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.}
         );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_infile_contain_sample_id {
+
+## Function : Check that the sample_id provided and sample_id in infile name match
+## Returns  :
+## Arguments: $infile_name      => Infile name
+##          : $infile_sample_id => Sample_id collect with regexp from infile
+##          : $sample_id        => Sample id from user
+##          : $sample_ids_ref   => Sample ids from user
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_name;
+    my $infile_sample_id;
+    my $sample_id;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        infile_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_name,
+            strict_type => 1,
+        },
+        infile_sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_sample_id,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    # Track seen sample ids
+    my %seen;
+
+    ## Increment for all sample ids
+    map { $seen{$_}++ } ( @{$sample_ids_ref}, $infile_sample_id );
+
+    if ( not $seen{$infile_sample_id} > 1 ) {
+
+        $log->fatal( $sample_id
+              . q{ supplied and sample_id }
+              . $infile_sample_id
+              . q{ found in file : }
+              . $infile_name
+              . q{ does not match. Please rename file to match sample_id: }
+              . $sample_id );
         exit 1;
     }
     return 1;
