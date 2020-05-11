@@ -144,7 +144,7 @@ sub analysis_sambamba_depth {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Sambamba qw{ sambamba_depth };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script};
 
     ### PREPROCESSING:
@@ -275,6 +275,17 @@ sub analysis_sambamba_depth {
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{bed},
+                id               => $sample_id,
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+                tag              => q{coverage},
             }
         );
 
