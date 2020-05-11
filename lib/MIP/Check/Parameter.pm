@@ -27,12 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.44;
+    our $VERSION = 1.45;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_active_installation_parameters
-      check_infile_contain_sample_id
       check_recipe_fastq_compatibility
     };
 }
@@ -72,80 +71,6 @@ sub check_active_installation_parameters {
         $log->fatal(
 q{The parameter "project_id" must be set when a sbatch installation has been requested}
         );
-        exit 1;
-    }
-    return 1;
-}
-
-sub check_infile_contain_sample_id {
-
-## Function : Check that the sample_id provided and sample_id in infile name match.
-## Returns  :
-## Arguments: $infile_name      => Infile name
-##          : $infile_sample_id => Sample_id collect with regexp from infile
-##          : $log              => Log object
-##          : $sample_id        => Sample id from user
-##          : $sample_ids_ref   => Sample ids from user
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_name;
-    my $infile_sample_id;
-    my $log;
-    my $sample_id;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        infile_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_name,
-            strict_type => 1,
-        },
-        infile_sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_sample_id,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Track seen sample ids
-    my %seen;
-
-    ## Increment for all sample ids
-    map { $seen{$_}++ } ( @{$sample_ids_ref}, $infile_sample_id );
-
-    if ( not $seen{$infile_sample_id} > 1 ) {
-
-        $log->fatal( $sample_id
-              . q{ supplied and sample_id }
-              . $infile_sample_id
-              . q{ found in file : }
-              . $infile_name
-              . q{ does not match. Please rename file to match sample_id: }
-              . $sample_id );
         exit 1;
     }
     return 1;
