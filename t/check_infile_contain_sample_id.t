@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,7 +66,6 @@ my $log = test_log( {} );
 my $infile_sample_id = q{sample-1};
 my $sample_id        = q{sample-1};
 
-my %active_parameter = ( sample_ids => [ $sample_id, qw{ sample-2 }, ], );
 my %infile = ( $sample_id => { mip_infiles => [ $sample_id . q{.fastq} ], }, );
 
 my $is_ok = check_infile_contain_sample_id(
@@ -74,7 +73,6 @@ my $is_ok = check_infile_contain_sample_id(
         infile_name      => $infile{$sample_id}{mip_infiles}[0],
         infile_sample_id => $infile_sample_id,
         sample_id        => $sample_id,
-        sample_ids_ref   => \@{ $active_parameter{sample_ids} },
     }
 );
 ## Then return true
@@ -89,7 +87,6 @@ trap {
             infile_name      => $infile{q{sample-1}}{mip_infiles}[0],
             infile_sample_id => $infile_sample_id,
             sample_id        => $sample_id,
-            sample_ids_ref   => \@{ $active_parameter{sample_ids} },
         }
     )
 };

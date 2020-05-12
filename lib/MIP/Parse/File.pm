@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -98,7 +98,6 @@ sub parse_fastq_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Validate::Case qw{ check_infile_contain_sample_id };
     use MIP::Fastq qw{ get_fastq_file_header_info };
     use MIP::File_info qw{
       get_sample_file_attribute
@@ -138,29 +137,10 @@ sub parse_fastq_infiles {
             );
 
             ## If filename convention is followed
-            if ( exists $infile_info{date} ) {
+            if ( not exists $infile_info{date} ) {
 
-                ## Check that the sample_id provided and sample_id in infile name match.
-                check_infile_contain_sample_id(
-                    {
-                        infile_name      => $file_name,
-                        infile_sample_id => $infile_info{infile_sample_id},
-                        sample_id        => $sample_id,
-                        sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                    }
-                );
-            }
-            else {
                 ## No regexp match i.e. file does not follow filename convention
-                $log->warn(q{Will try to find mandatory information from fastq header.});
-
-                ## Check that file name at least contains sample id
-                if ( $file_name !~ /$sample_id/sxm ) {
-
-                    $log->fatal(
-                        q{Please check that the file name contains the sample_id.});
-                    exit 1;
-                }
+                $log->warn(q{Will try to find mandatory information from fastq header});
 
                 ## Get run info from fastq file header
                 %fastq_info_header = get_fastq_file_header_info(

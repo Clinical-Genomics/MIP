@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,9 +66,15 @@ my $log = test_log( {} );
 
 ## Given compressed file, when following MIP filename convention
 my $file_name = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
+my $sample_id = q{ADM1059A1};
 
 ## Parse infile according to filename convention
-my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+my %infile_info = parse_fastq_infiles_format(
+    {
+        file_name => $file_name,
+        sample_id => $sample_id,
+    }
+);
 
 my %expected_features = (
     date             => $DATE,
@@ -83,21 +89,54 @@ my %expected_features = (
 is_deeply( \%infile_info, \%expected_features,
     q{Compressed file follows file convention} );
 
-## Given compressed file, when followinf MIP filename convention
+## Given file, when following MIP filename convention
 $file_name = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq};
 
 ## When parsing infile according to filename convention
-%infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+%infile_info = parse_fastq_infiles_format(
+    {
+        file_name => $file_name,
+        sample_id => $sample_id,
+    }
+);
 
 ## Then return all features from filename
 is_deeply( \%infile_info, \%expected_features,
     q{Uncompressed file follows file convention} );
 
+## Given a file, when following MIP filename convention
+$file_name = q{1_161011_TestFilev2_not-same-sample-id_TCCGGAGA_1.fastq};
+
+## When file name sample id and sample_id do not match
+trap {
+    parse_fastq_infiles_format(
+        {
+            file_name => $file_name,
+            sample_id => $sample_id,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if sample_id and file name sample are not equal} );
+like(
+    $trap->stderr,
+    qr/Please \s+ rename \s+ file \s+ to \s+ match \s+ sample_id/xms,
+    q{Throw fatal log message if sample_id cannot be found in fastq file name}
+);
+
 ## Given file, when not following MIP filename convention
 $file_name = q{TestFilev2_ADM1059A1_TCCGGAGA_1.fastq};
 
 ## When parsing infile according to filename convention
-my @responces = trap { parse_fastq_infiles_format( { file_name => $file_name, } ) };
+my @responces = trap {
+    parse_fastq_infiles_format(
+        {
+            file_name => $file_name,
+            sample_id => $sample_id,
+        }
+    )
+};
 
 ## Then return no features from filename
 is( $responces[0], undef, q{Return undef for file not following file convention} );
@@ -105,6 +144,27 @@ like(
     $trap->stderr,
     qr/Missing \s+ file \s+ name \s+ feature/xms,
     q{Throw warning for missing features}
+);
+
+## Given file, when not following MIP filename convention
+$file_name = q{TestFilev2_no-sample-id_TCCGGAGA_1.fastq};
+
+## When parsing infile according to filename convention
+trap {
+    parse_fastq_infiles_format(
+        {
+            file_name => $file_name,
+            sample_id => $sample_id,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if sample_id cannot be found in fastq file name} );
+like(
+    $trap->stderr,
+    qr/Please \s+ check \s+ that \s+ the \s+ file/xms,
+    q{Throw fatal log message if sample_id cannot be found in fastq file name}
 );
 
 done_testing();
