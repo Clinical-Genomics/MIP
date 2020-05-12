@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -343,7 +343,9 @@ sub analysis_gatk_haplotypecaller {
                 infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                linked_de_bruijn_graph =>
+                  $active_parameter_href->{gatk_haplotypecaller_linked_de_bruijn_graph},
+                memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 num_ref_samples_if_no_call =>
                   $active_parameter_href->{gatk_num_reference_samples_if_no_call},
                 outfile_path    => $outfile_path{$contig},

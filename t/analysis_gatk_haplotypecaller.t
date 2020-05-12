@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +75,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{gatk_haplotypecaller_emit_ref_confidence} = q{GVCF};
+$active_parameter{gatk_haplotypecaller_emit_ref_confidence}    = q{GVCF};
+$active_parameter{gatk_haplotypecaller_linked_de_bruijn_graph} = 0;
 
 my %file_info = test_mip_hashes(
     {

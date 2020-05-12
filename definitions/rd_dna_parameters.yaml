@@ -1157,6 +1157,12 @@ gatk_haplotypecaller_emit_ref_confidence:
   data_type: SCALAR
   default: "GVCF"
   type: recipe_argument
+gatk_haplotypecaller_linked_de_bruijn_graph:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 gatk_haplotypecaller_no_soft_clipped_bases:
   associated_recipe:
     - gatk_haplotypecaller
@@ -1254,16 +1260,16 @@ gatk_num_reference_samples_if_no_call:
     - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
-  default: 7854
+  mandatory: no
   type: recipe_argument
 gatk_calculate_genotype_call_set:
   associated_recipe:
     - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
   exists_check: file
   is_reference: 1
+  mandatory: no
   reference: reference_dir
   type: path
 gatk_variantrecalibration_annotations:
