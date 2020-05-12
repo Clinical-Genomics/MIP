@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.52;
+our $VERSION = 1.53;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1209,6 +1209,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{VCF to produce},
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_linked_de_bruijn_graph} => (
+            cmd_aliases   => [qw{ ghclbg }],
+            cmd_flag      => q{gatk_haplotype_lk_bruijn_grh},
+            documentation => q{Use linked de bruijn graph in the variant calling},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
