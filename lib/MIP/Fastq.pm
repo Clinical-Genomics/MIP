@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -390,11 +390,13 @@ sub parse_fastq_infiles_format {
 ## Function : Parse infile according to MIP filename convention
 ## Returns  : %infile_info or undef
 ## Arguments: $file_name => File name
+##          : $sample_id => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_name;
+    my $sample_id;
 
     my $tmpl = {
         file_name => {
@@ -403,9 +405,17 @@ sub parse_fastq_infiles_format {
             store       => \$file_name,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Validate::Case qw{ check_infile_contain_sample_id };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -435,8 +445,23 @@ sub parse_fastq_infiles_format {
         $log->warn(qq{Could not detect MIP file name convention for file: $file_name });
         $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE,
             @missing_feature );
-        return;
+
+        ## Check that file name at least contains sample id
+        return if ( $file_name =~ /$sample_id/sxm );
+
+        $log->fatal(
+qq{Please check that the file name: $file_name contains the sample_id: $sample_id}
+        );
+        exit 1;
     }
+    ## Check that the sample_id provided and sample_id in infile name match
+    check_infile_contain_sample_id(
+        {
+            infile_name      => $file_name,
+            infile_sample_id => $fastq_file_name{infile_sample_id},
+            sample_id        => $sample_id,
+        }
+    );
     return %fastq_file_name;
 }
 

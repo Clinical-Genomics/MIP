@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -462,7 +462,12 @@ sub parse_sample_fastq_file_attributes {
     use MIP::Fastq qw{ check_interleaved get_read_length parse_fastq_infiles_format };
 
     ## Parse infile according to filename convention
-    my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+    my %infile_info = parse_fastq_infiles_format(
+        {
+            file_name => $file_name,
+            sample_id => $sample_id,
+        }
+    );
 
     ## Parse compression features
     $infile_info{read_file_command} = parse_file_compression_features(
