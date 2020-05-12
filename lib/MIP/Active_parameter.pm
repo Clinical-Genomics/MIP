@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -62,6 +62,7 @@ BEGIN {
       set_default_vcfparser_select_file
       set_exome_target_bed
       set_gender_sample_ids
+      set_include_y
       set_load_env_environment
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
@@ -1722,7 +1723,7 @@ sub set_load_env_environment {
 
 sub set_gender_sample_ids {
 
-## Function : Set gender sample_ids of the current analysis and count each instance
+## Function : Set gender sample_ids of the current analysis
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
@@ -1759,7 +1760,7 @@ sub set_gender_sample_ids {
         2      => \&_set_female_gender,
         female => \&_set_female_gender,
         male   => \&_set_male_gender,
-        other  => \&_set_other_and_male_gender,
+        other  => \&_set_other_gender,
     );
 
   SAMPLE_ID:
@@ -1783,14 +1784,59 @@ sub set_gender_sample_ids {
             );
             next SAMPLE_ID;
         }
-        ## Set as other and male
-        _set_other_and_male_gender(
+        ## Set as other
+        _set_other_gender(
             {
                 active_parameter_href => $active_parameter_href,
                 sample_id             => $sample_id
             }
         );
 
+    }
+
+    set_include_y(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    return;
+}
+
+sub set_include_y {
+
+## Function : Set include_y bolean based on occurenes of male/other
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{include_y} = 0;
+
+  GENDER:
+    foreach my $gender ( keys %{ $active_parameter_href->{gender} } ) {
+
+        next GENDER if ( $gender eq q{females} );
+
+        $active_parameter_href->{include_y} =
+          ( @{ $active_parameter_href->{gender}{$gender} } > 0 ) ? 1 : 0;
+
+        last if $active_parameter_href->{include_y} == 1;
     }
     return;
 }
@@ -2478,14 +2524,13 @@ sub _set_female_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $active_parameter_href->{found_female}++;
     push @{ $active_parameter_href->{gender}{females} }, $sample_id;
     return;
 }
 
 sub _set_male_gender {
 
-## Function : Set male gender sample_ids of the current analysis and count each instance
+## Function : Set male gender sample_ids of the current analysis
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $sample_id             => Sample id
@@ -2514,14 +2559,13 @@ sub _set_male_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $active_parameter_href->{found_male}++;
     push @{ $active_parameter_href->{gender}{males} }, $sample_id;
     return;
 }
 
-sub _set_other_and_male_gender {
+sub _set_other_gender {
 
-## Function : Set other gender sample_ids of the current analysis and count each instance
+## Function : Set other gender sample_ids of the current analysis
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $sample_id             => Sample id
@@ -2550,11 +2594,6 @@ sub _set_other_and_male_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Include since it might be male to enable analysis of Y. For WGS estimation of gender
-    ## will be performed from fastq reads
-    $active_parameter_href->{found_male}++;
-
-    $active_parameter_href->{found_other}++;
     push @{ $active_parameter_href->{gender}{others} }, $sample_id;
     return;
 }

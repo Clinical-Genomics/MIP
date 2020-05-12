@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,8 +39,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Active_parameter}       => [qw{ set_gender_sample_ids }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ set_gender_sample_ids }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -68,45 +68,29 @@ my %sample_info = (
     },
 );
 
-  set_gender_sample_ids(
+set_gender_sample_ids(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
     }
-  );
-
-my %expected_result = (
-    found_male   => 2,
-    found_female => 1,
-    found_other  => 1,
 );
 
 my %expected_gender_info = (
-    gender => {
-        males   => [qw{ sample_1 }],
-        females => [qw{ sample_2 }],
-        others  => [qw{ sample_3 }],
-    }
+    males   => [qw{ sample_1 }],
+    females => [qw{ sample_2 }],
+    others  => [qw{ sample_3 }],
 );
-
-GENDER:
-foreach my $found_gender ( keys %expected_result ) {
-
-## Then all genders count should be one
-    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
-        $found_gender );
-}
 
 ## Then sample_ids should be added to each gender category
-is_deeply(
-    $active_parameter{gender},
-    $expected_gender_info{gender},
-    q{Added gender info to active parameter}
-);
+is_deeply( $active_parameter{gender},
+    \%expected_gender_info, q{Added gender info to active parameter} );
+is( $active_parameter{include_y}, 1, q{Set_include y} );
 
 ## Given no males or females
 # Clear data from previous test
-map { $active_parameter{$_} = 0 } (qw{ found_male found_female found_other });
+delete $active_parameter{gender};
+
+#map { $active_parameter{$_} = 0 } (qw{ found_male found_female found_other });
 
 %sample_info = (
     sample => {
@@ -116,25 +100,16 @@ map { $active_parameter{$_} = 0 } (qw{ found_male found_female found_other });
     },
 );
 
-%expected_result = (
-    found_male   => 3,
-    found_female => 0,
-    found_other  => 3,
-);
-
 set_gender_sample_ids(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
     }
-  );
+);
 
-GENDER:
-foreach my $found_gender ( keys %expected_result ) {
-
-## Then one male should be found and a other count of three
-    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
-        $found_gender );
-}
+%expected_gender_info = ( others => [qw{ sample_1 sample_2 sample_3 }], );
+## Then sample_ids should be added to each gender category
+is_deeply( $active_parameter{gender},
+    \%expected_gender_info, q{Added gender info to active parameter} );
 
 done_testing();

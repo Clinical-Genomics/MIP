@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -105,8 +105,6 @@ my $is_gender_other = parse_fastq_for_gender(
 is( $is_gender_other, undef, q{No unknown gender} );
 
 ## Given a sample when gender unknown
-$active_parameter{found_other}    = 1;
-$active_parameter{found_male}     = 1;
 $active_parameter{gender}{others} = [$sample_id];
 
 $is_gender_other = parse_fastq_for_gender(

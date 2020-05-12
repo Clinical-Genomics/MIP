@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -472,6 +472,7 @@ sub update_gender_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ set_include_y };
     use MIP::Contigs qw{ update_contigs_for_run };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -483,17 +484,31 @@ sub update_gender_info {
 
         $log->info(q{Found male according to fastq reads});
 
-        ## Increment found_male
-        $active_parameter_href->{found_male}++;
+        ## Add sample id to males
+        push @{ $active_parameter_href->{gender}{males} }, $sample_id;
+
+        ## For tracability
         $active_parameter_href->{gender_estimation}{$sample_id} = q{male};
-        return 1;
+    }
+    else {
+
+        $log->info(q{Found female according to fastq reads});
+
+        ## Add sample id to females
+        push @{ $active_parameter_href->{gender}{females} }, $sample_id;
+
+        $active_parameter_href->{gender_estimation}{$sample_id} = q{female};
     }
 
-    $log->info(q{Found female according to fastq reads});
+    ## Remove sample_id from others
+    @{ $active_parameter_href->{gender}{others} } =
+      grep { !/$sample_id/xms } @{ $active_parameter_href->{gender}{others} };
 
-    ## Decrement found_male
-    $active_parameter_href->{found_male}--;
-    $active_parameter_href->{gender_estimation}{$sample_id} = q{female};
+    set_include_y(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
 
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
@@ -501,7 +516,7 @@ sub update_gender_info {
             consensus_analysis_type => $consensus_analysis_type,
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
-            found_male              => $active_parameter_href->{found_male},
+            include_y               => $active_parameter_href->{include_y},
         }
     );
     return 1;

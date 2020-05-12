@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,7 +65,7 @@ diag(   q{Test update_contigs_for_run from Contigs.pm v}
 my $log = test_log( {} );
 
 ## Given some contigs to remove
-my $found_male      = 0;
+my $include_y       = 0;
 my @exclude_contigs = qw{ 1 2 3 4};
 
 my %file_info = (
@@ -81,7 +81,7 @@ update_contigs_for_run(
         consensus_analysis_type => q{wes},
         exclude_contigs_ref     => \@exclude_contigs,
         file_info_href          => \%file_info,
-        found_male              => $found_male,
+        include_y               => $include_y,
     }
 );
 

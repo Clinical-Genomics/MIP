@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,12 +62,12 @@ my $log = test_log( {} );
 ## Given contigs, when male not present
 my @contigs = qw{ 1 2 3 4 Y};
 
-my $is_male = 0;
+my $include_y = 0;
 
 my @no_male_contigs = delete_male_contig(
     {
         contigs_ref => \@contigs,
-        found_male  => $is_male,
+        include_y   => $include_y,
     }
 );
 
@@ -78,12 +78,12 @@ my @expected_contigs = qw{ 1 2 3 4 };
 is_deeply( \@no_male_contigs, \@expected_contigs, q{Removed male contig} );
 
 ## Given contigs, when male is presnt
-$is_male = 1;
+$include_y = 1;
 
 my @has_male_contigs = delete_male_contig(
     {
         contigs_ref => \@contigs,
-        found_male  => $is_male,
+        include_y   => $include_y,
     }
 );
 
