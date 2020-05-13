@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.33;
+    our $VERSION = 1.34;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -239,7 +239,7 @@ sub check_dragen_rd_dna {
             consensus_analysis_type => $consensus_analysis_type,
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
-            found_male              => $active_parameter_href->{found_male},
+            include_y               => $active_parameter_href->{include_y},
         }
     );
 
@@ -574,7 +574,7 @@ sub check_rd_dna {
             consensus_analysis_type => $consensus_analysis_type,
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
-            found_male              => $active_parameter_href->{found_male},
+            include_y               => $active_parameter_href->{include_y},
         }
     );
 
@@ -1077,7 +1077,7 @@ sub check_rd_dna_vcf_rerun {
             consensus_analysis_type => $consensus_analysis_type,
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
-            found_male              => $active_parameter_href->{found_male},
+            include_y               => $active_parameter_href->{include_y},
         }
     );
 
@@ -1298,7 +1298,7 @@ sub check_rd_rna {
             consensus_analysis_type => $consensus_analysis_type,
             exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href          => $file_info_href,
-            found_male              => $active_parameter_href->{found_male},
+            include_y               => $active_parameter_href->{include_y},
         }
     );
 

@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.54;
+    our $VERSION = 1.55;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -433,7 +433,7 @@ sub mip_analyse {
         }
     );
 
-    ## Set the gender(s) included in current analysisa and count them
+    ## Set the gender(s) included in current analysis and count them
     set_gender_sample_ids(
         {
             active_parameter_href => \%active_parameter,

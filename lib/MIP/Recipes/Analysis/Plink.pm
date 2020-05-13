@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -212,14 +212,14 @@ sub analysis_plink {
       PLINK_PROGRAM:
         while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} ) {
 
-            if ( scalar @sample_ids > 1 and $mode eq q{multiple_samples} ) {
+            if ( @sample_ids > 1 and $mode eq q{multiple_samples} ) {
 
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
-            if (    defined $active_parameter_href->{found_other}
-                and $active_parameter_href->{found_other} ne scalar @sample_ids
+            if (    defined $active_parameter_href->{gender}{others}
+                and @{ $active_parameter_href->{gender}{others} } != @sample_ids
                 and $mode eq q{check_for_sex} )
             {
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
@@ -229,7 +229,7 @@ sub analysis_plink {
     }
 
     ## No eligible test to run
-    if ( not scalar @plink_outfiles ) {
+    if ( not @plink_outfiles ) {
         $log->warn(
             q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'}
         );
@@ -371,7 +371,9 @@ sub analysis_plink {
     my $allow_no_sex;
 
     ## If not all samples have a known sex
-    if ( $active_parameter_href->{found_other} ) {
+    if ( $active_parameter_href->{gender}{others}
+        and @{ $active_parameter_href->{gender}{others} } )
+    {
 
         $allow_no_sex = 1;
     }
@@ -392,7 +394,7 @@ sub analysis_plink {
     say {$filehandle} $NEWLINE;
 
     # Only perform if more than 1 sample
-    if ( scalar @sample_ids > 1 ) {
+    if ( @sample_ids > 1 ) {
 
         my $inbreeding_outfile_prefix_hets =
           $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
@@ -427,8 +429,8 @@ sub analysis_plink {
         say {$filehandle} $NEWLINE;
     }
 
-    if ( defined $active_parameter_href->{found_other}
-        and $active_parameter_href->{found_other} ne scalar @sample_ids )
+    if ( defined $active_parameter_href->{gender}{others}
+        and @{ $active_parameter_href->{gender}{others} } != @sample_ids )
     {
 
         ## Only if not all samples have unknown sex
@@ -468,7 +470,7 @@ sub analysis_plink {
         my $extract_file;
         my $read_freqfile_path;
 
-        if ( scalar @sample_ids > 1 ) {
+        if ( @sample_ids > 1 ) {
 
             $extract_file       = $binary_fileset_prefix . $DOT . q{prune.in};
             $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
