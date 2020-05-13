@@ -51,7 +51,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $INTERLEAVED_READ_DIRECTION = 3;
+Readonly my $INTERLEAVED_READ_DIRECTION => 3;
 
 sub add_sample_fastq_file_lanes {
 
