@@ -27,7 +27,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -54,6 +54,7 @@ BEGIN {
 }
 
 use MIP::Fastq qw{ define_mip_fastq_file_features };
+use MIP::File_info qw{ get_sample_file_attribute };
 use MIP::Sample_info qw{ set_infile_info };
 
 diag(   q{Test set_infile_info from Sample_info.pm v}
@@ -69,72 +70,115 @@ diag(   q{Test set_infile_info from Sample_info.pm v}
 my $log = test_log( {} );
 
 ## Set file info parameters
-
-# Interleaved files
-my $is_interleaved;
-
-my $read_length = $READ_LENGTH;
-my $sample_id   = q{sample-1};
+my $fastq_file_read_one = q{file-1};
+my $fastq_file_read_two = q{file-2};
+my $sample_id           = q{sample-1};
 
 my %active_parameter = ( case_id => q{Adams}, );
-my %file_info = ( $sample_id => { mip_infiles => [qw{ file-1 }], }, );
-my %infile_both_strands_prefix;
-my %infile_info = (
-    date             => q{150703},
-    direction        => 1,
-    flowcell         => q{Undetermined-flow-rider},
-    index            => q{ATCG},
-    infile_sample_id => $sample_id,
-    lane             => 1,
+my %file_info        = (
+    $sample_id => {
+        $fastq_file_read_one => {
+            date             => q{150703},
+            direction        => 1,
+            flowcell         => q{Undetermined-flow-rider},
+            index            => q{ATCG},
+            infile_sample_id => $sample_id,
+            is_interleaved   => 0,
+            lane             => 1,
+            read_length      => $READ_LENGTH,
+        },
+        $fastq_file_read_two => {
+            date             => q{150703},
+            direction        => 2,
+            flowcell         => q{Undetermined-flow-rider},
+            index            => q{ATCG},
+            infile_sample_id => $sample_id,
+            lane             => 1,
+            read_length      => $READ_LENGTH,
+        },
+        lanes       => [1],
+        mip_infiles => [ $fastq_file_read_one, $fastq_file_read_two ],
+    },
 );
+my %infile_both_strands_prefix;
 my %infile_lane_prefix;
 my %sample_info;
+
+my %attribute = get_sample_file_attribute(
+    {
+        file_info_href => \%file_info,
+        file_name      => $fastq_file_read_one,
+        sample_id      => $sample_id,
+    }
+);
 
 ## Define file formats
 my ( $mip_file_format, $mip_file_format_with_direction,
     $original_file_name_prefix, $run_barcode )
   = define_mip_fastq_file_features(
     {
-        date               => $infile_info{date},
-        direction          => $infile_info{direction},
-        flowcell           => $infile_info{flowcell},
-        index              => $infile_info{index},
-        lane               => $infile_info{lane},
-        original_file_name => $file_info{$sample_id}{mip_infiles}[0],
+        date               => $attribute{date},
+        direction          => $attribute{direction},
+        flowcell           => $attribute{flowcell},
+        index              => $attribute{index},
+        lane               => $attribute{lane},
+        original_file_name => $fastq_file_read_one,
         sample_id          => $sample_id,
     }
   );
 
-my $parsed_date = Time::Piece->strptime( $infile_info{date}, q{%y%m%d} );
+my %attribute_2 = get_sample_file_attribute(
+    {
+        file_info_href => \%file_info,
+        file_name      => $fastq_file_read_two,
+        sample_id      => $sample_id,
+    }
+);
+my ( $mip_file_format_2, $mip_file_format_with_direction_2 ) =
+  define_mip_fastq_file_features(
+    {
+        date               => $attribute_2{date},
+        direction          => $attribute_2{direction},
+        flowcell           => $attribute_2{flowcell},
+        index              => $attribute_2{index},
+        lane               => $attribute_2{lane},
+        original_file_name => $fastq_file_read_two,
+        sample_id          => $sample_id,
+    }
+  );
+
+my $parsed_date = Time::Piece->strptime( $attribute{date}, q{%y%m%d} );
 $parsed_date = $parsed_date->ymd;
+my $lane_tracker = 0;
 
 ## Given single file, when Undetermined in flowcell name
 SAMPLE_ID:
 for my $sample_id ( keys %file_info ) {
 
-    my $lane_tracker = 0;
+    $lane_tracker = 0;
 
   INFILE:
     while ( my ( $file_index, $file_name ) =
         each @{ $file_info{$sample_id}{mip_infiles} } )
     {
 
-        set_infile_info(
+        get_sample_file_attribute(
+            {
+                file_info_href => \%file_info,
+                file_name      => $file_name,
+                sample_id      => $sample_id,
+            }
+        );
+        $lane_tracker = set_infile_info(
             {
                 active_parameter_href           => \%active_parameter,
-                date                            => $infile_info{date},
-                direction                       => $infile_info{direction},
                 file_index                      => $file_index,
                 file_info_href                  => \%file_info,
-                flowcell                        => $infile_info{flowcell},
-                index                           => $infile_info{index},
+                file_name                       => $file_name,
                 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
                 infile_lane_prefix_href         => \%infile_lane_prefix,
-                is_interleaved                  => $is_interleaved,
-                lane                            => $infile_info{lane},
                 lane_tracker                    => $lane_tracker,
-                read_length                     => $read_length,
-                sample_id                       => $infile_info{infile_sample_id},
+                sample_id                       => $sample_id,
                 sample_info_href                => \%sample_info,
             }
         );
@@ -148,27 +192,40 @@ my %expected_result = (
             lanes => [1],
         },
     },
-    infile_both_strands_prefix => { $sample_id => [ $mip_file_format_with_direction, ], },
-    infile_lane_prefix         => {
-        $sample_id => [ $mip_file_format, ],
+    infile_both_strands_prefix => {
+        $sample_id =>
+          [ $mip_file_format_with_direction, $mip_file_format_with_direction_2 ],
+    },
+    infile_lane_prefix => {
+        $sample_id => [$mip_file_format],
     },
     sample_info => {
         sample => {
             $sample_id => {
                 file => {
                     $mip_file_format => {
-                        sequence_run_type   => q{single-end},
+                        sequence_run_type   => q{paired-end},
                         sequence_length     => $READ_LENGTH,
-                        interleaved         => undef,
+                        interleaved         => 0,
                         read_direction_file => {
                             $mip_file_format_with_direction => {
                                 date                      => $parsed_date,
-                                original_file_name        => q{file-1},
+                                original_file_name        => $fastq_file_read_one,
                                 original_file_name_prefix => $original_file_name_prefix,
-                                read_direction            => $infile_info{direction},
-                                lane                      => $infile_info{lane},
-                                flowcell                  => $infile_info{flowcell},
-                                sample_barcode            => $infile_info{index},
+                                read_direction            => $attribute{direction},
+                                lane                      => $attribute{lane},
+                                flowcell                  => $attribute{flowcell},
+                                sample_barcode            => $attribute{index},
+                                run_barcode               => $run_barcode,
+                            },
+                            $mip_file_format_with_direction_2 => {
+                                date                      => $parsed_date,
+                                original_file_name        => $fastq_file_read_two,
+                                original_file_name_prefix => $original_file_name_prefix,
+                                read_direction            => $attribute_2{direction},
+                                lane                      => $attribute_2{lane},
+                                flowcell                  => $attribute_2{flowcell},
+                                sample_barcode            => $attribute_2{index},
                                 run_barcode               => $run_barcode,
                             },
                         },
@@ -178,6 +235,9 @@ my %expected_result = (
         },
     },
 );
+
+## Then lane tracker should be one
+is( $lane_tracker, 1, q{Tracked lane} );
 
 ## Then add the lane info
 is_deeply(
@@ -197,148 +257,10 @@ is_deeply(
 is_deeply(
     \%infile_both_strands_prefix,
     \%{ $expected_result{infile_both_strands_prefix} },
-    q{Added MIP file format with direction for single-end read}
-);
-
-## Then add single-end read info from file name
-is_deeply(
-    \%sample_info,
-    \%{ $expected_result{sample_info} },
-    q{Added sample info for single-end read}
-);
-
-## Clear results
-%expected_result = ();
-
-## Given another file to mimic read direction 2
-%file_info = ( $sample_id => { mip_infiles => [qw{ file-1 file-2}], }, );
-
-my $lane_tracker = 0;
-
-SAMPLE_ID:
-for my $sample_id ( keys %file_info ) {
-
-    $lane_tracker = 0;
-
-  INFILE:
-    while ( my ( $file_index, $file_name ) =
-        each @{ $file_info{$sample_id}{mip_infiles} } )
-    {
-
-        if ( $file_index == 1 ) {
-
-            ## Update infile info to mimic second read direction
-            $infile_info{direction} = 2;
-
-            ## Redefine file format for new direction
-            (
-                $mip_file_format, $mip_file_format_with_direction,
-                $original_file_name_prefix, $run_barcode
-              )
-              = define_mip_fastq_file_features(
-                {
-                    date      => $infile_info{date},
-                    direction => $infile_info{direction},
-                    flowcell  => $infile_info{flowcell},
-                    index     => $infile_info{index},
-                    lane      => $infile_info{lane},
-                    original_file_name =>
-                      $file_info{$sample_id}{mip_infiles}[$file_index],
-                    sample_id => $sample_id,
-                }
-              );
-
-            ## Add second read to infile lane prefix
-            push @{ $expected_result{infile_lane_prefix}{$sample_id} }, $mip_file_format;
-        }
-
-        ## Add the infile both strands prefix
-        push @{ $expected_result{infile_both_strands_prefix}{$sample_id} },
-          $mip_file_format_with_direction;
-
-        $lane_tracker = set_infile_info(
-            {
-                active_parameter_href           => \%active_parameter,
-                date                            => $infile_info{date},
-                direction                       => $infile_info{direction},
-                file_index                      => $file_index,
-                file_info_href                  => \%file_info,
-                flowcell                        => $infile_info{flowcell},
-                index                           => $infile_info{index},
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
-                is_interleaved                  => $is_interleaved,
-                lane                            => $infile_info{lane},
-                lane_tracker                    => $lane_tracker,
-                read_length                     => $read_length,
-                sample_id                       => $infile_info{infile_sample_id},
-                sample_info_href                => \%sample_info,
-            }
-        );
-
-        ## Define what to expect
-        my %direction_one_metric = (
-            interleaved     => $is_interleaved,
-            sequence_length => $READ_LENGTH,
-        );
-
-        ## Alias
-        my $file_level_href =
-          \%{ $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format} };
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %direction_one_metric ) {
-
-            $file_level_href->{$file_key} = $file_value;
-        }
-
-        my %both_directions_metric = (
-            date                      => $parsed_date,
-            flowcell                  => $infile_info{flowcell},
-            lane                      => $infile_info{lane},
-            original_file_name        => $file_info{$sample_id}{mip_infiles}[$file_index],
-            original_file_name_prefix => $original_file_name_prefix,
-            read_direction            => $infile_info{direction},
-            run_barcode               => $run_barcode,
-            sample_barcode            => $infile_info{index},
-        );
-
-        ## Alias
-        my $direction_level_href =
-          \%{ $expected_result{sample_info}{sample}{$sample_id}{file}
-              {$mip_file_format}{read_direction_file}{$mip_file_format_with_direction} };
-
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %both_directions_metric ) {
-
-            $direction_level_href->{$file_key} = $file_value;
-        }
-    }
-}
-
-$expected_result{lane}{$sample_id}{lanes} = [ 1, ];
-
-$expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
-  {sequence_run_type} = q{paired-end};
-
-is( $lane_tracker, 1, q{Tracked lane} );
-
-is_deeply(
-    \@{ $file_info{$sample_id}{lanes} },
-    \@{ $expected_result{lane}{$sample_id}{lanes} },
-    q{Added lane info for paired-end read}
-);
-
-is_deeply(
-    \%infile_lane_prefix,
-    \%{ $expected_result{infile_lane_prefix} },
-    q{Added MIP file format for paired-end read}
-);
-is_deeply(
-    \%infile_both_strands_prefix,
-    \%{ $expected_result{infile_both_strands_prefix} },
     q{Added MIP file format with direction for paired-end read}
 );
 
+## Then add single-end read info from file name
 is_deeply(
     \%sample_info,
     \%{ $expected_result{sample_info} },
