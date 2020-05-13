@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -876,18 +876,12 @@ sub set_infile_info {
 ## Function : Sets information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
 ## Returns  : $lane_tracker
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $date                            => Flow-cell sequencing date
-##          : $direction                       => Sequencing read direction
 ##          : $file_index                      => Index of file
 ##          : $file_info_href                  => File info hash {REF}
-##          : $flowcell                        => Flow-cell id
-##          : $index                           => The DNA library preparation molecular barcode
+##          : $file_name                       => File name
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $is_interleaved                  => Infile is interleaved
-##          : $lane                            => Flow-cell lane
 ##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
-##          : $read_length                     => Sequence read length
 ##          : $sample_id                       => Sample id
 ##          : $sample_info_href                => Info on samples and case hash {REF}
 
@@ -895,18 +889,12 @@ sub set_infile_info {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $date;
-    my $direction;
     my $file_index;
     my $file_info_href;
-    my $flowcell;
-    my $index;
+    my $file_name;
     my $infile_both_strands_prefix_href;
     my $infile_lane_prefix_href;
-    my $is_interleaved;
-    my $lane;
     my $lane_tracker;
-    my $read_length;
     my $sample_id;
     my $sample_info_href;
 
@@ -916,14 +904,6 @@ sub set_infile_info {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
-        direction => {
-            allow       => [ 1, 2 ],
-            defined     => 1,
-            required    => 1,
-            store       => \$direction,
             strict_type => 1,
         },
         file_index => {
@@ -940,13 +920,12 @@ sub set_infile_info {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        flowcell => {
+        file_name => {
             defined     => 1,
             required    => 1,
-            store       => \$flowcell,
+            store       => \$file_name,
             strict_type => 1,
         },
-        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
         infile_both_strands_prefix_href => {
             default     => {},
             defined     => 1,
@@ -961,27 +940,10 @@ sub set_infile_info {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        is_interleaved => {
-            required    => 1,
-            store       => \$is_interleaved,
-            strict_type => 1,
-        },
-        lane => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane,
-            strict_type => 1,
-        },
         lane_tracker => {
             defined     => 1,
             required    => 1,
             store       => \$lane_tracker,
-            strict_type => 1,
-        },
-        read_length => {
-            required    => 1,
-            store       => \$read_length,
             strict_type => 1,
         },
         sample_id => {
@@ -1002,36 +964,43 @@ sub set_infile_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
+    use MIP::File_info qw{ get_sample_file_attribute };
 
-    my $parsed_date = Time::Piece->strptime( $date, q{%y%m%d} );
+    my %attribute = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            file_name      => $file_name,
+            sample_id      => $sample_id,
+        }
+    );
+
+    my $parsed_date = Time::Piece->strptime( $attribute{date}, q{%y%m%d} );
     $parsed_date = $parsed_date->ymd;
 
     my ( $mip_file_format, $mip_file_format_with_direction,
         $original_file_name_prefix, $run_barcode )
       = define_mip_fastq_file_features(
         {
-            date               => $date,
-            direction          => $direction,
-            flowcell           => $flowcell,
-            index              => $index,
-            lane               => $lane,
-            original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+            date               => $attribute{date},
+            direction          => $attribute{direction},
+            flowcell           => $attribute{flowcell},
+            index              => $attribute{index},
+            lane               => $attribute{lane},
+            original_file_name => $file_name,
             sample_id          => $sample_id,
         }
       );
 
     ## Read 1
-    if ( $direction == 1 ) {
+    if ( $attribute{direction} == 1 ) {
 
-        ## Add lane
-        push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
-
-# Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
+        ## Save new format (sample_id_date_flow-cell_index_lane) in hash with sample_id as keys and inputfiles in array.
+        ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
         my %direction_one_metric = (
-            interleaved       => $is_interleaved,
-            sequence_length   => $read_length,
+            interleaved       => $attribute{is_interleaved},
+            sequence_length   => $attribute{read_length},
             sequence_run_type => q{single-end},
         );
 
@@ -1046,7 +1015,7 @@ sub set_infile_info {
 
         $lane_tracker++;
     }
-    if ( $direction == 2 ) {
+    if ( $attribute{direction} == 2 ) {
         ## 2nd read direction
 
         ## $lane_tracker -1 since it gets incremented after direction eq 1
@@ -1071,13 +1040,13 @@ sub set_infile_info {
 
     my %both_directions_metric = (
         date               => $parsed_date,
-        flowcell           => $flowcell,
-        lane               => $lane,
+        flowcell           => $attribute{flowcell},
+        lane               => $attribute{lane},
         original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
         original_file_name_prefix => $original_file_name_prefix,
-        read_direction            => $direction,
+        read_direction            => $attribute{direction},
         run_barcode               => $run_barcode,
-        sample_barcode            => $index,
+        sample_barcode            => $attribute{index},
     );
 
     ## Alias
