@@ -90,7 +90,7 @@ add_sample_fastq_file_lanes(
     }
 );
 
-## Then do not add lanes
+## Then add lanes
 is( @{ $file_info{$sample_id}{lanes} }, 1, q{Added lane for direction equals 1} );
 
 done_testing();

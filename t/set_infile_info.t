@@ -70,8 +70,6 @@ diag(   q{Test set_infile_info from Sample_info.pm v}
 my $log = test_log( {} );
 
 ## Set file info parameters
-
-# Interleaved files
 my $fastq_file_read_one = q{file-1};
 my $fastq_file_read_two = q{file-2};
 my $sample_id           = q{sample-1};
@@ -164,7 +162,7 @@ for my $sample_id ( keys %file_info ) {
         each @{ $file_info{$sample_id}{mip_infiles} } )
     {
 
-        my %file_attribute = get_sample_file_attribute(
+        get_sample_file_attribute(
             {
                 file_info_href => \%file_info,
                 file_name      => $file_name,

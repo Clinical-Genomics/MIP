@@ -239,7 +239,7 @@ sub get_fastq_file_header_info {
 ## Function : Get run info from fastq file header
 ## Returns  : @fastq_info_headers
 ## Arguments: $file_info_href    => File info hash {REF}
-##          : $file_name      => Fast file name
+##          : $file_name         => Fast file name
 ##          : $file_path         => File path to parse
 ##          : $read_file_command => Command used to read file
 ##          : $sample_id         => Sample id
