@@ -90,8 +90,6 @@ is( $active_parameter{include_y}, 1, q{Set_include y} );
 # Clear data from previous test
 delete $active_parameter{gender};
 
-#map { $active_parameter{$_} = 0 } (qw{ found_male found_female found_other });
-
 %sample_info = (
     sample => {
         sample_1 => { sex => q{xyz}, },

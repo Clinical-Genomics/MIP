@@ -98,7 +98,7 @@ is( $active_parameter{include_y}, 1, q{Include y} );
 is( $active_parameter{gender_estimation}{$sample_id},
     q{male}, q{Added estimated gender male} );
 is_deeply( $active_parameter{gender}{males}, [$sample_id], q{Add to males sample_id} );
-is_deeply( $active_parameter{gender}{others}, [], q{Remove from others sample_id} );
+is( @{ $active_parameter{gender}{others} }, 0, q{Remove from others sample_id} );
 
 ## Given a y read count when female
 $y_read_count = $FEMALE_THRESHOLD;
@@ -121,6 +121,6 @@ is( $active_parameter{gender_estimation}{$sample_id},
     q{female}, q{Added estimated gender female} );
 is_deeply( $active_parameter{gender}{females}, [$sample_id],
     q{Add to females sample_id} );
-is_deeply( $active_parameter{gender}{others}, [], q{Remove from others sample_id} );
+is( @{ $active_parameter{gender}{others} }, 0, q{Remove from others sample_id} );
 
 done_testing();

@@ -329,7 +329,9 @@ sub parse_fastq_for_gender {
     use MIP::Program::Bwa qw{ bwa_mem };
 
     ## All sample ids have a gender - non need to continue
-    return if ( not $active_parameter_href->{found_other} );
+    return
+      if ( not $active_parameter_href->{gender}{others}
+        or not @{ $active_parameter_href->{gender}{others} } );
 
     ## Unpack
     my $log                = Log::Log4perl->get_logger($LOG_NAME);
@@ -502,7 +504,7 @@ sub update_gender_info {
 
     ## Remove sample_id from others
     @{ $active_parameter_href->{gender}{others} } =
-      grep { !/$sample_id/xms } @{ $active_parameter_href->{gender}{others} };
+      grep { not /$sample_id/xms } @{ $active_parameter_href->{gender}{others} };
 
     set_include_y(
         {

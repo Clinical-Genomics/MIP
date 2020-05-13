@@ -1834,7 +1834,7 @@ sub set_include_y {
         next GENDER if ( $gender eq q{females} );
 
         $active_parameter_href->{include_y} =
-          ( @{ $active_parameter_href->{gender}{$gender} } > 0 ) ? 1 : 0;
+          @{ $active_parameter_href->{gender}{$gender} } ? 1 : 0;
 
         last if $active_parameter_href->{include_y} == 1;
     }

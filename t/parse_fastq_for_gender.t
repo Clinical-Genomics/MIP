@@ -69,8 +69,7 @@ my %active_parameter = test_mip_hashes(
 );
 my $consensus_analysis_type = q{wgs};
 my $sample_id               = $active_parameter{sample_ids}[2];
-$active_parameter{found_other} = 0;
-my %file_info = test_mip_hashes(
+my %file_info               = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
