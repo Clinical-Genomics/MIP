@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -169,7 +169,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{vta_vcfanno_config} => (
+        q{vcfanno_config} => (
             cmd_aliases   => [qw{ vtavac }],
             documentation => q{Variant vcfanno toml config},
             is            => q{rw},

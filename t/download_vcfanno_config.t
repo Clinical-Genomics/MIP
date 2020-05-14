@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Download::Vta_vcfanno_config} =>
-          [qw{ download_vta_vcfanno_config }],
+        q{MIP::Recipes::Download::Vcfanno_config} => [qw{ download_vcfanno_config }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Download::Vta_vcfanno_config qw{ download_vta_vcfanno_config };
+use MIP::Recipes::Download::Vcfanno_config qw{ download_vcfanno_config };
 
-diag(   q{Test download_vta_vcfanno_config from Vta_vcfanno_config.pm v}
-      . $MIP::Recipes::Download::Vta_vcfanno_config::VERSION
+diag(   q{Test download_vcfanno_config from Vcfanno_config.pm v}
+      . $MIP::Recipes::Download::Vcfanno_config::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +65,7 @@ my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given download parameters for recipe
 my $genome_version    = q{grch37};
-my $recipe_name       = q{vta_vcfanno_config};
+my $recipe_name       = q{vcfanno_config};
 my $reference_version = q{v1.2};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
@@ -85,7 +84,7 @@ my $reference_href =
 
 my %job_id;
 
-my $is_ok = download_vta_vcfanno_config(
+my $is_ok = download_vcfanno_config(
     {
         active_parameter_href => \%active_parameter,
         genome_version        => $genome_version,

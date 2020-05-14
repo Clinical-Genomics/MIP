@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_vcfanno_toml parse_toml_config_parameters };
@@ -169,8 +169,8 @@ sub parse_toml_config_parameters {
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
     my %toml_config_parameter = (
-        variant_annotation => [qw{ vta_vcfanno_config vta_vcfanno_functions }],
-        sv_annotate        => [qw{ sv_vta_vcfanno_config sv_vta_vcfanno_functions }],
+        variant_annotation => [qw{ vcfanno_config vcfanno_functions }],
+        sv_annotate        => [qw{ sv_vcfanno_config sv_vcfanno_functions }],
     );
 
   RECIPE:

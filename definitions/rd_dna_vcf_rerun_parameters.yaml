@@ -25,8 +25,8 @@ decompose_normalize_references:
     - mip
   data_type: ARRAY
   default:
-    - vta_vcfanno_config
-    - sv_vta_vcfanno_config
+    - sv_vcfanno_config
+    - vcfanno_config
   type: mip
 gatk_logging_level:
   associated_recipe:
@@ -162,14 +162,6 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_vta_vcfanno_config:
-  associated_recipe:
-    - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 sv_fqa_annotations:
   associated_recipe:
     - sv_annotate
@@ -200,6 +192,14 @@ sv_svdb_query_db_files:
   associated_recipe:
     - sv_annotate
   data_type: HASH
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+sv_vcfanno_config:
+  associated_recipe:
+    - sv_annotate
+  data_type: SCALAR
   exists_check: file
   is_reference: 1
   reference: reference_dir
@@ -502,7 +502,7 @@ variant_annotation:
     - bcftools
     - vcfanno
   type: recipe
-vta_vcfanno_config:
+vcfanno_config:
   associated_recipe:
     - variant_annotation
   data_type: SCALAR

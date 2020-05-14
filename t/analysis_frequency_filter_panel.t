@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,7 +76,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{vta_vcfanno_config} = catfile( $Bin,
+$active_parameter{vcfanno_config} = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{fqf_annotations}               = [qw{ GNOMADAF }];
 $active_parameter{fqf_bcftools_filter_threshold} = 1;

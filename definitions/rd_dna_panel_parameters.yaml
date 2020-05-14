@@ -26,12 +26,12 @@ decompose_normalize_references:
     - mip
   data_type: ARRAY
   default:
-    - vta_vcfanno_config
     - gatk_baserecalibration_known_sites
     - gatk_haplotypecaller_snp_known_set
-    - gatk_variantrecalibration_resource_indel
-    - gatk_varianteval_gold
     - gatk_varianteval_dbsnp
+    - gatk_varianteval_gold
+    - gatk_variantrecalibration_resource_indel
+    - vcfanno_config
   type: mip
 exome_target_bed:
   associated_recipe:
@@ -797,7 +797,7 @@ variant_annotation:
     - bcftools
     - vcfanno
   type: recipe
-vta_vcfanno_config:
+vcfanno_config:
   associated_recipe:
     - variant_annotation
   data_type: SCALAR

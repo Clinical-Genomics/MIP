@@ -126,13 +126,6 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   type: recipe
-vta_vcfanno_config:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
 genbank_haplogroup:
   analysis_mode: case
   associated_recipe:
@@ -232,7 +225,7 @@ recipe_core_number:
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
-    vta_vcfanno_config: 1
+    vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
@@ -248,7 +241,7 @@ recipe_core_number:
     reduced_penetrance: 1
     scout_exons: 1
     svrank_model: 1
-    sv_vta_vcfanno_config: 1
+    sv_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
     vcfanno_functions: 1
   type: mip
@@ -282,7 +275,7 @@ recipe_time:
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
-    vta_vcfanno_config: 1
+    vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
@@ -298,7 +291,7 @@ recipe_time:
     runstatus: 1
     scout_exons: 1
     svrank_model: 1
-    sv_vta_vcfanno_config: 1
+    sv_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
     vcfanno_functions: 1
   type: mip
@@ -335,7 +328,7 @@ svrank_model:
   data_type: SCALAR
   default: 1
   type: recipe
-sv_vta_vcfanno_config:
+sv_vcfanno_config:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -343,6 +336,13 @@ sv_vta_vcfanno_config:
   default: 1
   type: recipe
 vcf2cytosure_blacklist_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_config:
   analysis_mode: case
   associated_recipe:
     - mip
