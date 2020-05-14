@@ -62,7 +62,6 @@ my %file_info;
 my $mip_file_format_with_direction = q{a_file_format_1};
 my $sample_id                      = q{sample_id};
 
-## When direction is not one
 add_sample_infile_both_strands_prefix(
     {
         file_info_href                 => \%file_info,
@@ -71,7 +70,7 @@ add_sample_infile_both_strands_prefix(
     }
 );
 
-## Then do add infile_both_strands_prefix
+## Then add infile_both_strands_prefix
 is( @{ $file_info{$sample_id}{infile_both_strands_prefix} },
     1, q{Added infile_both_strands_prefix to file_info} );
 
