@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -34,7 +34,7 @@ BEGIN {
 
 sub parse_fastq_infiles {
 
-## Function : Parse fastq infiles for MIP processing.
+## Function : Parse fastq infiles for MIP processing
 ## Returns  :
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $file_info_href                  => File info hash {REF}
@@ -98,7 +98,7 @@ sub parse_fastq_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Fastq qw{ get_fastq_file_header_info };
+    use MIP::Fastq qw{ parse_fastq_file_header_attributes };
     use MIP::File_info qw{
       get_sample_file_attribute
       parse_files_compression_status
@@ -111,7 +111,6 @@ sub parse_fastq_infiles {
 
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
-        my %fastq_info_header;
 
         my %file_info_sample = get_sample_file_attribute(
             {
@@ -123,9 +122,7 @@ sub parse_fastq_infiles {
         my $infiles_dir = $file_info_sample{mip_infiles_dir};
 
       INFILE:
-        while ( my ( $file_index, $file_name ) =
-            each @{ $file_info_sample{mip_infiles} } )
-        {
+        foreach my $file_name ( @{ $file_info_sample{mip_infiles} } ) {
 
             my %infile_info = parse_sample_fastq_file_attributes(
                 {
@@ -143,7 +140,7 @@ sub parse_fastq_infiles {
                 $log->warn(q{Will try to find mandatory information from fastq header});
 
                 ## Get run info from fastq file header
-                %fastq_info_header = get_fastq_file_header_info(
+                parse_fastq_file_header_attributes(
                     {
                         file_info_href    => $file_info_href,
                         file_name         => $file_name,
@@ -152,28 +149,11 @@ sub parse_fastq_infiles {
                         sample_id         => $sample_id,
                     }
                 );
-
-                ## Adds information derived from infile name to hashes
-                $log->info(
-                        q{Found following information from fastq header: lane=}
-                      . $fastq_info_header{lane}
-                      . q{ flow-cell=}
-                      . $fastq_info_header{flowcell}
-                      . q{ index=}
-                      . $fastq_info_header{index}
-                      . q{ direction=}
-                      . $fastq_info_header{direction},
-                );
-                $log->warn(
-q{Will add fake date '20010101' to follow file convention since this is not recorded in fastq header}
-                );
             }
 
             ## Adds information derived from infile name to hashes
             $lane_tracker = set_infile_info(
                 {
-                    active_parameter_href           => $active_parameter_href,
-                    file_index                      => $file_index,
                     file_info_href                  => $file_info_href,
                     file_name                       => $file_name,
                     infile_both_strands_prefix_href => $infile_both_strands_prefix_href,

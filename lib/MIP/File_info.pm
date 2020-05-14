@@ -25,11 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
+      add_sample_infile_both_strands_prefix
       check_parameter_metafiles
       get_is_sample_files_compressed
       get_sample_file_attribute
@@ -46,6 +47,7 @@ BEGIN {
       set_human_genome_reference_features
       set_primary_contigs
       set_sample_file_attribute
+      set_sample_infile_lane_prefix
       set_select_file_contigs
     };
 }
@@ -59,7 +61,7 @@ sub add_sample_fastq_file_lanes {
 ## Returns  :
 ## Arguments: $direction      => Read direction
 ##          : $file_info_href => File info hash {REF}
-##          : $lane           => Fast file name
+##          : $lane           => Lane number
 ##          : $sample_id      => Sample id
 
     my ($arg_href) = @_;
@@ -105,6 +107,51 @@ sub add_sample_fastq_file_lanes {
 
     ## Add lane
     push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
+
+    return;
+}
+
+sub add_sample_infile_both_strands_prefix {
+
+## Function : Add sample fastq file both strands prefix to infile_both_strands_prefix
+## Returns  :
+## Arguments: $file_info_href                 => File info hash {REF}
+##          : $mip_file_format_with_direction => File name without ".fastq(.gz)"
+##          : $sample_id                      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $mip_file_format_with_direction;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        mip_file_format_with_direction => {
+            required    => 1,
+            store       => \$mip_file_format_with_direction,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add infile_both_strands_prefix
+    push @{ $file_info_href->{$sample_id}{infile_both_strands_prefix} },
+      $mip_file_format_with_direction;
 
     return;
 }
@@ -578,6 +625,94 @@ sub parse_sample_fastq_file_attributes {
         );
     }
     return %infile_info;
+}
+
+sub parse_select_file_contigs {
+
+## Function : Parse select file contigs
+## Returns  :
+## Arguments: $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
+##          : $file_info_href          => File info hash {REF}
+##          : $select_file_path        => Select file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $file_info_href;
+    my $select_file_path;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        select_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Contigs qw{ check_select_file_contigs sort_contigs_to_contig_set };
+    use MIP::Reference qw{ get_select_file_contigs };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ($select_file_path) {
+
+        ## Collects sequences contigs used in select file
+        my @select_file_contigs = get_select_file_contigs(
+            {
+                select_file_path => $select_file_path,
+            }
+        );
+
+        ## Set in file_info hash
+        set_select_file_contigs(
+            {
+                file_info_href          => $file_info_href,
+                select_file_contigs_ref => \@select_file_contigs,
+            }
+        );
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+            }
+        );
+
+        ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+        my %contig_sort_map = (
+            select_file_contigs        => q{contigs},
+            sorted_select_file_contigs => q{contigs_size_ordered},
+        );
+        while ( my ( $contigs_set_name, $sort_reference ) = each %contig_sort_map ) {
+
+            @{ $file_info_href->{$contigs_set_name} } = sort_contigs_to_contig_set(
+                {
+                    consensus_analysis_type    => $consensus_analysis_type,
+                    sort_contigs_ref           => $file_info_href->{select_file_contigs},
+                    sort_reference_contigs_ref => $file_info_href->{$sort_reference},
+                }
+            );
+        }
+    }
+    return 1;
 }
 
 sub set_alt_loci_contigs {
@@ -1104,6 +1239,70 @@ sub set_sample_file_attribute {
     return;
 }
 
+sub set_sample_infile_lane_prefix {
+
+## Function : Add sample fastq file lane prefix to infile_lane_prefix
+## Returns  :
+## Arguments: $direction       => Read direction
+##          : $file_info_href  => File info hash {REF}
+##          : $lane_tracker    => Lane tracker
+##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $direction;
+    my $file_info_href;
+    my $lane_tracker;
+    my $mip_file_format;
+    my $sample_id;
+
+    my $tmpl = {
+        direction => {
+            allow       => [ undef, 1, 2, $INTERLEAVED_READ_DIRECTION, ],
+            required    => 1,
+            store       => \$direction,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        lane_tracker => {
+            allow       => qr{\A \d+ \z}xsm,
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_tracker,
+            strict_type => 1,
+        },
+        mip_file_format => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_file_format,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $direction == 1 );
+
+    ## Set infile_lane_prefix
+    $file_info_href->{$sample_id}{infile_lane_prefix}[$lane_tracker] = $mip_file_format;
+
+    return;
+}
+
 sub set_select_file_contigs {
 
 ## Function : Set select file contigs
@@ -1142,91 +1341,4 @@ sub set_select_file_contigs {
     return;
 }
 
-sub parse_select_file_contigs {
-
-## Function : Parse select file contigs
-## Returns  :
-## Arguments: $consensus_analysis_type => Consensus analysis type for checking e.g. WGS specific files
-##          : $file_info_href          => File info hash {REF}
-##          : $select_file_path        => Select file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $consensus_analysis_type;
-    my $file_info_href;
-    my $select_file_path;
-
-    my $tmpl = {
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        select_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$select_file_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Contigs qw{ check_select_file_contigs sort_contigs_to_contig_set };
-    use MIP::Reference qw{ get_select_file_contigs };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    if ($select_file_path) {
-
-        ## Collects sequences contigs used in select file
-        my @select_file_contigs = get_select_file_contigs(
-            {
-                select_file_path => $select_file_path,
-            }
-        );
-
-        ## Set in file_info hash
-        set_select_file_contigs(
-            {
-                file_info_href          => $file_info_href,
-                select_file_contigs_ref => \@select_file_contigs,
-            }
-        );
-        ## Check that select file contigs is a subset of primary contigs
-        check_select_file_contigs(
-            {
-                contigs_ref             => $file_info_href->{contigs},
-                select_file_contigs_ref => $file_info_href->{select_file_contigs},
-            }
-        );
-
-        ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-        my %contig_sort_map = (
-            select_file_contigs        => q{contigs},
-            sorted_select_file_contigs => q{contigs_size_ordered},
-        );
-        while ( my ( $contigs_set_name, $sort_reference ) = each %contig_sort_map ) {
-
-            @{ $file_info_href->{$contigs_set_name} } = sort_contigs_to_contig_set(
-                {
-                    consensus_analysis_type    => $consensus_analysis_type,
-                    sort_contigs_ref           => $file_info_href->{select_file_contigs},
-                    sort_reference_contigs_ref => $file_info_href->{$sort_reference},
-                }
-            );
-        }
-    }
-    return 1;
-}
 1;

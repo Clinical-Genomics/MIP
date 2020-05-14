@@ -74,8 +74,7 @@ my $fastq_file_read_one = q{file-1};
 my $fastq_file_read_two = q{file-2};
 my $sample_id           = q{sample-1};
 
-my %active_parameter = ( case_id => q{Adams}, );
-my %file_info        = (
+my %file_info = (
     $sample_id => {
         $fastq_file_read_one => {
             date             => q{150703},
@@ -158,9 +157,7 @@ for my $sample_id ( keys %file_info ) {
     $lane_tracker = 0;
 
   INFILE:
-    while ( my ( $file_index, $file_name ) =
-        each @{ $file_info{$sample_id}{mip_infiles} } )
-    {
+    foreach my $file_name ( @{ $file_info{$sample_id}{mip_infiles} } ) {
 
         get_sample_file_attribute(
             {
@@ -171,8 +168,6 @@ for my $sample_id ( keys %file_info ) {
         );
         $lane_tracker = set_infile_info(
             {
-                active_parameter_href           => \%active_parameter,
-                file_index                      => $file_index,
                 file_info_href                  => \%file_info,
                 file_name                       => $file_name,
                 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
@@ -210,22 +205,22 @@ my %expected_result = (
                         read_direction_file => {
                             $mip_file_format_with_direction => {
                                 date                      => $parsed_date,
+                                flowcell                  => $attribute{flowcell},
+                                lane                      => $attribute{lane},
                                 original_file_name        => $fastq_file_read_one,
                                 original_file_name_prefix => $original_file_name_prefix,
                                 read_direction            => $attribute{direction},
-                                lane                      => $attribute{lane},
-                                flowcell                  => $attribute{flowcell},
-                                sample_barcode            => $attribute{index},
                                 run_barcode               => $run_barcode,
+                                sample_barcode            => $attribute{index},
                             },
                             $mip_file_format_with_direction_2 => {
                                 date                      => $parsed_date,
+                                flowcell                  => $attribute_2{flowcell},
+                                lane                      => $attribute_2{lane},
                                 original_file_name        => $fastq_file_read_two,
                                 original_file_name_prefix => $original_file_name_prefix,
-                                read_direction            => $attribute_2{direction},
-                                lane                      => $attribute_2{lane},
-                                flowcell                  => $attribute_2{flowcell},
                                 sample_barcode            => $attribute_2{index},
+                                read_direction            => $attribute_2{direction},
                                 run_barcode               => $run_barcode,
                             },
                         },
