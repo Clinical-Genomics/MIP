@@ -31,8 +31,8 @@ BEGIN {
       casava_header_features
       check_interleaved
       define_mip_fastq_file_features
-      parse_fastq_file_header_attributes
       get_read_length
+      parse_fastq_file_header_attributes
       parse_fastq_infiles_format };
 }
 
