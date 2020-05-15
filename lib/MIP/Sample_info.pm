@@ -1012,8 +1012,8 @@ sub set_infile_info {
         ## 2nd read direction
 
         # Alias
-        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ]
-          ;    # $lane_tracker -1 since it gets incremented after direction eq 1
+        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];    
+        # $lane_tracker -1 since it gets incremented after direction eq 1
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 
