@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.18;
+our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -240,7 +240,7 @@ sub _build_usage {
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit cadd chanjo
                           chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod
                           gffcompare htslib manta mip_scripts multiqc peddy picard preseq python
-                          rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
+                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
                           stranger stringtie svdb tiddit trim-galore ucsc upd utilities varg
                           variant_integrity vcf2cytosure vcfanno vep vts }
                     ]
@@ -262,7 +262,7 @@ sub _build_usage {
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit cadd chanjo
                           chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod
                           gffcompare htslib manta mip_scripts multiqc peddy picard preseq python
-                          rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
+                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
                           stranger stringtie svdb tiddit trim-galore ucsc upd utilities varg
                           variant_integrity vcf2cytosure vcfanno vep vts }
                     ]
