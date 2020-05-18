@@ -18,9 +18,8 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Download qw{ mip_download };
-use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -47,14 +46,6 @@ sub run {
     ## CLI commands inheritance level
     my %parameter =
       get_parameter_from_definition_files( { level => q{download_rd_dna}, } );
-
-    ## Print parameters from config file and exit
-    print_parameter_defaults(
-        {
-            parameter_href          => \%parameter,
-            print_parameter_default => $arg_href->{print_parameter_default},
-        }
-    );
 
     ## Start generating the installation script
     mip_download(

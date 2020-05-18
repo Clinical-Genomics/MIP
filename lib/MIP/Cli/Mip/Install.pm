@@ -22,9 +22,8 @@ use MooseX::Types::Structured qw{ Dict Optional };
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.17;
+our $VERSION = 1.18;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -59,14 +58,6 @@ sub run {
         $active_parameter{config_file} =
           catfile( $Bin, qw{ templates mip_install_config.yaml } );
     }
-
-    ## Print parameters from config file and exit
-    print_parameter_defaults(
-        {
-            parameter_href          => \%parameter,
-            print_parameter_default => $arg_href->{print_parameter_default},
-        }
-    );
 
     ## Start generating the installation script
     mip_install(
@@ -176,17 +167,6 @@ sub _build_usage {
             is       => q{rw},
             isa      => Bool,
             required => 0,
-        ),
-    );
-
-    option(
-        q{print_parameter_default} => (
-            cmd_aliases   => [qw{ ppd }],
-            cmd_flag      => q{print_parameter_default},
-            documentation => q{print the default parameters},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
         ),
     );
 
