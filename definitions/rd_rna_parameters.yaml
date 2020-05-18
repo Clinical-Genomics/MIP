@@ -61,6 +61,7 @@ transcript_annotation:
     - arriba_ar
     - blobfish
     - gffcompare_ar
+    - picardtools_collectrnaseqmetrics
     - salmon_quant
     - star_aln
     - star_fusion
@@ -71,10 +72,20 @@ transcript_annotation:
   is_reference: 1
   reference: reference_dir
   type: path
+transcript_annotation_file_endings:
+  associated_recipe:
+    - picardtools_collectrnaseqmetrics
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 library_type:
   associated_recipe:
-    - stringtie_ar
     - genebody_coverage
+    - picardtools_collectrnaseqmetrics
+    - stringtie_ar
   data_type: SCALAR
   default: reverse_stranded
   type: recipe_argument

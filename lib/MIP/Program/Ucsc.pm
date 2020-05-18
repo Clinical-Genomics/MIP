@@ -27,7 +27,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ ucsc_bed_to_big_bed ucsc_wig_to_big_wig };
+    our @EXPORT_OK = qw{ ucsc_bed_to_big_bed ucsc_gtf_to_genepred ucsc_wig_to_big_wig };
 }
 
 sub ucsc_bed_to_big_bed {
@@ -100,6 +100,114 @@ sub ucsc_bed_to_big_bed {
     push @commands, $infile_path;
 
     push @commands, $contigs_size_file_path;
+
+    push @commands, $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub ucsc_gtf_to_genepred {
+
+## Function : Perl wrapper for ucsc gtfToGenePred version 377
+## Returns  : @commands
+## Arguments: $extended_genepred      => Create extended genePred
+##          : $filehandle             => Filehandle to write to
+##          : $gene_name_as_name2     => Use gene name for the name2 field
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Path to output file
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $extended_genepred;
+    my $filehandle;
+    my $gene_name_as_name2;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdinfile_path;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        extended_genepred => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$extended_genepred,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        gene_name_as_name2 => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$gene_name_as_name2,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ gtfToGenePred };
+
+    if ($extended_genepred) {
+
+        push @commands, q{-genePredExt};
+    }
+
+    if ($gene_name_as_name2) {
+
+        push @commands, q{-geneNameAsName2};
+    }
+
+    push @commands, $infile_path;
 
     push @commands, $outfile_path;
 

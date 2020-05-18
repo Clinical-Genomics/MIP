@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.35;
+our $VERSION = 1.36;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -89,13 +89,13 @@ sub run {
         }
     );
 
-## File info hash
+    ## File info hash
     my %file_info = (
-
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
+        transcript_annotation_file_endings  => [qw{ .refFlat }],
     );
 
     mip_analyse(
