@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Sv_vta_vcfanno_config;
+package MIP::Recipes::Download::Sv_vcfanno_config;
 
 use 5.026;
 use Carp;
@@ -26,14 +26,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_sv_vta_vcfanno_config };
+    our @EXPORT_OK = qw{ download_sv_vcfanno_config };
 
 }
 
-sub download_sv_vta_vcfanno_config {
+sub download_sv_vcfanno_config {
 
 ## Function : Download SV frequency vcfanno config
 ## Returns  :

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter analysis_frequency_filter_panel };
@@ -264,7 +264,7 @@ sub analysis_frequency_filter {
                 fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
-                vcfanno_file_toml => $active_parameter_href->{vta_vcfanno_config},
+                vcfanno_file_toml => $active_parameter_href->{vcfanno_config},
             }
         );
 
@@ -510,7 +510,7 @@ sub analysis_frequency_filter_panel {
             fqf_annotations_ref => $active_parameter_href->{fqf_annotations},
             fqf_bcftools_filter_threshold =>
               $active_parameter_href->{fqf_bcftools_filter_threshold},
-            vcfanno_file_toml => $active_parameter_href->{vta_vcfanno_config},
+            vcfanno_file_toml => $active_parameter_href->{vcfanno_config},
         }
     );
 

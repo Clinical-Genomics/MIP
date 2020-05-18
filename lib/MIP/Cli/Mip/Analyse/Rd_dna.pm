@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.53;
+our $VERSION = 1.54;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -167,9 +167,9 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{vta_vcfanno_config} => (
-            cmd_aliases   => [qw{ vtavac }],
-            documentation => q{Frequency vcfanno toml config},
+        q{vcfanno_config} => (
+            cmd_aliases   => [qw{ vac }],
+            documentation => q{SNV/Indel vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )
@@ -800,9 +800,9 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{sv_vta_vcfanno_config} => (
-            cmd_aliases   => [qw{ svfqav }],
-            documentation => q{Frequency vcfanno toml config},
+        q{sv_vcfanno_config} => (
+            cmd_aliases   => [qw{ svvac }],
+            documentation => q{Structural variants vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )

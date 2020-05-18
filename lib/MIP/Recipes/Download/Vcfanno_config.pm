@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Vta_vcfanno_config;
+package MIP::Recipes::Download::Vcfanno_config;
 
 use 5.026;
 use Carp;
@@ -27,16 +27,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_vta_vcfanno_config };
+    our @EXPORT_OK = qw{ download_vcfanno_config };
 
 }
 
-sub download_vta_vcfanno_config {
+sub download_vcfanno_config {
 
-## Function : Download vta_vcfanno_config
+## Function : Download vcfanno_config
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
