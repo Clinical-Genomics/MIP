@@ -307,6 +307,17 @@ sub _build_usage {
     );
 
     option(
+        q{picardtools_collectrnaseqmetrics} => (
+            cmd_aliases   => [qw{ ptcrm }],
+            cmd_flag      => q{ppt_col_rna_met},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collect RNA seq metrics},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{gatk_baserecalibration} => (
             cmd_aliases => [qw{ gbr }],
             cmd_tags    => [q{Analysis recipe switch}],

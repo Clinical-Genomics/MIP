@@ -111,7 +111,7 @@ sub build_rd_rna_meta_files {
     use MIP::Recipes::Build::Star_fusion_prerequisites
       qw{ build_star_fusion_prerequisites };
     use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
-    use MIP::Recipes::Build::Transcript_annotation
+    use MIP::Recipes::Build::Transcript_annotation_prerequisites
       qw{ build_transcript_annotation_prerequisites };
 
     my %build_recipe = (

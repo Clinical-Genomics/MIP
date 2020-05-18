@@ -149,6 +149,7 @@ recipe_time:
     gzip_fastq: 2
     markduplicates: 8
     multiqc_ar: 1
+    picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 2
     preseq_ar: 2
     qccollect_ar: 1
@@ -174,6 +175,7 @@ recipe_memory:
     gatk_variantfiltration: 8
     genebody_coverage: 8
     multiqc_ar: 10
+    picardtools_collectrnaseqmetrics: 5
     picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25
@@ -207,6 +209,7 @@ recipe_core_number:
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
+    picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
     qccollect_ar: 1
@@ -222,6 +225,7 @@ recipe_core_number:
 picardtools_path:
   associated_recipe:
     - markduplicates
+    - picardtools_collectrnaseqmetrics
     - picardtools_mergesamfiles
     - star_aln
   data_type: SCALAR
@@ -473,6 +477,16 @@ picardtools_mergesamfiles:
   outfile_suffix: ".bam"
   program_executables:
     - sambamba
+  type: recipe
+## Picardtools CollectRnaSwqMetrics
+picardtools_collectrnaseqmetrics:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _collectrnaseqmetrics
+  outfile_suffix: ".txt"
   type: recipe
 ## StringTie
 stringtie_ar:
