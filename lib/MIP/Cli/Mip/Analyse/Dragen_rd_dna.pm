@@ -258,8 +258,8 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{sv_vcfanno_config} => (
-            cmd_aliases   => [qw{ svfqav }],
-            documentation => q{Frequency vcfanno toml config},
+            cmd_aliases   => [qw{ svvac }],
+            documentation => q{Structural variant vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )
@@ -587,8 +587,8 @@ q{Prepare for variant annotation block by copying and splitting files per contig
 
     option(
         q{vcfanno_config} => (
-            cmd_aliases   => [qw{ vtacvac }],
-            documentation => q{Frequency vcfanno toml config},
+            cmd_aliases   => [qw{ vac }],
+            documentation => q{SNV/Indel vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )

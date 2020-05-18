@@ -170,8 +170,8 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{vcfanno_config} => (
-            cmd_aliases   => [qw{ vtavac }],
-            documentation => q{Variant vcfanno toml config},
+            cmd_aliases   => [qw{ vac }],
+            documentation => q{SNV/Indel vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )
