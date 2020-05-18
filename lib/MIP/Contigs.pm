@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -219,13 +219,13 @@ sub delete_male_contig {
 ## Function : Delete contig chrY | Y from contigs array if no male or other found
 ## Returns  : @contigs
 ## Arguments: $contigs_ref => Contigs array to update {REF}
-##          : $found_male  => Male(s) was included in the analysis
+##          : $include_y   => Male(s) was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $contigs_ref;
-    my $found_male;
+    my $include_y;
 
     my $tmpl = {
         contigs_ref => {
@@ -235,18 +235,18 @@ sub delete_male_contig {
             store       => \$contigs_ref,
             strict_type => 1,
         },
-        found_male => {
-            allow       => qr{\A \d+ \z}sxm,
+        include_y => {
+            allow       => [ 0, 1 ],
             defined     => 1,
             required    => 1,
-            store       => \$found_male,
+            store       => \$include_y,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return @{$contigs_ref} if ($found_male);
+    return @{$contigs_ref} if ($include_y);
 
     ## Removes contig Y | chrY from contigs if no males or 'other' found in analysis
     my @contigs = delete_contig_elements(
@@ -441,7 +441,7 @@ sub update_contigs_for_run {
 ## Arguments: $consensus_analysis_type => Consensus analysis_type
 ##          : $exclude_contigs_ref     => Exclude contigs from analysis {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $found_male              => Male was included in the analysis
+##          : $include_y               => Male was included in the analysis
 
     my ($arg_href) = @_;
 
@@ -449,7 +449,7 @@ sub update_contigs_for_run {
     my $consensus_analysis_type;
     my $exclude_contigs_ref;
     my $file_info_href;
-    my $found_male;
+    my $include_y;
 
     my $tmpl = {
         consensus_analysis_type => {
@@ -471,11 +471,11 @@ sub update_contigs_for_run {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        found_male => {
-            allow       => qr{\A \d+ \z}sxm,
+        include_y => {
+            allow       => [ 0, 1 ],
             defined     => 1,
             required    => 1,
-            store       => \$found_male,
+            store       => \$include_y,
             strict_type => 1,
         },
     };
@@ -523,7 +523,7 @@ sub update_contigs_for_run {
         @{$male_contigs_ref} = delete_male_contig(
             {
                 contigs_ref => $male_contigs_ref,
-                found_male  => $found_male,
+                include_y   => $include_y,
             }
         );
     }

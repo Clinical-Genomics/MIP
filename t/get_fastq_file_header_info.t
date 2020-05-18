@@ -21,7 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
@@ -60,6 +60,7 @@ diag(   q{Test get_fastq_file_header_info from Fastq.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $FAKE_DATE        => q{000101};
 Readonly my $LANE             => 7;
 Readonly my $LANE_V_1_8       => 8;
 Readonly my $RUN_NUMBER       => 41;
@@ -77,17 +78,24 @@ my $log = test_log( {} );
 ## Given file, when format is lesser than Casava 1.4
 my $directory = catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq} );
 my $file_format_illumina_v1_4 = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
-my $read_file_command         = q{gzip -d -c};
+my %file_info;
+my $read_file_command = q{gzip -d -c};
+my $sample_id         = q{ADM1059A1};
 
 my %fastq_info_header = get_fastq_file_header_info(
     {
+        file_info_href    => \%file_info,
+        file_name         => $file_format_illumina_v1_4,
         file_path         => catfile( $directory, $file_format_illumina_v1_4 ),
         read_file_command => $read_file_command,
+        sample_id         => $sample_id,
     }
 );
 my %expected_header_element_v1_4 = (
+    date          => $FAKE_DATE,
     direction     => 1,
     flowcell      => q{H2V7FCCXX},
+    index         => $EMPTY_STR,
     instrument_id => q{@ST-E00266},
     lane          => $LANE,
     run_number    => $RUN_NUMBER,
@@ -108,12 +116,16 @@ my $file_format_illumina_v1_8 = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.
 
 %fastq_info_header = get_fastq_file_header_info(
     {
+        file_info_href    => \%file_info,
+        file_name         => $file_format_illumina_v1_8,
         file_path         => catfile( $directory, $file_format_illumina_v1_8 ),
         read_file_command => $read_file_command,
+        sample_id         => $sample_id,
     }
 );
 my %expected_header_element_v1_8 = (
     control_bit   => 0,
+    date          => $FAKE_DATE,
     direction     => 1,
     filtered      => q{N},
     flowcell      => q{HHJJCCCXY},
@@ -140,8 +152,11 @@ my $file_bad_format = q{643594-miptest_pedigree.yaml};
 trap {
     get_fastq_file_header_info(
         {
+            file_info_href    => \%file_info,
+            file_name         => $file_bad_format,
             file_path         => catfile( $directory, $file_bad_format ),
             read_file_command => q{cat},
+            sample_id         => $sample_id,
         }
     )
 };

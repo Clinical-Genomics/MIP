@@ -25,10 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      add_sample_fastq_file_lanes
       check_parameter_metafiles
       get_is_sample_files_compressed
       get_sample_file_attribute
@@ -47,6 +48,65 @@ BEGIN {
       set_sample_file_attribute
       set_select_file_contigs
     };
+}
+
+## Constants
+Readonly my $INTERLEAVED_READ_DIRECTION => 3;
+
+sub add_sample_fastq_file_lanes {
+
+## Function : Add sample fastq file lane to lanes
+## Returns  :
+## Arguments: $direction      => Read direction
+##          : $file_info_href => File info hash {REF}
+##          : $lane           => Fast file name
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $direction;
+    my $file_info_href;
+    my $lane;
+    my $sample_id;
+
+    my $tmpl = {
+        direction => {
+            allow       => [ undef, 1, 2, $INTERLEAVED_READ_DIRECTION, ],
+            required    => 1,
+            store       => \$direction,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        lane => {
+            required    => 1,
+            store       => \$lane,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $lane );
+
+    return if ( not $direction == 1 );
+
+    ## Add lane
+    push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
+
+    return;
 }
 
 sub check_parameter_metafiles {
@@ -462,7 +522,12 @@ sub parse_sample_fastq_file_attributes {
     use MIP::Fastq qw{ check_interleaved get_read_length parse_fastq_infiles_format };
 
     ## Parse infile according to filename convention
-    my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+    my %infile_info = parse_fastq_infiles_format(
+        {
+            file_name => $file_name,
+            sample_id => $sample_id,
+        }
+    );
 
     ## Parse compression features
     $infile_info{read_file_command} = parse_file_compression_features(
@@ -486,6 +551,15 @@ sub parse_sample_fastq_file_attributes {
         {
             file_path         => catfile( $infiles_dir, $file_name ),
             read_file_command => $infile_info{read_file_command},
+        }
+    );
+
+    add_sample_fastq_file_lanes(
+        {
+            direction      => $infile_info{direction},
+            file_info_href => $file_info_href,
+            lane           => $infile_info{lane},
+            sample_id      => $sample_id,
         }
     );
 

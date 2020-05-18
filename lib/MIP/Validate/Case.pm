@@ -23,10 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_infiles check_sample_ids };
+    our @EXPORT_OK = qw{ check_infiles check_infile_contain_sample_id check_sample_ids };
 }
 
 sub check_infiles {
@@ -95,6 +95,56 @@ q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and 
         exit 1;
     }
     return 1;
+}
+
+sub check_infile_contain_sample_id {
+
+## Function : Check that the sample_id provided and sample_id in infile name match
+## Returns  : 1
+## Arguments: $infile_name      => Infile name
+##          : $infile_sample_id => Sample_id collect with regexp from infile
+##          : $sample_id        => Sample id from user
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_name;
+    my $infile_sample_id;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_name,
+            strict_type => 1,
+        },
+        infile_sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_sample_id,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    return 1 if ( $sample_id eq $infile_sample_id );
+
+    $log->fatal(
+qq{$sample_id supplied and sample_id $infile_sample_id found in file : $infile_name does not match}
+    );
+    $log->fatal(qq{Please rename file to match sample_id: $sample_id});
+    exit 1;
 }
 
 sub check_sample_ids {

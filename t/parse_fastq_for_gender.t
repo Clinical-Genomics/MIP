@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,8 +69,7 @@ my %active_parameter = test_mip_hashes(
 );
 my $consensus_analysis_type = q{wgs};
 my $sample_id               = $active_parameter{sample_ids}[2];
-$active_parameter{found_other} = 0;
-my %file_info = test_mip_hashes(
+my %file_info               = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
@@ -105,8 +104,6 @@ my $is_gender_other = parse_fastq_for_gender(
 is( $is_gender_other, undef, q{No unknown gender} );
 
 ## Given a sample when gender unknown
-$active_parameter{found_other}    = 1;
-$active_parameter{found_male}     = 1;
 $active_parameter{gender}{others} = [$sample_id];
 
 $is_gender_other = parse_fastq_for_gender(

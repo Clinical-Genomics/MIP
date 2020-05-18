@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -98,7 +98,6 @@ sub parse_fastq_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
     use MIP::Fastq qw{ get_fastq_file_header_info };
     use MIP::File_info qw{
       get_sample_file_attribute
@@ -112,6 +111,7 @@ sub parse_fastq_infiles {
 
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
+        my %fastq_info_header;
 
         my %file_info_sample = get_sample_file_attribute(
             {
@@ -137,90 +137,23 @@ sub parse_fastq_infiles {
             );
 
             ## If filename convention is followed
-            if ( exists $infile_info{direction} ) {
+            if ( not exists $infile_info{date} ) {
 
-                ## Check that the sample_id provided and sample_id in infile name match.
-                check_infile_contain_sample_id(
-                    {
-                        infile_name      => $file_name,
-                        infile_sample_id => $infile_info{infile_sample_id},
-                        log              => $log,
-                        sample_id        => $sample_id,
-                        sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                    }
-                );
-
-                ## Adds information derived from infile name to hashes
-                $lane_tracker = set_infile_info(
-                    {
-                        active_parameter_href => $active_parameter_href,
-                        date                  => $infile_info{date},
-                        direction             => $infile_info{direction},
-                        file_info_href        => $file_info_href,
-                        file_index            => $file_index,
-                        flowcell              => $infile_info{flowcell},
-                        index                 => $infile_info{index},
-                        infile_both_strands_prefix_href =>
-                          $infile_both_strands_prefix_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        is_interleaved          => $infile_info{is_interleaved},
-                        lane                    => $infile_info{lane},
-                        lane_tracker            => $lane_tracker,
-                        read_length             => $infile_info{read_length},
-                        sample_id               => $infile_info{infile_sample_id},
-                        sample_info_href        => $sample_info_href,
-                    }
-                );
-            }
-            else {
                 ## No regexp match i.e. file does not follow filename convention
-                $log->warn(q{Will try to find mandatory information from fastq header.});
-
-                ## Check that file name at least contains sample id
-                if ( $file_name !~ /$sample_id/sxm ) {
-
-                    $log->fatal(
-                        q{Please check that the file name contains the sample_id.});
-                    exit 1;
-                }
+                $log->warn(q{Will try to find mandatory information from fastq header});
 
                 ## Get run info from fastq file header
-                my %fastq_info_header = get_fastq_file_header_info(
+                %fastq_info_header = get_fastq_file_header_info(
                     {
+                        file_info_href    => $file_info_href,
+                        file_name         => $file_name,
                         file_path         => catfile( $infiles_dir, $file_name ),
                         read_file_command => $infile_info{read_file_command},
+                        sample_id         => $sample_id,
                     }
                 );
 
-                if ( not exists $fastq_info_header{index} ) {
-
-                    # Special case since index is not present in fast headers casaava 1.4
-                    $fastq_info_header{index} = $EMPTY_STR;
-                }
                 ## Adds information derived from infile name to hashes
-                $lane_tracker = set_infile_info(
-                    {
-                        active_parameter_href => $active_parameter_href,
-                        ## fastq format does not contain a date of the run,
-                        ## so fake it with constant impossible date
-                        date           => q{000101},
-                        direction      => $fastq_info_header{direction},
-                        file_index     => $file_index,
-                        file_info_href => $file_info_href,
-                        flowcell       => $fastq_info_header{flowcell},
-                        index          => $fastq_info_header{index},
-                        infile_both_strands_prefix_href =>
-                          $infile_both_strands_prefix_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        is_interleaved          => $infile_info{is_interleaved},
-                        lane                    => $fastq_info_header{lane},
-                        lane_tracker            => $lane_tracker,
-                        read_length             => $infile_info{read_length},
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
-                    }
-                );
-
                 $log->info(
                         q{Found following information from fastq header: lane=}
                       . $fastq_info_header{lane}
@@ -235,15 +168,29 @@ sub parse_fastq_infiles {
 q{Will add fake date '20010101' to follow file convention since this is not recorded in fastq header}
                 );
             }
+
+            ## Adds information derived from infile name to hashes
+            $lane_tracker = set_infile_info(
+                {
+                    active_parameter_href           => $active_parameter_href,
+                    file_index                      => $file_index,
+                    file_info_href                  => $file_info_href,
+                    file_name                       => $file_name,
+                    infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
+                    infile_lane_prefix_href         => $infile_lane_prefix_href,
+                    lane_tracker                    => $lane_tracker,
+                    sample_id                       => $sample_id,
+                    sample_info_href                => $sample_info_href,
+                }
+            );
+
+            parse_files_compression_status(
+                {
+                    file_info_href => $file_info_href,
+                    sample_id      => $sample_id,
+                }
+            );
         }
-
-        parse_files_compression_status(
-            {
-                file_info_href => $file_info_href,
-                sample_id      => $sample_id,
-            }
-        );
-
     }
     return;
 }

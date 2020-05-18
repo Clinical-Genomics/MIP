@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -131,8 +131,7 @@ sub parse_config {
 
     ## Constants
     ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @REMOVE_KEYS =
-      qw{ binary_path found_female found_male found_other gender log_file dry_run_all };
+    my @REMOVE_KEYS = qw{ binary_path include_y gender log_file dry_run_all };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     my %config_parameter = read_from_file(

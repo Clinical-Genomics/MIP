@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -93,9 +93,13 @@ my %expected_infile_info = (
     read_file_command => q{gzip -d -c},
     read_length       => $READ_LENGTH,
 );
+my @expected_lanes = (1);
 
 ## Then file info for sample fastq should be collected
 is_deeply( \%infile_info, \%expected_infile_info,
     q{Set and returned file info for sample fastq file} );
+
+is_deeply( $file_info{$sample_id}{lanes},
+    \@expected_lanes, q{Set sample lanes in file_info} );
 
 done_testing();

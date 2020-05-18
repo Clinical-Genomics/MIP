@@ -17,14 +17,14 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DASH $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DASH $EMPTY_STR $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -238,16 +238,35 @@ sub get_fastq_file_header_info {
 
 ## Function : Get run info from fastq file header
 ## Returns  : @fastq_info_headers
-## Arguments: $file_path         => File path to parse
+## Arguments: $file_info_href    => File info hash {REF}
+##          : $file_name         => Fast file name
+##          : $file_path         => File path to parse
 ##          : $read_file_command => Command used to read file
+##          : $sample_id         => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $file_info_href;
+    my $file_name;
     my $file_path;
     my $read_file_command;
+    my $sample_id;
 
     my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
         file_path => {
             defined     => 1,
             required    => 1,
@@ -260,12 +279,19 @@ sub get_fastq_file_header_info {
             store       => \$read_file_command,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
     use MIP::Fastq qw{ casava_header_features };
+    use MIP::File_info qw{ set_sample_file_attribute };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -329,6 +355,29 @@ q{Could not detect required sample sequencing run info from fastq file header }
         exit 1;
     }
 
+    ## Add fake date since it is not part of the fastq header
+    $fastq_header_info{date} = q{000101};
+
+    if ( not exists $fastq_header_info{index} ) {
+
+        # Special case since index is not present in fast headers casaava 1.4
+        $fastq_header_info{index} = $EMPTY_STR;
+    }
+
+## Transfer to file_info hash
+  ATTRIBUTE:
+    while ( my ( $attribute, $attribute_value ) = each %fastq_header_info ) {
+
+        set_sample_file_attribute(
+            {
+                attribute       => $attribute,
+                attribute_value => $attribute_value,
+                file_info_href  => $file_info_href,
+                file_name       => $file_name,
+                sample_id       => $sample_id,
+            }
+        );
+    }
     return %fastq_header_info;
 }
 
@@ -390,11 +439,13 @@ sub parse_fastq_infiles_format {
 ## Function : Parse infile according to MIP filename convention
 ## Returns  : %infile_info or undef
 ## Arguments: $file_name => File name
+##          : $sample_id => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_name;
+    my $sample_id;
 
     my $tmpl = {
         file_name => {
@@ -403,9 +454,17 @@ sub parse_fastq_infiles_format {
             store       => \$file_name,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Validate::Case qw{ check_infile_contain_sample_id };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -435,8 +494,23 @@ sub parse_fastq_infiles_format {
         $log->warn(qq{Could not detect MIP file name convention for file: $file_name });
         $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE,
             @missing_feature );
-        return;
+
+        ## Check that file name at least contains sample id
+        return if ( $file_name =~ /$sample_id/sxm );
+
+        $log->fatal(
+qq{Please check that the file name: $file_name contains the sample_id: $sample_id}
+        );
+        exit 1;
     }
+    ## Check that the sample_id provided and sample_id in infile name match
+    check_infile_contain_sample_id(
+        {
+            infile_name      => $file_name,
+            infile_sample_id => $fastq_file_name{infile_sample_id},
+            sample_id        => $sample_id,
+        }
+    );
     return %fastq_file_name;
 }
 

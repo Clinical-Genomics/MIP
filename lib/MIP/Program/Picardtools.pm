@@ -1563,10 +1563,8 @@ sub picardtools_collectrnaseqmetrics {
             strict_type => 1,
         },
         strand_specificity => {
-            allow => [
-                undef,
-                qw{ NONE FIRST_READ_TRANSCRIPTION_STRAND SECOND_READ_TRANSCRIPTION_STRAND }
-            ],
+            allow       => [qw{ unstranded forward_stranded reverse_stranded }],
+            required    => 1,
             store       => \$strand_specificity,
             strict_type => 1,
         },
@@ -1618,9 +1616,17 @@ sub picardtools_collectrnaseqmetrics {
         push @commands, q{-RIBOSOMAL_INTERVALS} . $SPACE . $rrna_intervals_file_path;
     }
 
-    if ($strand_specificity) {
+    if ( $strand_specificity eq q{unstranded} ) {
 
-        push @commands, q{-STRAND_SPECIFICITY} . $SPACE . $strand_specificity;
+        push @commands, q{-STRAND_SPECIFICITY NONE};
+    }
+    elsif ( $strand_specificity eq q{forward_stranded} ) {
+
+        push @commands, q{-STRAND_SPECIFICITY FIRST_READ_TRANSCRIPTION_STRAND};
+    }
+    elsif ( $strand_specificity eq q{reverese_stranded} ) {
+
+        push @commands, q{-STRAND_SPECIFICITY SECOND_READ_TRANSCRIPTION_STRAND};
     }
 
     push @commands,

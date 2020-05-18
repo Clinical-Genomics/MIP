@@ -24,13 +24,14 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 use MIP::Test::Writefile qw{ write_toml_config };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -118,9 +119,14 @@ my $cmds_ref = [
     $toml_config_path,
 ];
 
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip} );
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip dragen rd dna } );
 
 my $qc_sample_info_file = catfile( $cluster_constant_path,
     qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml } );

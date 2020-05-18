@@ -88,6 +88,10 @@ my %required_argument = (
         input           => catfile(qw{ out_directory outfile }),
         expected_output => q{-OUTPUT} . $SPACE . catdir(qw{ out_directory outfile }),
     },
+    strand_specificity => {
+        input           => q{unstranded},
+        expected_output => q{-STRAND_SPECIFICITY NONE},
+    },
 );
 
 my %specific_argument = (
@@ -116,12 +120,6 @@ my %specific_argument = (
           . $SPACE
           . catfile(qw{  references rrna_intervals.interval_list }),
     },
-    strand_specificity => {
-        input           => q{SECOND_READ_TRANSCRIPTION_STRAND},
-        expected_output => q{-STRAND_SPECIFICITY}
-          . $SPACE
-          . q{SECOND_READ_TRANSCRIPTION_STRAND},
-    },
 );
 
 ## Coderef - enables generalized use of generate call
@@ -136,6 +134,27 @@ foreach my $argument_href (@arguments) {
         {
             argument_href              => $argument_href,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
+        }
+    );
+}
+
+my %strandedness = (
+    forward_stranded => q{FIRST_READ_TRANSCRIPTION_STRAND},
+    reverse_stranded => q{SECOND_READ_TRANSCRIPTION_STRAND},
+);
+
+STRAND_TYPE:
+foreach my $strand_type ( keys %strandedness ) {
+
+    $required_argument{strand_specificity}{input}           = $strand_type;
+    $required_argument{strand_specificity}{expected_output} = $strandedness{$strand_type};
+
+    my @commands = test_function(
+        {
+            argument_href              => \%base_argument,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,

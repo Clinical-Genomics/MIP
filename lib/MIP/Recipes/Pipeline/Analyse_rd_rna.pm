@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -166,6 +166,8 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
+      qw{ analysis_picardtools_collectrnaseqmetrics };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
@@ -215,34 +217,35 @@ sub pipeline_analyse_rd_rna {
 
     ## Dispatch table
     my %analysis_recipe = (
-        analysisrunstatus         => \&analysis_analysisrunstatus,
-        arriba_ar                 => \&analysis_arriba,
-        bcftools_merge            => \&analysis_bcftools_merge,
-        blobfish                  => \&analysis_blobfish,
-        bootstrapann              => \&analysis_bootstrapann,
-        dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
-        fastqc_ar                 => \&analysis_fastqc,
-        gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rna,
-        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
-        gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
-        gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
-        genebody_coverage         => \&analysis_genebody_coverage,
-        gffcompare_ar             => \&analysis_gffcompare,
-        markduplicates            => \&analysis_markduplicates_rna,
-        multiqc_ar                => \&analysis_multiqc,
-        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
-        preseq_ar                 => \&analysis_preseq,
-        qccollect_ar              => \&analysis_mip_qccollect,
-        rseqc                     => \&analysis_rseqc,
-        sacct                     => \&analysis_sacct,
-        salmon_quant              => \&analysis_salmon_quant,
-        star_aln                  => undef,
-        star_fusion               => \&analysis_star_fusion,
-        stringtie_ar              => \&analysis_stringtie,
-        trim_galore_ar            => \&analysis_trim_galore,
-        varianteffectpredictor    => \&analysis_vep,
-        version_collect_ar        => \&analysis_mip_vercollect,
+        analysisrunstatus                => \&analysis_analysisrunstatus,
+        arriba_ar                        => \&analysis_arriba,
+        bcftools_merge                   => \&analysis_bcftools_merge,
+        blobfish                         => \&analysis_blobfish,
+        bootstrapann                     => \&analysis_bootstrapann,
+        dna_vcf_reformat                 => \&analysis_vcf_ase_reformat,
+        fastqc_ar                        => \&analysis_fastqc,
+        gatk_asereadcounter              => \&analysis_gatk_asereadcounter,
+        gatk_baserecalibration           => \&analysis_gatk_baserecalibration_rna,
+        gatk_haplotypecaller             => \&analysis_gatk_haplotypecaller,
+        gatk_splitncigarreads            => \&analysis_gatk_splitncigarreads,
+        gatk_variantfiltration           => \&analysis_gatk_variantfiltration,
+        genebody_coverage                => \&analysis_genebody_coverage,
+        gffcompare_ar                    => \&analysis_gffcompare,
+        markduplicates                   => \&analysis_markduplicates_rna,
+        multiqc_ar                       => \&analysis_multiqc,
+        picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
+        picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
+        preseq_ar                        => \&analysis_preseq,
+        qccollect_ar                     => \&analysis_mip_qccollect,
+        rseqc                            => \&analysis_rseqc,
+        sacct                            => \&analysis_sacct,
+        salmon_quant                     => \&analysis_salmon_quant,
+        star_aln                         => undef,
+        star_fusion                      => \&analysis_star_fusion,
+        stringtie_ar                     => \&analysis_stringtie,
+        trim_galore_ar                   => \&analysis_trim_galore,
+        varianteffectpredictor           => \&analysis_vep,
+        version_collect_ar               => \&analysis_mip_vercollect,
     );
 
     ## Update which star recipe to use depending on fastq infile mix

@@ -24,12 +24,13 @@ use autodie qw{open close :all};
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -109,11 +110,14 @@ foreach my $test_case (@test_cases) {
         push @test_cmds, $dna_vcf_file;
     }
 
-    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-        command => \@test_cmds,
-        verbose => $VERBOSE
+    my %process_return = child_process(
+        {
+            commands_ref => \@test_cmds,
+            process_type => q{ipc_cmd_run},
+            verbose      => $VERBOSE,
+        }
     );
-    ok( $success, q{Executed mip} );
+    ok( $process_return{success}, q{Executed mip rd_rna} );
 
     my $qc_sample_info_file = catfile( $cluster_constant_path,
         qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -178,6 +178,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
+        genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
         q{get_fastq_header_v1.4}             => \&_get_fastq_header_v1_4,
         q{get_fastq_header_v1.4_interleaved} => \&_get_fastq_header_v1_4_interleaved,
@@ -239,6 +240,20 @@ sub perl_nae_oneliners {
         }
     );
     return @commands;
+}
+
+sub _genepred_to_refflat {
+
+## Function : Convert extended genePred format to refFlat format
+## Returns  : $genepred_to_refflat
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Put gene name first followed by the original first 10 fields
+    my $genepred_to_refflat = q?'say STDOUT join qq{\t}, ($F[11], @F[0..9])'?;
+
+    return $genepred_to_refflat;
 }
 
 sub _get_dict_contigs {
