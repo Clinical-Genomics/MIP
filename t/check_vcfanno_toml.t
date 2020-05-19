@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -51,9 +51,9 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Vcfanno qw{ check_vcfanno_toml };
 use MIP::Environment::Child_process qw{ child_process };
 use MIP::Toml qw{ load_toml write_toml };
+use MIP::Vcfanno qw{ check_vcfanno_toml };
 
 diag(   q{Test check_vcfanno_toml from Vcfanno.pm v}
       . $MIP::Vcfanno::VERSION
@@ -71,17 +71,17 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $vta_vcfanno_config =
+my $vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_vta_vcfanno_config = catfile( $test_reference_dir,
+my $test_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_check_vcfanno_-v1.0-.toml  } );
 
 my $toml_href = load_toml(
     {
-        path => $vta_vcfanno_config,
+        path => $vcfanno_config,
     }
 );
 
@@ -98,18 +98,18 @@ $toml_href->{annotation}[2]{file} =
 write_toml(
     {
         data_href => $toml_href,
-        path      => $test_vta_vcfanno_config,
+        path      => $test_vcfanno_config,
     }
 );
 
-my %active_parameter = ( vta_vcfanno_config => $test_vta_vcfanno_config, );
+my %active_parameter = ( vcfanno_config => $test_vcfanno_config, );
 
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
         active_parameter_href => \%active_parameter,
-        vcfanno_config_name => q{vta_vcfanno_config},
-        vcfanno_functions => q{vta_vcfanno_functions},
+        vcfanno_config_name   => q{vcfanno_config},
+        vcfanno_functions     => q{vcfanno_functions},
     }
 );
 
@@ -117,19 +117,19 @@ my $is_ok = check_vcfanno_toml(
 ok( $is_ok, q{Passed check for toml file} );
 
 ## Clean-up
-rmtree($test_vta_vcfanno_config);
+rmtree($test_vcfanno_config);
 
 ## Given a toml config file, when mandatory features are absent
-my $faulty_vta_vcfanno_config_file = catfile( $Bin,
+my $faulty_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
-$active_parameter{vta_vcfanno_config} = $faulty_vta_vcfanno_config_file;
+$active_parameter{vcfanno_config} = $faulty_vcfanno_config_file;
 trap {
     check_vcfanno_toml(
         {
             active_parameter_href => \%active_parameter,
-            vcfanno_config_name => q{vta_vcfanno_config},
-            vcfanno_functions => q{vta_vcfanno_functions},
+            vcfanno_config_name   => q{vcfanno_config},
+            vcfanno_functions     => q{vcfanno_functions},
         }
     )
 };

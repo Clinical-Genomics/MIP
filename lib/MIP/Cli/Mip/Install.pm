@@ -22,9 +22,8 @@ use MooseX::Types::Structured qw{ Dict Optional };
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.17;
+our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -59,14 +58,6 @@ sub run {
         $active_parameter{config_file} =
           catfile( $Bin, qw{ templates mip_install_config.yaml } );
     }
-
-    ## Print parameters from config file and exit
-    print_parameter_defaults(
-        {
-            parameter_href          => \%parameter,
-            print_parameter_default => $arg_href->{print_parameter_default},
-        }
-    );
 
     ## Start generating the installation script
     mip_install(
@@ -180,17 +171,6 @@ sub _build_usage {
     );
 
     option(
-        q{print_parameter_default} => (
-            cmd_aliases   => [qw{ ppd }],
-            cmd_flag      => q{print_parameter_default},
-            documentation => q{print the default parameters},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{program_test_file} => (
             cmd_aliases   => [qw{ ptf }],
             documentation => q{File with test commands in YAML format},
@@ -259,8 +239,8 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit cadd chanjo
                           chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod
-                          gffcompare htslib manta mip_scripts multiqc peddy picard preseq python
-                          rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
+                          gffcompare htslib manta mip_scripts multiqc peddy picard plink preseq python
+                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
                           stranger stringtie svdb tiddit trim-galore ucsc upd utilities varg
                           variant_integrity vcf2cytosure vcfanno vep vts }
                     ]
@@ -281,8 +261,8 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit cadd chanjo
                           chromograph cnvnator delly expansionhunter fastqc gatk gatk4 genmod
-                          gffcompare htslib manta mip_scripts multiqc peddy picard preseq python
-                          rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
+                          gffcompare htslib manta mip_scripts multiqc peddy picard plink preseq python
+                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
                           stranger stringtie svdb tiddit trim-galore ucsc upd utilities varg
                           variant_integrity vcf2cytosure vcfanno vep vts }
                     ]

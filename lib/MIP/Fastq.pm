@@ -17,22 +17,22 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DASH $EMPTY_STR $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $EMPTY_STR $LOG_NAME $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       casava_header_features
       check_interleaved
       define_mip_fastq_file_features
-      get_fastq_file_header_info
       get_read_length
+      parse_fastq_file_header_attributes
       parse_fastq_infiles_format };
 }
 
@@ -234,7 +234,7 @@ sub define_mip_fastq_file_features {
       $original_file_name_prefix, $run_barcode;
 }
 
-sub get_fastq_file_header_info {
+sub parse_fastq_file_header_attributes {
 
 ## Function : Get run info from fastq file header
 ## Returns  : @fastq_info_headers
@@ -333,14 +333,14 @@ sub get_fastq_file_header_info {
         ## If successful regexp
         if ($fastq_info_header_string) {
 
-            # Get header features
-            my @features = @{ $casava_header_regexp{$casava_version} };
+            # Get header attributes
+            my @attributes = @{ $casava_header_regexp{$casava_version} };
 
             # Split header string into array
             my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
 
             # Add to hash to be returned
-            @fastq_header_info{@features} = @fastq_info_headers;
+            @fastq_header_info{@attributes} = @fastq_info_headers;
             last REGEXP;
         }
     }
@@ -349,13 +349,15 @@ sub get_fastq_file_header_info {
 
         $log->fatal( q{Error parsing file header: } . $file_path );
         $log->fatal(
-q{Could not detect required sample sequencing run info from fastq file header }
-              . $DASH
-              . q{Please proved MIP file in MIP file convention format to proceed} );
+            q{Could not detect required sample sequencing run info from fastq file header}
+        );
+        $log->fatal(q{Please proved MIP file in MIP file convention format to proceed});
         exit 1;
     }
 
-    ## Add fake date since it is not part of the fastq header
+    $log->warn(
+q{Will add fake date '00010101' to follow file convention since this is not recorded in fastq header}
+    );
     $fastq_header_info{date} = q{000101};
 
     if ( not exists $fastq_header_info{index} ) {
@@ -378,7 +380,18 @@ q{Could not detect required sample sequencing run info from fastq file header }
             }
         );
     }
-    return %fastq_header_info;
+    ## Adds information derived from infile name to hashes
+    $log->info(
+            q{Found following information from fastq header: lane=}
+          . $fastq_header_info{lane}
+          . q{ flow-cell=}
+          . $fastq_header_info{flowcell}
+          . q{ index=}
+          . $fastq_header_info{index}
+          . q{ direction=}
+          . $fastq_header_info{direction},
+    );
+    return;
 }
 
 sub get_read_length {

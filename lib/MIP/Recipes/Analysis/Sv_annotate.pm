@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -389,9 +389,9 @@ sub analysis_sv_annotate {
             {
                 filehandle   => $filehandle,
                 infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                luafile_path => $active_parameter_href->{sv_fqa_vcfanno_functions},
+                luafile_path => $active_parameter_href->{vcfanno_functions},
                 stderrfile_path_append => $stderrfile_path,
-                toml_configfile_path   => $active_parameter_href->{sv_vta_vcfanno_config},
+                toml_configfile_path   => $active_parameter_href->{sv_vcfanno_config},
             }
         );
         print {$filehandle} $PIPE . $SPACE;
@@ -402,22 +402,22 @@ sub analysis_sv_annotate {
         my %vcfanno_config = read_from_file(
             {
                 format => q{toml},
-                path   => $active_parameter_href->{sv_vta_vcfanno_config},
+                path   => $active_parameter_href->{sv_vcfanno_config},
             }
         );
 
-        ## Store vcf anno annotations
-        my @vcf_anno_annotations;
+        ## Store vcfanno annotations
+        my @vcfanno_annotations;
 
       ANNOTATION:
         foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-            push @vcf_anno_annotations, @{ $annotation_href->{names} };
+            push @vcfanno_annotations, @{ $annotation_href->{names} };
         }
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                annotations_ref => \@vcf_anno_annotations,
+                annotations_ref => \@vcfanno_annotations,
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }

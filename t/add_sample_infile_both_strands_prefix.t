@@ -16,15 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Script::Utils}  => [qw{ print_parameter_defaults }],
+        q{MIP::File_info}      => [qw{ add_sample_infile_both_strands_prefix }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Script::Utils qw{ print_parameter_defaults };
+use MIP::File_info qw{ add_sample_infile_both_strands_prefix };
 
-diag(   q{Test print_parameter_defaults from Utils.pm v}
-      . $MIP::Script::Utils::VERSION
+diag(   q{Test add_sample_infile_both_strands_prefix from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,20 +57,21 @@ diag(   q{Test print_parameter_defaults from Utils.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a parameter hash
-my $parameter_href = { Test => q{value} };
+## Given a sample_id
+my %file_info;
+my $mip_file_format_with_direction = q{a_file_format_1};
+my $sample_id                      = q{sample_id};
 
-trap {
-    print_parameter_defaults(
-        {
-            parameter_href          => $parameter_href,
-            print_parameter_default => 1,
-        }
-    )
-};
+add_sample_infile_both_strands_prefix(
+    {
+        file_info_href                 => \%file_info,
+        mip_file_format_with_direction => $mip_file_format_with_direction,
+        sample_id                      => $sample_id,
+    }
+);
 
-like( $trap->stderr, qr/Default/xms, q{Print default message} );
-like( $trap->stderr, qr/Test/xms,    q{Print parameter hash} );
-is( $trap->leaveby, q{exit}, q{Exit} );
+## Then add infile_both_strands_prefix
+is( @{ $file_info{$sample_id}{infile_both_strands_prefix} },
+    1, q{Added infile_both_strands_prefix to file_info} );
 
 done_testing();

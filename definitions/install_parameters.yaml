@@ -123,7 +123,9 @@ rd_dna:
     - multiqc
     - peddy
     - picard
+    - plink
     - python
+    - rhocall
     - rtg-tools
     - sambamba
     - smncopynumbercaller

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Fastq}          => [qw{ get_fastq_file_header_info }],
+        q{MIP::Fastq}          => [qw{ parse_fastq_file_header_attributes }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Fastq qw{ get_fastq_file_header_info };
+use MIP::Fastq qw{ parse_fastq_file_header_attributes };
 
-diag(   q{Test get_fastq_file_header_info from Fastq.pm v}
+diag(   q{Test parse_fastq_file_header_attributes from Fastq.pm v}
       . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -82,7 +82,7 @@ my %file_info;
 my $read_file_command = q{gzip -d -c};
 my $sample_id         = q{ADM1059A1};
 
-my %fastq_info_header = get_fastq_file_header_info(
+parse_fastq_file_header_attributes(
     {
         file_info_href    => \%file_info,
         file_name         => $file_format_illumina_v1_4,
@@ -106,7 +106,7 @@ my %expected_header_element_v1_4 = (
 
 ## Then return expected_header_elements for < v1.4
 is_deeply(
-    \%fastq_info_header,
+    \%{$file_info{$sample_id}{$file_format_illumina_v1_4}},
     \%expected_header_element_v1_4,
     q{Found Illumina header format < v1.4}
 );
@@ -114,7 +114,7 @@ is_deeply(
 ## Given file, when format is greather than Casava 1.8
 my $file_format_illumina_v1_8 = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
 
-%fastq_info_header = get_fastq_file_header_info(
+parse_fastq_file_header_attributes(
     {
         file_info_href    => \%file_info,
         file_name         => $file_format_illumina_v1_8,
@@ -140,7 +140,7 @@ my %expected_header_element_v1_8 = (
 
 ## Then return expected_header_elements for > v1.8
 is_deeply(
-    \%fastq_info_header,
+    \%{$file_info{$sample_id}{$file_format_illumina_v1_8}},
     \%expected_header_element_v1_8,
     q{Found Illumina header format > v1.8}
 );
@@ -150,7 +150,7 @@ $directory = catfile( $Bin, qw{ data 643594-miptest } );
 my $file_bad_format = q{643594-miptest_pedigree.yaml};
 
 trap {
-    get_fastq_file_header_info(
+    parse_fastq_file_header_attributes(
         {
             file_info_href    => \%file_info,
             file_name         => $file_bad_format,

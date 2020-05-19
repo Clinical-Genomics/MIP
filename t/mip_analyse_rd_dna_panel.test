@@ -31,7 +31,7 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -110,7 +110,7 @@ my $cmds_ref = [
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
     qw{ --dra --vb },
-    q{--vta_vcfanno_config},
+    q{--vcfanno_config},
     $toml_config_path,
     q{--pedigree},
     catfile( $cluster_constant_path, qw{ 643594-miptest 643594-panel_pedigree.yaml } ),
