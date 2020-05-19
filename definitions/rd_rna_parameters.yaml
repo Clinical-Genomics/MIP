@@ -20,6 +20,7 @@ custom_default_parameters:
     - star_fusion_reference_genome
     - store_file
     - temp_directory
+    - transcript_annotation_file_endings
   type: mip
 human_genome_reference:
   associated_recipe:
@@ -67,7 +68,6 @@ transcript_annotation:
     - star_fusion
     - stringtie_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file
   is_reference: 1
   reference: reference_dir
@@ -80,7 +80,7 @@ transcript_annotation_file_endings:
   exists_check: file
   mandatory: no
   reference: reference_dir
-  type: path
+  type: mip
 library_type:
   associated_recipe:
     - genebody_coverage

@@ -233,7 +233,6 @@ sub analysis_picardtools_collectrnaseqmetrics {
     ### SHELL:
     ## CollectRnaSeqMetrics
     say {$filehandle} q{## Calculate rnaseq metrics on alignment};
-
     picardtools_collectrnaseqmetrics(
         {
             chart_outfile_path        => $outfile_path_prefix . q{.pdf},

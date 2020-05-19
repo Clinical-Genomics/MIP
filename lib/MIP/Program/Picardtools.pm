@@ -1624,7 +1624,7 @@ sub picardtools_collectrnaseqmetrics {
 
         push @commands, q{-STRAND_SPECIFICITY FIRST_READ_TRANSCRIPTION_STRAND};
     }
-    elsif ( $strand_specificity eq q{reverese_stranded} ) {
+    elsif ( $strand_specificity eq q{reverse_stranded} ) {
 
         push @commands, q{-STRAND_SPECIFICITY SECOND_READ_TRANSCRIPTION_STRAND};
     }

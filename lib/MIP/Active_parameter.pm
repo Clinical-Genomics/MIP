@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -58,6 +58,7 @@ BEGIN {
       set_default_reference_info_file
       set_default_store_file
       set_default_temp_directory
+      set_default_transcript_annotation
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
       set_exome_target_bed
@@ -1509,6 +1510,39 @@ sub set_default_temp_directory {
     ## Mip analyse
     $active_parameter_href->{temp_directory} =
       catfile( $active_parameter_href->{outdata_dir}, q{$SLURM_JOB_ID} );
+
+    return;
+}
+
+sub set_default_transcript_annotation {
+
+## Function : Set default transcript annotation to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Now we now what transcript annotation reference to build from
+    $active_parameter_href->{$parameter_name} =
+      $active_parameter_href->{transcript_annotation};
 
     return;
 }

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -866,6 +866,7 @@ sub set_custom_default_to_active_parameter {
       set_default_reference_info_file
       set_default_store_file
       set_default_temp_directory
+      set_default_transcript_annotation
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
     };
@@ -1005,6 +1006,13 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_temp_directory,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
+            },
+        },
+        transcript_annotation_file_endings => {
+            method   => \&set_default_transcript_annotation,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
             },
         },
         vcfparser_select_file => {
