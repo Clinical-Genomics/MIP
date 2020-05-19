@@ -75,7 +75,7 @@ open $filehandle, q{>}, \$file_content
 
 ## Given build parameters
 my $parameter_build_name = q{transcript_annotation_file_endings};
-my $recipe_name          = q{picardtools_collecrnametrics};
+my $recipe_name          = q{picardtools_collectrnaseqmetrics};
 my $slurm_mock_cmd       = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
