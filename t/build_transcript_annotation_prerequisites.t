@@ -106,7 +106,6 @@ my $refflat_suffix = $file_info{transcript_annotation_file_endings}[0];
 my $is_ok = build_transcript_annotation_prerequisites(
     {
         active_parameter_href        => \%active_parameter,
-        filehandle                   => $filehandle,
         file_info_href               => \%file_info,
         infile_lane_prefix_href      => \%infile_lane_prefix,
         job_id_href                  => \%job_id,
