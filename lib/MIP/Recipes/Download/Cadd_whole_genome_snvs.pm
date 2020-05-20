@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_cadd_whole_genome_snvs };
@@ -175,13 +175,16 @@ sub download_cadd_whole_genome_snvs {
     say {$filehandle} q{## } . $recipe_name;
 
     ## Construct outdir path
-    my $outdir_path =
-      catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh38_v1.5 no_anno } );
-    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
+    my %cadd_anno_map = (
+        grch37 => q{GRCh37},
+        grch38 => q{GRCh38},
+    );
 
-        $outdir_path =
-          catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh37_v1.4 no_anno } );
-    }
+    my $outdir_path = catdir(
+        $reference_dir,
+        qw{ CADD-scripts data prescored },
+        $cadd_anno_map{$genome_version} . $UNDERSCORE . $reference_version, q{no_anno}
+    );
 
     if ( not -d $outdir_path ) {
         gnu_mkdir(

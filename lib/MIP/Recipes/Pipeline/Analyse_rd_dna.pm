@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -147,12 +147,12 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_cadd set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph analysis_chromograph_proband };
@@ -267,12 +267,12 @@ sub pipeline_analyse_rd_dna {
         analysisrunstatus => \&analysis_analysisrunstatus,
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                          # Depends on genome build
-        cadd_ar => undef,    # Depends on human reference version
-        chanjo_sexcheck => \&analysis_chanjo_sex_check,
-        chromograph_ar  => undef,                         # Depends on pedigree
-        cnvnator_ar     => \&analysis_cnvnator,
-        delly_call      => \&analysis_delly_call,
-        delly_reformat  => \&analysis_delly_reformat,
+        cadd_ar           => \&analysis_cadd,
+        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
+        chromograph_ar    => undef,                          # Depends on pedigree
+        cnvnator_ar       => \&analysis_cnvnator,
+        delly_call        => \&analysis_delly_call,
+        delly_reformat    => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,
@@ -349,15 +349,6 @@ sub pipeline_analyse_rd_dna {
             analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_source =>
               $file_info_href->{human_genome_reference_source},
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
-        }
-    );
-
-    ## Set correct cadd recipe depending on version of the human_genome_reference
-    set_recipe_cadd(
-        {
-            analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }

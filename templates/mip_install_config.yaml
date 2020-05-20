@@ -46,7 +46,7 @@ singularity:
   cadd:
     executable:
       CADD.sh:
-    uri: shub://Clinical-Genomics/MIP:cadd-1.5
+    uri: docker://clinicalgenomics/cadd:1.6
   cnvnator:
     executable:
       cnvnator:

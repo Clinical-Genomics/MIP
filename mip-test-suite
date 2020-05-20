@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ## Unit and integration
-prove t -r -j 2
+#prove t -r -j 2
 
 ## Install
 perl t/mip_install.test

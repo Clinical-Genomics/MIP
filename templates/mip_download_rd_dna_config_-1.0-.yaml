@@ -19,18 +19,16 @@ reference:
     - phase3_v4_20130502
   1000g_snps:
     - phase1
-  cadd_bravo_topmed:
-    - v1.5
-  cadd_gnomad_genomes:
-    - v1.4
   cadd_offline_annotations:
     - v1.4
     - v1.5
+    - v1.6
   cadd_to_vcf_header:
     - 1.0
   cadd_whole_genome_snvs:
     - v1.4
     - v1.5
+    - v1.6
   chromograph_cytoband:
     - v1.0
   clinvar:
@@ -235,22 +233,6 @@ reference_feature:
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
         user: gsapubftp-anonymous
-  cadd_bravo_topmed:
-    grch38:
-      v1.5:
-        file: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz
-        file_index: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz.tbi
-        outfile: grch38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
-        outfile_index: grch38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz.tbi
-        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
-  cadd_gnomad_genomes:
-    grch37:
-      v1.4:
-        file: gnomad.genomes.r2.0.1.sites.tsv.gz
-        file_index: gnomad.genomes.r2.0.1.sites.tsv.gz.tbi
-        outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
-        outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
-        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
   cadd_offline_annotations:
     grch37:
       v1.4:
@@ -261,6 +243,14 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_decompress: tar
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+      v1.6:
+        file: annotationsGRCh37_v1.6.tar.gz
+        file_check: annotationsGRCh37_v1.6.tar.gz.md5
+        outfile: annotationsGRCh37_v1.6.tar.gz
+        outfile_check: annotationsGRCh37_v1.6.tar.gz.md5
+        outfile_check_method: md5sum
+        outfile_decompress: tar
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh37/
     grch38:
       v1.5:
         file: annotationsGRCh38.tar.gz
@@ -270,6 +260,14 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_decompress: tar
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
+      v1.6:
+        file: annotationsGRCh38_v1.6.tar.gz
+        file_check: annotationsGRCh38_v1.6.tar.gz.md5
+        outfile: annotationsGRCh38_v1.6.tar.gz
+        outfile_check: annotationsGRCh38_v1.6.tar.gz.md5
+        outfile_check_method: md5sum
+        outfile_decompress: tar
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/
   cadd_to_vcf_header:
     grch37:
       1.0:
@@ -293,6 +291,18 @@ reference_feature:
         outfile_index_check: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz.tbi.md5
         outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+      v1.6:
+        file: whole_genome_SNVs.tsv.gz
+        file_check: whole_genome_SNVs.tsv.gz.md5
+        file_index: whole_genome_SNVs.tsv.gz.tbi
+        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
+        outfile: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz
+        outfile_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
+        outfile_check_method: md5sum
+        outfile_index: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
+        outfile_index_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
+        outfile_index_check_method: md5sum
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh37/
     grch38:
       v1.5:
         file: whole_genome_SNVs.tsv.gz
@@ -306,6 +316,18 @@ reference_feature:
         outfile_index_check: grch38_cadd_whole_genome_snvs_-v1.5-.tsv.gz.tbi.md5
         outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
+      v1.6:
+        file: whole_genome_SNVs.tsv.gz
+        file_check: whole_genome_SNVs.tsv.gz.md5
+        file_index: whole_genome_SNVs.tsv.gz.tbi
+        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
+        outfile: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz
+        outfile_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
+        outfile_check_method: md5sum
+        outfile_index: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
+        outfile_index_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
+        outfile_index_check_method: md5sum
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/
   chromograph_cytoband:
     grch37:
       v1.0:
