@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -47,8 +47,8 @@ BEGIN {
       set_human_genome_reference_features
       set_primary_contigs
       set_sample_file_attribute
-      set_sample_infile_lane_prefix
       set_select_file_contigs
+      set_sample_file_prefix_no_direction
     };
 }
 
@@ -1239,70 +1239,6 @@ sub set_sample_file_attribute {
     return;
 }
 
-sub set_sample_infile_lane_prefix {
-
-## Function : Add sample fastq file lane prefix to infile_lane_prefix
-## Returns  :
-## Arguments: $direction       => Read direction
-##          : $file_info_href  => File info hash {REF}
-##          : $lane_tracker    => Lane tracker
-##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
-##          : $sample_id       => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $direction;
-    my $file_info_href;
-    my $lane_tracker;
-    my $mip_file_format;
-    my $sample_id;
-
-    my $tmpl = {
-        direction => {
-            allow       => [ undef, 1, 2, $INTERLEAVED_READ_DIRECTION, ],
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        lane_tracker => {
-            allow       => qr{\A \d+ \z}xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_tracker,
-            strict_type => 1,
-        },
-        mip_file_format => {
-            defined     => 1,
-            required    => 1,
-            store       => \$mip_file_format,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not $direction == 1 );
-
-    ## Set infile_lane_prefix
-    $file_info_href->{$sample_id}{infile_lane_prefix}[$lane_tracker] = $mip_file_format;
-
-    return;
-}
-
 sub set_select_file_contigs {
 
 ## Function : Set select file contigs
@@ -1337,6 +1273,62 @@ sub set_select_file_contigs {
 
     ## Set select contig sets
     @{ $file_info_href->{select_file_contigs} } = @{$select_file_contigs_ref};
+
+    return;
+}
+
+sub set_sample_file_prefix_no_direction {
+
+## Function : Add sample fastq file prefix without read direction in file name
+## Returns  :
+## Arguments: $file_info_href    => File info hash {REF}
+##          : $mip_file_format   => Mip file format without read direction and ".fastq(.gz)"
+##          : $sample_id         => Sample id
+##          : $sequence_run_type => Sequence run type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $direction;
+    my $file_info_href;
+    my $mip_file_format;
+    my $sample_id;
+    my $sequence_run_type;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        mip_file_format => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_file_format,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sequence_run_type => {
+            allow       => [qw{ paired-end single-end }],
+            defined     => 1,
+            required    => 1,
+            store       => \$sequence_run_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set file_prefix_no_direction
+    $file_info_href->{$sample_id}{file_prefix_no_direction}{$mip_file_format} =
+      $sequence_run_type;
 
     return;
 }

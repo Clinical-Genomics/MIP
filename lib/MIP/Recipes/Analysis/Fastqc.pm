@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -141,6 +141,7 @@ sub analysis_fastqc {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode update_memory_allocation };
     use MIP::Environment::Cluster qw{ check_max_core_number };
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
@@ -218,16 +219,23 @@ sub analysis_fastqc {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-  INFILE_LANE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
+  INFILE_PREFIX:
+    foreach
+      my $sequence_run_type ( values %{ $file_info_sample{file_prefix_no_direction} } )
+    {
 
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
         $core_number = update_core_number_to_seq_mode(
             {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
+                core_number       => $core_number,
+                sequence_run_type => $sequence_run_type,
             }
         );
     }
