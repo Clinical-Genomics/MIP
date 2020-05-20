@@ -1289,7 +1289,6 @@ sub set_sample_file_prefix_no_direction {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $direction;
     my $file_info_href;
     my $mip_file_format;
     my $sample_id;
@@ -1316,7 +1315,7 @@ sub set_sample_file_prefix_no_direction {
             strict_type => 1,
         },
         sequence_run_type => {
-            allow       => [qw{ paired-end single-end }],
+            allow       => [qw{ interleaved paired-end single-end }],
             defined     => 1,
             required    => 1,
             store       => \$sequence_run_type,

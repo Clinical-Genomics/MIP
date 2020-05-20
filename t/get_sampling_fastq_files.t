@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,27 +73,13 @@ my %file_info = test_mip_hashes(
     }
 );
 push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-my $infile_lane_prefix = $sample_id;
-my %infile_lane_prefix = ( $sample_id => [ $infile_lane_prefix, $infile_lane_prefix ], );
-
-my %sample_info = (
-    sample => {
-        $sample_id => {
-            file => {
-                $infile_lane_prefix => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
+$file_info{$sample_id}{file_prefix_no_direction}{ADM1059A3} = q{paired-end};
 
 my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        infile_paths_ref        => $file_info{$sample_id}{mip_infiles},
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        file_prefix_no_direction_href => $file_info{$sample_id}{file_prefix_no_direction},
+        infile_paths_ref              => $file_info{$sample_id}{mip_infiles},
+        sample_id                     => $sample_id,
     }
 );
 my @expected_fastq_files = qw{ ADM1059A3.fastq ADM1059A3.fastq };

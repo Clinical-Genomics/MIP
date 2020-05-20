@@ -174,25 +174,23 @@ sub get_sampling_fastq_files {
 
 ## Function : Get fastq files to sample reads from
 ## Returns  : $is_interleaved_fastq, @fastq_files
-## Arguments: $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $infile_paths_ref        => Infile paths {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $file_prefix_no_direction_href => File prefix without read direction
+##          : $infile_paths_ref              => Infile paths {REF}
+##          : $sample_id                     => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_lane_prefix_href;
+    my $file_prefix_no_direction_href;
     my $infile_paths_ref;
     my $sample_id;
-    my $sample_info_href;
 
     my $tmpl = {
-        infile_lane_prefix_href => {
+        file_prefix_no_direction_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infile_lane_prefix_href,
+            store       => \$file_prefix_no_direction_href,
             strict_type => 1,
         },
         infile_paths_ref => {
@@ -208,18 +206,9 @@ sub get_sampling_fastq_files {
             store       => \$sample_id,
             strict_type => 1,
         },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
 
     my @fastq_files;
 
@@ -227,30 +216,9 @@ sub get_sampling_fastq_files {
     my $paired_end_tracker = 0;
     my $is_interleaved_fastq;
 
-  INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+  SEQ_RUN_TYPE:
+    foreach my $sequence_run_type ( values %{$file_prefix_no_direction_href} ) {
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
-        # Collect interleaved status for fastq file
-        $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
-        ## Infile(s)
         push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
 
         # If second read direction is present
@@ -260,8 +228,13 @@ sub get_sampling_fastq_files {
             $paired_end_tracker = $paired_end_tracker + 1;
             push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
         }
+
+        if ( $sequence_run_type eq q{interleaved} ) {
+            $is_interleaved_fastq = 1;
+        }
+
         ## Only perform once per sample and fastq file(s)
-        last INFILE_PREFIX;
+        last SEQ_RUN_TYPE;
     }
     return $is_interleaved_fastq, @fastq_files;
 }
@@ -273,8 +246,6 @@ sub parse_fastq_for_gender {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $consensus_analysis_type => Consensus analysis_type
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -282,8 +253,6 @@ sub parse_fastq_for_gender {
     my $active_parameter_href;
     my $consensus_analysis_type;
     my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $sample_info_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -306,24 +275,11 @@ sub parse_fastq_for_gender {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Bwa qw{ bwa_mem };
@@ -349,16 +305,22 @@ sub parse_fastq_for_gender {
 
         ### Estimate gender from reads
 
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
         ## Get infile directory
-        my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
+        my $infiles_dir = $file_info_sample{mip_infiles_dir};
 
         ## Get fastq files to sample reads from
         my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
             {
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_paths_ref        => $file_info_href->{$sample_id}{mip_infiles},
-                sample_id               => $sample_id,
-                sample_info_href        => $sample_info_href,
+                file_prefix_no_direction_href =>
+                  $file_info_sample{file_prefix_no_direction},
+                infile_paths_ref => $file_info_sample{mip_infiles},
+                sample_id        => $sample_id,
             }
         );
 

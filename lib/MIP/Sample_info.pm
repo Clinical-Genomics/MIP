@@ -981,12 +981,16 @@ sub set_infile_info {
         ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
+        my $sequence_run_type = q{single-end};
+        if ( $attribute{is_interleaved} ) {
+            $sequence_run_type = q{interleaved};
+        }
         set_sample_file_prefix_no_direction(
             {
                 file_info_href    => $file_info_href,
                 mip_file_format   => $mip_file_format,
                 sample_id         => $sample_id,
-                sequence_run_type => q{single-end},
+                sequence_run_type => $sequence_run_type,
             }
         );
 

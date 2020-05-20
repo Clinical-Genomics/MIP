@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.34;
+    our $VERSION = 1.35;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -268,8 +268,6 @@ sub check_dragen_rd_dna {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_info_href        => $sample_info_href,
         }
     );
 
@@ -603,8 +601,6 @@ sub check_rd_dna {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_info_href        => $sample_info_href,
         }
     );
 
