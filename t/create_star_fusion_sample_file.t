@@ -21,10 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -36,10 +37,6 @@ $VERBOSE = test_standard_cli(
 ## Constants
 Readonly my $INDEX_READ_1_SECOND_PAIR => 2;
 Readonly my $INDEX_READ_2_SECOND_PAIR => 3;
-Readonly my $COLON                    => q{:};
-Readonly my $COMMA                    => q{,};
-Readonly my $SPACE                    => q{ };
-Readonly my $TAB                      => q{\t};
 
 BEGIN {
 
@@ -79,16 +76,13 @@ my @infile_paths = (
     catfile(qw{ a dir file_1.fastq }),   catfile(qw{ a dir file_2.fastq }),
     catfile(qw{ a dir file_x_1.fastq }), catfile(qw{ a dir file_x_2.fastq }),
 );
-my $sample_id          = q{sample_1};
-my $samples_file_path  = catfile( $test_dir, q{sample_file} );
-my %infile_lane_prefix = ( $sample_id => [qw{ file file_x }], );
-my %sample_info        = (
-    sample => {
-        $sample_id => {
-            file => {
-                file   => { sequence_run_type => q{paired-end}, },
-                file_x => { sequence_run_type => q{paired-end}, },
-            },
+my $sample_id         = q{sample_1};
+my $samples_file_path = catfile( $test_dir, q{sample_file} );
+my %file_info         = (
+    $sample_id => {
+        file_prefix_no_direction => {
+            file   => q{paired-end},
+            file_x => q{paired-end}
         },
     },
 );
@@ -99,12 +93,11 @@ open $filehandle, q{>}, \$file_content
 
 create_star_fusion_sample_file(
     {
-        filehandle              => $filehandle,
-        infile_paths_ref        => \@infile_paths,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        samples_file_path       => $samples_file_path,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        filehandle        => $filehandle,
+        file_info_href    => \%file_info,
+        infile_paths_ref  => \@infile_paths,
+        samples_file_path => $samples_file_path,
+        sample_id         => $sample_id,
     }
 );
 close $filehandle;

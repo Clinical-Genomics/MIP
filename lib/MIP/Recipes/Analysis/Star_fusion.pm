@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -236,12 +236,11 @@ sub analysis_star_fusion {
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
     create_star_fusion_sample_file(
         {
-            filehandle              => $filehandle,
-            infile_paths_ref        => \@infile_paths,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            samples_file_path       => $sample_files_path,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
+            filehandle        => $filehandle,
+            file_info_href    => $file_info_href,
+            infile_paths_ref  => \@infile_paths,
+            samples_file_path => $sample_files_path,
+            sample_id         => $sample_id,
         }
     );
     say {$filehandle} $NEWLINE;
