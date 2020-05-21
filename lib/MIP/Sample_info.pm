@@ -947,7 +947,7 @@ sub set_infile_info {
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
     use MIP::File_info
-      qw{ add_sample_infile_both_strands_prefix get_sample_file_attribute set_sample_file_prefix_no_direction };
+      qw{ add_sample_infile_both_strands_prefix get_sample_file_attribute set_sample_infile_prefix_no_direction };
 
     my %attribute = get_sample_file_attribute(
         {
@@ -985,7 +985,7 @@ sub set_infile_info {
         if ( $attribute{is_interleaved} ) {
             $sequence_run_type = q{interleaved};
         }
-        set_sample_file_prefix_no_direction(
+        set_sample_infile_prefix_no_direction(
             {
                 file_info_href    => $file_info_href,
                 mip_file_format   => $mip_file_format,
@@ -1020,7 +1020,7 @@ sub set_infile_info {
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 
-        set_sample_file_prefix_no_direction(
+        set_sample_infile_prefix_no_direction(
             {
                 file_info_href    => $file_info_href,
                 mip_file_format   => $mip_file_format,

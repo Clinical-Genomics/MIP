@@ -74,13 +74,14 @@ my %file_info = test_mip_hashes(
 );
 
 ## When sequence_run_type is interleaved
-$file_info{$sample_id}{file_prefix_no_direction}{ADM1059A3} = q{interleaved};
+$file_info{$sample_id}{infile_prefix_no_direction}{ADM1059A3} = q{interleaved};
 
 my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
-        file_prefix_no_direction_href => $file_info{$sample_id}{file_prefix_no_direction},
-        infile_paths_ref              => $file_info{$sample_id}{mip_infiles},
-        sample_id                     => $sample_id,
+        infile_prefix_no_direction_href =>
+          $file_info{$sample_id}{infile_prefix_no_direction},
+        infile_paths_ref => $file_info{$sample_id}{mip_infiles},
+        sample_id        => $sample_id,
     }
 );
 my @expected_fastq_files = qw{ ADM1059A3.fastq };
@@ -93,13 +94,14 @@ is_deeply( \@fastq_files, \@expected_fastq_files, q{Got interleaved fastq file} 
 
 ## When sequence_run_type is paired-end
 push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-$file_info{$sample_id}{file_prefix_no_direction}{ADM1059A3} = q{paired-end};
+$file_info{$sample_id}{infile_prefix_no_direction}{ADM1059A3} = q{paired-end};
 
 ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
-        file_prefix_no_direction_href => $file_info{$sample_id}{file_prefix_no_direction},
-        infile_paths_ref              => $file_info{$sample_id}{mip_infiles},
-        sample_id                     => $sample_id,
+        infile_prefix_no_direction_href =>
+          $file_info{$sample_id}{infile_prefix_no_direction},
+        infile_paths_ref => $file_info{$sample_id}{mip_infiles},
+        sample_id        => $sample_id,
     }
 );
 push @expected_fastq_files, q{ADM1059A3.fastq};

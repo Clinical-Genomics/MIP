@@ -205,7 +205,7 @@ sub analysis_bwa_mem {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_name_prefixes_ref =>
-                  [ keys %{ $file_info_sample{file_prefix_no_direction} } ],
+                  [ keys %{ $file_info_sample{infile_prefix_no_direction} } ],
                 outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
@@ -238,7 +238,7 @@ sub analysis_bwa_mem {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_prefix, $sequence_run_type ) =
-        each %{ $file_info_sample{file_prefix_no_direction} } )
+        each %{ $file_info_sample{infile_prefix_no_direction} } )
     {
 
         ## Assign file features
@@ -637,7 +637,7 @@ sub analysis_run_bwa_mem {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_name_prefixes_ref =>
-                  [ keys %{ $file_info_sample{file_prefix_no_direction} } ],
+                  [ keys %{ $file_info_sample{infile_prefix_no_direction} } ],
                 outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
@@ -671,7 +671,7 @@ sub analysis_run_bwa_mem {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_prefix, $sequence_run_type ) =
-        each %{ $file_info_sample{file_prefix_no_direction} } )
+        each %{ $file_info_sample{infile_prefix_no_direction} } )
     {
 
         ## Assign file features

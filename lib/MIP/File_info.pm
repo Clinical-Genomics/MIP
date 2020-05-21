@@ -48,7 +48,7 @@ BEGIN {
       set_primary_contigs
       set_sample_file_attribute
       set_select_file_contigs
-      set_sample_file_prefix_no_direction
+      set_sample_infile_prefix_no_direction
     };
 }
 
@@ -1277,7 +1277,7 @@ sub set_select_file_contigs {
     return;
 }
 
-sub set_sample_file_prefix_no_direction {
+sub set_sample_infile_prefix_no_direction {
 
 ## Function : Add sample fastq file prefix without read direction in file name
 ## Returns  :
@@ -1325,8 +1325,8 @@ sub set_sample_file_prefix_no_direction {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Set file_prefix_no_direction
-    $file_info_href->{$sample_id}{file_prefix_no_direction}{$mip_file_format} =
+    ## Set infile_prefix_no_direction
+    $file_info_href->{$sample_id}{infile_prefix_no_direction}{$mip_file_format} =
       $sequence_run_type;
 
     return;

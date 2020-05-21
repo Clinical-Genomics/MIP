@@ -174,23 +174,23 @@ sub get_sampling_fastq_files {
 
 ## Function : Get fastq files to sample reads from
 ## Returns  : $is_interleaved_fastq, @fastq_files
-## Arguments: $file_prefix_no_direction_href => File prefix without read direction
-##          : $infile_paths_ref              => Infile paths {REF}
-##          : $sample_id                     => Sample id
+## Arguments: $infile_prefix_no_direction_href => Infile prefix without read direction
+##          : $infile_paths_ref                => Infile paths {REF}
+##          : $sample_id                       => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_prefix_no_direction_href;
+    my $infile_prefix_no_direction_href;
     my $infile_paths_ref;
     my $sample_id;
 
     my $tmpl = {
-        file_prefix_no_direction_href => {
+        infile_prefix_no_direction_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$file_prefix_no_direction_href,
+            store       => \$infile_prefix_no_direction_href,
             strict_type => 1,
         },
         infile_paths_ref => {
@@ -216,7 +216,7 @@ sub get_sampling_fastq_files {
     my $paired_end_tracker = 0;
 
   SEQ_RUN_TYPE:
-    foreach my $sequence_run_type ( values %{$file_prefix_no_direction_href} ) {
+    foreach my $sequence_run_type ( values %{$infile_prefix_no_direction_href} ) {
 
         push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
 
@@ -315,8 +315,8 @@ sub parse_fastq_for_gender {
         ## Get fastq files to sample reads from
         my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
             {
-                file_prefix_no_direction_href =>
-                  $file_info_sample{file_prefix_no_direction},
+                infile_prefix_no_direction_href =>
+                  $file_info_sample{infile_prefix_no_direction},
                 infile_paths_ref => $file_info_sample{mip_infiles},
                 sample_id        => $sample_id,
             }

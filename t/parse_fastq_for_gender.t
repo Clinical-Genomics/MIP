@@ -75,7 +75,7 @@ my %file_info               = test_mip_hashes(
     }
 );
 push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-$file_info{$sample_id}{file_prefix_no_direction}{ADM1059A3} = q{paired-end};
+$file_info{$sample_id}{infile_prefix_no_direction}{ADM1059A3} = q{paired-end};
 
 my $is_gender_other = parse_fastq_for_gender(
     {

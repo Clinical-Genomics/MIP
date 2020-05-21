@@ -39,16 +39,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File_info}      => [qw{ set_sample_file_prefix_no_direction }],
+        q{MIP::File_info}      => [qw{ set_sample_infile_prefix_no_direction }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File_info qw{ set_sample_file_prefix_no_direction };
+use MIP::File_info qw{ set_sample_infile_prefix_no_direction };
 
-diag(   q{Test set_sample_file_prefix_no_direction from File_info.pm v}
+diag(   q{Test set_sample_infile_prefix_no_direction from File_info.pm v}
       . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -57,26 +57,26 @@ diag(   q{Test set_sample_file_prefix_no_direction from File_info.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a sample_id and an file_prefix_no_direction
+## Given a sample_id and an infile_prefix_no_direction
 my %file_info;
-my $file_prefix_no_direction = q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC};
+my $infile_prefix_no_direction = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7};
 my $sample_id                = q{sample_id};
 
 ## When sequence run type is single-end
 my $sequence_run_type = q{single-end};
 
-## Then do not set file_prefix_no_direction in file_info hash
-set_sample_file_prefix_no_direction(
+## Then do not set infile_prefix_no_direction in file_info hash
+set_sample_infile_prefix_no_direction(
     {
         file_info_href    => \%file_info,
-        mip_file_format   => $file_prefix_no_direction,
+        mip_file_format   => $infile_prefix_no_direction,
         sample_id         => $sample_id,
         sequence_run_type => $sequence_run_type,
     }
 );
 
-## Then set file_prefix_no_direction in file_info hash
-is( $file_info{$sample_id}{file_prefix_no_direction}{$file_prefix_no_direction},
-    $sequence_run_type, q{Set sequence run type for file_prefix_no_direction} );
+## Then set infile_prefix_no_direction in file_info hash
+is( $file_info{$sample_id}{infile_prefix_no_direction}{$infile_prefix_no_direction},
+    $sequence_run_type, q{Set sequence run type for infile_prefix_no_direction} );
 
 done_testing();

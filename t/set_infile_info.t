@@ -241,9 +241,9 @@ is_deeply(
     q{Added lane info for single-end read}
 );
 
-## Then add file_prefix_no_direction with sequence type
-is( $file_info{$sample_id}{file_prefix_no_direction}{$mip_file_format},
-    q{paired-end}, q{Added sequence run type to file_prefix_no_direction } );
+## Then add infile_prefix_no_direction with sequence type
+is( $file_info{$sample_id}{infile_prefix_no_direction}{$mip_file_format},
+    q{paired-end}, q{Added sequence run type to infile_prefix_no_direction } );
 
 ## Then add the infile lane prefix
 is_deeply(

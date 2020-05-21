@@ -108,7 +108,7 @@ sub create_star_fusion_sample_file {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_prefix, $sequence_run_type ) =
-        each %{ $file_info_sample{file_prefix_no_direction} } )
+        each %{ $file_info_sample{infile_prefix_no_direction} } )
     {
 
         ## Add sample id file index array
