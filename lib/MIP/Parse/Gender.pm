@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -214,7 +214,6 @@ sub get_sampling_fastq_files {
 
     ## Perform per single-end or read pair
     my $paired_end_tracker = 0;
-    my $is_interleaved_fastq;
 
   SEQ_RUN_TYPE:
     foreach my $sequence_run_type ( values %{$file_prefix_no_direction_href} ) {
@@ -229,14 +228,12 @@ sub get_sampling_fastq_files {
             push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
         }
 
-        if ( $sequence_run_type eq q{interleaved} ) {
-            $is_interleaved_fastq = 1;
-        }
+        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
 
         ## Only perform once per sample and fastq file(s)
-        last SEQ_RUN_TYPE;
+        return $is_interleaved_fastq, @fastq_files;
     }
-    return $is_interleaved_fastq, @fastq_files;
+    return;
 }
 
 sub parse_fastq_for_gender {
@@ -311,6 +308,7 @@ sub parse_fastq_for_gender {
                 sample_id      => $sample_id,
             }
         );
+
         ## Get infile directory
         my $infiles_dir = $file_info_sample{mip_infiles_dir};
 
