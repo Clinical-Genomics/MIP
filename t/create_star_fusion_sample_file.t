@@ -80,10 +80,9 @@ my $sample_id         = q{sample_1};
 my $samples_file_path = catfile( $test_dir, q{sample_file} );
 my %file_info         = (
     $sample_id => {
-        infile_prefix_no_direction => {
-            file   => q{paired-end},
-            file_x => q{paired-end}
-        },
+        infile_prefix_no_direction => [qw{ file file_x }],
+        file                       => { sequence_run_type => q{paired-end}, },
+        file_x                     => { sequence_run_type => q{paired-end}, },
     },
 );
 

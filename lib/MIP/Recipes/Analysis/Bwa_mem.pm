@@ -201,14 +201,13 @@ sub analysis_bwa_mem {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_name_prefixes_ref =>
-                  [ keys %{ $file_info_sample{infile_prefix_no_direction} } ],
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => $file_info_sample{infile_prefix_no_direction},
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
             }
         )
     );
@@ -232,13 +231,12 @@ sub analysis_bwa_mem {
     }
 
     # Too avoid adjusting infile_index in submitting to jobs
-    my $infile_index       = 0;
     my $paired_end_tracker = 0;
 
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    while ( my ( $infile_prefix, $sequence_run_type ) =
-        each %{ $file_info_sample{infile_prefix_no_direction} } )
+    while ( my ( $infile_index, $infile_prefix ) =
+        each @{ $file_info_sample{infile_prefix_no_direction} } )
     {
 
         ## Assign file features
@@ -247,6 +245,7 @@ sub analysis_bwa_mem {
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
         # Collect interleaved status for fastq file
+        my $sequence_run_type    = $file_info_sample{$infile_prefix}{sequence_run_type};
         my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
@@ -460,7 +459,6 @@ sub analysis_bwa_mem {
                 }
             );
         }
-        $infile_index++;
     }
     return 1;
 }
@@ -633,15 +631,14 @@ sub analysis_run_bwa_mem {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_name_prefixes_ref =>
-                  [ keys %{ $file_info_sample{infile_prefix_no_direction} } ],
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                temp_directory => $temp_directory,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => $file_info_sample{infile_prefix_no_direction},
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
@@ -665,19 +662,20 @@ sub analysis_run_bwa_mem {
     }
 
     # Too avoid adjusting infile_index in submitting to jobs
-    my $infile_index       = 0;
     my $paired_end_tracker = 0;
 
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    while ( my ( $infile_prefix, $sequence_run_type ) =
-        each %{ $file_info_sample{infile_prefix_no_direction} } )
+    while ( my ( $infile_index, $infile_prefix ) =
+        each @{ $file_info_sample{infile_prefix_no_direction} } )
     {
 
         ## Assign file features
         my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
+
+        my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -876,7 +874,6 @@ sub analysis_run_bwa_mem {
                 }
             );
         }
-        $infile_index++;
     }
     return 1;
 }
