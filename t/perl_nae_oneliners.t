@@ -93,7 +93,7 @@ my %specific_argument = (
     oneliner_name => {
         input => q{synonyms_grch37_to_grch38},
         expected_output =>
-          q?'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_'?,
+          q?'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^([^#])/chr$1/g) {} print $_'?,
     },
 );
 

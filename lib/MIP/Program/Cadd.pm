@@ -43,7 +43,6 @@ sub cadd {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $temp_dir_path          => Path to temp directory
 
     my ($arg_href) = @_;
 
@@ -56,7 +55,6 @@ sub cadd {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-    my $temp_dir_path;
 
     my $tmpl = {
         filehandle => {
@@ -92,12 +90,6 @@ sub cadd {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-        temp_dir_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_dir_path,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -115,8 +107,6 @@ sub cadd {
 
         push @commands, q{-g} . $SPACE . $genome_build;
     }
-
-    push @commands, q{-t} . $SPACE . $temp_dir_path;
 
     push @commands, $infile_path;
 

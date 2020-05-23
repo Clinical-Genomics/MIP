@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $CLOSE_PARENTHESIS $COMMA $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -289,10 +289,18 @@ sub analysis_cadd {
         my $view_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
 
+        my $view_infile_path = _parse_cadd_infile(
+            {
+                escape_oneliner   => 1,
+                infile_path       => $infile_path{$contig},
+                reference_version => $file_info_href->{human_genome_reference_version},
+            }
+        );
+
         bcftools_view(
             {
                 filehandle      => $xargsfilehandle,
-                infile_path     => $infile_path{$contig},
+                infile_path     => $view_infile_path,
                 types           => q{indels},
                 outfile_path    => $view_outfile_path,
                 output_type     => q{v},
@@ -308,7 +316,6 @@ sub analysis_cadd {
                 infile_path            => $view_outfile_path,
                 outfile_path           => $cadd_outfile_path,
                 stderrfile_path_append => $stderrfile_path,
-                temp_dir_path          => $active_parameter_href->{temp_directory},
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -339,7 +346,18 @@ sub analysis_cadd {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         # Corresponds to cadd outfile path
-        my $tabix_infile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+
+        ## Parse outfile in case of grch38
+        my $tabix_infile_path = _parse_cadd_outfile(
+            {
+                escape_oneliner   => 1,
+                filehandle        => $filehandle,
+                infile_path       => $cadd_outfile_path,
+                reference_version => $file_info_href->{human_genome_reference_version},
+            }
+        );
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         ## Create tabix index
         htslib_tabix(
@@ -617,12 +635,18 @@ sub analysis_cadd_panel {
     say {$filehandle} $NEWLINE;
 
     ## Get parameters
+    my $view_infile_path = _parse_cadd_infile(
+        {
+            infile_path       => $infile_path,
+            reference_version => $file_info_href->{human_genome_reference_version},
+        }
+    );
     my $view_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{view} . $outfile_suffix;
     bcftools_view(
         {
             filehandle   => $filehandle,
-            infile_path  => $infile_path,
+            infile_path  => $view_infile_path,
             types        => q{indels},
             outfile_path => $view_outfile_path,
             output_type  => q{v},
@@ -633,11 +657,20 @@ sub analysis_cadd_panel {
     my $cadd_outfile_path = $outfile_path_prefix . $DOT . q{tsv.gz};
     cadd(
         {
-            filehandle    => $filehandle,
-            genome_build  => $assembly_version,
-            infile_path   => $view_outfile_path,
-            outfile_path  => $cadd_outfile_path,
-            temp_dir_path => $active_parameter_href->{temp_directory},
+            filehandle   => $filehandle,
+            genome_build => $assembly_version,
+            infile_path  => $view_outfile_path,
+            outfile_path => $cadd_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Parse outfile in case of grch38
+    $cadd_outfile_path = _parse_cadd_outfile(
+        {
+            filehandle        => $filehandle,
+            infile_path       => $cadd_outfile_path,
+            reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -713,6 +746,154 @@ sub analysis_cadd_panel {
     return 1;
 }
 
+sub _parse_cadd_outfile {
+
+## Function : Parse and return outfile from CADD depending on reference version
+## Returns  : $outfile_file_path
+## Arguments: $escape_oneliner   => Escape perl oneliner
+##          : $filehandle        => Filehandle
+##          : $infile_path       => Cadd outfile path
+##          : $reference_version => Genome reference
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $escape_oneliner;
+    my $filehandle;
+    my $infile_path;
+    my $reference_version;
+
+    my $tmpl = {
+        escape_oneliner => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$escape_oneliner,
+            strict_type => 1,
+        },
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        reference_version => {
+            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
+
+    return $infile_path if $reference_version eq q{37};
+
+    my $synonyms_file_path = parse_file_suffix(
+        {
+            file_name   => $infile_path,
+            file_suffix => q{.tsv},
+        }
+    );
+    $synonyms_file_path .= $UNDERSCORE . q{synonyms.tsv.gz};
+
+    htslib_bgzip(
+        {
+            decompress      => 1,
+            filehandle      => $filehandle,
+            force           => 1,
+            infile_path     => $infile_path,
+            write_to_stdout => 1,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    perl_nae_oneliners(
+        {
+            escape_oneliner => $escape_oneliner,
+            filehandle      => $filehandle,
+            oneliner_name   => q{synonyms_grch37_to_grch38},
+        }
+    );
+
+    print {$filehandle} $PIPE . $SPACE;
+
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            force           => 1,
+            stdoutfile_path => $synonyms_file_path,
+            write_to_stdout => 1,
+        }
+    );
+
+    return $synonyms_file_path;
+}
+
+sub _parse_cadd_infile {
+
+## Function : Parse and return infile for CADD depending on reference version
+## Returns  : $infile_path
+## Arguments: $escape_oneliner   => Escape perl oneliner
+##          : $infile_path       => Infile path
+##          : $reference_version => Genome reference
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $escape_oneliner;
+    my $infile_path;
+    my $reference_version;
+
+    my $tmpl = {
+        escape_oneliner => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$escape_oneliner,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        reference_version => {
+            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    return $infile_path if $reference_version eq q{37};
+
+    my $synonyms_infile_path = q{<} . $OPEN_PARENTHESIS;
+
+    ## Perl
+    $synonyms_infile_path .= perl_nae_oneliners(
+        {
+            escape_oneliner => $escape_oneliner,
+            oneliner_name   => q{synonyms_grch38_to_grch37},
+            stdinfile_path  => $infile_path,
+        }
+    );
+
+    $synonyms_infile_path .= $CLOSE_PARENTHESIS;
+
+    return $synonyms_infile_path;
+}
+
 sub _get_cadd_reference_param {
 
 ## Function : Get the genome assembly and version for CADD
@@ -741,11 +922,6 @@ sub _get_cadd_reference_param {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Constants
-    Readonly my $GENOME_BUILD_19 => 37;
-    Readonly my $GENOME_BUILD_38 => 38;
-    Readonly my $GENOME_BUILD_37 => 37;
 
     my %cadd_map = (
         grch37 => q{GRCh37},

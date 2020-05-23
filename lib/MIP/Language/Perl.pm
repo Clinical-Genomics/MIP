@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -467,9 +467,9 @@ sub _synonyms_grch37_to_grch38 {
     my $modify_chr_prefix = q?'if($_=~s/^M/chrMT/g) {} ?;
 
     ## Add "chr" prefix to chromosome name
-    $modify_chr_prefix .= q?elsif ($_=~s/^(.+)/chr$1/g) {} ?;
+    $modify_chr_prefix .= q?elsif ($_=~s/^([^#])/chr$1/g) {} ?;
 
-## Print line
+    ## Print line
     $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;
@@ -483,13 +483,13 @@ sub _synonyms_grch38_to_grch37 {
 
     my ($arg_href) = @_;
 
-## Remove "chr" prefix from chromosome name and rename "MT" to "M"
+    ## Remove "chr" prefix from chromosome name and rename "MT" to "M"
     my $modify_chr_prefix = q?'if($_=~s/^chrMT/M/g) {} ?;
 
-## Remove "chr" prefix from chromosome name
+    ## Remove "chr" prefix from chromosome name
     $modify_chr_prefix .= q?elsif ($_=~s/^chr(.+)/$1/g) {} ?;
 
-## Print line
+    ## Print line
     $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;

@@ -92,10 +92,6 @@ my %required_argument = (
         input           => q{outfile.tsv.gz},
         expected_output => q{outfile.tsv.gz},
     },
-    temp_dir_path => {
-        input           => q{temp_dir},
-        expected_output => q{-t} . $SPACE . q{temp_dir},
-    },
 );
 
 my %specific_argument = (

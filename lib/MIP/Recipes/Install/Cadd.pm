@@ -101,11 +101,11 @@ q{Please supply a reference directory when installing CADD to use a static path}
     my $annotation_dir_path =
       catdir( $reference_dir_path, qw{ CADD-scripts data annotations } );
 
-    ## Bind annotation dir path to pathh in container
+    ## Bind annotation dir path to path in container
     my $cadd_bind_path =
         $annotation_dir_path
       . $COLON
-      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } );
+      . catdir( $FORWARD_SLASH, qw{ opt conda share CADD-scripts data annotations } );
 
     ## Store annotation dir path for later
     set_container_bind_paths(
