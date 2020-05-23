@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_vcfanno_config };
@@ -269,7 +269,7 @@ sub _set_reference_dir_path {
     my $set_reference_path_regexp = q?perl -nae '?;
 
     ## Find "file" line  and catch file name between "
-    $set_reference_path_regexp .= q? my ($filename) = $_=~/file=["](\S+)["]/sxm;?;
+    $set_reference_path_regexp .= q? my ($filename) = $_=~/file\s*=\s*["](\S+)["]/sxm;?;
 
     ## If file name prepend reference dir to file name
     $set_reference_path_regexp .=
