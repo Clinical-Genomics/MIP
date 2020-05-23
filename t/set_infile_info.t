@@ -241,14 +241,14 @@ is_deeply(
     q{Added lane info for single-end read}
 );
 
-## Then add infile_prefix_no_direction to file_info
-is( $file_info{$sample_id}{infile_prefix_no_direction}[0],
-    $mip_file_format, q{Added infile_prefix_no_direction to file_info } );
+## Then add no_direction_infile_prefixes to file_info
+is( $file_info{$sample_id}{no_direction_infile_prefixes}[0],
+    $mip_file_format, q{Added no_direction_infile_prefixes to file_info } );
 
-## Then add infile_prefix_no_direction with sequence type
+## Then add no_direction_infile_prefixes with sequence type
 is( $file_info{$sample_id}{$mip_file_format}{sequence_run_type},
     q{paired-end},
-    q{Added sequence run type to infile_prefix_no_direction in file_info } );
+    q{Added sequence run type to no_direction_infile_prefixes in file_info } );
 
 ## Then add the infile lane prefix
 is_deeply(

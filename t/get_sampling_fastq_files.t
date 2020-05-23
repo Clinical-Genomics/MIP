@@ -74,7 +74,7 @@ my %file_info = test_mip_hashes(
 );
 
 ## When sequence_run_type is interleaved
-push @{ $file_info{$sample_id}{infile_prefix_no_direction} }, q{ADM1059A3};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{interleaved};
 
 my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(

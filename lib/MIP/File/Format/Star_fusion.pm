@@ -107,7 +107,7 @@ sub create_star_fusion_sample_file {
 
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    foreach my $infile_prefix ( @{ $file_info_sample{infile_prefix_no_direction} } ) {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
         my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
 

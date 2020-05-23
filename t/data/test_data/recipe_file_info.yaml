@@ -4,7 +4,7 @@ ADM1059A1:
     sequence_run_type: single-end
   infile_lane_prefix:
     - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
-  infile_prefix_no_direction:
+  no_direction_infile_prefixes:
     - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
   mip_infiles_dir: infile_dir
   mip_infiles:

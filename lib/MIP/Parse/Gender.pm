@@ -217,7 +217,7 @@ sub get_sampling_fastq_files {
 
   INFILE_PREFIX:
     foreach
-      my $infile_prefix ( @{ $file_info_sample_href->{infile_prefix_no_direction} } )
+      my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } )
     {
 
         push @fastq_files, $infile_paths_ref->[$paired_end_tracker];

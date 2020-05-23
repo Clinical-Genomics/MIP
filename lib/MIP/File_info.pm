@@ -31,7 +31,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
       add_sample_infile_both_strands_prefix
-      add_sample_infile_prefix_no_direction
+      add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
       get_is_sample_files_compressed
       get_sample_file_attribute
@@ -156,13 +156,13 @@ sub add_sample_infile_both_strands_prefix {
     return;
 }
 
-sub add_sample_infile_prefix_no_direction {
+sub add_sample_no_direction_infile_prefixes {
 
 ## Function : Add sample fastq file prefix without read direction in file name
 ## Returns  :
-## Arguments: $file_info_href    => File info hash {REF}
-##          : $mip_file_format   => Mip file format without read direction and ".fastq(.gz)"
-##          : $sample_id         => Sample id
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
+##          : $sample_id       => Sample id
 
     my ($arg_href) = @_;
 
@@ -195,8 +195,9 @@ sub add_sample_infile_prefix_no_direction {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Add infile_prefix_no_direction
-    push @{ $file_info_href->{$sample_id}{infile_prefix_no_direction} }, $mip_file_format;
+    ## Add no_direction_infile_prefixes
+    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} },
+      $mip_file_format;
 
     return;
 }

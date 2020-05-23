@@ -947,7 +947,7 @@ sub set_infile_info {
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
     use MIP::File_info qw{ add_sample_infile_both_strands_prefix
-      add_sample_infile_prefix_no_direction
+      add_sample_no_direction_infile_prefixes
       get_sample_file_attribute
       set_sample_file_attribute };
 
@@ -983,7 +983,7 @@ sub set_infile_info {
         ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
-        add_sample_infile_prefix_no_direction(
+        add_sample_no_direction_infile_prefixes(
             {
                 file_info_href  => $file_info_href,
                 mip_file_format => $mip_file_format,
