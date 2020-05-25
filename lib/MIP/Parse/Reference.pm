@@ -112,14 +112,13 @@ sub parse_reference_for_vt {
         ## Split multi allelic records into single records and normalize
         analysis_vt_core(
             {
-                active_parameter_href   => $active_parameter_href,
-                build_gatk_index        => 1,
-                decompose               => 1,
-                normalize               => 1,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_path             => $reference_file_path,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
+                active_parameter_href => $active_parameter_href,
+                build_gatk_index      => 1,
+                decompose             => 1,
+                normalize             => 1,
+                infile_path           => $reference_file_path,
+                job_id_href           => $job_id_href,
+                parameter_href        => $parameter_href,
             }
         );
     }
