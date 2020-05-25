@@ -26,7 +26,7 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
@@ -214,11 +214,10 @@ sub pipeline_analyse_dragen_rd_dna {
     $log->info(q{[Reference check - Reference processed by VT]});
     parse_reference_for_vt(
         {
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
         }
     );
 
