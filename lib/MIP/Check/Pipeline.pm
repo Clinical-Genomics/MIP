@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.35;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1342,11 +1342,10 @@ sub check_rd_rna {
 
         check_recipe_fastq_compatibility(
             {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                parameter_href          => $parameter_href,
-                recipe_name             => $recipe,
-                sample_info_href        => $sample_info_href,
+                active_parameter_href => $active_parameter_href,
+                file_info_href        => $file_info_href,
+                parameter_href        => $parameter_href,
+                recipe_name           => $recipe,
             }
         );
     }

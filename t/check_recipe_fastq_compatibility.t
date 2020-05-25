@@ -22,10 +22,10 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Parameter} => [qw{ check_recipe_fastq_compatibility }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -80,47 +80,33 @@ $parameter{dependency_tree_href} = \%dependency_tree;
 
 my $log = test_log( {} );
 
-my $sample_id          = q{test};
-my %infile_lane_prefix = ( $sample_id => [qw{ test_lane1 test_lane2 }], );
-my %sample_info        = (
-    sample => {
-        $sample_id => {
-            file => {
-                test_lane1 => {
-                    sequence_run_type => q{paired-end},
-                },
-                test_lane2 => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
+my $sample_id         = q{ADM1059A1};
+my %file_info         = test_mip_hashes( { mip_hash_name => q{file_info}, } );
+my $mip_file_format_2 = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane1};
 
 ## Given that both lanes have been sequenced the same way
 my $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
     {
-        active_parameter_href   => \%active_parameter,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        parameter_href          => \%parameter,
-        recipe_name             => q{salmon_quant},
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
+        recipe_name           => q{salmon_quant},
     }
 );
 ## Then OK
 ok( $recipe_fastq_compatibility, q{Compatible} );
 
 ## Given a lane difference
-$sample_info{sample}{$sample_id}{file}{test_lane2}{sequence_run_type} = q{single_end};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format_2;
+$file_info{$sample_id}{$mip_file_format_2}{sequence_run_type} = q{paired-end};
 
 trap {
     $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
         {
-            active_parameter_href   => \%active_parameter,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            parameter_href          => \%parameter,
-            recipe_name             => q{salmon_quant},
-            sample_info_href        => \%sample_info,
+            active_parameter_href => \%active_parameter,
+            file_info_href        => \%file_info,
+            parameter_href        => \%parameter,
+            recipe_name           => q{salmon_quant},
         }
     )
 };

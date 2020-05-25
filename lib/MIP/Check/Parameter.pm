@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.45;
+    our $VERSION = 1.46;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -81,19 +81,17 @@ sub check_recipe_fastq_compatibility {
 ## Function : Check that the recipe is compatible with the fastq sequence modes. Turn of downstream applications otherwise
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameter hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $file_info_href          => File info hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name             => Recipe name
-##          : $sample_info_href        => Sample info hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten arguments
     my $active_parameter_href;
-    my $infile_lane_prefix_href;
+    my $file_info_href;
     my $parameter_href;
     my $recipe_name;
-    my $sample_info_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -103,11 +101,11 @@ sub check_recipe_fastq_compatibility {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
+        file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infile_lane_prefix_href,
+            store       => \$file_info_href,
             strict_type => 1,
         },
         parameter_href => {
@@ -123,20 +121,13 @@ sub check_recipe_fastq_compatibility {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Dependency_tree
       qw{ get_recipe_dependency_tree_chain get_recipes_for_dependency_tree_chain };
-    use MIP::Sample_info qw{ get_sequence_run_type };
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
     ## Check if program is going to run
@@ -149,18 +140,27 @@ sub check_recipe_fastq_compatibility {
 
     ## Get sequence run modes
   SAMPLE_ID:
-    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        my %sequence_run_type = get_sequence_run_type(
+        my %seen;
+
+        my %file_info_sample = get_sample_file_attribute(
             {
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_id               => $sample_id,
-                sample_info_href        => $sample_info_href,
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
             }
         );
 
-        ## Turn of recipe if multiple sequence types are present
-        if ( uniq( values %sequence_run_type ) > 1 ) {
+      INFILE_PREFIX:
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
+        {
+
+            my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
+            $seen{$sequence_run_type} = $sequence_run_type;
+
+        }
+        ## Turn of recipe if multiple sequence run types are present
+        if ( uniq( values %seen ) > 1 ) {
             $is_compatible = 0;
         }
     }
