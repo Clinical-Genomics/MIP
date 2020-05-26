@@ -383,6 +383,7 @@ sub get_sample_file_attribute {
                   lane
                   read_file_command
                   read_length
+                  sequence_run_type
                   }
             ],
             store       => \$attribute,

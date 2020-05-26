@@ -229,7 +229,14 @@ sub analysis_fastqc {
   INFILE_PREFIX:
     foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
-        my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
         $core_number = update_core_number_to_seq_mode(

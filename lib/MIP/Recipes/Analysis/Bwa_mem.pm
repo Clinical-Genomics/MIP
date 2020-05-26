@@ -245,7 +245,14 @@ sub analysis_bwa_mem {
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
         # Collect interleaved status for fastq file
-        my $sequence_run_type    = $file_info_sample{$infile_prefix}{sequence_run_type};
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
         my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
@@ -675,7 +682,14 @@ sub analysis_run_bwa_mem {
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
-        my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
