@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
@@ -144,9 +144,8 @@ sub analysis_dragen_dna_align_vc {
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_read_group
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
+    use MIP::Sample_info qw{
+      get_read_group
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
