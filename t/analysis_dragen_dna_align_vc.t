@@ -27,7 +27,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -119,20 +119,13 @@ my %sample_info = (
     sample => {
         $sample_id => {
             file => {
-                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
-                    sequence_run_type   => q{paired-end},
+                ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7 => {
+                    sequence_run_type   => q{single-end},
                     read_direction_file => {
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
-                            flowcell       => q{TestFilev2},
-                            lane           => q{1},
-                            sample_barcode => q{GAGATTC},
-                            platform       => q{ILLUMINA},
-                        },
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_2 => {
-                            flowcell       => q{TestFilev2},
-                            lane           => q{1},
-                            sample_barcode => q{GAGATTC},
-                            platform       => q{ILLUMINA},
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_1 => {
+                            flowcell       => q{HHJJCCCXY},
+                            lane           => q{7},
+                            sample_barcode => q{NAATGCGC},
                         },
                     },
                 },

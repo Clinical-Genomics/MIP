@@ -157,7 +157,6 @@ sub analysis_arriba {
     use MIP::Program::Star qw{ star_aln };
     use MIP::Sample_info qw{
       get_rg_header_line
-      get_sequence_run_type
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
@@ -260,7 +259,7 @@ sub analysis_arriba {
             sample_id      => $sample_id,
         }
     );
-    
+
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
