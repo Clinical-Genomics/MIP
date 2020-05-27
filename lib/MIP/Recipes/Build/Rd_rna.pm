@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_rna_meta_files };
@@ -104,19 +104,22 @@ sub build_rd_rna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Build::Star_fusion_prerequisites
-      qw{ build_star_fusion_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Salmon_quant_prerequisites
       qw{ build_salmon_quant_prerequisites };
+    use MIP::Recipes::Build::Star_fusion_prerequisites
+      qw{ build_star_fusion_prerequisites };
     use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
+    use MIP::Recipes::Build::Transcript_annotation_prerequisites
+      qw{ build_transcript_annotation_prerequisites };
 
     my %build_recipe = (
-        star_fusion_reference_genome        => \&build_star_fusion_prerequisites,
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         salmon_quant_reference_genome       => \&build_salmon_quant_prerequisites,
         star_aln_reference_genome           => \&build_star_prerequisites,
+        star_fusion_reference_genome        => \&build_star_fusion_prerequisites,
+        transcript_annotation_file_endings => \&build_transcript_annotation_prerequisites,
     );
 
   BUILD_RECIPE:

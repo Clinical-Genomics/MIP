@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added SpliceAI annotation
 - Collect and evaluate QC metrics generated in the RNA pipeline
 - Per default MIP now installs all programs needed for the different pipelines into one conda environment
+- Add picardtools CollectRnaSeqMetrics to the RNA pipeline
 
 **Tools**
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)

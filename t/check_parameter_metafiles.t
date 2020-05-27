@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -168,8 +168,7 @@ is( $parameter{exome_target_bed}{build_file},
     1, q{Set build file switch for hash parameter reference with mixed existence to 1} );
 
 ## Given scalar entries with active parameter, files exists, and active associated programs
-$active_parameter{bwa_build_reference} = 1;
-$active_parameter{human_genome_reference} =
+$active_parameter{bwa_build_reference} =
   catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } );
 $active_parameter{bwa_mem} = 1;
 

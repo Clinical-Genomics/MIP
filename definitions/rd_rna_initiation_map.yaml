@@ -17,6 +17,8 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles
+    - CHAIN_PTCRM:
+      - picardtools_collectrnaseqmetrics
     - CHAIN_STRINGTIE:
       - stringtie_ar
       - gffcompare_ar

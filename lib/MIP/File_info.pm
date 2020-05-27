@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -255,8 +255,8 @@ sub check_parameter_metafiles {
         ## Checks files to be built by combining filename stub with fileendings
         parse_meta_file_suffixes(
             {
-                active_parameter_href => $active_parameter_href,
-                file_name             => $active_parameter_href->{human_genome_reference},
+                active_parameter_href  => $active_parameter_href,
+                file_name              => $parameter,
                 meta_file_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
                 parameter_href         => $parameter_href,
                 parameter_name         => $parameter_name,

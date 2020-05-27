@@ -205,3 +205,5 @@ sorted_select_file_contigs:
   - 21
   - Y
   - MT
+transcript_annotation_file_endings:
+  - .refFlat
