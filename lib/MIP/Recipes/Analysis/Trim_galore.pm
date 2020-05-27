@@ -213,11 +213,18 @@ sub analysis_trim_galore {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar @{ $infile_lane_prefix_href->{$sample_id} },
+            modifier_core_number => scalar @{ $file_info_sample{no_direction_infile_prefixes} },
             recipe_core_number   => $recipe_resource{core_number},
         }
     );
@@ -256,13 +263,6 @@ sub analysis_trim_galore {
     # Keep track of paired end files
     my $paired_end_tracker = 0;
     my %qc_files;
-
-    my %file_info_sample = get_sample_file_attribute(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
 
   INFILE_PREFIX:
     foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
