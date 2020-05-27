@@ -316,7 +316,7 @@ sub check_parameter_metafiles {
 sub get_consensus_sequence_run_type {
 
 ## Function : Get consensus sequence run type across samples
-## Returns  : 0 | 1
+## Returns  : 0 | $consensus_type
 ## Arguments: $file_info_href  => File info hash {REF}
 ##          : $sample_ids_ref  => Sample ids
 
