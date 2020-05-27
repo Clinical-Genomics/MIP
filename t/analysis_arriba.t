@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,6 +79,7 @@ $active_parameter{transcript_annotation}            = q{transcripts.gtf};
 $active_parameter{arriba_blacklist_path}            = q{blacklist.tsv};
 $active_parameter{arriba_cytoband_path}             = q{cytobands.tsv};
 $active_parameter{arriba_proteindomain_path}        = q{proteindomains.gff};
+$active_parameter{platform}                         = q{ILLUMINA};
 my $sample_id = $active_parameter{sample_ids}[0];
 
 my %file_info = test_mip_hashes(
@@ -106,7 +107,24 @@ my %parameter = test_mip_hashes(
 );
 $parameter{$recipe_name}{outfile_suffix} = q{.tsv};
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info;
+my %sample_info = (
+    sample => {
+        $sample_id => {
+            file => {
+                ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7 => {
+                    sequence_run_type   => q{single-end},
+                    read_direction_file => {
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_1 => {
+                            flowcell       => q{HHJJCCCXY},
+                            lane           => q{7},
+                            sample_barcode => q{NAATGCGC},
+                        },
+                    },
+                },
+            },
+        },
+    },
+);
 
 my $is_ok = analysis_arriba(
     {

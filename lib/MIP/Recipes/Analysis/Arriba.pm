@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
@@ -146,6 +146,7 @@ sub analysis_arriba {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
@@ -247,24 +248,29 @@ sub analysis_arriba {
     ### SHELL:
     say {$filehandle} q{## Performing fusion transcript detections using } . $recipe_name;
 
-    ## Get infiles
+    ### Get infiles
     my $paired_end_tracker = 0;
     my @forward_files;
     my @reverse_files;
     my @read_groups;
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+    
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
