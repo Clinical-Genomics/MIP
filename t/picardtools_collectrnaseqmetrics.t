@@ -89,7 +89,7 @@ my %required_argument = (
         expected_output => q{-OUTPUT} . $SPACE . catdir(qw{ out_directory outfile }),
     },
     strand_specificity => {
-        input           => q{unstranded},
+        input           => q{NONE},
         expected_output => q{-STRAND_SPECIFICITY NONE},
     },
 );
@@ -140,26 +140,4 @@ foreach my $argument_href (@arguments) {
         }
     );
 }
-
-my %strandedness = (
-    forward_stranded => q{FIRST_READ_TRANSCRIPTION_STRAND},
-    reverse_stranded => q{SECOND_READ_TRANSCRIPTION_STRAND},
-);
-
-STRAND_TYPE:
-foreach my $strand_type ( keys %strandedness ) {
-
-    $required_argument{strand_specificity}{input}           = $strand_type;
-    $required_argument{strand_specificity}{expected_output} = $strandedness{$strand_type};
-
-    my @commands = test_function(
-        {
-            argument_href              => \%base_argument,
-            function_base_commands_ref => \@function_base_commands,
-            module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
-        }
-    );
-}
-
 done_testing();

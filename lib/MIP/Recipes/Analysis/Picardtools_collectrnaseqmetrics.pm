@@ -232,7 +232,13 @@ sub analysis_picardtools_collectrnaseqmetrics {
 
     ### SHELL:
     ## CollectRnaSeqMetrics
+
     say {$filehandle} q{## Calculate rnaseq metrics on alignment};
+    my $strandedness = _get_strandedness(
+        {
+            library_type => $active_parameter_href->{library_type},
+        }
+    );
     picardtools_collectrnaseqmetrics(
         {
             chart_outfile_path        => $outfile_path_prefix . q{.pdf},
@@ -244,7 +250,7 @@ sub analysis_picardtools_collectrnaseqmetrics {
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
-            strand_specificity   => $active_parameter_href->{library_type},
+            strand_specificity   => $strandedness,
             temp_directory       => $temp_directory,
         }
     );
@@ -285,4 +291,37 @@ sub analysis_picardtools_collectrnaseqmetrics {
     }
     return 1;
 }
+
+sub _get_strandedness {
+
+## Function : Return the right strandedness variable name for picardtools collectrnaseqmetrics
+## Returns  : $strandedness
+## Arguments: $library_type => Library type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $library_type;
+
+    my $tmpl = {
+        library_type => {
+            allow       => [qw{ forward_stranded reverse_stranded unstranded }],
+            defined     => 1,
+            required    => 1,
+            store       => \$library_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %strandedness = (
+        forward_stranded => q{FIRST_READ_TRANSCRIPTION_STRAND},
+        reverse_stranded => q{SECOND_READ_TRANSCRIPTION_STRAND},
+        unstranded       => q{NONE},
+    );
+
+    return $strandedness{$library_type};
+}
+
 1;
