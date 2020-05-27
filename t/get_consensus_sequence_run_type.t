@@ -64,6 +64,20 @@ my @sample_ids      = ( $sample_id, );
 my %file_info       = test_mip_hashes( { mip_hash_name => q{file_info}, } );
 
 ## When all files have the same sequence_run_type
+my $consensus_type = get_consensus_sequence_run_type(
+    {
+        file_info_href => \%file_info,
+        sample_ids_ref => \@sample_ids,
+    }
+);
+
+## Then return consensus type
+is( $consensus_type, q{single-end}, q{Returned consensus sequence run type} );
+
+## When multiple sequence run types
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
+$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
+
 my $has_consensus = get_consensus_sequence_run_type(
     {
         file_info_href => \%file_info,
@@ -71,21 +85,7 @@ my $has_consensus = get_consensus_sequence_run_type(
     }
 );
 
-## Then return true
-ok( $has_consensus, q{Found consensus sequence run type} );
-
-## When multiple sequence run types
-push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
-$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
-
-$has_consensus = get_consensus_sequence_run_type(
-    {
-        file_info_href => \%file_info,
-        sample_ids_ref => \@sample_ids,
-    }
-);
-
-## Then return true
+## Then return false
 is( $has_consensus, 0, q{Found different sequence run type} );
 
 done_testing();

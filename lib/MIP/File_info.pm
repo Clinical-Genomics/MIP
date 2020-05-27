@@ -346,6 +346,7 @@ sub get_consensus_sequence_run_type {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $has_consensus;
+    my $consensus_type;
 
     ## Get sequence run modes
   SAMPLE_ID:
@@ -373,14 +374,14 @@ sub get_consensus_sequence_run_type {
                 }
             );
             $seen{$sequence_run_type} = $sequence_run_type;
-
+            $consensus_type = $sequence_run_type;
         }
 
         ## Turn of recipe if multiple sequence run types are present
         $has_consensus = scalar keys %seen <= 1 ? 1 : 0;
         return 0 if ( not $has_consensus );
     }
-    return $has_consensus;
+    return $consensus_type;
 }
 
 sub get_is_sample_files_compressed {
