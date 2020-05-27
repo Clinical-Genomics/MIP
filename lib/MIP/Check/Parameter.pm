@@ -127,7 +127,7 @@ sub check_recipe_fastq_compatibility {
 
     use MIP::Dependency_tree
       qw{ get_recipe_dependency_tree_chain get_recipes_for_dependency_tree_chain };
-    use MIP::File_info qw{ get_sample_file_attribute };
+    use MIP::File_info qw{ get_consensus_sequence_run_type };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
     ## Check if program is going to run
@@ -136,34 +136,12 @@ sub check_recipe_fastq_compatibility {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $is_compatible = 1;
-
-    ## Get sequence run modes
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        my %seen;
-
-        my %file_info_sample = get_sample_file_attribute(
-            {
-                file_info_href => $file_info_href,
-                sample_id      => $sample_id,
-            }
-        );
-
-      INFILE_PREFIX:
-        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
+    my $is_compatible = get_consensus_sequence_run_type(
         {
-
-            my $sequence_run_type = $file_info_sample{$infile_prefix}{sequence_run_type};
-            $seen{$sequence_run_type} = $sequence_run_type;
-
+            file_info_href => $file_info_href,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
         }
-        ## Turn of recipe if multiple sequence run types are present
-        if ( uniq( values %seen ) > 1 ) {
-            $is_compatible = 0;
-        }
-    }
+    );
 
     if ( not $is_compatible ) {
 

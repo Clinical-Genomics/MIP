@@ -33,6 +33,7 @@ BEGIN {
       add_sample_infile_both_strands_prefix
       add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
+      get_consensus_sequence_run_type
       get_is_sample_files_compressed
       get_sample_file_attribute
       parse_file_compression_features
@@ -312,6 +313,76 @@ sub check_parameter_metafiles {
     return;
 }
 
+sub get_consensus_sequence_run_type {
+
+## Function : Get consensus sequence run type across samples
+## Returns  : 0 | 1
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $sample_ids_ref  => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $has_consensus;
+
+    ## Get sequence run modes
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        my %seen;
+
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+
+      INFILE_PREFIX:
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
+        {
+
+            my $sequence_run_type = get_sample_file_attribute(
+                {
+                    attribute      => q{sequence_run_type},
+                    file_info_href => $file_info_href,
+                    file_name      => $infile_prefix,
+                    sample_id      => $sample_id,
+                }
+            );
+            $seen{$sequence_run_type} = $sequence_run_type;
+
+        }
+
+        ## Turn of recipe if multiple sequence run types are present
+        $has_consensus = scalar keys %seen <= 1 ? 1 : 0;
+        return 0 if ( not $has_consensus );
+    }
+    return $has_consensus;
+}
+
 sub get_is_sample_files_compressed {
 
 ## Function : Get sample files compression status
@@ -417,8 +488,14 @@ sub get_sample_file_attribute {
     }
     if ( not $attribute ) {
 
+        ## Return entire file name array
+        return @{ $file_info_href->{$sample_id}{$file_name} }
+          if ( ref $file_info_href->{$sample_id}{$file_name} eq q{ARRAY} );
+
         ## Return entire file name hash
-        return %{ $file_info_href->{$sample_id}{$file_name} };
+        return %{ $file_info_href->{$sample_id}{$file_name} }
+          if ( ref $file_info_href->{$sample_id}{$file_name} eq q{HASH} );
+
     }
     ## Get attribute
     my $stored_attribute =
