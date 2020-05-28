@@ -490,12 +490,14 @@ sub get_sample_file_attribute {
     if ( not $attribute ) {
 
         ## Return entire file name array
-        return @{ $file_info_href->{$sample_id}{$file_name} }
-          if ( ref $file_info_href->{$sample_id}{$file_name} eq q{ARRAY} );
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{ARRAY} ) {
+            return @{ $file_info_href->{$sample_id}{$file_name} };
+        }
 
         ## Return entire file name hash
-        return %{ $file_info_href->{$sample_id}{$file_name} }
-          if ( ref $file_info_href->{$sample_id}{$file_name} eq q{HASH} );
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{HASH} ) {
+            return %{ $file_info_href->{$sample_id}{$file_name} };
+        }
 
     }
     ## Get attribute
