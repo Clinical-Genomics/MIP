@@ -2393,7 +2393,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         linked_de_bruijn_graph => {
-            allow       => [ 0, 1 ],
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$linked_de_bruijn_graph,
             strict_type => 1,
