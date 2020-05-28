@@ -79,7 +79,7 @@ singularity:
   gatk4:
     executable:
       gatk:
-    uri: docker://broadinstitute/gatk:4.1.7.0
+    uri: docker://broadinstitute/gatk:4.1.4.0
   genmod:
     executable:
       genmod:
