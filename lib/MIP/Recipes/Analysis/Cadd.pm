@@ -255,7 +255,11 @@ sub analysis_cadd {
     say {$filehandle} q{## } . $recipe_name;
 
     ## Add reference dir for CADD mounting point
-    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    my $bash_variable =
+        q{MIP_BIND}
+      . $EQUALS
+      . catdir( $active_parameter_href->{reference_dir},
+        qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -292,6 +296,7 @@ sub analysis_cadd {
         my $view_infile_path = _parse_cadd_infile(
             {
                 escape_oneliner   => 1,
+                filehandle        => $xargsfilehandle,
                 infile_path       => $infile_path{$contig},
                 reference_version => $file_info_href->{human_genome_reference_version},
             }
@@ -349,15 +354,14 @@ sub analysis_cadd {
         my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
 
         ## Parse outfile in case of grch38
-        my $tabix_infile_path = _parse_cadd_outfile(
+        $cadd_outfile_path = _parse_cadd_outfile(
             {
                 escape_oneliner   => 1,
-                filehandle        => $filehandle,
+                filehandle        => $xargsfilehandle,
                 infile_path       => $cadd_outfile_path,
                 reference_version => $file_info_href->{human_genome_reference_version},
             }
         );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         ## Create tabix index
         htslib_tabix(
@@ -366,7 +370,7 @@ sub analysis_cadd {
                 end             => $REGION_END,
                 filehandle      => $xargsfilehandle,
                 force           => 1,
-                infile_path     => $tabix_infile_path,
+                infile_path     => $cadd_outfile_path,
                 sequence        => $SEQUENCE_NAME,
                 stderrfile_path => $stderrfile_path,
             }
@@ -375,7 +379,7 @@ sub analysis_cadd {
 
         bcftools_annotate(
             {
-                annotations_file_path  => $tabix_infile_path,
+                annotations_file_path  => $cadd_outfile_path,
                 columns_name           => $cadd_columns_name,
                 filehandle             => $xargsfilehandle,
                 headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
@@ -625,7 +629,11 @@ sub analysis_cadd_panel {
     say {$filehandle} q{## CADD};
 
     ## Add reference dir for CADD mounting point
-    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    my $bash_variable =
+        q{MIP_BIND}
+      . $EQUALS
+      . catdir( $active_parameter_href->{reference_dir},
+        qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -637,6 +645,7 @@ sub analysis_cadd_panel {
     ## Get parameters
     my $view_infile_path = _parse_cadd_infile(
         {
+            filehandle        => $filehandle,
             infile_path       => $infile_path,
             reference_version => $file_info_href->{human_genome_reference_version},
         }
@@ -749,7 +758,7 @@ sub analysis_cadd_panel {
 sub _parse_cadd_outfile {
 
 ## Function : Parse and return outfile from CADD depending on reference version
-## Returns  : $outfile_file_path
+## Returns  : $infile_path | $synonyms_file_path
 ## Arguments: $escape_oneliner   => Escape perl oneliner
 ##          : $filehandle        => Filehandle
 ##          : $infile_path       => Cadd outfile path
@@ -833,15 +842,17 @@ sub _parse_cadd_outfile {
             write_to_stdout => 1,
         }
     );
+    print {$filehandle} $SEMICOLON . $SPACE;
 
     return $synonyms_file_path;
 }
 
 sub _parse_cadd_infile {
 
-## Function : Parse and return infile for CADD depending on reference version
-## Returns  : $infile_path
+## Function : Parse CADD infile and preproccess if necessary, depending on reference version
+## Returns  : $infile_path | undef
 ## Arguments: $escape_oneliner   => Escape perl oneliner
+##          : $filehandle        => Filehandle
 ##          : $infile_path       => Infile path
 ##          : $reference_version => Genome reference
 
@@ -849,6 +860,7 @@ sub _parse_cadd_infile {
 
     ## Flatten argument(s)
     my $escape_oneliner;
+    my $filehandle;
     my $infile_path;
     my $reference_version;
 
@@ -857,6 +869,11 @@ sub _parse_cadd_infile {
             allow       => [ undef, 0, 1 ],
             store       => \$escape_oneliner,
             strict_type => 1,
+        },
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
         },
         infile_path => {
             defined     => 1,
@@ -878,20 +895,18 @@ sub _parse_cadd_infile {
 
     return $infile_path if $reference_version eq q{37};
 
-    my $synonyms_infile_path = q{<} . $OPEN_PARENTHESIS;
-
     ## Perl
-    $synonyms_infile_path .= perl_nae_oneliners(
+    my @infile_commands = perl_nae_oneliners(
         {
             escape_oneliner => $escape_oneliner,
+            filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch38_to_grch37},
             stdinfile_path  => $infile_path,
         }
     );
+    print {$filehandle} $PIPE . $SPACE;
 
-    $synonyms_infile_path .= $CLOSE_PARENTHESIS;
-
-    return $synonyms_infile_path;
+    return;
 }
 
 sub _get_cadd_reference_param {
