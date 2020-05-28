@@ -1260,16 +1260,16 @@ gatk_num_reference_samples_if_no_call:
     - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
-  default: 7854
+  mandatory: no
   type: recipe_argument
 gatk_calculate_genotype_call_set:
   associated_recipe:
     - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
   exists_check: file
   is_reference: 1
+  mandatory: no
   reference: reference_dir
   type: path
 gatk_variantrecalibration_annotations:
