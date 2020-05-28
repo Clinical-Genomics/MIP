@@ -1213,6 +1213,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{gatk_haplotypecaller_linked_de_bruijn_graph} => (
+            cmd_aliases   => [qw{ ghclbg }],
+            cmd_flag      => q{gatk_haplotype_lk_bruijn_grh},
+            documentation => q{Use linked de bruijn graph in the variant calling},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller_no_soft_clipped_bases} => (
             cmd_aliases   => [qw{ ghcscb }],
             cmd_flag      => q{gatk_haplotype_no_soft_cb},
