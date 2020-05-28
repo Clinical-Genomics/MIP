@@ -93,7 +93,7 @@ $file_info{star_aln_reference_genome} = [q{reference_genome}];
 );
 my $mip_file_format = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane2};
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
-$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{single-end};
+$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
 my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
 my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
 

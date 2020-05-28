@@ -58,22 +58,29 @@ diag(   q{Test get_sampling_fastq_files from Gender.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
-my %active_parameter = test_mip_hashes(
+## Given a sample id
+my $sample_id = q{ADM1059A3};
+
+## When no files to sample from
+my %file_info;
+
+my ( $return, ) = get_sampling_fastq_files(
     {
-        mip_hash_name => q{active_parameter},
-        recipe_name   => q{bwa_mem},
+        file_info_sample_href => \%{ $file_info{$sample_id} },
+        infile_paths_ref      => [],
     }
 );
-my $sample_id = $active_parameter{sample_ids}[2];
 
-my %file_info = test_mip_hashes(
+## Then return undef
+is( $return, undef, q{No file to sample from} );
+
+## When sequence_run_type is interleaved
+%file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
 );
 
-## When sequence_run_type is interleaved
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{interleaved};
 
@@ -81,7 +88,6 @@ my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
         file_info_sample_href => \%{ $file_info{$sample_id} },
         infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
-        sample_id             => $sample_id,
     }
 );
 my @expected_fastq_files = qw{ ADM1059A3.fastq };
@@ -100,7 +106,6 @@ $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
     {
         file_info_sample_href => \%{ $file_info{$sample_id} },
         infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
-        sample_id             => $sample_id,
     }
 );
 push @expected_fastq_files, q{ADM1059A3.fastq};

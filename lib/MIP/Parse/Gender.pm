@@ -176,14 +176,12 @@ sub get_sampling_fastq_files {
 ## Returns  : $is_interleaved_fastq, @fastq_files
 ## Arguments: $file_info_sample_href => File info sample hash
 ##          : $infile_paths_ref      => Infile paths {REF}
-##          : $sample_id             => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_info_sample_href;
     my $infile_paths_ref;
-    my $sample_id;
 
     my $tmpl = {
         file_info_sample_href => {
@@ -198,12 +196,6 @@ sub get_sampling_fastq_files {
             defined     => 1,
             required    => 1,
             store       => \$infile_paths_ref,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
             strict_type => 1,
         },
     };
@@ -322,7 +314,6 @@ sub parse_fastq_for_gender {
             {
                 file_info_sample_href => \%file_info_sample,
                 infile_paths_ref      => $file_info_sample{mip_infiles},
-                sample_id             => $sample_id,
             }
         );
 
