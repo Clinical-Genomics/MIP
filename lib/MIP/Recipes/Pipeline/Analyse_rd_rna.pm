@@ -251,9 +251,9 @@ sub pipeline_analyse_rd_rna {
     ## Update which star recipe to use depending on fastq infile mix
     set_recipe_star_aln(
         {
-            analysis_recipe_href    => \%analysis_recipe,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_info_href        => $sample_info_href,
+            analysis_recipe_href => \%analysis_recipe,
+            file_info_href       => $file_info_href,
+            sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 

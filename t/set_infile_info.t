@@ -27,7 +27,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -240,6 +240,15 @@ is_deeply(
     \@{ $expected_result{lane}{$sample_id}{lanes} },
     q{Added lane info for single-end read}
 );
+
+## Then add no_direction_infile_prefixes to file_info
+is( $file_info{$sample_id}{no_direction_infile_prefixes}[0],
+    $mip_file_format, q{Added no_direction_infile_prefixes to file_info } );
+
+## Then add no_direction_infile_prefixes with sequence type
+is( $file_info{$sample_id}{$mip_file_format}{sequence_run_type},
+    q{paired-end},
+    q{Added sequence run type to no_direction_infile_prefixes in file_info } );
 
 ## Then add the infile lane prefix
 is_deeply(

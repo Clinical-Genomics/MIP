@@ -169,7 +169,6 @@ sub analysis_gzip_fastq {
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my @infile_paths         = @{ $io{in}{file_paths} };
-    my @infile_suffixes      = @{ $io{in}{file_suffixes} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -214,16 +213,29 @@ sub analysis_gzip_fastq {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-  INFILE_LANE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
 
+  INFILE_LANE:
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
+
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
         $core_number = update_core_number_to_seq_mode(
             {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
+                core_number       => $core_number,
+                sequence_run_type => $sequence_run_type,
             }
         );
     }
@@ -264,8 +276,16 @@ sub analysis_gzip_fastq {
   INFILE:
     while ( my ( $infile_index, $infile ) = each @infile_names ) {
 
+        my $is_file_compressed = get_sample_file_attribute(
+            {
+                attribute      => q{is_file_compressed},
+                file_info_href => $file_info_href,
+                file_name      => $infile,
+                sample_id      => $sample_id,
+            }
+        );
         ## For files ending with ".fastq" required since there can be a mixture (also .fastq.gz) within the sample dir
-        if ( $infile_suffixes[$infile_index] eq q{.fastq} ) {
+        if ( not $is_file_compressed ) {
 
             ## Using only $active_parameter{max_cores_per_node} cores
             if ( $uncompressed_file_counter ==

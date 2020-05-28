@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -946,8 +946,10 @@ sub set_infile_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
-    use MIP::File_info
-      qw{ add_sample_infile_both_strands_prefix get_sample_file_attribute set_sample_infile_lane_prefix };
+    use MIP::File_info qw{ add_sample_infile_both_strands_prefix
+      add_sample_no_direction_infile_prefixes
+      get_sample_file_attribute
+      set_sample_file_attribute };
 
     my %attribute = get_sample_file_attribute(
         {
@@ -981,12 +983,21 @@ sub set_infile_info {
         ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
-        set_sample_infile_lane_prefix(
+        add_sample_no_direction_infile_prefixes(
             {
-                direction       => $attribute{direction},
                 file_info_href  => $file_info_href,
-                lane_tracker    => $lane_tracker,
                 mip_file_format => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
+        my $sequence_run_type =
+          $attribute{is_interleaved} ? q{interleaved} : q{single-end};
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => $sequence_run_type,
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
                 sample_id       => $sample_id,
             }
         );
@@ -1011,11 +1022,21 @@ sub set_infile_info {
     if ( $attribute{direction} == 2 ) {
         ## 2nd read direction
 
-        # Alias
-        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];    
+        # Get mip file format for read direction one
         # $lane_tracker -1 since it gets incremented after direction eq 1
+        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
+
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => q{paired-end},
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
 
         ## Alias
         my $file_level_href =

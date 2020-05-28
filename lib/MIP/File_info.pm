@@ -31,7 +31,9 @@ BEGIN {
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
       add_sample_infile_both_strands_prefix
+      add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
+      get_consensus_sequence_run_type
       get_is_sample_files_compressed
       get_sample_file_attribute
       parse_file_compression_features
@@ -47,7 +49,6 @@ BEGIN {
       set_human_genome_reference_features
       set_primary_contigs
       set_sample_file_attribute
-      set_sample_infile_lane_prefix
       set_select_file_contigs
     };
 }
@@ -152,6 +153,52 @@ sub add_sample_infile_both_strands_prefix {
     ## Add infile_both_strands_prefix
     push @{ $file_info_href->{$sample_id}{infile_both_strands_prefix} },
       $mip_file_format_with_direction;
+
+    return;
+}
+
+sub add_sample_no_direction_infile_prefixes {
+
+## Function : Add sample fastq file prefix without read direction in file name
+## Returns  :
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $mip_file_format;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        mip_file_format => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_file_format,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add no_direction_infile_prefixes
+    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} },
+      $mip_file_format;
 
     return;
 }
@@ -266,6 +313,77 @@ sub check_parameter_metafiles {
     return;
 }
 
+sub get_consensus_sequence_run_type {
+
+## Function : Get consensus sequence run type across samples
+## Returns  : 0 | $consensus_type
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $sample_ids_ref  => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $has_consensus;
+    my $consensus_type;
+
+    ## Get sequence run modes
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        my %seen;
+
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+
+      INFILE_PREFIX:
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
+        {
+
+            my $sequence_run_type = get_sample_file_attribute(
+                {
+                    attribute      => q{sequence_run_type},
+                    file_info_href => $file_info_href,
+                    file_name      => $infile_prefix,
+                    sample_id      => $sample_id,
+                }
+            );
+            $seen{$sequence_run_type} = $sequence_run_type;
+            $consensus_type = $sequence_run_type;
+        }
+
+        ## Turn of recipe if multiple sequence run types are present
+        $has_consensus = scalar keys %seen <= 1 ? 1 : 0;
+        return 0 if ( not $has_consensus );
+    }
+    return $consensus_type;
+}
+
 sub get_is_sample_files_compressed {
 
 ## Function : Get sample files compression status
@@ -337,6 +455,7 @@ sub get_sample_file_attribute {
                   lane
                   read_file_command
                   read_length
+                  sequence_run_type
                   }
             ],
             store       => \$attribute,
@@ -370,8 +489,16 @@ sub get_sample_file_attribute {
     }
     if ( not $attribute ) {
 
+        ## Return entire file name array
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{ARRAY} ) {
+            return @{ $file_info_href->{$sample_id}{$file_name} };
+        }
+
         ## Return entire file name hash
-        return %{ $file_info_href->{$sample_id}{$file_name} };
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{HASH} ) {
+            return %{ $file_info_href->{$sample_id}{$file_name} };
+        }
+
     }
     ## Get attribute
     my $stored_attribute =
@@ -1236,70 +1363,6 @@ sub set_sample_file_attribute {
     return if ( not defined $attribute_value );
 
     $file_info_href->{$sample_id}{$file_name}{$attribute} = $attribute_value;
-    return;
-}
-
-sub set_sample_infile_lane_prefix {
-
-## Function : Add sample fastq file lane prefix to infile_lane_prefix
-## Returns  :
-## Arguments: $direction       => Read direction
-##          : $file_info_href  => File info hash {REF}
-##          : $lane_tracker    => Lane tracker
-##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
-##          : $sample_id       => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $direction;
-    my $file_info_href;
-    my $lane_tracker;
-    my $mip_file_format;
-    my $sample_id;
-
-    my $tmpl = {
-        direction => {
-            allow       => [ undef, 1, 2, $INTERLEAVED_READ_DIRECTION, ],
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        lane_tracker => {
-            allow       => qr{\A \d+ \z}xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_tracker,
-            strict_type => 1,
-        },
-        mip_file_format => {
-            defined     => 1,
-            required    => 1,
-            store       => \$mip_file_format,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not $direction == 1 );
-
-    ## Set infile_lane_prefix
-    $file_info_href->{$sample_id}{infile_lane_prefix}[$lane_tracker] = $mip_file_format;
-
     return;
 }
 

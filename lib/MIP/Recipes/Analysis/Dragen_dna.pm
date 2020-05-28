@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
@@ -136,6 +136,7 @@ sub analysis_dragen_dna_align_vc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources };
@@ -143,9 +144,8 @@ sub analysis_dragen_dna_align_vc {
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_read_group
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
+    use MIP::Sample_info qw{
+      get_read_group
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -235,11 +235,25 @@ sub analysis_dragen_dna_align_vc {
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
+
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Read group header line
         my %read_group = get_read_group(
@@ -254,24 +268,6 @@ sub analysis_dragen_dna_align_vc {
         my @read_groups = qw{ id sm lb lane };
 
         push @dragen_fastq_list_lines, join $COMMA, @read_group{@read_groups};
-
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
-        # Collect interleaved status for fastq file
-        my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
 
         ## Infile(s)
         my $fastq_file_path = $infile_paths[$paired_end_tracker];

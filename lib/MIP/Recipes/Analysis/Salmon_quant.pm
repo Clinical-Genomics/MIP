@@ -140,13 +140,13 @@ sub analysis_salmon_quant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_sequence_run_type set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
@@ -213,19 +213,6 @@ sub analysis_salmon_quant {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-    ## Get sequence run type
-    my %sequence_run_type = get_sequence_run_type(
-        {
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
-        }
-    );
-
-    my @sequence_run_types = uniq( values %sequence_run_type );
-
-    my $sequence_run_mode = $sequence_run_types[0];
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -249,8 +236,25 @@ sub analysis_salmon_quant {
     ## Salmon quant
     say {$filehandle} q{## Quantifying transcripts using } . $recipe_name;
 
+    my @infile_prefixes = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            file_name      => q{no_direction_infile_prefixes},
+            sample_id      => $sample_id,
+        }
+    );
+
+    my $sequence_run_type = get_sample_file_attribute(
+        {
+            attribute      => q{sequence_run_type},
+            file_info_href => $file_info_href,
+            file_name      => $infile_prefixes[0],
+            sample_id      => $sample_id,
+        }
+    );
+
     ## For paired end
-    if ( $sequence_run_mode eq q{paired-end} ) {
+    if ( $sequence_run_type eq q{paired-end} ) {
 
         ## Grep every other read file and place in new arrays
         # Even array indexes get a 0 remainder and are evalauted as false

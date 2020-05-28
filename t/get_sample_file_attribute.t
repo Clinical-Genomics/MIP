@@ -59,14 +59,16 @@ diag(   q{Test get_sample_file_attribute from File_info.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a sample with info
-my $file_name = q{a_file.gz};
-my $sample_id = q{a_sample_id};
-my %file_info = (
+my $file_name     = q{a_file.gz};
+my $infile_prefix = q{a_file};
+my $sample_id     = q{a_sample_id};
+my %file_info     = (
     $sample_id => {
         $file_name => {
             is_file_compressed => 1,
             read_file_command  => q{gzip -d -c},
         },
+        no_direction_infile_prefixes => [ $infile_prefix, ],
     },
 );
 my %attribute = (
@@ -108,6 +110,7 @@ is_deeply(
 );
 
 ## Given a no attribute in call
+## When file name point to hash
 my %got_attribute_href = get_sample_file_attribute(
     {
         file_info_href => \%file_info,
@@ -116,9 +119,28 @@ my %got_attribute_href = get_sample_file_attribute(
     }
 );
 
-## Then return entire sample id attribute hash
+## Then return entire sample id file name attribute hash
 is_deeply( \%got_attribute_href, \%attribute,
     q{Returned sample id file name attribute hash} );
+
+## When file name points to array
+my @got_attributes_ref = get_sample_file_attribute(
+    {
+        file_info_href => \%file_info,
+        file_name      => q{no_direction_infile_prefixes},
+        sample_id      => $sample_id,
+    }
+);
+
+my @no_direction_infile_prefixes_attributes = ($infile_prefix);
+
+## Then return entire sample id file name attribute attribute
+is_deeply(
+    \@got_attributes_ref,
+    \@no_direction_infile_prefixes_attributes,
+    q{Returned sample id file name attribute array}
+);
+
 ## Given a undefined attribute in file_info hash
 delete $file_info{$sample_id}{$file_name}{is_file_compressed};
 
