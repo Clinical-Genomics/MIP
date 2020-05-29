@@ -432,11 +432,9 @@ sub _get_rrna_transcripts {
     # Print header line
     my $rrna_transcripts = q?'if (/^#/) {print $_} ?;
 
-    # For transcript lines ...
-    $rrna_transcripts .= q?elsif ($F[2] =~ /transcript/xms ?;
-
-    # .. belonging to the rRNA or Mt_rRNA gene type
-    $rrna_transcripts .= q?and $_ =~ / gene_type \s \"(rRNA|Mt_rRNA)\" /nxms)?;
+    # For rRNA, rRNA_pseudogenes or Mt_rRNA
+    $rrna_transcripts .=
+      q?elsif ($_ =~ / gene_type \s \"(rRNA|rRNA_pseudogene|Mt_rRNA)\" /nxms)?;
 
     # Print
     $rrna_transcripts .= q?{print $_}'?;
