@@ -199,13 +199,12 @@ sub pipeline_analyse_dragen_rd_dna {
 
     build_dragen_rd_dna_meta_files(
         {
-            active_parameter_href   => $active_parameter_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
