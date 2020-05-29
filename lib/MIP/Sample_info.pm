@@ -760,7 +760,6 @@ sub set_infile_info {
 ## Arguments: $file_info_href                  => File info hash {REF}
 ##          : $file_name                       => File name
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
 ##          : $sample_id                       => Sample id
 ##          : $sample_info_href                => Info on samples and case hash {REF}
@@ -771,7 +770,6 @@ sub set_infile_info {
     my $file_info_href;
     my $file_name;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $lane_tracker;
     my $sample_id;
     my $sample_info_href;
@@ -795,13 +793,6 @@ sub set_infile_info {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         lane_tracker => {
@@ -864,10 +855,6 @@ sub set_infile_info {
     ## Read 1
     if ( $attribute{direction} == 1 ) {
 
-        ## Save new format (sample_id_date_flow-cell_index_lane) in hash with sample_id as keys and inputfiles in array.
-        ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
-        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
-
         add_sample_no_direction_infile_prefixes(
             {
                 file_info_href  => $file_info_href,
@@ -914,10 +901,6 @@ sub set_infile_info {
     }
     if ( $attribute{direction} == 2 ) {
         ## 2nd read direction
-
-        # Get mip file format for read direction one
-        # $lane_tracker -1 since it gets incremented after direction eq 1
-        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 

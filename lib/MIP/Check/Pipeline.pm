@@ -39,7 +39,6 @@ sub check_dragen_rd_dna {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
@@ -52,7 +51,6 @@ sub check_dragen_rd_dna {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $log;
     my $order_parameters_ref;
     my $parameter_href;
@@ -85,13 +83,6 @@ sub check_dragen_rd_dna {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         log => {
@@ -257,7 +248,6 @@ sub check_dragen_rd_dna {
             active_parameter_href           => $active_parameter_href,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
         }
@@ -290,7 +280,6 @@ sub check_rd_dna {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
@@ -303,7 +292,6 @@ sub check_rd_dna {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $log;
     my $order_parameters_ref;
     my $parameter_href;
@@ -336,13 +324,6 @@ sub check_rd_dna {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         log => {
@@ -590,7 +571,6 @@ sub check_rd_dna {
             active_parameter_href           => $active_parameter_href,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
         }
@@ -623,7 +603,6 @@ sub check_rd_dna_panel {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
 ##          : $sample_info_href                => Info on samples and case hash {REF}
@@ -635,7 +614,6 @@ sub check_rd_dna_panel {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $order_parameters_ref;
     my $parameter_href;
     my $sample_info_href;
@@ -667,13 +645,6 @@ sub check_rd_dna_panel {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         order_parameters_ref => {
@@ -860,7 +831,6 @@ sub check_rd_dna_panel {
             active_parameter_href           => $active_parameter_href,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
         }
@@ -884,7 +854,6 @@ sub check_rd_dna_vcf_rerun {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $log                     => Log object to write to
 ##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -896,7 +865,6 @@ sub check_rd_dna_vcf_rerun {
     my $active_parameter_href;
     my $broadcasts_ref;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $log;
     my $order_parameters_ref;
     my $parameter_href;
@@ -922,13 +890,6 @@ sub check_rd_dna_vcf_rerun {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         log => {
@@ -1096,7 +1057,6 @@ sub check_rd_rna {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
@@ -1109,7 +1069,6 @@ sub check_rd_rna {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $log;
     my $order_parameters_ref;
     my $parameter_href;
@@ -1142,13 +1101,6 @@ sub check_rd_rna {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         log => {
@@ -1312,7 +1264,6 @@ sub check_rd_rna {
             active_parameter_href           => $active_parameter_href,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             sample_info_href                => $sample_info_href,
         }

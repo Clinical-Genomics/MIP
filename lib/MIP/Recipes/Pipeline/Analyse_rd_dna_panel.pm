@@ -39,7 +39,6 @@ sub pipeline_analyse_rd_dna_panel {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
@@ -54,7 +53,6 @@ sub pipeline_analyse_rd_dna_panel {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
@@ -89,13 +87,6 @@ sub pipeline_analyse_rd_dna_panel {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -194,7 +185,6 @@ sub pipeline_analyse_rd_dna_panel {
             broadcasts_ref                  => $broadcasts_ref,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             order_parameters_ref            => $order_parameters_ref,
             parameter_href                  => $parameter_href,
             sample_info_href                => $sample_info_href,

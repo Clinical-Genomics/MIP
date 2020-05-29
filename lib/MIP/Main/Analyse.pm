@@ -172,7 +172,7 @@ sub mip_analyse {
 #### Set program parameters
 
 ## Directories, files, job_ids and sample_info
-    my ( %infile_lane_prefix, %infile_both_strands_prefix, %job_id, %sample_info );
+    my ( %infile_both_strands_prefix, %job_id, %sample_info );
 
 #### Staging Area
 ### Get and/or set input parameters
@@ -500,7 +500,6 @@ sub mip_analyse {
             consensus_analysis_type         => $consensus_analysis_type,
             file_info_href                  => \%file_info,
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_lane_prefix_href         => \%infile_lane_prefix,
             job_id_href                     => \%job_id,
             order_parameters_ref            => \@order_parameters,
             order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
