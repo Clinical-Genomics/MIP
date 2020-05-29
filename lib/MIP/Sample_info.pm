@@ -36,8 +36,6 @@ BEGIN {
       get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
       reload_previous_pedigree_info
       set_file_path_to_store
       set_gene_panel
@@ -459,122 +457,6 @@ sub get_sample_info_sample_recipe_attributes {
     ## No infile level
     ## Get recipe attribute for recipe hash
     return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name} };
-}
-
-sub get_sequence_run_type {
-
-## Function : Return sequence run type
-## Returns  : $sequence_run_type | %sequence_run_type
-## Arguments: $infile_lane_prefix      => Infile lane prefix
-##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $infile_lane_prefix_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( %{$infile_lane_prefix_href} ) {
-
-        my %sequence_run_type;
-
-      INFILE_LANE_PREFIX:
-        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
-            $sequence_run_type{$infile_lane_prefix} =
-              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-              {sequence_run_type};
-        }
-
-        return %sequence_run_type;
-    }
-    elsif ( defined $infile_lane_prefix ) {
-
-        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-          {sequence_run_type};
-
-    }
-
-    croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
-}
-
-sub get_sequence_run_type_is_interleaved {
-
-## Function : Get sequence run type interleaved info
-## Returns  : undef (not interleaved) | 1 (is interleaved)
-## Arguments: $infile_lane_prefix => Infile lane prefix
-##          : $sample_id          => Sample id
-##          : $sample_info_href   => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            required    => 1,
-            defined     => 1,
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return
-      if (
-        ref $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-        {sequence_run_type} ne q{HASH} );
-
-    return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-      {sequence_run_type}{interleaved};
-
 }
 
 sub reload_previous_pedigree_info {
