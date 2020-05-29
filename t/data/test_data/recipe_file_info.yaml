@@ -157,6 +157,10 @@ human_genome_reference_file_endings:
   - .dict
   - .fai
 human_genome_reference_name_prefix: grch37_homo_sapiens_-d5-
+max_parallel_processes_count:
+  ADM1059A1: 0
+  ADM1059A2: 0
+  ADM1059A3: 0
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:

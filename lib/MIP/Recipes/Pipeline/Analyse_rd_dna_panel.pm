@@ -302,14 +302,13 @@ sub pipeline_analyse_rd_dna_panel {
 
                 $analysis_recipe{$recipe}->(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
+                        active_parameter_href => $active_parameter_href,
+                        file_info_href        => $file_info_href,
+                        job_id_href           => $job_id_href,
+                        parameter_href        => $parameter_href,
+                        recipe_name           => $recipe,
+                        sample_id             => $sample_id,
+                        sample_info_href      => $sample_info_href,
                     }
                 );
             }
@@ -320,13 +319,12 @@ sub pipeline_analyse_rd_dna_panel {
 
             $analysis_recipe{$recipe}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    recipe_name             => $recipe,
-                    sample_info_href        => $sample_info_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    parameter_href        => $parameter_href,
+                    recipe_name           => $recipe,
+                    sample_info_href      => $sample_info_href,
                 }
             );
         }

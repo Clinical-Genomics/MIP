@@ -946,10 +946,13 @@ sub set_infile_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
-    use MIP::File_info qw{ add_sample_infile_both_strands_prefix
+    use MIP::File_info qw{
+      add_sample_infile_both_strands_prefix
       add_sample_no_direction_infile_prefixes
       get_sample_file_attribute
-      set_sample_file_attribute };
+      set_sample_file_attribute
+      set_sample_max_parallel_processes_count
+    };
 
     my %attribute = get_sample_file_attribute(
         {
@@ -999,6 +1002,14 @@ sub set_infile_info {
                 file_info_href  => $file_info_href,
                 file_name       => $mip_file_format,
                 sample_id       => $sample_id,
+            }
+        );
+
+        set_sample_max_parallel_processes_count(
+            {
+                file_info_href               => $file_info_href,
+                max_parallel_processes_count => $lane_tracker,
+                sample_id                    => $sample_id,
             }
         );
 
