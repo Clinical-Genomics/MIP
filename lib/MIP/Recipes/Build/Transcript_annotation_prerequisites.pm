@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_transcript_annotation_prerequisites };
@@ -146,8 +146,6 @@ sub build_transcript_annotation_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Ucsc qw{ ucsc_gtf_to_genepred };
@@ -160,7 +158,6 @@ sub build_transcript_annotation_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my $refflat_suffix  = $parameter_build_suffixes_ref->[0];
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
         {
@@ -168,7 +165,12 @@ sub build_transcript_annotation_prerequisites {
             recipe_name           => q{mip},
         }
     );
+
+    ## Generate a random integer.
+    my $random_integer       = int rand $MAX_RANDOM_NUMBER;
     my $annotation_file_path = $active_parameter_href->{transcript_annotation};
+    my $annotation_file_path_random =
+      $annotation_file_path . $UNDERSCORE . $random_integer;
 
     ## No supplied filehandle i.e. create new sbatch script
     if ( not defined $filehandle ) {
@@ -193,64 +195,50 @@ sub build_transcript_annotation_prerequisites {
         );
     }
 
-    ## Generate a random integer.
-    my $random_integer = int rand $MAX_RANDOM_NUMBER;
-
     $log->warn( q{Will try to create required }
           . $annotation_file_path
           . q{ associated file(s) before executing }
           . $recipe_name );
 
-    ## Set file names
-    my $annotation_file_path_random =
-      $annotation_file_path . $UNDERSCORE . $random_integer;
-    my $temp_genepred_file_path = $annotation_file_path_random . $DOT . q{genePred};
-    my $temp_refflat_file_path  = $annotation_file_path_random . $refflat_suffix;
-    my $intended_file_path      = $annotation_file_path . $refflat_suffix;
-
-    say {$filehandle} q{## Convert gtf to extended genePred };
-    ucsc_gtf_to_genepred(
-        {
-            extended_genepred  => 1,
-            filehandle         => $filehandle,
-            gene_name_as_name2 => 1,
-            infile_path        => $annotation_file_path,
-            outfile_path       => $temp_genepred_file_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    say {$filehandle} q{## Convert genePred to refFlat};
-
-    perl_nae_oneliners(
-        {
-            filehandle      => $filehandle,
-            oneliner_name   => q{genepred_to_refflat},
-            stdinfile_path  => $temp_genepred_file_path,
-            stdoutfile_path => $temp_refflat_file_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-    check_exist_and_move_file(
-        {
-            filehandle          => $filehandle,
-            intended_file_path  => $intended_file_path,
-            temporary_file_path => $temp_refflat_file_path,
-        }
+    my %build_transcript_annotation = (
+        q{.refFlat} => {
+            extra_arg_href => {},
+            method         => \&_build_refflat,
+        },
+        q{.rrna.interval_list} => {
+            extra_arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+            method => \&_build_rrna_interval_list,
+        },
     );
 
-    ## Remove temporary files
-    say {$filehandle} q{#Remove temporary files};
-    gnu_rm(
-        {
-            filehandle  => $filehandle,
-            force       => 1,
-            infile_path => $temp_genepred_file_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
+  ANNOTATION_SUFFIX:
+    foreach my $annotation_suffix ( @{$parameter_build_suffixes_ref} ) {
+
+        my $intended_file_path = $annotation_file_path . $annotation_suffix;
+        my $temp_file_path     = $annotation_file_path_random . $annotation_suffix;
+
+        ## Build annotaion
+        $build_transcript_annotation{$annotation_suffix}{method}->(
+            {
+                %{ $build_transcript_annotation{$annotation_suffix}{extra_arg_href} },
+                annotation_file_path        => $annotation_file_path,
+                annotation_file_path_random => $annotation_file_path_random,
+                filehandle                  => $filehandle,
+                temp_file_path              => $temp_file_path,
+            }
+        );
+
+        ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+        check_exist_and_move_file(
+            {
+                filehandle          => $filehandle,
+                intended_file_path  => $intended_file_path,
+                temporary_file_path => $temp_file_path,
+            }
+        );
+    }
 
     ## Only create once
     $parameter_href->{transcript_annotation_file_endings}{build_file} = 0;
@@ -278,6 +266,215 @@ sub build_transcript_annotation_prerequisites {
         }
     }
     return 1;
+}
+
+sub _build_refflat {
+
+## Function : Creates the transcript annotation refFlat file.
+## Returns  :
+## Arguments: $annotation_file_path        => Annotation file path
+##          : $annotation_file_path_random => Annotation suffix
+##          : $filehandle                  => Filehandle to write to
+##          : $temp_file_path              => Temp file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_file_path;
+    my $annotation_file_path_random;
+    my $filehandle;
+    my $temp_file_path;
+
+    my $tmpl = {
+        annotation_file_path => {
+            required    => 1,
+            store       => \$annotation_file_path,
+            strict_type => 1,
+        },
+        annotation_file_path_random => {
+            required    => 1,
+            store       => \$annotation_file_path_random,
+            strict_type => 1,
+        },
+        filehandle     => { store => \$filehandle, },
+        temp_file_path => {
+            required    => 1,
+            store       => \$temp_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Ucsc qw{ ucsc_gtf_to_genepred };
+
+    ## Set file names
+    my $temp_genepred_file_path = $annotation_file_path_random . $DOT . q{genePred};
+
+    say {$filehandle} q{## Convert gtf to extended genePred };
+    ucsc_gtf_to_genepred(
+        {
+            extended_genepred  => 1,
+            filehandle         => $filehandle,
+            gene_name_as_name2 => 1,
+            infile_path        => $annotation_file_path,
+            outfile_path       => $temp_genepred_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    say {$filehandle} q{## Convert genePred to refFlat};
+
+    perl_nae_oneliners(
+        {
+            filehandle      => $filehandle,
+            oneliner_name   => q{genepred_to_refflat},
+            stdinfile_path  => $temp_genepred_file_path,
+            stdoutfile_path => $temp_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Remove temporary files
+    say {$filehandle} q{## Remove temporary files};
+    gnu_rm(
+        {
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $temp_genepred_file_path,
+        }
+    );
+    print {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _build_rrna_interval_list {
+
+## Function : Creates the transcript annotation ribomal RNA interval_list
+## Returns  :
+## Arguments: $annotation_file_path        => Annotation file path
+##          : $annotation_file_path_random => Annotation suffix
+##          : $filehandle                  => Filehandle to write to
+##          : $temp_file_path              => Temp file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $annotation_file_path;
+    my $annotation_file_path_random;
+    my $filehandle;
+    my $temp_file_path;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        annotation_file_path => {
+            required    => 1,
+            store       => \$annotation_file_path,
+            strict_type => 1,
+        },
+        annotation_file_path_random => {
+            required    => 1,
+            store       => \$annotation_file_path_random,
+            strict_type => 1,
+        },
+        filehandle     => { store => \$filehandle, },
+        temp_file_path => {
+            required    => 1,
+            store       => \$temp_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Gtf2bed qw{ gtf2bed };
+    use MIP::Program::Picardtools qw{
+      picardtools_bedtointervallist
+      picardtools_createsequencedictionary
+    };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
+
+    ## Set file names
+    my $temp_rrna_bed_file_path = $annotation_file_path_random . $DOT . q{rrna.bed};
+    my $temp_dict_file_path     = $annotation_file_path_random . $DOT . q{dict};
+
+    ## Perl regexp for rRNA
+    say {$filehandle} q{## Getting rRNA transcripts and converting to bed format};
+    perl_nae_oneliners(
+        {
+            filehandle     => $filehandle,
+            oneliner_name  => q{get_rrna_transcripts},
+            stdinfile_path => $annotation_file_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Gtf2Bed
+    gtf2bed(
+        {
+            filehandle      => $filehandle,
+            infile_path     => $DASH,
+            stdoutfile_path => $temp_rrna_bed_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Create sequence dictionary
+    picardtools_createsequencedictionary(
+        {
+            filehandle => $filehandle,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $temp_dict_file_path,
+            referencefile_path   => $active_parameter_href->{human_genome_reference},
+            temp_directory       => $active_parameter_href->{temp_directory},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Picardtools bed to interval_list
+    say {$filehandle} q{## Convert bed to interval_list format};
+    picardtools_bedtointervallist(
+        {
+            filehandle  => $filehandle,
+            infile_path => $temp_rrna_bed_file_path,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $temp_file_path,
+            sequence_dictionary  => $temp_dict_file_path,
+            temp_directory       => $active_parameter_href->{temp_directory},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Remove temporary files
+    say {$filehandle} q{## Remove temporary files};
+    foreach my $temp_file ( $temp_dict_file_path, $temp_rrna_bed_file_path ) {
+        gnu_rm(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => $temp_file,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+
+    return;
 }
 
 1;
