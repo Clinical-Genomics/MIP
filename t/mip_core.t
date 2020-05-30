@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.14;
+our $VERSION = 1.15;
 
 our $USAGE = build_usage( {} );
 
@@ -335,7 +335,7 @@ sub mip_scripts {
               mip_rd_dna_vcf_rerun_config.yaml
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
-              qc_regexp_-v1.25-.yaml
+              qc_regexp_-v1.26-.yaml
               rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
               }

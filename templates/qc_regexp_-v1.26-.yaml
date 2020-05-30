@@ -16,6 +16,9 @@ collectmultiplemetrics:
 collectmultiplemetricsinsertsize:
   data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
   header: "perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' "
+collectrnaseqmetrics:
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^PF_BASES/ ) {print $_;last;}' "
 fastqc_ar:
   basic_statistics: "perl -nae' if ($_=~/>>Basic Statistics\\s+(\\S+)/) {print $1;last;}' "
   encoding: "perl -nae' if ($_=~/Encoding\\s+(\\S+\\s\\S+\\s\\S+\\s\\S+|\\S+\\s\\S+)/) { my $encoding = $1;$encoding=~s/\\s/\\_/g; print $encoding;last;}' "

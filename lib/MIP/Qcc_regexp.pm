@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -250,6 +250,14 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
 
     # Return line and only look at line 8 in file, where the data action is
     $regexp{collectmultiplemetricsinsertsize}{data} =
+      q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
+
+    # Get PF_BASES line from header
+    $regexp{collectrnaseqmetrics}{header} =
+      q?perl -nae' if ($_ =~/^PF_BASES/ ) {print $_;last;}' ?;
+
+    # Return line and only look at line 8 in file, where the data action is
+    $regexp{collectrnaseqmetrics}{data} =
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
 # Return CompOverlap CompFeatureInput line and only look at line 8, where the data action is in header
