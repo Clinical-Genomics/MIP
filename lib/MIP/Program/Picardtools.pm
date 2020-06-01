@@ -350,7 +350,6 @@ sub picardtools_bedtointervallist {
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
-
         temp_directory => { store => \$temp_directory, strict_type => 1, },
     };
 
@@ -373,7 +372,6 @@ sub picardtools_bedtointervallist {
         );
     }
 
-    ## Picardtools addorreaplacereadgroups
     push @commands, q{BedToIntervalList};
 
     ## Picardtools base args

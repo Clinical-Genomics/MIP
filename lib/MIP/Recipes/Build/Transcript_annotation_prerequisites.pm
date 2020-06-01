@@ -461,7 +461,6 @@ sub _build_rrna_interval_list {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Remove temporary files
     say {$filehandle} q{## Remove temporary files};
     foreach my $temp_file ( $temp_dict_file_path, $temp_rrna_bed_file_path ) {
         gnu_rm(
