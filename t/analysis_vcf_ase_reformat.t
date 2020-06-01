@@ -89,7 +89,6 @@ my %file_info = test_mip_hashes(
     }
 );
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -98,19 +97,19 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info;
+my %sample_info =
+  ( sample => { $sample_id => { dna_sample_id => q{a_dna_sample_id} }, }, );
 
 my $is_ok = analysis_vcf_ase_reformat(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 

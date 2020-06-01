@@ -96,7 +96,6 @@ $file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_path_href}{s
 $file_info{io}{TEST}{$case_id}{sv_reformat}{out}{file_path_href}{selected} =
   q{sv.select.vcf};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -114,15 +113,14 @@ $parameter{$recipe_name}{outfile_suffix} = q{.txt};
 my %sample_info;
 my $is_ok = analysis_varg(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

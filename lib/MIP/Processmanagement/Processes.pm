@@ -146,20 +146,20 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
 ## Function : Create job id string from sample_ids job id chain and path for SLURM submission using dependencies
 ## Returns  : $job_ids_string
-## Arguments: $case_id                 => Case id
-##          : $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_ids_ref          => Sample ids {REF}
+## Arguments: $case_id                           => Case id
+##          : $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes {REF}
+##          : $path                              => Trunk or branch
+##          : $sample_ids_ref                    => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
     my $sample_ids_ref;
 
@@ -176,18 +176,18 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -204,7 +204,7 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
     my $job_ids_string;
 
-    ## Add all previous jobId(s) from sample_id chainkey(s)
+    ## Add all previous jobId(s) from sample_id chain_key(s)
   SAMPLE_IDS:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
 
@@ -222,8 +222,10 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
             );
         }
 
-      INFILES:
-        while ( my ($infile_index) = each @{ $infile_lane_prefix_href->{$sample_id} } ) {
+      PARALLEL_PROCESS:
+        foreach my $parallel_processes_index (
+            0 .. $max_parallel_processes_count_href->{$sample_id} )
+        {
 
             # Create key
             my $sample_id_parallel_chain_key =
@@ -232,20 +234,21 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
               . q{parallel}
               . $UNDERSCORE
               . $path
-              . $infile_index;
+              . $parallel_processes_index;
 
             ## If parallel job exists
-            if ( $job_id_href->{$case_id_chain_key}{$sample_id_parallel_chain_key} ) {
+            next PARALLEL_PROCESS
+              if (
+                not $job_id_href->{$case_id_chain_key}{$sample_id_parallel_chain_key} );
 
-                ## Add to job_id string
-                $job_ids_string .= add_to_job_id_dependency_string(
-                    {
-                        job_id_href       => $job_id_href,
-                        case_id_chain_key => $case_id_chain_key,
-                        chain_key         => $sample_id_parallel_chain_key,
-                    }
-                );
-            }
+            ## Add to job_id string
+            $job_ids_string .= add_to_job_id_dependency_string(
+                {
+                    job_id_href       => $job_id_href,
+                    case_id_chain_key => $case_id_chain_key,
+                    chain_key         => $sample_id_parallel_chain_key,
+                }
+            );
         }
     }
     return $job_ids_string;
@@ -440,21 +443,21 @@ sub add_job_id_dependency_tree {
 
 sub add_parallel_job_id_to_sample_id_dependency_tree {
 
-## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
+## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type
 ## Returns  :
-## Arguments: $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Info on jobIds hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_id               => Sample ID
-##          : $sample_id_chain_key     => Sample ID chain hash key
+## Arguments: $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => Info on job_ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $sample_id                         => Sample ID
+##          : $sample_id_chain_key               => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
     my $sample_id;
     my $sample_id_chain_key;
@@ -466,18 +469,18 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -496,8 +499,10 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
     my $parallel_jobs_chain_key;
 
     ## Push parallel job_ids
-  INFILES:
-    while ( my ($infile_index) = each @{ $infile_lane_prefix_href->{$sample_id} } ) {
+  PARALLEL_PROCESS:
+    foreach my $parallel_processes_index (
+        0 .. $max_parallel_processes_count_href->{$sample_id} )
+    {
 
         # Set key
         $parallel_jobs_chain_key =
@@ -506,21 +511,21 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
           . $chain_key_type
           . $UNDERSCORE
           . $path
-          . $infile_index;
+          . $parallel_processes_index;
 
-        ## If parellel job_ids exists
-        if ( exists $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} ) {
+        ## If parallel job_ids exists
+        next PARALLEL_PROCESS
+          if ( not exists $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} );
 
-            # Alias job_ids array for sample_id in job_id_href to push to
-            my $sample_id_job_ids_ref =
-              \@{ $job_id_href->{$case_id_chain_key}{$sample_id_chain_key} };
+        # Alias job_ids array for sample_id in job_id_href to push to
+        my $sample_id_job_ids_ref =
+          \@{ $job_id_href->{$case_id_chain_key}{$sample_id_chain_key} };
 
-            # Alias parallel job_ids array to push from
-            my $job_ids_ref =
-              \@{ $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} };
+        # Alias parallel job_ids array to push from
+        my $job_ids_ref =
+          \@{ $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} };
 
-            push @{$sample_id_job_ids_ref}, @{$job_ids_ref};
-        }
+        push @{$sample_id_job_ids_ref}, @{$job_ids_ref};
     }
     return;
 }
@@ -679,18 +684,18 @@ sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
 
 ## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
 ## Returns  :
-## Arguments: $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Info on jobIds hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_id               => Sample ID
+## Arguments: $case_id_chain_key                 => Case id chain hash key
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $job_id_href                       => Info on jobIds hash {REF}
+##          : $path                              => Trunk or branch
+##          : $sample_id                         => Sample ID
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
     my $sample_id;
 
@@ -701,18 +706,18 @@ sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -721,38 +726,39 @@ sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    return if ( not exists $max_parallel_processes_count_href->{$sample_id} );
+
     my $chain_key_type = q{parallel};
     my $parallel_jobs_chain_key;
 
-    if ( exists $infile_lane_prefix_href->{$sample_id} ) {
+    ## Push parallel job_ids
+  PARALLEL_PROCESS:
+    foreach my $parallel_processes_index (
+        0 .. $max_parallel_processes_count_href->{$sample_id} )
+    {
 
-        ## Push parallel job_ids
-      INFILES:
-        while ( my ($infile_index) = each @{ $infile_lane_prefix_href->{$sample_id} } ) {
+        # Set parallel sample key
+        $parallel_jobs_chain_key =
+            $sample_id
+          . $UNDERSCORE
+          . $chain_key_type
+          . $UNDERSCORE
+          . $path
+          . $parallel_processes_index;
 
-            # Set parallel sample key
-            $parallel_jobs_chain_key =
-                $sample_id
-              . $UNDERSCORE
-              . $chain_key_type
-              . $UNDERSCORE
-              . $path
-              . $infile_index;
+        ## If parallel job_ids exists
+        next PARALLEL_PROCESS
+          if ( not exists $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} );
 
-            ## If parellel job_ids exists
-            if ( exists $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} ) {
+        # Alias job_ids array for case_id in job_id_href to push to
+        my $case_id_job_ids_ref =
+          \@{ $job_id_href->{$case_id_chain_key}{$case_id_chain_key} };
 
-                # Alias job_ids array for case_id in job_id_href to push to
-                my $case_id_job_ids_ref =
-                  \@{ $job_id_href->{$case_id_chain_key}{$case_id_chain_key} };
+        # Alias parallel job_ids array to push from
+        my $job_ids_ref =
+          \@{ $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} };
 
-                # Alias parallel job_ids array to push from
-                my $job_ids_ref =
-                  \@{ $job_id_href->{$case_id_chain_key}{$parallel_jobs_chain_key} };
-
-                push @{$case_id_job_ids_ref}, @{$job_ids_ref};
-            }
-        }
+        push @{$case_id_job_ids_ref}, @{$job_ids_ref};
     }
     return;
 }
@@ -761,21 +767,19 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 
 ## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
 ## Returns  :
-## Arguments: $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Info on jobIds hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_id               => Sample ID
-##          : $sample_ids_ref          => Sample ids {REF}
+## Arguments: $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => Info on jobIds hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $sample_ids_ref                    => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
-    my $sample_id;
     my $sample_ids_ref;
 
     my $tmpl = {
@@ -785,18 +789,18 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -811,16 +815,16 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  SAMPLE_IDS:
+  SAMPLE_ID:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
 
         add_sample_id_parallel_job_id_to_case_id_dependency_tree(
             {
-                case_id_chain_key       => $case_id_chain_key,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                path                    => $path,
-                sample_id               => $sample_id,
+                case_id_chain_key                 => $case_id_chain_key,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $path,
+                sample_id                         => $sample_id,
             }
         );
     }
@@ -1157,21 +1161,21 @@ sub create_job_id_string_for_case_id {
 
 ## Function : Create job id string from the job id chain and path associated with case for SLURM submission using dependencies
 ## Returns  : $job_ids_string
-##          : $case_id                 => Case id
-##          : $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_ids_ref          => Sample ids {REF}
+##          : $case_id                           => Case id
+##          : $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $path                              => Trunk or branch
+##          : $sample_ids_ref                    => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $path;
     my $sample_ids_ref;
@@ -1189,18 +1193,18 @@ sub create_job_id_string_for_case_id {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         parallel_chains_ref => {
@@ -1225,12 +1229,12 @@ sub create_job_id_string_for_case_id {
 
     $job_ids_string = create_job_id_string_for_case_id_and_path(
         {
-            case_id                 => $case_id,
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_ids_ref          => $sample_ids_ref,
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_ids_ref                    => $sample_ids_ref,
         }
     );
 
@@ -1242,12 +1246,12 @@ sub create_job_id_string_for_case_id {
 
         $job_ids_string = create_job_id_string_for_case_id_and_path(
             {
-                case_id                 => $case_id,
-                case_id_chain_key       => $case_id_chain_key_main,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                path                    => $path_main,
-                sample_ids_ref          => $sample_ids_ref,
+                case_id                           => $case_id,
+                case_id_chain_key                 => $case_id_chain_key_main,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $path_main,
+                sample_ids_ref                    => $sample_ids_ref,
             }
         );
     }
@@ -1270,20 +1274,20 @@ sub create_job_id_string_for_case_id_and_path {
 
 ## Function : Create job id string from the job id chain and main path for SLURM submission using dependencies
 ## Returns  : $job_ids_string
-## Arguments: $case_id                 => Case id
-##          : $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_ids_ref          => Sample ids {REF}
+## Arguments: $case_id                           => Case id
+##          : $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $sample_ids_ref                    => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
     my $sample_ids_ref;
 
@@ -1300,18 +1304,18 @@ sub create_job_id_string_for_case_id_and_path {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -1339,42 +1343,41 @@ sub create_job_id_string_for_case_id_and_path {
                 job_id_href       => $job_id_href,
             }
         );
+        return $job_ids_string;
     }
-    else {
 
-        ## First case_id in MAIN chain
+    ## First case_id in MAIN chain
 
-        ## Add both parallel and sample_id jobId(s) from sample_id(s) chainkey
-        $job_ids_string = add_sample_ids_job_ids_to_job_id_dependency_string(
-            {
-                case_id                 => $case_id,
-                case_id_chain_key       => $case_id_chain_key,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                path                    => $path,
-                sample_ids_ref          => $sample_ids_ref,
-            }
-        );
-    }
+    ## Add both parallel and sample_id job_id(s) from sample_id(s) chain_key
+    $job_ids_string = add_sample_ids_job_ids_to_job_id_dependency_string(
+        {
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_ids_ref                    => $sample_ids_ref,
+        }
+    );
     return $job_ids_string;
 }
 
 sub clear_sample_id_parallel_job_id_dependency_tree {
 
-## Function : Clear parallel sample job_ids in the sample_id chain.
+## Function : Clear parallel sample job_ids in the sample_id chain
 ## Returns  :
-## Arguments: $case_id_chain_key       => Case id chain hash key
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Info on jobIds hash {REF}
-##          : $path                    => Trunk or branch
-##          : $sample_id               => Sample ID
+## Arguments: $case_id_chain_key                 => Case id chain hash key
+##          : $job_id_href                       => Info on jobIds hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $sample_id                         => Sample ID
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id_chain_key;
-    my $infile_lane_prefix_href;
     my $job_id_href;
+    my $max_parallel_processes_count_href;
     my $path;
     my $sample_id;
 
@@ -1385,18 +1388,18 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
             store       => \$case_id_chain_key,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
             strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
@@ -1405,15 +1408,22 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Clear all latest parallel jobs within chainkey
-  INFILES:
-    while ( my ($infile_index) = each @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    ## Clear all latest parallel jobs within chain_key
+  PARALLEL_PROCESS:
+    foreach my $parallel_processes_index (
+        0 .. $max_parallel_processes_count_href->{$sample_id} )
+    {
 
         # Create key
         my $sample_id_parallel_chain_key =
-          $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $infile_index;
+            $sample_id
+          . $UNDERSCORE
+          . q{parallel}
+          . $UNDERSCORE
+          . $path
+          . $parallel_processes_index;
 
-        ## If parallel job exists
+        ## If parallel job
         if ( $job_id_href->{$case_id_chain_key}{$sample_id_parallel_chain_key} ) {
 
             # Clear latest parallel sample_id chain submission
@@ -1738,32 +1748,32 @@ sub submit_recipe {
 
 ## Function : Submit recipe depending on submission profile
 ## Returns  :
-## Arguments: $base_command            => Profile base command
-##          : $case_id                 => Case id
-##          : $dependency_method       => Dependency method
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_chain            => Chain id
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $job_dependency_type     => Job dependency type
-##          : $log                     => Log object
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $recipe_file_path        => Recipe file path
-##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
-##          : $job_reservation_name    => Allocate resources from named reservation
-##          : $sample_id               => Sample id
-##          : $sample_ids_ref          => Sample ids {REF}
-##          : $submission_profile      => Submission profile
+## Arguments: $base_command                      => Profile base command
+##          : $case_id                           => Case id
+##          : $dependency_method                 => Dependency method
+##          : $job_id_chain                      => Chain id
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $job_dependency_type               => Job dependency type
+##          : $log                               => Log object
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $recipe_file_path                  => Recipe file path
+##          : $recipe_files_tracker              => Track the number of parallel processes (e.g. recipe scripts for a module)
+##          : $job_reservation_name              => Allocate resources from named reservation
+##          : $sample_id                         => Sample id
+##          : $sample_ids_ref                    => Sample ids {REF}
+##          : $submission_profile                => Submission profile
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
     my $dependency_method;
-    my $infile_lane_prefix_href;
     my $job_id_chain;
     my $job_id_href;
     my $job_dependency_type;
     my $log;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $recipe_file_path;
     my $recipe_files_tracker;
@@ -1791,11 +1801,6 @@ sub submit_recipe {
             store       => \$dependency_method,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_chain => { store => \$job_id_chain, strict_type => 1, },
         job_id_href  => {
             default     => {},
@@ -1812,6 +1817,11 @@ sub submit_recipe {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         parallel_chains_ref => {
             default     => [],
@@ -1857,20 +1867,20 @@ sub submit_recipe {
 
     $is_manager{$submission_profile}->(
         {
-            base_command            => $base_command,
-            case_id                 => $case_id,
-            dependency_method       => $dependency_method,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_dependency_type     => $job_dependency_type,
-            job_id_chain            => $job_id_chain,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parallel_chains_ref     => $parallel_chains_ref,
-            recipe_file_path        => $recipe_file_path,
-            recipe_files_tracker    => $recipe_files_tracker,
-            reservation_name        => $job_reservation_name,
-            sample_id               => $sample_id,
-            sample_ids_ref          => $sample_ids_ref,
+            base_command                      => $base_command,
+            case_id                           => $case_id,
+            dependency_method                 => $dependency_method,
+            job_dependency_type               => $job_dependency_type,
+            job_id_chain                      => $job_id_chain,
+            job_id_href                       => $job_id_href,
+            log                               => $log,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            parallel_chains_ref               => $parallel_chains_ref,
+            recipe_file_path                  => $recipe_file_path,
+            recipe_files_tracker              => $recipe_files_tracker,
+            reservation_name                  => $job_reservation_name,
+            sample_id                         => $sample_id,
+            sample_ids_ref                    => $sample_ids_ref,
         }
     );
     return 1;
@@ -1935,7 +1945,8 @@ sub write_job_ids_to_file {
         q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
 
     ## Remove all undef elements from return array of all job_ids
-    my @job_ids = grep { defined } get_all_job_ids( { job_id_href => $job_id_href, } );
+    my @job_ids =
+      grep { defined } get_all_job_ids( { job_id_href => $job_id_href, } );
 
     ## Writes a YAML hash to file
     my %out_job_id = ( $case_id => [@job_ids], );

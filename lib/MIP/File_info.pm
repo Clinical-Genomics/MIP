@@ -49,6 +49,7 @@ BEGIN {
       set_human_genome_reference_features
       set_primary_contigs
       set_sample_file_attribute
+      set_sample_max_parallel_processes_count
       set_select_file_contigs
     };
 }
@@ -1363,6 +1364,51 @@ sub set_sample_file_attribute {
     return if ( not defined $attribute_value );
 
     $file_info_href->{$sample_id}{$file_name}{$attribute} = $attribute_value;
+    return;
+}
+
+sub set_sample_max_parallel_processes_count {
+
+## Function : Set sample max parallel processes count
+## Returns  :
+## Arguments: $file_info_href               => File info hash {REF}
+##          : $max_parallel_processes_count => New parallel processes count
+##          : $sample_id                    => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $max_parallel_processes_count;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        max_parallel_processes_count => {
+            allow       => qr{ \A \d+ \z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{max_parallel_processes_count}{$sample_id} =
+      $max_parallel_processes_count;
     return;
 }
 

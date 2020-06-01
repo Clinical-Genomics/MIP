@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +31,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA      => q{,};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -63,28 +58,28 @@ diag(   q{Test create_job_id_string_for_case_id from Processes.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $case_id               = q{case1};
-my $path                  = q{MAIN};
-my $sample_id             = q{sample1};
-my $sbatch_script_tracker = 0;
-my $case_id_chain_key     = $case_id . $UNDERSCORE . $path;
+my $case_id                  = q{case1};
+my $path                     = q{MAIN};
+my $sample_id                = q{sample1};
+my $parallel_processes_index = 0;
+my $case_id_chain_key        = $case_id . $UNDERSCORE . $path;
 my $case_id_parallel_chain_key =
-  $case_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $sbatch_script_tracker;
-my $parallel_chain_key = q{parallel} . $UNDERSCORE . $path . $sbatch_script_tracker;
+  $case_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $parallel_processes_index;
+my $parallel_chain_key = q{parallel} . $UNDERSCORE . $path . $parallel_processes_index;
 my @parallel_chains    = ($parallel_chain_key);
 my @sample_ids         = ($sample_id);
-my %infile_lane_prefix;
-my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %max_parallel_processes_count = ( $sample_id => 0, );
+my %job_id                       = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 
 ## Given job ids from MAIN chain, when existing job id for case id
 my $job_ids_string = create_job_id_string_for_case_id(
     {
-        case_id                 => $case_id,
-        case_id_chain_key       => $case_id_chain_key,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        path                    => $path,
-        sample_ids_ref          => \@sample_ids,
+        case_id                           => $case_id,
+        case_id_chain_key                 => $case_id_chain_key,
+        job_id_href                       => \%job_id,
+        max_parallel_processes_count_href => \%max_parallel_processes_count,
+        path                              => $path,
+        sample_ids_ref                    => \@sample_ids,
     }
 );
 
@@ -97,12 +92,12 @@ my $path_other              = q{other};
 my $case_id_chain_key_other = $case_id . $UNDERSCORE . $path_other;
 my $job_ids_string_other    = create_job_id_string_for_case_id(
     {
-        case_id                 => $case_id,
-        case_id_chain_key       => $case_id_chain_key_other,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        path                    => $path_other,
-        sample_ids_ref          => \@sample_ids,
+        case_id                           => $case_id,
+        case_id_chain_key                 => $case_id_chain_key_other,
+        job_id_href                       => \%job_id,
+        max_parallel_processes_count_href => \%max_parallel_processes_count,
+        path                              => $path_other,
+        sample_ids_ref                    => \@sample_ids,
     }
 );
 
@@ -117,13 +112,13 @@ $job_id{$case_id_parallel_chain_key}{$case_id_parallel_chain_key} =
 
 my $job_ids_string_other_parallel = create_job_id_string_for_case_id(
     {
-        case_id                 => $case_id,
-        case_id_chain_key       => $case_id_chain_key_other,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parallel_chains_ref     => \@parallel_chains,
-        path                    => $path_other,
-        sample_ids_ref          => \@sample_ids,
+        case_id                           => $case_id,
+        case_id_chain_key                 => $case_id_chain_key_other,
+        job_id_href                       => \%job_id,
+        max_parallel_processes_count_href => \%max_parallel_processes_count,
+        parallel_chains_ref               => \@parallel_chains,
+        path                              => $path_other,
+        sample_ids_ref                    => \@sample_ids,
     }
 );
 

@@ -40,7 +40,6 @@ sub build_bwa_prerequisites {
 ##          : $case_id                      => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
-##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => The bwa reference associated file endings {REF}
@@ -55,7 +54,6 @@ sub build_bwa_prerequisites {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_build_suffixes_ref;
@@ -92,13 +90,6 @@ sub build_bwa_prerequisites {
         human_genome_reference => {
             default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -200,12 +191,11 @@ sub build_bwa_prerequisites {
 
     build_human_genome_prerequisites(
         {
-            active_parameter_href   => $active_parameter_href,
-            filehandle              => $filehandle,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
+            active_parameter_href => $active_parameter_href,
+            filehandle            => $filehandle,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,

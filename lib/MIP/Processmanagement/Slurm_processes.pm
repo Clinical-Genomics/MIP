@@ -18,7 +18,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
@@ -51,24 +51,22 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
 
 ## Function : Submit jobs that has case_id dependencies and adds to sample dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_id               => Sample id
-##          : $sbatch_file_name        => Sbatch file name
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_id                         => Sample id
+##          : $sbatch_file_name                  => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $path;
     my $reservation_name;
     my $sample_id;
@@ -90,13 +88,6 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [qw{ afterany afterok }],
             default     => q{afterok},
@@ -110,10 +101,12 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         reservation_name => {
@@ -145,6 +138,8 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -154,7 +149,6 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key       = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
@@ -168,12 +162,12 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
     ## Always check and add any parallel (i.e job_ids that are processed in parallel witin path) dependency jobs
     add_parallel_job_id_to_sample_id_dependency_tree(
         {
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_id               => $sample_id,
-            sample_id_chain_key     => $sample_id_chain_key,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            path                              => $path,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            sample_id                         => $sample_id,
+            sample_id_chain_key               => $sample_id_chain_key,
         }
     );
 
@@ -181,12 +175,12 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_case_id(
         {
-            case_id                 => $case_id,
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_ids_ref          => [$sample_id],
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_ids_ref                    => [$sample_id],
         }
     );
 
@@ -583,24 +577,22 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
 
 ## Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $log                     => Log
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_id               => Sample id
-##          : $sbatch_file_name        => Sbatch file name
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_id                         => Sample id
+##          : $sbatch_file_name                  => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $path;
     my $reservation_name;
     my $sample_id;
@@ -622,13 +614,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [qw{afterany afterok}],
             default     => q{afterok},
@@ -642,10 +627,12 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         reservation_name => {
@@ -676,6 +663,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -685,7 +674,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key       = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
@@ -699,12 +687,12 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Always check and add any parallel (i.e job_ids that are processed in parallel witin path) dependency jobs
     add_parallel_job_id_to_sample_id_dependency_tree(
         {
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_id               => $sample_id,
-            sample_id_chain_key     => $sample_id_chain_key,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_id                         => $sample_id,
+            sample_id_chain_key               => $sample_id_chain_key,
         }
     );
 
@@ -744,11 +732,11 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
 
     clear_sample_id_parallel_job_id_dependency_tree(
         {
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_id               => $sample_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_id                         => $sample_id,
         }
     );
     ## Clear sample job_ids in the the sample_id chain
@@ -798,24 +786,22 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to sample dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_id               => Sample id
-##          : $sbatch_file_name        => Sbatch file name
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_id                         => Sample id
+##          : $sbatch_file_name                  => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $path;
     my $reservation_name;
     my $sample_id;
@@ -837,13 +823,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [qw{ afterany afterok }],
             default     => q{afterok},
@@ -857,10 +836,12 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         reservation_name => {
@@ -891,6 +872,8 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -900,7 +883,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key       = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
@@ -914,12 +896,12 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
     ## Always check and add any parallel (i.e job_ids that are processed in parallel witin path) dependency jobs
     add_parallel_job_id_to_sample_id_dependency_tree(
         {
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_id               => $sample_id,
-            sample_id_chain_key     => $sample_id_chain_key,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            path                              => $path,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            sample_id                         => $sample_id,
+            sample_id_chain_key               => $sample_id_chain_key,
         }
     );
 
@@ -959,11 +941,11 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
 
     clear_sample_id_parallel_job_id_dependency_tree(
         {
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            path                    => $path,
-            sample_id               => $sample_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $path,
+            sample_id                         => $sample_id,
         }
     );
 
@@ -1023,25 +1005,23 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to case dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_ids_ref          => Sample ids {REF}
-##          : $sbatch_file_name        => Sbatch file name
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_ids_ref                    => Sample ids {REF}
+##          : $sbatch_file_name                  => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $path;
     my $reservation_name;
@@ -1064,13 +1044,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [qw{ afterany afterok }],
             default     => q{afterok},
@@ -1084,10 +1057,12 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         parallel_chains_ref => {
             default     => [],
@@ -1124,6 +1099,8 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -1137,13 +1114,13 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_case_id(
         {
-            case_id                 => $case_id,
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            parallel_chains_ref     => $parallel_chains_ref,
-            path                    => $path,
-            sample_ids_ref          => $sample_ids_ref,
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            parallel_chains_ref               => $parallel_chains_ref,
+            path                              => $path,
+            sample_ids_ref                    => $sample_ids_ref,
         }
     );
 
@@ -1228,25 +1205,23 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
 
 ## Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_ids_ref          => Sample ids {REF}
-##          : $sbatch_file_name        => Sbatch file name
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_ids_ref                    => Sample ids {REF}
+##          : $sbatch_file_name                  => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $path;
     my $reservation_name;
@@ -1269,13 +1244,6 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -1289,10 +1257,12 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
             store       => \$job_dependency_type,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         parallel_chains_ref => {
             default     => [],
@@ -1329,6 +1299,8 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -1342,13 +1314,13 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_case_id(
         {
-            case_id                 => $case_id,
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            parallel_chains_ref     => $parallel_chains_ref,
-            path                    => $path,
-            sample_ids_ref          => $sample_ids_ref,
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            job_id_href                       => $job_id_href,
+            parallel_chains_ref               => $parallel_chains_ref,
+            path                              => $path,
+            sample_ids_ref                    => $sample_ids_ref,
         }
     );
 
@@ -1424,26 +1396,24 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to case parallel dependencies using SLURM
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $path                    => Trunk or branch
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_ids_ref          => Sample ids {REF}
-##          : $sbatch_file_name        => Sbatch file name
-##          : $sbatch_script_tracker   => Track the number of parallel processes (e.g. sbatch scripts for a module)
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $path                              => Trunk or branch
+##          : $reservation_name                  => Allocate resources from named reservation
+##          : $sample_ids_ref                    => Sample ids {REF}
+##          : $sbatch_file_name                  => Sbatch file name
+##          : $sbatch_script_tracker             => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $path;
     my $reservation_name;
@@ -1467,13 +1437,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [qw{afterany afterok}],
             default     => q{afterok},
@@ -1487,10 +1450,12 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         parallel_chains_ref => {
@@ -1533,6 +1498,8 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
       limit_job_id_string
     };
 
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     # Create string with all previous job_ids
     my $job_ids_string;
 
@@ -1546,13 +1513,13 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_case_id(
         {
-            case_id                 => $case_id,
-            case_id_chain_key       => $case_id_chain_key,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            parallel_chains_ref     => $parallel_chains_ref,
-            path                    => $path,
-            sample_ids_ref          => $sample_ids_ref,
+            case_id                           => $case_id,
+            case_id_chain_key                 => $case_id_chain_key,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            job_id_href                       => $job_id_href,
+            parallel_chains_ref               => $parallel_chains_ref,
+            path                              => $path,
+            sample_ids_ref                    => $sample_ids_ref,
         }
     );
 
@@ -1620,10 +1587,8 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
 ## Returns  :
 ## Arguments: $base_command            => Sbatch
 ##          : $case_id                 => Case id
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
-##          : $log                     => Log
 ##          : $path                    => Trunk or branch
 ##          : $reservation_name        => Allocate resources from named reservation
 ##          : $sample_id               => Sample id
@@ -1634,9 +1599,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
 
     ## Flatten argument(s)
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $log;
     my $path;
     my $reservation_name;
     my $sample_id;
@@ -1659,13 +1622,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             store       => \$case_id,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -1678,11 +1634,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             default     => q{afterok},
             store       => \$job_dependency_type,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         reservation_name => {
@@ -1720,6 +1671,8 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
       create_job_id_string_for_sample_id
       limit_job_id_string
     };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     # Create string with all previous job_ids
     my $job_ids_string;
@@ -2118,32 +2071,32 @@ sub submit_slurm_recipe {
 
 ## Function : Submit SLURM recipe
 ## Returns  :
-## Arguments: $base_command            => Sbatch
-##          : $case_id                 => Case id
-##          : $dependency_method       => Dependency method
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $job_id_chain            => Chain id
-##          : $job_id_href             => The info on job ids hash {REF}
-##          : $job_dependency_type     => SLURM job dependency type
-##          : $log                     => Log
-##          : $parallel_chains_ref     => Info on parallel chains array {REF}
-##          : $recipe_file_path        => Sbatch file path
-##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. sbatch scripts for a module)
-##          : $reservation_name        => Allocate resources from named reservation
-##          : $sample_id               => Sample id
-##          : $sample_ids_ref          => Sample ids {REF}
+## Arguments: $base_command                      => Sbatch
+##          : $case_id                           => Case id
+##          : $dependency_method                 => Dependency method
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $job_id_chain                      => Chain id
+##          : $job_id_href                       => The info on job ids hash {REF}
+##          : $job_dependency_type               => SLURM job dependency type
+##          : $log                               => Log
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $parallel_chains_ref               => Info on parallel chains array {REF}
+##          : $recipe_file_path                   => Sbatch file path
+##          : $recipe_files_tracker              => Track the number of parallel processes (e.g. sbatch scripts for a module)
+##          : $reservation_name                   => Allocate resources from named reservation
+##          : $sample_id                         => Sample id
+##          : $sample_ids_ref                    => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $dependency_method;
     my $case_id;
-    my $infile_lane_prefix_href;
     my $job_dependency_type;
     my $job_id_chain;
     my $job_id_href;
     my $log;
+    my $max_parallel_processes_count_href;
     my $parallel_chains_ref;
     my $reservation_name;
     my $recipe_file_path;
@@ -2183,13 +2136,6 @@ sub submit_slurm_recipe {
             store       => \$dependency_method,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         job_dependency_type => {
             allow       => [ undef, qw{ afterany afterok } ],
             default     => q{afterok},
@@ -2208,6 +2154,13 @@ sub submit_slurm_recipe {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        max_parallel_processes_count_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$max_parallel_processes_count_href,
+            strict_type => 1,
         },
         parallel_chains_ref => {
             default     => [],
@@ -2261,15 +2214,14 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_sample_id_dependency_case_dead_end(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                reservation_name        => $reservation_name,
-                sample_ids_ref          => $sample_ids_ref,
-                sbatch_file_name        => $recipe_file_path,
+                base_command                      => $base_command,
+                case_id                           => $case_id,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $job_id_chain,
+                reservation_name                  => $reservation_name,
+                sample_ids_ref                    => $sample_ids_ref,
+                sbatch_file_name                  => $recipe_file_path,
             }
         );
         return 1;
@@ -2324,15 +2276,14 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_case_id_dependency_add_to_sample(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                reservation_name        => $reservation_name,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_path,
+                base_command                      => $base_command,
+                case_id                           => $case_id,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $job_id_chain,
+                reservation_name                  => $reservation_name,
+                sample_id                         => $sample_id,
+                sbatch_file_name                  => $recipe_file_path,
             }
         );
 
@@ -2341,16 +2292,15 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_sample_id_dependency_add_to_case(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                parallel_chains_ref     => $parallel_chains_ref,
-                reservation_name        => $reservation_name,
-                sample_ids_ref          => $sample_ids_ref,
-                sbatch_file_name        => $recipe_file_path,
+                base_command                      => $base_command,
+                case_id                           => $case_id,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $job_id_chain,
+                parallel_chains_ref               => $parallel_chains_ref,
+                reservation_name                  => $reservation_name,
+                sample_ids_ref                    => $sample_ids_ref,
+                sbatch_file_name                  => $recipe_file_path,
             }
         );
         return 1;
@@ -2359,16 +2309,15 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_sample_id_dependency_step_in_parallel_to_case(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                reservation_name        => $reservation_name,
-                sample_ids_ref          => $sample_ids_ref,
-                sbatch_file_name        => $recipe_file_path,
-                sbatch_script_tracker   => $recipe_files_tracker,
+                base_command                      => $base_command,
+                case_id                           => $case_id,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $job_id_chain,
+                reservation_name                  => $reservation_name,
+                sample_ids_ref                    => $sample_ids_ref,
+                sbatch_file_name                  => $recipe_file_path,
+                sbatch_script_tracker             => $recipe_files_tracker,
             }
         );
         return 1;
@@ -2377,15 +2326,14 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                reservation_name        => $reservation_name,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_path,
+                base_command                      => $base_command,
+                case_id                           => $case_id,
+                job_id_href                       => $job_id_href,
+                max_parallel_processes_count_href => $max_parallel_processes_count_href,
+                path                              => $job_id_chain,
+                reservation_name                  => $reservation_name,
+                sample_id                         => $sample_id,
+                sbatch_file_name                  => $recipe_file_path,
             }
         );
         return 1;
@@ -2394,16 +2342,14 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_sample_id_dependency_step_in_parallel(
             {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                reservation_name        => $reservation_name,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_path,
-                sbatch_script_tracker   => $recipe_files_tracker,
+                base_command          => $base_command,
+                case_id               => $case_id,
+                job_id_href           => $job_id_href,
+                path                  => $job_id_chain,
+                reservation_name      => $reservation_name,
+                sample_id             => $sample_id,
+                sbatch_file_name      => $recipe_file_path,
+                sbatch_script_tracker => $recipe_files_tracker,
             }
         );
         return 1;
@@ -2413,15 +2359,14 @@ sub submit_slurm_recipe {
 
     slurm_submit_job_sample_id_dependency_add_to_sample(
         {
-            base_command            => $base_command,
-            case_id                 => $case_id,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            path                    => $job_id_chain,
-            reservation_name        => $reservation_name,
-            sample_id               => $sample_id,
-            sbatch_file_name        => $recipe_file_path,
+            base_command                      => $base_command,
+            case_id                           => $case_id,
+            job_id_href                       => $job_id_href,
+            max_parallel_processes_count_href => $max_parallel_processes_count_href,
+            path                              => $job_id_chain,
+            reservation_name                  => $reservation_name,
+            sample_id                         => $sample_id,
+            sbatch_file_name                  => $recipe_file_path,
         }
     );
     return 1;

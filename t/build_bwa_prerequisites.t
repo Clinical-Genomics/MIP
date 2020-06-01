@@ -80,7 +80,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
@@ -90,7 +89,6 @@ my $is_ok = build_bwa_prerequisites(
     {
         active_parameter_href        => \%active_parameter,
         file_info_href               => \%file_info,
-        infile_lane_prefix_href      => \%infile_lane_prefix,
         job_id_href                  => \%job_id,
         log                          => $log,
         parameter_build_suffixes_ref => \@{ $file_info{$parameter_build_name} },

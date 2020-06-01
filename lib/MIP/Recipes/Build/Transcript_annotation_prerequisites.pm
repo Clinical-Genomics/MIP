@@ -39,7 +39,6 @@ sub build_transcript_annotation_prerequisites {
 ##          : $case_id                      => Family ID
 ##          : $filehandle                   => Filehandle to write to
 ##          : $file_info_href               => File info hash {REF}
-##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
@@ -55,7 +54,6 @@ sub build_transcript_annotation_prerequisites {
     my $active_parameter_href;
     my $filehandle;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_build_suffixes_ref;
@@ -87,13 +85,6 @@ sub build_transcript_annotation_prerequisites {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {

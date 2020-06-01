@@ -38,7 +38,6 @@ sub run_analyse_pipeline {
 ##          : $consensus_analysis_type         => Consensus analysis type
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $order_recipes_ref               => Order of recipes
@@ -53,7 +52,6 @@ sub run_analyse_pipeline {
     my $consensus_analysis_type;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $order_parameters_ref;
     my $order_recipes_ref;
@@ -93,13 +91,6 @@ sub run_analyse_pipeline {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -171,7 +162,6 @@ sub run_analyse_pipeline {
             broadcasts_ref                  => $broadcasts_ref,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             job_id_href                     => $job_id_href,
             log                             => $log,
             order_parameters_ref            => $order_parameters_ref,
