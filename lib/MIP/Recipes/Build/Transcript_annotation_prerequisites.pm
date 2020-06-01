@@ -337,7 +337,6 @@ sub _build_refflat {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Remove temporary files
     say {$filehandle} q{## Remove temporary files};
     gnu_rm(
         {
@@ -408,7 +407,6 @@ sub _build_rrna_interval_list {
     my $temp_rrna_bed_file_path = $annotation_file_path_random . $DOT . q{rrna.bed};
     my $temp_dict_file_path     = $annotation_file_path_random . $DOT . q{dict};
 
-    ## Perl regexp for rRNA
     say {$filehandle} q{## Getting rRNA transcripts and converting to bed format};
     perl_nae_oneliners(
         {
@@ -419,7 +417,6 @@ sub _build_rrna_interval_list {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Gtf2Bed
     gtf2bed(
         {
             filehandle      => $filehandle,
@@ -429,7 +426,6 @@ sub _build_rrna_interval_list {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Create sequence dictionary
     picardtools_createsequencedictionary(
         {
             filehandle => $filehandle,
@@ -444,7 +440,6 @@ sub _build_rrna_interval_list {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Picardtools bed to interval_list
     say {$filehandle} q{## Convert bed to interval_list format};
     picardtools_bedtointervallist(
         {
