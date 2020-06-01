@@ -608,9 +608,9 @@ sub update_prioritize_flag {
 
     use MIP::Parameter qw{ get_parameter_attribute };
 
-    return if ( $consensus_analysis_type eq q{wgs} );
-
     return if ( not $prioritize_key );
+
+    return $prioritize_key if ( $consensus_analysis_type eq q{wgs} );
 
     ## Split string into array
     my @variant_callers = split $COMMA, $prioritize_key;
