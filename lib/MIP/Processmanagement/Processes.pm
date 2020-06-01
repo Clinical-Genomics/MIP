@@ -149,7 +149,7 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 ## Arguments: $case_id                           => Case id
 ##          : $case_id_chain_key                 => Case id chain hash key
 ##          : $job_id_href                       => The info on job ids hash {REF}
-##          : $max_parallel_processes_count_href => Maximum number of parallel processes
+##          : $max_parallel_processes_count_href => Maximum number of parallel processes {REF}
 ##          : $path                              => Trunk or branch
 ##          : $sample_ids_ref                    => Sample ids {REF}
 
