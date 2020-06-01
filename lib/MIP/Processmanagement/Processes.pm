@@ -450,7 +450,7 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
 ##          : $max_parallel_processes_count_href => Maximum number of parallel processes
 ##          : $path                              => Trunk or branch
 ##          : $sample_id                         => Sample ID
-##          : $sample_id_chain_key                => Sample ID chain hash key
+##          : $sample_id_chain_key               => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
