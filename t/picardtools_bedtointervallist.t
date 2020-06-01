@@ -63,6 +63,10 @@ diag(   q{Test picardtools_bedtointervallist from Picardtools.pm v}
 my @function_base_commands = qw{ picard BedToIntervalList };
 
 my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -70,10 +74,6 @@ my %base_argument = (
     stderrfile_path_append => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
-    },
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
     },
 );
 
