@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,14 +76,18 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ path to case_chr1.vcf }),
-        expected_output => q{--input} . $SPACE . catfile(qw{ path to case_chr1.vcf})
+        expected_output => q{--feature-file}
+          . $SPACE
+          . catfile(qw{ path to case_chr1.vcf})
     },
 );
 
 my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ path to case_chr1.vcf }),
-        expected_output => q{--input} . $SPACE . catfile(qw{ path to case_chr1.vcf})
+        expected_output => q{--feature-file}
+          . $SPACE
+          . catfile(qw{ path to case_chr1.vcf})
     },
     outfile_path => {
         input           => catfile(qw{ path to case.vcf.idx }),
