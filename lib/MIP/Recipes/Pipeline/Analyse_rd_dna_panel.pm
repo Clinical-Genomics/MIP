@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -39,7 +39,6 @@ sub pipeline_analyse_rd_dna_panel {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
@@ -54,7 +53,6 @@ sub pipeline_analyse_rd_dna_panel {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
@@ -89,13 +87,6 @@ sub pipeline_analyse_rd_dna_panel {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -194,7 +185,6 @@ sub pipeline_analyse_rd_dna_panel {
             broadcasts_ref                  => $broadcasts_ref,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             order_parameters_ref            => $order_parameters_ref,
             parameter_href                  => $parameter_href,
             sample_info_href                => $sample_info_href,
@@ -209,13 +199,12 @@ sub pipeline_analyse_rd_dna_panel {
 
     build_rd_dna_meta_files(
         {
-            active_parameter_href   => $active_parameter_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -224,11 +213,10 @@ sub pipeline_analyse_rd_dna_panel {
     $log->info(q{[Reference check - Reference processed by VT]});
     parse_reference_for_vt(
         {
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -303,14 +291,13 @@ sub pipeline_analyse_rd_dna_panel {
 
                 $analysis_recipe{$recipe}->(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
+                        active_parameter_href => $active_parameter_href,
+                        file_info_href        => $file_info_href,
+                        job_id_href           => $job_id_href,
+                        parameter_href        => $parameter_href,
+                        recipe_name           => $recipe,
+                        sample_id             => $sample_id,
+                        sample_info_href      => $sample_info_href,
                     }
                 );
             }
@@ -321,13 +308,12 @@ sub pipeline_analyse_rd_dna_panel {
 
             $analysis_recipe{$recipe}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    recipe_name             => $recipe,
-                    sample_info_href        => $sample_info_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    parameter_href        => $parameter_href,
+                    recipe_name           => $recipe,
+                    sample_info_href      => $sample_info_href,
                 }
             );
         }

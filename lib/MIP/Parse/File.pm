@@ -39,7 +39,6 @@ sub parse_fastq_infiles {
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $log                             => Log object
 ##          : $sample_info_href                => Info on samples and case hash {REF}
 
@@ -49,7 +48,6 @@ sub parse_fastq_infiles {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $log;
     my $sample_info_href;
 
@@ -73,13 +71,6 @@ sub parse_fastq_infiles {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         log => {
@@ -157,7 +148,6 @@ sub parse_fastq_infiles {
                     file_info_href                  => $file_info_href,
                     file_name                       => $file_name,
                     infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-                    infile_lane_prefix_href         => $infile_lane_prefix_href,
                     lane_tracker                    => $lane_tracker,
                     sample_id                       => $sample_id,
                     sample_info_href                => $sample_info_href,

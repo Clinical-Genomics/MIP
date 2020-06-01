@@ -79,7 +79,7 @@ singularity:
   gatk4:
     executable:
       gatk:
-    uri: docker://broadinstitute/gatk:4.1.6.0
+    uri: docker://broadinstitute/gatk:4.1.4.0
   genmod:
     executable:
       genmod:
@@ -186,9 +186,10 @@ singularity:
     uri: shub://J35P312/TIDDIT:2.8.0
   ucsc:
     executable:
-      wigToBigWig:
       bedToBigBed:
-    uri: docker://clinicalgenomics/ucsc:357
+      gtfToGenePred:
+      wigToBigWig:
+    uri: docker://clinicalgenomics/ucsc:377
   upd:
     executable:
       upd:

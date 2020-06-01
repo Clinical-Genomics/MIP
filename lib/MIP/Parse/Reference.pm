@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_reference_for_vt };
@@ -34,7 +34,6 @@ sub parse_reference_for_vt {
 ## Function : Parse reference to make sure that they have been decomposed and normalised
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
@@ -43,7 +42,6 @@ sub parse_reference_for_vt {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_href;
@@ -54,13 +52,6 @@ sub parse_reference_for_vt {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -112,14 +103,13 @@ sub parse_reference_for_vt {
         ## Split multi allelic records into single records and normalize
         analysis_vt_core(
             {
-                active_parameter_href   => $active_parameter_href,
-                build_gatk_index        => 1,
-                decompose               => 1,
-                normalize               => 1,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_path             => $reference_file_path,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
+                active_parameter_href => $active_parameter_href,
+                build_gatk_index      => 1,
+                decompose             => 1,
+                normalize             => 1,
+                infile_path           => $reference_file_path,
+                job_id_href           => $job_id_href,
+                parameter_href        => $parameter_href,
             }
         );
     }

@@ -27,7 +27,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -100,7 +100,6 @@ my %file_info = (
     },
 );
 my %infile_both_strands_prefix;
-my %infile_lane_prefix;
 my %sample_info;
 
 my %attribute = get_sample_file_attribute(
@@ -171,7 +170,6 @@ for my $sample_id ( keys %file_info ) {
                 file_info_href                  => \%file_info,
                 file_name                       => $file_name,
                 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
                 lane_tracker                    => $lane_tracker,
                 sample_id                       => $sample_id,
                 sample_info_href                => \%sample_info,
@@ -190,9 +188,6 @@ my %expected_result = (
     infile_both_strands_prefix => {
         $sample_id =>
           [ $mip_file_format_with_direction, $mip_file_format_with_direction_2 ],
-    },
-    infile_lane_prefix => {
-        $sample_id => [$mip_file_format],
     },
     sample_info => {
         sample => {
@@ -241,12 +236,14 @@ is_deeply(
     q{Added lane info for single-end read}
 );
 
-## Then add the infile lane prefix
-is_deeply(
-    \%infile_lane_prefix,
-    \%{ $expected_result{infile_lane_prefix} },
-    q{Added MIP file format for single-end read}
-);
+## Then add no_direction_infile_prefixes to file_info
+is( $file_info{$sample_id}{no_direction_infile_prefixes}[0],
+    $mip_file_format, q{Added no_direction_infile_prefixes to file_info } );
+
+## Then add no_direction_infile_prefixes with sequence type
+is( $file_info{$sample_id}{$mip_file_format}{sequence_run_type},
+    q{paired-end},
+    q{Added sequence run type to no_direction_infile_prefixes in file_info } );
 
 ## Then add the infile both strands prefix (i.e. including read direction)
 is_deeply(

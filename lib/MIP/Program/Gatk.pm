@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2393,7 +2393,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         linked_de_bruijn_graph => {
-            allow       => [ 0, 1 ],
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$linked_de_bruijn_graph,
             strict_type => 1,
@@ -2659,7 +2659,7 @@ sub gatk_indexfeaturefile {
 
     push @commands, q{IndexFeatureFile};
 
-    push @commands, q{--input} . $SPACE . $infile_path;
+    push @commands, q{--feature-file} . $SPACE . $infile_path;
 
     ## Add common options
     gatk_common_options(

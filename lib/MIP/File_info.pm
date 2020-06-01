@@ -25,13 +25,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
       add_sample_infile_both_strands_prefix
+      add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
+      get_consensus_sequence_run_type
       get_is_sample_files_compressed
       get_sample_file_attribute
       parse_file_compression_features
@@ -47,7 +49,7 @@ BEGIN {
       set_human_genome_reference_features
       set_primary_contigs
       set_sample_file_attribute
-      set_sample_infile_lane_prefix
+      set_sample_max_parallel_processes_count
       set_select_file_contigs
     };
 }
@@ -156,6 +158,52 @@ sub add_sample_infile_both_strands_prefix {
     return;
 }
 
+sub add_sample_no_direction_infile_prefixes {
+
+## Function : Add sample fastq file prefix without read direction in file name
+## Returns  :
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
+##          : $sample_id       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $mip_file_format;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        mip_file_format => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_file_format,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add no_direction_infile_prefixes
+    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} },
+      $mip_file_format;
+
+    return;
+}
+
 sub check_parameter_metafiles {
 
 ## Function : Checks parameter metafile exists
@@ -255,8 +303,8 @@ sub check_parameter_metafiles {
         ## Checks files to be built by combining filename stub with fileendings
         parse_meta_file_suffixes(
             {
-                active_parameter_href => $active_parameter_href,
-                file_name             => $active_parameter_href->{human_genome_reference},
+                active_parameter_href  => $active_parameter_href,
+                file_name              => $parameter,
                 meta_file_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
                 parameter_href         => $parameter_href,
                 parameter_name         => $parameter_name,
@@ -264,6 +312,77 @@ sub check_parameter_metafiles {
         );
     }
     return;
+}
+
+sub get_consensus_sequence_run_type {
+
+## Function : Get consensus sequence run type across samples
+## Returns  : 0 | $consensus_type
+## Arguments: $file_info_href  => File info hash {REF}
+##          : $sample_ids_ref  => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $has_consensus;
+    my $consensus_type;
+
+    ## Get sequence run modes
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        my %seen;
+
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+
+      INFILE_PREFIX:
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
+        {
+
+            my $sequence_run_type = get_sample_file_attribute(
+                {
+                    attribute      => q{sequence_run_type},
+                    file_info_href => $file_info_href,
+                    file_name      => $infile_prefix,
+                    sample_id      => $sample_id,
+                }
+            );
+            $seen{$sequence_run_type} = $sequence_run_type;
+            $consensus_type = $sequence_run_type;
+        }
+
+        ## Turn of recipe if multiple sequence run types are present
+        $has_consensus = scalar keys %seen <= 1 ? 1 : 0;
+        return 0 if ( not $has_consensus );
+    }
+    return $consensus_type;
 }
 
 sub get_is_sample_files_compressed {
@@ -337,6 +456,7 @@ sub get_sample_file_attribute {
                   lane
                   read_file_command
                   read_length
+                  sequence_run_type
                   }
             ],
             store       => \$attribute,
@@ -370,8 +490,16 @@ sub get_sample_file_attribute {
     }
     if ( not $attribute ) {
 
+        ## Return entire file name array
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{ARRAY} ) {
+            return @{ $file_info_href->{$sample_id}{$file_name} };
+        }
+
         ## Return entire file name hash
-        return %{ $file_info_href->{$sample_id}{$file_name} };
+        if ( ref $file_info_href->{$sample_id}{$file_name} eq q{HASH} ) {
+            return %{ $file_info_href->{$sample_id}{$file_name} };
+        }
+
     }
     ## Get attribute
     my $stored_attribute =
@@ -1239,32 +1367,22 @@ sub set_sample_file_attribute {
     return;
 }
 
-sub set_sample_infile_lane_prefix {
+sub set_sample_max_parallel_processes_count {
 
-## Function : Add sample fastq file lane prefix to infile_lane_prefix
+## Function : Set sample max parallel processes count
 ## Returns  :
-## Arguments: $direction       => Read direction
-##          : $file_info_href  => File info hash {REF}
-##          : $lane_tracker    => Lane tracker
-##          : $mip_file_format => Mip file format without read direction and ".fastq(.gz)"
-##          : $sample_id       => Sample id
+## Arguments: $file_info_href               => File info hash {REF}
+##          : $max_parallel_processes_count => New parallel processes count
+##          : $sample_id                    => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $direction;
     my $file_info_href;
-    my $lane_tracker;
-    my $mip_file_format;
+    my $max_parallel_processes_count;
     my $sample_id;
 
     my $tmpl = {
-        direction => {
-            allow       => [ undef, 1, 2, $INTERLEAVED_READ_DIRECTION, ],
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -1272,17 +1390,11 @@ sub set_sample_infile_lane_prefix {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        lane_tracker => {
-            allow       => qr{\A \d+ \z}xsm,
+        max_parallel_processes_count => {
+            allow       => qr{ \A \d+ \z }sxm,
             defined     => 1,
             required    => 1,
-            store       => \$lane_tracker,
-            strict_type => 1,
-        },
-        mip_file_format => {
-            defined     => 1,
-            required    => 1,
-            store       => \$mip_file_format,
+            store       => \$max_parallel_processes_count,
             strict_type => 1,
         },
         sample_id => {
@@ -1295,11 +1407,8 @@ sub set_sample_infile_lane_prefix {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not $direction == 1 );
-
-    ## Set infile_lane_prefix
-    $file_info_href->{$sample_id}{infile_lane_prefix}[$lane_tracker] = $mip_file_format;
-
+    $file_info_href->{max_parallel_processes_count}{$sample_id} =
+      $max_parallel_processes_count;
     return;
 }
 

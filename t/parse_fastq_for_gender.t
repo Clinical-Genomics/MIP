@@ -74,29 +74,15 @@ my %file_info               = test_mip_hashes(
         mip_hash_name => q{file_info},
     }
 );
-push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-my $infile_lane_prefix = $sample_id;
-my %infile_lane_prefix = ( $sample_id => [ $infile_lane_prefix, $infile_lane_prefix ], );
-
-my %sample_info = (
-    sample => {
-        $sample_id => {
-            file => {
-                $infile_lane_prefix => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
+push @{ $file_info{$sample_id}{mip_infiles} },                  q{ADM1059A3.fastq};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
+$file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
 
 my $is_gender_other = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        sample_info_href        => \%sample_info,
     }
 );
 
@@ -111,8 +97,6 @@ $is_gender_other = parse_fastq_for_gender(
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        sample_info_href        => \%sample_info,
     }
 );
 

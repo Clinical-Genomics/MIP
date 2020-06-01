@@ -95,7 +95,6 @@ my %file_info = test_mip_hashes(
 
 $file_info{human_genome_reference_source} = q{grch};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -117,7 +116,6 @@ foreach my $genome_version ( $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 
             active_parameter_href   => \%active_parameter,
             case_id                 => $case_id,
             file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             parameter_href          => \%parameter,
             profile_base_command    => $slurm_mock_cmd,
@@ -128,5 +126,4 @@ foreach my $genome_version ( $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 
     ## Then return TRUE
     ok( $is_ok, qq{Executed analysis recipe $recipe_name for grch$genome_version} );
 }
-
 done_testing();

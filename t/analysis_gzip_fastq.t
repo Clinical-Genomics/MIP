@@ -85,8 +85,6 @@ my %file_info = test_mip_hashes(
 );
 $file_info{is_files_compressed}{$sample_id} = 0;
 
-my $infile_prefix      = q{an_infile_prefix};
-my %infile_lane_prefix = ( $sample_id => [q{an_infile_prefix}] );
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -95,24 +93,18 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info = (
-    sample => {
-        $sample_id =>
-          { file => { $infile_prefix => { sequence_run_type => q{paired-end} }, }, },
-    }
-);
+my %sample_info;
 
 my $is_ok = analysis_gzip_fastq(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 

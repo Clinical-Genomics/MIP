@@ -21,10 +21,10 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Set::Analysis}  => [qw{ set_recipe_star_aln }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -59,47 +59,40 @@ diag(   q{Test set_recipe_star_aln from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a sample with only paired end fastq files.
-my $sample_id               = q{test};
-my %infile_lane_prefix_hash = ( $sample_id => [qw{ lane1 lane2 }], );
-my %sample_info             = (
-    sample => {
-        $sample_id => {
-            file => {
-                lane1 => {
-                    sequence_run_type => q{paired-end},
-                },
-                lane2 => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
+## Given a sample with file info
+my $mip_file_format = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane1};
+my $sample_id       = q{ADM1059A1};
+my %file_info       = test_mip_hashes( { mip_hash_name => q{file_info}, } );
+my @sample_ids      = ( $sample_id, );
+
 my %analysis_recipe;
 
-## Then use analysis_star_aln recipe
+# When sample has consensus sequence run type
 set_recipe_star_aln(
     {
-        analysis_recipe_href    => \%analysis_recipe,
-        infile_lane_prefix_href => \%infile_lane_prefix_hash,
-        sample_info_href        => \%sample_info,
+        analysis_recipe_href => \%analysis_recipe,
+        file_info_href       => \%file_info,
+        sample_ids_ref       => \@sample_ids,
     }
 );
+
+## Then use analysis_star_aln recipe
 is( $analysis_recipe{star_aln},
     \&analysis_star_aln, q{Set star_aln single sequence run type} );
 
-## Given a sample with mixed single and paired end fastq files.
-$sample_info{sample}{$sample_id}{file}{lane2}{sequence_run_type} = q{single-end};
+# When sample has mixed single and paired end fastq files
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
+$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
 
-## Then use analysis_star_aln recipe_mixed
 set_recipe_star_aln(
     {
-        analysis_recipe_href    => \%analysis_recipe,
-        infile_lane_prefix_href => \%infile_lane_prefix_hash,
-        sample_info_href        => \%sample_info,
+        analysis_recipe_href => \%analysis_recipe,
+        file_info_href       => \%file_info,
+        sample_ids_ref       => \@sample_ids,
     }
 );
+
+## Then use analysis_star_aln recipe_mixed
 is( $analysis_recipe{star_aln},
     \&analysis_star_aln_mixed, q{Set star_aln multiple sequence run type} );
 

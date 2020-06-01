@@ -78,7 +78,6 @@ my %file_info = (
     },
 );
 my %infile_both_strands_prefix;
-my %infile_lane_prefix;
 my %sample_info;
 
 parse_fastq_infiles(
@@ -86,7 +85,6 @@ parse_fastq_infiles(
         active_parameter_href           => \%active_parameter,
         file_info_href                  => \%file_info,
         infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-        infile_lane_prefix_href         => \%infile_lane_prefix,
         log                             => $log,
         sample_info_href                => \%sample_info,
     }
@@ -107,7 +105,6 @@ parse_fastq_infiles(
         active_parameter_href           => \%active_parameter,
         file_info_href                  => \%file_info,
         infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-        infile_lane_prefix_href         => \%infile_lane_prefix,
         log                             => $log,
         sample_info_href                => \%sample_info,
     }
@@ -132,7 +129,6 @@ trap {
             active_parameter_href           => \%active_parameter,
             file_info_href                  => \%file_info,
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_lane_prefix_href         => \%infile_lane_prefix,
             log                             => $log,
             sample_info_href                => \%sample_info,
         }

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,47 +58,60 @@ diag(   q{Test get_sampling_fastq_files from Gender.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
-my %active_parameter = test_mip_hashes(
+## Given a sample id
+my $sample_id = q{ADM1059A3};
+
+## When no files to sample from
+my %file_info;
+
+my ( $return, ) = get_sampling_fastq_files(
     {
-        mip_hash_name => q{active_parameter},
-        recipe_name   => q{bwa_mem},
+        file_info_sample_href => \%{ $file_info{$sample_id} },
+        infile_paths_ref      => [],
     }
 );
-my $sample_id = $active_parameter{sample_ids}[2];
 
-my %file_info = test_mip_hashes(
+## Then return undef
+is( $return, undef, q{No file to sample from} );
+
+## When sequence_run_type is interleaved
+%file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
 );
-push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-my $infile_lane_prefix = $sample_id;
-my %infile_lane_prefix = ( $sample_id => [ $infile_lane_prefix, $infile_lane_prefix ], );
 
-my %sample_info = (
-    sample => {
-        $sample_id => {
-            file => {
-                $infile_lane_prefix => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
+$file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{interleaved};
 
 my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        infile_paths_ref        => $file_info{$sample_id}{mip_infiles},
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        file_info_sample_href => \%{ $file_info{$sample_id} },
+        infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
     }
 );
-my @expected_fastq_files = qw{ ADM1059A3.fastq ADM1059A3.fastq };
+my @expected_fastq_files = qw{ ADM1059A3.fastq };
+
+## Then return true for interleaved
+is( $is_interleaved_fastq, 1, q{Is interleaved file} );
+
+## Then return fastq file
+is_deeply( \@fastq_files, \@expected_fastq_files, q{Got interleaved fastq file} );
+
+## When sequence_run_type is paired-end
+push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
+$file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
+
+( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
+    {
+        file_info_sample_href => \%{ $file_info{$sample_id} },
+        infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
+    }
+);
+push @expected_fastq_files, q{ADM1059A3.fastq};
+
 ## Then return undef for interleaved
-is( $is_interleaved_fastq, undef, q{No interleaved files} );
+is( $is_interleaved_fastq, 0, q{No interleaved files} );
 
 ## Then return fastq files
 is_deeply( \@fastq_files, \@expected_fastq_files, q{Got fastq files} );

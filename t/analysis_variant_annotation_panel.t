@@ -42,16 +42,16 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Variant_annotation} =>
-          [qw{ analysis_variant_annotation }],
+          [qw{ analysis_variant_annotation_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
+use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation_panel };
 
-diag(   q{Test analysis_variant_annotation from Variant_annotation.pm v}
+diag(   q{Test analysis_variant_annotation_panel from Variant_annotation.pm v}
       . $MIP::Recipes::Analysis::Variant_annotation::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -90,7 +90,6 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -103,12 +102,11 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf.gz};
 
 my %sample_info;
 
-my $is_ok = analysis_variant_annotation(
+my $is_ok = analysis_variant_annotation_panel(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
         file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,

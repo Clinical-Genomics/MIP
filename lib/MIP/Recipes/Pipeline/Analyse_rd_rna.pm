@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -37,7 +37,6 @@ sub pipeline_analyse_rd_rna {
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
@@ -52,7 +51,6 @@ sub pipeline_analyse_rd_rna {
     my $broadcasts_ref;
     my $file_info_href;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
@@ -87,13 +85,6 @@ sub pipeline_analyse_rd_rna {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -166,6 +157,8 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
+      qw{ analysis_picardtools_collectrnaseqmetrics };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
@@ -187,7 +180,6 @@ sub pipeline_analyse_rd_rna {
             broadcasts_ref                  => $broadcasts_ref,
             file_info_href                  => $file_info_href,
             infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
             log                             => $log,
             order_parameters_ref            => $order_parameters_ref,
             parameter_href                  => $parameter_href,
@@ -203,54 +195,54 @@ sub pipeline_analyse_rd_rna {
 
     build_rd_rna_meta_files(
         {
-            active_parameter_href   => $active_parameter_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
     ## Dispatch table
     my %analysis_recipe = (
-        analysisrunstatus         => \&analysis_analysisrunstatus,
-        arriba_ar                 => \&analysis_arriba,
-        bcftools_merge            => \&analysis_bcftools_merge,
-        blobfish                  => \&analysis_blobfish,
-        bootstrapann              => \&analysis_bootstrapann,
-        dna_vcf_reformat          => \&analysis_vcf_ase_reformat,
-        fastqc_ar                 => \&analysis_fastqc,
-        gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rna,
-        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
-        gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
-        gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
-        genebody_coverage         => \&analysis_genebody_coverage,
-        gffcompare_ar             => \&analysis_gffcompare,
-        markduplicates            => \&analysis_markduplicates_rna,
-        multiqc_ar                => \&analysis_multiqc,
-        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
-        preseq_ar                 => \&analysis_preseq,
-        qccollect_ar              => \&analysis_mip_qccollect,
-        rseqc                     => \&analysis_rseqc,
-        sacct                     => \&analysis_sacct,
-        salmon_quant              => \&analysis_salmon_quant,
-        star_aln                  => undef,
-        star_fusion               => \&analysis_star_fusion,
-        stringtie_ar              => \&analysis_stringtie,
-        trim_galore_ar            => \&analysis_trim_galore,
-        varianteffectpredictor    => \&analysis_vep,
-        version_collect_ar        => \&analysis_mip_vercollect,
+        analysisrunstatus                => \&analysis_analysisrunstatus,
+        arriba_ar                        => \&analysis_arriba,
+        bcftools_merge                   => \&analysis_bcftools_merge,
+        blobfish                         => \&analysis_blobfish,
+        bootstrapann                     => \&analysis_bootstrapann,
+        dna_vcf_reformat                 => \&analysis_vcf_ase_reformat,
+        fastqc_ar                        => \&analysis_fastqc,
+        gatk_asereadcounter              => \&analysis_gatk_asereadcounter,
+        gatk_baserecalibration           => \&analysis_gatk_baserecalibration_rna,
+        gatk_haplotypecaller             => \&analysis_gatk_haplotypecaller,
+        gatk_splitncigarreads            => \&analysis_gatk_splitncigarreads,
+        gatk_variantfiltration           => \&analysis_gatk_variantfiltration,
+        genebody_coverage                => \&analysis_genebody_coverage,
+        gffcompare_ar                    => \&analysis_gffcompare,
+        markduplicates                   => \&analysis_markduplicates_rna,
+        multiqc_ar                       => \&analysis_multiqc,
+        picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
+        picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
+        preseq_ar                        => \&analysis_preseq,
+        qccollect_ar                     => \&analysis_mip_qccollect,
+        rseqc                            => \&analysis_rseqc,
+        sacct                            => \&analysis_sacct,
+        salmon_quant                     => \&analysis_salmon_quant,
+        star_aln                         => undef,
+        star_fusion                      => \&analysis_star_fusion,
+        stringtie_ar                     => \&analysis_stringtie,
+        trim_galore_ar                   => \&analysis_trim_galore,
+        varianteffectpredictor           => \&analysis_vep,
+        version_collect_ar               => \&analysis_mip_vercollect,
     );
 
     ## Update which star recipe to use depending on fastq infile mix
     set_recipe_star_aln(
         {
-            analysis_recipe_href    => \%analysis_recipe,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_info_href        => $sample_info_href,
+            analysis_recipe_href => \%analysis_recipe,
+            file_info_href       => $file_info_href,
+            sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 
@@ -279,14 +271,13 @@ sub pipeline_analyse_rd_rna {
 
                 $analysis_recipe{$recipe}->(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
+                        active_parameter_href => $active_parameter_href,
+                        file_info_href        => $file_info_href,
+                        job_id_href           => $job_id_href,
+                        parameter_href        => $parameter_href,
+                        recipe_name           => $recipe,
+                        sample_id             => $sample_id,
+                        sample_info_href      => $sample_info_href,
                     }
                 );
             }
@@ -296,13 +287,12 @@ sub pipeline_analyse_rd_rna {
 
             $analysis_recipe{$recipe}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    recipe_name             => $recipe,
-                    sample_info_href        => $sample_info_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    parameter_href        => $parameter_href,
+                    recipe_name           => $recipe,
+                    sample_info_href      => $sample_info_href,
                 }
             );
         }

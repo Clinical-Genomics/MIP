@@ -39,16 +39,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File_info}      => [qw{ set_sample_infile_lane_prefix }],
+        q{MIP::File_info}      => [qw{ add_sample_no_direction_infile_prefixes }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File_info qw{ set_sample_infile_lane_prefix };
+use MIP::File_info qw{ add_sample_no_direction_infile_prefixes };
 
-diag(   q{Test set_sample_infile_lane_prefix from File_info.pm v}
+diag(   q{Test add_sample_no_direction_infile_prefixes from File_info.pm v}
       . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -57,44 +57,22 @@ diag(   q{Test set_sample_infile_lane_prefix from File_info.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a lane_tracker, sample_id and an infile_lane_prefix
+## Given a sample_id and an no_direction_infile_prefixes
 my %file_info;
-my $lane_tracker       = 0;
-my $infile_lane_prefix = q{infile_lane_prefix};
-my $sample_id          = q{sample_id};
+my $no_direction_infile_prefixes = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7};
+my $sample_id                  = q{sample_id};
 
-## When direction is not one
-my $direction = 2;
-
-## Then do not set infile_lane_prefix in file_info hash
-set_sample_infile_lane_prefix(
+## Then do not set no_direction_infile_prefixes in file_info hash
+add_sample_no_direction_infile_prefixes(
     {
-        direction       => $direction,
         file_info_href  => \%file_info,
-        lane_tracker    => $lane_tracker,
-        mip_file_format => $infile_lane_prefix,
+        mip_file_format => $no_direction_infile_prefixes,
         sample_id       => $sample_id,
     }
 );
 
-is( @{ $file_info{$sample_id}{infile_lane_prefix} },
-    0, q{Did not set infile_prefix for read direction two} );
-
-## When direction is one
-$direction = 1;
-
-## Then set infile_lane_prefix in file_info hash
-set_sample_infile_lane_prefix(
-    {
-        direction       => $direction,
-        file_info_href  => \%file_info,
-        lane_tracker    => $lane_tracker,
-        mip_file_format => $infile_lane_prefix,
-        sample_id       => $sample_id,
-    }
-);
-
-is( @{ $file_info{$sample_id}{infile_lane_prefix} },
-    1, q{Set infile_prefix for read direction one} );
+## Then set no_direction_infile_prefixes in file_info hash
+is( @{ $file_info{$sample_id}{no_direction_infile_prefixes} },
+    1, q{Add no_direction_infile_prefixes to file_info} );
 
 done_testing();

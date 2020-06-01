@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,8 +36,6 @@ BEGIN {
       get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
       reload_previous_pedigree_info
       set_file_path_to_store
       set_gene_panel
@@ -461,122 +459,6 @@ sub get_sample_info_sample_recipe_attributes {
     return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name} };
 }
 
-sub get_sequence_run_type {
-
-## Function : Return sequence run type
-## Returns  : $sequence_run_type | %sequence_run_type
-## Arguments: $infile_lane_prefix      => Infile lane prefix
-##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $infile_lane_prefix_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( %{$infile_lane_prefix_href} ) {
-
-        my %sequence_run_type;
-
-      INFILE_LANE_PREFIX:
-        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
-            $sequence_run_type{$infile_lane_prefix} =
-              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-              {sequence_run_type};
-        }
-
-        return %sequence_run_type;
-    }
-    elsif ( defined $infile_lane_prefix ) {
-
-        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-          {sequence_run_type};
-
-    }
-
-    croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
-}
-
-sub get_sequence_run_type_is_interleaved {
-
-## Function : Get sequence run type interleaved info
-## Returns  : undef (not interleaved) | 1 (is interleaved)
-## Arguments: $infile_lane_prefix => Infile lane prefix
-##          : $sample_id          => Sample id
-##          : $sample_info_href   => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            required    => 1,
-            defined     => 1,
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return
-      if (
-        ref $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-        {sequence_run_type} ne q{HASH} );
-
-    return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-      {sequence_run_type}{interleaved};
-
-}
-
 sub reload_previous_pedigree_info {
 
 ## Function : Updates sample_info hash with previous run pedigree info
@@ -878,7 +760,6 @@ sub set_infile_info {
 ## Arguments: $file_info_href                  => File info hash {REF}
 ##          : $file_name                       => File name
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
 ##          : $sample_id                       => Sample id
 ##          : $sample_info_href                => Info on samples and case hash {REF}
@@ -889,7 +770,6 @@ sub set_infile_info {
     my $file_info_href;
     my $file_name;
     my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
     my $lane_tracker;
     my $sample_id;
     my $sample_info_href;
@@ -913,13 +793,6 @@ sub set_infile_info {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         lane_tracker => {
@@ -946,8 +819,13 @@ sub set_infile_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
-    use MIP::File_info
-      qw{ add_sample_infile_both_strands_prefix get_sample_file_attribute set_sample_infile_lane_prefix };
+    use MIP::File_info qw{
+      add_sample_infile_both_strands_prefix
+      add_sample_no_direction_infile_prefixes
+      get_sample_file_attribute
+      set_sample_file_attribute
+      set_sample_max_parallel_processes_count
+    };
 
     my %attribute = get_sample_file_attribute(
         {
@@ -977,17 +855,30 @@ sub set_infile_info {
     ## Read 1
     if ( $attribute{direction} == 1 ) {
 
-        ## Save new format (sample_id_date_flow-cell_index_lane) in hash with sample_id as keys and inputfiles in array.
-        ## Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
-        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
-
-        set_sample_infile_lane_prefix(
+        add_sample_no_direction_infile_prefixes(
             {
-                direction       => $attribute{direction},
                 file_info_href  => $file_info_href,
-                lane_tracker    => $lane_tracker,
                 mip_file_format => $mip_file_format,
                 sample_id       => $sample_id,
+            }
+        );
+        my $sequence_run_type =
+          $attribute{is_interleaved} ? q{interleaved} : q{single-end};
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => $sequence_run_type,
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
+
+        set_sample_max_parallel_processes_count(
+            {
+                file_info_href               => $file_info_href,
+                max_parallel_processes_count => $lane_tracker,
+                sample_id                    => $sample_id,
             }
         );
 
@@ -1011,11 +902,17 @@ sub set_infile_info {
     if ( $attribute{direction} == 2 ) {
         ## 2nd read direction
 
-        # Alias
-        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];    
-        # $lane_tracker -1 since it gets incremented after direction eq 1
-
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
+
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => q{paired-end},
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
 
         ## Alias
         my $file_level_href =

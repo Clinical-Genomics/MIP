@@ -82,7 +82,6 @@ my %file_info = test_mip_hashes(
 );
 $file_info{human_genome_reference_name_prefix} = q{human_genome};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -95,13 +94,12 @@ my %sample_info;
 
 my $is_ok = build_rd_dna_vcf_rerun_meta_files(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        log                     => $log,
-        parameter_href          => \%parameter,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        log                   => $log,
+        parameter_href        => \%parameter,
+        sample_info_href      => \%sample_info,
     }
 );
 

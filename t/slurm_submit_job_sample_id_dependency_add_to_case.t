@@ -60,30 +60,33 @@ diag( q{Test slurm_submit_job_sample_id_dependency_add_to_case from Slurm_proces
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+
 ## Given a mock slurm and script
-my $case_id = q{case1};
-my %infile_lane_prefix;
-my %job_id         = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $path           = q{MAIN};
+my $case_id                      = q{case1};
+my %job_id                       = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my $path                         = q{MAIN};
+my %max_parallel_processes_count = (
+    sample1 => 0,
+    sample2 => 0,
+);
 my @sample_ids     = qw{ sample1 sample2 };
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
-## Add paralell case chain job id
+## When parallel case chain job id exists
 @{ $job_id{case1_MAIN}{case1_parallel_MAIN0} } = qw{ job_id_10 };
 
 slurm_submit_job_sample_id_dependency_add_to_case(
     {
-        base_command            => $slurm_mock_cmd,
-        case_id                 => $case_id,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        log                     => $log,
-        path                    => $path,
-        sample_ids_ref          => \@sample_ids,
-        sbatch_file_name        => $sbatch_file_name,
+        base_command                      => $slurm_mock_cmd,
+        case_id                           => $case_id,
+        job_id_href                       => \%job_id,
+        max_parallel_processes_count_href => \%max_parallel_processes_count,
+        path                              => $path,
+        sample_ids_ref                    => \@sample_ids,
+        sbatch_file_name                  => $sbatch_file_name,
     }
 );
 

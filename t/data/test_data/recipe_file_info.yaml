@@ -1,5 +1,11 @@
 ---
 ADM1059A1:
+  ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7:
+    sequence_run_type: single-end
+  infile_lane_prefix:
+    - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
+  no_direction_infile_prefixes:
+    - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
   mip_infiles_dir: infile_dir
   mip_infiles:
     - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
@@ -15,12 +21,16 @@ ADM1059A1:
     read_file_command: cat
     read_length: 151
 ADM1059A2:
+  infile_lane_prefix:
+    - ADM1059A2
   mip_infiles_dir: infile_dir
   mip_infiles:
     - ADM1059A2.fastq
   ADM1059A2.fastq:
     is_file_compressed: 0
 ADM1059A3:
+  infile_lane_prefix:
+    - ADM1059A3
   mip_infiles_dir: infile_dir
   mip_infiles:
     - ADM1059A3.fastq
@@ -147,6 +157,10 @@ human_genome_reference_file_endings:
   - .dict
   - .fai
 human_genome_reference_name_prefix: grch37_homo_sapiens_-d5-
+max_parallel_processes_count:
+  ADM1059A1: 0
+  ADM1059A2: 0
+  ADM1059A3: 0
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:
@@ -205,3 +219,5 @@ sorted_select_file_contigs:
   - 21
   - Y
   - MT
+transcript_annotation_file_endings:
+  - .refFlat

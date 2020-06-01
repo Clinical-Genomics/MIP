@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,7 +76,6 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -89,24 +88,23 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my $is_ok = analysis_vt_core(
     {
-        active_parameter_href   => \%active_parameter,
-        bgzip                   => 1,
-        build_gatk_index        => 1,
-        case_id                 => $case_id,
-        contig                  => 1,
-        gnu_sed                 => 1,
-        decompose               => 1,
-        normalize               => 1,
-        uniq                    => 1,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        infile_path             => q{an_infile_path.vcf},
-        instream                => 0,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        tabix                   => 1,
-        xargs_file_path_prefix  => q{a_file_prefix},
+        active_parameter_href  => \%active_parameter,
+        bgzip                  => 1,
+        build_gatk_index       => 1,
+        case_id                => $case_id,
+        contig                 => 1,
+        gnu_sed                => 1,
+        decompose              => 1,
+        normalize              => 1,
+        uniq                   => 1,
+        infile_path            => q{an_infile_path.vcf},
+        instream               => 0,
+        job_id_href            => \%job_id,
+        parameter_href         => \%parameter,
+        profile_base_command   => $slurm_mock_cmd,
+        recipe_name            => $recipe_name,
+        tabix                  => 1,
+        xargs_file_path_prefix => q{a_file_prefix},
     }
 );
 

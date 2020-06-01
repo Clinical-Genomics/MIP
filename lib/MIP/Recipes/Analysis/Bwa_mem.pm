@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -36,26 +36,24 @@ BEGIN {
 
 sub analysis_bwa_mem {
 
-## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files using the bwa mem binary
-## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
-##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name             => Program name
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and case hash {REF}
-##          : $temp_directory          => Temporary directory
+    ## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files using the bwa mem binary
+    ## Returns  :
+    ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+    ##          : $case_id                 => Family id
+    ##          : $file_info_href          => File info hash {REF}
+    ##          : $job_id_href             => Job id hash {REF}
+    ##          : $parameter_href          => Parameter hash {REF}
+    ##          : $profile_base_command    => Submission profile base command
+    ##          : $recipe_name             => Program name
+    ##          : $sample_id               => Sample id
+    ##          : $sample_info_href        => Info on samples and case hash {REF}
+    ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -85,13 +83,6 @@ sub analysis_bwa_mem {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -141,19 +132,18 @@ sub analysis_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bwa qw{ bwa_mem };
-    use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
+    use MIP::File_info qw{get_sample_file_attribute};
+    use MIP::Get::File qw{get_io_files};
+    use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources};
+    use MIP::Parse::File qw{parse_io_outfiles};
+    use MIP::Processmanagement::Processes qw{submit_recipe};
+    use MIP::Program::Bwa qw{bwa_mem};
+    use MIP::Program::Samtools qw{samtools_stats samtools_sort samtools_view};
     use MIP::Sample_info qw{
       get_rg_header_line
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
       set_recipe_metafile_in_sample_info
-      set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+      set_recipe_outfile_in_sample_info};
+    use MIP::Script::Setup_script qw{setup_script};
 
     ### PREPROCESSING:
 
@@ -174,12 +164,9 @@ sub analysis_bwa_mem {
             stream         => q{in},
         }
     );
-    my @infile_paths         = @{ $io{in}{file_paths} };
-    my @infile_names         = @{ $io{in}{file_names} };
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
+    my @infile_paths = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -194,6 +181,13 @@ sub analysis_bwa_mem {
         }
     );
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     %io = (
         %io,
         parse_io_outfiles(
@@ -201,7 +195,7 @@ sub analysis_bwa_mem {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                file_name_prefixes_ref => $file_info_sample{no_direction_infile_prefixes},
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
@@ -209,7 +203,6 @@ sub analysis_bwa_mem {
         )
     );
 
-    my $outdir_path           = $io{out}{dir_path};
     my $outfile_suffix        = $io{out}{file_suffix};
     my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
     my @outfile_paths         = @{ $io{out}{file_paths} };
@@ -218,10 +211,6 @@ sub analysis_bwa_mem {
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
-
-    ## Assign file tags
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
 
     my $output_format;
     my $uncompressed_bam_output;
@@ -238,7 +227,7 @@ sub analysis_bwa_mem {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
+        each @{ $file_info_sample{no_direction_infile_prefixes} } )
     {
 
         ## Assign file features
@@ -246,23 +235,16 @@ sub analysis_bwa_mem {
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
         # Collect interleaved status for fastq file
-        my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
+        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -282,10 +264,6 @@ sub analysis_bwa_mem {
                 temp_directory                  => $temp_directory,
             }
         );
-
-        # Split to enable submission to %sample_info_qc later
-        my ( $volume, $directory, $stderr_file ) =
-          splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
         ### SHELL:
 
@@ -463,15 +441,16 @@ sub analysis_bwa_mem {
 
             submit_recipe(
                 {
-                    base_command            => $profile_base_command,
-                    case_id                 => $case_id,
-                    dependency_method       => q{sample_to_sample_parallel},
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_chain            => $job_id_chain,
-                    job_id_href             => $job_id_href,
+                    base_command      => $profile_base_command,
+                    case_id           => $case_id,
+                    dependency_method => q{sample_to_sample_parallel},
+                    job_id_chain      => $job_id_chain,
+                    job_id_href       => $job_id_href,
                     job_reservation_name =>
                       $active_parameter_href->{job_reservation_name},
-                    log                  => $log,
+                    log => $log,
+                    max_parallel_processes_count_href =>
+                      $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $infile_index,
                     sample_id            => $sample_id,
@@ -490,7 +469,6 @@ sub analysis_run_bwa_mem {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -504,7 +482,6 @@ sub analysis_run_bwa_mem {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -534,13 +511,6 @@ sub analysis_run_bwa_mem {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -590,6 +560,7 @@ sub analysis_run_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{get_sample_file_attribute};
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -598,7 +569,6 @@ sub analysis_run_bwa_mem {
     use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
-      get_sequence_run_type
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -623,12 +593,9 @@ sub analysis_run_bwa_mem {
             temp_directory => $temp_directory,
         }
     );
-    my @infile_paths         = @{ $io{in}{file_paths} };
-    my @infile_names         = @{ $io{in}{file_names} };
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
+    my @infile_paths = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -643,6 +610,13 @@ sub analysis_run_bwa_mem {
         }
     );
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     %io = (
         %io,
         parse_io_outfiles(
@@ -650,7 +624,7 @@ sub analysis_run_bwa_mem {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                file_name_prefixes_ref => $file_info_sample{no_direction_infile_prefixes},
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
@@ -659,7 +633,6 @@ sub analysis_run_bwa_mem {
         )
     );
 
-    my $outdir_path           = $io{out}{dir_path};
     my $outfile_suffix        = $io{out}{file_suffix};
     my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
     my @outfile_paths         = @{ $io{out}{file_paths} };
@@ -668,10 +641,6 @@ sub analysis_run_bwa_mem {
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
-
-    ## Assign file tags
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
 
     my $output_format;
     my $uncompressed_bam_output;
@@ -688,7 +657,7 @@ sub analysis_run_bwa_mem {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
+        each @{ $file_info_sample{no_direction_infile_prefixes} } )
     {
 
         ## Assign file features
@@ -696,12 +665,12 @@ sub analysis_run_bwa_mem {
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
@@ -723,10 +692,6 @@ sub analysis_run_bwa_mem {
                 temp_directory                  => $temp_directory,
             }
         );
-
-        # Split to enable submission to %sample_info_qc later
-        my ( $volume, $directory, $stderr_file ) =
-          splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
         ### SHELL:
 
@@ -890,15 +855,16 @@ sub analysis_run_bwa_mem {
 
             submit_recipe(
                 {
-                    base_command            => $profile_base_command,
-                    case_id                 => $case_id,
-                    dependency_method       => q{sample_to_sample_parallel},
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_chain            => $job_id_chain,
-                    job_id_href             => $job_id_href,
+                    base_command      => $profile_base_command,
+                    case_id           => $case_id,
+                    dependency_method => q{sample_to_sample_parallel},
+                    job_id_chain      => $job_id_chain,
+                    job_id_href       => $job_id_href,
                     job_reservation_name =>
                       $active_parameter_href->{job_reservation_name},
-                    log                  => $log,
+                    log => $log,
+                    max_parallel_processes_count_href =>
+                      $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $infile_index,
                     sample_id            => $sample_id,

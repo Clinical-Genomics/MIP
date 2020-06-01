@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,9 +91,9 @@ $file_info{star_aln_reference_genome} = [q{reference_genome}];
         mip_hash_name => q{io},
     }
 );
-
-my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
-my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
+my $mip_file_format = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane2};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
+$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -109,15 +109,15 @@ my %sample_info = (
     sample => {
         $sample_id => {
             file => {
-                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
+                ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7 => {
                     sequence_run_type   => q{paired-end},
                     read_direction_file => {
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_1 => {
                             flowcell       => q{TestFilev2},
                             lane           => q{1},
                             sample_barcode => q{GAGATTC},
                         },
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_2 => {
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_2 => {
                             flowcell       => q{TestFilev2},
                             lane           => q{1},
                             sample_barcode => q{GAGATTC},
@@ -141,15 +141,14 @@ my %sample_info = (
 
 my $is_ok = analysis_star_aln_mixed(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 
