@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
 - VEP: 97 -> 99
+- CADD: v1.5 -> v1.6
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml

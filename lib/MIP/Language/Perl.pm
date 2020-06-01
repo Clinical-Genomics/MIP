@@ -500,13 +500,13 @@ sub _synonyms_grch37_to_grch38 {
 
     my ($arg_href) = @_;
 
-    ## Add "chr" prefix to chromosome name and rename "M" to "MT"
-    my $modify_chr_prefix = q?'if($_=~s/^M/chrMT/g) {} ?;
+    ## Add "chr" prefix to chromosome name and rename "MT" to "chrM"
+    my $modify_chr_prefix = q?'if($_=~s/^MT/chrM/g) {} ?;
 
     ## Add "chr" prefix to chromosome name
-    $modify_chr_prefix .= q?elsif ($_=~s/^(.+)/chr$1/g) {} ?;
+    $modify_chr_prefix .= q?elsif ($_=~s/^([^#])/chr$1/g) {} ?;
 
-## Print line
+    ## Print line
     $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;
@@ -520,13 +520,13 @@ sub _synonyms_grch38_to_grch37 {
 
     my ($arg_href) = @_;
 
-## Remove "chr" prefix from chromosome name and rename "MT" to "M"
-    my $modify_chr_prefix = q?'if($_=~s/^chrMT/M/g) {} ?;
+    ## Remove "chr" prefix from chromosome name and rename "chrM" to "MT"
+    my $modify_chr_prefix = q?'if($_=~s/^chrM/MT/g) {} ?;
 
-## Remove "chr" prefix from chromosome name
+    ## Remove "chr" prefix from chromosome name
     $modify_chr_prefix .= q?elsif ($_=~s/^chr(.+)/$1/g) {} ?;
 
-## Print line
+    ## Print line
     $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;

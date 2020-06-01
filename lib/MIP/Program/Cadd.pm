@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ cadd };
@@ -33,7 +33,7 @@ BEGIN {
 
 sub cadd {
 
-## Function : Perl wrapper for dynamic annotation using CADD version 1.4.
+## Function : Perl wrapper for dynamic annotation using CADD version 1.6.
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $genome_build           => Genome build
@@ -43,8 +43,6 @@ sub cadd {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $temp_dir_path          => Path to temp directory
-##          : $version                => Version of CADD script
 
     my ($arg_href) = @_;
 
@@ -57,8 +55,6 @@ sub cadd {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-    my $temp_dir_path;
-    my $version;
 
     my $tmpl = {
         filehandle => {
@@ -94,19 +90,6 @@ sub cadd {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-        temp_dir_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_dir_path,
-            strict_type => 1,
-        },
-        version => {
-            allow       => [qw{ v1.4 v1.5}],
-            defined     => 1,
-            required    => 1,
-            store       => \$version,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -120,16 +103,10 @@ sub cadd {
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
-    if ($version) {
-
-        push @commands, q{-v} . $SPACE . $version;
-    }
     if ($genome_build) {
 
         push @commands, q{-g} . $SPACE . $genome_build;
     }
-
-    push @commands, q{-t} . $SPACE . $temp_dir_path;
 
     push @commands, $infile_path;
 

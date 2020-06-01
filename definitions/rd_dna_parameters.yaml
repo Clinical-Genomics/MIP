@@ -249,7 +249,7 @@ recipe_time:
     endvariantannotationblock: 2
     expansionhunter: 2
     fastqc_ar: 10
-    variant_annotation: 1
+    variant_annotation: 3
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_cadd_whole_genome_snvs };
@@ -122,7 +122,6 @@ sub download_cadd_whole_genome_snvs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -174,45 +173,14 @@ sub download_cadd_whole_genome_snvs {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    ## Construct outdir path
-    my $outdir_path =
-      catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh38_v1.5 no_anno } );
-    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
-
-        $outdir_path =
-          catdir( $reference_dir, qw{ CADD-scripts data prescored GRCh37_v1.4 no_anno } );
-    }
-
-    if ( not -d $outdir_path ) {
-        gnu_mkdir(
-            {
-                filehandle       => $filehandle,
-                indirectory_path => $outdir_path,
-                parents          => 1,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
-
     get_reference(
         {
             filehandle     => $filehandle,
             recipe_name    => $recipe_name,
-            reference_dir  => $outdir_path,
+            reference_dir  => $reference_dir,
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
-        }
-    );
-
-    ## Create a mock file for the later download processes to recognize
-    my $file_path    = catfile( $reference_dir, $reference_href->{outfile} );
-    my $echo_message = q{File downloaded to} . $SPACE . $outdir_path;
-    gnu_echo(
-        {
-            outfile_path => $file_path,
-            filehandle   => $filehandle,
-            strings_ref  => [$echo_message],
         }
     );
 

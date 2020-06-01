@@ -134,13 +134,12 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
     use MIP::Constants qw{ set_singularity_constants };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
-    use MIP::Set::Analysis
-      qw{ set_recipe_cadd set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
@@ -210,8 +209,8 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus => \&analysis_analysisrunstatus,
-        cadd_ar => undef,    # Depends on human reference version
+        analysisrunstatus                => \&analysis_analysisrunstatus,
+        cadd_ar                          => \&analysis_cadd,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
@@ -230,15 +229,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
         version_collect_ar => \&analysis_mip_vercollect,
         vt_ar              => \&analysis_vt,
-    );
-
-    ## Set correct cadd recipe depending on version of the human_genome_reference
-    set_recipe_cadd(
-        {
-            analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
-        }
     );
 
     ## Special case for rankvariants recipe

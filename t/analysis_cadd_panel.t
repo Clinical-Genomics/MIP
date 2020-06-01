@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,7 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $GENOME_BUILD_VERSION => 38;
+Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
 
 BEGIN {
 
@@ -92,8 +93,7 @@ my %file_info = test_mip_hashes(
     }
 );
 
-$file_info{human_genome_reference_source}  = q{grch};
-$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION;
+$file_info{human_genome_reference_source} = q{grch};
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -106,20 +106,24 @@ my %parameter = test_mip_hashes(
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 my %sample_info;
 
-my $is_ok = analysis_cadd_panel(
-    {
-        active_parameter_href => \%active_parameter,
-        case_id               => $case_id,
-        file_info_href        => \%file_info,
-        job_id_href           => \%job_id,
-        parameter_href        => \%parameter,
-        profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        sample_info_href      => \%sample_info,
-    }
-);
+GENOME_VERSION:
+foreach my $genome_version ( $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 ) {
 
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+    $file_info{human_genome_reference_version} = $genome_version;
 
+    my $is_ok = analysis_cadd_panel(
+        {
+            active_parameter_href   => \%active_parameter,
+            case_id                 => $case_id,
+            file_info_href          => \%file_info,
+            job_id_href             => \%job_id,
+            parameter_href          => \%parameter,
+            profile_base_command    => $slurm_mock_cmd,
+            recipe_name             => $recipe_name,
+            sample_info_href        => \%sample_info,
+        }
+    );
+    ## Then return TRUE
+    ok( $is_ok, qq{Executed analysis recipe $recipe_name for grch$genome_version} );
+}
 done_testing();

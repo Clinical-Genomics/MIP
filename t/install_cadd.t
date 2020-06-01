@@ -99,7 +99,7 @@ my $expected = [
         qw{ CADD-scripts data annotations }
       )
       . $COLON
-      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } )
+      . catdir( $FORWARD_SLASH, qw{ opt conda share CADD-scripts data annotations } )
 ];
 install_cadd(
     {
