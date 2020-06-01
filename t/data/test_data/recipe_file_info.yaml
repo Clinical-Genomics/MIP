@@ -221,3 +221,4 @@ sorted_select_file_contigs:
   - MT
 transcript_annotation_file_endings:
   - .refFlat
+  - .rrna.interval_list

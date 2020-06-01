@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collectrnaseqmetrics };
@@ -198,6 +198,7 @@ sub analysis_picardtools_collectrnaseqmetrics {
 
     my $transcript_annotation = $active_parameter_href->{transcript_annotation};
     my $refflat_ending        = $file_info_href->{transcript_annotation_file_endings}[0];
+    my $rrna_ending           = $file_info_href->{transcript_annotation_file_endings}[1];
 
     ## Filehandles
     # Create anonymous filehandle
@@ -238,11 +239,12 @@ sub analysis_picardtools_collectrnaseqmetrics {
             infile_path               => $infile_path,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path         => $outfile_path,
-            strand_specificity   => $strandedness,
-            temp_directory       => $temp_directory,
+            java_use_large_pages     => $active_parameter_href->{java_use_large_pages},
+            memory_allocation        => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path             => $outfile_path,
+            rrna_intervals_file_path => $transcript_annotation . $rrna_ending,
+            strand_specificity       => $strandedness,
+            temp_directory           => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;

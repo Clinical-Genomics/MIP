@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -99,8 +99,6 @@ my %job_id;
 my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
-
-my $refflat_suffix = $file_info{transcript_annotation_file_endings}[0];
 
 my $is_ok = build_transcript_annotation_prerequisites(
     {

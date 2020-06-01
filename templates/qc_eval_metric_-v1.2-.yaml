@@ -76,14 +76,19 @@ wes:
     fraction_of_common_variants:
       lt: 0.55
 wts:
-  trim_galore_stats:
-    percentage_bp_after_trimming:
-      lt: 60
-    percentage_reads_after_trimming:
-      lt: 80
+  collectrnaseqmetrics:
+    PCT_MRNA_BASES:
+      lt: 0.9
+    PCT_RIBOSOMAL_BASES:
+      gt: 0.05
   markduplicates:
     fraction_duplicates:
       gt: 0.5
   star_log:
     percentage_uniquely_mapped_reads:
       lt: 75
+  trim_galore_stats:
+    percentage_bp_after_trimming:
+      lt: 60
+    percentage_reads_after_trimming:
+      lt: 80

@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -130,8 +130,8 @@ sub install_mip_scripts {
               mip_rd_dna_vcf_rerun_config.yaml
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
-              qc_eval_metric_-v1.1-.yaml
-              qc_regexp_-v1.25-.yaml
+              qc_eval_metric_-v1.2-.yaml
+              qc_regexp_-v1.26-.yaml
               rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
               }

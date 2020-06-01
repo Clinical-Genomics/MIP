@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -185,6 +185,7 @@ sub perl_nae_oneliners {
         q{get_fastq_header_v1.8}             => \&_get_fastq_header_v1_8,
         q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
         get_fastq_read_length                => \&_get_fastq_read_length,
+        get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
@@ -418,6 +419,27 @@ sub _get_fastq_read_length {
     $read_length_regexp .= q?print $seq_length;last;}' ?;
 
     return $read_length_regexp;
+}
+
+sub _get_rrna_transcripts {
+
+## Function : Return rRNA transcripts from gtf file
+## Returns  : $rrna_transcripts
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Print header line
+    my $rrna_transcripts = q?'if (/^#/) {print $_} ?;
+
+    # For rRNA, rRNA_pseudogenes or Mt_rRNA
+    $rrna_transcripts .=
+      q?elsif ($_ =~ / gene_type \s \"(rRNA|rRNA_pseudogene|Mt_rRNA)\" /nxms)?;
+
+    # Print
+    $rrna_transcripts .= q?{print $_}'?;
+
+    return $rrna_transcripts;
 }
 
 sub _get_select_contigs_by_col {

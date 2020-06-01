@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.36;
+our $VERSION = 1.37;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -95,7 +95,7 @@ sub run {
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
-        transcript_annotation_file_endings  => [qw{ .refFlat }],
+        transcript_annotation_file_endings  => [qw{ .refFlat .rrna.interval_list }],
     );
 
     mip_analyse(
