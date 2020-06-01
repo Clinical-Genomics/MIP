@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -57,6 +57,7 @@ diag(   q{Test update_prioritize_flag from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given recipes, variant callers and prioritization
 my @recipes   = qw{ cnvnator_ar delly_reformat tiddit };
 my %parameter = (
     cnvnator_ar    => { variant_caller => q{cnvnator}, },
@@ -64,7 +65,9 @@ my %parameter = (
     manta          => { variant_caller => q{manta}, },
     tiddit         => { variant_caller => q{tiddit}, },
 );
-my $prioritize_key          = q{manta,delly,cnvnator,tiddit};
+my $prioritize_key = q{manta,delly,cnvnator,tiddit};
+
+## When consensus analysis type is wes
 my $consensus_analysis_type = q{wes};
 
 $prioritize_key = update_prioritize_flag(
@@ -76,6 +79,25 @@ $prioritize_key = update_prioritize_flag(
     }
 );
 
-is( $prioritize_key, q{manta}, q{Updated prioritize flag} );
+## Then return only wes recipe
+is( $prioritize_key, q{manta}, q{Updated prioritize flag for consensus wes} );
 
+## When consensus analysis type is wgs
+$consensus_analysis_type = q{wgs};
+my $prioritize_key_wgs = q{manta,delly,cnvnator,tiddit};
+
+$prioritize_key = update_prioritize_flag(
+    {
+        consensus_analysis_type => $consensus_analysis_type,
+        parameter_href          => \%parameter,
+        prioritize_key          => $prioritize_key_wgs,
+        recipes_ref             => \@recipes,
+    }
+);
+
+is(
+    $prioritize_key,
+    q{manta,delly,cnvnator,tiddit},
+    q{Updated prioritize flag consensus wgs}
+);
 done_testing();
