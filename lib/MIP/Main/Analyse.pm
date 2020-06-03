@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.55;
+    our $VERSION = 1.56;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -171,8 +171,7 @@ sub mip_analyse {
 
 #### Set program parameters
 
-## Directories, files, job_ids and sample_info
-    my ( %infile_both_strands_prefix, %job_id, %sample_info );
+    my ( %job_id, %sample_info );
 
 #### Staging Area
 ### Get and/or set input parameters
@@ -495,16 +494,15 @@ sub mip_analyse {
 
     run_analyse_pipeline(
         {
-            active_parameter_href           => \%active_parameter,
-            broadcasts_ref                  => \@broadcasts,
-            consensus_analysis_type         => $consensus_analysis_type,
-            file_info_href                  => \%file_info,
-            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            job_id_href                     => \%job_id,
-            order_parameters_ref            => \@order_parameters,
-            order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
-            parameter_href                  => \%parameter,
-            sample_info_href                => \%sample_info,
+            active_parameter_href   => \%active_parameter,
+            broadcasts_ref          => \@broadcasts,
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => \%file_info,
+            job_id_href             => \%job_id,
+            order_parameters_ref    => \@order_parameters,
+            order_recipes_ref       => \@{ $parameter{cache}{order_recipes_ref} },
+            parameter_href          => \%parameter,
+            sample_info_href        => \%sample_info,
         }
     );
 

@@ -99,7 +99,6 @@ my %file_info = (
         mip_infiles => [ $fastq_file_read_one, $fastq_file_read_two ],
     },
 );
-my %infile_both_strands_prefix;
 my %sample_info;
 
 my %attribute = get_sample_file_attribute(
@@ -167,12 +166,11 @@ for my $sample_id ( keys %file_info ) {
         );
         $lane_tracker = set_infile_info(
             {
-                file_info_href                  => \%file_info,
-                file_name                       => $file_name,
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                lane_tracker                    => $lane_tracker,
-                sample_id                       => $sample_id,
-                sample_info_href                => \%sample_info,
+                file_info_href   => \%file_info,
+                file_name        => $file_name,
+                lane_tracker     => $lane_tracker,
+                sample_id        => $sample_id,
+                sample_info_href => \%sample_info,
             }
         );
     }
@@ -184,10 +182,6 @@ my %expected_result = (
         $sample_id => {
             lanes => [1],
         },
-    },
-    infile_both_strands_prefix => {
-        $sample_id =>
-          [ $mip_file_format_with_direction, $mip_file_format_with_direction_2 ],
     },
     sample_info => {
         sample => {
@@ -244,13 +238,6 @@ is( $file_info{$sample_id}{no_direction_infile_prefixes}[0],
 is( $file_info{$sample_id}{$mip_file_format}{sequence_run_type},
     q{paired-end},
     q{Added sequence run type to no_direction_infile_prefixes in file_info } );
-
-## Then add the infile both strands prefix (i.e. including read direction)
-is_deeply(
-    \%infile_both_strands_prefix,
-    \%{ $expected_result{infile_both_strands_prefix} },
-    q{Added MIP file format with direction for paired-end read}
-);
 
 ## Then add single-end read info from file name
 is_deeply(

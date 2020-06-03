@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -38,8 +38,6 @@ sub parse_fastq_infiles {
 ## Returns  :
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $file_info_href                  => File info hash {REF}
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $log                             => Log object
 ##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -47,8 +45,6 @@ sub parse_fastq_infiles {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_both_strands_prefix_href;
-    my $log;
     my $sample_info_href;
 
     my $tmpl = {
@@ -65,18 +61,6 @@ sub parse_fastq_infiles {
             required    => 1,
             store       => \$file_info_href,
             strict_type => 1,
-        },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         sample_info_href => {
             default     => {},
@@ -96,6 +80,8 @@ sub parse_fastq_infiles {
       parse_sample_fastq_file_attributes
     };
     use MIP::Sample_info qw{ set_infile_info };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -145,12 +131,11 @@ sub parse_fastq_infiles {
             ## Adds information derived from infile name to hashes
             $lane_tracker = set_infile_info(
                 {
-                    file_info_href                  => $file_info_href,
-                    file_name                       => $file_name,
-                    infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-                    lane_tracker                    => $lane_tracker,
-                    sample_id                       => $sample_id,
-                    sample_info_href                => $sample_info_href,
+                    file_info_href   => $file_info_href,
+                    file_name        => $file_name,
+                    lane_tracker     => $lane_tracker,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
                 }
             );
 
