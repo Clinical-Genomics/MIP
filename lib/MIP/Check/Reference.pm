@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -376,6 +376,9 @@ sub _parse_vcfanno_toml_path {
 
         ## Only check vcf files which should have the fields annotation
         next ANNOTATION if ( not exists $annotation_href->{fields} );
+
+        ## Skip files not set for normalization in the toml
+        next ANNOTATION if ( $annotation_href->{skip_split_and_normalize} );
 
         if ( not exists $seen_href->{$annotation_file_path} ) {
 
