@@ -155,7 +155,7 @@ singularity:
   star:
     executable:
       STAR:
-    uri: library://jemten/mip_containers/star:2.7.3a
+    uri: docker://clinicalgenomics/star:2.7.4a
   star-fusion:
     executable:
       blastn:
