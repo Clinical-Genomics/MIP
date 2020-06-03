@@ -9,7 +9,9 @@ reference:
     - phase1
   ctat_resource_lib:
     - gencode_v19_ctat_lib_oct012019
+    - gencode_v19_ctat_lib_apr032020
     - gencode_v31_ctat_lib_oct012019
+    - gencode_v33_ctat_lib_apr062020
   dbsnp:
     - 138_esa_129
     - 138
@@ -48,6 +50,14 @@ reference_feature:
         outfile_decompress: tar
         outfile_check_method: md5sum
         url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
+      gencode_v19_ctat_lib_apr032020:
+        file: GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play.tar.gz
+        file_check: GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play.tar.gz.md5sum
+        outfile: grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
+        outfile_check: grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz.md5
+        outfile_decompress: tar
+        outfile_check_method: md5sum
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.9/
     grch38:
       gencode_v31_ctat_lib_oct012019:
         file: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz
@@ -57,6 +67,14 @@ reference_feature:
         outfile_decompress: tar
         outfile_check_method: md5sum
         url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
+      gencode_v33_ctat_lib_apr062020:
+        file: GRCh38_gencode_v33_CTAT_lib_Apr062020.plug-n-play.tar.gz
+        file_check: GRCh38_gencode_v33_CTAT_lib_Apr062020.plug-n-play.tar.gz.md5sum
+        outfile: grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
+        outfile_check: grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz.md5
+        outfile_decompress: tar
+        outfile_check_method: md5sum
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.9/
   human_reference:
     grch37:
       decoy_5:
