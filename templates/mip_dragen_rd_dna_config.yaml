@@ -47,6 +47,7 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
+picardtools_path: /usr/picard
 sv_genmod_models_case_type: cmms
 sv_vep_plugin:
   ExACpLI:
