@@ -103,7 +103,7 @@ singularity:
   multiqc:
     executable:
       multiqc:
-    uri: docker://ewels/multiqc:1.8
+    uri: docker://ewels/multiqc:1.9
   peddy:
     executable:
       peddy: "python -m peddy"
