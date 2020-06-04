@@ -10,9 +10,9 @@ shell:
 singularity:
   arriba:
     executable:
-      arriba: /arriba_v1.1.0/arriba
-      draw_fusions.R: /arriba_v1.1.0/draw_fusions.R
-    uri: docker://uhrigs/arriba:1.1.0
+      arriba: /arriba_v1.2.0/arriba
+      draw_fusions.R: /arriba_v1.2.0/draw_fusions.R
+    uri: docker://uhrigs/arriba:1.2.0
   blobfish:
     executable:
       BlobFish.py:
