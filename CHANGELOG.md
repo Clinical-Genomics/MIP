@@ -28,6 +28,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picard: 2.20.7 -> 2.22.4
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
+- STAR 2.7.3a -> 2.7.4a
 - STAR-Fusion v1.8.0 -> v1.9.0
 - VEP: 97 -> 99
 
