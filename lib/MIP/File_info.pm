@@ -25,12 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
-      add_sample_infile_both_strands_prefix
       add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
       get_consensus_sequence_run_type
@@ -109,51 +108,6 @@ sub add_sample_fastq_file_lanes {
 
     ## Add lane
     push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
-
-    return;
-}
-
-sub add_sample_infile_both_strands_prefix {
-
-## Function : Add sample fastq file both strands prefix to infile_both_strands_prefix
-## Returns  :
-## Arguments: $file_info_href                 => File info hash {REF}
-##          : $mip_file_format_with_direction => File name without ".fastq(.gz)"
-##          : $sample_id                      => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $mip_file_format_with_direction;
-    my $sample_id;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        mip_file_format_with_direction => {
-            required    => 1,
-            store       => \$mip_file_format_with_direction,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Add infile_both_strands_prefix
-    push @{ $file_info_href->{$sample_id}{infile_both_strands_prefix} },
-      $mip_file_format_with_direction;
 
     return;
 }

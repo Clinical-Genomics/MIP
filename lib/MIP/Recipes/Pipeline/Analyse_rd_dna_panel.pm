@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
@@ -35,16 +35,15 @@ sub pipeline_analyse_rd_dna_panel {
 
 ## Function : Pipeline recipe for dna panel data analysis.
 ## Returns  :
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
-##          : $file_info_href                  => File info hash {REF}
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $job_id_href                     => Job id hash {REF}
-##          : $log                             => Log object to write to
-##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref               => Order of recipes
-##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $log                   => Log object to write to
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $order_recipes_ref     => Order of recipes
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -52,7 +51,6 @@ sub pipeline_analyse_rd_dna_panel {
     my $active_parameter_href;
     my $broadcasts_ref;
     my $file_info_href;
-    my $infile_both_strands_prefix_href;
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
@@ -80,13 +78,6 @@ sub pipeline_analyse_rd_dna_panel {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -181,13 +172,12 @@ sub pipeline_analyse_rd_dna_panel {
     ### Pipeline specific checks
     check_rd_dna_panel(
         {
-            active_parameter_href           => $active_parameter_href,
-            broadcasts_ref                  => $broadcasts_ref,
-            file_info_href                  => $file_info_href,
-            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            order_parameters_ref            => $order_parameters_ref,
-            parameter_href                  => $parameter_href,
-            sample_info_href                => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            file_info_href        => $file_info_href,
+            order_parameters_ref  => $order_parameters_ref,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
