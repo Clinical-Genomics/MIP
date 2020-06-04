@@ -214,7 +214,7 @@ singularity:
   vep:
     executable:
       vep:
-    uri: docker://ensemblorg/ensembl-vep:release_99.2
+    uri: docker://ensemblorg/ensembl-vep:release_100.2
   vcf2cytosure:
     executable:
       vcf2cytosure:

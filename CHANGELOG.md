@@ -31,7 +31,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - STAR 2.7.3a -> 2.7.4a
 - STAR-Fusion v1.8.0 -> v1.9.0
 - stringtie 2.0.3 -> 2.1.3b
-- VEP: 97 -> 99
+- VEP: 97 -> 100
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
