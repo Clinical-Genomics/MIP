@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_file_suffix parse_io_outfiles };
@@ -36,9 +36,9 @@ sub parse_fastq_infiles {
 
 ## Function : Parse fastq infiles for MIP processing
 ## Returns  :
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $file_info_href                  => File info hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
