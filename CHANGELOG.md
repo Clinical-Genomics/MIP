@@ -37,6 +37,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.5-.toml
 - grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
 - grch37_loqusdb_sv_-2020-04-20.vcf
+- grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
+- grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
 - VEP cache: 97 -> 99
 
 ## [8.2.4]
