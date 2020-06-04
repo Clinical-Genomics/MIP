@@ -29,6 +29,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
 - STAR 2.7.3a -> 2.7.4a
+- STAR-Fusion v1.8.0 -> v1.9.0
 - VEP: 97 -> 99
 
 **References**
@@ -37,6 +38,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.5-.toml
 - grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
 - grch37_loqusdb_sv_-2020-04-20.vcf
+- grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
+- grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
 - VEP cache: 97 -> 99
 
 ## [8.2.4]
