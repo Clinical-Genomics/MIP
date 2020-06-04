@@ -175,7 +175,7 @@ singularity:
   stringtie:
     executable:
       stringtie:
-    uri: library://jemten/mip_containers/stringtie:2.0.3
+    uri: docker://clinicalgenomics/stringtie:2.1.3b
   svdb:
     executable:
       svdb:
