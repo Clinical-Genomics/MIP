@@ -59,6 +59,8 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
 
 ## Given
 
+## When
+
 ## Then
 ########################
 #### YOUR TEST HERE ####

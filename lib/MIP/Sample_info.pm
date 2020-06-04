@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.34;
+    our $VERSION = 1.35;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,8 +41,10 @@ BEGIN {
       set_gene_panel
       set_infile_info
       set_no_dry_run_parameters
+      set_no_read_direction_file_attributes
       set_parameter_in_sample_info
       set_processing_metafile_in_sample_info
+      set_read_direction_file_attributes
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info
       set_in_sample_info
@@ -755,7 +757,7 @@ sub set_gene_panel {
 
 sub set_infile_info {
 
-## Function : Sets information derived from fastq infile name or header to sample_info hash
+## Function : Sets information derived from fastq infile name or header to file_info and sample_info hash
 ## Returns  : $lane_tracker
 ## Arguments: $file_info_href   => File info hash {REF}
 ##          : $file_name        => File name
@@ -842,7 +844,6 @@ sub set_infile_info {
         }
       );
 
-    ## Read 1
     if ( $attribute{direction} == 1 ) {
 
         add_sample_no_direction_infile_prefixes(
@@ -877,22 +878,17 @@ sub set_infile_info {
             sequence_length   => $attribute{read_length},
             sequence_run_type => q{single-end},
         );
-
-        ## Alias
-        my $file_level_href =
-          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %direction_one_metric ) {
-
-            $file_level_href->{$file_key} = $file_value;
-        }
-
+        set_no_read_direction_file_attributes(
+            {
+                file_name              => $mip_file_format,
+                no_read_direction_href => \%direction_one_metric,
+                sample_id              => $sample_id,
+                sample_info_href       => $sample_info_href,
+            }
+        );
         $lane_tracker++;
     }
     if ( $attribute{direction} == 2 ) {
-        ## 2nd read direction
-
-        my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 
         set_sample_file_attribute(
             {
@@ -904,14 +900,15 @@ sub set_infile_info {
             }
         );
 
-        ## Alias
-        my $file_level_href =
-          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %direction_two_metric ) {
-
-            $file_level_href->{$file_key} = $file_value;
-        }
+        my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
+        set_no_read_direction_file_attributes(
+            {
+                file_name              => $mip_file_format,
+                no_read_direction_href => \%direction_two_metric,
+                sample_id              => $sample_id,
+                sample_info_href       => $sample_info_href,
+            }
+        );
     }
 
     my %both_directions_metric = (
@@ -925,17 +922,15 @@ sub set_infile_info {
         sample_barcode            => $attribute{index},
     );
 
-    ## Alias
-    my $direction_level_href =
-      \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format}
-          {read_direction_file}{$mip_file_format_with_direction} };
-
-  INFO:
-    while ( my ( $file_key, $file_value ) = each %both_directions_metric ) {
-
-        $direction_level_href->{$file_key} = $file_value;
-    }
-
+    set_read_direction_file_attributes(
+        {
+            direction_file_name => $mip_file_format_with_direction,
+            file_name           => $mip_file_format,
+            read_direction_href => \%both_directions_metric,
+            sample_id           => $sample_id,
+            sample_info_href    => $sample_info_href,
+        }
+    );
     return $lane_tracker;
 }
 
@@ -1008,6 +1003,62 @@ sub set_no_dry_run_parameters {
     return;
 }
 
+sub set_no_read_direction_file_attributes {
+
+##Function : Sets file attributes for no read direction file
+##Returns  :
+##Arguments: $file_name              => File name
+##         : $no_read_direction_href => No read direction keys and values to set
+##         : $sample_id              => Sample id
+##         : $sample_info_href       => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $no_read_direction_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        no_read_direction_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$no_read_direction_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    while ( my ( $attribute, $attribute_value ) = each %{$no_read_direction_href} ) {
+
+        $sample_info_href->{sample}{$sample_id}{file}{$file_name}{$attribute} =
+          $attribute_value;
+    }
+    return;
+}
+
 sub set_in_sample_info {
 
 ##Function : Sets key and value in sample info
@@ -1048,6 +1099,70 @@ sub set_in_sample_info {
     return if ( not defined $value );
 
     $sample_info_href->{$key} = $value;
+    return;
+}
+
+sub set_read_direction_file_attributes {
+
+##Function : Sets read direction file attributes
+##Returns  :
+##Arguments: $direction_file_name => File name with read direction
+##         : $file_name           => File name
+##         : $read_direction_href => Read direction keys and values to set
+##         : $sample_id           => Sample id
+##         : $sample_info_href    => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $direction_file_name;
+    my $file_name;
+    my $read_direction_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        direction_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$direction_file_name,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        read_direction_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$read_direction_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    while ( my ( $attribute, $attribute_value ) = each %{$read_direction_href} ) {
+
+        $sample_info_href->{sample}{$sample_id}{file}{$file_name}
+          {read_direction_file}{$direction_file_name}{$attribute} = $attribute_value;
+    }
     return;
 }
 

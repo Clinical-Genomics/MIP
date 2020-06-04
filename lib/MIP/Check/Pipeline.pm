@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -116,8 +116,8 @@ sub check_dragen_rd_dna {
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
-    use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
@@ -352,9 +352,9 @@ sub check_rd_dna {
     };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
     use MIP::Reference
       qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
@@ -652,9 +652,9 @@ sub check_rd_dna_panel {
     use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
     use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
-    use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Reference qw{ parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
@@ -1102,8 +1102,8 @@ sub check_rd_rna {
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles };
-    use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
