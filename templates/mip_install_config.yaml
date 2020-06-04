@@ -155,7 +155,7 @@ singularity:
   star:
     executable:
       STAR:
-    uri: library://jemten/mip_containers/star:2.7.3a
+    uri: docker://clinicalgenomics/star:2.7.4a
   star-fusion:
     executable:
       blastn:
@@ -167,7 +167,7 @@ singularity:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.8.0/star-fusion.v1.8.0.simg
+    uri: https://data.broadinstitute.org/Trinity/CTAT_SINGULARITY/STAR-Fusion/star-fusion.v1.9.0.simg
   stranger:
     executable:
       stranger:
