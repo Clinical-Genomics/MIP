@@ -17,7 +17,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add picardtools CollectRnaSeqMetrics to the RNA pipeline
 
 **Tools**
+- Arriba: 1.1.0 -> 1.2.0
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
+- CADD: v1.5 -> v1.6
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9
 - gatk: 4.1.3.0 -> 4.1.4.0
@@ -26,8 +28,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picard: 2.20.7 -> 2.22.4
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
+- STAR 2.7.3a -> 2.7.4a
 - VEP: 97 -> 99
-- CADD: v1.5 -> v1.6
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.33;
+    our $VERSION = 1.34;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -757,19 +757,17 @@ sub set_infile_info {
 
 ## Function : Sets information derived from fastq infile name or header to sample_info hash
 ## Returns  : $lane_tracker
-## Arguments: $file_info_href                  => File info hash {REF}
-##          : $file_name                       => File name
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
-##          : $sample_id                       => Sample id
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $file_info_href   => File info hash {REF}
+##          : $file_name        => File name
+##          : $lane_tracker     => Counts the number of lanes sequenced {REF}
+##          : $sample_id        => Sample id
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_info_href;
     my $file_name;
-    my $infile_both_strands_prefix_href;
     my $lane_tracker;
     my $sample_id;
     my $sample_info_href;
@@ -786,13 +784,6 @@ sub set_infile_info {
             defined     => 1,
             required    => 1,
             store       => \$file_name,
-            strict_type => 1,
-        },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
         lane_tracker => {
@@ -820,7 +811,6 @@ sub set_infile_info {
 
     use MIP::Fastq qw{ define_mip_fastq_file_features };
     use MIP::File_info qw{
-      add_sample_infile_both_strands_prefix
       add_sample_no_direction_infile_prefixes
       get_sample_file_attribute
       set_sample_file_attribute
@@ -924,17 +914,6 @@ sub set_infile_info {
         }
     }
 
-# Save new format in hash with sample id as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and the file suffix is removed (.fastq).
-    push @{ $infile_both_strands_prefix_href->{$sample_id} },
-      $mip_file_format_with_direction;
-
-    add_sample_infile_both_strands_prefix(
-        {
-            file_info_href                 => $file_info_href,
-            mip_file_format_with_direction => $mip_file_format_with_direction,
-            sample_id                      => $sample_id,
-        }
-    );
     my %both_directions_metric = (
         date                      => $parsed_date,
         flowcell                  => $attribute{flowcell},
