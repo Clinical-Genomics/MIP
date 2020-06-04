@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::File}    => [qw{ parse_fastq_infiles }],
+        q{MIP::Fastq}          => [qw{ parse_fastq_infiles }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::File qw{ parse_fastq_infiles };
+use MIP::Fastq qw{ parse_fastq_infiles };
 
-diag(   q{Test parse_fastq_infiles from File.pm v}
-      . $MIP::Parse::File::VERSION
+diag(   q{Test parse_fastq_infiles from Fastq.pm v}
+      . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

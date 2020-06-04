@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use List::Util qw { any sum };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,6 +34,7 @@ BEGIN {
       define_mip_fastq_file_features
       get_read_length
       parse_fastq_file_header_attributes
+      parse_fastq_infiles
       parse_fastq_infiles_format };
 }
 
@@ -445,6 +447,124 @@ sub get_read_length {
 
     ## Return read length
     return $process_return{stdouts_ref}[0];
+}
+
+sub parse_fastq_infiles {
+
+## Function : Parse fastq infiles for MIP processing
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Fastq qw{ parse_fastq_file_header_attributes };
+    use MIP::File_info qw{
+      get_sample_file_attribute
+      parse_files_compression_status
+      parse_sample_fastq_file_attributes
+    };
+    use MIP::Sample_info qw{ set_infile_info };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  SAMPLE_ID:
+    for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        # Needed to be able to track when lanes are finished
+        my $lane_tracker = 0;
+
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+        ## Unpack
+        my $infiles_dir = $file_info_sample{mip_infiles_dir};
+
+      INFILE:
+        foreach my $file_name ( @{ $file_info_sample{mip_infiles} } ) {
+
+            my %infile_info = parse_sample_fastq_file_attributes(
+                {
+                    file_info_href => $file_info_href,
+                    file_name      => $file_name,
+                    infiles_dir    => $infiles_dir,
+                    sample_id      => $sample_id,
+                }
+            );
+
+            ## If filename convention is followed
+            if ( not exists $infile_info{date} ) {
+
+                ## No regexp match i.e. file does not follow filename convention
+                $log->warn(q{Will try to find mandatory information from fastq header});
+
+                ## Get run info from fastq file header
+                parse_fastq_file_header_attributes(
+                    {
+                        file_info_href    => $file_info_href,
+                        file_name         => $file_name,
+                        file_path         => catfile( $infiles_dir, $file_name ),
+                        read_file_command => $infile_info{read_file_command},
+                        sample_id         => $sample_id,
+                    }
+                );
+            }
+
+            ## Adds information derived from infile name to hashes
+            $lane_tracker = set_infile_info(
+                {
+                    file_info_href   => $file_info_href,
+                    file_name        => $file_name,
+                    lane_tracker     => $lane_tracker,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            parse_files_compression_status(
+                {
+                    file_info_href => $file_info_href,
+                    sample_id      => $sample_id,
+                }
+            );
+        }
+    }
+    return;
 }
 
 sub parse_fastq_infiles_format {
