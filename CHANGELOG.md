@@ -30,6 +30,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
 - STAR 2.7.3a -> 2.7.4a
 - STAR-Fusion v1.8.0 -> v1.9.0
+- stringtie 2.0.3 -> 2.1.3b
 - VEP: 97 -> 99
 
 **References**
