@@ -82,7 +82,7 @@ BEGIN {
 
 sub add_gender {
 
-## Function : Add sample_ids to list of genders of the current analysis
+## Function : Add sample_id to list of genders of the current analysis
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $gender                => Gender to add to

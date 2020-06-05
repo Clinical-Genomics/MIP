@@ -441,46 +441,26 @@ sub update_gender_info {
     ## Constants
     Readonly my $MALE_THRESHOLD => 36;
 
-    if ( $y_read_count > $MALE_THRESHOLD ) {
+    my $gender  = $y_read_count > $MALE_THRESHOLD ? q{male} : q{female};
+    my $genders = $gender . q{s};
+    $log->info(qq{Found $gender according to fastq reads});
 
-        $log->info(q{Found male according to fastq reads});
+    add_gender(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_id             => $sample_id,
+            gender                => $genders,
+        }
+    );
 
-        add_gender(
-            {
-                active_parameter_href => $active_parameter_href,
-                sample_id             => $sample_id,
-                gender                => q{males},
-            }
-        );
-
-        ## For tracability
-        set_gender_estimation(
-            {
-                active_parameter_href => $active_parameter_href,
-                gender                => q{male},
-                sample_id             => $sample_id,
-            }
-        );
-    }
-    else {
-
-        $log->info(q{Found female according to fastq reads});
-
-        add_gender(
-            {
-                active_parameter_href => $active_parameter_href,
-                sample_id             => $sample_id,
-                gender                => q{females},
-            }
-        );
-        set_gender_estimation(
-            {
-                active_parameter_href => $active_parameter_href,
-                gender                => q{female},
-                sample_id             => $sample_id,
-            }
-        );
-    }
+    ## For tracability
+    set_gender_estimation(
+        {
+            active_parameter_href => $active_parameter_href,
+            gender                => $gender,
+            sample_id             => $sample_id,
+        }
+    );
 
     remove_sample_id_from_gender(
         {
