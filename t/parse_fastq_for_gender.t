@@ -78,7 +78,7 @@ push @{ $file_info{$sample_id}{mip_infiles} },                  q{ADM1059A3.fast
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
 
-my $has_gender_other = parse_fastq_for_gender(
+my $estimated_unknown_gender = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
@@ -87,12 +87,12 @@ my $has_gender_other = parse_fastq_for_gender(
 );
 
 ## Then skip estimation using reads
-is( $has_gender_other, undef, q{No unknown gender} );
+is( $estimated_unknown_gender, undef, q{No unknown gender - skip} );
 
 ## Given a sample when gender unknown
 $active_parameter{gender}{others} = [$sample_id];
 
-$has_gender_other = parse_fastq_for_gender(
+$estimated_unknown_gender = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
@@ -101,6 +101,6 @@ $has_gender_other = parse_fastq_for_gender(
 );
 
 ## Then skip estimation using reads
-is( $has_gender_other, 1, q{Unknown gender} );
+is( $estimated_unknown_gender, 1, q{Estimated unknown gender} );
 
 done_testing();
