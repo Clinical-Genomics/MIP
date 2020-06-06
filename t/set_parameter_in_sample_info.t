@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,16 +67,16 @@ my %active_parameter = test_mip_hashes(
         mip_hash_name => q{active_parameter},
     }
 );
-
-my %sample_info = test_mip_hashes(
-    {
-        mip_hash_name => q{qc_sample_info},
-    }
+%{ $active_parameter{expected_coverage} } = (
+    ADM1059A1 => 1,
+    ADM1059A2 => 1,
+    ADM1059A3 => 1,
 );
-
 $active_parameter{human_genome_reference} = catfile(qw{ a test path genome build});
 $active_parameter{log_file}               = catfile(qw{ a test dir and log_path});
 $active_parameter{pedigree_file}          = catfile(qw{ a test pedigree path });
+
+my %sample_info;
 
 my %file_info = (
     human_genome_reference_source  => q{grch},
@@ -91,38 +91,21 @@ set_parameter_in_sample_info(
     }
 );
 
-## Then these entries should be set in sample info
-is(
-    $sample_info{human_genome_build}{path},
-    $active_parameter{human_genome_reference},
-    q{Added genome build path}
+my %expected_sample_info = (
+    human_genome_build => {
+        path    => $active_parameter{human_genome_reference},
+        source  => $file_info{human_genome_reference_source},
+        version => $file_info{human_genome_reference_version},
+    },
 );
-is(
-    $sample_info{human_genome_build}{source},
-    $file_info{human_genome_reference_source},
-    q{Added genome build source}
-);
-is(
-    $sample_info{human_genome_build}{version},
-    $file_info{human_genome_reference_version},
-    q{Added genome build version}
-);
-is(
-    $sample_info{pedigree_file}{path},
-    $active_parameter{pedigree_file},
-    q{Added pedigree path}
-);
-is(
-    $sample_info{log_file_dir},
-    dirname( dirname( $active_parameter{log_file} ) ),
-    q{Added log dir path}
-);
-is(
-    $sample_info{last_log_file_path},
-    $active_parameter{log_file},
-    q{Added log file path}
-);
+$expected_sample_info{analysis_type} = $active_parameter{analysis_type};
+%{ $expected_sample_info{expected_coverage} } = %{ $active_parameter{expected_coverage} };
+$expected_sample_info{pedigree_file}{path} = $active_parameter{pedigree_file};
+$expected_sample_info{log_file_dir} = dirname( dirname( $active_parameter{log_file} ) );
+$expected_sample_info{last_log_file_path} = $active_parameter{log_file};
+$expected_sample_info{has_trio}           = 0;
 
-ok( $sample_info{has_trio}, q{Added has_trio} );
+## Then these entries should be set in sample info
+is_deeply( \%sample_info, \%expected_sample_info, q{Set parameter in sample_info} );
 
 done_testing();
