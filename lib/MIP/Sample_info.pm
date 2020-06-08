@@ -1552,6 +1552,7 @@ sub set_parameter_in_sample_info {
         },
     );
 
+  PARMETER_MAP_HREF:
     foreach my $parameter_href ( values %set_parameter_map ) {
 
         set_in_sample_info(
