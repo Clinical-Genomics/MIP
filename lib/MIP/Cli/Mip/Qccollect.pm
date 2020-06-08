@@ -19,7 +19,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 command_short_description(q{MIP qccollect command});
 
@@ -94,7 +94,6 @@ sub _build_usage {
 
     option(
         q{eval_metric_file} => (
-            cmd_aliases   => [qw{ emf }],
             cmd_tags      => [q{YAML}],
             documentation => q{Evaluation_metric file path},
             is            => q{rw},
@@ -104,7 +103,6 @@ sub _build_usage {
 
     option(
         q{evaluate_plink_gender} => (
-            cmd_aliases   => [qw{ epg }],
             documentation => q{Evaluate plink gender},
             is            => q{rw},
             isa           => Bool,
@@ -113,7 +111,7 @@ sub _build_usage {
 
     option(
         q{log_file} => (
-            cmd_aliases   => [qw{ l }],
+            cmd_aliases   => [qw{ l log }],
             default       => catfile( cwd(), q{qccollect.log} ),
             documentation => q{Log file},
             is            => q{rw},
@@ -145,7 +143,6 @@ sub _build_usage {
 
     option(
         q{regexp_file} => (
-            cmd_aliases   => [qw{ rxf }],
             cmd_tags      => [q{YAML}],
             documentation => q{Regular expression file path},
             is            => q{rw},
@@ -156,7 +153,6 @@ sub _build_usage {
 
     option(
         q{sample_info_file} => (
-            cmd_aliases   => [qw{ sif }],
             cmd_tags      => [q{YAML}],
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
@@ -167,7 +163,6 @@ sub _build_usage {
 
     option(
         q{skip_evaluation} => (
-            cmd_aliases   => [qw{ ske }],
             documentation => q{Skip evaluation step},
             is            => q{rw},
             isa           => Bool,

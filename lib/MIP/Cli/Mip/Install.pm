@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.19;
+our $VERSION = 1.20;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -78,7 +78,6 @@ sub _build_usage {
 
     option(
         q{add_environment_date} => (
-            cmd_aliases   => [qw{ aed }],
             cmd_flag      => q{add_environment_date},
             documentation => q{Add creation date to environment},
             is            => q{rw},
@@ -89,7 +88,6 @@ sub _build_usage {
 
     option(
         q{conda_no_update_dep} => (
-            cmd_aliases   => [qw{ cnud }],
             cmd_flag      => q{conda_no_update_dep},
             documentation => q{Do not update dependencies},
             is            => q{rw},
@@ -131,7 +129,6 @@ sub _build_usage {
 
     option(
         q{environment_prefix} => (
-            cmd_aliases => [qw{ ep }],
             documentation =>
               q{Prepend this to environment names. Separated by underscore},
             is  => q{rw},
@@ -141,7 +138,6 @@ sub _build_usage {
 
     option(
         q{environment_suffix} => (
-            cmd_aliases   => [qw{ es }],
             documentation => q{Append this to environment names. Separated by underscore},
             is            => q{rw},
             isa           => Str,
@@ -160,8 +156,7 @@ sub _build_usage {
     );
     option(
         q{prefer_shell} => (
-            cmd_aliases => [qw{ psh }],
-            cmd_flag    => q{prefer_shell},
+            cmd_flag => q{prefer_shell},
             documentation =>
               q{Shell will be used for overlapping shell and biconda installations},
             is       => q{rw},
@@ -172,7 +167,6 @@ sub _build_usage {
 
     option(
         q{program_test_file} => (
-            cmd_aliases   => [qw{ ptf }],
             documentation => q{File with test commands in YAML format},
             is            => q{rw},
             isa           => Str,
@@ -181,7 +175,6 @@ sub _build_usage {
 
     option(
         q{project_id} => (
-            cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
             is            => q{rw},
             isa           => Str,
@@ -221,7 +214,6 @@ sub _build_usage {
 
     option(
         q{sbatch_process_time} => (
-            cmd_aliases   => [qw{ spt }],
             documentation => q{Time limit for sbatch job},
             is            => q{rw},
             isa           => Str,
@@ -274,7 +266,6 @@ sub _build_usage {
 
     option(
         q{vep_assemblies} => (
-            cmd_aliases   => [qw{ vea }],
             cmd_tags      => [q{Default: GRCh37, GRCh38}],
             cmd_flag      => q{vep_assemblies},
             documentation => q{VEP assemblies to download},
@@ -286,7 +277,6 @@ sub _build_usage {
 
     option(
         q{vep_auto_flag} => (
-            cmd_aliases   => [qw{ veaf }],
             cmd_flag      => q{vep_auto_flag},
             cmd_tags      => [q{Default: cf}],
             documentation => q{VEP's --AUTO flag},
@@ -298,8 +288,7 @@ sub _build_usage {
 
     option(
         q{vep_cache_dir} => (
-            cmd_aliases => [qw{ vecd }],
-            cmd_flag    => q{vep_cache_dir},
+            cmd_flag => q{vep_cache_dir},
             cmd_tags =>
               [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
             documentation => q{VEP's cache directory},
@@ -311,7 +300,6 @@ sub _build_usage {
 
     option(
         q{vep_plugins} => (
-            cmd_aliases   => [qw{ vepl }],
             cmd_flag      => q{vep_plugins},
             documentation => q{VEP plugins to install},
             is            => q{rw},
@@ -322,7 +310,6 @@ sub _build_usage {
 
     option(
         q{vep_species} => (
-            cmd_aliases   => [qw{ ves }],
             cmd_tags      => [q{Default: homo_sapiens_merged}],
             cmd_flag      => q{vep_species},
             documentation => q{VEP species},
