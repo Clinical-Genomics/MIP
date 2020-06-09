@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -160,6 +160,14 @@ sub analysis_samtools_subsample_mt {
 
     ## Find Mitochondrial contig infile_path
     my $infile_path = first_value { / $infile_name_prefix [.]M|chrM /sxm } @infile_paths;
+
+    if ( not $infile_path ) {
+
+        $log->warn(
+qq{Mitochondrial contig is not part of analysis contig set - skipping $recipe_name}
+        );
+        return 1;
+    }
 
     my $job_id_chain = get_recipe_attributes(
         {
