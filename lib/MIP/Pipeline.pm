@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -33,16 +33,15 @@ sub run_analyse_pipeline {
 
 ## Function : Run analysis pipeline recipe
 ## Returns  :
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
-##          : $consensus_analysis_type         => Consensus analysis type
-##          : $file_info_href                  => File info hash {REF}
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $job_id_href                     => Job id hash {REF}
-##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref               => Order of recipes
-##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
+##          : $consensus_analysis_type => Consensus analysis type
+##          : $file_info_href          => File info hash {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
+##          : $order_recipes_ref       => Order of recipes
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -51,7 +50,6 @@ sub run_analyse_pipeline {
     my $broadcasts_ref;
     my $consensus_analysis_type;
     my $file_info_href;
-    my $infile_both_strands_prefix_href;
     my $job_id_href;
     my $order_parameters_ref;
     my $order_recipes_ref;
@@ -84,13 +82,6 @@ sub run_analyse_pipeline {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -158,16 +149,15 @@ sub run_analyse_pipeline {
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
     $pipeline{$consensus_analysis_type}->(
         {
-            active_parameter_href           => $active_parameter_href,
-            broadcasts_ref                  => $broadcasts_ref,
-            file_info_href                  => $file_info_href,
-            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            order_parameters_ref            => $order_parameters_ref,
-            order_recipes_ref               => $order_recipes_ref,
-            parameter_href                  => $parameter_href,
-            sample_info_href                => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            order_parameters_ref  => $order_parameters_ref,
+            order_recipes_ref     => $order_recipes_ref,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
     return;

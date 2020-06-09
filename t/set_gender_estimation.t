@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
+        q{MIP::Active_parameter} => [qw{ set_gender_estimation }],
         q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Active_parameter qw{ set_gender_estimation };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test set_gender_estimation from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,13 +57,22 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given a sample_id
+my %active_parameter;
+my $sample_id = q{a_sample_id};
 
-## When
+## When gender estimation is female
+my $gender = q{female};
+
+set_gender_estimation(
+    {
+        active_parameter_href => \%active_parameter,
+        gender                => $gender,
+        sample_id             => $sample_id,
+    }
+);
 
 ## Then
-########################
-#### YOUR TEST HERE ####
-########################
+is( $active_parameter{gender_estimation}{$sample_id}, $gender, q{Set gender estimation} );
 
 done_testing();

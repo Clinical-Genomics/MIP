@@ -28,10 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      add_gender
       check_load_env_packages
       check_parameter_files
       check_recipe_mode
@@ -46,6 +47,7 @@ BEGIN {
       parse_program_executables
       parse_recipe_resources
       parse_vep_plugin
+      remove_sample_id_from_gender
       set_binary_path
       set_default_analysis_type
       set_default_conda_path
@@ -62,6 +64,7 @@ BEGIN {
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
       set_exome_target_bed
+      set_gender_estimation
       set_gender_sample_ids
       set_include_y
       set_load_env_environment
@@ -75,6 +78,50 @@ BEGIN {
       update_to_absolute_path
       write_references
     };
+}
+
+sub add_gender {
+
+## Function : Add sample_id to list of genders of the current analysis
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $gender                => Gender to add to
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $gender;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        gender => {
+            allow       => [qw{ females males others }],
+            defined     => 1,
+            required    => 1,
+            store       => \$gender,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    push @{ $active_parameter_href->{gender}{$gender} }, $sample_id;
+    return;
 }
 
 sub check_load_env_packages {
@@ -1136,6 +1183,51 @@ sub parse_vep_plugin {
     return 1;
 }
 
+sub remove_sample_id_from_gender {
+
+## Function : Remove sample_id from gender
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $gender                => Gender to remove sample id from
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $gender;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        gender => {
+            allow       => [qw{ females males others }],
+            defined     => 1,
+            required    => 1,
+            store       => \$gender,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    @{ $active_parameter_href->{gender}{$gender} } =
+      grep { not /$sample_id/xms } @{ $active_parameter_href->{gender}{$gender} };
+    return;
+}
+
 sub set_binary_path {
 
 ## Function : Set binary path to active parameters
@@ -1755,6 +1847,50 @@ sub set_load_env_environment {
     return;
 }
 
+sub set_gender_estimation {
+
+## Function : Set gender estimation for sample_id
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $gender                => Gender to set
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $gender;
+    my $sample_id;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        gender => {
+            allow       => [qw{ female male other }],
+            defined     => 1,
+            required    => 1,
+            store       => \$gender,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{gender_estimation}{$sample_id} = $gender;
+    return;
+}
+
 sub set_gender_sample_ids {
 
 ## Function : Set gender sample_ids of the current analysis
@@ -1790,11 +1926,11 @@ sub set_gender_sample_ids {
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     my %gender_map = (
-        1      => \&_set_male_gender,
-        2      => \&_set_female_gender,
-        female => \&_set_female_gender,
-        male   => \&_set_male_gender,
-        other  => \&_set_other_gender,
+        1      => q{males},
+        2      => q{females},
+        female => q{females},
+        male   => q{males},
+        other  => q{others},
     );
 
   SAMPLE_ID:
@@ -1810,24 +1946,23 @@ sub set_gender_sample_ids {
 
         if ( exists $gender_map{$sex} ) {
 
-            $gender_map{$sex}->(
+            add_gender(
                 {
                     active_parameter_href => $active_parameter_href,
-                    sample_id             => $sample_id
+                    sample_id             => $sample_id,
+                    gender                => $gender_map{$sex},
                 }
             );
             next SAMPLE_ID;
         }
-        ## Set as other
-        _set_other_gender(
+        add_gender(
             {
                 active_parameter_href => $active_parameter_href,
-                sample_id             => $sample_id
+                sample_id             => $sample_id,
+                gender                => q{others},
             }
         );
-
     }
-
     set_include_y(
         {
             active_parameter_href => $active_parameter_href,
@@ -2525,111 +2660,6 @@ sub _check_infile_directory {
     $log->fatal(
         q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
     exit 1;
-}
-
-sub _set_female_gender {
-
-## Function : Set female gender sample_ids of the current analysis and count each instance
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $sample_id             => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_id;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    push @{ $active_parameter_href->{gender}{females} }, $sample_id;
-    return;
-}
-
-sub _set_male_gender {
-
-## Function : Set male gender sample_ids of the current analysis
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $sample_id             => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_id;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    push @{ $active_parameter_href->{gender}{males} }, $sample_id;
-    return;
-}
-
-sub _set_other_gender {
-
-## Function : Set other gender sample_ids of the current analysis
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $sample_id             => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_id;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    push @{ $active_parameter_href->{gender}{others} }, $sample_id;
-    return;
 }
 
 sub _set_vcfparser_file_counter {

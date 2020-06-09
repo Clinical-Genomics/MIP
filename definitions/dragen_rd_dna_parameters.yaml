@@ -72,11 +72,9 @@ infile_dirs:
   update_path: absolute_path
 picardtools_path:
   associated_recipe:
-    - prepareforvariantannotationblock
+    - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 #### Bash
 recipe_core_number:
   associated_recipe:

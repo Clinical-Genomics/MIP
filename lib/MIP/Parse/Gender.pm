@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -273,15 +273,21 @@ sub parse_fastq_for_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_active_parameter_attribute };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Bwa qw{ bwa_mem };
 
-    ## All sample ids have a gender - non need to continue
-    return
-      if ( not $active_parameter_href->{gender}{others}
-        or not @{ $active_parameter_href->{gender}{others} } );
+    my $other_gender_count = get_active_parameter_attribute(
+        {
+            active_parameter_href => $active_parameter_href,
+            attribute             => q{others},
+            parameter_name        => q{gender},
+        }
+    );
+    ## All sample ids have a gender - no need to continue
+    return if ( not $other_gender_count );
 
     ## Unpack
     my $log                = Log::Log4perl->get_logger($LOG_NAME);
@@ -290,7 +296,6 @@ sub parse_fastq_for_gender {
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{gender}{others} } ) {
 
-        ## Only for sample with wgs analysis type
         next SAMPLE_ID
           if ( not $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} );
 
@@ -306,10 +311,8 @@ sub parse_fastq_for_gender {
             }
         );
 
-        ## Get infile directory
         my $infiles_dir = $file_info_sample{mip_infiles_dir};
 
-        ## Get fastq files to sample reads from
         my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
             {
                 file_info_sample_href => \%file_info_sample,
@@ -372,7 +375,7 @@ sub parse_fastq_for_gender {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub update_gender_info {
@@ -429,7 +432,8 @@ sub update_gender_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ set_include_y };
+    use MIP::Active_parameter
+      qw{ add_gender remove_sample_id_from_gender set_gender_estimation set_include_y };
     use MIP::Contigs qw{ update_contigs_for_run };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -437,29 +441,34 @@ sub update_gender_info {
     ## Constants
     Readonly my $MALE_THRESHOLD => 36;
 
-    if ( $y_read_count > $MALE_THRESHOLD ) {
+    my $gender  = $y_read_count > $MALE_THRESHOLD ? q{male} : q{female};
+    my $genders = $gender . q{s};
+    $log->info(qq{Found $gender according to fastq reads});
 
-        $log->info(q{Found male according to fastq reads});
+    add_gender(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_id             => $sample_id,
+            gender                => $genders,
+        }
+    );
 
-        ## Add sample id to males
-        push @{ $active_parameter_href->{gender}{males} }, $sample_id;
+    ## For tracability
+    set_gender_estimation(
+        {
+            active_parameter_href => $active_parameter_href,
+            gender                => $gender,
+            sample_id             => $sample_id,
+        }
+    );
 
-        ## For tracability
-        $active_parameter_href->{gender_estimation}{$sample_id} = q{male};
-    }
-    else {
-
-        $log->info(q{Found female according to fastq reads});
-
-        ## Add sample id to females
-        push @{ $active_parameter_href->{gender}{females} }, $sample_id;
-
-        $active_parameter_href->{gender_estimation}{$sample_id} = q{female};
-    }
-
-    ## Remove sample_id from others
-    @{ $active_parameter_href->{gender}{others} } =
-      grep { not /$sample_id/xms } @{ $active_parameter_href->{gender}{others} };
+    remove_sample_id_from_gender(
+        {
+            active_parameter_href => $active_parameter_href,
+            gender                => q{others},
+            sample_id             => $sample_id,
+        }
+    );
 
     set_include_y(
         {

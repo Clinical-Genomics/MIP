@@ -17,17 +17,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add picardtools CollectRnaSeqMetrics to the RNA pipeline
 
 **Tools**
+- Arriba: 1.1.0 -> 1.2.0
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
+- CADD: v1.5 -> v1.6
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9
 - gatk: 4.1.3.0 -> 4.1.4.0
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
-- multiqc: 1.7 -> 1.8
+- multiqc: 1.7 -> 1.9
 - picard: 2.20.7 -> 2.22.4
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
-- VEP: 97 -> 99
-- CADD: v1.5 -> v1.6
+- STAR 2.7.3a -> 2.7.4a
+- STAR-Fusion v1.8.0 -> v1.9.0
+- stringtie 2.0.3 -> 2.1.3b
+- VEP: 97 -> 100
 
 **References**
 - grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
@@ -35,6 +39,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_frequency_vcfanno_filter_config_-v1.5-.toml
 - grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
 - grch37_loqusdb_sv_-2020-04-20.vcf
+- grch37_gencode_annotation_-v31-.gtf.gz -> grch37_gencode_annotation_-v34-.gtf.gz
+- grch38_gencode_annotation_-v31-.gtf.gz -> grch38_gencode_annotation_-v34-.gtf.gz
+- grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
+- grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
 - VEP cache: 97 -> 99
 
 ## [8.2.4]

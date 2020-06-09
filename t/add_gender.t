@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
+        q{MIP::Active_parameter} => [qw{ add_gender }],
         q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Active_parameter qw{ add_gender };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test add_gender from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,13 +57,36 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given a sample_id
+my %active_parameter;
+my $sample_id = q{a_sample_id};
 
-## When
+## When sample is male
+my $gender = q{males};
+add_gender(
+    {
+        active_parameter_href => \%active_parameter,
+        gender                => $gender,
+        sample_id             => $sample_id,
+    }
+);
 
-## Then
-########################
-#### YOUR TEST HERE ####
-########################
+## Then add sample_id to list of male genders in active_parameters
+is_deeply( $active_parameter{gender}{$gender},
+    [$sample_id], q{Added sample id to male gender} );
+
+## When sample is female
+$gender = q{females};
+add_gender(
+    {
+        active_parameter_href => \%active_parameter,
+        gender                => $gender,
+        sample_id             => $sample_id,
+    }
+);
+
+## Then add sample_id to list of female genders in active_parameters
+is_deeply( $active_parameter{gender}{$gender},
+    [$sample_id], q{Added sample id to female gender} );
 
 done_testing();
