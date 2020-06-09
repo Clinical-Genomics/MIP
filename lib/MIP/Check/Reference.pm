@@ -341,18 +341,20 @@ sub check_toml_config_for_vcf_tags {
         }
     }
 
-  REFERENCE_FILE:
-    foreach my $reference_file ( keys %missing_tag ) {
+    if (%missing_tag) {
+      REFERENCE_FILE:
+        foreach my $reference_file ( keys %missing_tag ) {
 
-        $log->fatal(
-            $reference_file
-              . $SPACE
-              . q{misses required key(s)}
-              . $COLON
-              . $SPACE
-              . join $SPACE,
-            @{ $missing_tag{$reference_file} }
-        );
+            $log->fatal(
+                $reference_file
+                  . $SPACE
+                  . q{misses required ID(s)}
+                  . $COLON
+                  . $SPACE
+                  . join $SPACE,
+                @{ $missing_tag{$reference_file} }
+            );
+        }
         exit 1;
     }
 

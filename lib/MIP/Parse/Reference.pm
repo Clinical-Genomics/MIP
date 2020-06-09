@@ -30,7 +30,7 @@ BEGIN {
       qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };
 }
 
-sub parse_reference {
+sub parse_references {
 
 ## Function : Parse references for preprocessing operations
 ## Returns  :
@@ -223,7 +223,7 @@ sub parse_toml_config_for_vcf_tags {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %preops = check_toml_for_vcf_tags(
+    my %preops = check_toml_config_for_vcf_tags(
         {
             active_parameter_href => $active_parameter_href,
         }

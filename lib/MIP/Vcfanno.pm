@@ -99,7 +99,7 @@ sub check_toml_annotation_for_tags {
             }
         );
 
-        next VCF_ID_TAG if $header_id_line;
+        next VCF_ID_TAG if defined $header_id_line;
 
         my %preops = get_toml_annotation_preops(
             {
