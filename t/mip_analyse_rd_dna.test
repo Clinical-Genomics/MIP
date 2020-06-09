@@ -31,7 +31,7 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -97,7 +97,7 @@ my $cmds_ref = [
     $config_file,
     q{--conda_path},
     $conda_path,
-    q{--ccp},
+    q{--cluster_constant_path},
     $cluster_constant_path,
     q{--ifd},
     catfile(
@@ -111,7 +111,7 @@ my $cmds_ref = [
     catfile(
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
-    qw{ --dra --svv 0 --vb },
+    qw{ --dra --sv_varianteffectpredictor 0 --vb },
     q{--vcfanno_config},
     $toml_config_path,
     q{--varg_ar},

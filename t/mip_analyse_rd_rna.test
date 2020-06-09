@@ -30,7 +30,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -82,7 +82,7 @@ my @base_cmds = (
     $config_file,
     q{--conda_path},
     $conda_path,
-    q{--ccp},
+    q{--cluster_constant_path},
     $cluster_constant_path,
     q{--ifd},
     catfile(
