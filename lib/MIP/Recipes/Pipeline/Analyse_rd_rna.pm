@@ -26,7 +26,244 @@ BEGIN {
     our $VERSION = 1.34;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
+    our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
+}
+
+sub parse_rd_rna {
+
+## Function : Rare disease RNA pipeline specific checks and parsing
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{
+      check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
+      parse_infiles
+      write_references
+    };
+    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Check::File qw{ check_ids_in_dna_vcf };
+    use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
+    use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Fastq qw{ parse_fastq_infiles };
+    use MIP::File_info qw{ check_parameter_metafiles };
+    use MIP::Parameter qw{ get_cache };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
+    use MIP::Set::Analysis qw{ set_ase_chain_recipes };
+    use MIP::Star qw{ check_interleaved_files_for_star };
+    use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
+
+    ## Constants
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
+    check_sample_id_in_hash_parameter_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ infile_dirs }],
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check dna vcf
+    check_ids_in_dna_vcf(
+        {
+            active_parameter_href => $active_parameter_href,
+            dna_vcf_file          => $active_parameter_href->{dna_vcf_file},
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Set ASE recipes depending on previous check
+    set_ase_chain_recipes(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    broadcast_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            order_parameters_ref  => $order_parameters_ref,
+        }
+    );
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update recipes depending on pedigree
+    update_recipe_mode_for_pedigree(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipes_ref           => [qw{ blobfish }],
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            include_y               => $active_parameter_href->{include_y},
+        }
+    );
+
+    ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+        }
+    );
+
+    ## Reformat file names to MIP format, get file name info and add info to sample_info
+    parse_fastq_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    check_interleaved_files_for_star(
+        {
+            file_info_href => $file_info_href,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
+        }
+    );
+
+    ## Add to sample info
+    set_parameter_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Check recipe compability with fastq files
+    my @recipes_to_check = qw{ arriba_ar salmon_quant };
+
+  RECIPE:
+    foreach my $recipe (@recipes_to_check) {
+
+        check_recipe_fastq_compatibility(
+            {
+                active_parameter_href => $active_parameter_href,
+                file_info_href        => $file_info_href,
+                parameter_href        => $parameter_href,
+                recipe_name           => $recipe,
+            }
+        );
+    }
+
+    return;
 }
 
 sub pipeline_analyse_rd_rna {
@@ -122,7 +359,6 @@ sub pipeline_analyse_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rd_rna };
     use MIP::Constants qw{ set_singularity_constants };
 
     ## Recipes
@@ -165,12 +401,11 @@ sub pipeline_analyse_rd_rna {
     use MIP::Set::Analysis qw{ set_recipe_star_aln };
 
     ### Pipeline specific checks
-    check_rd_rna(
+    parse_rd_rna(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             file_info_href        => $file_info_href,
-            log                   => $log,
             order_parameters_ref  => $order_parameters_ref,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
