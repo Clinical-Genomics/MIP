@@ -136,7 +136,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Check::Pipeline qw{ check_rd_dna_panel };
     use MIP::Constants qw{ set_singularity_constants };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
-    use MIP::Parse::Reference qw{ parse_reference };
+    use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
 
     ## Recipes

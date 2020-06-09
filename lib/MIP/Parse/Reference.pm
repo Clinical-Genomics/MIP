@@ -26,7 +26,8 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_references parse_reference_for_vt parse_toml_for_preops };
+    our @EXPORT_OK =
+      qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };
 }
 
 sub parse_reference {
@@ -83,7 +84,7 @@ sub parse_reference {
     );
 
     $log->info(q{[Reference check - Reference annotation]});
-    parse_toml_for_preops(
+    parse_toml_config_for_vcf_tags(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -176,7 +177,7 @@ sub parse_reference_for_vt {
     return;
 }
 
-sub parse_toml_for_preops {
+sub parse_toml_config_for_vcf_tags {
 
 ## Function : Parse references in toml config for preops
 ## Returns  :
@@ -217,41 +218,35 @@ sub parse_toml_for_preops {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_references_for_vt };
-    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
-
-    return if ( not $active_parameter_href->{sv_annotate} );
-    return if ( not $active_parameter_href->{variant_annotation} );
+    use MIP::Check::Reference qw{ check_toml_config_for_vcf_tags };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my @to_process_references = check_toml_for_preops(
+    my %preops = check_toml_for_vcf_tags(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
         }
     );
 
-  REFERENCE:
-    foreach my $reference_file_path (@to_process_references) {
-
-        $log->info(q{[VT - Normalize and decompose]});
-        $log->info( $TAB . q{File: } . $reference_file_path );
-
-        ## Split multi allelic records into single records and normalize
-        analysis_vt_core(
-            {
-                active_parameter_href => $active_parameter_href,
-                build_gatk_index      => 1,
-                decompose             => 1,
-                normalize             => 1,
-                infile_path           => $reference_file_path,
-                job_id_href           => $job_id_href,
-                parameter_href        => $parameter_href,
-            }
-        );
-    }
+    #  REFERENCE:
+    #    foreach my $reference_file_path (@to_process_references) {
+    #
+    #        $log->info(q{[Vcfanno - Apply preops]});
+    #        $log->info( $TAB . q{File: } . $reference_file_path );
+    #
+    #        analysis_vcfanno(
+    #            {
+    #                active_parameter_href => $active_parameter_href,
+    #                build_gatk_index      => 1,
+    #                decompose             => 1,
+    #                normalize             => 1,
+    #                infile_path           => $reference_file_path,
+    #                job_id_href           => $job_id_href,
+    #                parameter_href        => $parameter_href,
+    #            }
+    #        );
+    #    }
     return;
 }
 

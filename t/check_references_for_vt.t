@@ -111,7 +111,6 @@ my @vt_references_test =
 my @refs_to_process = check_references_for_vt(
     {
         active_parameter_href => \%active_parameter_test,
-        log                   => $log,
         parameter_href        => \%parameter_test,
         vt_references_ref     => \@vt_references_test,
     }
