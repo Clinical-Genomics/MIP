@@ -185,9 +185,9 @@ sub perl_nae_oneliners {
         q{get_fastq_header_v1.8}             => \&_get_fastq_header_v1_8,
         q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
         get_fastq_read_length                => \&_get_fastq_read_length,
-        get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
+        get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
@@ -483,8 +483,6 @@ sub _get_vcf_sample_ids {
 ## Arguments:
 
     my ($arg_href) = @_;
-
-    ## Prints sequence length and exits
 
     # Find VCF column header line
     my $get_vcf_sample_ids = q?'if ($_ =~ /^#CHROM/ and $F[8] eq q{FORMAT}) {?;
