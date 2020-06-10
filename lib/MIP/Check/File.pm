@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_ids_in_dna_vcf check_file_md5sum check_mip_process_files };
@@ -70,7 +70,7 @@ sub check_ids_in_dna_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_sample_ids_from_vcf };
+    use MIP::Vcf qw{ get_sample_ids_from_vcf };
 
     return if ( not $dna_vcf_file );
 

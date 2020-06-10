@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -187,6 +187,7 @@ sub perl_nae_oneliners {
         get_fastq_read_length                => \&_get_fastq_read_length,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
+        get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
@@ -399,7 +400,7 @@ q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $dir
 sub _get_fastq_read_length {
 
 ## Function : Return read length from a fastq infile
-## Returns  : $get_fastq_read_length
+## Returns  : $read_length_regexp
 ## Arguments:
 
     my ($arg_href) = @_;
@@ -473,6 +474,23 @@ sub _get_select_contigs_by_col {
     $get_select_contigs .= q?last;' ?;
 
     return $get_select_contigs;
+}
+
+sub _get_vcf_sample_ids {
+
+## Function : Return sample ids from a vcf file
+## Returns  : $get_vcf_sample_ids
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Find VCF column header line
+    my $get_vcf_sample_ids = q?'if ($_ =~ /^#CHROM/ and $F[8] eq q{FORMAT}) {?;
+
+    # Print all sample ids
+    $get_vcf_sample_ids .= q?print "@F[9..$#F]"}'?;
+
+    return $get_vcf_sample_ids;
 }
 
 sub _remove_decomposed_asterisk_records {
