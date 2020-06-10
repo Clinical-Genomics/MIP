@@ -29,12 +29,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       broadcast_parameters
       check_analysis_type_to_pipeline
+      check_ids_in_dna_vcf
       check_prioritize_variant_callers
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
@@ -158,6 +159,101 @@ qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline}
 qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type}
         );
         $log->fatal(q{Aborting run});
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_ids_in_dna_vcf {
+
+## Function : Check sample ids in dna VCF and compare to input sample ids
+## Returns  : 1
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $dna_vcf_file          => Unannotated case vcf file from dna pipeline
+##          : $sample_info_href      => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $dna_vcf_file;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1
+        },
+        dna_vcf_file => {
+            store       => \$dna_vcf_file,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+    use MIP::Vcf qw{ get_sample_ids_from_vcf };
+
+    return if ( not $dna_vcf_file );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Retrieve sample ids from vcf
+    my @vcf_sample_ids = get_sample_ids_from_vcf(
+        {
+            vcf_file_path => $dna_vcf_file,
+        }
+    );
+
+    ## Store sample_ids with no matching vcf sample ids
+    my @no_matches;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $dna_sample_id = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{dna_sample_id},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        next SAMPLE_ID if ( any { $dna_sample_id eq $_ } @vcf_sample_ids );
+
+        push @no_matches, $sample_id;
+    }
+
+    ## Check cases
+    if ( @no_matches == @{ $active_parameter_href->{sample_ids} } ) {
+
+        $log->fatal(q{No matching sample ids between the RNA and DNA data});
+        exit 1;
+    }
+    elsif ( @no_matches > 0 and $active_parameter_href->{force_dna_ase} ) {
+
+        $log->warn( q{Turning off ASE analysis for sample: } . join $SPACE, @no_matches );
+
+        @{ $active_parameter_href->{no_ase_samples} } = @no_matches;
+    }
+    elsif ( @no_matches > 0 ) {
+
+        $log->fatal(q{Only partial match between the DNA sample ids and RNA sample ids});
+        $log->fatal(
+q{Start with flag --force_dna_ase to run ASE analysis on the RNA samples with a DNA match}
+        );
         exit 1;
     }
     return 1;
