@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna_panel pipeline_analyse_rd_dna_panel };
@@ -107,7 +107,6 @@ sub parse_rd_dna_panel {
       write_references
     };
     use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
-    use MIP::Check::Reference qw{  };
     use MIP::Config qw{ write_mip_config };
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles };
