@@ -25,10 +25,206 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
+    our @EXPORT_OK = qw{ parse_rd_dna_vcf_rerun pipeline_analyse_rd_dna_vcf_rerun };
+}
+
+sub parse_rd_dna_vcf_rerun {
+
+## Function : Rare disease DNA vcf rerun pipeline specific checks and parsing
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{
+      check_sample_id_in_hash_parameter
+      parse_vep_plugin
+      set_vcfparser_outfile_counter
+      write_references
+    };
+    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
+    use MIP::Parameter qw{ get_cache };
+    use MIP::Reference qw{ get_select_file_contigs };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
+
+    ## Constants
+    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update the expected number of outfiles after vcfparser
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
+
+    ## Collect select file contigs to loop over downstream
+    parse_select_file_contigs(
+        {
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+            select_file_path        => $active_parameter_href->{vcfparser_select_file},
+        }
+    );
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
+        }
+    );
+
+    broadcast_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            order_parameters_ref  => $order_parameters_ref,
+        }
+    );
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            include_y               => $active_parameter_href->{include_y},
+        }
+    );
+
+    ## Add to sample info
+    set_parameter_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
 }
 
 sub pipeline_analyse_rd_dna_vcf_rerun {
@@ -124,7 +320,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
     use MIP::Constants qw{ set_singularity_constants };
     use MIP::Parse::Reference qw{ parse_reference_for_vt };
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
@@ -158,12 +353,11 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
 
     ### Pipeline specific checks
-    check_rd_dna_vcf_rerun(
+    parse_rd_dna_vcf_rerun(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,
             file_info_href        => $file_info_href,
-            log                   => $log,
             order_parameters_ref  => $order_parameters_ref,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
