@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.46;
+    our $VERSION = 1.47;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -125,10 +125,10 @@ sub check_recipe_fastq_compatibility {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ set_recipe_mode };
     use MIP::Dependency_tree
       qw{ get_recipe_dependency_tree_chain get_recipes_for_dependency_tree_chain };
     use MIP::File_info qw{ get_consensus_sequence_run_type };
-    use MIP::Set::Parameter qw{ set_recipe_mode };
 
     ## Check if program is going to run
     return if ( $active_parameter_href->{$recipe_name} == 0 );

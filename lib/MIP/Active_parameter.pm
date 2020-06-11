@@ -21,14 +21,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -70,6 +70,7 @@ BEGIN {
       set_load_env_environment
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      set_recipe_mode
       set_recipe_resource
       set_vcfparser_outfile_counter
       update_recipe_mode_for_start_with_option
@@ -2146,6 +2147,59 @@ sub set_pedigree_sample_id_parameter {
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
 
+    return;
+}
+
+sub set_recipe_mode {
+
+## Function : Set recipe mode
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $mode                  => Mode to set
+##          : $recipes_ref           => Recipes to set mode for {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $mode;
+    my $recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        mode => {
+            allow       => [ 0, 1, 2 ],
+            defined     => 1,
+            required    => 1,
+            store       => \$mode,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+  RECIPE:
+    foreach my $recipe ( @{$recipes_ref} ) {
+
+        $active_parameter_href->{$recipe} = $mode;
+
+        $log->info( qq{Set $recipe to} . $COLON . $SPACE . $mode );
+    }
     return;
 }
 
