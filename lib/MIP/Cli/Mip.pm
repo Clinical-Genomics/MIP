@@ -40,7 +40,6 @@ sub _build_usage {
 
     option(
         q{bash_set_errexit} => (
-            cmd_aliases   => [qw{ bse }],
             documentation => q{Set errexit in bash scripts},
             is            => q{rw},
             isa           => Bool,
@@ -49,7 +48,6 @@ sub _build_usage {
 
     option(
         q{bash_set_nounset} => (
-            cmd_aliases   => [qw{ bsu }],
             documentation => q{Set nounset in bash scripts},
             is            => q{rw},
             isa           => Bool,
@@ -58,7 +56,6 @@ sub _build_usage {
 
     option(
         q{bash_set_pipefail} => (
-            cmd_aliases   => [qw{ bsp }],
             documentation => q{Set pipefail in bash scripts},
             is            => q{rw},
             isa           => Bool,
@@ -67,7 +64,6 @@ sub _build_usage {
 
     option(
         q{conda_path} => (
-            cmd_aliases   => [qw{ conp }],
             documentation => q{Conda path},
             is            => q{rw},
             isa           => Str,
@@ -76,7 +72,6 @@ sub _build_usage {
 
     option(
         q{email} => (
-            cmd_aliases   => [qw{ em }],
             documentation => q{E-mail},
             is            => q{rw},
             isa           => Str,
@@ -85,7 +80,6 @@ sub _build_usage {
 
     option(
         q{email_types} => (
-            cmd_aliases   => [qw{ emt }],
             cmd_tags      => [q{Default: FAIL}],
             documentation => q{E-mail type},
             is            => q{rw},
@@ -95,7 +89,6 @@ sub _build_usage {
 
     option(
         q{job_reservation_name} => (
-            cmd_aliases   => [qw{ job_res_name }],
             documentation => q{Allocate node resources from named reservation},
             is            => q{rw},
             isa           => Str,
@@ -113,7 +106,6 @@ sub _build_usage {
 
     option(
         q{max_cores_per_node} => (
-            cmd_aliases   => [qw{ mcpn }],
             cmd_tags      => [q{Default: 16}],
             documentation => q{Maximum number of processor cores per node},
             is            => q{rw},
@@ -123,7 +115,6 @@ sub _build_usage {
 
     option(
         q{core_ram_memory} => (
-            cmd_aliases   => [qw{ crm }],
             cmd_tags      => [q{Default: 5}],
             documentation => q{RAM memory size of the core(s) in GigaBytes},
             is            => q{rw},
@@ -133,7 +124,6 @@ sub _build_usage {
 
     option(
         q{node_ram_memory} => (
-            cmd_aliases   => [qw{ nrm }],
             cmd_tags      => [q{Default: 128}],
             documentation => q{RAM memory size of the node(s) in GigaBytes},
             is            => q{rw},

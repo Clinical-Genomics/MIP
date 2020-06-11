@@ -17,7 +17,7 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $LOG_NAME $SPACE };
 
 BEGIN {
 
@@ -25,10 +25,247 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_panel };
+    our @EXPORT_OK = qw{ parse_rd_dna_panel pipeline_analyse_rd_dna_panel };
+}
+
+sub parse_rd_dna_panel {
+
+## Function : Rare disease panel DNA pipeline specific checks and parsing
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{
+      check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
+      parse_infiles
+      parse_vep_plugin
+      set_vcfparser_outfile_counter
+      write_references
+    };
+    use MIP::Analysis qw{ broadcast_parameters parse_prioritize_variant_callers };
+    use MIP::Config qw{ write_mip_config };
+    use MIP::Fastq qw{ parse_fastq_infiles };
+    use MIP::File_info qw{ check_parameter_metafiles };
+    use MIP::Gatk qw{ check_gatk_sample_map_paths };
+    use MIP::Reference qw{ parse_exome_target_bed parse_nist_parameters };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
+    use MIP::Vcfanno qw{ parse_toml_config_parameters };
+
+    ## Constants
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
+    parse_exome_target_bed(
+        {
+            exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
+            human_genome_reference_source =>
+              $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update the expected number of outfiles after vcfparser
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => [qw{ vep_plugin }],
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ analysis_type expected_coverage }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
+    check_sample_id_in_hash_parameter_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ exome_target_bed infile_dirs }],
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check that the supplied gatk sample map file paths exists
+    check_gatk_sample_map_paths(
+        {
+            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+        }
+    );
+
+    ## Parse parameters with TOML config files
+    parse_toml_config_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    parse_nist_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    broadcast_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            order_parameters_ref  => $order_parameters_ref,
+        }
+    );
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
+    parse_prioritize_variant_callers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+        }
+    );
+
+    ## Reformat file names to MIP format, get file name info and add info to sample_info
+    parse_fastq_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Add to sample info
+    set_parameter_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
 }
 
 sub pipeline_analyse_rd_dna_panel {
@@ -124,7 +361,6 @@ sub pipeline_analyse_rd_dna_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rd_dna_panel };
     use MIP::Constants qw{ set_singularity_constants };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
@@ -170,7 +406,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Build::Rd_dna qw{ build_rd_dna_meta_files };
 
     ### Pipeline specific checks
-    check_rd_dna_panel(
+    parse_rd_dna_panel(
         {
             active_parameter_href => $active_parameter_href,
             broadcasts_ref        => $broadcasts_ref,

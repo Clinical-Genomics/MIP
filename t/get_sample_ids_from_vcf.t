@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File}      => [qw{ get_sample_ids_from_vcf }],
+        q{MIP::Vcf}            => [qw{ get_sample_ids_from_vcf }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::File qw{ get_sample_ids_from_vcf };
+use MIP::Vcf qw{ get_sample_ids_from_vcf };
 
-diag(   q{Test get_sample_ids_from_vcf from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_sample_ids_from_vcf from Vcf.pm v}
+      . $MIP::Vcf::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -85,6 +84,6 @@ trap {
 
 ## Then exit and print fatal message
 is( $trap->exit, 1, q{Exit on error} );
-like( $trap->stderr, qr/FATAL/xms, q{Print error message} );
+like( $trap->stderr, qr/ERROR:/xms, q{Print error message} );
 
 done_testing();

@@ -31,7 +31,7 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -96,7 +96,7 @@ my $cmds_ref = [
     $config_file,
     q{--conda_path},
     $conda_path,
-    q{--ccp},
+    q{--cluster_constant_path},
     $cluster_constant_path,
     q{--pedigree},
     catfile(
