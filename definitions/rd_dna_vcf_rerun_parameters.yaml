@@ -71,7 +71,6 @@ recipe_core_number:
   default:
     analysisrunstatus: 1
     endvariantannotationblock: 1
-    variant_annotation: 13
     frequency_filter: 13
     rhocall_ar: 15
     sacct: 1
@@ -81,7 +80,9 @@ recipe_core_number:
     sv_varianteffectpredictor: 0
     sv_vcf_rerun_reformat: 1
     sv_vcfparser: 13
+    variant_annotation: 13
     vcf_rerun_reformat: 1
+    vcfanno_preops: 36
     version_collect_ar: 1
     vt_ar: 13
     vt_core: 1
@@ -108,7 +109,6 @@ recipe_time:
     analysisrunstatus: 1
     cadd_ar: 10
     endvariantannotationblock: 2
-    variant_annotation: 1
     frequency_filter: 2
     prepareforvariantannotationblock: 5
     rankvariant: 10
@@ -120,8 +120,10 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcf_rerun_reformat: 1
     sv_vcfparser: 2
+    variant_annotation: 1
     varianteffectpredictor: 10
     vcf_rerun_reformat: 1
+    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -510,6 +512,16 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
+vcfanno_preops:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  program_executables:
+    - bcftools
+    - vcfanno
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
