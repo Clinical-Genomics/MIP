@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [8.2.6]
+- Updates multiqc 
+
+**Tools**
+- multiqc: 1.7 -> 1.9
+
 ## [8.2.5]
 - Adds output files to store for gatk_combinevariants, sambamba depth, chromograph recipes
 - Use MIPs bcftools singularity image in the conda env when checking references 
