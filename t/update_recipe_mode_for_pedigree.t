@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Update::Recipes} => [qw{ update_recipe_mode_for_pedigree }],
-        q{MIP::Test::Fixtures}  => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Analysis}       => [qw{ update_recipe_mode_for_pedigree }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
+use MIP::Analysis qw{ update_recipe_mode_for_pedigree };
 
-diag(   q{Test update_recipe_mode_for_pedigree from Recipes.pm v}
-      . $MIP::Update::Recipes::VERSION
+diag(   q{Test update_recipe_mode_for_pedigree from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,10 +58,12 @@ diag(   q{Test update_recipe_mode_for_pedigree from Recipes.pm v}
       . $EXECUTABLE_NAME );
 
 my $log = test_log( { no_screen => 1, } );
+
+## Given pedigree and recipe
 my %sample_info = test_mip_hashes( { mip_hash_name => q{qc_sample_info}, } );
 my %active_parameter = ( blobfish => 1 );
 
-## Given compatible pedigree
+## When pedigree phenotypea are compatible
 update_recipe_mode_for_pedigree(
     {
         active_parameter_href => \%active_parameter,
@@ -69,10 +71,11 @@ update_recipe_mode_for_pedigree(
         sample_info_href      => \%sample_info,
     }
 );
+
 ## Then keep blobfish recipe active
 is( $active_parameter{blobfish}, 1, q{Recipe is compatible with pedigree} );
 
-## Given non compatible pedigree
+## When non compatible pedigree phenotypes
 $sample_info{sample}{ADM1059A1}{phenotype} = q{unaffected};
 update_recipe_mode_for_pedigree(
     {
@@ -81,13 +84,16 @@ update_recipe_mode_for_pedigree(
         sample_info_href      => \%sample_info,
     }
 );
+
 ## Then turn off blobfish
 is( $active_parameter{blobfish}, 0, q{Recipe is not compatible with pedigree} );
 
-## Given single sample pedigree
+## Given an active recipe
 $active_parameter{blobfish} = 1;
 delete $sample_info{sample}{ADM1059A1};
 delete $sample_info{sample}{ADM1059A2};
+
+## When single sample in pedigree
 update_recipe_mode_for_pedigree(
     {
         active_parameter_href => \%active_parameter,
@@ -95,6 +101,7 @@ update_recipe_mode_for_pedigree(
         sample_info_href      => \%sample_info,
     }
 );
+
 ## Then turn off blobfish
 is( $active_parameter{blobfish}, 0, q{Recipe is not compatible with pedigree} );
 done_testing();

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.34;
+    our $VERSION = 1.35;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
@@ -102,7 +102,7 @@ sub parse_rd_rna {
       parse_infiles
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Analysis qw{ broadcast_parameters update_recipe_mode_for_pedigree };
     use MIP::Check::File qw{ check_ids_in_dna_vcf };
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
@@ -113,7 +113,6 @@ sub parse_rd_rna {
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Star qw{ check_interleaved_files_for_star };
-    use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
