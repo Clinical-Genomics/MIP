@@ -128,6 +128,10 @@ my %specific_argument = (
         input           => $MIN_ALLELES,
         expected_output => q{--min-alleles } . $MIN_ALLELES,
     },
+    no_header => {
+        input           => 1,
+        expected_output => q{--no-header},
+    },
     outfile_path => {
         input           => q{outfile.txt},
         expected_output => q{--output-file outfile.txt},

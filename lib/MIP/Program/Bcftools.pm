@@ -1718,6 +1718,7 @@ sub bcftools_view {
 ##          : $max_alleles            => Max alleles listed in REF and ALT columns
 ##          : $min_ac                 => Min allele count for sites to be printed
 ##          : $min_alleles            => Min alleles listed in REF and ALT columns
+##          : $no_header              => No header
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
@@ -1742,6 +1743,7 @@ sub bcftools_view {
     my $max_alleles;
     my $min_ac;
     my $min_alleles;
+    my $no_header;
     my $outfile_path;
     my $regions_ref;
     my $samples_file_path;
@@ -1784,6 +1786,11 @@ sub bcftools_view {
         min_alleles => {
             allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$min_alleles,
+            strict_type => 1,
+        },
+        no_header => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_header,
             strict_type => 1,
         },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
@@ -1868,6 +1875,11 @@ sub bcftools_view {
     if ($min_alleles) {
 
         push @commands, q{--min-alleles} . $SPACE . $min_alleles;
+    }
+
+    if ($no_header) {
+
+        push @commands, q{--no-header};
     }
 
     if ($outfile_path) {

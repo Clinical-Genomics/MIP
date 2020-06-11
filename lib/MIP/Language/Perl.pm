@@ -516,7 +516,7 @@ sub _get_vcf_header_id_line {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Find vcf_key
-    my $vcf_header_line = q?'if($_=~/ID\=? . $id . q?/) { ?;
+    my $vcf_header_line = q?'if($_=~/ID\=? . $id . q?,/) { ?;
 
     ## Write to stdout
     $vcf_header_line .= q?print $_} ?;

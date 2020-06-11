@@ -219,8 +219,8 @@ sub parse_toml_config_for_vcf_tags {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Reference qw{ check_toml_config_for_vcf_tags };
+    use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_vcfanno_preop };
 
-    ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %preops = check_toml_config_for_vcf_tags(
@@ -229,24 +229,22 @@ sub parse_toml_config_for_vcf_tags {
         }
     );
 
-    #  REFERENCE:
-    #    foreach my $reference_file_path (@to_process_references) {
-    #
-    #        $log->info(q{[Vcfanno - Apply preops]});
-    #        $log->info( $TAB . q{File: } . $reference_file_path );
-    #
-    #        analysis_vcfanno(
-    #            {
-    #                active_parameter_href => $active_parameter_href,
-    #                build_gatk_index      => 1,
-    #                decompose             => 1,
-    #                normalize             => 1,
-    #                infile_path           => $reference_file_path,
-    #                job_id_href           => $job_id_href,
-    #                parameter_href        => $parameter_href,
-    #            }
-    #        );
-    #    }
+  REFERENCE:
+    while ( my ( $reference_file_path, $annotation_href ) = each %preops ) {
+
+        $log->info(q{[Vcfanno - Apply preops]});
+        $log->info( $TAB . q{File: } . $reference_file_path );
+
+        analysis_vcfanno_preop(
+            {
+                active_parameter_href => $active_parameter_href,
+                annotation_href       => $annotation_href,
+                infile_path           => $reference_file_path,
+                job_id_href           => $job_id_href,
+                parameter_href        => $parameter_href,
+            }
+        );
+    }
     return;
 }
 
