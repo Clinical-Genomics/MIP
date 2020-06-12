@@ -14,7 +14,7 @@ use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-## Third party module(s)
+## CPANM
 use autodie;
 use List::MoreUtils qw{ all any };
 use Log::Log4perl;
@@ -22,7 +22,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $EMPTY_STR $CLOSE_BRACE $CLOSE_BRACKET $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SINGLE_QUOTE $SPACE };
+  qw{ $COLON $COMMA $EMPTY_STR $CLOSE_BRACE $CLOSE_BRACKET $LOG_NAME $NEWLINE $OPEN_BRACE $OPEN_BRACKET $SINGLE_QUOTE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -42,6 +42,7 @@ BEGIN {
       parse_prioritize_variant_callers
       set_parameter_to_broadcast
       update_prioritize_flag
+      update_recipe_mode_for_pedigree
       update_recipe_mode_for_wes
     };
 }
@@ -729,6 +730,92 @@ sub update_prioritize_flag {
     ## Update prioritize parameter
     $prioritize_key = join $COMMA, @variant_callers;
     return $prioritize_key;
+}
+
+sub update_recipe_mode_for_pedigree {
+
+## Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wts
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $recipes_ref           => Recipes to update {REF}
+##          : $sample_info_href      => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $recipes_ref;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_recipe_mode };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %phenotype_count;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        $phenotype_count{$phenotype}++;
+    }
+
+    return
+      if (  not $phenotype_count{unknown}
+        and $phenotype_count{affected}
+        and $phenotype_count{unaffected} );
+
+  RECIPE:
+    foreach my $recipe ( @{$recipes_ref} ) {
+
+        next RECIPE if $active_parameter_href->{$recipe} == 0;
+
+        set_recipe_mode(
+            {
+                active_parameter_href => $active_parameter_href,
+                mode                  => 0,
+                recipes_ref           => [ $recipe, ],
+            }
+        );
+        $log->warn( q{Turned off}
+              . $COLON
+              . $recipe
+              . q{as it is not compatible with this pedigrees phenotypes constellation} );
+    }
+    return;
 }
 
 sub update_recipe_mode_for_wes {

@@ -102,7 +102,7 @@ sub parse_rd_rna {
       parse_infiles
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf };
+    use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf  update_recipe_mode_for_pedigree }; 
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
@@ -112,7 +112,6 @@ sub parse_rd_rna {
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Set::Analysis qw{ set_ase_chain_recipes };
     use MIP::Star qw{ check_interleaved_files_for_star };
-    use MIP::Update::Recipes qw{ update_recipe_mode_for_pedigree };
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
