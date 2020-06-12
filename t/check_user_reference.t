@@ -73,10 +73,9 @@ $active_parameter{reference}{not_a_reference} = [qw{ decoy_5 }];
 trap {
     check_user_reference(
         {
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref               => \%{ $active_parameter{reference_feature} },
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     )
 };
@@ -100,10 +99,9 @@ $active_parameter{reference}{human_reference} = [qw{ bad_version }];
 trap {
     check_user_reference(
         {
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref               => \%{ $active_parameter{reference_feature} },
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     )
 };
@@ -121,10 +119,9 @@ $active_parameter{reference}{human_reference} = [qw{ decoy_5 }];
 my @returns = trap {
     check_user_reference(
         {
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref               => \%{ $active_parameter{reference_feature} },
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     )
 };
