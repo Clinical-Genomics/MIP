@@ -13,32 +13,23 @@ use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-## CPANM
-use List::Util qw{ any };
-use Readonly;
-
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $SPACE $TAB };
+use MIP::Constants qw{ $LOG_NAME };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.35;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_conda_path
       set_container_bind_paths
       set_programs_for_installation
-      set_recipe_mode
     };
 }
-
-## Constants
-Readonly my $TWO         => 2;
-Readonly my $ONE_HUNDRED => 100;
 
 sub set_conda_path {
 
@@ -194,64 +185,6 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
             }
         );
     }
-    return;
-}
-
-sub set_recipe_mode {
-
-## Function : Set recipe mode
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $mode                  => Mode to set
-##          : $recipes_ref           => Recipes to set {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $mode;
-    my $recipes_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        mode => {
-            allow       => [ 0, 1, $TWO ],
-            defined     => 1,
-            required    => 1,
-            store       => \$mode,
-            strict_type => 1,
-        },
-        recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$recipes_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Set recipe mode
-  RECIPE:
-    foreach my $recipe ( @{$recipes_ref} ) {
-
-        $active_parameter_href->{$recipe} = $mode;
-
-        ## Broadcast
-        $log->info(
-            q{Set} . $SPACE . $recipe . $SPACE . q{to} . $COLON . $SPACE . $mode );
-    }
-
     return;
 }
 
