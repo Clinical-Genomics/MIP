@@ -102,8 +102,7 @@ sub parse_rd_rna {
       parse_infiles
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters update_recipe_mode_for_pedigree };
-    use MIP::Check::File qw{ check_ids_in_dna_vcf };
+    use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf  update_recipe_mode_for_pedigree }; 
     use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
