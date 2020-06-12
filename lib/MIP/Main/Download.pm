@@ -49,7 +49,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -249,10 +249,9 @@ sub mip_download {
 
     check_user_reference(
         {
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref => \%{ $active_parameter{reference_feature} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     );
 
