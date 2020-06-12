@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -42,6 +42,7 @@ BEGIN {
       parse_prioritize_variant_callers
       set_parameter_to_broadcast
       update_prioritize_flag
+      update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree
       update_recipe_mode_for_wes
     };
@@ -730,6 +731,104 @@ sub update_prioritize_flag {
     ## Update prioritize parameter
     $prioritize_key = join $COMMA, @variant_callers;
     return $prioritize_key;
+}
+
+sub update_recipe_mode_for_fastq_compatibility {
+
+## Function : Check that the recipe is compatible with the fastq sequence modes or turn it off
+## Returns  : $is_compatible
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $recipe_name           => Recipe name
+
+    my ($arg_href) = @_;
+
+    ## Flatten arguments
+    my $active_parameter_href;
+    my $file_info_href;
+    my $parameter_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            required    => 1,
+            defined     => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_recipe_mode };
+    use MIP::Dependency_tree
+      qw{ get_recipe_dependency_tree_chain get_recipes_for_dependency_tree_chain };
+    use MIP::File_info qw{ get_consensus_sequence_run_type };
+
+    return if ( $active_parameter_href->{$recipe_name} == 0 );
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $is_compatible = get_consensus_sequence_run_type(
+        {
+            file_info_href => $file_info_href,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
+        }
+    );
+
+    if ( not $is_compatible ) {
+
+        $log->warn(q{Multiple sequence run types detected});
+        $log->warn(qq{Turning off $recipe_name and downstream recipes});
+
+        my $recipe_chain;
+        get_recipe_dependency_tree_chain(
+            {
+                chain_id_ref         => \$recipe_chain,
+                dependency_tree_href => $parameter_href->{dependency_tree_href},
+                recipe               => $recipe_name,
+            }
+        );
+
+        my @chain_recipes = get_recipes_for_dependency_tree_chain(
+            {
+                chain_initiation_point  => $recipe_chain,
+                dependency_tree_href    => $parameter_href->{dependency_tree_href},
+                recipe_initiation_point => $recipe_name,
+            }
+        );
+
+        set_recipe_mode(
+            {
+                active_parameter_href => $active_parameter_href,
+                mode                  => 0,
+                recipes_ref           => \@chain_recipes,
+            }
+        );
+    }
+    return $is_compatible;
 }
 
 sub update_recipe_mode_for_pedigree {

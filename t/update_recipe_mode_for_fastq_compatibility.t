@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_recipe_fastq_compatibility }],
+        q{MIP::Analysis} => [qw{ update_recipe_mode_for_fastq_compatibility }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility };
+use MIP::Analysis qw{ update_recipe_mode_for_fastq_compatibility };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
-diag(   q{Test check_recipe_fastq_compatibility from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test update_recipe_mode_for_fastq_compatibility from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -80,12 +80,12 @@ $parameter{dependency_tree_href} = \%dependency_tree;
 
 my $log = test_log( {} );
 
-my $sample_id         = q{ADM1059A1};
 my %file_info         = test_mip_hashes( { mip_hash_name => q{file_info}, } );
 my $mip_file_format_2 = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane1};
+my $sample_id         = q{ADM1059A1};
 
 ## Given that both lanes have been sequenced the same way
-my $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
+my $recipe_fastq_compatibility = update_recipe_mode_for_fastq_compatibility(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
@@ -93,7 +93,7 @@ my $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
         recipe_name           => q{salmon_quant},
     }
 );
-## Then OK
+## Then return true
 ok( $recipe_fastq_compatibility, q{Compatible} );
 
 ## Given a lane difference
@@ -101,7 +101,7 @@ push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format
 $file_info{$sample_id}{$mip_file_format_2}{sequence_run_type} = q{paired-end};
 
 trap {
-    $recipe_fastq_compatibility = check_recipe_fastq_compatibility(
+    $recipe_fastq_compatibility = update_recipe_mode_for_fastq_compatibility(
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
@@ -112,6 +112,6 @@ trap {
 };
 ## Then not compatible
 is( $recipe_fastq_compatibility, 0, q{Identify non compatible sequence types} );
-like( $trap->stderr, qr/Multiple\ssequence\srun\stypes\sdetected/xms, q{Log warning} );
+like( $trap->stderr, qr/Multiple\ssequence\srun\stypes\sdetected/xms, q{Log warning for non compatible sequence types with recipe} );
 
 done_testing();
