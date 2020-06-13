@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.35;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
@@ -102,8 +102,9 @@ sub parse_rd_rna {
       parse_infiles
       write_references
     };
-    use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf  update_recipe_mode_for_pedigree }; 
-    use MIP::Check::Parameter qw{ check_recipe_fastq_compatibility  };
+    use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf
+      update_recipe_mode_for_fastq_compatibility
+      update_recipe_mode_for_pedigree };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::Fastq qw{ parse_fastq_infiles };
@@ -251,7 +252,7 @@ sub parse_rd_rna {
   RECIPE:
     foreach my $recipe (@recipes_to_check) {
 
-        check_recipe_fastq_compatibility(
+        update_recipe_mode_for_fastq_compatibility(
             {
                 active_parameter_href => $active_parameter_href,
                 file_info_href        => $file_info_href,
