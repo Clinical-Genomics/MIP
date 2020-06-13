@@ -90,8 +90,8 @@ sub check_user_reference {
 
                 my $has_attribute = get_download_reference_attributes(
                     {
-                        id             => $reference_id,
                         genome_version => $reference_genome_version,
+                        id             => $reference_id,
                         reference_href => $reference_ref,
                         version        => $version,
                     }
@@ -122,16 +122,16 @@ sub get_download_reference_attributes {
 
 ## Function : Get reference id version attributes per genome build for download
 ## Returns  : %{$reference_file_attribute_href}
-## Arguments: $id             => Reference id
-##          : $genome_version => Reference genome build versions
+## Arguments: $genome_version => Reference genome build versions
+##          : $id             => Reference id
 ##          : $reference_href => Reference id and reference version per genome version
 ##          : $version        => Reference version
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $id;
     my $genome_version;
+    my $id;
     my $reference_href;
     my $version;
 
