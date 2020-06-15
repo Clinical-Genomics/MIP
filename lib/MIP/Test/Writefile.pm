@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_write_to_file write_toml_config };
@@ -150,7 +150,12 @@ sub write_toml_config {
 
         $toml{functions}{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
     }
-    $toml{annotation}[0]{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $toml{annotation} } ) {
+
+        $annotation_href->{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+    }
 
     write_to_file(
         {

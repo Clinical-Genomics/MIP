@@ -25,7 +25,97 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_vcfanno_toml parse_toml_config_parameters };
+    our @EXPORT_OK = qw{
+      check_toml_annotation_for_tags
+      check_vcfanno_toml
+      get_toml_annotation_preops
+      parse_toml_config_parameters
+    };
+}
+
+sub check_toml_annotation_for_tags {
+
+## Function : Check that TOML annotation contains necessary vcf tags or has instructions (preops) on how to create them
+## Returns  :
+## Arguments: $annotation_href      => TOML annotation {REF}
+##          : $bcftools_binary_path => Path to bcftools binary
+##          : $missing_tag_href     => Files missing vcf tags {REF}
+##          : $preop_href           => Toml config file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_href;
+    my $bcftools_binary_path;
+    my $missing_tag_href;
+    my $preops_href;
+
+    my $tmpl = {
+        annotation_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$annotation_href,
+            strict_type => 1,
+        },
+        bcftools_binary_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bcftools_binary_path,
+            strict_type => 1,
+        },
+        missing_tag_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$missing_tag_href,
+            strict_type => 1,
+        },
+        preops_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$preops_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ any };
+    use MIP::File::Format::Vcf qw{ get_vcf_header_line_by_id };
+    use MIP::Vcfanno qw{ get_toml_annotation_preops };
+
+    my $annotation_file_path = $annotation_href->{file};
+
+  VCF_ID_TAG:
+    foreach my $vcf_id_tag ( @{ $annotation_href->{fields} } ) {
+
+        my $header_id_line = get_vcf_header_line_by_id(
+            {
+                bcftools_binary_path => $bcftools_binary_path,
+                header_id            => $vcf_id_tag,
+                vcf_file_path        => $annotation_file_path,
+            }
+        );
+
+        next VCF_ID_TAG if defined $header_id_line;
+
+        my %preops = get_toml_annotation_preops(
+            {
+                annotation_href => $annotation_href,
+            }
+        );
+
+        if ( %preops and any { $_ eq $vcf_id_tag } @{ $preops{names} } ) {
+
+            push @{ $preops_href->{$annotation_file_path}{annotation} }, \%preops;
+            return;
+        }
+
+        push @{ $missing_tag_href->{$annotation_file_path} }, $vcf_id_tag;
+    }
+    return 1;
 }
 
 sub check_vcfanno_toml {
@@ -142,6 +232,38 @@ sub check_vcfanno_toml {
     }
 
     return 1;
+}
+
+sub get_toml_annotation_preops {
+
+## Function : Get potential annotation preops in TOML
+## Returns  : %preops
+## Arguments: $annotation_href => Annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_href;
+
+    my $tmpl = {
+        annotation_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$annotation_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if not $annotation_href->{preops};
+
+    my %preops = (
+        file => $annotation_href->{file},
+        %{ $annotation_href->{preops} },
+    );
+    return %preops;
 }
 
 sub parse_toml_config_parameters {

@@ -26,7 +26,7 @@ qccollect_eval_metric_file: qc_eval_metric_-v1.1-.yaml
 qccollect_regexp_file: qc_regexp_-v1.25-.yaml
 rank_model_file: rank_model_-v1.29-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-vcfanno_config: grch37_vcfanno_config_v1.9-.toml
+vcfanno_config: grch37_vcfanno_config_v1.10-.toml
 ### Analysis
 ### Programs
 ## Parameters

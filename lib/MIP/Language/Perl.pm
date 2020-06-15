@@ -102,6 +102,7 @@ sub perl_nae_oneliners {
 ##          : $n                      => Iterate over filename arguments
 ##          : $oneliner_cmd           => Command to execute
 ##          : $oneliner_name          => Perl oneliner name
+##          : $oneliner_parameter     => Feed a parameter to the oneliner program
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -114,6 +115,7 @@ sub perl_nae_oneliners {
     my $filehandle;
     my $oneliner_cmd;
     my $oneliner_name;
+    my $oneliner_parameter;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -159,6 +161,10 @@ sub perl_nae_oneliners {
             store       => \$oneliner_name,
             strict_type => 1,
         },
+        oneliner_parameter => {
+            store       => \$oneliner_parameter,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -187,11 +193,18 @@ sub perl_nae_oneliners {
         get_fastq_read_length                => \&_get_fastq_read_length,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
+        get_vcf_header_id_line               => \&_get_vcf_header_id_line,
         get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
         write_contigs_size_file              => \&_write_contigs_size_file,
+    );
+
+    my %oneliner_option = (
+        get_vcf_header_id_line => {
+            id => $oneliner_parameter
+        },
     );
 
     ## Stores commands depending on input parameters
@@ -203,19 +216,24 @@ sub perl_nae_oneliners {
         }
     );
 
+    ## Fetch oneliner from dispach table
     if (    defined $oneliner_name
         and exists $oneliner{$oneliner_name}
         and not $oneliner_cmd )
     {
 
-        $oneliner_cmd = $oneliner{$oneliner_name}->();
+        $oneliner_cmd = $oneliner{$oneliner_name}->(
+            defined $oneliner_option{$oneliner_name}
+            ? $oneliner_option{$oneliner_name}
+            : undef
+        );
     }
 
+    ## Quote oneliner for use with xargs
     if ( $oneliner_cmd and $escape_oneliner ) {
 
         $oneliner_cmd = $BACKWARD_SLASH . $oneliner_cmd;
         substr $oneliner_cmd, $MINUS_ONE, 0, $BACKWARD_SLASH;
-
     }
 
     if ($oneliner_cmd) {
@@ -474,6 +492,40 @@ sub _get_select_contigs_by_col {
     $get_select_contigs .= q?last;' ?;
 
     return $get_select_contigs;
+}
+
+sub _get_vcf_header_id_line {
+
+## Function : Return vcf header line matching given id
+## Returns  : $vcf_header_line
+## Arguments: $id => Header info id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $id;
+
+    my $tmpl = {
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Find vcf_key
+    my $vcf_header_line = q?'if($_=~/\A[#]{2}INFO=<ID=? . $id . q?,/) { ?;
+
+    ## Write to stdout
+    $vcf_header_line .= q?print $_} ?;
+
+    ## If header is finished quit
+    $vcf_header_line .= q?if($_=~ /\A#CHROM/) {last}'?;
+
+    return $vcf_header_line;
 }
 
 sub _get_vcf_sample_ids {

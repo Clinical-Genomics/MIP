@@ -35,7 +35,7 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
 sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.3-.toml
-vcfanno_config: grch37_vcfanno_config_-v1.9-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.10-.toml
 ### Analysis
 ## Programs
 ## Parameters

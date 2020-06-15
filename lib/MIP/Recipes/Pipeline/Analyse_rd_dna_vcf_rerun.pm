@@ -321,7 +321,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_singularity_constants };
-    use MIP::Parse::Reference qw{ parse_reference_for_vt };
+    use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
@@ -381,14 +381,12 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         }
     );
 
-    ## Check if vt has processed references
+    ## Check if references needs preprocessing
     ## If not try to reprocesses them before launching recipes
-    $log->info(q{[Reference check - Reference processed by VT]});
-    parse_reference_for_vt(
+    parse_references(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
-            log                   => $log,
             parameter_href        => $parameter_href,
         }
     );

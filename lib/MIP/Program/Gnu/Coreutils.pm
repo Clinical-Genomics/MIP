@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -1370,6 +1370,7 @@ sub gnu_split {
 ## Function : Perl wrapper for writing split command to $filehandle or return commands array. Based on split 8.4.
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
+##          : $files                  => Files to generate, keep lines intact
 ##          : $infile_path            => Infile path
 ##          : $lines                  => Put number lines per output file
 ##          : $numeric_suffixes       => Use numeric suffixes instead of alphabetic
@@ -1384,6 +1385,7 @@ sub gnu_split {
 
     ## Flatten argument(s)
     my $filehandle;
+    my $files;
     my $infile_path;
     my $lines;
     my $numeric_suffixes;
@@ -1399,6 +1401,11 @@ sub gnu_split {
     my $tmpl = {
         filehandle => {
             store => \$filehandle,
+        },
+        files => {
+            allow       => qr/ ^\d+$ /xms,
+            store       => \$files,
+            strict_type => 1,
         },
         infile_path => {
             defined     => 1,
@@ -1454,6 +1461,10 @@ sub gnu_split {
     my @commands = q{split};
 
     ## Options
+    if ($files) {
+        push @commands, q{--number=l/} . $files;
+    }
+
     if ($lines) {
         push @commands, q{--lines=} . $lines;
     }

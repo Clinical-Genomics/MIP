@@ -39,6 +39,7 @@ BEGIN {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       get_active_parameter_attribute
+      get_binary_path
       get_matching_values_key
       get_not_allowed_temp_dirs
       get_package_env_attributes
@@ -692,6 +693,42 @@ sub get_active_parameter_attribute {
 
     ## Return scalar parameter attribute value
     return $parameter_attribute;
+}
+
+sub get_binary_path {
+
+## Function : Get path to binary
+## Returns  : $active_parameter_href->{binary_path}{$binary}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $binary                => Binary name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $binary;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        binary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $active_parameter_href->{binary_path}{$binary} );
+
+    return $active_parameter_href->{binary_path}{$binary};
 }
 
 sub get_matching_values_key {
