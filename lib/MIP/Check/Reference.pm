@@ -273,7 +273,7 @@ sub check_references_for_vt {
 
 sub check_toml_config_for_vcf_tags {
 
-## Function : Check that the toml config contains alll neccessary annotation tags
+## Function : Check that the toml config contains all neccessary annotation tags
 ## Returns  : %preop_annotations
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 
