@@ -59,7 +59,7 @@ diag(   q{Test gnu_split from Coreutils.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $FILES => 12;
+Readonly my $NUMBER_OF_FILES => 12;
 
 ## Base arguments
 my @function_base_commands = qw{ split };
@@ -90,8 +90,8 @@ my %required_argument = (
 ## Specific arguments
 my %specific_argument = (
     files => {
-        input           => $FILES,
-        expected_output => q{--number=l/} . $FILES,
+        input           => $NUMBER_OF_FILES,
+        expected_output => q{--number=l/} . $NUMBER_OF_FILES,
     },
     infile_path => {
         input           => q{infile.test},

@@ -517,13 +517,13 @@ sub _get_vcf_header_id_line {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Find vcf_key
-    my $vcf_header_line = q?'if($_=~/ID\=? . $id . q?,/) { ?;
+    my $vcf_header_line = q?'if($_=~/\A[#]{2}INFO=<ID=? . $id . q?,/) { ?;
 
     ## Write to stdout
     $vcf_header_line .= q?print $_} ?;
 
     ## If header is finished quit
-    $vcf_header_line .= q?if($_=~/#CHROM/) {last}'?;
+    $vcf_header_line .= q?if($_=~ /\A#CHROM/) {last}'?;
 
     return $vcf_header_line;
 }

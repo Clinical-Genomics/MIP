@@ -42,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference} => [qw{ check_toml_config_for_vcf_tags }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Reference}      => [qw{ check_toml_config_for_vcf_tags }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Reference qw{ check_toml_config_for_vcf_tags };
+use MIP::Reference qw{ check_toml_config_for_vcf_tags };
 
 diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -131,7 +131,7 @@ trap {
 };
 
 ## Then print fatal log message and exit
-ok( $trap->exit, q{Exit when vcf annoation tags are missing } );
+ok( $trap->exit, q{Exit when vcf annotation tags are missing } );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
 unlink $toml_config_path;

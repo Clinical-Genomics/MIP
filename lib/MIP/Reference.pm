@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use List::MoreUtils qw { all any };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -35,6 +35,7 @@ BEGIN {
       check_nist_nist_id
       check_nist_sample_id
       check_nist_version
+      check_toml_config_for_vcf_tags
       get_dict_contigs
       get_nist_file
       get_select_file_contigs
@@ -430,6 +431,101 @@ sub check_nist_version {
         exit 1;
     }
     return 1;
+}
+
+sub check_toml_config_for_vcf_tags {
+
+## Function : Check that the toml config contains all neccessary annotation tags
+## Returns  : %preop_annotations
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ get_binary_path };
+    use MIP::Io::Read qw{ read_from_file };
+    use MIP::Vcfanno qw{ check_toml_annotation_for_tags };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $bcftools_binary_path = get_binary_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            binary                => q{bcftools},
+        }
+    );
+
+    ## TOML parameters
+    my %toml = (
+        sv_annotate        => q{sv_vcfanno_config},
+        variant_annotation => q{vcfanno_config},
+    );
+
+    my %missing_tag;
+    my %preop_annotations;
+
+  VCFANNO_RECIPE:
+    while ( my ( $vcfanno_recipe, $vcfanno_toml_config ) = each %toml ) {
+
+        next VCFANNO_RECIPE if ( not $active_parameter_href->{$vcfanno_recipe} );
+
+        my %vcfanno_config = read_from_file(
+            {
+                format => q{toml},
+                path   => $active_parameter_href->{$vcfanno_toml_config},
+            }
+        );
+
+      ANNOTATION:
+        foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+            ## Only check vcf files
+            next ANNOTATION if ( not exists $annotation_href->{fields} );
+
+            ## Check if vcf contains the VCF tag specified in the annotation
+            check_toml_annotation_for_tags(
+                {
+                    annotation_href      => $annotation_href,
+                    bcftools_binary_path => $bcftools_binary_path,
+                    missing_tag_href     => \%missing_tag,
+                    preops_href          => \%preop_annotations,
+                }
+            );
+        }
+    }
+
+    if (%missing_tag) {
+      REFERENCE_FILE:
+        foreach my $reference_file ( keys %missing_tag ) {
+
+            $log->fatal(
+                $reference_file
+                  . $SPACE
+                  . q{misses required ID(s)}
+                  . $COLON
+                  . $SPACE
+                  . join $SPACE,
+                @{ $missing_tag{$reference_file} }
+            );
+        }
+        exit 1;
+    }
+
+    return %preop_annotations;
 }
 
 sub get_dict_contigs {

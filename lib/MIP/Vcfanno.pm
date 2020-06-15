@@ -35,7 +35,7 @@ BEGIN {
 
 sub check_toml_annotation_for_tags {
 
-## Function : Check that TOML annotation contains necessary vcf tags
+## Function : Check that TOML annotation contains necessary vcf tags or has instructions (preops) on how to create them
 ## Returns  :
 ## Arguments: $annotation_href      => TOML annotation {REF}
 ##          : $bcftools_binary_path => Path to bcftools binary

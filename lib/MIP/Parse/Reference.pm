@@ -34,9 +34,9 @@ sub parse_references {
 
 ## Function : Parse references for preprocessing operations
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -143,7 +143,6 @@ sub parse_reference_for_vt {
 
     return if ( not $active_parameter_href->{vt_normalize} );
 
-    ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my @to_process_references = check_references_for_vt(
@@ -167,9 +166,9 @@ sub parse_reference_for_vt {
                 active_parameter_href => $active_parameter_href,
                 build_gatk_index      => 1,
                 decompose             => 1,
-                normalize             => 1,
                 infile_path           => $reference_file_path,
                 job_id_href           => $job_id_href,
+                normalize             => 1,
                 parameter_href        => $parameter_href,
             }
         );
@@ -181,9 +180,9 @@ sub parse_toml_config_for_vcf_tags {
 
 ## Function : Parse references in toml config for preops
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -218,7 +217,7 @@ sub parse_toml_config_for_vcf_tags {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_toml_config_for_vcf_tags };
+    use MIP::Reference qw{ check_toml_config_for_vcf_tags };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_vcfanno_preop };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
