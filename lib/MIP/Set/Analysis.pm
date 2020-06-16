@@ -23,11 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_ase_chain_recipes
       set_rankvariants_ar
       set_recipe_bwa_mem
       set_recipe_chromograph
@@ -382,47 +381,6 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
         $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
     }
-    return;
-}
-
-sub set_ase_chain_recipes {
-
-## Function : Update analysis recipes for ASE on dna vcf
-## Returns  :
-## Arguments: $active_parameter_href => Active parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Keep default if no DNA vcf
-    if ( not $active_parameter_href->{dna_vcf_file} ) {
-
-        ## Turn off vcf reformat
-        $active_parameter_href->{dna_vcf_reformat} = 0;
-    }
-    else {
-
-        ## Turn off variantcalling part of RNA pipeline
-        $active_parameter_href->{gatk_splitncigarreads}  = 0;
-        $active_parameter_href->{gatk_baserecalibration} = 0;
-        $active_parameter_href->{gatk_haplotypecaller}   = 0;
-        $active_parameter_href->{gatk_variantfiltration} = 0;
-    }
-
     return;
 }
 

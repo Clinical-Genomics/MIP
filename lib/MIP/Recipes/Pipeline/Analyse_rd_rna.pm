@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.36;
+    our $VERSION = 1.37;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
@@ -111,7 +111,7 @@ sub parse_rd_rna {
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parameter qw{ get_cache };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
-    use MIP::Set::Analysis qw{ set_ase_chain_recipes };
+    use MIP::Analysis qw{ set_ase_chain_recipes };
     use MIP::Star qw{ check_interleaved_files_for_star };
 
     ## Constants
