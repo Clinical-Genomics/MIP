@@ -39,7 +39,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.15;
+    our $VERSION = 2.16;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -78,9 +78,6 @@ sub mip_install {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
-    # All parameters MIP install knows
-    my %parameter = %{$parameter_href};
-
     ## Get local time
     my $date_time       = localtime;
     my $date_time_stamp = $date_time->datetime;
@@ -93,7 +90,7 @@ sub mip_install {
     update_to_absolute_path(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -119,7 +116,7 @@ sub mip_install {
     check_cmd_config_vs_definition_file(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -144,8 +141,8 @@ sub mip_install {
         {
             active_parameter_href => $active_parameter_href,
             custom_default_parameters_ref =>
-              \@{ $parameter{custom_default_parameters}{default} },
-            parameter_href => \%parameter,
+              $parameter_href->{custom_default_parameters}{default},
+            parameter_href => $parameter_href,
         }
     );
 

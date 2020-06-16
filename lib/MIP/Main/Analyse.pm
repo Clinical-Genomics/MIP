@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.57;
+    our $VERSION = 1.58;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -146,15 +146,6 @@ sub mip_analyse {
     # Holds all active parameters values for broadcasting
     my @broadcasts;
 
-    # File information
-    my %file_info = %{$file_info_href};
-
-    # Order parameters for logical broadcast of parameters
-    my @order_parameters = @{$order_parameters_ref};
-
-    # All parameters MIP analyse knows
-    my %parameter = %{$parameter_href};
-
 #### Script parameters
 
 ## Add date_time_stamp for later use in log and qc_metrics yaml file
@@ -176,7 +167,7 @@ sub mip_analyse {
     update_to_absolute_path(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -184,7 +175,7 @@ sub mip_analyse {
     parse_config(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -209,13 +200,13 @@ sub mip_analyse {
         {
             active_parameter_href => $active_parameter_href,
             pedigree_file_path    => $active_parameter_href->{pedigree_file},
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
             sample_info_href      => \%sample_info,
         }
     );
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
-    $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
+    $parameter_href->{cache}{consensus_analysis_type} = get_overall_analysis_type(
         {
             analysis_type_href => $active_parameter_href->{analysis_type},
         }
@@ -226,14 +217,14 @@ sub mip_analyse {
         {
             active_parameter_href => $active_parameter_href,
             custom_default_parameters_ref =>
-              \@{ $parameter{custom_default_parameters}{default} },
-            parameter_href => \%parameter,
+              $parameter_href->{custom_default_parameters}{default},
+            parameter_href => $parameter_href,
         }
     );
 
     my $consensus_analysis_type = get_cache(
         {
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
             parameter_name => q{consensus_analysis_type},
         }
     );
@@ -250,10 +241,10 @@ sub mip_analyse {
 ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and check compression status
     set_human_genome_reference_features(
         {
-            file_info_href => \%file_info,
+            file_info_href => $file_info_href,
             human_genome_reference =>
               basename( $active_parameter_href->{human_genome_reference} ),
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
         }
     );
 
@@ -261,7 +252,7 @@ sub mip_analyse {
     parse_reference_path(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -278,7 +269,7 @@ sub mip_analyse {
         {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
-            parameter_href          => \%parameter,
+            parameter_href          => $parameter_href,
         }
     );
 
@@ -295,17 +286,17 @@ sub mip_analyse {
     check_human_genome_file_endings(
         {
             human_genome_reference_file_endings_ref =>
-              $file_info{human_genome_reference_file_endings},
+              $file_info_href->{human_genome_reference_file_endings},
             human_genome_reference_path =>
               $active_parameter_href->{human_genome_reference},
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
             parameter_name => q{human_genome_reference_file_endings},
         }
     );
 
 ## Set sequence contigs used in analysis from human genome sequence dict file
     my $dict_file_path = catfile( $active_parameter_href->{reference_dir},
-        $file_info{human_genome_reference_name_prefix} . $DOT . q{dict} );
+        $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
 
     set_dict_contigs(
         {
@@ -316,7 +307,7 @@ sub mip_analyse {
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{cache}{trio} = get_is_trio(
+    $parameter_href->{cache}{trio} = get_is_trio(
         {
             active_parameter_href => $active_parameter_href,
             sample_info_href      => \%sample_info,
@@ -344,7 +335,7 @@ sub mip_analyse {
     parse_recipes(
         {
             active_parameter_href   => $active_parameter_href,
-            parameter_href          => \%parameter,
+            parameter_href          => $parameter_href,
             parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
     );
@@ -356,7 +347,7 @@ sub mip_analyse {
     parse_program_executables(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -383,17 +374,17 @@ sub mip_analyse {
                 ## Collects all recipes that MIP can handle
                 q{type:recipe},
             ],
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
         }
     );
 
-    set_cache_program_executables( { parameter_href => \%parameter, } );
+    set_cache_program_executables( { parameter_href => $parameter_href, } );
 
     ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -401,22 +392,22 @@ sub mip_analyse {
     check_load_env_packages(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
     ## Check that recipe name and program name are not identical
     check_recipe_vs_binary_name(
         {
-            parameter_href   => \%parameter,
-            recipe_names_ref => \@{ $parameter{cache}{recipe} },
+            parameter_href   => $parameter_href,
+            recipe_names_ref => $parameter_href->{cache}{recipe},
         }
     );
 
     parse_start_with_recipe(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         },
     );
 
@@ -425,7 +416,7 @@ sub mip_analyse {
         {
             active_parameter_href => $active_parameter_href,
             dry_run_all           => $active_parameter_href->{dry_run_all},
-            recipes_ref           => \@{ $parameter{cache}{recipe} },
+            recipes_ref           => $parameter_href->{cache}{recipe},
         }
     );
 
@@ -441,15 +432,15 @@ sub mip_analyse {
 ## Set contig prefix and contig names depending on reference used
     set_contigs(
         {
-            file_info_href => \%file_info,
-            version        => $file_info{human_genome_reference_version},
+            file_info_href => $file_info_href,
+            version        => $file_info_href->{human_genome_reference_version},
         }
     );
 
 ## Creates all fileendings as the samples is processed depending on the chain of modules activated
     my @order_recipes = get_cache(
         {
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
             parameter_name => q{order_recipes_ref},
         }
     );
@@ -457,9 +448,9 @@ sub mip_analyse {
         {
             active_parameter_href => $active_parameter_href,
             case_id               => $active_parameter_href->{case_id},
-            file_info_href        => \%file_info,
+            file_info_href        => $file_info_href,
             order_recipes_ref     => \@order_recipes,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
             sample_ids_ref        => $active_parameter_href->{sample_ids},
         }
     );
@@ -470,7 +461,7 @@ sub mip_analyse {
             case_id          => $active_parameter_href->{case_id},
             execution_mode   => q{system},
             fam_file_path    => $active_parameter_href->{pedigree_fam_file},
-            parameter_href   => \%parameter,
+            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => \%sample_info,
         }
@@ -494,11 +485,11 @@ sub mip_analyse {
             active_parameter_href   => $active_parameter_href,
             broadcasts_ref          => \@broadcasts,
             consensus_analysis_type => $consensus_analysis_type,
-            file_info_href          => \%file_info,
+            file_info_href          => $file_info_href,
             job_id_href             => \%job_id,
-            order_parameters_ref    => \@order_parameters,
-            order_recipes_ref       => \@{ $parameter{cache}{order_recipes_ref} },
-            parameter_href          => \%parameter,
+            order_parameters_ref    => $order_parameters_ref,
+            order_recipes_ref       => $parameter_href->{cache}{order_recipes_ref},
+            parameter_href          => $parameter_href,
             sample_info_href        => \%sample_info,
         }
     );
