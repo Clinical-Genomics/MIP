@@ -49,7 +49,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -94,10 +94,6 @@ sub mip_download {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
-    ## Transfer to lexical variables
-    # Parameters to include in each download run
-    my %active_parameter = %{$active_parameter_href};
-
     # All parameters MIP download knows
     my %parameter = %{$parameter_href};
 
@@ -115,22 +111,22 @@ sub mip_download {
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
 
     ### Config file
     ## If config from cmd
-    if ( exists $active_parameter{config_file}
-        && defined $active_parameter{config_file} )
+    if ( exists $active_parameter_href->{config_file}
+        && defined $active_parameter_href->{config_file} )
     {
 
         ## Loads a YAML file into an arbitrary hash and returns it.
         my %config_parameter = read_from_file(
             {
                 format => q{yaml},
-                path   => $active_parameter{config_file},
+                path   => $active_parameter_href->{config_file},
             }
         );
 
@@ -138,7 +134,7 @@ sub mip_download {
         ## has been supplied on the command line
         set_config_to_active_parameters(
             {
-                active_parameter_href => \%active_parameter,
+                active_parameter_href => $active_parameter_href,
                 config_parameter_href => \%config_parameter,
             }
         );
@@ -146,7 +142,7 @@ sub mip_download {
         ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
         check_cmd_config_vs_definition_file(
             {
-                active_parameter_href => \%active_parameter,
+                active_parameter_href => $active_parameter_href,
                 parameter_href        => \%parameter,
             }
         );
@@ -155,7 +151,7 @@ sub mip_download {
 ## Get log object and set log file in active parameters unless already set from cmd
     my $log = get_log(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             date                  => $date,
             date_time_stamp       => $date_time_stamp,
             log_name              => uc q{mip_download},
@@ -164,13 +160,15 @@ sub mip_download {
     );
 
     $log->info( q{MIP Version: } . $MIP_VERSION );
-    $log->info(
-        q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );
+    $log->info( q{Writing log messages to}
+          . $COLON
+          . $SPACE
+          . $active_parameter_href->{log_file} );
 
     ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             custom_default_parameters_ref =>
               \@{ $parameter{custom_default_parameters}{default} },
             parameter_href => \%parameter,
@@ -178,18 +176,18 @@ sub mip_download {
     );
 
     ## Make sure that we have lower case from user input
-    @{ $active_parameter{reference_genome_versions} } =
-      map { lc } @{ $active_parameter{reference_genome_versions} };
+    @{ $active_parameter_href->{reference_genome_versions} } =
+      map { lc } @{ $active_parameter_href->{reference_genome_versions} };
 
     ## Create reference dir if it does not exists
-    make_path( $active_parameter{reference_dir} );
+    make_path( $active_parameter_href->{reference_dir} );
 
     ### Checks
 
     ## Parse existence of files and directories
     parse_parameter_files(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -197,21 +195,21 @@ sub mip_download {
     ## Check email adress syntax and mail host
     check_email_address(
         {
-            email => $active_parameter{email},
+            email => $active_parameter_href->{email},
         }
     );
 
     ## Parameters that have keys or elements as MIP recipe names
     parse_recipes(
         {
-            active_parameter_href   => \%active_parameter,
+            active_parameter_href   => $active_parameter_href,
             parameter_href          => \%parameter,
             parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
     );
 
     ## Check core number requested against environment provisioned
-    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
+    parse_recipe_resources( { active_parameter_href => $active_parameter_href, } );
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     set_cache(
@@ -227,7 +225,7 @@ sub mip_download {
     ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -235,23 +233,24 @@ sub mip_download {
     ## Update recipe mode depending on dry_run_all flag
     update_recipe_mode_with_dry_run_all(
         {
-            active_parameter_href => \%active_parameter,
-            dry_run_all           => $active_parameter{dry_run_all},
+            active_parameter_href => $active_parameter_href,
+            dry_run_all           => $active_parameter_href->{dry_run_all},
             recipes_ref           => \@{ $parameter{cache}{recipe} },
         }
     );
 
-    set_load_env_environment( { active_parameter_href => \%active_parameter, } );
+    set_load_env_environment( { active_parameter_href => $active_parameter_href, } );
 
     ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
     parse_download_reference_parameter(
-        { reference_href => \%{ $active_parameter{reference} }, } );
+        { reference_href => $active_parameter_href->{reference}, } );
 
     check_user_reference(
         {
-            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
-            reference_ref                 => $active_parameter{reference_feature},
-            user_supplied_reference_ref   => $active_parameter{reference},
+            reference_genome_versions_ref =>
+              $active_parameter_href->{reference_genome_versions},
+            reference_ref               => $active_parameter_href->{reference_feature},
+            user_supplied_reference_ref => $active_parameter_href->{reference},
         }
     );
 
@@ -259,7 +258,7 @@ sub mip_download {
 q{Will write sbatch install instructions for references to individual sbatch scripts}
     );
 
-    run_download_pipeline( { active_parameter_href => \%active_parameter, } );
+    run_download_pipeline( { active_parameter_href => $active_parameter_href, } );
 
     return;
 }
