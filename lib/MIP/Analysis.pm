@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +40,7 @@ BEGIN {
       get_overall_analysis_type
       get_vcf_parser_analysis_suffix
       parse_prioritize_variant_callers
+      set_ase_chain_recipes
       set_parameter_to_broadcast
       update_prioritize_flag
       update_recipe_mode_for_fastq_compatibility
@@ -569,6 +570,49 @@ qq{Could not find any active variant caller recipes for parameter: $prioritize_p
         );
     }
     return 1;
+}
+
+sub set_ase_chain_recipes {
+
+## Function : Update analysis recipes for ASE on DNA VCF
+## Returns  :
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_recipe_mode };
+
+    my @DNA_RECIPES  = (qw{ dna_vcf_reformat });
+    my @ASE_RECIPIES = (
+        qw{ gatk_baserecalibration gatk_haplotypecaller gatk_splitncigarreads gatk_variantfiltration }
+    );
+
+    my @recipes =
+      $active_parameter_href->{dna_vcf_file} < 1 ? @DNA_RECIPES : @ASE_RECIPIES;
+
+    set_recipe_mode(
+        {
+            active_parameter_href => $active_parameter_href,
+            mode                  => 0,
+            recipes_ref           => \@recipes,
+        }
+    );
+    return;
 }
 
 sub set_parameter_to_broadcast {
