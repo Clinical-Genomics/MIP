@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.56;
+    our $VERSION = 1.57;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -143,10 +143,6 @@ sub mip_analyse {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Transfer to lexical variables
-    # Parameters to include in each analysis run
-    my %active_parameter = %{$active_parameter_href};
-
     # Holds all active parameters values for broadcasting
     my @broadcasts;
 
@@ -179,7 +175,7 @@ sub mip_analyse {
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -187,7 +183,7 @@ sub mip_analyse {
 ### Config
     parse_config(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -195,7 +191,7 @@ sub mip_analyse {
 ## Get log object and set log file in active parameters unless already set from cmd
     my $log = get_log(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             date                  => $date,
             date_time_stamp       => $date_time_stamp,
             log_name              => uc q{mip_analyse},
@@ -206,13 +202,13 @@ sub mip_analyse {
 ## Write MIP VERSION and log file path
     $log->info( q{MIP Version: } . $MIP_VERSION );
     $log->info( q{Script parameters and info from are saved in file: }
-          . $active_parameter{log_file} );
+          . $active_parameter_href->{log_file} );
 
 ## Pedigree
     parse_pedigree(
         {
-            active_parameter_href => \%active_parameter,
-            pedigree_file_path    => $active_parameter{pedigree_file},
+            active_parameter_href => $active_parameter_href,
+            pedigree_file_path    => $active_parameter_href->{pedigree_file},
             parameter_href        => \%parameter,
             sample_info_href      => \%sample_info,
         }
@@ -221,14 +217,14 @@ sub mip_analyse {
     ## Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
         {
-            analysis_type_href => \%{ $active_parameter{analysis_type} },
+            analysis_type_href => $active_parameter_href->{analysis_type},
         }
     );
 
 ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             custom_default_parameters_ref =>
               \@{ $parameter{custom_default_parameters}{default} },
             parameter_href => \%parameter,
@@ -246,7 +242,7 @@ sub mip_analyse {
 ## reside in the mip reference directory to full path
     set_parameter_reference_dir_path(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_name        => q{human_genome_reference},
         }
     );
@@ -256,7 +252,7 @@ sub mip_analyse {
         {
             file_info_href => \%file_info,
             human_genome_reference =>
-              basename( $active_parameter{human_genome_reference} ),
+              basename( $active_parameter_href->{human_genome_reference} ),
             parameter_href => \%parameter,
         }
     );
@@ -264,7 +260,7 @@ sub mip_analyse {
 ## Reference in MIP reference directory
     parse_reference_path(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -280,7 +276,7 @@ sub mip_analyse {
 ## Parse existence of files and directories
     parse_parameter_files(
         {
-            active_parameter_href   => \%active_parameter,
+            active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
             parameter_href          => \%parameter,
         }
@@ -290,7 +286,7 @@ sub mip_analyse {
     reload_previous_pedigree_info(
         {
             sample_info_href      => \%sample_info,
-            sample_info_file_path => $active_parameter{sample_info_file},
+            sample_info_file_path => $active_parameter_href->{sample_info_file},
         }
     );
 
@@ -300,14 +296,15 @@ sub mip_analyse {
         {
             human_genome_reference_file_endings_ref =>
               $file_info{human_genome_reference_file_endings},
-            human_genome_reference_path => $active_parameter{human_genome_reference},
-            parameter_href              => \%parameter,
-            parameter_name              => q{human_genome_reference_file_endings},
+            human_genome_reference_path =>
+              $active_parameter_href->{human_genome_reference},
+            parameter_href => \%parameter,
+            parameter_name => q{human_genome_reference_file_endings},
         }
     );
 
 ## Set sequence contigs used in analysis from human genome sequence dict file
-    my $dict_file_path = catfile( $active_parameter{reference_dir},
+    my $dict_file_path = catfile( $active_parameter_href->{reference_dir},
         $file_info{human_genome_reference_name_prefix} . $DOT . q{dict} );
 
     set_dict_contigs(
@@ -321,7 +318,7 @@ sub mip_analyse {
 ## Detect case constellation based on pedigree file
     $parameter{cache}{trio} = get_is_trio(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             sample_info_href      => \%sample_info,
         }
     );
@@ -329,36 +326,36 @@ sub mip_analyse {
 ## Check email adress syntax and mail host
     check_email_address(
         {
-            email => $active_parameter{email},
+            email => $active_parameter_href->{email},
         }
     );
 
 ## Check that the temp directory value is allowed
     my @is_not_allowed_temp_dirs =
-      get_not_allowed_temp_dirs( { active_parameter_href => \%active_parameter, } );
+      get_not_allowed_temp_dirs( { active_parameter_href => $active_parameter_href, } );
     check_allowed_temp_directory(
         {
             not_allowed_paths_ref => \@is_not_allowed_temp_dirs,
-            temp_directory        => $active_parameter{temp_directory},
+            temp_directory        => $active_parameter_href->{temp_directory},
         }
     );
 
 ## Parameters that have keys or elements as MIP recipe names
     parse_recipes(
         {
-            active_parameter_href   => \%active_parameter,
+            active_parameter_href   => $active_parameter_href,
             parameter_href          => \%parameter,
             parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
     );
 
     ## Check core number requested against environment provisioned
-    parse_recipe_resources( { active_parameter_href => \%active_parameter, } );
+    parse_recipe_resources( { active_parameter_href => $active_parameter_href, } );
 
     ## Check programs in path, is executable, and set binary_path
     parse_program_executables(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -366,8 +363,8 @@ sub mip_analyse {
     ## Check that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
         {
-            case_id        => $active_parameter{case_id},
-            sample_ids_ref => \@{ $active_parameter{sample_ids} },
+            case_id        => $active_parameter_href->{case_id},
+            sample_ids_ref => $active_parameter_href->{sample_ids},
         }
     );
 
@@ -395,7 +392,7 @@ sub mip_analyse {
     ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -403,7 +400,7 @@ sub mip_analyse {
     ## Check that package name name are included in MIP as either "mip", "recipe" or "program"
     check_load_env_packages(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         }
     );
@@ -418,7 +415,7 @@ sub mip_analyse {
 
     parse_start_with_recipe(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             parameter_href        => \%parameter,
         },
     );
@@ -426,8 +423,8 @@ sub mip_analyse {
 ## Update recipe mode depending on dry_run_all flag
     update_recipe_mode_with_dry_run_all(
         {
-            active_parameter_href => \%active_parameter,
-            dry_run_all           => $active_parameter{dry_run_all},
+            active_parameter_href => $active_parameter_href,
+            dry_run_all           => $active_parameter_href->{dry_run_all},
             recipes_ref           => \@{ $parameter{cache}{recipe} },
         }
     );
@@ -435,7 +432,7 @@ sub mip_analyse {
     ## Set the gender(s) included in current analysis and count them
     set_gender_sample_ids(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             sample_info_href      => \%sample_info,
         }
     );
@@ -458,23 +455,23 @@ sub mip_analyse {
     );
     build_file_prefix_tag(
         {
-            active_parameter_href => \%active_parameter,
-            case_id               => $active_parameter{case_id},
+            active_parameter_href => $active_parameter_href,
+            case_id               => $active_parameter_href->{case_id},
             file_info_href        => \%file_info,
             order_recipes_ref     => \@order_recipes,
             parameter_href        => \%parameter,
-            sample_ids_ref        => $active_parameter{sample_ids},
+            sample_ids_ref        => $active_parameter_href->{sample_ids},
         }
     );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            case_id          => $active_parameter{case_id},
+            case_id          => $active_parameter_href->{case_id},
             execution_mode   => q{system},
-            fam_file_path    => $active_parameter{pedigree_fam_file},
+            fam_file_path    => $active_parameter_href->{pedigree_fam_file},
             parameter_href   => \%parameter,
-            sample_ids_ref   => $active_parameter{sample_ids},
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => \%sample_info,
         }
     );
@@ -485,7 +482,7 @@ sub mip_analyse {
 
     set_no_dry_run_parameters(
         {
-            is_dry_run_all   => $active_parameter{dry_run_all},
+            is_dry_run_all   => $active_parameter_href->{dry_run_all},
             analysis_date    => $date_time_stamp,
             mip_version      => $MIP_VERSION,
             sample_info_href => \%sample_info,
@@ -494,7 +491,7 @@ sub mip_analyse {
 
     run_analyse_pipeline(
         {
-            active_parameter_href   => \%active_parameter,
+            active_parameter_href   => $active_parameter_href,
             broadcasts_ref          => \@broadcasts,
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => \%file_info,
@@ -510,7 +507,7 @@ sub mip_analyse {
     # Write sample info to yaml file
     write_sample_info_to_file(
         {
-            sample_info_file => $active_parameter{sample_info_file},
+            sample_info_file => $active_parameter_href->{sample_info_file},
             sample_info_href => \%sample_info,
         }
     );
@@ -518,16 +515,16 @@ sub mip_analyse {
     ## Write job_ids to file
     write_job_ids_to_file(
         {
-            case_id         => $active_parameter{case_id},
+            case_id         => $active_parameter_href->{case_id},
             date_time_stamp => $date_time_stamp,
             job_id_href     => \%job_id,
-            log_file        => $active_parameter{log_file},
+            log_file        => $active_parameter_href->{log_file},
         }
     );
 
     store_files(
         {
-            active_parameter_href => \%active_parameter,
+            active_parameter_href => $active_parameter_href,
             sample_info_href      => \%sample_info,
         }
     );
