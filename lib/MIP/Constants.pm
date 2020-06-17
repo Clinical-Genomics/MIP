@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
 
@@ -372,7 +372,7 @@ sub set_singularity_constants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::Singularity qw{ reduce_dir_paths };
+    use MIP::Environment::Path qw{ reduce_dir_paths };
 
     ## Gather default bind paths for singularity
     my @singularity_bind_paths = (

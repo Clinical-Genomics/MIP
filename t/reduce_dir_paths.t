@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Singularity} => [qw{ reduce_dir_paths }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Environment::Path} => [qw{ reduce_dir_paths }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Singularity qw{ reduce_dir_paths };
+use MIP::Environment::Path qw{ reduce_dir_paths };
 
-diag(   q{Test reduce_dir_paths from Parse::Singularity.pm v}
-      . $MIP::Parse::Singularity::VERSION
+diag(   q{Test reduce_dir_paths from Path.pm v}
+      . $MIP::Environment::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
