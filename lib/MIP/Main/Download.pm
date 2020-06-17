@@ -49,7 +49,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -94,9 +94,6 @@ sub mip_download {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
-    # All parameters MIP download knows
-    my %parameter = %{$parameter_href};
-
     ## Get local time
     my $date_time       = localtime;
     my $date_time_stamp = $date_time->datetime;
@@ -112,7 +109,7 @@ sub mip_download {
     update_to_absolute_path(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -143,7 +140,7 @@ sub mip_download {
         check_cmd_config_vs_definition_file(
             {
                 active_parameter_href => $active_parameter_href,
-                parameter_href        => \%parameter,
+                parameter_href        => $parameter_href,
             }
         );
     }
@@ -170,8 +167,8 @@ sub mip_download {
         {
             active_parameter_href => $active_parameter_href,
             custom_default_parameters_ref =>
-              \@{ $parameter{custom_default_parameters}{default} },
-            parameter_href => \%parameter,
+              $parameter_href->{custom_default_parameters}{default},
+            parameter_href => $parameter_href,
         }
     );
 
@@ -188,7 +185,7 @@ sub mip_download {
     parse_parameter_files(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -203,7 +200,7 @@ sub mip_download {
     parse_recipes(
         {
             active_parameter_href   => $active_parameter_href,
-            parameter_href          => \%parameter,
+            parameter_href          => $parameter_href,
             parameter_to_check_href => \%RECIPE_PARAMETERS_TO_CHECK,
         }
     );
@@ -218,7 +215,7 @@ sub mip_download {
                 ## Collects all recipes that MIP can handle
                 q{type:recipe},
             ],
-            parameter_href => \%parameter,
+            parameter_href => $parameter_href,
         }
     );
 
@@ -226,7 +223,7 @@ sub mip_download {
     check_recipe_mode(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => \%parameter,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -235,7 +232,7 @@ sub mip_download {
         {
             active_parameter_href => $active_parameter_href,
             dry_run_all           => $active_parameter_href->{dry_run_all},
-            recipes_ref           => \@{ $parameter{cache}{recipe} },
+            recipes_ref           => $parameter_href->{cache}{recipe},
         }
     );
 
