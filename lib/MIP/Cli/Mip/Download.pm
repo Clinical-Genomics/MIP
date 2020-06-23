@@ -18,7 +18,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MooseX::App required sub. Called internally by MooseX::App
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -131,15 +131,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{with_singularity} => (
-            documentation =>
-              q{Run programs inside a singularity container where available},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

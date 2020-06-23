@@ -7,6 +7,7 @@ conda:
 conda_path: <user_path>/miniconda3
 conda_prefix_path: <user_path>/miniconda3/envs/mip_travis
 config_file: <user_path>/MIP/templates/mip_install_config.yaml
+container_manager: singularity
 core_number: '1'
 core_ram_memory: '5'
 custom_default_parameters:
@@ -26,7 +27,6 @@ pipelines:
   - rd_dna
   - rd_rna
 prefer_shell: '0'
-prefer_singularity: '0'
 process_time: 2-00:00:00
 program_test_file: <user_path>/MIP/templates/program_test_cmds.yaml
 rd_dna:

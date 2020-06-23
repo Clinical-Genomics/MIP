@@ -182,12 +182,6 @@ supported_capture_kit:
     twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed
     latest: genome_reference_source_version_twist_target_-1-.bed
   type: mip
-with_singularity:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: mip
 ### Programs
 ## AnalysisRunStatus
 analysisrunstatus:

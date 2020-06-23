@@ -15,16 +15,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 
-## MIPs lib/
-use MIP::Constants
-  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $WITH_SINGULARITY };
-
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -236,7 +232,7 @@ sub get_package_source_env_cmds {
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
+    use MIP::Environment::Container qw{ parse_container_bind_paths };
 
     ## Initilize variable
     my @source_environment_cmds;
@@ -267,8 +263,8 @@ sub get_package_source_env_cmds {
         push @source_environment_cmds, $prior_to_load_cmd;
     }
 
-    ## Append singularity bind variable to source_environment_cmds_ref if applicable
-    parse_sing_bind_paths(
+    ## Append container bind variable to source_environment_cmds_ref
+    parse_container_bind_paths(
         {
             active_parameter_href       => $active_parameter_href,
             package_name                => $package_name,

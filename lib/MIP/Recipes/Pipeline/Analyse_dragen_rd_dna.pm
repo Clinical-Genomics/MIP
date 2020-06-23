@@ -26,7 +26,7 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_dragen_rd_dna pipeline_analyse_dragen_rd_dna };
@@ -349,7 +349,7 @@ sub pipeline_analyse_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_singularity_constants };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
@@ -396,7 +396,7 @@ sub pipeline_analyse_dragen_rd_dna {
     );
 
     ## Set analysis constants
-    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});

@@ -1,4 +1,4 @@
-package MIP::Recipes::Install::Singularity;
+package MIP::Recipes::Install::Docker;
 
 use 5.026;
 use Carp;
@@ -19,20 +19,20 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AT $BACKWARD_SLASH $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
+  qw{ $AT $BACKWARD_SLASH $CLOSE_BRACE $DOLLAR_SIGN $DOUBLE_QUOTE $COLON $EMPTY_STR $LOG_NAME $OPEN_BRACE $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ install_singularity_containers };
+    our @EXPORT_OK = qw{ install_docker_containers };
 }
 
-sub install_singularity_containers {
+sub install_docker_containers {
 
 ## Function : Pull container from singularity hub or docker hub
 ## Returns  :
@@ -74,92 +74,61 @@ sub install_singularity_containers {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw{ check_future_filesystem_for_directory };
     use MIP::Environment::Container qw{ parse_container_uri };
-    use MIP::Program::Singularity qw{ singularity_pull };
     use MIP::Recipes::Install::Cadd qw{ install_cadd };
-    use MIP::Recipes::Install::Htslib qw{ install_htslib };
     use MIP::Recipes::Install::Vep qw{ install_vep };
+    use MIP::Set::Parameter qw{ set_container_bind_paths };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    say {$filehandle} q{## Pull containers with Singularity};
-
-    ## Set dir path for containers
-    my $container_dir_path = catdir( $conda_env_path, qw{ share containers } );
+    say {$filehandle} q{## Setup containers for docker};
 
     ## Containers requiring something extra
     my %finish_container_installation = (
-        htslib => \&install_htslib,
-        cadd   => \&install_cadd,
-        vep    => \&install_vep,
+        cadd => \&install_cadd,
+        vep  => \&install_vep,
     );
 
-    ## Write check command to filehandle
-    say {$filehandle} q{## Check for container path};
-    my $dir_check = check_future_filesystem_for_directory(
-        {
-            directory_path => $container_dir_path,
-        }
-    );
-    say {$filehandle} $dir_check . $NEWLINE;
+    my $mip_bind_path =
+      $BACKWARD_SLASH . $DOLLAR_SIGN . $OPEN_BRACE . q{MIP_BIND} . $CLOSE_BRACE;
 
   CONTAINER:
-    foreach my $container ( keys %{$container_href} ) {
+    while ( my ( $image_name, $image_href ) = each %{$container_href} ) {
 
-        $log->info( q{Writing instructions for pulling container}
-              . $COLON
-              . $SPACE
-              . $container );
+        $log->info(
+            q{Writing instructions for running image} . $COLON . $SPACE . $image_name );
 
-        say {$filehandle} q{## Setting up } . $container . q{ container};
+        say {$filehandle} q{## Setting up } . $image_name . q{ image};
 
-        my $container_path = catfile( $container_dir_path, $container . q{.sif} );
-
-        ## Place relative to conda proxy bin
-        my $relative_container_path =
-          catdir( qw{ \"\$CONDA_ENV_DIR\" share containers }, $container . q{.sif} );
-
-        parse_container_uri(
+        set_container_bind_paths(
             {
-                container_manager => q{singularity},
-                uri_ref           => \$container_href->{$container}{uri},
+                bind_paths_ref => [$mip_bind_path],
+                container_href => $image_href,
             }
         );
-
-        singularity_pull(
-            {
-                container_uri => $container_href->{$container}{uri},
-                filehandle    => $filehandle,
-                force         => 1,
-                outfile_path  => $container_path,
-            }
-        );
-        print {$filehandle} $NEWLINE;
 
         ## Finishing touches for certain containers
-        if ( $finish_container_installation{$container} ) {
+        if ( $finish_container_installation{$image_name} ) {
 
-            $finish_container_installation{$container}->(
+            $finish_container_installation{$image_name}->(
                 {
                     active_parameter_href => $active_parameter_href,
-                    container_href        => $container_href->{$container},
-                    container_path        => $container_path,
+                    container_href        => $image_href,
+                    container_path        => $image_href->{uri},
                     filehandle            => $filehandle,
                 }
             );
         }
 
         ## Make available as exeuctable in bin
-        setup_singularity_executable(
+        setup_docker_executable(
             {
-                conda_env_path  => $conda_env_path,
-                container_path  => $relative_container_path,
-                executable_href => $container_href->{$container}{executable},
-                filehandle      => $filehandle,
-                program_bind_paths_ref =>
-                  $container_href->{$container}{program_bind_paths},
+                conda_env_path         => $conda_env_path,
+                executable_href        => $image_href->{executable},
+                filehandle             => $filehandle,
+                image_address          => $image_href->{uri},
+                program_bind_paths_ref => $image_href->{program_bind_paths},
             }
         );
         print {$filehandle} $NEWLINE;
@@ -168,34 +137,29 @@ sub install_singularity_containers {
     return 1;
 }
 
-sub setup_singularity_executable {
+sub setup_docker_executable {
 
-## Function : Make singularity program executable available in conda bin
+## Function : Make docker executable available in conda bin
 ## Returns  :
 ## Arguments: $conda_env_path         => Path to conda environment
-##          : $container_path         => Path to container
 ##          : $executable_href        => Hash with executables and their path in the container (if not in PATH) {REF}
 ##          : $filehandle             => Filehandle
+##          : $image_address          => Address to docker image
 ##          : $program_bind_paths_ref => Extra static bind paths
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $conda_env_path;
-    my $container_path;
     my $executable_href;
     my $filehandle;
+    my $image_address;
     my $program_bind_paths_ref;
 
     my $tmpl = {
         conda_env_path => {
             required    => 1,
             store       => \$conda_env_path,
-            strict_type => 1,
-        },
-        container_path => {
-            required    => 1,
-            store       => \$container_path,
             strict_type => 1,
         },
         executable_href => {
@@ -208,6 +172,11 @@ sub setup_singularity_executable {
             required => 1,
             store    => \$filehandle,
         },
+        image_address => {
+            required    => 1,
+            store       => \$image_address,
+            strict_type => 1,
+        },
         program_bind_paths_ref => {
             default     => $arg_href->{program_bind_paths_ref} ||= [],
             store       => \$program_bind_paths_ref,
@@ -218,9 +187,9 @@ sub setup_singularity_executable {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Shell qw{ build_shebang };
+    use MIP::Program::Docker qw{ docker_run };
     use MIP::Program::Gnu::Bash qw{ gnu_unset };
     use MIP::Program::Gnu::Coreutils qw{ gnu_chmod gnu_echo };
-    use MIP::Program::Singularity qw{ singularity_exec };
 
     my @shebang = build_shebang(
         {
@@ -237,11 +206,6 @@ sub setup_singularity_executable {
       . $BACKWARD_SLASH
       . $DOUBLE_QUOTE;
 
-    ## Find proxy bin directory
-    my $executable_dir_cmd = q{DIR=$(dirname "$(readlink -f "$0")")};
-    ## Assign conda env dir to enable relative path to proxy bin within conda env
-    my $conda_env_dir_cmd = q{CONDA_ENV_DIR="$(dirname "$DIR")"};
-
   EXECUTABLE:
     foreach my $executable ( keys %{$executable_href} ) {
 
@@ -255,14 +219,19 @@ sub setup_singularity_executable {
         {
             $container_executable = $EMPTY_STR;
         }
-        my @singularity_cmds = singularity_exec(
+        my @docker_cmds = docker_run(
             {
-                bind_paths_ref                 => $program_bind_paths_ref,
-                singularity_container          => $container_path,
-                singularity_container_cmds_ref => [$container_executable],
+                bind_paths_ref     => $program_bind_paths_ref,
+                container_cmds_ref => [$container_executable],
+                entrypoint         => $BACKWARD_SLASH
+                  . $DOUBLE_QUOTE
+                  . $BACKWARD_SLASH
+                  . $DOUBLE_QUOTE,
+                image  => $image_address,
+                remove => 1,
             }
         );
-        push @singularity_cmds, $bash_command;
+        push @docker_cmds, $bash_command;
 
         my $proxy_executable_path = catfile( $conda_env_path, q{bin}, $executable );
 
@@ -276,25 +245,12 @@ sub setup_singularity_executable {
         );
         print {$filehandle} $NEWLINE;
 
-      CMD:
-        foreach my $cmd ( $executable_dir_cmd, $conda_env_dir_cmd ) {
-
-            gnu_echo(
-                {
-                    filehandle             => $filehandle,
-                    stdoutfile_path_append => $proxy_executable_path,
-                    string_wrapper         => $SINGLE_QUOTE,
-                    strings_ref            => [$cmd],
-                }
-            );
-            print {$filehandle} $NEWLINE;
-        }
         gnu_echo(
             {
                 filehandle             => $filehandle,
                 no_trailing_newline    => 1,
                 stdoutfile_path_append => $proxy_executable_path,
-                strings_ref            => [ join $SPACE, @singularity_cmds ],
+                strings_ref            => [ join $SPACE, @docker_cmds ],
             }
         );
         print {$filehandle} $NEWLINE;

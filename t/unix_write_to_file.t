@@ -20,11 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA set_singularity_constants $SPACE $WITH_SINGULARITY  };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -78,8 +78,6 @@ my %active_parameter = (
     pedigree_file    => q{a_pedigre_file.yaml},
     with_singularity => 1
 );
-
-set_singularity_constants( { active_parameter_href => \%active_parameter, } );
 
 @commands = ( q{commands_ref}, [qw{ test per-line }] );
 test_write_to_file(

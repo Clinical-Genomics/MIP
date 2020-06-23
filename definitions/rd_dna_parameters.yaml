@@ -9,7 +9,6 @@ custom_default_parameters:
     - conda_path
     - bwa_build_reference
     - exome_target_bed
-    - gatk_path
     - infile_dirs
     - pedigree_fam_file
     - picardtools_path
@@ -75,6 +74,7 @@ gatk_path:
     - gatk_variantevalall
     - gatk_variantevalexome
   data_type: SCALAR
+  default: /usr/
   type: path
 ## HumanGenomeReference
 human_genome_reference:

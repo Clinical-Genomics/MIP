@@ -71,6 +71,15 @@ sub _build_usage {
     );
 
     option(
+        q{container_manager} => (
+            cmd_tags      => [q{Default: singularity}],
+            documentation => q{Container manager},
+            is            => q{rw},
+            isa           => enum( [qw{ docker singularity }] ),
+        ),
+    );
+
+    option(
         q{email} => (
             documentation => q{E-mail},
             is            => q{rw},

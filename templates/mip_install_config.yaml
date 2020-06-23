@@ -12,19 +12,19 @@ singularity:
     executable:
       arriba: /arriba_v1.2.0/arriba
       draw_fusions.R: /arriba_v1.2.0/draw_fusions.R
-    uri: docker://uhrigs/arriba:1.2.0
+    uri: docker.io/uhrigs/arriba:1.2.0
   blobfish:
     executable:
       BlobFish.py:
-    uri: docker://clinicalgenomics/blobfish:0.0.2
+    uri: docker.io/clinicalgenomics/blobfish:0.0.2
   bootstrapann:
     executable:
       BootstrapAnn.py:
-    uri: docker://clinicalgenomics/bootstrapann:df02f35
+    uri: docker.io/clinicalgenomics/bootstrapann:df02f35
   bwa:
     executable:
       bwa:
-    uri: docker://clinicalgenomics/bwa:0.7.17
+    uri: docker.io/clinicalgenomics/bwa:0.7.17
   bwakit:
     executable:
       bwa-postalt.js:
@@ -38,15 +38,15 @@ singularity:
       typeHLA.sh:
       typeHLA-selctg.js:
       seqtk:
-    uri: docker://clinicalgenomics/bwakit:0.7.15
+    uri: docker.io/clinicalgenomics/bwakit:0.7.15
   bedtools:
     executable:
       bedtools:
-    uri: docker://clinicalgenomics/bedtools:2.2.29
+    uri: docker.io/clinicalgenomics/bedtools:2.2.29
   cadd:
     executable:
       CADD.sh:
-    uri: docker://clinicalgenomics/cadd:1.6
+    uri: docker.io/clinicalgenomics/cadd:1.6
   cnvnator:
     executable:
       cnvnator:
@@ -55,19 +55,19 @@ singularity:
   chanjo:
     executable:
       chanjo:
-    uri: docker://clinicalgenomics/chanjo:4.2.0
+    uri: docker.io/clinicalgenomics/chanjo:4.2.0
   chromograph:
     executable:
       chromograph:
-    uri: docker://clinicalgenomics/chromograph:91f0988
+    uri: docker.io/clinicalgenomics/chromograph:91f0988
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker://clinicalgenomics/expansionhunter:3.2.2
+    uri: docker.io/clinicalgenomics/expansionhunter:3.2.2
   fastqc:
     executable:
       fastqc:
-    uri: docker://clinicalgenomics/fastqc:0.11.9
+    uri: docker.io/clinicalgenomics/fastqc:0.11.9
   delly:
     executable:
       delly:
@@ -75,55 +75,55 @@ singularity:
   gatk:
     executable:
       gatk3: "no_executable_in_image"
-    uri: shub://Clinical-Genomics/MIP:gatk-3.8
+    uri: docker.io/broadinstitute/gatk3:3.8-1
   gatk4:
     executable:
       gatk:
-    uri: docker://broadinstitute/gatk:4.1.4.0
+    uri: docker.io/broadinstitute/gatk:4.1.4.0
   genmod:
     executable:
       genmod:
-    uri: docker://clinicalgenomics/genmod:3.7.3
+    uri: docker.io/clinicalgenomics/genmod:3.7.3
   gffcompare:
     executable:
       gffcompare:
-    uri: docker://clinicalgenomics/gffcompare:0.11.2
+    uri: docker.io/clinicalgenomics/gffcompare:0.11.2
   htslib:
     executable:
       bcftools:
       bgzip:
       samtools:
       tabix:
-    uri: docker://clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.10.2
   manta:
     executable:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
-    uri: docker://clinicalgenomics/manta:1.6.0
+    uri: docker.io/clinicalgenomics/manta:1.6.0
   multiqc:
     executable:
       multiqc:
-    uri: docker://ewels/multiqc:1.9
+    uri: docker.io/ewels/multiqc:1.9
   peddy:
     executable:
       peddy: "python -m peddy"
-    uri: docker://clinicalgenomics/peddy:0.4.3
+    uri: docker.io/clinicalgenomics/peddy:0.4.3
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker://broadinstitute/picard:2.22.4
+    uri: docker.io/broadinstitute/picard:2.22.4
   plink:
     executable:
       plink2:
-    uri: docker://clinicalgenomics/plink:1.90b3.35
+    uri: docker.io/clinicalgenomics/plink:1.90b3.35
   preseq:
     executable:
       preseq:
-    uri: docker://clinicalgenomics/preseq:2.0.3
+    uri: docker.io/clinicalgenomics/preseq:2.0.3
   rhocall:
     executable:
       rhocall:
-    uri: docker://clinicalgenomics/rhocall:0.5.1
+    uri: docker.io/clinicalgenomics/rhocall:0.5.1
   rseqc:
     executable:
       bam2wig.py:
@@ -139,23 +139,23 @@ singularity:
   rtg-tools:
     executable:
       rtg:
-    uri: docker://realtimegenomics/rtg-tools:3.10.1
+    uri: docker.io/realtimegenomics/rtg-tools:3.10.1
   salmon:
     executable:
       salmon:
-    uri: docker://clinicalgenomics/salmon:0.12.0
+    uri: docker.io/clinicalgenomics/salmon:0.12.0
   sambamba:
     executable:
       sambamba:
-    uri: docker://clinicalgenomics/sambamba:0.6.8
+    uri: docker.io/clinicalgenomics/sambamba:0.6.8
   smncopynumbercaller:
     executable:
       smn_caller.py:
-    uri: docker://clinicalgenomics/smncopynumbercaller:4b2c1ad
+    uri: docker.io/clinicalgenomics/smncopynumbercaller:4b2c1ad
   star:
     executable:
       STAR:
-    uri: docker://clinicalgenomics/star:2.7.4a
+    uri: docker.io/clinicalgenomics/star:2.7.4a
   star-fusion:
     executable:
       blastn:
@@ -171,11 +171,11 @@ singularity:
   stranger:
     executable:
       stranger:
-    uri: docker://clinicalgenomics/stranger:0.5.5
+    uri: docker.io/clinicalgenomics/stranger:0.5.5
   stringtie:
     executable:
       stringtie:
-    uri: docker://clinicalgenomics/stringtie:2.1.3b
+    uri: docker.io/clinicalgenomics/stringtie:2.1.3b
   svdb:
     executable:
       svdb:
@@ -189,32 +189,32 @@ singularity:
       bedToBigBed:
       gtfToGenePred:
       wigToBigWig:
-    uri: docker://clinicalgenomics/ucsc:377
+    uri: docker.io/clinicalgenomics/ucsc:377
   upd:
     executable:
       upd:
-    uri: docker://clinicalgenomics/upd:0.1
+    uri: docker.io/clinicalgenomics/upd:0.1
   utilities:
     executable:
       gtf2bed:
       pigz:
-    uri: docker://clinicalgenomics/utilities:latest
+    uri: docker.io/clinicalgenomics/utilities:latest
   varg:
     executable:
       varg:
-    uri: docker://clinicalgenomics/varg:1.2.0
+    uri: docker.io/clinicalgenomics/varg:1.2.0
   variant_integrity:
     executable:
       variant_integrity:
-    uri: docker://clinicalgenomics/variant_integrity:0.0.4
+    uri: docker.io/clinicalgenomics/variant_integrity:0.0.4
   vcfanno:
     executable:
       vcfanno:
-    uri: docker://clinicalgenomics/vcfanno:0.3.2
+    uri: docker.io/clinicalgenomics/vcfanno:0.3.2
   vep:
     executable:
       vep:
-    uri: docker://ensemblorg/ensembl-vep:release_100.2
+    uri: docker.io/ensemblorg/ensembl-vep:release_100.2
   vcf2cytosure:
     executable:
       vcf2cytosure:
@@ -222,7 +222,7 @@ singularity:
   vt:
     executable:
       vt:
-    uri: docker://clinicalgenomics/vt:2015.11.10
+    uri: docker.io/clinicalgenomics/vt:2015.11.10
 vep_plugins:
   - dbNSFP
   - ExACpLI
