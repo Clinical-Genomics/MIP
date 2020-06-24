@@ -71,7 +71,7 @@ singularity:
   delly:
     executable:
       delly:
-    uri: shub://Clinical-Genomics/MIP:delly-0.8.1
+    uri: docker.io/clinicalgenomics/delly:0.8.1
   gatk:
     executable:
       gatk3: "no_executable_in_image"
