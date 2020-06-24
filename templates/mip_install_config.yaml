@@ -167,7 +167,7 @@ singularity:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: https://data.broadinstitute.org/Trinity/CTAT_SINGULARITY/STAR-Fusion/star-fusion.v1.9.0.simg
+    uri: docker.io/trinityctat/starfusion:1.9.0
   stranger:
     executable:
       stranger:
