@@ -51,7 +51,7 @@ singularity:
     executable:
       cnvnator:
       cnvnator2VCF.pl:
-    uri: shub://Clinical-Genomics/MIP:cnvnator-0.4.1
+    uri: docker.io/clinicalgenomics/cnvnator:0.4.1
   chanjo:
     executable:
       chanjo:
