@@ -25,59 +25,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      check_file_version_exist
       check_future_filesystem_for_directory
     };
-}
-
-sub check_file_version_exist {
-
-## Function : Check if a file with with a filename consisting of $file_path_prefix.$file_counter.$file_path_suffix exist. If so bumps the version number and return new file path and version number.
-## Returns  : $file_path, $file_name_version
-## Arguments: $file_path_prefix => File path prefix
-##          : $file_path_suffix => File path suffix
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path_prefix;
-    my $file_path_suffix;
-
-    my $tmpl = {
-        file_path_prefix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path_prefix,
-            strict_type => 1,
-        },
-        file_path_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path_suffix,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Nr of sbatch scripts with identical filenames i.e. version number
-    my $file_name_version = 0;
-
-    my $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
-
-  FILE_PATHS:
-    while ( -e $file_path ) {
-
-        $file_name_version++;
-
-        ## New file_path to test for existence
-        $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
-    }
-    return ( $file_path, $file_name_version );
 }
 
 sub check_future_filesystem_for_directory {

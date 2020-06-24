@@ -29,11 +29,62 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ setup_install_script setup_script write_return_to_environment write_return_to_conda_environment write_source_environment_command };
+    our @EXPORT_OK = qw{ check_script_file_path_exist
+      setup_install_script
+      setup_script
+      write_return_to_environment
+      write_return_to_conda_environment
+      write_source_environment_command };
+}
+
+sub check_script_file_path_exist {
+
+## Function : Check if a file with with a filename consisting of $file_path_prefix.$file_counter.$file_path_suffix exist.
+##          : If so bumps the version number and return new file path and version number
+## Returns  : $file_path, $file_name_version
+## Arguments: $file_path_prefix => File path prefix
+##          : $file_path_suffix => File path suffix
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path_prefix;
+    my $file_path_suffix;
+
+    my $tmpl = {
+        file_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path_prefix,
+            strict_type => 1,
+        },
+        file_path_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path_suffix,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Nr of scripts with identical file names i.e. version number
+    my $file_name_version = 0;
+
+    my $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
+
+  FILE_PATHS:
+    while ( -e $file_path ) {
+
+        $file_name_version++;
+
+        ## New file_path to test for existence
+        $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
+    }
+    return ( $file_path, $file_name_version );
 }
 
 sub setup_install_script {
@@ -414,7 +465,6 @@ sub setup_script {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Path qw{ check_file_version_exist };
     use MIP::List qw{ check_allowed_array_values };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
@@ -474,7 +524,7 @@ sub setup_script {
 
     ## Check if a file with with a filename consisting of
     ## $file_path_prefix.$file_name_version.$file_path_suffix exist
-    ( $file_path, $file_name_version ) = check_file_version_exist(
+    ( $file_path, $file_name_version ) = check_script_file_path_exist(
         {
             file_path_prefix => $file_path_prefix,
             file_path_suffix => $file_name_suffix,
