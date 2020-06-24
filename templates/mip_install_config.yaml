@@ -135,7 +135,7 @@ singularity:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-    uri: library://jemten/mip_containers/rseqc:3.0.1
+    uri: docker.io/clinicalgenomics/rseqc:3.0.1
   rtg-tools:
     executable:
       rtg:
