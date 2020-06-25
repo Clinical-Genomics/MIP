@@ -218,7 +218,7 @@ singularity:
   vcf2cytosure:
     executable:
       vcf2cytosure:
-    uri: shub://J35P312/vcf2cytosure:0.5.1
+    uri: docker.io/jemten/vcf2cytosure:0.5.1
   vt:
     executable:
       vt:
