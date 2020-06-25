@@ -179,11 +179,11 @@ singularity:
   svdb:
     executable:
       svdb:
-    uri: shub://J35P312/SVDB:2.2.0
+    uri: docker.io/jemten/svdb:2.2.0
   tiddit:
     executable:
       TIDDIT.py:
-    uri: shub://J35P312/TIDDIT:2.8.0
+    uri: docker.io/jemten/tiddit:2.8.0
   ucsc:
     executable:
       bedToBigBed:
