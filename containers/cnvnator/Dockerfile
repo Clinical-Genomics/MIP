@@ -13,9 +13,9 @@ LABEL maintainer="Clinical-Genomics/MIP"
 
 ## Install wget and unzip
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     cmake \
     language-pack-en-base \
     libbz2-dev \
@@ -35,7 +35,7 @@ RUN apt-get update && \
     apt-get purge && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-    
+
 WORKDIR /app
 
 ## Install ROOT
@@ -45,12 +45,12 @@ RUN wget --no-verbose https://root.cern.ch/download/root_v6.20.06.Linux-ubuntu18
     rm -rf root/tutorials
 
 ## Set paths for ROOT
-ENV PATH=/usr/local/bin:${PATH} 
-ENV ROOTSYS=/app/root 
-ENV PATH=${PATH}:${ROOTSYS}/bin 
+ENV PATH=/usr/local/bin:${PATH}
+ENV ROOTSYS=/app/root
+ENV PATH=${PATH}:${ROOTSYS}/bin
 ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${ROOTSYS}/lib
 
-## Install samtools 
+## Install samtools
 RUN wget --no-verbose https://github.com/samtools/samtools/releases/download/1.10/samtools-1.10.tar.bz2 && \
     bunzip2 samtools-1.10.tar.bz2 && \
     tar -xf samtools-1.10.tar && \
