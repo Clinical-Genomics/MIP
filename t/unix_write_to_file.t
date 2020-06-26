@@ -74,10 +74,7 @@ test_write_to_file(
 );
 
 ## Per line test and testing with singularity
-my %active_parameter = (
-    pedigree_file    => q{a_pedigre_file.yaml},
-    with_singularity => 1
-);
+my %active_parameter = ( pedigree_file => q{a_pedigre_file.yaml}, );
 
 @commands = ( q{commands_ref}, [qw{ test per-line }] );
 test_write_to_file(

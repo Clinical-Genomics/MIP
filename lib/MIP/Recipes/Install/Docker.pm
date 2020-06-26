@@ -99,7 +99,7 @@ sub install_docker_containers {
         $log->info(
             q{Writing instructions for running image} . $COLON . $SPACE . $image_name );
 
-        say {$filehandle} q{## Setting up } . $image_name . q{ image};
+        say {$filehandle} qq{## Setting up $image_name image};
 
         set_container_bind_paths(
             {
@@ -209,14 +209,9 @@ sub setup_docker_executable {
   EXECUTABLE:
     foreach my $executable ( keys %{$executable_href} ) {
 
-        my $container_executable = $executable;
-        if ( $executable_href->{$executable} ) {
-            $container_executable = $executable_href->{$executable};
-        }
+        my $container_executable = $executable_href->{$executable} ||= $executable;
 
-        if (    $executable_href->{$executable}
-            and $executable_href->{$executable} eq q{no_executable_in_image} )
-        {
+        if ( $container_executable eq q{no_executable_in_image} ) {
             $container_executable = $EMPTY_STR;
         }
         my @docker_cmds = docker_run(

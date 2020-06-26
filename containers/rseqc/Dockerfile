@@ -6,9 +6,9 @@ FROM clinicalgenomics/mip:2.0
 
 LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
-LABEL software="delly"
-LABEL software.version="0.8.1"
-LABEL extra.binaries="delly"
+LABEL software="rseqc"
+LABEL software.version="3.0.1"
+LABEL extra.binaries="rseqc"
 LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN pip install --no-cache-dir rseqc==3.0.1

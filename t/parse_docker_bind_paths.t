@@ -61,11 +61,11 @@ diag(   q{Test parse_container_bind_paths from Container.pm v}
 
 ## Given environment paths, and commands
 my %active_parameter = (
-    outdata_dir       => q{an_outdata_dir},
-    reference_dir     => q{a_ref_dir},
-    recipe_bind_path  => { bwa_mem => [qw{ infiles_dir }], },
-    temp_directory    => q{a_temp_dir},
     container_manager => q{docker},
+    outdata_dir       => q{an_outdata_dir},
+    recipe_bind_path  => { bwa_mem => [qw{ infiles_dir }], },
+    reference_dir     => q{a_ref_dir},
+    temp_directory    => q{a_temp_dir},
 );
 
 my @source_environment_cmds = qw{ conda activate test };

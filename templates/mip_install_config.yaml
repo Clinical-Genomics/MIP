@@ -7,7 +7,7 @@ pip:
 shell:
   mip_scripts:
     version: Your current MIP version
-singularity:
+container:
   arriba:
     executable:
       arriba: /arriba_v1.2.0/arriba

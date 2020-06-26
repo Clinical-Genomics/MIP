@@ -27,11 +27,11 @@ use MIP::Script::Setup_script qw{ setup_install_script };
 use MIP::Set::Parameter qw{ set_programs_for_installation };
 
 ## Recipes
+use MIP::Environment::Container qw{ install_containers };
 use MIP::Recipes::Install::Conda qw{ install_conda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Post_installation qw{ check_mip_installation };
-use MIP::Environment::Container qw{ install_containers };
 
 BEGIN {
 

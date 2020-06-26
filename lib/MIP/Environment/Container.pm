@@ -91,7 +91,7 @@ sub install_containers {
             arg_href => {
                 active_parameter_href => $active_parameter_href,
                 conda_env_path        => $active_parameter_href->{conda_prefix_path},
-                container_href        => $active_parameter_href->{singularity},
+                container_href        => $active_parameter_href->{condtainer},
                 filehandle            => $filehandle,
             },
             method => \&install_docker_containers,
@@ -100,7 +100,7 @@ sub install_containers {
             arg_href => {
                 active_parameter_href => $active_parameter_href,
                 conda_env_path        => $active_parameter_href->{conda_prefix_path},
-                container_href        => $active_parameter_href->{singularity},
+                container_href        => $active_parameter_href->{container},
                 filehandle            => $filehandle,
             },
             method => \&install_singularity_containers,
@@ -153,28 +153,24 @@ sub parse_container_bind_paths {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ add_recipe_bind_paths };
     use MIP::Environment::Path
-      qw{ build_docker_bind_path_var build_singularity_bind_path_var reduce_dir_paths };
+      qw{ build_docker_bind_path_var build_singularity_bind_path_var };
 
-    ## For testing
     return if not $CONTAINER_MANAGER;
 
     my @export_bind_paths = @CONTAINER_BIND_PATHS;
-
-    ## Look for extra bind paths
-    if ( $active_parameter_href->{recipe_bind_path}{$package_name} ) {
-
-        ## Add extra paths
-        push @export_bind_paths,
-          @{ $active_parameter_href->{recipe_bind_path}{$package_name} };
-
-        ## Check for redundant paths
-        @export_bind_paths = reduce_dir_paths( { dir_paths_ref => \@export_bind_paths } );
-    }
+    add_recipe_bind_paths(
+        {
+            active_parameter_href => $active_parameter_href,
+            export_bind_paths_ref => \@export_bind_paths,
+            recipe_name           => $package_name,
+        }
+    );
 
     my %container = (
-        docker      => \&_build_docker_bind_path_var,
-        singularity => \&_build_singularity_bind_path_var,
+        docker      => \&build_docker_bind_path_var,
+        singularity => \&build_singularity_bind_path_var,
     );
 
     my $container_bind_var = $container{$CONTAINER_MANAGER}->(
@@ -219,7 +215,7 @@ sub parse_container_uri {
 
     return if $container_manager eq q{docker};
 
-    if ( ${$uri_ref} =~ /\A docker\.io /xms ) {
+    if ( ${$uri_ref} =~ /\A docker[.]io /xms ) {
 
         ${$uri_ref} = q{docker://} . ${$uri_ref};
     }
@@ -229,7 +225,7 @@ sub parse_container_uri {
 
 sub run_container {
 
-## Function : Run/Exec an image/container docker or singularity
+## Function : Run a docker container or exec a singularity image
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref         => Bind host directory to container {REF}
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
@@ -354,80 +350,6 @@ sub run_container {
       ->( { %{ $container_api{$container_manager}{arg_href} } } );
 
     return @commands;
-}
-
-sub _build_docker_bind_path_var {
-
-## Function : Build bind path variable for use with docker
-## Returns  : $mip_bind_var
-## Arguments: $bind_paths_ref => Directories to be mounted {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bind_paths_ref;
-
-    my $tmpl = {
-        bind_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @mip_bind_paths = map { $_ . $COLON . $_ } @{$bind_paths_ref};
-
-    my $mip_bind = join $SPACE . q{--volume} . $SPACE, @mip_bind_paths;
-
-    my $mip_bind_var =
-        q{export MIP_BIND}
-      . $EQUALS
-      . $DOUBLE_QUOTE
-      . $mip_bind
-      . $DOUBLE_QUOTE
-      . $SEMICOLON;
-
-    return $mip_bind_var;
-}
-
-sub _build_singularity_bind_path_var {
-
-## Function : Build bind path variable for use with singularity
-## Returns  : $singularity_bind_var
-## Arguments: $bind_paths_ref => Directories to be mounted {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bind_paths_ref;
-
-    my $tmpl = {
-        bind_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $singularity_bind = join $COMMA, @{$bind_paths_ref};
-
-    my $singularity_bind_var =
-        q{export SINGULARITY_BIND}
-      . $EQUALS
-      . $DOUBLE_QUOTE
-      . $singularity_bind
-      . $DOUBLE_QUOTE
-      . $SEMICOLON;
-
-    return $singularity_bind_var;
 }
 
 1;
