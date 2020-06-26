@@ -25,9 +25,9 @@ before_install:
 
 install:
   ## Test installation script and gather coverage information
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_install.test
   ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
   ## Install MIP rare disease
   - bash mip.sh
   ## Special case: Install bcftools since it is required by some tests
@@ -37,29 +37,29 @@ script:
   ## Test MIP rd_dna
   - conda activate mip_travis
   ## Set-up test coverage for test directory "t"
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 9 t
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,subroutine prove -lrs -f -j 9 t
   ### Download
   ## Set-up test coverage for mip_download_rd_dna.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_download_rd_dna.test
   ## Set-up test coverage for mip_download_rd_dna.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_rna.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_download_rd_rna.test
   ### Analyse
   ## Set-up test coverage for mip_analyse_rd_dna.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_analyse_rd_dna.test
   ## Set-up test coverage for mip_analyse_vcf_rerun.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
   ## Set-up test coverage for mip qccollect
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_qccollect.test
   ## Set-up test coverage for mip vercollect
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vercollect.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_vercollect.test
   ## Set-up test coverage for mip vcfparser
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_vcfparser.test
   ## Set-up test coverage for mip_analyse_vcf_rerun.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_analyse_dragen_rd_dna.test
   ## Set-up test coverage for mip_analyse_rd_dna_panel.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_panel.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_analyse_rd_dna_panel.test
   ## Set-up test coverage for mip_analyse_rna.test
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl t/mip_analyse_rd_rna.test
   ## Get some coverage statistics
   - cover
 
