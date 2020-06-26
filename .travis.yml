@@ -1,5 +1,5 @@
 ---
-dist: trusty
+dist: bionic
 language: perl
 perl:
   - "5.26.0"
@@ -8,6 +8,8 @@ sudo: required
 before_install:
   ## Install SSL
   - sudo apt-get update
+  ## Install bcftools
+  - sudo apt-get install bcftools libc6 libhts2 zlib1g
 
   ## Install conda
   - wget https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
@@ -30,8 +32,6 @@ install:
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,subroutine perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
   ## Install MIP rare disease
   - bash mip.sh
-  ## Special case: Install bcftools since it is required by some tests
-  - conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
 script:
   ## Test MIP rd_dna
