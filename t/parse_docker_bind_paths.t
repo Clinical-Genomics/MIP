@@ -59,7 +59,7 @@ diag(   q{Test parse_container_bind_paths from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given environment paths, and commands
 my %active_parameter = (
     outdata_dir       => q{an_outdata_dir},
     reference_dir     => q{a_ref_dir},
@@ -71,6 +71,7 @@ my %active_parameter = (
 my @source_environment_cmds = qw{ conda activate test };
 set_container_constants( { active_parameter_href => \%active_parameter, } );
 
+## When container manager is docker
 parse_container_bind_paths(
     {
         active_parameter_href       => \%active_parameter,

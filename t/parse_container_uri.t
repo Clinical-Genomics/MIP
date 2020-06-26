@@ -57,8 +57,9 @@ diag(   q{Test parse_container_uri from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a dockerhub uri and singularity
+## Given a dockerhub uri
 my $uri = q{docker.io/clinicalgenomics/chanjo:4.2.0};
+## When container manager is singularity
 parse_container_uri(
     {
         container_manager => q{singularity},
@@ -70,8 +71,9 @@ parse_container_uri(
 my $expected_uri = q{docker://docker.io/clinicalgenomics/chanjo:4.2.0};
 is( $uri, $expected_uri, q{Parse uri for singularity} );
 
-## Given a dockerhub uri and docker
+## Given a dockerhub uri
 $uri = q{docker.io/clinicalgenomics/chanjo:4.2.0};
+## When container manager is docker
 parse_container_uri(
     {
         container_manager => q{docker},
