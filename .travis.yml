@@ -2,7 +2,7 @@
 dist: bionic
 language: perl
 perl:
-  - "5.26.0"
+  - "5.28"
 sudo: required
 
 before_install:
