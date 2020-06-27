@@ -474,13 +474,13 @@ sub setup_script {
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
+    Readonly my %SUBMISSION_METHOD => ( slurm => q{sbatch}, );
 
     ## Unpack parameters
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $submission_profile = $active_parameter_href->{submission_profile};
 
-    my %submission_method = ( slurm => q{sbatch}, );
-    my $script_type       = $submission_method{$submission_profile};
+    my $script_type       = %SUBMISSION_METHOD{$submission_profile};
 
     ### Script names and directory creation
     ## File
