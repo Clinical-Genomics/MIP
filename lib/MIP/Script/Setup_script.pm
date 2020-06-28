@@ -21,7 +21,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -32,12 +33,120 @@ BEGIN {
     our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_script_file_path_exist
+    our @EXPORT_OK = qw{
+      build_script_directories_and_paths
+      check_script_file_path_exist
       setup_install_script
       setup_script
       write_return_to_environment
       write_return_to_conda_environment
       write_source_environment_command };
+}
+
+sub build_script_directories_and_paths {
+
+## Function : Builds and makes recipe directories (info & data & script), recipe script paths
+## Returns  : $file_info_path, $file_path_prefix, $recipe_data_directory_path
+## Arguments: $directory_id               => $sample id | $case_id
+##          : $outdata_dir                => MIP outdata directory {Optional}
+##          : $outscript_dir              => MIP outscript directory {Optional}
+##          : $recipe_data_directory_path => Set recipe data directory path
+##          : $recipe_directory           => Builds from $directory_id
+##          : $recipe_mode                => Recipe mode
+##          : $recipe_name                => Assigns filename to sbatch script
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $directory_id;
+    my $outdata_dir;
+    my $outscript_dir;
+    my $recipe_data_directory_path;
+    my $recipe_directory;
+    my $recipe_mode;
+    my $recipe_name;
+
+    my $tmpl = {
+        directory_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$directory_id,
+            strict_type => 1,
+        },
+        outdata_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdata_dir,
+            strict_type => 1,
+        },
+        outscript_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outscript_dir,
+            strict_type => 1,
+        },
+        recipe_data_directory_path => {
+            required    => 1,
+            store       => \$recipe_data_directory_path,
+            strict_type => 1,
+        },
+        recipe_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_directory,
+            strict_type => 1,
+        },
+        recipe_mode => => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_mode,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my $file_name_prefix = $recipe_name . $UNDERSCORE . $directory_id . $DOT;
+
+    ## Directory paths
+    if ( not defined $recipe_data_directory_path ) {
+
+        $recipe_data_directory_path =
+          catdir( $outdata_dir, $directory_id, $recipe_directory );
+    }
+    my $recipe_info_directory_path = catdir( $recipe_data_directory_path, q{info} );
+    my $recipe_script_directory_path =
+      catdir( $outscript_dir, $directory_id, $recipe_directory );
+
+    ## Create directories
+    make_path( $recipe_info_directory_path, $recipe_data_directory_path,
+        $recipe_script_directory_path );
+
+    ## File paths
+    my $file_path_prefix = catfile( $recipe_script_directory_path, $file_name_prefix );
+    my $file_info_path   = catfile( $recipe_info_directory_path,   $file_name_prefix );
+    my $dry_run_file_path_prefix = catfile( $recipe_script_directory_path,
+        q{dry_run} . $UNDERSCORE . $file_name_prefix );
+    my $dry_run_file_info_path =
+      catfile( $recipe_info_directory_path,
+        q{dry_run} . $UNDERSCORE . $file_name_prefix );
+
+    ## Dry run recipe - update file paths
+    if ( $recipe_mode == 2 ) {
+
+        $file_path_prefix = $dry_run_file_path_prefix;
+        $file_info_path   = $dry_run_file_info_path;
+        $log->info( q{Dry run:} . $NEWLINE );
+    }
+    return ( $file_info_path, $file_path_prefix, $recipe_data_directory_path );
 }
 
 sub check_script_file_path_exist {
@@ -474,57 +583,33 @@ sub setup_script {
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
-    Readonly my %SUBMISSION_METHOD => ( slurm => q{sbatch}, );
+    Readonly my %SUBMISSION_METHOD    => ( slurm => q{sbatch}, );
 
     ## Unpack parameters
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $submission_profile = $active_parameter_href->{submission_profile};
 
-    my $script_type       = %SUBMISSION_METHOD{$submission_profile};
+    my $script_type = $SUBMISSION_METHOD{$submission_profile};
 
     ### Script names and directory creation
     ## File
-    my $file_name_prefix = $recipe_name . $UNDERSCORE . $directory_id . $DOT;
-    my $file_name_version;
     my $file_name_suffix = $DOT . q{sh};
 
-    # Path
-    my $file_path;
-
-    ## Directory paths
-    if ( not defined $recipe_data_directory_path ) {
-
-        $recipe_data_directory_path =
-          catdir( $outdata_dir, $directory_id, $recipe_directory );
-    }
-    my $recipe_info_directory_path = catdir( $recipe_data_directory_path, q{info} );
-    my $recipe_script_directory_path =
-      catdir( $outscript_dir, $directory_id, $recipe_directory );
-
-    ## Create directories
-    make_path( $recipe_info_directory_path, $recipe_data_directory_path,
-        $recipe_script_directory_path );
-
-    ## File paths
-    my $file_path_prefix = catfile( $recipe_script_directory_path, $file_name_prefix );
-    my $file_info_path   = catfile( $recipe_info_directory_path,   $file_name_prefix );
-    my $dry_run_file_path_prefix = catfile( $recipe_script_directory_path,
-        q{dry_run} . $UNDERSCORE . $file_name_prefix );
-    my $dry_run_file_info_path =
-      catfile( $recipe_info_directory_path,
-        q{dry_run} . $UNDERSCORE . $file_name_prefix );
-
-    ## Dry run recipe - update file paths
-    if ( $recipe_mode == 2 ) {
-
-        $file_path_prefix = $dry_run_file_path_prefix;
-        $file_info_path   = $dry_run_file_info_path;
-        $log->info( q{Dry run:} . $NEWLINE );
-    }
+    ( my ( $file_info_path, $file_path_prefix ), $recipe_data_directory_path ) =
+      build_script_directories_and_paths(
+        {
+            directory_id               => $directory_id,
+            outdata_dir                => $outdata_dir,
+            outscript_dir              => $outscript_dir,
+            recipe_data_directory_path => $recipe_data_directory_path,
+            recipe_directory           => $recipe_directory,
+            recipe_mode                => $active_parameter_href->{$recipe_name},
+            recipe_name                => $recipe_name,
+        }
+      );
 
     ## Check if a file with with a filename consisting of
     ## $file_path_prefix.$file_name_version.$file_path_suffix exist
-    ( $file_path, $file_name_version ) = check_script_file_path_exist(
+    my ( $file_path, $file_name_version ) = check_script_file_path_exist(
         {
             file_path_prefix => $file_path_prefix,
             file_path_suffix => $file_name_suffix,
