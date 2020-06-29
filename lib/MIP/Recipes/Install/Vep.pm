@@ -25,7 +25,7 @@ use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Perl qw{ perl_nae_oneliners };
 use MIP::Program::Tar qw{ tar };
 use MIP::Program::Wget qw{ wget };
-use MIP::Program::Singularity qw{ singularity_exec };
+use MIP::Environment::Container qw{ run_container };
 use MIP::Program::Vep qw{ variant_effect_predictor_install };
 
 BEGIN {
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -125,7 +125,8 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     my $vep_version     = q?${VEP_VERSION}?;
     my $vep_version_cmd = _get_vep_version_cmd(
         {
-            container_path => $container_path,
+            container_manager => $active_parameter_href->{container_manager},
+            container_path    => $container_path,
         }
     );
     say {$filehandle} q{VEP_VERSION} . $EQUALS . $vep_version_cmd;
@@ -164,12 +165,14 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
             species_ref     => \@species,
         }
     );
-    singularity_exec(
+    run_container(
         {
-            bind_paths_ref                 => [$cache_dir_path],
-            filehandle                     => $filehandle,
-            singularity_container          => $container_path,
-            singularity_container_cmds_ref => \@vep_install_cmds,
+            bind_paths_ref     => [$cache_dir_path],
+            filehandle         => $filehandle,
+            container_path     => $container_path,
+            container_manager  => $active_parameter_href->{container_manager},
+            container_cmds_ref => \@vep_install_cmds,
+
         }
     );
     say {$filehandle} $NEWLINE;
@@ -199,12 +202,14 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                     species_ref     => \@species,
                 }
             );
-            singularity_exec(
+            run_container(
                 {
-                    bind_paths_ref                 => [$cache_dir_path],
-                    filehandle                     => $filehandle,
-                    singularity_container          => $container_path,
-                    singularity_container_cmds_ref => \@vep_install_cmds,
+                    bind_paths_ref     => [$cache_dir_path],
+                    filehandle         => $filehandle,
+                    container_path     => $container_path,
+                    container_manager  => $active_parameter_href->{container_manager},
+                    container_cmds_ref => \@vep_install_cmds,
+
                 }
             );
             say {$filehandle} $NEWLINE;
@@ -240,14 +245,22 @@ sub _get_vep_version_cmd {
 
 ## Function : Write command that captures vep version in a bash variable
 ## Returns  : $vep_version_cmd
-## Arguments: $container_path => Path to vep container
+## Arguments: $container_manager => Container manager
+##          : $container_path    => Path to vep container
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $container_manager;
     my $container_path;
 
     my $tmpl = {
+        container_manager => {
+            defined     => 1,
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
         container_path => {
             defined     => 1,
             required    => 1,
@@ -271,10 +284,11 @@ sub _get_vep_version_cmd {
         }
     );
 
-    my @vep_version_cmds = singularity_exec(
+    my @vep_version_cmds = run_container(
         {
-            singularity_container          => $container_path,
-            singularity_container_cmds_ref => \@version_cmds,
+            container_manager  => $container_manager,
+            container_path     => $container_path,
+            container_cmds_ref => \@version_cmds,
         }
     );
     my $vep_version_cmd = join $SPACE, @vep_version_cmds;

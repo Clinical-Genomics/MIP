@@ -8,7 +8,6 @@ custom_default_parameters:
     - analysis_type
     - conda_path
     - exome_target_bed
-    - gatk_path
     - infile_dirs
     - pedigree_fam_file
     - picardtools_path
@@ -40,9 +39,8 @@ gatk_path:
     - varianteffectpredictor
     - rankvariant
   data_type: SCALAR
-  exists_check: directory
+  default: /usr/
   type: path
-  update_path: absolute_path
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:

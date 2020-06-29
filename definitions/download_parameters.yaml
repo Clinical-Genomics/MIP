@@ -92,9 +92,3 @@ temp_directory:
     - mip
   data_type: SCALAR
   type: path
-with_singularity:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: mip

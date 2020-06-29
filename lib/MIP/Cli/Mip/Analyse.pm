@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.14;
+our $VERSION = 1.15;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -129,14 +129,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
             documentation => q{Set the GATK log level},
             is            => q{rw},
             isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
-        )
-    );
-
-    option(
-        q{gatk_path} => (
-            documentation => q{Path to GATK},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
@@ -306,15 +298,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Collects executable versions across the analysis},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{with_singularity} => (
-            documentation =>
-              q{Run programs inside a singularity container where available},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

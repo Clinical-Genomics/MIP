@@ -33,6 +33,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_gender
+      add_recipe_bind_paths
       check_load_env_packages
       check_parameter_files
       check_recipe_mode
@@ -123,6 +124,62 @@ sub add_gender {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     push @{ $active_parameter_href->{gender}{$gender} }, $sample_id;
+    return;
+}
+
+sub add_recipe_bind_paths {
+
+## Function : Add recipe specific bind paths to defaults
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $export_bind_paths_ref => Bind paths to add to
+##          : $recipe_name           => Recipe name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $export_bind_paths_ref;
+    my $recipe_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        export_bind_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$export_bind_paths_ref,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Path qw{ reduce_dir_paths };
+
+    return if ( not $active_parameter_href->{recipe_bind_path}{$recipe_name} );
+
+    push @{$export_bind_paths_ref},
+      @{ $active_parameter_href->{recipe_bind_path}{$recipe_name} };
+
+    @{$export_bind_paths_ref} = reduce_dir_paths(
+        {
+            dir_paths_ref => $export_bind_paths_ref
+        }
+    );
+
     return;
 }
 

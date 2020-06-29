@@ -8,7 +8,6 @@ custom_default_parameters:
   default:
     - analysis_type
     - conda_path
-    - gatk_path
     - infile_dirs
     - pedigree_fam_file
     - picardtools_path
@@ -99,15 +98,6 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: recipe_argument
-gatk_path:
-  associated_recipe:
-    - gatk_asereadcounter
-    - gatk_baserecalibration
-    - gatk_haplotypecaller
-    - gatk_splitncigarreads
-    - gatk_variantfiltration
-  data_type: SCALAR
-  type: path
 infile_dirs:
   associated_recipe:
     - mip

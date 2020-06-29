@@ -16,14 +16,14 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $EQUALS $PIPE $SEMICOLON $SPACE $TAB };
+use MIP::Constants qw{ $COLON $COMMA $DOT $EQUALS $PIPE $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -84,8 +84,15 @@ sub get_vcf_header_line_by_id {
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
     ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
-    my @check_header_cmds =
-      gnu_export( { bash_variable => q{MIP_BIND} . $EQUALS . $vcf_file_path, } );
+    my @check_header_cmds = gnu_export(
+        {
+                bash_variable => q{MIP_BIND}
+              . $EQUALS
+              . $vcf_file_path
+              . $COLON
+              . $vcf_file_path,
+        }
+    );
     push @check_header_cmds, $SEMICOLON;
 
     ## Stream vcf using bcftools

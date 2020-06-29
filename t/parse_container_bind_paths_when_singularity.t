@@ -21,11 +21,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants
-  qw{ $COMMA $DOUBLE_QUOTE $EQUALS $SEMICOLON set_singularity_constants @SINGULARITY_BIND_PATHS $SPACE };
+  qw{ $COMMA $DOUBLE_QUOTE $EQUALS $SEMICOLON set_container_constants @CONTAINER_BIND_PATHS $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Singularity} => [qw{ parse_sing_bind_paths }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Environment::Container} => [qw{ parse_container_bind_paths }],
+        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
+use MIP::Environment::Container qw{ parse_container_bind_paths };
 
-diag(   q{Test parse_sing_bind_paths from Singularity.pm v}
-      . $MIP::Parse::Singularity::VERSION
+diag(   q{Test parse_container_bind_paths from Container.pm v}
+      . $MIP::Environment::Container::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,19 +59,19 @@ diag(   q{Test parse_sing_bind_paths from Singularity.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given singularity as container manager
 my %active_parameter = (
-    outdata_dir                  => q{an_outdata_dir},
-    reference_dir                => q{a_ref_dir},
-    singularity_recipe_bind_path => { bwa_mem => [qw{ infiles_dir }], },
-    temp_directory               => q{a_temp_dir},
-    with_singularity             => 1,
+    outdata_dir       => q{an_outdata_dir},
+    reference_dir     => q{a_ref_dir},
+    recipe_bind_path  => { bwa_mem => [qw{ infiles_dir }], },
+    temp_directory    => q{a_temp_dir},
+    container_manager => q{singularity},
 );
 
 my @source_environment_cmds = qw{ conda activate test };
-set_singularity_constants( { active_parameter_href => \%active_parameter, } );
+set_container_constants( { active_parameter_href => \%active_parameter, } );
 
-parse_sing_bind_paths(
+parse_container_bind_paths(
     {
         active_parameter_href       => \%active_parameter,
         package_name                => q{bwa_mem},
@@ -80,7 +80,7 @@ parse_sing_bind_paths(
 );
 
 ## Constant dir paths and specific one(s)
-my $singularity_bind = join $COMMA, ( @SINGULARITY_BIND_PATHS, q{infiles_dir} );
+my $singularity_bind = join $COMMA, ( @CONTAINER_BIND_PATHS, q{infiles_dir} );
 
 my @expected_source_environment_cmds = (
     qw{ conda activate test },
@@ -96,7 +96,7 @@ my @expected_source_environment_cmds = (
 is_deeply(
     \@source_environment_cmds,
     \@expected_source_environment_cmds,
-    q{Bound extra paths}
+    q{Got singularity bind paths}
 );
 
 done_testing();

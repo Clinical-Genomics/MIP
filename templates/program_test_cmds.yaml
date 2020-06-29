@@ -37,7 +37,7 @@ fusion-filter:
 gatk4:
   execution: 'gatk'
 gatk:
-  execution: 'gatk3 java -jar /opt/conda/opt/gatk-3.8/GenomeAnalysisTK.jar --version'
+  execution: 'gatk3 java -jar /usr/GenomeAnalysisTK.jar --version'
 genmod:
   execution: 'genmod'
 gffcompare:
