@@ -9,12 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: shogo82148/actions-setup-perl@v1
-          with:
-            perl-version: '5.26'
+        with:
+          perl-version: '5.26'
       - uses: goanpeca/setup-miniconda@v1
-          with:
-            channels: bioconda, conda-forge,
-            miniconda-version: 4.5.11
+        with:
+          channels: bioconda, conda-forge,
+          miniconda-version: 4.5.11
       - name: Set up perl
       - run: perl -V
       - run: cpanm --quiet --notest --installdeps .
