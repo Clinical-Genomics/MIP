@@ -19,14 +19,21 @@ jobs:
         run: |
           perl -V
           cpanm --quiet --notest --installdeps .
+          cpanm --notest Devel::Cover::Report::Coveralls
 
-      - name: Set up miniconda
+      - name: Run mip install test
+        shell: bash -l {0}
+        run: perl t/mip_install.test
+
+      - name: Set up conda test env
         shell: bash -l {0}
         run: |
           conda info
-          conda list
-          conda config --show-sources
-          conda config --show
           conda create -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+          conda activate mip_travis
+
+      - name: Run unit tests
+        shell: bash -l {0}
+        run: |
           conda activate mip_travis
           prove -lrs -f t
