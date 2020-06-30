@@ -45,11 +45,11 @@ BEGIN {
 
 sub build_script_directories_and_paths {
 
-## Function : Builds and makes recipe directories (info & data & script), recipe script paths
+## Function : Builds and makes recipe directories (info & data & script) and recipe script paths
 ## Returns  : $file_info_path, $file_path_prefix, $recipe_data_directory_path
 ## Arguments: $directory_id               => $sample id | $case_id
-##          : $outdata_dir                => MIP outdata directory {Optional}
-##          : $outscript_dir              => MIP outscript directory {Optional}
+##          : $outdata_dir                => MIP outdata directory
+##          : $outscript_dir              => MIP outscript directory
 ##          : $recipe_data_directory_path => Set recipe data directory path
 ##          : $recipe_directory           => Builds from $directory_id
 ##          : $recipe_mode                => Recipe mode
