@@ -13,8 +13,7 @@ jobs:
           perl-version: '5.26'
       - uses: goanpeca/setup-miniconda@v1
         with:
-          channels: bioconda, conda-forge,
-        #  miniconda-version: 4.5.11
+          channels: bioconda, conda-forge
 
       - name: Set up perl
         run: |
@@ -22,7 +21,7 @@ jobs:
           cpanm --quiet --notest --installdeps .
 
       - name: Set up miniconda
-        shell: sh -l {0}
+        shell: bash -l {0}
         run: |
           conda info
           conda list
