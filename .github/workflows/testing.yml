@@ -14,9 +14,6 @@ jobs:
       - uses: goanpeca/setup-miniconda@v1
         with:
           channels: bioconda, conda-forge
-      - uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up perl
         run: |
@@ -70,7 +67,11 @@ jobs:
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vercollect.test
 
-      - name: Coveralls
+      - name: Calculate coveralls
         run: |
           cover
-          cover -report coveralls
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
