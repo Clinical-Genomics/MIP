@@ -19,11 +19,11 @@ jobs:
         run: |
           perl -V
           cpanm --quiet --notest --installdeps .
-          cpanm --notest Devel::Cover::Report::Coveralls
+          cpanm --quiet --notest Devel::Cover::Report::Coveralls
 
       - name: Run mip install test
         shell: bash -l {0}
-        run: perl t/mip_install.test
+        run: PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 
       - name: Set up conda test env
         shell: bash -l {0}
@@ -36,4 +36,9 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          prove -lrs -f t
+          PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f t
+
+      - name: Report coveralls
+        run: |
+          cover
+          cover -report coveralls
