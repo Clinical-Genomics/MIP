@@ -12,11 +12,11 @@ jobs:
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: '5.26'
+        uses: goanpeca/setup-miniconda@v1
+                - with:
+                miniconda-version: 4.5.11
       - run: perl -V
       - run: cpanm --quiet --notest --installdeps .
-      - uses: goanpeca/setup-miniconda@v1
-        - with:
-          miniconda-version: 4.5.11
       - shell: bash -l {0}
           run: |
             conda info
