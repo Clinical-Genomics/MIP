@@ -14,4 +14,14 @@ jobs:
           perl-version: '5.26'
       - run: perl -V
       - run: cpanm --quiet --notest --installdeps .
-      - run: prove -lrs -f -j 9 t
+      - uses: goanpeca/setup-miniconda@v1
+        - with:
+          miniconda-version: 4.5.11
+      - shell: bash -l {0}
+          run: |
+            conda info
+            conda list
+            conda config --show-sources
+            conda config --show
+            conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+      - run: prove -lrs -f t
