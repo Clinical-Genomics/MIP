@@ -15,9 +15,12 @@ jobs:
         with:
           channels: bioconda, conda-forge,
           miniconda-version: 4.5.11
+
       - name: Set up perl
-      - run: perl -V
-      - run: cpanm --quiet --notest --installdeps .
+        run: |
+          perl -V
+          cpanm --quiet --notest --installdeps .
+
       - name: Set up miniconda
       - shell: bash -l {0}
         run: |
