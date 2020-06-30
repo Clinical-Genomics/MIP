@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -51,7 +51,7 @@ use MIP::Program::Star_fusion qw{ star_fusion_gtf_file_to_feature_seqs };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test star_fusion_gtf_file_to_feature_seqs from Star_fusion.pm v}
-      . $MIP::Program::Star_Fusion::VERSION
+      . $MIP::Program::Star_fusion::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
