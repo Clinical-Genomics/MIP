@@ -22,7 +22,7 @@ jobs:
           cpanm --quiet --notest --installdeps .
 
       - name: Set up miniconda
-      - shell: bash -l {0}
+        shell: bash -l {0}
         run: |
           conda info
           conda list
