@@ -1,0 +1,17 @@
+name: MIP CI
+
+on: ["pull_request", "push"]
+
+jobs:
+  tests:
+    name: Install perl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: '5.26'
+      - run: perl -V
+      - run: cpanm --quiet --notest --installdeps .
+      - run: prove -lrs -f -j 9 t
