@@ -27,5 +27,5 @@ jobs:
           conda list
           conda config --show-sources
           conda config --show
-          conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+          conda create -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
           prove -lrs -f t
