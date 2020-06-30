@@ -4,7 +4,7 @@ on: ["pull_request", "push"]
 
 jobs:
   tests:
-    name: Install perl
+    name: Install MIP
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -26,4 +26,4 @@ jobs:
           conda config --show-sources
           conda config --show
           conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
-      - run: prove -lrs -f t
+          prove -lrs -f t
