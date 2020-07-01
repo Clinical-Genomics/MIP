@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -90,8 +90,8 @@ sub install_containers {
         docker => {
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-                conda_env_path        => $active_parameter_href->{conda_prefix_path},
-                container_href        => $active_parameter_href->{condtainer},
+                conda_env_path        => $conda_env_path,
+                container_href        => $container_href,
                 filehandle            => $filehandle,
             },
             method => \&install_docker_containers,
@@ -99,8 +99,8 @@ sub install_containers {
         singularity => {
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-                conda_env_path        => $active_parameter_href->{conda_prefix_path},
-                container_href        => $active_parameter_href->{container},
+                conda_env_path        => $conda_env_path,
+                container_href        => $container_href,
                 filehandle            => $filehandle,
             },
             method => \&install_singularity_containers,
