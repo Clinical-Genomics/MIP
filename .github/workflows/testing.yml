@@ -1,6 +1,8 @@
+---
+
 name: MIP CI
 
-on: ["pull_request", "push"]
+"on": ["pull_request", "push"]
 
 jobs:
   tests:
