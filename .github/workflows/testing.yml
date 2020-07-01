@@ -40,7 +40,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 2 t
+        #  PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 2 t
 
       - name: Run MIP download tests
         shell: bash -l {0}
@@ -70,8 +70,4 @@ jobs:
       - name: Calculate coveralls
         run: |
           cover
-
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cover -report coveralls
