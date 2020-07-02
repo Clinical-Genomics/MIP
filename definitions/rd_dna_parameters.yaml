@@ -170,6 +170,7 @@ recipe_core_number:
     samtools_merge: 13
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
+    star_caller: 1
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -280,6 +281,7 @@ recipe_time:
     samtools_subsample_mt: 1
     smncopynumbercaller: 1
     split_fastq_file: 10
+    star_caller: 1
     sv_annotate: 2
     sv_combinevariantcallsets: 2
     sv_rankvariant: 10
@@ -591,6 +593,17 @@ smncopynumbercaller:
   outfile_suffix: ".tsv"
   program_executables:
     - smn_caller.py
+  type: recipe
+star_caller:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _cyp2d6
+  outfile_suffix: ".tsv"
+  program_executables:
+    - star_caller.py
   type: recipe
 tiddit_coverage:
   analysis_mode: sample

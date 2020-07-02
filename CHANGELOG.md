@@ -15,11 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Collect and evaluate QC metrics generated in the RNA pipeline
 - Per default MIP now installs all programs needed for the different pipelines into one conda environment
 - Add picardtools CollectRnaSeqMetrics to the RNA pipeline
+- Call CYPSD6 alleles with star_caller from the Cyrius package
 
 **Tools**
 - Arriba: 1.1.0 -> 1.2.0
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
 - CADD: v1.5 -> v1.6
+- Cyrius: 1.0
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9
 - gatk: 4.1.3.0 -> 4.1.4.0

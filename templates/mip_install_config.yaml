@@ -60,6 +60,10 @@ container:
     executable:
       chromograph:
     uri: docker.io/clinicalgenomics/chromograph:91f0988
+  cyrius:
+    executable:
+      star_caller.py:
+    uri: docker.io/clinicalgenomics/cyrius:1.0
   expansionhunter:
     executable:
       ExpansionHunter:
