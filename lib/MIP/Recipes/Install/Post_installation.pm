@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -89,7 +89,7 @@ sub check_mip_installation {
         keys %{ $active_parameter_href->{conda} },
         keys %{ $active_parameter_href->{pip} },
         keys %{ $active_parameter_href->{shell} },
-        keys %{ $active_parameter_href->{singularity} },
+        keys %{ $active_parameter_href->{container} },
     );
 
     check_program_installations(
@@ -336,7 +336,7 @@ sub build_perl_program_check_command {
     ## Constants
     Readonly my $OPEN_STRING  => q/q{/;
     Readonly my $CLOSE_STRING => q/}/;
-    Readonly my $TIMEOUT      => 20;
+    Readonly my $TIMEOUT      => 60;
 
     ## Array for storing test commands
     my @program_test_commands;

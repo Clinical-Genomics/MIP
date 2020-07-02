@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.36;
+    our $VERSION = 1.37;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -154,7 +154,7 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
 
     ## Solve the installation when the skip_program or select_program parameter has been used
   INSTALL_MODE:
-    foreach my $install_mode (qw{ conda pip shell singularity }) {
+    foreach my $install_mode (qw{ conda pip shell container }) {
 
         ## Remove programs that are to be skipped
         delete @{ $active_parameter_href->{$install_mode} }
