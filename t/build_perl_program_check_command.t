@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -78,7 +78,7 @@ my @perl_commands = build_perl_program_check_command(
 my $perl_command = join $SPACE, @perl_commands;
 
 my $expected_return =
-q{perl -e ' use IPC::Cmd qw{ can_run run }; use Test::More; ok(run(command => q{program --version}, timeout => 20), q{Can execute: program}); done_testing; '};
+q{perl -e ' use IPC::Cmd qw{ can_run run }; use Test::More; ok(run(command => q{program --version}, timeout => 60), q{Can execute: program}); done_testing; '};
 is( $perl_command, $expected_return, q{Perl oneliner execution test built} );
 
 ## Given a program with only a path test
