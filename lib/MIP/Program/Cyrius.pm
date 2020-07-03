@@ -91,16 +91,19 @@ sub star_caller {
             strict_type => 1,
         },
         manifest_file_path => {
+            defined     => 1,
             required    => 1,
             store       => \$manifest_file_path,
             strict_type => 1,
         },
         outdir_path => {
+            defined     => 1,
             required    => 1,
             store       => \$outdir_path,
             strict_type => 1,
         },
         outfile_prefix => {
+            defined     => 1,
             required    => 1,
             store       => \$outfile_prefix,
             strict_type => 1,
