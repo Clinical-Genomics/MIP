@@ -1,6 +1,6 @@
 ---
 
-name: MIP CI
+name: MIP CI tests
 
 "on": ["pull_request", "push"]
 

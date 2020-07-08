@@ -1,6 +1,6 @@
 ---
 
-name: MIP CI
+name: MIP CI code coverage
 
 "on": ["pull_request", "push"]
 
