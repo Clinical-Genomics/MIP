@@ -1,12 +1,12 @@
 ---
 
-name: MIP CI
+name: MIP CI tests
 
 "on": ["pull_request", "push"]
 
 jobs:
   tests:
-    name: Install MIP
+    name: MIP test suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,16 +21,15 @@ jobs:
         run: |
           perl -V
           cpanm --quiet --notest --installdeps .
-          cpanm --quiet --notest Devel::Cover::Report::Coveralls
 
       - name: Run MIP install test
         shell: bash -l {0}
-        run: PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
+        run: perl t/mip_install.test
 
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
+          perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
           bash mip.sh
 
       - name: Install bcftools in conda test env
@@ -42,34 +41,29 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 2 t
+          prove -lrs -f -j 2 t
 
       - name: Run MIP download tests
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_rna.test
+          perl t/mip_download_rd_dna.test
+          perl t/mip_download_rd_rna.test
 
       - name: Run MIP analyse tests
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_panel.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
+          perl t/mip_analyse_dragen_rd_dna.test
+          perl t/mip_analyse_rd_dna_panel.test
+          perl t/mip_analyse_rd_dna.test
+          perl t/mip_analyse_rd_dna_vcf_rerun.test
+          perl t/mip_analyse_rd_rna.test
 
       - name: Run MIP scripts tests
         shell: bash -l {0}
         run: |
           conda activate mip_travis
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vercollect.test
-
-      - name: Calculate coveralls
-        run: |
-          cover
-          cover -report coveralls
+          perl t/mip_qccollect.test
+          perl t/mip_vcfparser.test
+          perl t/mip_vercollect.test
