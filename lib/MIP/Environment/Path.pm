@@ -324,6 +324,7 @@ sub get_conda_bin_dir_path {
     if (   not $bin_file_path
         or not -f $bin_file_path )
     {
+        say STDERR $bin_file_path;
         $log->logcroak( q{Failed to find default path for}
               . $SPACE
               . $bin_file
