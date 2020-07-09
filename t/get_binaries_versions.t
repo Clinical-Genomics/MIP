@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,7 +63,7 @@ my $log = test_log( {} );
 
 ## Given a binary and version when exists
 my $binary      = q{mip};
-my $binary_path = catfile( $Bin, qw{ data modules miniconda envs mip_travis bin mip } );
+my $binary_path = catfile( $Bin, qw{ data modules miniconda envs mip_ci bin mip } );
 my %binary_info = ( $binary => $binary_path, );
 
 my %binary_version = get_binaries_versions( { binary_info_href => \%binary_info, } );

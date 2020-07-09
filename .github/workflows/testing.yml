@@ -29,31 +29,31 @@ jobs:
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
-          perl mip install --bash_set_errexit --envn mip_travis --select_program mip_scripts python
+          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
           bash mip.sh
 
       - name: Install bcftools in conda test env
         shell: bash -l {0}
         run: |
-          conda install -n mip_travis --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+          conda install -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
       - name: Run MIP unit tests
         shell: bash -l {0}
         run: |
-          conda activate mip_travis
+          conda activate mip_ci
           prove -lrs -f -j 2 t
 
       - name: Run MIP download tests
         shell: bash -l {0}
         run: |
-          conda activate mip_travis
+          conda activate mip_ci
           perl t/mip_download_rd_dna.test
           perl t/mip_download_rd_rna.test
 
       - name: Run MIP analyse tests
         shell: bash -l {0}
         run: |
-          conda activate mip_travis
+          conda activate mip_ci
           perl t/mip_analyse_dragen_rd_dna.test
           perl t/mip_analyse_rd_dna_panel.test
           perl t/mip_analyse_rd_dna.test
@@ -63,7 +63,7 @@ jobs:
       - name: Run MIP scripts tests
         shell: bash -l {0}
         run: |
-          conda activate mip_travis
+          conda activate mip_ci
           perl t/mip_qccollect.test
           perl t/mip_vcfparser.test
           perl t/mip_vercollect.test

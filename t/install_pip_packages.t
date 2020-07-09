@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,7 +68,7 @@ open my $filehandle, q{>}, \$file_content
 
 my $log = test_log( { no_screen => 1, } );
 
-my $conda_env    = catdir( $Bin, qw{ data modules miniconda envs mip_travis } );
+my $conda_env    = catdir( $Bin, qw{ data modules miniconda envs mip_ci } );
 my %pip_packages = (
     genmod         => q{1.2.3},
     random_package => undef,
