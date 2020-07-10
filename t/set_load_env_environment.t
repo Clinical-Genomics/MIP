@@ -107,6 +107,7 @@ $active_parameter{environment_name} = undef;
 
 my $return = set_load_env_environment( { active_parameter_href => \%active_parameter, } );
 
+## Then skip sub and return zero
 is( $return, 0, q{Skip - no environment name defined} );
 
 done_testing();
