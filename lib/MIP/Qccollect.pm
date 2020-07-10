@@ -236,7 +236,10 @@ sub chanjo_gender_check {
 ## Set initial gender check status
     my $status = q{FAIL};
 
-    if ( exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} ) {
+    if (    defined $chanjo_sexcheck_gender
+        and defined $sample_id_sex
+        and exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} )
+    {
 
         $status = q{PASS};
     }
@@ -721,7 +724,8 @@ sub get_parent_ids {
             }
         );
 
-        ## Save father_id and  mother_id if not 0
+        ## Return father_id and mother_id if defined and not 0
+        next SAMPLE_ID if ( not defined $father_id and not defined $mother_id );
         next SAMPLE_ID if ( $father_id eq 0 and $mother_id eq 0 );
 
         return $father_id, $mother_id;
@@ -1106,7 +1110,7 @@ sub relation_check {
             foreach my $relative_metric ( @{ $case{$sample_id}{$members} } ) {
 
                 ## Should only hit self
-                if ( $relative_metric == 1 ) {
+                if ( $relative_metric eq 1 ) {
 
                     ## If self
                     next RELATIVE if ( $sample_id eq $members );
