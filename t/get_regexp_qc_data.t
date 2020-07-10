@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
 use Readonly;
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -79,12 +79,15 @@ is_deeply( \@regexp_returns, \@expected_qc_data,
     q{Got regexp return data from system call} );
 
 ## Given a invalid regexp when file exist
-my @returns = get_regexp_qc_data(
+my @response = trap { get_regexp_qc_data(
     {
         data_file_path => $data_file_path,
         regexp         => q{perl -e 'print STDERR q{Testing catching STDERR}'},
     }
-);
-is_deeply( \@returns, [q{Testing catching STDERR}], q{Return STDERR stream} );
+)
+};
+
+is( $response[0], undef, q{Return undef when STDERR} );
+like( $trap->stderr, qr/Testing\s+catching\s+STDERR/xms, q{Throw warning when STDERR} );
 
 done_testing();
