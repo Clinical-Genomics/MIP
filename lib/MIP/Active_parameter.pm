@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.30;
+    our $VERSION = 1.31;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1920,6 +1920,8 @@ sub set_load_env_environment {
 
     ## Unpack
     my $env_name = $active_parameter_href->{environment_name};
+
+    return 0 if ( not defined $env_name );
 
     if ( keys %{ $active_parameter_href->{load_env} } != 1 ) {
 

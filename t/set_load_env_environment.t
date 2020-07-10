@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,7 +58,7 @@ diag(   q{Test set_load_env_environment from Active_parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { } );
+my $log = test_log( {} );
 
 ## Given a single load_env environment
 my $user_env_name    = q{user_env_name};
@@ -90,15 +90,23 @@ is_deeply(
     q{Set user environment name in load_env}
 );
 
-## Given multiple load_env environments
+## When multiple load_env environments
 $active_parameter{load_env}{another_env} = {
-        method => q{conda},
-        mip    => undef,
-    };
+    method => q{conda},
+    mip    => undef,
+};
 
-trap { set_load_env_environment( { active_parameter_href => \%active_parameter, } )
+trap {
+    set_load_env_environment( { active_parameter_href => \%active_parameter, } )
 };
 
 like( $trap->stderr, qr/Could\s+not\s+use/xms, q{Throw warning log message} );
+
+## When environment_name is not defined
+$active_parameter{environment_name} = undef;
+
+my $return = set_load_env_environment( { active_parameter_href => \%active_parameter, } );
+
+is( $return, 0, q{Skip - no environment name defined} );
 
 done_testing();

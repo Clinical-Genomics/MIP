@@ -938,6 +938,7 @@ sub plink_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Data::Diver qw{ Dive };
     use MIP::Qc_data qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
@@ -992,7 +993,7 @@ sub plink_gender_check {
             }
         );
 
-        if ( exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} ) {
+        if ( Dive( %gender_map, $plink_sexcheck_gender, $sample_id_sex ) ) {
 
             add_qc_data_recipe_info(
                 {
