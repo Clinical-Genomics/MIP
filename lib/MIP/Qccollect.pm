@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -938,7 +938,6 @@ sub plink_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Data::Diver qw{ Dive };
     use MIP::Qc_data qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
@@ -993,7 +992,10 @@ sub plink_gender_check {
             }
         );
 
-        if ( Dive( %gender_map, $plink_sexcheck_gender, $sample_id_sex ) ) {
+        if (    defined $plink_sexcheck_gender
+            and defined $sample_id_sex
+            and exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} )
+        {
 
             add_qc_data_recipe_info(
                 {
