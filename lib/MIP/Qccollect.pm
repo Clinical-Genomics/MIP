@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1026,7 +1026,7 @@ sub plink_gender_check {
 
 sub relation_check {
 
-## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
+## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related
 ## Returns  :
 ## Arguments: $qc_data_href            => Qc data hash {REF}
 ##          : $relationship_values_ref => All relationship estimations {REF}
@@ -1051,7 +1051,6 @@ sub relation_check {
         },
         relationship_values_ref => {
             default     => [],
-            defined     => 1,
             required    => 1,
             store       => \$relationship_values_ref,
             strict_type => 1,
@@ -1065,7 +1064,6 @@ sub relation_check {
         },
         sample_orders_ref => {
             default     => [],
-            defined     => 1,
             required    => 1,
             store       => \$sample_orders_ref,
             strict_type => 1,
@@ -1077,6 +1075,8 @@ sub relation_check {
     use MIP::Qccollect qw{ get_parent_ids };
     use MIP::Qc_data qw{ set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    return if ( not @{$relationship_values_ref} and not @{$sample_orders_ref} );
 
     ## Constants
     Readonly my $RELATIONSHIP_CUTOFF => 0.70;
@@ -1179,7 +1179,7 @@ sub relation_check {
             );
         }
     }
-    return;
+    return 1;
 }
 
 sub set_case_eval_metrics {
