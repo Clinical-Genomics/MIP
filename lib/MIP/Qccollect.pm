@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -236,7 +236,10 @@ sub chanjo_gender_check {
 ## Set initial gender check status
     my $status = q{FAIL};
 
-    if ( exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} ) {
+    if (    defined $chanjo_sexcheck_gender
+        and defined $sample_id_sex
+        and exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} )
+    {
 
         $status = q{PASS};
     }
@@ -721,7 +724,8 @@ sub get_parent_ids {
             }
         );
 
-        ## Save father_id and  mother_id if not 0
+        ## Return father_id and mother_id if defined and not 0
+        next SAMPLE_ID if ( not defined $father_id and not defined $mother_id );
         next SAMPLE_ID if ( $father_id eq 0 and $mother_id eq 0 );
 
         return $father_id, $mother_id;
@@ -992,7 +996,10 @@ sub plink_gender_check {
             }
         );
 
-        if ( exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} ) {
+        if (    defined $plink_sexcheck_gender
+            and defined $sample_id_sex
+            and exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} )
+        {
 
             add_qc_data_recipe_info(
                 {
@@ -1019,7 +1026,7 @@ sub plink_gender_check {
 
 sub relation_check {
 
-## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
+## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related
 ## Returns  :
 ## Arguments: $qc_data_href            => Qc data hash {REF}
 ##          : $relationship_values_ref => All relationship estimations {REF}
@@ -1044,7 +1051,6 @@ sub relation_check {
         },
         relationship_values_ref => {
             default     => [],
-            defined     => 1,
             required    => 1,
             store       => \$relationship_values_ref,
             strict_type => 1,
@@ -1058,7 +1064,6 @@ sub relation_check {
         },
         sample_orders_ref => {
             default     => [],
-            defined     => 1,
             required    => 1,
             store       => \$sample_orders_ref,
             strict_type => 1,
@@ -1070,6 +1075,8 @@ sub relation_check {
     use MIP::Qccollect qw{ get_parent_ids };
     use MIP::Qc_data qw{ set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    return if ( not @{$relationship_values_ref} and not @{$sample_orders_ref} );
 
     ## Constants
     Readonly my $RELATIONSHIP_CUTOFF => 0.70;
@@ -1103,7 +1110,7 @@ sub relation_check {
             foreach my $relative_metric ( @{ $case{$sample_id}{$members} } ) {
 
                 ## Should only hit self
-                if ( $relative_metric == 1 ) {
+                if ( $relative_metric eq 1 ) {
 
                     ## If self
                     next RELATIVE if ( $sample_id eq $members );
@@ -1172,7 +1179,7 @@ sub relation_check {
             );
         }
     }
-    return;
+    return 1;
 }
 
 sub set_case_eval_metrics {
