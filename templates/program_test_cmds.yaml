@@ -18,6 +18,8 @@ bwa:
   path: 'bwa'
 bwakit:
   path: 'run-bwamem'
+bwa-mem2:
+  path: 'bwa-mem2'
 cadd:
   execution: 'CADD.sh -h'
 chanjo:

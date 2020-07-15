@@ -39,6 +39,10 @@ container:
       typeHLA-selctg.js:
       seqtk:
     uri: docker.io/clinicalgenomics/bwakit:0.7.15
+  bwa-mem2:
+    executable:
+      bwa-mem2:
+    uri: docker.io/clinicalgenomics/bwa-mem2:2.0
   bedtools:
     executable:
       bedtools:
