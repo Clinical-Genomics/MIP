@@ -6,12 +6,12 @@ FROM clinicalgenomics/mip:2.0
 
 LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
-LABEL software="bwa"
-LABEL software.version="0.7.17"
-LABEL extra.binaries="bwa"
+LABEL software="bwa-mem2"
+LABEL software.version="2.0"
+LABEL extra.binaries="bwa-mem2"
 LABEL maintainer="Clinical-Genomics/MIP"
 
-RUN conda install bwa=0.7.17=ha92aebf_3
+RUN conda install bwa-mem2=2.0=he513fc3_0
 
 ## Clean up after conda
 RUN /opt/conda/bin/conda clean -tipsy
