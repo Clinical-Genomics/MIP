@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,8 +65,7 @@ my $test_dir = File::Temp->newdir();
 my $log = test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_binary_path =
-  catdir( $Bin, qw{ data modules miniconda envs mip_travis bin vep } );
+my $vep_binary_path = catdir( $Bin, qw{ data modules miniconda envs mip_ci bin vep } );
 my $vep_directory_cache =
   catdir( $Bin, qw{ data references ensembl-tools-data-100 cache } );
 

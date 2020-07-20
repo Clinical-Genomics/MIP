@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -597,13 +597,13 @@ sub set_ase_chain_recipes {
 
     use MIP::Active_parameter qw{ set_recipe_mode };
 
-    my @DNA_RECIPES  = (qw{ dna_vcf_reformat });
-    my @ASE_RECIPIES = (
+    my @DNA_VC_RECIPES = (qw{ dna_vcf_reformat });
+    my @RNA_VC_RECIPES = (
         qw{ gatk_baserecalibration gatk_haplotypecaller gatk_splitncigarreads gatk_variantfiltration }
     );
 
     my @recipes =
-      $active_parameter_href->{dna_vcf_file} < 1 ? @DNA_RECIPES : @ASE_RECIPIES;
+      $active_parameter_href->{dna_vcf_file} ? @RNA_VC_RECIPES : @DNA_VC_RECIPES;
 
     set_recipe_mode(
         {

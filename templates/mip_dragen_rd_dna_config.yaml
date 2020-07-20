@@ -5,7 +5,7 @@ max_cores_per_node: 36
 node_ram_memory: 192
 project_id: travis_test
 load_env:
-  mip_travis:
+  mip_ci:
     method: conda
     mip:
 slurm_quality_of_service: low

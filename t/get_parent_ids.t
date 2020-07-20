@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,5 +97,20 @@ $sample_info{sample}{ADM1059A1}{mother} = 0;
 ## Then return fake father and mother id
 is( $father_id, q{YYY_father}, q{Got fake father id} );
 is( $mother_id, q{XXX_mother}, q{Got fake mother id} );
+
+## Given undefined father and mother
+$sample_info{sample}{ADM1059A1}{father} = undef;
+$sample_info{sample}{ADM1059A1}{mother} = undef;
+
+( $father_id, $mother_id ) = get_parent_ids(
+    {
+        case_href        => \%case,
+        sample_info_href => \%sample_info,
+    }
+);
+
+## Then return fake father and mother id
+is( $father_id, q{YYY_father}, q{Got fake father id from undefined father} );
+is( $mother_id, q{XXX_mother}, q{Got fake mother id from undefined mother} );
 
 done_testing();

@@ -34,8 +34,8 @@ In `lib/MIP/Cli/Mip/Install/<pipeline>`:
   1. Add the executable of your program to the test envs:
 
 ```
-$ touch t/data/modules/miniconda/envs/mip_travis_<env_name>/bin/<program_executable>
-$ chmod a+x t/data/modules/miniconda/envs/mip_travis_<env_name>/bin/<program_executable>
+$ touch t/data/modules/miniconda/envs/mip_ci/bin/<program_executable>
+$ chmod a+x t/data/modules/miniconda/envs/mip_ci/bin/<program_executable>
 ```
 2. Add the program to the template config
 

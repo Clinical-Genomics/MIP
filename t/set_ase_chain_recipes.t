@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,8 +69,6 @@ my %active_parameter = (
 );
 
 ## When no DNA VCF file is supplied
-$active_parameter{dna_vcf_file} = 0;
-
 set_ase_chain_recipes( { active_parameter_href => \%active_parameter, } );
 
 ## Then turn off DNA VCF reformat recipe
@@ -80,12 +78,12 @@ is( $active_parameter{dna_vcf_reformat}, 0, q{Turn off DNA VCF reformat recipe} 
 $active_parameter{dna_vcf_reformat} = 1;
 
 ## When DNA VCF file is supplied
-$active_parameter{dna_vcf_file} = 1;
+$active_parameter{dna_vcf_file} = catfile(qw{ my dna_variants.vcf });
 
 set_ase_chain_recipes( { active_parameter_href => \%active_parameter, } );
 
 my %expected_recipe_mode = (
-    dna_vcf_file           => 1,
+    dna_vcf_file           => catfile(qw{ my dna_variants.vcf }),
     dna_vcf_reformat       => 1,
     gatk_baserecalibration => 0,
     gatk_haplotypecaller   => 0,

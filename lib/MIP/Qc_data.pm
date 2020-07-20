@@ -566,7 +566,7 @@ sub get_regexp_qc_data {
 
         ## Be verbose that something went wrong
         say {*STDERR} join $NEWLINE, @{ $process_return{stderrs_ref} };
-        return @{ $process_return{stderrs_ref} };
+        return;
     }
     return @{ $process_return{stdouts_ref} };
 }

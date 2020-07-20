@@ -172,4 +172,21 @@ is(
     q{Found unrelated siblings}
 );
 
+## When no relationship_values and no sample_order
+delete $qc_data{recipe}{relation_check}{sample_relation_check};
+delete $qc_data{recipe}{pedigree_check}{sample_order};
+
+my $return = relation_check(
+    {
+        qc_data_href => \%qc_data,
+        relationship_values_ref =>
+          \@{ $qc_data{recipe}{relation_check}{sample_relation_check} },
+        sample_info_href  => \%sample_info,
+        sample_orders_ref => \@{ $qc_data{recipe}{pedigree_check}{sample_order} },
+    }
+);
+
+## Then skip relation check and return undef
+is( $return, undef, q{Skip if no sample order and no relationship values} );
+
 done_testing();

@@ -32,7 +32,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 ## Set paths
 my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
@@ -74,7 +74,7 @@ GetOptions(
 ok( can_run(q{mip}), q{Checking can run mip} );
 
 ### Prepare temporary file for testing
-my %binary_path = ( mip => catfile( $conda_path, qw{ envs mip_travis bin mip} ), );
+my %binary_path = ( mip => catfile( $conda_path, qw{ envs mip_ci bin mip} ), );
 
 write_to_file(
     {
