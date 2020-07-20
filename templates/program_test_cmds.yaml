@@ -26,6 +26,8 @@ chromograph:
   execution: 'chromograph'
 cnvnator:
   path: 'cnvnator'
+cyrius:
+  execution: 'star_caller.py --help'
 delly:
   execution: 'delly'
 expansionhunter:
