@@ -19,6 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - Arriba: 1.1.0 -> 1.2.0
 - bcftools: 1.9=ha228f0b_4 -> 1.10.2-hd2cd319_0 (DNA)
+- bwa-mem2: 2.0-he513fc3_0
 - CADD: v1.5 -> v1.6
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9

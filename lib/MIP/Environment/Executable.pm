@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -256,6 +256,11 @@ q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bwa => {
             version_cmd => q{2>&1 >/dev/null},
+            version_regexp =>
+q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        q{bwa-mem2} => {
+            version_cmd => q{ version 2>&1 >/dev/null},
             version_regexp =>
 q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },

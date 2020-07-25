@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna_panel pipeline_analyse_rd_dna_panel };
@@ -449,6 +449,7 @@ sub pipeline_analyse_rd_dna_panel {
     my %analysis_recipe = (
         analysisrunstatus            => \&analysis_analysisrunstatus,
         bwa_mem                      => undef,
+        bwa_mem2                     => undef,
         cadd_ar                      => \&analysis_cadd_panel,
         endvariantannotationblock    => \&analysis_endvariantannotationblock_panel,
         fastqc_ar                    => \&analysis_fastqc,

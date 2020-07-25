@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -277,7 +277,7 @@ sub parse_fastq_for_gender {
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Program::Bwa qw{ bwa_mem };
+    use MIP::Program::Bwa qw{ bwa_mem2_mem };
 
     my $other_gender_count = get_active_parameter_attribute(
         {
@@ -327,7 +327,7 @@ sub parse_fastq_for_gender {
         my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } );
 
         ## Build bwa mem command
-        my @commands = bwa_mem(
+        my @commands = bwa_mem2_mem(
             {
                 idxbase                 => $referencefile_path,
                 infile_path             => $bwa_infiles[0],

@@ -8,6 +8,7 @@ custom_default_parameters:
     - analysis_type
     - conda_path
     - bwa_build_reference
+    - bwa_mem2_build_reference
     - exome_target_bed
     - infile_dirs
     - pedigree_fam_file
@@ -81,6 +82,7 @@ human_genome_reference:
   associated_recipe:
     - bcftools_mpileup
     - bwa_mem
+    - bwa_mem2
     - cnvnator_ar
     - delly_call
     - expansionhunter
@@ -106,6 +108,7 @@ human_genome_reference_file_endings:
   associated_recipe:
     - bcftools_mpileup
     - bwa_mem
+    - bwa_mem2
     - cnvnator_ar
     - delly_call
     - expansionhunter
@@ -135,6 +138,7 @@ recipe_core_number:
     analysisrunstatus: 1
     bcftools_mpileup: 16
     bwa_mem: 36
+    bwa_mem2: 36
     chanjo_sexcheck: 1
     chromograph_ar: 1
     cnvnator_ar: 13
@@ -240,6 +244,7 @@ recipe_time:
   default:
     analysisrunstatus: 1
     bwa_mem: 30
+    bwa_mem2: 30
     bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
@@ -315,6 +320,7 @@ infile_dirs:
 picardtools_path:
   associated_recipe:
     - bwa_mem
+    - bwa_mem2
     - delly_reformat
     - markduplicates
     - picardtools_collecthsmetrics
@@ -375,7 +381,7 @@ bwa_mem:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -391,15 +397,38 @@ bwa_build_reference:
   exists_check: file
   reference: reference_dir
   type: path
+bwa_mem2:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _sorted
+  outfile_suffix: ".bam"
+  program_executables:
+    - bwa-mem2
+    - samtools
+  recipe_type: aligners
+  type: recipe
+bwa_mem2_build_reference:
+  associated_recipe:
+    - bwa_mem2
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
 bwa_mem_bamstats:
   associated_recipe:
     - bwa_mem
+    - bwa_mem2
   data_type: SCALAR
   default: 1
   type: recipe_argument
 bwa_mem_cram:
   associated_recipe:
     - bwa_mem
+    - bwa_mem2
   data_type: SCALAR
   default: 0
   type: recipe_argument
@@ -412,6 +441,7 @@ bwa_mem_hla:
 bwa_soft_clip_sup_align:
   associated_recipe:
     - bwa_mem
+    - bwa_mem2
   data_type: SCALAR
   default: 0
   type: recipe_argument

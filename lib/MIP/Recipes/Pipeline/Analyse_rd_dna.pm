@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.35;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -547,6 +547,7 @@ sub pipeline_analyse_rd_dna {
         analysisrunstatus => \&analysis_analysisrunstatus,
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                          # Depends on genome build
+        bwa_mem2          => undef,
         cadd_ar           => \&analysis_cadd,
         chanjo_sexcheck   => \&analysis_chanjo_sex_check,
         chromograph_ar    => undef,                          # Depends on pedigree

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -890,6 +890,13 @@ sub set_custom_default_to_active_parameter {
             },
         },
         bwa_build_reference => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        bwa_mem2_build_reference => {
             method   => \&set_default_human_genome,
             arg_href => {
                 active_parameter_href => $active_parameter_href,

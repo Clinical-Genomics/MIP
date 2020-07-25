@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -75,7 +75,8 @@ sub set_recipe_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
+    use MIP::Recipes::Analysis::Bwa_mem
+      qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
     Readonly my $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS => 37;
     Readonly my $GENOME_BUILD_VERSION_HG_PRIOR_ALTS   => 19;
@@ -92,7 +93,8 @@ sub set_recipe_bwa_mem {
 
         # Human genome version <= grch37
         # Use bwa mem recipe
-        $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+        $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
+        $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
         return;
     }
 
@@ -108,7 +110,8 @@ sub set_recipe_bwa_mem {
 
     ## Human genome version <= hg19
     # Use bwa mem recipe
-    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+    $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
+    $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
 
     return;
 }
