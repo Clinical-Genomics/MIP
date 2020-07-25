@@ -391,6 +391,7 @@ sub build_bwa_mem2_prerequisites {
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
+    Readonly my $MEMORY_ALLOCATION => 100;
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
@@ -418,6 +419,7 @@ sub build_bwa_mem2_prerequisites {
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $MEMORY_ALLOCATION,
             process_time                    => $PROCESSING_TIME,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
