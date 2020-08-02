@@ -83,7 +83,7 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.1.4.0
+    uri: docker.io/broadinstitute/gatk:4.1.3.0
   genmod:
     executable:
       genmod:

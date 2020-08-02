@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+  qw{ $AMPERSAND $ASTERISK $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
@@ -138,7 +138,8 @@ sub analysis_bwa_mem {
     use MIP::Parse::File qw{parse_io_outfiles};
     use MIP::Processmanagement::Processes qw{submit_recipe};
     use MIP::Program::Bwa qw{bwa_mem};
-    use MIP::Program::Samtools qw{samtools_stats samtools_sort samtools_view};
+    use MIP::Program::Samtools
+      qw{ samtools_index samtools_stats samtools_sort samtools_view};
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -347,10 +348,17 @@ sub analysis_bwa_mem {
                 temp_file_path_prefix =>
                   catfile( $temp_directory, q{samtools_sort_temp} ),
                 thread_number => $recipe_resource{core_number},
-                write_index   => 1,
             }
         );
         say {$filehandle} $NEWLINE;
+
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $outfile_path,
+            }
+        );
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
@@ -371,8 +379,9 @@ sub analysis_bwa_mem {
                     outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
-            say {$filehandle} $NEWLINE;
+            say {$filehandle} $AMPERSAND . $NEWLINE;
         }
+        say {$filehandle} q{wait} . $NEWLINE;
 
         if (    $active_parameter_href->{bwa_mem_cram}
             and $outfile_suffix ne q{.cram} )
@@ -560,18 +569,19 @@ sub analysis_bwa_mem2 {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{get_sample_file_attribute};
-    use MIP::Get::File qw{get_io_files};
-    use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources};
-    use MIP::Parse::File qw{parse_io_outfiles};
-    use MIP::Processmanagement::Processes qw{submit_recipe};
-    use MIP::Program::Bwa qw{bwa_mem2_mem};
-    use MIP::Program::Samtools qw{samtools_stats samtools_sort samtools_view};
+    use MIP::File_info qw{ get_sample_file_attribute };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bwa qw{ bwa_mem2_mem };
+    use MIP::Program::Samtools
+      qw{ samtools_index samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
-      set_recipe_outfile_in_sample_info};
-    use MIP::Script::Setup_script qw{setup_script};
+      set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -775,10 +785,17 @@ sub analysis_bwa_mem2 {
                 temp_file_path_prefix =>
                   catfile( $temp_directory, q{samtools_sort_temp} ),
                 thread_number => $recipe_resource{core_number},
-                write_index   => 1,
             }
         );
         say {$filehandle} $NEWLINE;
+
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $outfile_path,
+            }
+        );
+        say {$filehandle} $AMPERSAND . $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
@@ -799,8 +816,9 @@ sub analysis_bwa_mem2 {
                     outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
-            say {$filehandle} $NEWLINE;
+            say {$filehandle} $AMPERSAND . $NEWLINE;
         }
+        say {$filehandle} q{wait} . $NEWLINE;
 
         if (    $active_parameter_href->{bwa_mem_cram}
             and $outfile_suffix ne q{.cram} )
@@ -994,7 +1012,8 @@ sub analysis_run_bwa_mem {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Samtools qw{ samtools_stats samtools_sort samtools_view };
+    use MIP::Program::Samtools
+      qw{ samtools_index samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -1194,6 +1213,14 @@ sub analysis_run_bwa_mem {
         );
         say {$filehandle} $NEWLINE;
 
+        samtools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $outfile_path,
+            }
+        );
+        say {$filehandle} $AMPERSAND . $NEWLINE;
+
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
             samtools_stats(
@@ -1213,8 +1240,9 @@ sub analysis_run_bwa_mem {
                     outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
-            say {$filehandle} $NEWLINE;
+            say {$filehandle} $AMPERSAND . $NEWLINE;
         }
+        say {$filehandle} q{wait} . $NEWLINE;
 
         if (    $active_parameter_href->{bwa_mem_cram}
             and $outfile_suffix ne q{.cram} )
@@ -1368,7 +1396,7 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     # End oneliner
     print {$filehandle} q?' ?;
-    say   {$filehandle} q{>} . $SPACE . $outfile_path;
+    print {$filehandle} q{>} . $SPACE . $outfile_path . $SPACE;
 
     return;
 }

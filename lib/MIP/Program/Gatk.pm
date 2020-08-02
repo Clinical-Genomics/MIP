@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2316,6 +2316,7 @@ sub gatk_haplotypecaller {
 ##          : $standard_min_confidence_threshold_for_calling => The minimum phred-scaled confidence threshold at which variants should be called
 ##          : $stderrfile_path                               => Stderrfile path
 ##          : $temp_directory                                => Redirect tmp files to java temp
+##          : $use_new_qual_calculator                       => Use the new AF model instead of the so-called exact model
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
@@ -2345,6 +2346,7 @@ sub gatk_haplotypecaller {
     my $emit_ref_confidence;
     my $java_use_large_pages;
     my $linked_de_bruijn_graph;
+    my $use_new_qual_calculator;
     my $verbosity;
     my $xargs_mode;
 
@@ -2454,6 +2456,12 @@ sub gatk_haplotypecaller {
             store       => \$temp_directory,
             strict_type => 1,
         },
+        use_new_qual_calculator => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$use_new_qual_calculator,
+            strict_type => 1,
+        },
         verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
@@ -2523,6 +2531,11 @@ sub gatk_haplotypecaller {
     if ($num_ref_samples_if_no_call) {
         push @commands,
           q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
+    }
+
+    if ($use_new_qual_calculator) {
+
+        push @commands, q{--use-new-qual-calculator};
     }
 
     if ($linked_de_bruijn_graph) {
