@@ -134,7 +134,7 @@ sub parse_rd_dna {
       qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ cnvnator_ar delly_call delly_reformat expansionhunter
-      samtools_subsample_mt smncopynumbercaller tiddit };
+      samtools_subsample_mt smncopynumbercaller star_caller tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     my $consensus_analysis_type = get_cache(
@@ -488,10 +488,12 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
+    use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
+    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
@@ -588,6 +590,7 @@ sub pipeline_analyse_rd_dna {
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         smncopynumbercaller       => \&analysis_smncopynumbercaller,
         split_fastq_file          => \&analysis_split_fastq_file,
+        star_caller               => \&analysis_star_caller,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
         sv_rankvariant            => undef,                   # Depends on sample features

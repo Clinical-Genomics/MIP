@@ -24,6 +24,8 @@ CHAIN_ALL:
       - sambamba_depth
     - CHAIN_SMN:
       - smncopynumbercaller
+    - CHAIN_CYRIUS:
+      - star_caller
     - CHAIN_PTMME:
       - picardtools_collectmultiplemetrics
     - CHAIN_PTCHSM:

@@ -566,6 +566,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{star_caller} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{CYP2D6 allele analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{tiddit_coverage} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Generate coverage data from alignment},
