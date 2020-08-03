@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,10 +46,10 @@ BEGIN {
 
 sub build_shebang {
 
-## Function : Build bash shebang line. Returns @commands or writes to already opened filehandle.
+## Function : Build bash shebang line. Returns @commands or writes to already opened filehandle
 ## Returns  : @commands
-## Arguments: $filehandle         => Filehandle to write to
-##          : $bash_bin_path      => Location of bash bin
+## Arguments: $bash_bin_path      => Location of bash bin
+##          : $filehandle         => Filehandle to write to
 ##          : $invoke_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
 ##          : $separator          => Separator to use when writing
 
@@ -89,10 +89,8 @@ sub build_shebang {
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     ## Build shebang
-    # Stores commands depending on input parameters
-    my @commands = ( q{#!} . $bash_bin_path );
+    my @commands = ( q{#!} . $SPACE . $bash_bin_path );
 
-    ##Invoke as login shell
     if ($invoke_login_shell) {
 
         $commands[0] .= $SPACE . q{--login};
