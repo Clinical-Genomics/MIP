@@ -51,7 +51,6 @@ sub build_shebang {
 ## Arguments: $bash_bin_path      => Location of bash bin
 ##          : $filehandle         => Filehandle to write to
 ##          : $invoke_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
-##          : $separator          => Separator to use when writing
 
     my ($arg_href) = @_;
 
@@ -61,7 +60,6 @@ sub build_shebang {
     ## Default(s)
     my $bash_bin_path;
     my $invoke_login_shell;
-    my $separator;
 
     my $tmpl = {
         bash_bin_path => {
@@ -75,11 +73,6 @@ sub build_shebang {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$invoke_login_shell,
-            strict_type => 1,
-        },
-        separator => {
-            default     => $NEWLINE,
-            store       => \$separator,
             strict_type => 1,
         },
     };
