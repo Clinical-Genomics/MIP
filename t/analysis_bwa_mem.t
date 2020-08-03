@@ -89,6 +89,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$file_info{ADM1059A1}{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7}{sequence_run_type} = q{paired-end};
 
 my %job_id;
 my %parameter = test_mip_hashes(
