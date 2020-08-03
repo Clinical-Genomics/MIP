@@ -245,7 +245,7 @@ recipe_time:
   default:
     analysisrunstatus: 1
     bwa_mem: 30
-    bwa_mem2: 30
+    bwa_mem2: 10
     bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2

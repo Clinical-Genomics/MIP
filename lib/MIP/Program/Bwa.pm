@@ -257,7 +257,7 @@ sub bwa_mem {
 
 sub bwa_mem2_mem {
 
-## Function : Perl wrapper for writing bwa mem 2 mem recipe to $filehandle. Based on bwa 0.7.17.
+## Function : Perl wrapper for writing bwa mem 2 mem recipe to $filehandle. Based on bwa mem 2 2.0.
 ## Returns  : @commands
 ## Arguments: $filehandle              => Sbatch filehandle to write to
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
@@ -393,7 +393,7 @@ sub bwa_mem2_mem {
 
 sub bwa_mem2_index {
 
-## Function : Perl wrapper for writing bwa mem 2 index recipe to $filehandle. Based on bwa 0.7.17.
+## Function : Perl wrapper for writing bwa mem 2 index recipe to $filehandle. Based on bwa mem 2 2.0.
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $prefix                 => Prefix of the index [same as fasta name]

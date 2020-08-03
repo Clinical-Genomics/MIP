@@ -312,7 +312,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Bwa mem 2},
             is            => q{rw},
-            isa           => enum( [ 1, 2 ] ),
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
