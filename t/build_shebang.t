@@ -15,12 +15,12 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use List::MoreUtils qw{ any };
 use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -59,64 +59,60 @@ diag(   q{Test build_shebang from Shell.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $separator = q{\n};
-
 ## Base arguments
 my $batch_shebang = q{#!} . $SPACE;
 
 my $bash_bin_path =
   catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
 
-## Given specific arguments
-my %argument = (
+## Base arguments
+my @function_base_commands = ( $batch_shebang . $bash_bin_path );
+
+my %base_argument = (
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
+);
+
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
     bash_bin_path => {
         input           => $bash_bin_path,
-        expected_output => $batch_shebang . $bash_bin_path . q{ --login},
+        expected_output => $batch_shebang . $bash_bin_path,
+    },
+);
+
+my %specific_argument = (
+    bash_bin_path => {
+        input           => $bash_bin_path,
+        expected_output => $batch_shebang . $bash_bin_path,
     },
     invoke_login_shell => {
         input           => 1,
-        expected_output => $batch_shebang . $bash_bin_path . q{ --login},
+        expected_output => q{--login},
     },
-);
-
-my @commands = build_shebang(
-    {
-        bash_bin_path      => $argument{bash_bin_path}{input},
-        invoke_login_shell => $argument{invoke_login_shell}{input},
-    }
-);
-
-## Testing return of commands
-foreach my $key ( keys %argument ) {
-
-    # Unpack expected output
-    my $expected_output = $argument{$key}{expected_output};
-
-    ## Then the returned commands should match the expected output
-    ok( ( any { $_ eq $expected_output } @commands ), q{Argument: } . $key );
-}
-
-## Testing write to file
-
-## Given mock arguments
-my @args = (
-    bash_bin_path => $bash_bin_path,
-    filehandle    => undef,
 );
 
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&build_shebang;
 
-my @function_base_commands = ( $batch_shebang . $bash_bin_path );
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
 
-## Then write to file should return without errors
-test_write_to_file(
-    {
-        args_ref             => \@args,
-        base_commands_ref    => \@function_base_commands,
-        module_function_cref => $module_function_cref,
-        separator            => $separator,
-    }
-);
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+
+    test_function(
+        {
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
+        }
+    );
+}
 
 done_testing();

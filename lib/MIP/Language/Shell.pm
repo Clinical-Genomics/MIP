@@ -93,14 +93,14 @@ sub build_shebang {
 
     if ($invoke_login_shell) {
 
-        $commands[0] .= $SPACE . q{--login};
+        push @commands, q{--login};
     }
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
             filehandle   => $filehandle,
-            separator    => $separator,
+            separator    => $SPACE,
         }
     );
     return @commands;
