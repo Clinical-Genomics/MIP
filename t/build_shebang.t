@@ -15,8 +15,8 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2018 };
 use List::MoreUtils qw{ any };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -67,7 +67,7 @@ my $batch_shebang = q{#!} . $SPACE;
 my $bash_bin_path =
   catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
 
-## Specific arguments
+## Given specific arguments
 my %argument = (
     bash_bin_path => {
         input           => $bash_bin_path,
@@ -98,7 +98,7 @@ foreach my $key ( keys %argument ) {
 
 ## Testing write to file
 
-## Given fake arguments
+## Given mock arguments
 my @args = (
     bash_bin_path => $bash_bin_path,
     filehandle    => undef,
