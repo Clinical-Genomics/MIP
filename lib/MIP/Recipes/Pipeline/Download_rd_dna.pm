@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -80,8 +80,6 @@ sub pipeline_download_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_container_constants };
-    use MIP::Recipes::Download::1000g_all_sv qw{ download_1000g_all_sv };
-    use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
     use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
@@ -129,8 +127,6 @@ sub pipeline_download_rd_dna {
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
-        q{1000g_all_sv}                => \&download_1000g_all_sv,
-        q{1000g_all_wgs}               => \&download_1000g_all_wgs,
         q{1000g_indels}                => \&download_1000g_indels,
         q{1000g_omni}                  => \&download_1000g_omni,
         q{1000g_sites}                 => \&download_1000g_sites,

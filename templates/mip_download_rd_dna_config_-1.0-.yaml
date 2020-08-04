@@ -7,14 +7,10 @@ load_env:
     mip:
 project_id: development
 reference:
-  1000g_all_sv:
-    - phase3_v8.20130502
-  1000g_all_wgs:
-    - phase3_v5b.20130502
-  1000g_omni:
-    - 2.5
   1000g_indels:
     - phase1
+  1000g_omni:
+    - 2.5
   1000g_sites:
     - phase3_v4_20130502
   1000g_snps:
@@ -135,22 +131,6 @@ reference_feature:
         file: Homo_sapiens_assembly38.fasta
         outfile: grch38_homo_sapiens_-assembly-.fasta
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
-  1000g_all_sv:
-    grch37:
-      phase3_v8.20130502:
-        file: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz
-        file_index: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz.tbi
-        outfile: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
-  1000g_all_wgs:
-    grch37:
-      phase3_v5b.20130502:
-        file: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
-        file_index: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz.tbi
-        outfile: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
   1000g_indels:
     grch37:
       phase1:

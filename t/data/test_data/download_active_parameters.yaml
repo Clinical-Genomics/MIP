@@ -10,10 +10,6 @@ project_id: development
 node_ram_memory: '128'
 core_ram_memory: 5
 reference:
-  1000g_all_sv:
-    - phase3_v8.20130502
-  1000g_all_wgs:
-    - phase3_v5b.20130502
   1000g_indels:
     - phase1
   1000g_omni:
@@ -122,24 +118,6 @@ reference:
   vcfanno_functions:
     - v1.0
 reference_feature:
-  1000g_all_sv:
-    grch37:
-      phase3_v8.20130502:
-        file: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz
-        file_index: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz.tbi
-        outfile: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
-    grch38: {}
-  1000g_all_wgs:
-    grch37:
-      phase3_v5b.20130502:
-        file: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
-        file_index: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz.tbi
-        outfile: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
-    grch38: {}
   1000g_indels:
     grch37:
       phase1:
