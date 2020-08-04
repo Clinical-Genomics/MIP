@@ -6,8 +6,7 @@ use Cwd;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile catdir };
-use File::Temp qw{ tempfile };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -18,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
@@ -27,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $DOT $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,14 +63,13 @@ diag(   q{Test setup_install_script from Setup_script.pm v}
 my $log = test_log( {} );
 
 my %active_parameter = (
-    slurm_quality_of_service => q{low},
-    project_id               => q{cust000},
+    bash_set_errexit         => 1,
+    bash_set_nounset         => 1,
     core_number              => 1,
     email_types              => [qw{ FAIL }],
     process_time             => q{1:00:00},
-    slurm_quality_of_service => q{ low },
-    bash_set_errexit         => 1,
-    bash_set_nounset         => 1,
+    project_id               => q{cust000},
+    slurm_quality_of_service => q{low},
 );
 
 ### Given a request to create bash file
@@ -90,12 +87,12 @@ open $filehandle, q{>}, \$file_content
 trap {
     setup_install_script(
         {
+            active_parameter_href => \%active_parameter,
             filehandle            => $filehandle,
             file_name             => q{test.sh},
-            remove_dir            => catfile( cwd(), $DOT, q{test} ),
             invoke_login_shell    => 0,
             log                   => $log,
-            active_parameter_href => \%active_parameter,
+            remove_dir            => catfile( cwd(), $DOT, q{test} ),
             sbatch_mode           => 0,
             set_errexit           => $active_parameter{bash_set_errexit},
             set_nounset           => $active_parameter{bash_set_nounset},
@@ -106,18 +103,18 @@ trap {
 # Close the filehandle
 close $filehandle;
 
-## Then '--account' should  be part of the header
-ok( $file_content =~ / (\/usr\/bin\/env\/bash)$ /xms, q{Create bash file} );
+## Then 'shebang' should  be part of the header
+ok( $file_content =~ / \A [#]!\s+\/usr\/bin\/env\/bash /xms, q{Create bash file} );
 
 ### Given input to write bash file for sbatch submission
 # Create anonymous filehandle
-my $filehandle_SBATCH = IO::Handle->new();
+my $filehandle_sbatch = IO::Handle->new();
 
 # For storing info to write
 my $file_content_sbatch;
 
 # Store file content in memory by using referenced variable
-open $filehandle_SBATCH, q{>}, \$file_content_sbatch
+open $filehandle_sbatch, q{>}, \$file_content_sbatch
   or croak q{Cannot write to}
   . $SPACE
   . $file_content_sbatch
@@ -129,12 +126,12 @@ open $filehandle_SBATCH, q{>}, \$file_content_sbatch
 trap {
     setup_install_script(
         {
-            filehandle            => $filehandle_SBATCH,
+            active_parameter_href => \%active_parameter,
+            filehandle            => $filehandle_sbatch,
             file_name             => q{test.sh},
-            remove_dir            => catfile( cwd(), $DOT, q{test} ),
             invoke_login_shell    => 1,
             log                   => $log,
-            active_parameter_href => \%active_parameter,
+            remove_dir            => catfile( cwd(), $DOT, q{test} ),
             sbatch_mode           => 1,
             set_errexit           => $active_parameter{bash_set_errexit},
             set_nounset           => $active_parameter{bash_set_nounset},
@@ -143,9 +140,9 @@ trap {
 };
 
 # Close the filehandle
-close $filehandle_SBATCH;
+close $filehandle_sbatch;
 
-## Then '--account' should  be part of the header
-ok( $file_content_sbatch =~ / ^(\#SBATCH) /xms, q{Create sbatch headers} );
+## Then '#SBATCH' should  be part of the header
+ok( $file_content_sbatch =~ / ^[#]SBATCH /xms, q{Create sbatch headers} );
 
 done_testing();
