@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_dna_meta_files };
@@ -95,7 +95,8 @@ sub build_rd_dna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
+    use MIP::Recipes::Build::Bwa_prerequisites
+      qw{ build_bwa_prerequisites build_bwa_mem2_prerequisites };
     use MIP::Recipes::Build::Capture_file_prerequisites
       qw{ build_capture_file_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites
@@ -104,6 +105,7 @@ sub build_rd_dna_meta_files {
 
     my %build_recipe = (
         bwa_build_reference                 => \&build_bwa_prerequisites,
+        bwa_mem2_build_reference            => \&build_bwa_mem2_prerequisites,
         exome_target_bed                    => \&build_capture_file_prerequisites,
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         rtg_vcfeval_reference_genome        => \&build_rtg_prerequisites,

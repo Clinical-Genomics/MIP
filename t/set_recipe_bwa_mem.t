@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Bwa_mem} =>
-          [qw{ analysis_bwa_mem analysis_run_bwa_mem }],
+          [qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem }],
         q{MIP::Set::Analysis}  => [qw{ set_recipe_bwa_mem }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
@@ -50,7 +50,8 @@ BEGIN {
 }
 
 use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
-use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
+use MIP::Recipes::Analysis::Bwa_mem
+  qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
 diag(   q{Test set_recipe_bwa_mem from Analysis.pm v}
       . $MIP::Set::Analysis::VERSION
@@ -77,7 +78,11 @@ set_recipe_bwa_mem(
         human_genome_reference_version => $GENOME_BUILD_VERSION_19,
     }
 );
-my %expected_analysis_recipe = ( bwa_mem => \&analysis_bwa_mem, );
+my %expected_analysis_recipe = (
+    bwa_mem  => \&analysis_bwa_mem,
+    bwa_mem2 => \&analysis_bwa_mem2,
+);
+
 ## Then set bwa mem recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
     q{Set bwa mem recipe for } . $reference_source . $GENOME_BUILD_VERSION_19 );
@@ -105,7 +110,8 @@ set_recipe_bwa_mem(
         human_genome_reference_version => $GENOME_BUILD_VERSION_37,
     }
 );
-$expected_analysis_recipe{bwa_mem} = \&analysis_bwa_mem;
+$expected_analysis_recipe{bwa_mem}  = \&analysis_bwa_mem;
+$expected_analysis_recipe{bwa_mem2} = \&analysis_bwa_mem2;
 
 ## Then set bwa mem recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,

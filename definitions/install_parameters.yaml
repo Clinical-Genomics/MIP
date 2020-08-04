@@ -106,6 +106,7 @@ rd_dna:
     - bedtools
     - bwa
     - bwakit
+    - bwa-mem2
     - cadd
     - chanjo
     - chromograph

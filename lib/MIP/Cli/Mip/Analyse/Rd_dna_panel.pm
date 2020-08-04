@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -97,6 +97,9 @@ sub run {
 
         # BWA human genome reference file endings
         bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
+
+        bwa_mem2_build_reference =>
+          [qw{ .0123 .ann .amb .bwt.2bit.64 .bwt.8bit.32 .pac }],
 
         exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
@@ -301,6 +304,15 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Align reads using Bwa Mem},
             is            => q{rw},
             isa           => enum( [ 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bwa_mem2} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Align reads using Bwa mem 2},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
