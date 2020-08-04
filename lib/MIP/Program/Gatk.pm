@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2293,7 +2293,7 @@ sub gatk_genotypegvcfs {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.5.0.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.8.1.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
@@ -2305,18 +2305,15 @@ sub gatk_haplotypecaller {
 ##          : $java_use_large_pages                          => Use java large pages
 ###         : $linked_de_bruijn_graph                        => Use linked de bruijn graph assembly mode
 ##          : $memory_allocation                             => Memory allocation to run Gatk
-##          : $num_ref_samples_if_no_call                    => Number of hom-ref genotypes to infer at sites not present in a panel
 ##          : $outfile_path                                  => Outfile path
 ##          : $pcr_indel_model                               => The PCR indel model to use
 ##          : $pedigree                                      => Pedigree files for samples
-##          : $population_callset                            => Callset to use in calculating genotype priors
 ##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path                            => Reference sequence file
 ##          : $sample_ploidy                                 => Ploidy per sample
 ##          : $standard_min_confidence_threshold_for_calling => The minimum phred-scaled confidence threshold at which variants should be called
 ##          : $stderrfile_path                               => Stderrfile path
 ##          : $temp_directory                                => Redirect tmp files to java temp
-##          : $use_new_qual_calculator                       => Use the new AF model instead of the so-called exact model
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
@@ -2330,11 +2327,9 @@ sub gatk_haplotypecaller {
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
-    my $num_ref_samples_if_no_call;
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
-    my $population_callset;
     my $read_filters_ref;
     my $referencefile_path;
     my $sample_ploidy;
@@ -2346,7 +2341,6 @@ sub gatk_haplotypecaller {
     my $emit_ref_confidence;
     my $java_use_large_pages;
     my $linked_de_bruijn_graph;
-    my $use_new_qual_calculator;
     my $verbosity;
     my $xargs_mode;
 
@@ -2404,11 +2398,6 @@ sub gatk_haplotypecaller {
             store       => \$memory_allocation,
             strict_type => 1,
         },
-        num_ref_samples_if_no_call => {
-            allow       => [ undef, qr/ ^\d+$ /sxm ],
-            store       => \$num_ref_samples_if_no_call,
-            strict_type => 1,
-        },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -2422,10 +2411,6 @@ sub gatk_haplotypecaller {
         pcr_indel_model => {
             allow       => [ undef, qw{ NONE HOSTILE AGGRESSIVE CONSERVATIVE } ],
             store       => \$pcr_indel_model,
-            strict_type => 1,
-        },
-        population_callset => {
-            store       => \$population_callset,
             strict_type => 1,
         },
         read_filters_ref => {
@@ -2454,12 +2439,6 @@ sub gatk_haplotypecaller {
         },
         temp_directory => {
             store       => \$temp_directory,
-            strict_type => 1,
-        },
-        use_new_qual_calculator => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$use_new_qual_calculator,
             strict_type => 1,
         },
         verbosity => {
@@ -2521,21 +2500,6 @@ sub gatk_haplotypecaller {
     if ($dbsnp_path) {
 
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
-    }
-
-    if ($population_callset) {
-
-        push @commands, q{--population-callset} . $SPACE . $population_callset;
-    }
-
-    if ($num_ref_samples_if_no_call) {
-        push @commands,
-          q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
-    }
-
-    if ($use_new_qual_calculator) {
-
-        push @commands, q{--use-new-qual-calculator};
     }
 
     if ($linked_de_bruijn_graph) {
