@@ -715,7 +715,7 @@ delly_exclude_file:
     - delly_call
     - delly_reformat
   data_type: SCALAR
-  default: hg19_human_excl_-20150227-.tsv
+  default: hg19_human_excl_-20200310-.tsv
   exists_check: file
   is_reference: 1
   reference: reference_dir

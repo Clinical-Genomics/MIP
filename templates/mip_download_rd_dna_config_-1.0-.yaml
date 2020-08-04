@@ -42,8 +42,8 @@ reference:
     - gold_standard_dbsnp
     - 146
   delly_exclude:
-    - 20150227
     - 20150915
+    - 20200310
   expansionhunter:
     - 3.0.0
     - 3.0.1
@@ -433,9 +433,9 @@ reference_feature:
         user: gsapubftp-anonymous
   delly_exclude:
     grch37:
-      20150227:  # latest commit for file on master branch
+      20200310:  # latest commit for file on master branch
         file: human.hg19.excl.tsv
-        outfile: hg19_human_excl_-20150227-.tsv
+        outfile: hg19_human_excl_-20200310-.tsv
         url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
     grch38:
       20150915:  # latest commit for file on master branch
