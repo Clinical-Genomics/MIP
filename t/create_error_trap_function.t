@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 0;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -157,6 +157,7 @@ sub _build_test_file_recipe {
             filehandle => $recipe_filehandle,
         }
     );
+    print {$filehandle} $NEWLINE;
 
     ## Set shell attributes
     gnu_set(

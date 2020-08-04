@@ -307,6 +307,7 @@ sub setup_install_script {
             invoke_login_shell => $invoke_login_shell,
         }
     );
+    print {$filehandle} $NEWLINE;
 
     ## Set shell attributes
     gnu_set(
@@ -645,6 +646,7 @@ sub setup_script {
             invoke_login_shell => 1,
         }
     );
+    print {$filehandle} $NEWLINE;
 
     ### Sbatch header
     ## Get parameters
