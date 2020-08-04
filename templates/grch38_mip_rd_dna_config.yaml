@@ -101,7 +101,7 @@ vep_plugin:
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-    path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.0b2a-.txt.gz
+    path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.1a-.txt.gz
   ExACpLI:
     exists_check: file
     path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
