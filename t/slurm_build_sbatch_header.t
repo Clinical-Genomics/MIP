@@ -21,11 +21,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,10 +36,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA   => q{,};
 Readonly my $CORE_NR => 8;
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -68,15 +66,9 @@ diag(   q{Test slurm_build_sbatch_header from SLURM.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given a sbatch shebang and parameters
 ## Base arguments
-my $sbatch_shebang = q{#SBATCH };
-
-my %base_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => $sbatch_shebang,
-    },
-);
+my $sbatch_shebang = q{#SBATCH} . $SPACE;
 
 ## Specific arguments
 my %argument = (
@@ -138,12 +130,13 @@ foreach my $key ( keys %argument ) {
     # Add sbatch shebang to all expected outputs
     my $expected_output = $sbatch_shebang . $argument{$key}{expected_output};
 
+    ## Then commands should match expected output
     ok( ( any { $_ eq $expected_output } @commands ), q{Argument: } . $key );
 }
 
 ## Testing write to file
 
-# Fake arguments
+# Given mock arguments
 my @args = (
     project_id => 1,
     filehandle => undef,
