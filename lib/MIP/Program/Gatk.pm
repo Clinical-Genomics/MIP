@@ -1972,20 +1972,21 @@ sub gatk_genomicsdbimport {
 
 ## Function : Perl wrapper for writing GATK GenomicsDBImport recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
-## Arguments: $filehandle                => Sbatch filehandle to write to
-##          : $genomicsdb_workspace_path => Workspace for GenomicsDB
-##          : $infile_paths_ref          => GVCF files to be imported to GenomicsDB {REF}
-##          : $intervals_ref             => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages      => Use java large pages
-##          : $memory_allocation         => Memory allocation to run Gatk
-##          : $pedigree                  => Pedigree files
-##          : $read_filters_ref          => Filters to apply on reads {REF}
-##          : $referencefile_path        => Reference sequence file
-##          : $sample_name_map_path      => Sample name map for merged references (Format: sample_id\tfile.vcf )
-##          : $stderrfile_path           => Stderrfile path
-##          : $temp_directory            => Redirect tmp files to java temp
-##          : $verbosity                 => Set the minimum level of logging
-##          : $xargs_mode                => Set if the program will be executed via xargs
+## Arguments: $filehandle                   => Sbatch filehandle to write to
+##          : $genomicsdb_workspace_path    => Workspace for GenomicsDB
+##          : $infile_paths_ref             => GVCF files to be imported to GenomicsDB {REF}
+##          : $intervals_ref                => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages         => Use java large pages
+##          : $memory_allocation            => Memory allocation to run Gatk
+##          : $pedigree                     => Pedigree files
+##          : $read_filters_ref             => Filters to apply on reads {REF}
+##          : $referencefile_path           => Reference sequence file
+##          : $sample_name_map_path         => Sample name map for merged references (Format: sample_id\tfile.vcf )
+##          : $shared_posixfs_optimizations => Turn on disable file locking and minimize write to disc
+##          : $stderrfile_path              => Stderrfile path
+##          : $temp_directory               => Redirect tmp files to java temp
+##          : $verbosity                    => Set the minimum level of logging
+##          : $xargs_mode                   => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -2003,6 +2004,7 @@ sub gatk_genomicsdbimport {
     my $temp_directory;
 
     ## Default(s)
+    my $shared_posixfs_optimizations;
     my $verbosity;
     my $xargs_mode;
 
@@ -2049,6 +2051,12 @@ sub gatk_genomicsdbimport {
             store       => \$sample_name_map_path,
             strict_type => 1,
         },
+        shared_posixfs_optimizations => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$shared_posixfs_optimizations,
+            strict_type => 1,
+        },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
         verbosity       => {
@@ -2085,6 +2093,11 @@ sub gatk_genomicsdbimport {
         push @commands,
           q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
           @{$infile_paths_ref};
+    }
+
+    if ($shared_posixfs_optimizations) {
+
+        push @commands, q{--genomicsdb-shared-posixfs-optimizations};
     }
 
     if ($sample_name_map_path) {
