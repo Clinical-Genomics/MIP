@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2636,7 +2636,7 @@ sub gatk_indexfeaturefile {
 
     push @commands, q{IndexFeatureFile};
 
-    push @commands, q{--feature-file} . $SPACE . $infile_path;
+    push @commands, q{--input} . $SPACE . $infile_path;
 
     ## Add common options
     gatk_common_options(
