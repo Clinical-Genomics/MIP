@@ -140,7 +140,6 @@ sub slurm_build_sbatch_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::List qw{ check_allowed_array_values };
-    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     my @commands;
 
