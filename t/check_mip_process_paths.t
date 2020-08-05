@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Language::Shell} => [qw{ check_mip_process_files }],
+        q{MIP::Language::Shell} => [qw{ check_mip_process_paths }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Shell qw{ check_mip_process_files };
+use MIP::Language::Shell qw{ check_mip_process_paths };
 use MIP::Environment::Child_process qw{ child_process };
 
-diag(   q{Test check_mip_process_files from Shell.pm v}
+diag(   q{Test check_mip_process_paths from Shell.pm v}
       . $MIP::Language::Shell::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -69,7 +69,7 @@ open my $filehandle, q{>}, $test_file_path
 ## Given path that exists and one that does not
 my @paths = ( $test_file_path, catfile( cwd(), q{does_not_exist.test} ) );
 
-my $is_ok = check_mip_process_files(
+my $is_ok = check_mip_process_paths(
     {
         filehandle => $filehandle,
         paths_ref  => \@paths,
