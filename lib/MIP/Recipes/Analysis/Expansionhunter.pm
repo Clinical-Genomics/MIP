@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -363,9 +363,10 @@ sub analysis_expansionhunter {
       $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
-            filehandle      => $filehandle,
-            infile_path     => $svdb_outfile_path,
-            stdoutfile_path => $stranger_outfile_path,
+            filehandle        => $filehandle,
+            infile_path       => $svdb_outfile_path,
+            repeats_file_path => $variant_catalog_file_path,
+            stdoutfile_path   => $stranger_outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
