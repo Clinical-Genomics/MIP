@@ -253,7 +253,7 @@ recipe_time:
     cadd_whole_genome_snvs: 15
     chromograph_cytoband: 1
     clinvar: 1
-    dbnsfp: 15
+    dbnsfp: 25
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
