@@ -20,8 +20,21 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $AMPERSAND $COMMA $DOT $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{
+  $AMPERSAND
+  $CLOSE_PARENTHESIS
+  $COMMA
+  $DOT
+  $DOUBLE_QUOTE
+  $EQUALS
+  $NEWLINE
+  $OPEN_PARENTHESIS
+  $PIPE
+  $SINGLE_QUOTE
+  $SPACE
+  $TAB
+  $UNDERSCORE
+};
 
 BEGIN {
 
@@ -29,12 +42,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_shebang
       check_exist_and_move_file
+      check_mip_process_paths
       clear_trap
       create_error_trap_function
       create_housekeeping_function
@@ -97,6 +111,73 @@ sub build_shebang {
         }
     );
     return @commands;
+}
+
+sub check_mip_process_paths {
+
+## Function : Check existence of all paths that are supposed to be created after mip processing
+## Returns  :
+## Arguments: $filehandle => Filehandle to write to
+##          : $paths_ref  => Paths to files to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $paths_ref;
+
+    my $tmpl = {
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## First analysis and dry run will otherwise cause try to print uninitialized values
+    my @defined_paths = grep { defined } @{$paths_ref};
+    my @paths = map { $DOUBLE_QUOTE . $_ . $DOUBLE_QUOTE . $SPACE } @defined_paths;
+
+    ## Create bash array
+    print {$filehandle} q?readonly PATHS? . $EQUALS . $OPEN_PARENTHESIS;
+
+    ## Add to bash array "PATHS"
+    print {$filehandle} @paths;
+
+    ## Close bash array
+    say {$filehandle} $CLOSE_PARENTHESIS;
+
+    ## Loop over files
+    say {$filehandle} q?for path in "${PATHS[@]}"?;
+
+    ## For each element in array do
+    say {$filehandle} q?do? . $SPACE;
+
+    ## File exists and is larger than zero
+    say {$filehandle} $TAB . q?if [ -s "$path" ]; then?;
+
+    ## Echo
+    say {$filehandle} $TAB x 2 . q?echo "Found file $path"?;
+    say {$filehandle} $TAB . q?else?;
+
+    ## Redirect to STDERR
+    say {$filehandle} $TAB x 2 . q?echo "Could not find $path" >&2?;
+
+    ## Set status flag so that "notFinished" remains in sample_info_file
+    say {$filehandle} $TAB x 2 . q?STATUS="1"?;
+    say {$filehandle} $TAB . q?fi?;
+    say {$filehandle} q?done ?, $NEWLINE;
+
+    return 1;
 }
 
 sub create_housekeeping_function {

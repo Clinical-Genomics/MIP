@@ -18,7 +18,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -26,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::File}    => [qw{ check_mip_process_files }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Language::Shell} => [qw{ check_mip_process_paths }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::File qw{ check_mip_process_files };
+use MIP::Language::Shell qw{ check_mip_process_paths };
 use MIP::Environment::Child_process qw{ child_process };
 
-diag(   q{Test check_mip_process_files from File.pm v}
-      . $MIP::Check::File::VERSION
+diag(   q{Test check_mip_process_paths from Shell.pm v}
+      . $MIP::Language::Shell::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -70,7 +69,7 @@ open my $filehandle, q{>}, $test_file_path
 ## Given path that exists and one that does not
 my @paths = ( $test_file_path, catfile( cwd(), q{does_not_exist.test} ) );
 
-my $is_ok = check_mip_process_files(
+my $is_ok = check_mip_process_paths(
     {
         filehandle => $filehandle,
         paths_ref  => \@paths,

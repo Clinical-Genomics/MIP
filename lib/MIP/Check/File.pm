@@ -24,10 +24,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_file_md5sum check_mip_process_files };
+    our @EXPORT_OK = qw{ check_file_md5sum };
 }
 
 ## Constants
@@ -109,76 +109,6 @@ sub check_file_md5sum {
         }
     );
     say {$filehandle} $NEWLINE;
-    return 1;
-}
-
-sub check_mip_process_files {
-
-## Function : Test all file that are supposed to exists after process
-## Returns  :
-## Arguments: $filehandle => Filehandle to write to
-##          : $paths_ref  => Paths to files to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $paths_ref;
-
-    my $tmpl = {
-        filehandle => {
-            defined  => 1,
-            required => 1,
-            store    => \$filehandle,
-        },
-        paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Create bash array
-    print {$filehandle} q?readonly FILES=(?;
-
-  PATH:
-    foreach my $path ( @{$paths_ref} ) {
-
-        ## First analysis and dry run will otherwise cause try to print uninitialized values
-        next PATH if ( not defined $path );
-
-        ## Add to array
-        print {$filehandle} q?"? . $path . q?" ?;
-    }
-
-    ## Close bash array
-    say {$filehandle} q?)?;
-
-    ## Loop over files
-    say {$filehandle} q?for file in "${FILES[@]}"?;
-
-    ## For each element in array do
-    say {$filehandle} q?do? . $SPACE;
-
-    ## File exists and is larger than zero
-    say {$filehandle} $TAB . q?if [ -s "$file" ]; then?;
-
-    ## Echo
-    say {$filehandle} $TAB x 2 . q?echo "Found file $file"?;
-    say {$filehandle} $TAB . q?else?;
-
-    ## Redirect to STDERR
-    say {$filehandle} $TAB x 2 . q?echo "Could not find $file" >&2?;
-
-    ## Set status flagg so that perl notFinished remains in sample_info_file
-    say {$filehandle} $TAB x 2 . q?STATUS="1"?;
-    say {$filehandle} $TAB . q?fi?;
-    say {$filehandle} q?done ?, $NEWLINE;
-
     return 1;
 }
 
