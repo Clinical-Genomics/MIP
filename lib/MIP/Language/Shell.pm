@@ -10,14 +10,13 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use Readonly;
+use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants
@@ -432,35 +431,35 @@ sub track_progress {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Workloadmanager::Slurm qw{ slurm_sacct slurm_reformat_sacct_output };
+    use MIP::Program::Slurm qw{ slurm_sacct };
+    use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
-    if ( @{$job_ids_ref} ) {
+    return if ( not @{$job_ids_ref} );
 
-        ## Copy array
-        my @reformat_sacct_headers = @{$sacct_format_fields_ref};
+    my @reformat_sacct_headers = @{$sacct_format_fields_ref};
+
+  HEADER_ELEMENT:
+    foreach my $element (@reformat_sacct_headers) {
 
         ## Remove "%digits" from headers
-      HEADER_ELEMENT:
-        foreach my $element (@reformat_sacct_headers) {
-
-            $element =~ s/%\d+//gsxm;
-        }
-        my @commands = slurm_sacct(
-            {
-                fields_format_ref => \@{$sacct_format_fields_ref},
-                job_ids_ref       => \@{$job_ids_ref},
-            }
-        );
-
-        slurm_reformat_sacct_output(
-            {
-                commands_ref               => \@commands,
-                filehandle                 => $filehandle,
-                log_file_path              => $log_file_path,
-                reformat_sacct_headers_ref => \@reformat_sacct_headers,
-            }
-        );
+        $element =~ s/%\d+//gsxm;
     }
+
+    my @commands = slurm_sacct(
+        {
+            fields_format_ref => \@{$sacct_format_fields_ref},
+            job_ids_ref       => \@{$job_ids_ref},
+        }
+    );
+
+    slurm_reformat_sacct_output(
+        {
+            commands_ref               => \@commands,
+            filehandle                 => $filehandle,
+            log_file_path              => $log_file_path,
+            reformat_sacct_headers_ref => \@reformat_sacct_headers,
+        }
+    );
     return;
 }
 
