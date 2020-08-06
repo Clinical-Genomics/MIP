@@ -188,6 +188,10 @@ container:
     executable:
       svdb:
     uri: docker.io/jemten/svdb:2.2.0
+  telomerecat:
+    executable:
+      telomerecat:
+    uri: quay.io/wtsicgp/telomerecat:3.4.0
   tiddit:
     executable:
       TIDDIT.py:

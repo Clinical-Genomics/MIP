@@ -1,11 +1,9 @@
-package MIP::Recipes::Analysis::RECIPE_NAME;
+package MIP::Recipes::Analysis::Telomerecat;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -17,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $FORWARD_SLASH $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -28,13 +26,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_RECIPE_NAME };
+    our @EXPORT_OK = qw{ analysis_telomerecat };
 
 }
 
-sub analysis_RECIPE_NAME {
+sub analysis_telomerecat {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Analyse telomere lengths using Telomerecat
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -118,9 +116,10 @@ sub analysis_RECIPE_NAME {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Program::Telomerecat qw{ telomerecat_bam2length };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -129,28 +128,15 @@ sub analysis_RECIPE_NAME {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $case_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
-        }
-    );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
-
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
         }
     );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -158,27 +144,54 @@ sub analysis_RECIPE_NAME {
         }
     );
 
-    ## Set and get the io files per chain, id and stream
-    %io = (
-        %io,
-        parse_io_outfiles(
-            {
-                chain_id         => $job_id_chain,
-                id               => $case_id,
-                file_info_href   => $file_info_href,
-                file_name_prefix => $infile_name_prefix,
-                iterators_ref    => \@contigs_size_ordered,
-                outdata_dir      => $active_parameter_href->{outdata_dir},
-                parameter_href   => $parameter_href,
-                recipe_name      => $recipe_name,
-            }
-        )
-    );
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{telomerecat_use_sample_id_as_display_name};
 
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my @infile_paths;
+    my %sample_display;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                stream         => q{in},
+            }
+        );
+        my $file_path_prefix = $sample_io{in}{file_path_prefix};
+        my $file_name_prefix = $sample_io{in}{file_name_prefix};
+        my $file_suffix      = $sample_io{in}{file_suffix};
+        push @infile_paths, $file_path_prefix . $file_suffix;
+
+        ## Collect display name
+        my $sample_display_name = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sample_display_name},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        $sample_display{ $file_name_prefix . $file_suffix } = $sample_display_name;
+    }
+
+    ## Set and get the io files per chain, id and stream
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $case_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$case_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            recipe_name            => $recipe_name,
+        }
+    );
+    my $outfile_path = ${ $io{out}{file_paths} }[0];
 
     ## Filehandles
     # Create anonymous filehandle
@@ -205,11 +218,27 @@ sub analysis_RECIPE_NAME {
 
     say {$filehandle} q{## } . $recipe_name;
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    telomerecat_bam2length(
+        {
+            filehandle       => $filehandle,
+            infile_paths_ref => \@infile_paths,
+            outfile_path     => $outfile_path,
+            processes        => $recipe_resource{core_number},
+            temp_directory   => $active_parameter_href->{temp_directory},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    _rename_sample(
+        {
+            file_path                     => $outfile_path,
+            filehandle                    => $filehandle,
+            sample_display_href           => \%sample_display,
+            use_sample_id_as_display_name => $use_sample_id_as_display_name,
+        }
+    );
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
@@ -217,7 +246,17 @@ sub analysis_RECIPE_NAME {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_paths[0],
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $case_id,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -241,6 +280,93 @@ sub analysis_RECIPE_NAME {
         );
     }
     return 1;
+}
+
+sub _rename_sample {
+
+## Function : Change sample names in Telomerecat outfile
+## Returns  :
+## Arguments: $file_path                     => Path to Telomerecat outfile
+##          : $filehandle                    => Filehandle
+##          : $sample_display_href           => Sample name hash {REF}
+##          : $use_sample_id_as_display_name => Use sample id as sample display name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $filehandle;
+    my $sample_display_href;
+    my $use_sample_id_as_display_name;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        sample_display_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_display_href,
+            strict_type => 1,
+        },
+        use_sample_id_as_display_name => {
+            allow       => [ undef, 0, 1 ],
+            required    => 1,
+            store       => \$use_sample_id_as_display_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_base };
+    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
+
+    return if $use_sample_id_as_display_name;
+
+    say {$filehandle} q{## Rename file name to sample display name};
+    while ( my ( $file_name, $sample_display_name ) = each %{$sample_display_href} ) {
+
+        if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+
+            my @perl_cmds = perl_base(
+                {
+                    print        => 1,
+                    inplace      => 1,
+                    command_line => 1,
+                }
+            );
+
+            my $regexp =
+                $SINGLE_QUOTE . q?s/\A?
+              . $file_name
+              . $FORWARD_SLASH
+              . $sample_display_name
+              . $FORWARD_SLASH
+              . $SINGLE_QUOTE;
+            push @perl_cmds, $regexp;
+
+            push @perl_cmds, $file_path;
+
+            unix_write_to_file(
+                {
+                    commands_ref => \@perl_cmds,
+                    filehandle   => $filehandle,
+                    separator    => $SPACE,
+
+                }
+            );
+            print {$filehandle} $NEWLINE;
+        }
+    }
+    return;
 }
 
 1;

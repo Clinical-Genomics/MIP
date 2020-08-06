@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -215,7 +215,7 @@ sub parse_container_uri {
 
     return if $container_manager eq q{docker};
 
-    if ( ${$uri_ref} =~ /\A docker[.]io /xms ) {
+    if ( ${$uri_ref} =~ /\A quay|docker[.]io /xms ) {
 
         ${$uri_ref} = q{docker://} . ${$uri_ref};
     }

@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -81,7 +81,21 @@ parse_container_uri(
     }
 );
 
-## Then prepend docker://
+## Then leave uri unchanged
 $expected_uri = q{docker.io/clinicalgenomics/chanjo:4.2.0};
 is( $uri, $expected_uri, q{Parse uri for docker} );
+
+## Given a quay uri
+$uri = q{quay.io/clinicalgenomics/chanjo:4.2.0};
+## When container manager is singularity
+parse_container_uri(
+    {
+        container_manager => q{singularity},
+        uri_ref           => \$uri,
+    }
+);
+
+## Then leave uri unchanged
+$expected_uri = q{docker://quay.io/clinicalgenomics/chanjo:4.2.0};
+is( $uri, $expected_uri, q{Parse quay uri for singularity} );
 done_testing();
