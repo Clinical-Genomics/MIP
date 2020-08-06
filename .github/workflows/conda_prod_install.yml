@@ -17,9 +17,7 @@ jobs:
       - name: Set up perl using conda
         shell: bash -l {0}
         run: |
-          ls /usr/share/miniconda/condabin/conda/
-          ls /usr/share/miniconda/condabin/conda/etc/profile.d/conda.sh
-          bash mip_install_perl.sh -e mip_ci -p /usr/share/miniconda/condabin/conda
+          bash mip_install_perl.sh -e mip_ci -p /usr/share/miniconda
 
       - name: Run MIP install test
         shell: bash -l {0}
