@@ -662,14 +662,10 @@ sub analysis_gatk_haplotypecaller_panel {
             intervals_ref        => [$padded_exome_target_bed_file],
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            num_ref_samples_if_no_call =>
-              $active_parameter_href->{gatk_num_reference_samples_if_no_call},
-            outfile_path => $outfile_path,
+            outfile_path         => $outfile_path,
             pcr_indel_model =>
               $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model},
-            pedigree => $fam_file_path,
-            population_callset =>
-              $active_parameter_href->{gatk_calculate_genotype_call_set},
+            pedigree           => $fam_file_path,
             referencefile_path => $referencefile_path,
             standard_min_confidence_threshold_for_calling =>
               $STANDARD_MIN_CONFIDENCE_THRSD,
