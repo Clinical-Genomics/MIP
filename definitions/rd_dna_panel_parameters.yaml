@@ -631,14 +631,12 @@ gatk_cnnscorevariants:
 # Connected to AN / 2 for gatk_calculate_genotype_call_set
 gatk_num_reference_samples_if_no_call:
   associated_recipe:
-    - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
   default: 7854
   type: recipe_argument
 gatk_calculate_genotype_call_set:
   associated_recipe:
-    - gatk_haplotypecaller
     - gatk_variantrecalibration
   data_type: SCALAR
   default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz

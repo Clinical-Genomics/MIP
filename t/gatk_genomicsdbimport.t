@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -86,27 +85,31 @@ my %required_argument = (
 
 my %specific_argument = (
     genomicsdb_workspace_path => {
-        input           => catdir(qw{ a dir }),
-        expected_output => q{--genomicsdb-workspace-path } . catdir(qw{ a dir }),
+        input           => catdir(qw{a dir}),
+        expected_output => q{--genomicsdb-workspace-path } . catdir(qw{a dir}),
     },
     infile_paths_ref => {
         inputs_ref =>
-          [ catfile(qw{ path to mother.g.vcf }), catfile(qw{ path to child.g.vcf }) ],
+          [ catfile(qw{path to mother.g.vcf}), catfile(qw{path to child.g.vcf}) ],
         expected_output => q{--variant}
           . $SPACE
-          . catfile(qw{ path to mother.g.vcf})
+          . catfile(qw{path to mother.g.vcf})
           . $SPACE
           . q{--variant}
           . $SPACE
-          . catfile(qw{ path to child.g.vcf}),
+          . catfile(qw{path to child.g.vcf}),
     },
     intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2 }],
+        inputs_ref      => [qw{chr1 chr2}],
         expected_output => q{--intervals chr1 --intervals chr2},
     },
     sample_name_map_path => {
-        input           => catfile(qw{ my sample_map.vcf }),
-        expected_output => q{--sample-name-map } . catfile(qw{ my sample_map.vcf }),
+        input           => catfile(qw{my sample_map.vcf}),
+        expected_output => q{--sample-name-map } . catfile(qw{my sample_map.vcf}),
+    },
+    shared_posixfs_optimizations => {
+        input           => 1,
+        expected_output => q{--genomicsdb-shared-posixfs-optimizations},
     },
 );
 

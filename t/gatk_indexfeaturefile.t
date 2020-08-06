@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,18 +75,14 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ path to case_chr1.vcf }),
-        expected_output => q{--feature-file}
-          . $SPACE
-          . catfile(qw{ path to case_chr1.vcf})
+        expected_output => q{-_input} . $SPACE . catfile(qw{ path to case_chr1.vcf})
     },
 );
 
 my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ path to case_chr1.vcf }),
-        expected_output => q{--feature-file}
-          . $SPACE
-          . catfile(qw{ path to case_chr1.vcf})
+        expected_output => q{--input} . $SPACE . catfile(qw{ path to case_chr1.vcf})
     },
     outfile_path => {
         input           => catfile(qw{ path to case.vcf.idx }),
@@ -103,7 +98,7 @@ my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
             base_commands_index        => 1,

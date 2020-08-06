@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -309,8 +309,9 @@ sub analysis_gatk_genotypegvcfs {
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 sample_name_map_path => $sample_name_map_path,
-                temp_directory       => $temp_directory,
-                verbosity            => $active_parameter_href->{gatk_logging_level},
+                shared_posixfs_optimizations => 1,
+                temp_directory               => $temp_directory,
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$filehandle} $NEWLINE;
