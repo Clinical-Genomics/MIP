@@ -14,9 +14,8 @@ jobs:
           channels: bioconda, conda-forge
 
       - name: Set up perl using conda
-        run: |
-          which conda
-          bash mip_install_perl.sh -p /home/proj/bin/conda
+        shell: bash -l {0}
+        run: bash mip_install_perl.sh -e mip_ci -p /usr/share/miniconda/condabin/conda
 
       - name: Run MIP install test
         shell: bash -l {0}
