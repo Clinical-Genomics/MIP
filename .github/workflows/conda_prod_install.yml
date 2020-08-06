@@ -12,7 +12,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
         with:
-          miniconda-version: 4.5.12
           channels: bioconda, conda-forge
 
       - name: Set up perl using conda
@@ -22,11 +21,14 @@ jobs:
 
       - name: Run MIP install test
         shell: bash -l {0}
-        run: perl t/mip_install.test
+        run: |
+          conda activate mip_ci
+          perl t/mip_install.test
 
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
+          conda activate mip_ci
           perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
           bash mip.sh
 
