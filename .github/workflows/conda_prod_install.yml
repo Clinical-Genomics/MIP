@@ -9,12 +9,15 @@ jobs:
     name: MIP production install
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
         with:
           channels: bioconda, conda-forge
 
       - name: Set up perl using conda
-        run: bash mip_install_perl.sh -e mip_ci -p /usr/share/miniconda/condabin/conda
+        shell: bash -l {0}
+        run: |
+          bash mip_install_perl.sh -e mip_ci -p /usr/share/miniconda/condabin/conda
 
       - name: Run MIP install test
         shell: bash -l {0}
