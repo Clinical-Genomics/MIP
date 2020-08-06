@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Per default MIP now installs all programs needed for the different pipelines into one conda environment
 - Add picardtools CollectRnaSeqMetrics to the RNA pipeline
 - Call CYP2D6 alleles with star_caller from the Cyrius package
+- Use bwa_mem2 for alignemnt as default instead of bwa_mem
+- Added option "genomicsdb-shared-posixfs-optimizations" to gatk_genomicsDB to turn off file lock 
 
 **Tools**
 - Arriba: 1.1.0 -> 1.2.0
@@ -25,7 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Cyrius: 1.0
 - expansionhunter: 3.1.2 -> 3.2.2
 - fastqc: 0.11.8-0 -> 0.11.9
-- gatk: 4.1.3.0 -> 4.1.4.0
+- gatk: 4.1.3.0 -> 4.1.8.1
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
 - multiqc: 1.7 -> 1.9
 - picard: 2.20.7 -> 2.22.4
