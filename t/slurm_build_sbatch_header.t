@@ -26,7 +26,7 @@ use MIP::Test::Fixtures qw{ test_standard_cli };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,20 +45,20 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Workloadmanager::Slurm} => [qw{ slurm_build_sbatch_header }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
-        q{MIP::Test::Writefile}        => [qw{ test_write_to_file }],
+        q{MIP::Program::Slurm}  => [qw{ slurm_build_sbatch_header }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+        q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
 my $separator = q{\n};
 
-diag(   q{Test slurm_build_sbatch_header from SLURM.pm v}
-      . $MIP::Workloadmanager::Slurm::VERSION
+diag(   q{Test slurm_build_sbatch_header from Slurm.pm v}
+      . $MIP::Program::Slurm::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

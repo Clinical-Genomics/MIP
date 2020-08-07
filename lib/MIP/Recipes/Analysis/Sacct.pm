@@ -7,14 +7,12 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 # MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
@@ -25,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sacct };
@@ -117,8 +115,8 @@ sub analysis_sacct {
 
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Slurm qw{ slurm_sacct };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Workloadmanager::Slurm qw{ slurm_sacct };
 
     ### PREPROCESSING:
 
