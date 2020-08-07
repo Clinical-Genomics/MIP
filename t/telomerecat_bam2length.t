@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Telemerocat} => [qw{ telomerecat_bam2length }],
+        q{MIP::Program::Telomerecat} => [qw{ telomerecat_bam2length }],
         q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Telomerecat qw{ telomerecat_bam2length };
 
-diag(   q{Test SUB_ROUTINE from MODULE.pm v}
-      . $MIP::Program::MODULE::VERSION
+diag(   q{Test telomerecat_bam2length from Telomerecat.pm v}
+      . $MIP::Program::Telomerecat::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -60,7 +60,7 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ BASE_COMMAND };
+my @function_base_commands = qw{ telomerecat bam2length };
 
 my %base_argument = (
     filehandle => {
@@ -84,47 +84,37 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    infile_paths_ref => {
+        inputs_ref      => [qw{ alignment1.bam alignment2.bam }],
+        expected_output => q{alignment1.bam alignment2.bam},
     },
-    HASH => {
-        input_href => {
-            key_1 => q{value_1},
-            key_2 => q{value_2},
-        },
-
-        # Always sorted to an alphabetical order according to ASCII table
-        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    outfile_path => {
+        input           => q{telomere_length.csv},
+        expected_output => q{--output telomere_lengths.csv},
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    infile_paths_ref => {
+        inputs_ref      => [qw{ alignment1.bam alignment2.bam }],
+        expected_output => q{alignment1.bam alignment2.bam},
     },
-    HASH => {
-        input_href => {
-            key_1 => q{value_1},
-            key_2 => q{value_2},
-        },
-
-        # Always sorted to an alphabetical order according to ASCII table
-        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
+    outfile_path => {
+        input           => q{telomere_lengths.csv},
+        expected_output => q{--output telomere_lengths.csv},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    processes => {
+        input           => 2,
+        expected_output => q{-p 2},
+    },
+    temp_directory => {
+        input           => catdir(qw{ temp path }),
+        expected_output => q{--temp_dir} . $SPACE . catdir(qw{ temp path }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&telomerecat_bam2length;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
