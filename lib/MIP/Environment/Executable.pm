@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -427,6 +427,10 @@ q?'my ($version) = /version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
             version_cmd => q{--version},
             version_regexp =>
 q?'my ($version) = /\(htslib\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        telomerecat => {
+            version_regexp =>
+q?'BEGIN {my $match = 0}; if ($match) {my ($version) = /(\d+.\d+.\d+)/; print $version; last;} $match=1 if (/\A Version: /xms);'?,
         },
         q{TIDDIT.py} => {
             version_cmd => q{--version},

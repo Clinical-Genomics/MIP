@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,17 +66,25 @@ my @function_base_commands = qw{ perl };
 ## to enable testing of each individual argument
 
 my %specific_argument = (
-    command_line => {
+    autosplit => {
         input           => 1,
-        expected_output => q{-e},
+        expected_output => q{-a},
     },
     n => {
         input           => 1,
         expected_output => q{-n},
     },
-    autosplit => {
+    command_line => {
         input           => 1,
-        expected_output => q{-a},
+        expected_output => q{-e},
+    },
+    inplace => {
+        input           => 1,
+        expected_output => q{-i},
+    },
+    print => {
+        input           => 1,
+        expected_output => q{-p},
     },
 );
 

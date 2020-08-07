@@ -86,6 +86,8 @@ stringtie:
   execution: 'stringtie --version'
 svdb:
   execution: 'svdb'
+telomerecat:
+  execution: 'telomerecat'
 tiddit:
   execution: 'TIDDIT.py'
 trim-galore:

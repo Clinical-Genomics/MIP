@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.36;
+    our $VERSION = 1.37;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -134,7 +134,7 @@ sub parse_rd_dna {
       qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ cnvnator_ar delly_call delly_reformat expansionhunter
-      samtools_subsample_mt smncopynumbercaller star_caller tiddit };
+      samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     my $consensus_analysis_type = get_cache(
@@ -494,6 +494,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
+    use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
@@ -597,6 +598,7 @@ sub pipeline_analyse_rd_dna {
         sv_reformat               => \&analysis_reformat_sv,
         sv_varianteffectpredictor => undef,                   # Depends on analysis type
         sv_vcfparser              => undef,                   # Depends on analysis type
+        telomerecat_ar            => \&analysis_telomerecat,
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
         varg_ar                => \&analysis_varg,

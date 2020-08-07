@@ -37,7 +37,9 @@ sub perl_base {
 ## Returns  :
 ## Arguments: $autosplit    => Turns on autosplit mode when used with a -n or -p
 ##          : $command_line => Enter one line of program
+##          : $inplace      => In place edit
 ##          : $n            => Iterate over filename arguments
+##          : $p            => Print line
 
     my ($arg_href) = @_;
 
@@ -46,7 +48,9 @@ sub perl_base {
     ## Default(s)
     my $autosplit;
     my $command_line;
+    my $inplace;
     my $n;
+    my $print;
 
     my $tmpl = {
         autosplit => {
@@ -61,10 +65,22 @@ sub perl_base {
             store       => \$command_line,
             strict_type => 1,
         },
+        inplace => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$inplace,
+            strict_type => 1,
+        },
         n => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$n,
+            strict_type => 1,
+        },
+        print => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$print,
             strict_type => 1,
         },
     };
@@ -81,6 +97,14 @@ sub perl_base {
     if ($autosplit) {
 
         push @commands, q{-a};
+    }
+    if ($inplace) {
+
+        push @commands, q{-i};
+    }
+    if ($print) {
+
+        push @commands, q{-p};
     }
     if ($command_line) {
 

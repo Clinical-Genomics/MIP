@@ -26,6 +26,8 @@ CHAIN_ALL:
       - smncopynumbercaller
     - CHAIN_CYRIUS:
       - star_caller
+    - CHAIN_TEL:
+      - telomerecat_ar
     - CHAIN_PTMME:
       - picardtools_collectmultiplemetrics
     - CHAIN_PTCHSM:

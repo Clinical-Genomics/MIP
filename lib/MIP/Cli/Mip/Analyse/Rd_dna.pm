@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.59;
+our $VERSION = 1.60;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -571,6 +571,24 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{CYP2D6 allele analysis},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{telomerecat} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Telomere analysis},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{telomerecat_use_sample_id_as_display_name} => (
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for telomerecat outfile},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
