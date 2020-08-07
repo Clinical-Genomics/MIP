@@ -288,7 +288,7 @@ sub setup_install_script {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Gnu::Bash qw{ gnu_set };
-    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+    use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
     ## Set $bash_bin_path default
     my $bash_bin_path =
@@ -575,12 +575,12 @@ sub setup_script {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Language::Shell
+      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
     use MIP::List qw{ check_allowed_array_values };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
-    use MIP::Language::Shell
-      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
-    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+    use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;

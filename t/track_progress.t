@@ -48,7 +48,7 @@ BEGIN {
 
 use MIP::Language::Shell qw{ track_progress };
 
-diag(   q{Test track_progress from SHELL.pm v}
+diag(   q{Test track_progress from Shell.pm v}
       . $MIP::Language::Shell::VERSION
       . $COMMA
       . $SPACE . q{Perl}

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -195,6 +194,7 @@ sub perl_nae_oneliners {
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
         get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
+        reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
@@ -203,8 +203,9 @@ sub perl_nae_oneliners {
 
     my %oneliner_option = (
         get_vcf_header_id_line => {
-            id => $oneliner_parameter
+            id => $oneliner_parameter,
         },
+        reformat_sacct_headers => { sacct_header => $oneliner_parameter, },
     );
 
     ## Stores commands depending on input parameters
@@ -216,7 +217,7 @@ sub perl_nae_oneliners {
         }
     );
 
-    ## Fetch oneliner from dispach table
+    ## Fetch oneliner from dispatch table
     if (    defined $oneliner_name
         and exists $oneliner{$oneliner_name}
         and not $oneliner_cmd )
@@ -438,6 +439,42 @@ sub _get_fastq_read_length {
     $read_length_regexp .= q?print $seq_length;last;}' ?;
 
     return $read_length_regexp;
+}
+
+sub _reformat_sacct_headers {
+
+## Function : Write individual job line - skip line containing (.batch or .bat+) in the first column
+## Returns  : $reformat_sacct_headers
+## Arguments: $sacct_header => Sacct header to reformat
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sacct_header;
+
+    my $tmpl = {
+        sacct_header => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sacct_header,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Set headers
+    my $reformat_sacct_headers = q?'my @headers=(? . $sacct_header . q?); ?;
+
+    # Write header line
+    $reformat_sacct_headers .=
+      q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
+
+  # Write individual job line - skip line containing (.batch or .bat+) in the first column
+    $reformat_sacct_headers .=
+q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), qq{\n} }' ?;
+
+    return $reformat_sacct_headers;
 }
 
 sub _get_rrna_transcripts {

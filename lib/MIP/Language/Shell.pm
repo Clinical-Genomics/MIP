@@ -398,7 +398,7 @@ sub enable_trap {
 
 sub track_progress {
 
-## Function : Output SLURM info on each job via sacct command and write to log file(.status)
+## Function : Output Slurm info on each job via sacct command and write to log file(.status)
 ## Returns  :
 ## Arguments: $filehandle              => Sbatch filehandle to write to
 ##          : $job_ids_ref             => Job ids
