@@ -68,6 +68,10 @@ container:
     executable:
       star_caller.py:
     uri: docker.io/clinicalgenomics/cyrius:1.0
+  deepvariant:
+    executable:
+      run_deepvariant.py:
+    uri: docker.io/google/deepvariant:0.10.0
   expansionhunter:
     executable:
       ExpansionHunter:
