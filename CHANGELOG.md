@@ -39,7 +39,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **References**
 - clinvar_20191013 -> clinvar_20200728
 - dbNSFP4.0b2a.zip -> dbNSFP4.1a.zip
-- delly_exclude grch37 20150227 -> 20100310
+- delly_exclude grch37 20150227 -> 20200310
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_vcfanno_config_-v1.10-.toml
 - grch37_gencode_annotation_-v31-.gtf.gz -> grch37_gencode_annotation_-v34-.gtf.gz
 - grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
