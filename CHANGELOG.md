@@ -39,13 +39,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - VEP: 97 -> 100
 
 **References**
-- grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
+- clinvar_20191013 -> clinvar_20200728
+- dbNSFP4.0b2a.zip -> dbNSFP4.1a.zip
+- delly_exclude grch37 20150227 -> 20200310
 - grch37_frequency_vcfanno_filter_config_-v1.3-.toml -> grch37_vcfanno_config_-v1.10-.toml
+- grch37_gencode_annotation_-v31-.gtf.gz -> grch37_gencode_annotation_-v34-.gtf.gz
+- grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
 - grch37_loqusdb_snv_indel_-2019-11-04-.vcf.gz -> grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz
 - grch37_loqusdb_sv_-2020-04-20.vcf
-- grch37_gencode_annotation_-v31-.gtf.gz -> grch37_gencode_annotation_-v34-.gtf.gz
+- grch38_frequency_vcfanno_filter_config_-v1.2-.toml -> grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 - grch38_gencode_annotation_-v31-.gtf.gz -> grch38_gencode_annotation_-v34-.gtf.gz
-- grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
 - grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
 - VEP cache: 97 -> 100
 

@@ -1,20 +1,6 @@
 ---
 ## Version: 1.0.0
 # Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
-1000g_all_sv:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
-1000g_all_wgs:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
 1000g_indels:
   analysis_mode: case
   associated_recipe:
@@ -208,8 +194,6 @@ recipe_core_number:
     - mip
   data_type: HASH
   default:
-    1000g_all_sv: 1
-    1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
     1000g_sites: 1
@@ -258,8 +242,6 @@ recipe_time:
     - mip
   data_type: HASH
   default:
-    1000g_all_sv: 1
-    1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
     1000g_sites: 1
@@ -271,7 +253,7 @@ recipe_time:
     cadd_whole_genome_snvs: 15
     chromograph_cytoband: 1
     clinvar: 1
-    dbnsfp: 15
+    dbnsfp: 25
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1

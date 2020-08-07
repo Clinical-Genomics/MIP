@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_clinvar };
@@ -191,8 +191,12 @@ sub download_clinvar {
     );
 
     say {$filehandle} q{## Build clinvar variation ID header file};
-    my $header_file_path =
-      catfile( $reference_dir, $reference_version . $UNDERSCORE . q{clnvid_header.txt} );
+    my $header_file_path = catfile( $reference_dir,
+            $genome_version
+          . $UNDERSCORE
+          . $reference_version
+          . $UNDERSCORE
+          . q{clnvid_header.txt} );
     ## Build clinvar variation ID header file
     _build_clnvid_head_file(
         {
