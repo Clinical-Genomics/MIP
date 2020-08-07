@@ -87,6 +87,7 @@ is( $uri, $expected_uri, q{Parse uri for docker} );
 
 ## Given a quay uri
 $uri = q{quay.io/clinicalgenomics/chanjo:4.2.0};
+
 ## When container manager is singularity
 parse_container_uri(
     {
