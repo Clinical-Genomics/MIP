@@ -121,7 +121,7 @@ my @arguments = ( \%base_argument, \%specific_argument );
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
             do_test_base_command       => 1,

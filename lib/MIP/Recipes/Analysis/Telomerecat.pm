@@ -34,14 +34,14 @@ sub analysis_telomerecat {
 
 ## Function : Analyse telomere lengths using Telomerecat
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
-##          : $file_info_href          => File_info hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name             => Recipe name
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $case_id               => Family id
+##          : $file_info_href        => File_info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Recipe name
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -307,6 +307,7 @@ sub _rename_sample {
             strict_type => 1,
         },
         filehandle => {
+            required => 1,
             store => \$filehandle,
         },
         sample_display_href => {
@@ -338,9 +339,9 @@ sub _rename_sample {
 
             my @perl_cmds = perl_base(
                 {
-                    print        => 1,
-                    inplace      => 1,
                     command_line => 1,
+                    inplace      => 1,
+                    print        => 1,
                 }
             );
 
