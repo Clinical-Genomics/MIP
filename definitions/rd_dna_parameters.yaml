@@ -306,7 +306,7 @@ recipe_time:
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
-    vt_core: 10
+    vt_core: 30
   type: mip
 set_recipe_time:
   associated_recipe:
@@ -1477,9 +1477,8 @@ rhocall_ar:
 rhocall_frequency_file:
   associated_recipe:
     - rhocall_ar
-    - variant_annotation
   data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
+  default: grch37_gnomad.genomes_-r2.1.1-.tab.gz
   exists_check: file
   is_reference: 1
   reference: reference_dir

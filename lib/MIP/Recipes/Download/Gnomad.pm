@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -122,12 +122,12 @@ sub download_gnomad {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Rtg qw{ rtg_vcfsubset };
-    use MIP::Program::Htslib qw{ htslib_tabix };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -222,7 +222,18 @@ sub download_gnomad {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    ## Create AF file for bcftools roh
+    _build_af_file(
+        {
+            filehandle        => $filehandle,
+            file_name         => $reference_href->{outfile},
+            infile_path       => $reformated_outfile_path,
+            reference_dir     => $reference_dir,
+            reference_version => $reference_version,
+        }
+    );
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
@@ -238,6 +249,105 @@ sub download_gnomad {
         );
     }
     return 1;
+}
+
+sub _build_af_file {
+
+## Function : Build allele frequency file for bcftools roh
+## Returns  :
+## Arguments: $file_name         => Name of downloaded file
+##          : $filehandle        => Filehandle
+##          : $infile_path       => Path to reformatted file
+##          : $reference_dir     => Reference directory
+##          : $reference_version => Reference version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $filehandle;
+    my $infile_path;
+    my $reference_dir;
+    my $reference_version;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        reference_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir,
+            strict_type => 1,
+        },
+        reference_version => {
+            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv }],
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::Program::Bcftools qw{ bcftools_query };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+
+    ## Don't build file for SV:s
+    return if ( $reference_version eq q{r2.1.1_sv} );
+
+    my $outfile_no_suffix = parse_file_suffix(
+        {
+            file_name   => $file_name,
+            file_suffix => q{.vcf},
+        }
+    );
+    my $allele_frq_file_path = catfile( $reference_dir, $outfile_no_suffix . q{.tab.gz} );
+
+    bcftools_query(
+        {
+            filehandle       => $filehandle,
+            format           => q{'%CHROM\t%POS\t%REF,%ALT\t%INFO/AF\n'},
+            infile_paths_ref => [$infile_path],
+        }
+    );
+    print {$filehandle} $SPACE . $PIPE . $SPACE;
+
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            stdoutfile_path => $allele_frq_file_path,
+            write_to_stdout => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            begin       => 2,
+            end         => 2,
+            filehandle  => $filehandle,
+            infile_path => $allele_frq_file_path,
+            sequence    => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
 }
 
 1;
