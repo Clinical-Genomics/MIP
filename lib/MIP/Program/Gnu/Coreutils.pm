@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -297,7 +297,6 @@ sub gnu_cp {
     ## Stores commands depending on input parameters
     my @commands = qw{ cp };
 
-    ## Preserve the specified attributes
     if ( @{$preserve_attributes_ref} ) {
         push @commands, q{--preserve=} . join $COMMA, @{$preserve_attributes_ref};
     }
@@ -307,14 +306,13 @@ sub gnu_cp {
     }
 
     if ($recursive) {
-        push @commands, q{--recursive};
+        push @commands, q{-R};
     }
 
     if ($force) {
-        push @commands, q{--force};
+        push @commands, q{-f};
     }
 
-    ## Explain what is being done
     if ($verbose) {
         push @commands, q{--verbose};
     }
