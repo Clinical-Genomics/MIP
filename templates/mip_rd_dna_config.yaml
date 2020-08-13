@@ -38,8 +38,8 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
-qccollect_eval_metric_file: qc_eval_metric_-v1.1-.yaml
-qccollect_regexp_file: qc_regexp_-v1.25-.yaml
+qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
+qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
 vcfanno_config: grch37_vcfanno_config_-v1.10-.toml
 ### Analysis
