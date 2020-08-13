@@ -306,7 +306,7 @@ recipe_time:
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
-    vt_core: 30
+    vt_core: 10
   type: mip
 set_recipe_time:
   associated_recipe:
