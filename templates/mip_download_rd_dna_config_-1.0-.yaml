@@ -111,8 +111,8 @@ reference:
   vcf2cytosure_blacklist_regions:
     - 1.0
   vcfanno_config:
-    - v1.9
     - v1.10
+    - v1.11 
   vcfanno_functions:
     - v1.0
 reference_feature:
@@ -821,18 +821,18 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   vcfanno_config:
     grch37:
-      v1.9:
-        file: grch37_vcfanno_config_-v1.9-.toml
-        file_check: grch37_vcfanno_config_-v1.9-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.9-.toml
-        outfile_check: grch37_vcfanno_config_-v1.9-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
       v1.10:
         file: grch37_vcfanno_config_-v1.10-.toml
         file_check: grch37_vcfanno_config_-v1.10-.toml.md5
         outfile: grch37_vcfanno_config_-v1.10-.toml
         outfile_check: grch37_vcfanno_config_-v1.10-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+      v1.11:
+        file: grch37_vcfanno_config_-v1.11-.toml
+        file_check: grch37_vcfanno_config_-v1.11-.toml.md5
+        outfile: grch37_vcfanno_config_-v1.11-.toml
+        outfile_check: grch37_vcfanno_config_-v1.11-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   vcfanno_functions:
