@@ -196,6 +196,10 @@ container:
     executable:
       TIDDIT.py:
     uri: docker.io/jemten/tiddit:2.8.0
+  trim-galore:
+    executable:
+      trim_galore:
+    uri: library://jemten/mip_containers/trim-galore:0.6.4
   ucsc:
     executable:
       bedToBigBed:
