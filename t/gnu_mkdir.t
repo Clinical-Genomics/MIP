@@ -94,7 +94,7 @@ my %specific_argument = (
     },
     parents => {
         input           => 1,
-        expected_output => q{--parents},
+        expected_output => q{-p},
     },
     verbose => {
         input           => 1,
