@@ -1477,9 +1477,8 @@ rhocall_ar:
 rhocall_frequency_file:
   associated_recipe:
     - rhocall_ar
-    - variant_annotation
   data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.tab.gz
+  default: grch37_gnomad.genomes_-r2.1.1-.tab.gz
   exists_check: file
   is_reference: 1
   reference: reference_dir
