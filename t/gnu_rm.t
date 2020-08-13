@@ -93,7 +93,7 @@ my %specific_argument = (
     },
     recursive => {
         input           => 1,
-        expected_output => q{--recursive},
+        expected_output => q{--R},
     },
     force => {
         input           => 1,

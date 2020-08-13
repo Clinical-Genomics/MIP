@@ -1149,7 +1149,7 @@ sub gnu_rm {
     my @commands = qw{ rm };
 
     if ($recursive) {
-        push @commands, q{--recursive};
+        push @commands, q{--R};
     }
 
     if ($force) {
