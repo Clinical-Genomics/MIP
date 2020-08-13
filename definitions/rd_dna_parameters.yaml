@@ -1329,7 +1329,7 @@ gatk_calculate_genotype_call_set:
   associated_recipe:
     - gatk_variantrecalibration
   data_type: SCALAR
-  default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
+  default: grch37_gnomad_reformated_-r2.1.1-.vcf.gz
   exists_check: file
   is_reference: 1
   reference: reference_dir
