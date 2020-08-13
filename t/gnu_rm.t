@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,7 +97,7 @@ my %specific_argument = (
     },
     force => {
         input           => 1,
-        expected_output => q{--force},
+        expected_output => q{-f},
     },
     verbose => {
         input           => 1,
