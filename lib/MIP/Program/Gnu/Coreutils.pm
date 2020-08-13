@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -1148,7 +1148,7 @@ sub gnu_rm {
     }
 
     if ($force) {
-        push @commands, q{--force};
+        push @commands, q{-f};
     }
 
     if ($verbose) {
