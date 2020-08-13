@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -878,19 +878,16 @@ sub gnu_mkdir {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parametersr
-    my @commands = q{mkdir};
+    my @commands = qw{ mkdir };
 
-    ## Make parent directories as needed
     if ($parents) {
-        push @commands, q{--parents};
+        push @commands, q{-p};
     }
 
-    ## Explain what is being done
     if ($verbose) {
         push @commands, q{--verbose};
     }
 
-    ## Indirectory
     push @commands, $indirectory_path;
 
     push @commands,
