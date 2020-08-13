@@ -112,7 +112,7 @@ reference:
     - 1.0
   vcfanno_config:
     - v1.10
-    - v1.11 
+    - v1.11
   vcfanno_functions:
     - v1.0
 reference_feature:
