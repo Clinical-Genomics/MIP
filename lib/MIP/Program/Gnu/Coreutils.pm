@@ -9,14 +9,12 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
 
 ## CPANM
 use autodie;
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
@@ -29,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
@@ -1148,22 +1146,20 @@ sub gnu_rm {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rm};
+    my @commands = qw{ rm };
 
     if ($recursive) {
-        push @commands, q{--recursive};
+        push @commands, q{-R};
     }
 
     if ($force) {
         push @commands, q{--force};
     }
 
-    ## Explain what is being done
     if ($verbose) {
         push @commands, q{--verbose};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
