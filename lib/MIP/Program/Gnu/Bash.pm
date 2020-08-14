@@ -270,8 +270,8 @@ sub gnu_trap {
     my $stderrfile_path_append;
 
     ## Default(s)
-    my $trap_signals_ref;
     my $trap_function_call;
+    my $trap_signals_ref;
 
     my $tmpl = {
         filehandle => {
