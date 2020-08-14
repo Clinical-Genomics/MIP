@@ -30,6 +30,11 @@ cnvnator:
   path: 'cnvnator'
 cyrius:
   execution: 'star_caller.py --help'
+deepvariant:
+  path: 'run_deepvariant'
+  path: 'make_examples'
+  path: 'call_variants'
+  path: 'postprocess_variants'
 delly:
   execution: 'delly'
 expansionhunter:
