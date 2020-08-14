@@ -5,10 +5,8 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Basename qw{ fileparse };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ decompress_files };
@@ -86,6 +84,7 @@ sub decompress_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Tar qw{ tar };
     use MIP::Program::Zip qw{ unzip };
@@ -102,9 +101,14 @@ sub decompress_files {
                 filehandle       => $filehandle,
                 force            => 1,
                 infile_paths_ref => $file_paths_ref,
-                outfile_path     => $outfile_path,
-                quiet            => 1,
-                stdout           => 1,
+                outfile_path     => parse_file_suffix(
+                    {
+                        file_name   => $outfile_path,
+                        file_suffix => q{.gz},
+                    }
+                ),
+                quiet  => 1,
+                stdout => 1,
             },
         },
         unzip => {
