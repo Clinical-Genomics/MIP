@@ -41,7 +41,7 @@ sv_svdb_query_db_files:
 qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
 qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
-vcfanno_config: grch37_vcfanno_config_-v1.10-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.11-.toml
 ### Analysis
 ### Programs
 ## Parameters
