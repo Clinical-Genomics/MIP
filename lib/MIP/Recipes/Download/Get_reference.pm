@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -152,6 +152,7 @@ sub get_reference {
                 file_path   => $outfile_path,
                 program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
+                outfile_path => $outfile_path,
             }
         );
 
