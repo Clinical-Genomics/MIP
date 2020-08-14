@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
 use 5.026;
 use Carp;
@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +31,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $COLON => q{:};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -62,27 +57,24 @@ diag(   q{Test enable_trap from SHELL.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $filehandle, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle
-enable_trap( { filehandle => $filehandle } );
+enable_trap( { filehandle => $filehandle, } );
 
-# Close the filehandle
 close $filehandle;
 
-## Then trap comment and trap should be written to file
-my ($enable_trap_command) = $file_content =~ /^(## Enable trap)/ms;
+## Then trap comment should be written to file
+my ($enable_trap_command) = $file_content =~ /^([#]{2} \s+ Enable \s+ trap)/msx;
 
 ok( $enable_trap_command, q{Wrote enable trap title} );
 
+## Then trap function should be written to file
 my ($trap_command) = $file_content =~ /^(trap\s+[']error['])/mxs;
 
 ok( $trap_command, q{Wrote trap command} );

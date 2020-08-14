@@ -430,10 +430,10 @@ sub clear_trap {
 
 sub enable_trap {
 
-## Function : Enable trap function with trap signal(s).
+## Function : Enable trap function with trap signal(s)
 ## Returns  :
 ## Arguments: $filehandle         => The filehandle to write to
-##          : $trap_function_call => The trap function argument
+##          : $trap_function_call => Trap function argument
 ##          : $trap_signals_ref   => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
@@ -468,9 +468,9 @@ sub enable_trap {
 
     gnu_trap(
         {
-            trap_signals_ref   => $trap_signals_ref,
-            trap_function_call => $trap_function_call,
             filehandle         => $filehandle,
+            trap_function_call => $trap_function_call,
+            trap_signals_ref   => $trap_signals_ref,
         }
     );
     say {$filehandle} $NEWLINE;
