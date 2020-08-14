@@ -43,7 +43,7 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: genomic_superdups_frac_match
     file_type: bed
-    path: cluster_constant_path!/references/grch37_genomics_super_dups_-20181009.bed.gz
+    path: cluster_constant_path!/references/grch37_genomic_superdups_reformated_-20181009-.bed.gz
   clinvar:
     annotation_type: exact
     force_report_coordinates: 0
