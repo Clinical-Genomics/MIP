@@ -76,6 +76,13 @@ container:
     executable:
       fastqc:
     uri: docker.io/clinicalgenomics/fastqc:0.11.9
+  deepvariant:
+    executable:
+      run_deepvariant: /opt/deepvariant/bin/run_deepvariant
+      make_examples: /opt/deepvariant/bin/make_examples
+      call_variants: /opt/deepvariant/bin/call_variants
+      postprocess_variants: /opt/deepvariant/bin/postprocess_variants
+    uri: docker.io/google/deepvariant:0.10.0
   delly:
     executable:
       delly:
