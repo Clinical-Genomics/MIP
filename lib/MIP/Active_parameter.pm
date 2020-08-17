@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1687,7 +1687,7 @@ sub set_default_temp_directory {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Mip download
-    if ( exists $active_parameter_href->{download_pipeline_type} ) {
+    if ( exists $active_parameter_href->{download_pipeline} ) {
 
         $active_parameter_href->{temp_directory} =
           catfile( cwd(), qw{ mip_download $SLURM_JOB_ID } );

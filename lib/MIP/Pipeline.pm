@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -186,23 +186,12 @@ sub run_download_pipeline {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
-    use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
+    use MIP::Recipes::Pipeline::Download qw{ pipeline_download };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack
-    my $pipeline_type = $active_parameter_href->{download_pipeline_type};
-
-    ## Create dispatch table of pipelines
-    my %pipeline = (
-        rd_dna => \&pipeline_download_rd_dna,
-        rd_rna => \&pipeline_download_rd_rna,
-    );
-
-    $log->info( q{Pipeline download type: } . $pipeline_type );
-    $pipeline{$pipeline_type}->(
+    pipeline_download(
         {
             active_parameter_href => $active_parameter_href,
             temp_directory        => $active_parameter_href->{temp_directory},
