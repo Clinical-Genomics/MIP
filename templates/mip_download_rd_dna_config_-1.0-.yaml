@@ -125,8 +125,8 @@ reference_feature:
         file_index_check: human_g1k_v37.fasta.fai.gz.md5
         outfile: grch37_homo_sapiens_-d5-.fasta.gz
         outfile_check: grch37_homo_sapiens_-d5-.fasta.gz.md5
-        outfile_index: human_g1k_v37.fasta.fai.gz
-        outfile_index_check: human_g1k_v37.fasta.fai.gz.md5
+        outfile_index: grch37_homo_sapiens_-d5-.fasta.fai.gz
+        outfile_index_check: grch37_homo_sapiens_-d5-.fasta.fai.gz.md5
         url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_check_method: md5sum
@@ -135,7 +135,9 @@ reference_feature:
     grch38:
       assembly38:
         file: Homo_sapiens_assembly38.fasta
+        file_index: Homo_sapiens_assembly38.fasta.fai
         outfile: grch38_homo_sapiens_-assembly-.fasta
+        outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_indels:
     grch37:
