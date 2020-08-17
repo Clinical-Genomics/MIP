@@ -1,4 +1,83 @@
 ---
+## Version: 1.0.0
+# Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
+1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_omni:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_sites:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_snps:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_bravo_topmed:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_gnomad_genomes:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_offline_annotations:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_to_vcf_header:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_whole_genome_snvs:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+chromograph_cytoband:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+clinvar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 config_file:
   associated_recipe:
     - mip
@@ -6,6 +85,13 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+ctat_resource_lib:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -13,6 +99,32 @@ custom_default_parameters:
   default:
     - reference_dir
     - temp_directory
+  type: mip
+dbnsfp:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+dbsnp:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+delly_exclude:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+download_pipeline:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
   type: mip
 dry_run_all:
   associated_recipe:
@@ -26,12 +138,103 @@ environment_name:
   data_type: SCALAR
   mandatory: no
   type: mip
+expansionhunter:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+genbank_haplogroup:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gencode_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+genomic_superdups:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+giab:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gnomad:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gnomad_pli_per_gene:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+hapmap:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+human_reference:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 load_env:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
   type: mip
+manta_call_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+mills_and_1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gatk_mitochondrial_ref:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+pfam:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 print_parameter_default:
   associated_recipe:
     - mip
@@ -44,6 +247,114 @@ project_id:
     - mip
   data_type: SCALAR
   type: mip
+rank_model:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    cadd_bravo_topmed: 1
+    cadd_gnomad_genomes: 1
+    cadd_offline_annotations: 1
+    cadd_to_vcf_header: 1
+    cadd_whole_genome_snvs: 1
+    chromograph_cytoband: 1
+    clinvar: 1
+    ctat_resource_lib: 1
+    dbnsfp: 1
+    dbsnp: 1
+    delly_exclude: 1
+    expansionhunter: 1
+    gatk_mitochondrial_ref: 1
+    genbank_haplogroup: 1
+    gencode_annotation: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 1
+    gnomad_pli_per_gene: 1
+    hapmap: 1
+    human_reference: 1
+    manta_call_regions: 1
+    mills_and_1000g_indels: 1
+    pfam: 1
+    rank_model: 1
+    reduced_penetrance: 1
+    runstatus: 1
+    scout_exons: 1
+    sv_vcfanno_config: 1
+    svrank_model: 1
+    vcf2cytosure_blacklist_regions: 1
+    vcfanno_config: 1
+    vcfanno_functions: 1
+  type: mip
+recipe_memory:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    # Per process
+    gnomad: 25
+  type: mip
+recipe_time:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    cadd_bravo_topmed: 5
+    cadd_gnomad_genomes: 5
+    cadd_offline_annotations: 15
+    cadd_to_vcf_header: 1
+    cadd_whole_genome_snvs: 15
+    chromograph_cytoband: 1
+    clinvar: 1
+    ctat_resource_lib: 10
+    dbnsfp: 25
+    dbsnp: 1
+    delly_exclude: 1
+    expansionhunter: 1
+    gatk_mitochondrial_ref: 1
+    genbank_haplogroup: 1
+    gencode_annotation: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 25
+    gnomad_pli_per_gene: 1
+    hapmap: 1
+    human_reference: 1
+    manta_call_regions: 1
+    mills_and_1000g_indels: 1
+    pfam: 1
+    rank_model: 1
+    reduced_penetrance: 1
+    runstatus: 1
+    scout_exons: 1
+    sv_vcfanno_config: 1
+    svrank_model: 1
+    vcf2cytosure_blacklist_regions: 1
+    vcfanno_config: 1
+    vcfanno_functions: 1
+  type: mip
+reduced_penetrance:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 reference:
   associated_recipe:
     - mip
@@ -56,6 +367,11 @@ reference_dir:
   exists_check: directory
   type: path
   update_path: absolute_path
+reference_feature:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  type: mip
 reference_genome_versions:
   associated_recipe:
     - mip
@@ -64,6 +380,13 @@ reference_genome_versions:
     - grch37
     - grch38
   type: recipe_argument
+runstatus:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 sacct_format_fields:
   associated_recipe:
     - mip
@@ -81,14 +404,56 @@ sacct_format_fields:
     - state
     - exitcode
   type: recipe_argument
+scout_exons:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 submission_profile:
   associated_recipe:
     - mip
   data_type: SCALAR
   default: slurm
   type: mip
+svrank_model:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+sv_vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 temp_directory:
   associated_recipe:
     - mip
   data_type: SCALAR
   type: path
+vcf2cytosure_blacklist_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_functions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe

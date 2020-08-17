@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_definition_file
@@ -296,8 +296,6 @@ sub get_parameter_from_definition_files {
                 qw{ analyse
                   dragen_rd_dna
                   download
-                  download_rd_dna
-                  download_rd_rna
                   install
                   mip
                   not_required

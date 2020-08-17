@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 our $USAGE = build_usage( {} );
 
@@ -299,8 +299,7 @@ sub mip_scripts {
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
         definitions     => [
             qw{ analyse_parameters.yaml
-              download_rd_dna_parameters.yaml
-              download_rd_rna_parameters.yaml
+              download_parameters.yaml
               install_parameters.yaml
               required_parameters.yaml
               mip_parameters.yaml
