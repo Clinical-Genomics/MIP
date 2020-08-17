@@ -329,6 +329,16 @@ sub analysis_gatk_combinevariantcallsets {
                     sample_info_href => $sample_info_href,
                 }
             );
+            set_file_path_to_store(
+                {
+                    format           => q{bcf},
+                    id               => $case_id,
+                    path             => $bcf_file_path,
+                    path_index       => $bcf_file_path . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
         }
 
         submit_recipe(

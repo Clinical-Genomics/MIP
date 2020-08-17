@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [9.0.0]
 - Moved annotationof CADD and SPIDEX to vcfanno´s toml config
 - Removed CADD and SPIDEX annotations from Rankvariants recipe, CLI and parameters
 - Turned off bcftools_mpileup by default
@@ -29,7 +29,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - fastqc: 0.11.8-0 -> 0.11.9
 - gatk: 4.1.3.0 -> 4.1.8.1
 - htslib: 1.9-hc238db4_4 -> 1.10.2=h78d89cc_0 (DNA)
-- multiqc: 1.7 -> 1.9
 - picard: 2.20.7 -> 2.22.4
 - samtools: 1.9=h8571acd_11 -> 1.10-h9402c20_2 (DNA)
 - SMNCopyNumberCaller: 4b2c1ad -> 1.0
@@ -51,6 +50,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - grch38_gencode_annotation_-v31-.gtf.gz -> grch38_gencode_annotation_-v34-.gtf.gz
 - grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz -> grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
 - VEP cache: 97 -> 100
+
+## [8.2.6]
+- Updates multiqc 
+
+**Tools**
+- multiqc: 1.7 -> 1.9
+
+## [8.2.5]
+- Adds output files to store for gatk_combinevariants, sambamba depth, chromograph recipes
+- Use MIPs bcftools singularity image in the conda env when checking references 
 
 ## [8.2.4]
 - Chromograph patch
