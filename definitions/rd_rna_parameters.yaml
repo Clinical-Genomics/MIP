@@ -878,7 +878,7 @@ qccollect_eval_metric_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_eval_metric_-v1.1-.yaml
+  default: qc_eval_metric_-v1.2-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir
@@ -887,7 +887,7 @@ qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_-v1.24-.yaml
+  default: qc_regexp_-v1.26-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

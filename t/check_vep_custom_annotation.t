@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,7 +79,8 @@ my %vep_custom_ann = (
         key                      => q{genomic_superdups_frac_match},
         file_type                => q{bed},
         path                     => catfile(
-            $Bin, qw{ data references grch37_genomics_super_dups_-20181009.bed.gz }
+            $Bin,
+            qw{ data references grch37_genomic_superdups_reformated_-20181009-.bed.gz }
         ),
     },
 );

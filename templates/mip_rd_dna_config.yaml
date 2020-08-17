@@ -41,7 +41,7 @@ sv_svdb_query_db_files:
 qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
 qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
-vcfanno_config: grch37_vcfanno_config_-v1.10-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.11-.toml
 ### Analysis
 ### Programs
 ## Parameters
@@ -64,7 +64,7 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: genomic_superdups_frac_match
     file_type: bed
-    path: cluster_constant_path!/references/grch37_genomics_super_dups_-20181009.bed.gz
+    path: cluster_constant_path!/references/grch37_genomic_superdups_reformated_-20181009-.bed.gz
   clinvar:
     annotation_type: exact
     force_report_coordinates: 0
