@@ -206,7 +206,7 @@ container:
   trim-galore:
     executable:
       trim_galore:
-    uri: library://jemten/mip_containers/trim-galore:0.6.4
+    uri: docker.io/clinicalgenomics/trim_galore:0.6.4
   ucsc:
     executable:
       bedToBigBed:
