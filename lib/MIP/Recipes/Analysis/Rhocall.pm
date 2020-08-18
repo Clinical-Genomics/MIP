@@ -17,7 +17,8 @@ use autodie qw{ :all };
 use Readonly;
 
 # MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -414,11 +415,11 @@ sub analysis_rhocall_viz {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Program::Gzip qw{ gzip };
-    use MIP::Program::Rhocall qw{ rhocall_viz };
-    use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
-    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
+    use MIP::Program::Picardtools qw{ picardtools_updatevcfsequencedictionary };
+    use MIP::Program::Rhocall qw{ rhocall_viz };
+    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Reference qw{ write_contigs_size_file };
     use MIP::Sample_info
@@ -538,13 +539,14 @@ sub analysis_rhocall_viz {
     );
     say {$filehandle} $NEWLINE;
 
-    gzip(
+    picardtools_updatevcfsequencedictionary(
         {
-            decompress       => 1,
-            filehandle       => $filehandle,
-            force            => 1,
-            infile_paths_ref => [$sample_vcf],
-            outfile_path     => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            filehandle  => $filehandle,
+            infile_path => $sample_vcf,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            outfile_path        => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            sequence_dictionary => $active_parameter_href->{human_genome_reference},
         }
     );
     say {$filehandle} $NEWLINE;
