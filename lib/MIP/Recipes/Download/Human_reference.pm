@@ -8,14 +8,12 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
@@ -26,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_human_reference };
@@ -121,12 +119,13 @@ sub download_human_reference {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Parse::File qw{ parse_file_suffix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Samtools qw{ samtools_faidx };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -185,6 +184,21 @@ sub download_human_reference {
             verbose        => $verbose,
         }
     );
+
+    my $outfile_path =
+      catfile( $active_parameter_href->{reference_dir}, $reference_href->{outfile} );
+    samtools_faidx(
+        {
+            filehandle  => $filehandle,
+            infile_path => parse_file_suffix(
+                {
+                    file_name   => $outfile_path,
+                    file_suffix => q{.gz},
+                }
+            ),
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
