@@ -767,6 +767,7 @@ sub analysis_bwa_mem2 {
                 with_header              => 1,
             }
         );
+        say {$filehandle} $NEWLINE;
 
         ## Set samtools sort input;
         my $samtools_sort_infile = $samtools_view_outfile_path;
