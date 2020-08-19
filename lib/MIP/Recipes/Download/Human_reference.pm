@@ -187,15 +187,13 @@ sub download_human_reference {
 
     my $outfile_path =
       catfile( $active_parameter_href->{reference_dir}, $reference_href->{outfile} );
+    my $outfile_no_gz =
+      parse_file_suffix( { file_name => $outfile_path, file_suffix => q{.gz}, } )
+      // $outfile_path;
     samtools_faidx(
         {
             filehandle  => $filehandle,
-            infile_path => parse_file_suffix(
-                {
-                    file_name   => $outfile_path,
-                    file_suffix => q{.gz},
-                }
-            ),
+            infile_path => $outfile_no_gz,
         }
     );
     say {$filehandle} $NEWLINE;
