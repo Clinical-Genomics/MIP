@@ -221,7 +221,7 @@ recipe_memory:
     picardtools_collectmultiplemetrics: 8
     plink: 10
     rhocall_ar: 2
-    rhocall_viz: 2
+    rhocall_viz: 5
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
