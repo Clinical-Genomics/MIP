@@ -7,7 +7,9 @@ prove t -r -j 2
 perl t/mip_install.test
 
 ## Download
-perl t/mip_download.test
+perl t/mip_download_rd_dna.test
+
+perl t/mip_download_rd_rna.test
 
 ## DNA
 perl t/mip_analyse_rd_dna.test
