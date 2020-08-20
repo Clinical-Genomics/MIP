@@ -93,11 +93,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-#%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-#    {
-#        mip_hash_name => q{io},
-#    }
-#);
 
 my %job_id;
 my %parameter = test_mip_hashes(
