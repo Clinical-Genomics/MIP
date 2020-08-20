@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA set_genome_build_constants $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -93,11 +93,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -112,12 +107,12 @@ my %sample_info;
 my $is_ok = analysis_smncopynumbercaller(
     {
         active_parameter_href => \%active_parameter,
+        case_id               => $active_parameter{case_id},
         file_info_href        => \%file_info,
         job_id_href           => \%job_id,
         parameter_href        => \%parameter,
         profile_base_command  => $slurm_mock_cmd,
         recipe_name           => $recipe_name,
-        sample_id             => $sample_id,
         sample_info_href      => \%sample_info,
     }
 );
