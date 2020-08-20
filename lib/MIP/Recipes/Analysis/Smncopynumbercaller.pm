@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -214,7 +213,7 @@ sub analysis_smncopynumbercaller {
             filehandle            => $filehandle,
             no_trailing_newline   => 1,
             outfile_path          => $manifest_file_path,
-            strings_ref           => [join q{\n}, @infile_paths],
+            strings_ref           => [ join q{\n}, @infile_paths ],
         }
     );
     say {$filehandle} $NEWLINE;

@@ -174,7 +174,7 @@ recipe_core_number:
     samtools_merge: 13
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
-    star_caller: 1
+    star_caller: 4
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -627,7 +627,7 @@ smncopynumbercaller:
     - smn_caller.py
   type: recipe
 star_caller:
-  analysis_mode: sample
+  analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
