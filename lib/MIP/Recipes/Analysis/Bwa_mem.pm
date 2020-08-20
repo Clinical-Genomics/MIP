@@ -8,14 +8,12 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
@@ -27,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
@@ -737,6 +735,8 @@ sub analysis_bwa_mem2 {
         ## Add missing "@RG"
         $rg_header_line =
           $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
+        my $samtools_view_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{mem} . $outfile_suffix;
 
         # Prior to ALTs in reference genome
         bwa_mem2_mem(
@@ -761,16 +761,16 @@ sub analysis_bwa_mem2 {
                 auto_detect_input_format => 1,
                 filehandle               => $filehandle,
                 infile_path              => q{-},
+                outfile_path             => $samtools_view_outfile_path,
                 thread_number            => $recipe_resource{core_number},
                 uncompressed_bam_output  => $uncompressed_bam_output,
                 with_header              => 1,
             }
         );
-        print {$filehandle} $PIPE . $SPACE;
+        say {$filehandle} $NEWLINE;
 
-        ## Set samtools sort input; Pipe from samtools view
-        my $samtools_sort_infile =
-          catfile( dirname( devnull() ), q{stdin} );
+        ## Set samtools sort input;
+        my $samtools_sort_infile = $samtools_view_outfile_path;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
