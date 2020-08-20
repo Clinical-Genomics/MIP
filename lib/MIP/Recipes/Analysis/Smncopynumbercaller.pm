@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_smncopynumbercaller };
@@ -44,7 +44,6 @@ sub analysis_smncopynumbercaller {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
-##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -55,7 +54,6 @@ sub analysis_smncopynumbercaller {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
-    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -107,12 +105,6 @@ sub analysis_smncopynumbercaller {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -139,21 +131,6 @@ sub analysis_smncopynumbercaller {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
-        }
-    );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path        = $infile_path_prefix . $infile_suffix;
-
     my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
@@ -169,25 +146,39 @@ sub analysis_smncopynumbercaller {
         }
     );
 
-    %io = (
-        %io,
-        parse_io_outfiles(
-            {
-                chain_id               => $job_id_chain,
-                id                     => $sample_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
-            }
-        )
-    );
+    my @infile_paths;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                stream         => q{in},
+            }
+        );
+        my $file_path_prefix = $sample_io{in}{file_path_prefix};
+        my $file_suffix      = $sample_io{in}{file_suffix};
+        push @infile_paths, $file_path_prefix . $file_suffix;
+    }
+
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $case_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$case_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            recipe_name            => $recipe_name,
+        }
+    );
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -198,7 +189,7 @@ sub analysis_smncopynumbercaller {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
+            directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -223,7 +214,7 @@ sub analysis_smncopynumbercaller {
             filehandle            => $filehandle,
             no_trailing_newline   => 1,
             outfile_path          => $manifest_file_path,
-            strings_ref           => [$infile_path],
+            strings_ref           => [join q{\n}, @infile_paths],
         }
     );
     say {$filehandle} $NEWLINE;
@@ -248,10 +239,8 @@ sub analysis_smncopynumbercaller {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -259,7 +248,7 @@ sub analysis_smncopynumbercaller {
         set_file_path_to_store(
             {
                 format           => q{meta},
-                id               => $sample_id,
+                id               => $case_id,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
@@ -270,7 +259,7 @@ sub analysis_smncopynumbercaller {
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
+                dependency_method    => q{sample_to_case},
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
@@ -278,7 +267,7 @@ sub analysis_smncopynumbercaller {
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );

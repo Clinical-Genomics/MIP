@@ -616,7 +616,7 @@ sambamba_depth_quality_control:
   default: 1
   type: recipe_argument
 smncopynumbercaller:
-  analysis_mode: sample
+  analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
