@@ -103,6 +103,10 @@ container:
     executable:
       gffcompare:
     uri: docker.io/clinicalgenomics/gffcompare:0.11.2
+  glnexus:
+    executable:
+      glnexus_cli:
+    uri: quay.io/mlin/glnexus:v1.2.7
   htslib:
     executable:
       bcftools:

@@ -23,7 +23,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.23;
+our $VERSION = 1.24;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -230,11 +230,11 @@ sub _build_usage {
                 enum(
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
-                          chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4 genmod
-                          gffcompare htslib manta mip_scripts multiqc peddy picard plink preseq python
-                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
-                          stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd utilities
-                          varg variant_integrity vcf2cytosure vcfanno vep vts }
+                          chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4
+                          genmod gffcompare glnexus htslib manta mip_scripts multiqc peddy picard plink
+                          preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
+                          star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd
+                          utilities varg variant_integrity vcf2cytosure vcfanno vep vts }
                     ]
                 ),
             ],
@@ -252,11 +252,11 @@ sub _build_usage {
                 enum(
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
-                          chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4 genmod
-                          gffcompare htslib manta mip_scripts multiqc peddy picard plink preseq python
-                          rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star star-fusion
-                          stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd utilities
-                          varg variant_integrity vcf2cytosure vcfanno vep vts }
+                          chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4
+                          genmod gffcompare glnexus htslib manta mip_scripts multiqc peddy picard plink
+                          preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
+                          star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd
+                          utilities varg variant_integrity vcf2cytosure vcfanno vep vts }
                     ]
                 ),
             ],
