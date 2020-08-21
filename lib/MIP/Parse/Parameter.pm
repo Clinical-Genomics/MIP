@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,94 +23,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      parse_conda_env_name
       parse_download_reference_parameter
     };
 
-}
-
-sub parse_conda_env_name {
-
-## Function : Build conda environment names depending on input parameters
-## Returns  : $conda_environment_name
-## Arguments: $base_name     => Degfault base environment name
-##          : $date          => Date
-##          : $environment   => Installation environment
-##          : parameter_href => Parmeter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $base_name;
-    my $date;
-    my $environment;
-    my $parameter_href;
-
-    my $tmpl = {
-        base_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$base_name,
-            strict_type => 1,
-        },
-        date => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date,
-            strict_type => 1,
-        },
-        environment => {
-            defined     => 1,
-            required    => 1,
-            store       => \$environment,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $environment_name = $parameter_href->{environment_name}{$environment};
-
-    ## Give the env a default name if not given
-    if ( not $environment_name ) {
-
-        ## Strip the first character, i.e. 'e' from the environment string
-        my $env_postfix = substr $environment, 1;
-        $environment_name = $base_name . $UNDERSCORE . $env_postfix;
-    }
-
-    ## Prepend environemnt prefix
-    if ( $parameter_href->{environment_prefix} ) {
-
-        $environment_name =
-          $parameter_href->{environment_prefix} . $UNDERSCORE . $environment_name;
-    }
-
-    ## Add environment date
-    if ( $parameter_href->{add_environment_date} ) {
-
-        $environment_name = $environment_name . $UNDERSCORE . $date;
-    }
-
-    ## Append environment suffix
-    if ( $parameter_href->{environment_suffix} ) {
-
-        $environment_name =
-          $environment_name . $UNDERSCORE . $parameter_href->{environment_suffix};
-    }
-
-    return $environment_name;
 }
 
 sub parse_download_reference_parameter {
