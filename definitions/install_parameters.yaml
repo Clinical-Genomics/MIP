@@ -119,6 +119,7 @@ rd_dna:
     - gatk
     - gatk4
     - genmod
+    - glnexus
     - htslib
     - manta
     - mip_scripts

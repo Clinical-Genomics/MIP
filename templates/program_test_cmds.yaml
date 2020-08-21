@@ -48,6 +48,8 @@ genmod:
   execution: 'genmod'
 gffcompare:
   execution: 'gffcompare --version'
+glnexus:
+  execution: 'glnexus_cli --help'
 htslib:
   execution: 'bgzip --version'
 manta:
