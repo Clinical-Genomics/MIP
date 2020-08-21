@@ -6,7 +6,6 @@ use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use Params::Check qw{ check allow last_error };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
@@ -23,7 +22,7 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.23;
+our $VERSION = 1.24;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -77,16 +76,6 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{add_environment_date} => (
-            cmd_flag      => q{add_environment_date},
-            documentation => q{Add creation date to environment},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{conda_no_update_dep} => (
             cmd_flag      => q{conda_no_update_dep},
             documentation => q{Do not update dependencies},
@@ -120,28 +109,11 @@ sub _build_usage {
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
-            cmd_tags      => [q{Default: mip_rd_dna}],
+            cmd_tags      => [q{Default: mip}],
             documentation => q{Set environment name},
             is            => q{rw},
             isa           => Str,
         ),
-    );
-
-    option(
-        q{environment_prefix} => (
-            documentation =>
-              q{Prepend this to environment names. Separated by underscore},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
-        q{environment_suffix} => (
-            documentation => q{Append this to environment names. Separated by underscore},
-            is            => q{rw},
-            isa           => Str,
-        )
     );
 
     option(
