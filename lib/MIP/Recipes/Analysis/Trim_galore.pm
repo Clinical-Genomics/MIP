@@ -123,7 +123,7 @@ sub analysis_trim_galore {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::Cluster qw{ update_memory_allocation };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
@@ -492,7 +492,8 @@ sub _get_cores_for_trimgalore {
     Readonly my $THREE => 3;
 
     ## Currently (Trim galore v0.6.5) the way to calculate the core argument to trim galore:
-    ## Always 1 for trim galore and 2 for cutadapt the rest are splitted between read, write and cutadapt.
+    ## Always three cores for overhead (1 for trim galore and 2 for cutadapt)
+    ## the rest are splitted between the three processe (read, write and cutadapt).
     my $core_argument =
       floor( ( $max_cores_per_node / $parallel_processes - $THREE ) / $THREE );
     my $recipe_core_number = ( $core_argument * $THREE + $THREE ) * $parallel_processes;
