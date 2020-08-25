@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -205,13 +205,11 @@ sub run_install_pipeline {
 ## Function : Run install pipeline recipe
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this install hash {REF}
-##          : $pipeline              => Pipeline
 
     my ($arg_href) = @_;
 
 ## Flatten argument(s)
     my $active_parameter_href;
-    my $pipeline;
 
     my $tmpl = {
         active_parameter_href => {
@@ -219,13 +217,6 @@ sub run_install_pipeline {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        pipeline => {
-            allow       => [q{mip_install}],
-            defined     => 1,
-            required    => 1,
-            store       => \$pipeline,
             strict_type => 1,
         },
     };
@@ -237,14 +228,11 @@ sub run_install_pipeline {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Create dispatch table of pipelines
-    my %pipeline_table = ( mip_install => \&pipeline_install, );
-
     $log->info(
         q{Installing pipelines: } . join $SPACE,
         @{ $active_parameter_href->{pipelines} }
     );
-    $pipeline_table{$pipeline}->(
+    pipeline_install(
         {
             active_parameter_href => $active_parameter_href,
             quiet                 => $active_parameter_href->{quiet},
