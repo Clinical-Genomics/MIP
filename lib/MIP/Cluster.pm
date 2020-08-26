@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -187,7 +187,7 @@ sub update_memory_allocation {
     my $recipe_memory_allocation = $process_memory_allocation * $parallel_processes;
 
     ## Check that memory is available
-    check_recipe_memory_allocation(
+    $recipe_memory_allocation = check_recipe_memory_allocation(
         {
             node_ram_memory          => $node_ram_memory,
             recipe_memory_allocation => $recipe_memory_allocation,
