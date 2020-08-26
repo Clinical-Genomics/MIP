@@ -336,18 +336,20 @@ sub case_qc {
         }
     }
 
-    if (exists $qc_data_href->{recipe}{pedigree_check} and exists $qc_data_href->{recipe}{relation_check}) {
+    if (    exists $qc_data_href->{recipe}{pedigree_check}
+        and exists $qc_data_href->{recipe}{relation_check} )
+    {
 
-    relation_check(
-        {
-            qc_data_href => $qc_data_href,
-            relationship_values_ref =>
-              \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
-            sample_info_href => $sample_info_href,
-            sample_orders_ref =>
-              \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
-        }
-    );
+        relation_check(
+            {
+                qc_data_href => $qc_data_href,
+                relationship_values_ref =>
+                  \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
+                sample_info_href => $sample_info_href,
+                sample_orders_ref =>
+                  \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
+            }
+        );
     }
     return;
 }
