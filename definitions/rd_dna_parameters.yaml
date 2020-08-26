@@ -294,7 +294,7 @@ recipe_time:
     sv_reformat: 1
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
-    telomerecat_ar: 1
+    telomerecat_ar: 5
     tiddit: 20
     tiddit_coverage: 5
     upd_ar: 1
