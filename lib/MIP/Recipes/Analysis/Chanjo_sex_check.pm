@@ -204,7 +204,6 @@ sub analysis_chanjo_sex_check {
             core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
             filehandle                      => $filehandle,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             job_id_href                     => $job_id_href,
             process_time                    => $recipe_resource{time},

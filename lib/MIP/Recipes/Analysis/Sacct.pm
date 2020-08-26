@@ -151,7 +151,6 @@ sub analysis_sacct {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            log                   => $log,
             memory_allocation     => $recipe_resource{memory_allocation},
             process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name,

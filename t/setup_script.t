@@ -100,7 +100,6 @@ my ($recipe_file_path) = setup_script(
         email_types_ref       => [qw{ FAIL }],
         filehandle            => $filehandle,
         job_id_href           => \%job_id,
-        log                   => $log,
         recipe_directory      => $test_recipe_name,
         recipe_name           => $test_recipe_name,
         sleep                 => 1,

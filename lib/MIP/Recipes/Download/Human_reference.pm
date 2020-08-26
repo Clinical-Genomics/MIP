@@ -157,7 +157,6 @@ sub download_human_reference {
             directory_id               => q{mip_download},
             filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
-            log                        => $log,
             memory_allocation          => $recipe_resource{memory},
             outdata_dir                => $active_parameter_href->{reference_dir},
             outscript_dir              => $active_parameter_href->{reference_dir},

@@ -185,7 +185,6 @@ sub build_star_prerequisites {
             directory_id                    => $case_id,
             core_number                     => $NUMBER_OF_CORES,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
