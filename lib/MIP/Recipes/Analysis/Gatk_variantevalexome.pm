@@ -7,14 +7,12 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
@@ -25,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalexome };
@@ -241,8 +239,9 @@ sub analysis_gatk_variantevalexome {
     say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            filehandle  => $filehandle,
-            infile_path => $view_outfile_path,
+            filehandle        => $filehandle,
+            infile_path       => $view_outfile_path,
+            memory_allocation => q{Xmx2g},
         }
     );
     say {$filehandle} $NEWLINE;
