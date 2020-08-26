@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = q{2.1.9};
+    our $VERSION = q{2.1.10};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect };
@@ -336,16 +336,21 @@ sub case_qc {
         }
     }
 
-    relation_check(
-        {
-            qc_data_href => $qc_data_href,
-            relationship_values_ref =>
-              \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
-            sample_info_href => $sample_info_href,
-            sample_orders_ref =>
-              \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
-        }
-    );
+    if (    exists $qc_data_href->{recipe}{pedigree_check}
+        and exists $qc_data_href->{recipe}{relation_check} )
+    {
+
+        relation_check(
+            {
+                qc_data_href => $qc_data_href,
+                relationship_values_ref =>
+                  \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
+                sample_info_href => $sample_info_href,
+                sample_orders_ref =>
+                  \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
+            }
+        );
+    }
     return;
 }
 
