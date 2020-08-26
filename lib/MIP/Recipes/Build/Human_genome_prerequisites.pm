@@ -192,7 +192,6 @@ sub build_human_genome_prerequisites {
                 job_id_href                     => $job_id_href,
                 filehandle                      => $filehandle,
                 directory_id                    => $case_id,
-                log                             => $log,
                 recipe_name                     => $recipe_name,
                 recipe_directory                => $recipe_name,
                 source_environment_commands_ref => $recipe_resource{load_env_ref},
