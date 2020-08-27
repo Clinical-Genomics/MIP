@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_rna_meta_files };
@@ -105,11 +105,13 @@ sub build_rd_rna_meta_files {
     use MIP::Recipes::Build::Transcript_annotation_prerequisites
       qw{ build_transcript_annotation_prerequisites };
 
+    ## The contruction of the star fusion reference is broken on grch37
     my %build_recipe = (
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         salmon_quant_reference_genome       => \&build_salmon_quant_prerequisites,
         star_aln_reference_genome           => \&build_star_prerequisites,
-        star_fusion_reference_genome        => \&build_star_fusion_prerequisites,
+
+        #star_fusion_reference_genome        => \&build_star_fusion_prerequisites,
         transcript_annotation_file_endings => \&build_transcript_annotation_prerequisites,
     );
 
