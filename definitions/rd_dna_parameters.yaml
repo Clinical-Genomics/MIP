@@ -139,6 +139,7 @@ recipe_core_number:
     bcftools_mpileup: 16
     bwa_mem: 36
     bwa_mem2: 36
+    cadd_ar: 13
     chanjo_sexcheck: 1
     chromograph_ar: 1
     cnvnator_ar: 13
@@ -1616,7 +1617,7 @@ frequency_filter:
   data_type: SCALAR
   default: 1
   file_tag: _frqf
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe

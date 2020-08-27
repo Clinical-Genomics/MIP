@@ -18,8 +18,18 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $BACKWARD_SLASH $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{
+  $BACKWARD_SLASH
+  $DASH
+  $DOT
+  $DOUBLE_QUOTE
+  $EMPTY_STR
+  $LOG_NAME
+  $NEWLINE
+  $PIPE
+  $SEMICOLON
+  $SPACE
+};
 
 BEGIN {
 
@@ -27,7 +37,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter analysis_frequency_filter_panel };
@@ -139,7 +149,7 @@ sub analysis_frequency_filter {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -261,12 +271,22 @@ sub analysis_frequency_filter {
 
         bcftools_view(
             {
+                exclude                => $exclude_filter,
                 filehandle             => $xargsfilehandle,
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
-                output_type            => q{v},
+                output_type            => q{z},
                 stderrfile_path_append => $stderrfile_path,
-                exclude                => $exclude_filter,
+            }
+        );
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
+
+        bcftools_index(
+            {
+                filehandle             => $xargsfilehandle,
+                infile_path            => $outfile_path{$contig},
+                output_type            => q{tbi},
+                stderrfile_path_append => $stderrfile_path,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -403,7 +423,7 @@ sub analysis_frequency_filter_panel {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -502,8 +522,17 @@ sub analysis_frequency_filter_panel {
             filehandle   => $filehandle,
             infile_path  => $infile_path,
             outfile_path => $outfile_path,
-            output_type  => q{v},
+            output_type  => q{z},
             exclude      => $exclude_filter,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    bcftools_index(
+        {
+            filehandle  => $filehandle,
+            infile_path => $outfile_path,
+            output_type => q{tbi},
         }
     );
     say {$filehandle} $NEWLINE;

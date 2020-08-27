@@ -80,6 +80,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    cadd_ar: 13
     dragen_dna_align_vc: 1
     dragen_dna_joint_calling: 1
     endvariantannotationblock: 1
@@ -541,7 +542,7 @@ frequency_filter:
   data_type: SCALAR
   default: 1
   file_tag: _frqf
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe
