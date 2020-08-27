@@ -91,7 +91,6 @@ my %required_argument = (
         input           => catfile(qw{ reference_dir human_genome_build.fasta }),
         expected_output => q{ --ref=}
           . catfile(qw{ reference_dir human_genome_build.fasta}),
-        ,
     },
     model_type => {
         input           => q{WES},
