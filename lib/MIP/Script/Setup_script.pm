@@ -387,7 +387,6 @@ sub setup_script {
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
 ##          : $job_id_href                     => The job_id hash {REF}
-##          : $log                             => Log object
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
@@ -412,7 +411,6 @@ sub setup_script {
     my $filehandle;
     my $job_id_href;
     my $memory_allocation;
-    my $log;
     my $recipe_data_directory_path;
     my $recipe_directory;
     my $recipe_name;
@@ -482,7 +480,6 @@ sub setup_script {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log               => { defined => 1, required => 1, store => \$log, },
         memory_allocation => {
             allow       => [ undef, qr{ \A\d+\z }sxm ],
             store       => \$memory_allocation,
@@ -581,6 +578,8 @@ sub setup_script {
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;

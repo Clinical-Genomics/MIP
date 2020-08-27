@@ -8,7 +8,7 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
+use POSIX qw{ floor };
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -123,7 +123,7 @@ sub analysis_trim_galore {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::Cluster qw{ update_memory_allocation };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
@@ -160,13 +160,7 @@ sub analysis_trim_galore {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Construct outfiles
     my $outsample_directory =
@@ -211,21 +205,25 @@ sub analysis_trim_galore {
         }
     );
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
+    my %recipe_resource = get_recipe_resources(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number =>
-              scalar @{ $file_info_sample{no_direction_infile_prefixes} },
-            recipe_core_number => $recipe_resource{core_number},
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
-    # Get recipe memory allocation
+    my $parallel_processes = scalar @{ $file_info_sample{no_direction_infile_prefixes} };
+    my ( $process_core_number, $recipe_core_number ) = _get_cores_for_trimgalore(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            parallel_processes => $parallel_processes,
+        }
+    );
+
     my $memory_allocation = update_memory_allocation(
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
+            parallel_processes        => $recipe_core_number,
             process_memory_allocation => $recipe_resource{memory},
         }
     );
@@ -234,11 +232,10 @@ sub analysis_trim_galore {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_core_number,
             directory_id                    => $sample_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $memory_allocation,
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
@@ -293,7 +290,7 @@ sub analysis_trim_galore {
         ## Trim galore
         trim_galore(
             {
-                cores            => $recipe_resource{core_number},
+                cores            => $process_core_number,
                 filehandle       => $filehandle,
                 infile_paths_ref => \@fastq_files,
                 outdir_path      => $outsample_directory,
@@ -460,4 +457,51 @@ sub _construct_trim_galore_outfile_paths {
     }
     return @outfile_paths;
 }
+
+sub _get_cores_for_trimgalore {
+
+## Function : Calculate nr of cores to be supplied to each Trim galore process and the recipe
+## Returns  : $core_argument, $recipe_core_number
+## Arguments: $max_cores_per_node => Cores available
+##          : $parallel_processes => Run fastqc after trimming
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $max_cores_per_node;
+    my $parallel_processes;
+
+    my $tmpl = {
+        max_cores_per_node => {
+            allow       => [qr/\A \d+ \z/xms],
+            required    => 1,
+            store       => \$max_cores_per_node,
+            strict_type => 1,
+        },
+        parallel_processes => {
+            allow       => [qr/\A \d+ \z/xms],
+            required    => 1,
+            store       => \$parallel_processes,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    Readonly my $THREE => 3;
+
+    ## Currently (Trim galore v0.6.5) the way to calculate the core argument to trim galore:
+    ## Always three cores for overhead (1 for trim galore and 2 for cutadapt)
+    ## the rest are splitted between the three processe (read, write and cutadapt).
+    my $core_argument =
+      floor( ( $max_cores_per_node / $parallel_processes - $THREE ) / $THREE );
+    my $recipe_core_number = ( $core_argument * $THREE + $THREE ) * $parallel_processes;
+
+    ## Only supply core argument if more than 1
+    $core_argument      = $core_argument > 1 ? $core_argument      : 0;
+    $recipe_core_number = $core_argument     ? $recipe_core_number : $parallel_processes;
+
+    return ( $core_argument, $recipe_core_number );
+}
+
 1;
