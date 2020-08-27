@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Deepvariant} => [qw{ deepvariant }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -85,11 +85,13 @@ my %base_argument = (
 my %required_argument = (
     bamfile => {
         input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{ --reads=} . catfile(qw{ dir infile.bam }),,
+        expected_output => q{ --reads=} . catfile(qw{ dir infile.bam }),
     },
     referencefile_path => {
         input           => catfile(qw{ reference_dir human_genome_build.fasta }),
-        expected_output => q{ --ref=} . catfile(qw{ reference_dir human_genome_build.fasta}),,
+        expected_output => q{ --ref=}
+          . catfile(qw{ reference_dir human_genome_build.fasta}),
+        ,
     },
     model_type => {
         input           => q{WES},
@@ -99,7 +101,7 @@ my %required_argument = (
         input           => catfile(q{ dir outfile.vcf }),
         expected_output => q{ --output_gvcf=} . catfile(qw{ dir outfile.vcf }),
     },
-    
+
 );
 
 my %specific_argument = (
