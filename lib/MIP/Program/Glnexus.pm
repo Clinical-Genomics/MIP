@@ -34,7 +34,7 @@ sub glnexus_merge {
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
 ## Arguments: $config                 => Allows us to process vcf files from different variant callers.
-##          : $infiles_ref            => Space separated list of input vcf files 
+##          : $infiles_ref            => Space separated list of input vcf files
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
