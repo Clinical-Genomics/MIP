@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -34,7 +33,13 @@ sub deepvariant {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $bamfile                => Aligned, sorted, indexed bam file containing the reads we want to call
+##          : $bedfile                => Bed file containing the list of  regions we want to process
+##          : $filehandle             => Filehandle to write to
+##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO 
+##          : $num_shards             => Number of files the input is split into for the make examples step
+##          : $outfile_path           => Path to the output gvcf file
+##          : $referencefile_path     => Path to genome reference
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -55,11 +60,9 @@ sub deepvariant {
     my $stdinfile_path;
     my $stdoutfile_path;
 
-    ## Default(s)
-
     my $tmpl = {
         bamfile => {
-            allow => qr/ bam $ /xms,
+            allow => qr/ bam \z /xms,
             defined => 1, 
             required => 1,
             store => \$bamfile,
@@ -68,6 +71,7 @@ sub deepvariant {
         bedfile => {
             defined => 1,
             store => \$bedfile,
+            strict_type => 1,
         },
         filehandle => {
             store => \$filehandle,
@@ -80,6 +84,7 @@ sub deepvariant {
             strict_type => 1,
         },
         num_shards => { 
+            allow => qr/ \A \d+ \z /xms,
             store => \$num_shards,
             strict_type => 1,
         },

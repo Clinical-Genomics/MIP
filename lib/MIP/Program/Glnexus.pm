@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -34,7 +33,8 @@ sub glnexus_merge {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $config                 => Allows us to process vcf files from different variant callers.
+##          : $infiles_ref            => Space separated list of input vcf files 
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -49,8 +49,6 @@ sub glnexus_merge {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-
-    ## Default(s)
 
     my $tmpl = {
         config => {
