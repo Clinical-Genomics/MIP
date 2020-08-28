@@ -411,7 +411,6 @@ star_fusion_min_junction_reads:
 star_fusion_pfam_db:
   associated_recipe:
     - star_fusion
-  build_file: 1
   data_type: SCALAR
   exists_check: directory
   is_reference: 1
