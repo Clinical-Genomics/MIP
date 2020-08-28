@@ -255,7 +255,7 @@ sub analysis_cadd {
 
     ## Process per contig
   CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
+    while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
         my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
@@ -270,9 +270,11 @@ sub analysis_cadd {
             $view_infile_path = $outfile_path_prefix . $DOT . $contig . q{plus.vcf};
             bcftools_concat(
                 {
-                    filehandle => $xargsfilehandle,
-                    infile_paths_ref =>
-                      [ $infile_path{ $contigs_size_ordered[0] }, $infile_path{$contig} ],
+                    filehandle       => $xargsfilehandle,
+                    infile_paths_ref => [
+                        $infile_path{ $contigs_size_ordered[ $index - 1 ] },
+                        $infile_path{$contig}
+                    ],
                     outfile_path    => $view_infile_path,
                     output_type     => q{v},
                     rm_dups         => 0,
@@ -881,9 +883,9 @@ sub _parse_cadd_infile {
 
     bcftools_view(
         {
-            filehandle       => $filehandle,
+            filehandle  => $filehandle,
             infile_path => $infile_path,
-            output_type      => q{v},
+            output_type => q{v},
         }
     );
     print {$filehandle} $PIPE . $SPACE;
