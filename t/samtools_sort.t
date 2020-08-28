@@ -96,8 +96,8 @@ my %specific_argument = (
         expected_output => q{a_file.bam},
     },
     max_memory_per_thread => {
-        input           => 1 . q{1G},
-        expected_output => q{-m 1G},
+        input           => 1 . q{G},
+        expected_output => q{-m} . $SPACE . q{1G},
     },
     outfile_path => {
         input           => q{an_outfile.bam},
