@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -827,10 +827,7 @@ sub bcftools_index {
         push @commands, q{--} . $output_type;
     }
 
-    if ($infile_path) {
-
-        push @commands, $infile_path;
-    }
+    push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(

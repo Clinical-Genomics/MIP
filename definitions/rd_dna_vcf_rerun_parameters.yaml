@@ -68,6 +68,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    cadd_ar: 13
     endvariantannotationblock: 1
     frequency_filter: 13
     rhocall_ar: 15
@@ -527,7 +528,7 @@ frequency_filter:
   data_type: SCALAR
   default: 1
   file_tag: _frqf
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe
