@@ -882,7 +882,7 @@ sub _parse_cadd_infile {
     bcftools_view(
         {
             filehandle       => $filehandle,
-            infile_paths_ref => [$infile_path],
+            infile_path => $infile_path,
             output_type      => q{v},
         }
     );
