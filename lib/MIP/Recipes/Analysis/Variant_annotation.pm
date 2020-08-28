@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -43,7 +42,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -727,7 +726,6 @@ sub analysis_vcfanno_preop {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,

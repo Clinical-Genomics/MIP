@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_ctat_resource_lib };
@@ -193,6 +193,7 @@ sub download_ctat_resource_lib {
     ## Move dir
     gnu_mv(
         {
+            filehandle   => $filehandle,
             infile_path  => $reformated_outdir_path,
             outfile_path => catfile( $reference_dir, lc $reformated_outdir_name ),
         }

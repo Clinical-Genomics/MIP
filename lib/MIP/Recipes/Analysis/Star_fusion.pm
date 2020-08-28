@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -235,16 +235,13 @@ sub analysis_star_fusion {
     );
     say {$filehandle} $NEWLINE;
 
-    my $referencefile_dir_path =
-        $active_parameter_href->{star_fusion_reference_genome}
-      . $file_info_href->{star_fusion_reference_genome}[0];
     star_fusion(
         {
             cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
             filehandle            => $filehandle,
             fusion_inspector      => q{inspect},
-            genome_lib_dir_path   => $referencefile_dir_path,
+            genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             min_junction_reads =>
               $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
