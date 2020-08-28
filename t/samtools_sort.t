@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -94,6 +94,10 @@ my %specific_argument = (
     infile_path => {
         input           => q{a_file.bam},
         expected_output => q{a_file.bam},
+    },
+    max_memory_per_thread => {
+        input           => 1 . q{1G},
+        expected_output => q{-m 1G},
     },
     outfile_path => {
         input           => q{an_outfile.bam},

@@ -7,14 +7,12 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $AMPERSAND $COMMA $SPACE };
@@ -26,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -713,6 +711,7 @@ sub samtools_sort {
 ## Returns  : @commands
 ##          : $filehandle             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
+##          : $max_memory_per_thread  => Set maximum memory per thread; suffix K/M/G recognized
 ##          : $outfile_path           => Outfile path
 ##          : $output_format          => Output format
 ##          : $referencefile_path     => Reference file path (fasta)
@@ -728,6 +727,7 @@ sub samtools_sort {
     ## Flatten argument(s)
     my $filehandle;
     my $infile_path;
+    my $max_memory_per_thread;
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
@@ -746,6 +746,11 @@ sub samtools_sort {
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
+        },
+        max_memory_per_thread => {
+            allow       => [ undef, qr{ \A\d+[G|K|M]\z }xsm, ],
+            store       => \$max_memory_per_thread,
             strict_type => 1,
         },
         outfile_path  => { store => \$outfile_path, strict_type => 1, },
@@ -795,6 +800,10 @@ sub samtools_sort {
         }
     );
 
+    if ($max_memory_per_thread) {
+
+        push @commands, q{-m} . $SPACE . $max_memory_per_thread;
+    }
     if ($temp_file_path_prefix) {
 
         push @commands, q{-T} . $SPACE . $temp_file_path_prefix;

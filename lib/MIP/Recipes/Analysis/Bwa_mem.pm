@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.26;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
@@ -339,10 +339,11 @@ sub analysis_bwa_mem {
         ## Sort the output from bwa mem
         samtools_sort(
             {
-                filehandle    => $filehandle,
-                infile_path   => $samtools_sort_infile,
-                outfile_path  => $outfile_path,
-                output_format => $output_format,
+                filehandle            => $filehandle,
+                infile_path           => $samtools_sort_infile,
+                max_memory_per_thread => 2 . q{G},
+                outfile_path          => $outfile_path,
+                output_format         => $output_format,
                 temp_file_path_prefix =>
                   catfile( $temp_directory, q{samtools_sort_temp} ),
                 thread_number => $recipe_resource{core_number},
@@ -778,10 +779,11 @@ sub analysis_bwa_mem2 {
         ## Sort the output from bwa mem
         samtools_sort(
             {
-                filehandle    => $filehandle,
-                infile_path   => $samtools_sort_infile,
-                outfile_path  => $outfile_path,
-                output_format => $output_format,
+                filehandle            => $filehandle,
+                infile_path           => $samtools_sort_infile,
+                max_memory_per_thread => 2 . q{G},
+                outfile_path          => $outfile_path,
+                output_format         => $output_format,
                 temp_file_path_prefix =>
                   catfile( $temp_directory, q{samtools_sort_temp} ),
                 thread_number => $recipe_resource{core_number},
@@ -1201,10 +1203,11 @@ sub analysis_run_bwa_mem {
         ## Sort the output from run-bwamem
         samtools_sort(
             {
-                filehandle    => $filehandle,
-                infile_path   => $samtools_sort_infile,
-                outfile_path  => $outfile_path,
-                output_format => $output_format,
+                filehandle            => $filehandle,
+                infile_path           => $samtools_sort_infile,
+                max_memory_per_thread => 2 . q{G},
+                outfile_path          => $outfile_path,
+                output_format         => $output_format,
                 temp_file_path_prefix =>
                   catfile( $temp_directory, q{samtools_sort_temp} ),
                 thread_number => $recipe_resource{core_number},
