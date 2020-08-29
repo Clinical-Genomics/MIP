@@ -749,7 +749,7 @@ sub samtools_sort {
             strict_type => 1,
         },
         max_memory_per_thread => {
-            allow       => [ undef, qr{ \A\d+[G|K|M]\z }xsm, ],
+            allow       => [ undef, qr{ \A \d+[G|K|M] \z }xsm, ],
             store       => \$max_memory_per_thread,
             strict_type => 1,
         },
