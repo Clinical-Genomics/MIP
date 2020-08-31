@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -232,7 +232,7 @@ sub test_mip_hashes {
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
-        pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
+        pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
         qc_sample_info =>
           catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
     );

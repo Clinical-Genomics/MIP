@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,7 +65,7 @@ my %parameter        = test_mip_hashes( { mip_hash_name => q{define_parameter}, 
 my %sample_info;
 
 # Set pedigree file path
-$active_parameter{pedigree_file} = catfile( $Bin, qw{ data test_data pedigree.yaml} );
+$active_parameter{pedigree_file} = catfile( $Bin, qw{ data test_data pedigree_wes.yaml} );
 
 my $is_ok = parse_pedigree(
     {
