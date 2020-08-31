@@ -5,11 +5,11 @@ analysis_type:
   ADM1059A3: wgs
 recipe:
   pedigree_check:
-    path: /home/travis/build/Clinical-Genomics/MIP/t/data/643594-miptest/test_data/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf
+    path: /home/runner/work/MIP/MIP/t/data/643594-miptest/test_data/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf
   plink_sexcheck:
-    path: /home/travis/build/Clinical-Genomics/MIP/t/data/643594-miptest/test_data/643594-miptest/plink/643594-miptest_gatkcomb.plink_sexcheck.sexcheck
+    path: /home/runner/work/MIP/MIP/t/data/643594-miptest/test_data/643594-miptest/plink/643594-miptest_gatkcomb.plink_sexcheck.sexcheck
   relation_check:
-    path: /home/travis/build/Clinical-Genomics/MIP/t/data/643594-miptest/test_data/643594-miptest/plink/643594-miptest_gatkcomb.relation_check.mibs
+    path: /home/runner/work/MIP/MIP/t/data/643594-miptest/test_data/643594-miptest/plink/643594-miptest_gatkcomb.relation_check.mibs
 sample:
   ADM1059A1:
     analysis_type: wgs
@@ -24,7 +24,7 @@ sample:
     recipe:
       chanjo_sexcheck:
         ADM1059A1_lanes_1_sorted_md_brecal_sex:
-          path: /home/travis/build/Clinical-Genomics/MIP/t/data/643594-miptest/test_data/ADM1059A1/chanjo_sexcheck/ADM1059A1_lanes_1_sorted_md_brecal_sex.tsv
+          path: /home/runner/work/MIP/MIP/t/data/643594-miptest/test_data/ADM1059A1/chanjo_sexcheck/ADM1059A1_lanes_1_sorted_md_brecal_sex.tsv
   ADM1059A2:
     analysis_type: wgs
     capture_kit: agilent_sureselect.v5
