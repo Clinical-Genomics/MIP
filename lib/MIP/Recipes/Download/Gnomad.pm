@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $DOT $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -124,8 +124,7 @@ sub download_gnomad {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
-    use MIP::Program::Htslib qw{ htslib_tabix };
-    use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_index };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -187,9 +186,9 @@ sub download_gnomad {
 
 ## Map of key names to keep from reference vcf
     my %info_key = (
-        q{r2.0.1}    => [ qw{AF AF_POPMAX}, ],
-        q{r2.1.1}    => [ qw{AF AF_popmax}, ],
-        q{r2.1.1_sv} => [ qw{AF POPMAX_AF}, ],
+        q{r2.0.1}    => [ qw{ INFO/AF INFO/AF_POPMAX }, ],
+        q{r2.1.1}    => [ qw{ INFO/AF INFO/AF_popmax }, ],
+        q{r2.1.1_sv} => [ qw{ INFO/AC INFO/AF INFO/POPMAX_AF }, ],
     );
 
     my $reformated_outfile = join $UNDERSCORE,
@@ -198,25 +197,27 @@ sub download_gnomad {
         $DASH . $reference_version . q{-.vcf.gz}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-    my $rtg_memory              = $recipe_resource{memory} - 1 . q{G};
 
-    rtg_vcfsubset(
+    ## Only include sites for which at least one of the info keys are above zero
+    my $include = join $SPACE . $PIPE x 2 . $SPACE,
+      map { $_ . q{>0} } @{ $info_key{$reference_version} };
+    bcftools_annotate(
         {
-            filehandle         => $filehandle,
-            infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
-            keep_info_keys_ref => $info_key{$reference_version},
-            memory             => $rtg_memory,
-            outfile_path       => $reformated_outfile_path,
+            filehandle     => $filehandle,
+            include        => $SINGLE_QUOTE . $include . $SINGLE_QUOTE,
+            infile_path    => catfile( $reference_dir, $reference_href->{outfile} ),
+            outfile_path   => $reformated_outfile_path,
+            output_type    => q{z},
+            remove_ids_ref => [ map { q{^} . $_ } @{ $info_key{$reference_version} } ],
         }
     );
     say {$filehandle} $NEWLINE;
 
-    htslib_tabix(
+    bcftools_index(
         {
             filehandle  => $filehandle,
-            force       => 1,
             infile_path => $reformated_outfile_path,
-            preset      => q{vcf},
+            output_type => q{tbi},
         }
     );
     say {$filehandle} $NEWLINE;

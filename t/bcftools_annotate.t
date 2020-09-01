@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -98,6 +98,10 @@ my %specific_argument = (
     headerfile_path => {
         input           => q{headerlines},
         expected_output => q{--header-lines headerlines},
+    },
+    include => {
+        input           => q{INFO/CSQ[*]~":p[.]"},
+        expected_output => q{--include INFO/CSQ[*]~":p[.]"},
     },
     infile_path => {
         input           => q{infile.test},
