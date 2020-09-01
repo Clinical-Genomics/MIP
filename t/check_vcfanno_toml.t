@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,7 +91,7 @@ $toml_href->{functions}{file} =
 $toml_href->{annotation}[0]{file} =
   catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
 $toml_href->{annotation}[1]{file} =
-  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.1.1_sv-.vcf } );
+  catfile( $Bin, qw{ data references grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz } );
 $toml_href->{annotation}[2]{file} =
   catfile( $Bin, qw{ data references grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz } );
 
