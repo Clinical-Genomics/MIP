@@ -367,6 +367,22 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{deepvariant} => (
+            documentation => q{Use deepvariant for variant calling},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ]),
+        )
+    );
+
+    option(
+        q{glnexus} => (
+            documentation => q{Use glnexus to merge sample vcfs},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{samtools_merge} => (
             cmd_flag => q{samtools_merge},
             cmd_tags => [q{Analysis recipe switch}],

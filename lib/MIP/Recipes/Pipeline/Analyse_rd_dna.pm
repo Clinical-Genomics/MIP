@@ -444,6 +444,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph analysis_chromograph_proband };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant }; 
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
@@ -555,6 +556,7 @@ sub pipeline_analyse_rd_dna {
         chanjo_sexcheck   => \&analysis_chanjo_sex_check,
         chromograph_ar    => undef,                          # Depends on pedigree
         cnvnator_ar       => \&analysis_cnvnator,
+        deepvariant       => \&analysis_deepvariant,
         delly_call        => \&analysis_delly_call,
         delly_reformat    => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
