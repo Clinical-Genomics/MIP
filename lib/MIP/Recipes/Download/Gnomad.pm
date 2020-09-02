@@ -199,12 +199,12 @@ sub download_gnomad {
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
     ## Only include sites for which at least one of the info keys are above zero
-    my $include = join $SPACE . $PIPE x 2 . $SPACE,
+    my $include_record = join $SPACE . $PIPE x 2 . $SPACE,
       map { $_ . q{>0} } @{ $info_key{$reference_version} };
     bcftools_annotate(
         {
             filehandle     => $filehandle,
-            include        => $SINGLE_QUOTE . $include . $SINGLE_QUOTE,
+            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
             infile_path    => catfile( $reference_dir, $reference_href->{outfile} ),
             outfile_path   => $reformated_outfile_path,
             output_type    => q{z},
