@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -58,6 +58,7 @@ sub bcftools_annotate {
 ##          : $columns_name           => List of columns in the annotation file, e.g. CHROM,POS,REF,ALT,-,INFO/TAG
 ##          : $filehandle             => Filehandle to write to
 ##          : $headerfile_path        => File with lines which should be appended to the VCF header
+##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
@@ -76,6 +77,7 @@ sub bcftools_annotate {
     my $annotations_file_path;
     my $columns_name;
     my $filehandle;
+    my $include;
     my $infile_path;
     my $headerfile_path;
     my $outfile_path;
@@ -96,6 +98,7 @@ sub bcftools_annotate {
         columns_name          => { store => \$columns_name,          strict_type => 1, },
         filehandle            => { store => \$filehandle, },
         headerfile_path       => { store => \$headerfile_path,       strict_type => 1, },
+        include               => { store => \$include,               strict_type => 1, },
         infile_path           => { store => \$infile_path,           strict_type => 1, },
         outfile_path          => { store => \$outfile_path,          strict_type => 1, },
         output_type           => {
@@ -148,6 +151,11 @@ sub bcftools_annotate {
     if ($columns_name) {
 
         push @commands, q{--columns} . $SPACE . $columns_name;
+    }
+
+    if ($include) {
+
+        push @commands, q{--include} . $SPACE . $include;
     }
 
     if ( @{$remove_ids_ref} ) {

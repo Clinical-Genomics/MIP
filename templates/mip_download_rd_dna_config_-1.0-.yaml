@@ -678,8 +678,6 @@ reference_feature:
         file_index: gnomad_v2_sv.sites.vcf.gz.tbi
         outfile: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz.tbi
-        outfile_decompress: gzip
-        outfile_index_decompress: gzip
         url_prefix: https://storage.googleapis.com/gnomad-public/papers/2019-sv/
     grch38:
       r2.1.1:
