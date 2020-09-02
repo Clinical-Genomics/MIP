@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_panel };
@@ -122,12 +121,11 @@ sub analysis_cadd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -207,32 +205,15 @@ sub analysis_cadd {
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $recipe_resource{core_number},
-        }
-    );
-    ## Update memory depending on how many cores that are being used
-    my $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            memory_allocation               => $memory_allocation,
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -241,7 +222,6 @@ sub analysis_cadd {
     );
 
     ### SHELL:
-
     say {$filehandle} q{## } . $recipe_name;
 
     ## Add reference dir for CADD mounting point
@@ -264,7 +244,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number      => $core_number,
+            core_number      => $recipe_resource{core_number},
             filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
@@ -274,7 +254,7 @@ sub analysis_cadd {
 
     ## Process per contig
   CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
+    while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
         my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
@@ -282,12 +262,32 @@ sub analysis_cadd {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
+        my $view_infile_path = $infile_path{$contig};
 
-        my $view_infile_path = _parse_cadd_infile(
+        if ( $contig =~ / MT | chrM /xms ) {
+
+            $view_infile_path = $outfile_path_prefix . $DOT . $contig . q{plus.vcf};
+            bcftools_concat(
+                {
+                    filehandle       => $xargsfilehandle,
+                    infile_paths_ref => [
+                        $infile_path{ $contigs_size_ordered[ $index - 1 ] },
+                        $infile_path{$contig}
+                    ],
+                    outfile_path    => $view_infile_path,
+                    output_type     => q{v},
+                    rm_dups         => 0,
+                    stderrfile_path => $stderrfile_path,
+                }
+            );
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
+        }
+
+        $view_infile_path = _parse_cadd_infile(
             {
                 escape_oneliner   => 1,
                 filehandle        => $xargsfilehandle,
-                infile_path       => $infile_path{$contig},
+                infile_path       => $view_infile_path,
                 reference_version => $file_info_href->{human_genome_reference_version},
             }
         );
@@ -323,7 +323,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $recipe_resource{core_number},
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -376,6 +376,7 @@ sub analysis_cadd {
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{v},
+                regions_ref            => [$contig],
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -550,7 +551,7 @@ sub analysis_cadd_panel {
     );
 
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
-    my $job_id_chain      = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -874,8 +875,18 @@ sub _parse_cadd_infile {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_view };
 
     return $infile_path if $reference_version eq q{37};
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+            output_type => q{v},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
 
     ## Perl
     my @infile_commands = perl_nae_oneliners(
