@@ -33,9 +33,10 @@ sub deepvariant {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $bamfile                => Aligned, sorted, indexed bam file containing the reads we want to call
+## Arguments: 
 ##          : $bedfile                => Bed file containing the list of  regions we want to process
 ##          : $filehandle             => Filehandle to write to
+##          : $infile_path            => Aligned, sorted, indexed bam file containing the reads we want to call
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
 ##          : $outfile_path           => Path to the output gvcf file
@@ -48,9 +49,9 @@ sub deepvariant {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bamfile;
     my $bedfile;
     my $filehandle;
+    my $infile_path;
     my $model_type;
     my $num_shards;
     my $outfile_path;
@@ -61,13 +62,6 @@ sub deepvariant {
     my $stdoutfile_path;
 
     my $tmpl = {
-        bamfile => {
-            allow       => qr/ bam \z /xms,
-            defined     => 1,
-            required    => 1,
-            store       => \$bamfile,
-            strict_type => 1,
-        },
         bedfile => {
             defined     => 1,
             store       => \$bedfile,
@@ -75,6 +69,13 @@ sub deepvariant {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        infile_path => {
+            allow       => qr/ bam \z /xms,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
         },
         model_type => {
             allow       => [qw{ WES WGS PACBIO }],
@@ -123,7 +124,7 @@ sub deepvariant {
     ## Stores commands depending on input parameters
     my @commands = qw{ run_deepvariant };
 
-    push @commands, q{--reads} . $EQUALS . $bamfile;
+    push @commands, q{--reads} . $EQUALS . $infile_path;
     push @commands, q{--ref} . $EQUALS . $referencefile_path;
     push @commands, q{--output_gvcf} . $EQUALS . $outfile_path;
     push @commands, q{--model_type} . $EQUALS . $model_type;

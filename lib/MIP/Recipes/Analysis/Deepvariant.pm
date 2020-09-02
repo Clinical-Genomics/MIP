@@ -149,9 +149,9 @@ sub analysis_deepvariant {
     );
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path        = $io{in}{file_path};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path_prefix = $io{out}{file_path_prefix};
+    my $infile_suffix      = $io{out}{file_suffix};  
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -201,7 +201,6 @@ sub analysis_deepvariant {
             directory_id                    => $sample_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
@@ -216,7 +215,8 @@ sub analysis_deepvariant {
     
     deepvariant(
 	{
-	    bamfile => $infile_path,
+            filehandle => $filehandle,
+	    infile_path => $infile_path,
             model_type => uc $analysis_type,
             num_shards => $recipe_resource{core_number},
             referencefile_path => $active_parameter_href->{human_genome_reference},
