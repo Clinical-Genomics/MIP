@@ -8,14 +8,12 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -26,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_pfam };
@@ -122,7 +120,7 @@ sub download_pfam {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Program::Hmmer qw{ hmmpress };
@@ -187,10 +185,10 @@ sub download_pfam {
 
     ## Prep pfam database
     my $hmmfile_path = catfile( $reference_dir, $reference_href->{outfile} );
-    $hmmfile_path = parse_file_suffix(
+    $hmmfile_path = remove_file_path_suffix(
         {
-            file_name   => $hmmfile_path,
-            file_suffix => $DOT . q{gz},
+            file_path         => $hmmfile_path,
+            file_suffixes_ref => [ $DOT . q{gz} ],
         }
     );
     hmmpress(

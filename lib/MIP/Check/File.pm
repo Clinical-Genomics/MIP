@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_file_md5sum };
@@ -62,7 +62,7 @@ sub check_file_md5sum {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
 
     ## Skip file
     return if ( not defined $check_method );
@@ -70,10 +70,10 @@ sub check_file_md5sum {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
     ## Parse file suffix in filename.suffix(.gz).
     ## Removes suffix if matching else return undef
-    my $file_path = parse_file_suffix(
+    my $file_path = remove_file_path_suffix(
         {
-            file_name   => $md5_file_path,
-            file_suffix => $DOT . q{md5},
+            file_path         => $md5_file_path,
+            file_suffixes_ref => [ $DOT . q{md5} ],
         }
     );
 
