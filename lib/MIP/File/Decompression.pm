@@ -93,6 +93,14 @@ sub decompress_files {
 
     croak q{Supply infile for tar!} if ( $program eq q{tar} and not $file_path );
 
+    if ( $program eq q{gzip} ) {
+        $outfile_path = remove_file_path_suffix(
+            {
+                file_path         => $outfile_path,
+                file_suffixes_ref => [qw{ .gz}],
+            }
+        );
+    }
     my %decompress_api = (
         gzip => {
             method   => \&gzip,
@@ -101,14 +109,9 @@ sub decompress_files {
                 filehandle       => $filehandle,
                 force            => 1,
                 infile_paths_ref => $file_paths_ref,
-                outfile_path     => remove_file_path_suffix(
-                    {
-                        file_path         => $outfile_path,
-                        file_suffixes_ref => [qw{ .gz }],
-                    }
-                ),
-                quiet  => 1,
-                stdout => 1,
+                outfile_path     => $outfile_path,
+                quiet            => 1,
+                stdout           => 1,
             },
         },
         unzip => {
