@@ -542,8 +542,8 @@ sub _annotate_and_calculate_afpopmax {
         {
             filehandle   => $filehandle,
             infile_path  => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
-            output_type  => q{z},
             outfile_path => $outfile_path,
+            output_type  => q{z},
         }
     );
     say {$filehandle} $NEWLINE;
