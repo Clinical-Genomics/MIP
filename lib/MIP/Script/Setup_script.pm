@@ -398,7 +398,6 @@ sub setup_script {
 ##          : $set_nounset                     => Bash set -u {Optional}
 ##          : $set_pipefail                    => Pipe fail switch {Optional}
 ##          : $sleep                           => Sleep for X seconds {Optional}
-##          : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
 ##          : $temp_directory                  => Temporary directory for recipe {Optional}
 ##          : $ulimit_n                        => Set ulimit -n for recipe {Optional}
@@ -428,7 +427,6 @@ sub setup_script {
     my $set_nounset;
     my $set_pipefail;
     my $sleep;
-    my $slurm_quality_of_service;
     my $temp_directory;
 
     my $tmpl = {
@@ -547,12 +545,6 @@ sub setup_script {
             store       => \$sleep,
             strict_type => 1,
         },
-        slurm_quality_of_service => {
-            allow       => [qw{ low high normal }],
-            default     => $arg_href->{active_parameter_href}{slurm_quality_of_service},
-            store       => \$slurm_quality_of_service,
-            strict_type => 1,
-        },
         source_environment_commands_ref => {
             default     => [],
             store       => \$source_environment_commands_ref,
@@ -661,17 +653,18 @@ sub setup_script {
         @sacct_format_fields = @{ $active_parameter_href->{sacct_format_fields} };
         @sbatch_headers      = slurm_build_sbatch_header(
             {
-                core_number              => $core_number,
-                email                    => $active_parameter_href->{email},
-                email_types_ref          => $email_types_ref,
-                filehandle               => $filehandle,
-                job_name                 => $job_name,
-                memory_allocation        => $memory_allocation,
-                process_time             => $process_time . q{:00:00},
-                project_id               => $active_parameter_href->{project_id},
-                slurm_quality_of_service => $slurm_quality_of_service,
-                stderrfile_path          => $stderrfile_path,
-                stdoutfile_path          => $stdoutfile_path,
+                core_number       => $core_number,
+                email             => $active_parameter_href->{email},
+                email_types_ref   => $email_types_ref,
+                filehandle        => $filehandle,
+                job_name          => $job_name,
+                memory_allocation => $memory_allocation,
+                process_time      => $process_time . q{:00:00},
+                project_id        => $active_parameter_href->{project_id},
+                slurm_quality_of_service =>
+                  $active_parameter_href->{slurm_quality_of_service},
+                stderrfile_path => $stderrfile_path,
+                stdoutfile_path => $stdoutfile_path,
             }
         );
     }
