@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -303,17 +302,17 @@ sub _build_af_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Bcftools qw{ bcftools_query };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
 
     ## Don't build file for SV:s
     return if ( $reference_version eq q{r2.1.1_sv} );
 
-    my $outfile_no_suffix = parse_file_suffix(
+    my $outfile_no_suffix = remove_file_path_suffix(
         {
-            file_name   => $file_name,
-            file_suffix => q{.vcf},
+            file_path         => $file_name,
+            file_suffixes_ref => [qw{ .vcf .vcf.gz }],
         }
     );
     my $allele_frq_file_path = catfile( $reference_dir, $outfile_no_suffix . q{.tab.gz} );

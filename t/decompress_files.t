@@ -62,11 +62,15 @@ diag(   q{Test decompress_files from Decompression.pm v}
 my $file_paths_ref = [q{a_file_path.gz}];
 my $file_path      = q{a_file_path.gz};
 my $outdir_path    = q{a_outdir};
-my $outfile_path   = q{a_outfile};
-my @programs       = qw{ gzip tar unzip };
+
+my %program = (
+    gzip  => q{a_outfile.gz},
+    tar   => q{a_outfile.tar},
+    unzip => q{a_outfile.zip},
+);
 
 PROGRAM:
-foreach my $program (@programs) {
+while ( my ( $program, $outfile_path ) = each %program ) {
 
     my @decompress_commands = decompress_files(
         {
@@ -81,6 +85,8 @@ foreach my $program (@programs) {
 }
 
 ## Given missing file_paths for tar
+my $outfile_path = q{a_outfile};
+
 trap {
     decompress_files(
         {
