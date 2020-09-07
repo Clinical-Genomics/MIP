@@ -17,7 +17,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $DASH $DOT $FORWARD_SLASH $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -123,7 +124,7 @@ sub download_gnomad {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
-    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_index };
+    use MIP::Program::Bcftools qw{ bcftools_index };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -183,13 +184,6 @@ sub download_gnomad {
         }
     );
 
-## Map of key names to keep from reference vcf
-    my %info_key = (
-        q{r2.0.1}    => [ qw{ INFO/AF INFO/AF_POPMAX }, ],
-        q{r2.1.1}    => [ qw{ INFO/AF INFO/AF_popmax }, ],
-        q{r2.1.1_sv} => [ qw{ INFO/AC INFO/AF INFO/POPMAX_AF }, ],
-    );
-
     my $reformated_outfile = join $UNDERSCORE,
       (
         $genome_version, $recipe_name, q{reformated},
@@ -197,20 +191,44 @@ sub download_gnomad {
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
-    ## Only include sites for which at least one of the info keys are above zero
-    my $include_record = join $SPACE . $PIPE x 2 . $SPACE,
-      map { $_ . q{>0} } @{ $info_key{$reference_version} };
-    bcftools_annotate(
+    my %gnomad_post_processing = (
+        q{r2.0.1} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AF INFO/AF_POPMAX }],
+            },
+            method => \&_annotate,
+        },
+        q{r2.1.1} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AF INFO/AF_popmax }],
+            },
+            method => \&_annotate,
+        },
+        q{r2.1.1_sv} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AC INFO/AF INFO/POPMAX_AF }],
+            },
+            method => \&_annotate,
+        },
+        q{r3.0} => {
+            arg_href => {
+                info_keys_ref => [
+                    qw{ INFO/AF INFO/AF_afr INFO/AF_amr INFO/AF_ami INFO/AF_eas INFO/AF_nfe INFO/AF_sas }
+                ],
+                recipe_dir_path => dirname($recipe_file_path),
+            },
+            method => \&_annotate_and_calculate_afpopmax,
+        },
+    );
+
+    $gnomad_post_processing{$reference_version}{method}->(
         {
-            filehandle     => $filehandle,
-            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
-            infile_path    => catfile( $reference_dir, $reference_href->{outfile} ),
-            outfile_path   => $reformated_outfile_path,
-            output_type    => q{z},
-            remove_ids_ref => [ map { q{^} . $_ } @{ $info_key{$reference_version} } ],
+            %{ $gnomad_post_processing{$reference_version}{arg_href} },
+            filehandle   => $filehandle,
+            infile_path  => catfile( $reference_dir, $reference_href->{outfile} ),
+            outfile_path => $reformated_outfile_path,
         }
     );
-    say {$filehandle} $NEWLINE;
 
     bcftools_index(
         {
@@ -225,7 +243,7 @@ sub download_gnomad {
     _build_af_file(
         {
             filehandle        => $filehandle,
-            file_name         => $reference_href->{outfile},
+            file_name         => $reformated_outfile,
             infile_path       => $reformated_outfile_path,
             reference_dir     => $reference_dir,
             reference_version => $reference_version,
@@ -293,7 +311,7 @@ sub _build_af_file {
             strict_type => 1,
         },
         reference_version => {
-            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv }],
+            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv r3.0 }],
             required    => 1,
             store       => \$reference_version,
             strict_type => 1,
@@ -342,6 +360,189 @@ sub _build_af_file {
             filehandle  => $filehandle,
             infile_path => $allele_frq_file_path,
             sequence    => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _annotate {
+
+## Function : Annotate gnomad vcf
+## Returns  :
+## Arguments: $filehandle       => Filehandle
+##          : $infile_path      => Path to infile
+##          : $info_keys_ref    => INFO keys
+##          : $outfile_path     => Path to reformatted file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $info_keys_ref;
+    my $outfile_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        info_keys_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$info_keys_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Bcftools qw{ bcftools_annotate };
+
+    ## Annotate
+    ## Only include sites for which at least one of the info keys are above zero
+    my $include_record = join $SPACE . $PIPE x 2 . $SPACE,
+      map { $_ . q{>0} } @{$info_keys_ref};
+    bcftools_annotate(
+        {
+            filehandle     => $filehandle,
+            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
+            infile_path    => $infile_path,
+            outfile_path   => $outfile_path,
+            output_type    => q{z},
+            remove_ids_ref => [ map { q{^} . $_ } @{$info_keys_ref} ],
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _annotate_and_calculate_afpopmax {
+
+## Function : Calculate AF_popmax for gnomad r3.0
+## Returns  :
+## Arguments: $filehandle      => Filehandle
+##          : $infile_path     => Path to infile
+##          : $info_keys_ref   => INFO keys
+##          : $outfile_path    => Path to reformatted file
+##          : $recipe_dir_path => Recipe directory path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $info_keys_ref;
+    my $outfile_path;
+    my $recipe_dir_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        info_keys_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$info_keys_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        recipe_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_dir_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Vcfanno qw{ vcfanno };
+    use MIP::Toml qw{ write_toml };
+
+    Readonly my $MAX_RANDOM_NUMBER => 10_000;
+
+    ## Annotate
+    ## Only include sites for which at least one of the info keys are above zero
+    my $include_record = join $SPACE . $PIPE x 2 . $SPACE,
+      map { $_ . q{>0} } @{$info_keys_ref};
+    bcftools_annotate(
+        {
+            filehandle     => $filehandle,
+            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
+            infile_path    => $infile_path,
+            output_type    => q{v},
+            remove_ids_ref => [ map { q{^} . $_ } @{$info_keys_ref} ],
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Calculate af_popmax
+    my $postannotation = {
+        postannotation => [
+            {
+                fields => [qw{ AF_afr AF_ami AF_amr AF_eas AF_nfe AF_sas }],
+                name   => q{AF_popmax},
+                op     => q{max},
+                type   => q{Float},
+            },
+        ],
+    };
+
+    ## Generate a random integer between 0-10,000.
+    my $random_integer = int rand $MAX_RANDOM_NUMBER;
+    my $toml_path      = catfile( $recipe_dir_path,
+        $random_integer . $UNDERSCORE . q{calculate_afpopmax.toml} );
+    write_toml(
+        {
+            data_href => $postannotation,
+            path      => $toml_path,
+        }
+    );
+
+    vcfanno(
+        {
+            filehandle           => $filehandle,
+            infile_path          => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
+            toml_configfile_path => $toml_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
+            outfile_path => $outfile_path,
+            output_type  => q{z},
         }
     );
     say {$filehandle} $NEWLINE;
