@@ -18,7 +18,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Call CYP2D6 alleles with star_caller from the Cyrius package
 - Added bwa_mem2 as an alignemnt option instead of bwa_mem
 - Added option "genomicsdb-shared-posixfs-optimizations" to gatk_genomicsDB to turn off file lock
-- Moved smncopynumbercaller from sample level to case level 
+- Moved smncopynumbercaller from sample level to case level
+- Added telomerecat analysis for estimating telomere length from wgs
 
 **Tools**
 - Arriba: 1.1.0 -> 1.2.0
