@@ -206,7 +206,7 @@ recipe_memory:
     - mip
   data_type: HASH
   default:
-    cadd_ar: 4
+    cadd_ar: 6
     chanjo_sexcheck: 2
     chromograph_ar: 5
     delly_reformat: 3
