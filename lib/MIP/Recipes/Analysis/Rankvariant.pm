@@ -27,14 +27,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 }
 
-Readonly my $FOUR => 4;
+Readonly my $FOUR                   => 4;
+Readonly my $MAX_PARALLEL_PROCESSES => 13;
 
 sub analysis_rankvariant {
 
@@ -266,9 +267,10 @@ sub analysis_rankvariant {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
+    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $xargs_core_number,
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -659,9 +661,10 @@ sub analysis_rankvariant_unaffected {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
+    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $xargs_core_number,
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
