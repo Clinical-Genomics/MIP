@@ -27,3 +27,4 @@ requires qw{ TOML::Parser 0.91 };                   # MIP
 requires qw{ TOML::Tiny 0.06};                      # MIP
 requires qw{ Try::Tiny 0.28 };                      # MIP
 requires qw{ YAML 1.24 };                           # MIP
+requires qw{ Date::Time 1.52 };                       # MIP
