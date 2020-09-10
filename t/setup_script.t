@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,7 +97,6 @@ my ($recipe_file_path) = setup_script(
     {
         active_parameter_href => \%active_parameter,
         directory_id          => $directory_id,
-        email_types_ref       => [qw{ FAIL }],
         filehandle            => $filehandle,
         job_id_href           => \%job_id,
         recipe_directory      => $test_recipe_name,

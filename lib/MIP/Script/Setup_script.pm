@@ -30,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -383,7 +383,6 @@ sub setup_script {
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##          : $core_number                     => Number of cores to allocate {Optional}
 ##          : $directory_id                    => $sample id | $case_id
-##          : $email_types_ref                 => Email type
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
 ##          : $job_id_href                     => The job_id hash {REF}
@@ -418,7 +417,6 @@ sub setup_script {
 
     ## Default(s)
     my $core_number;
-    my $email_types_ref;
     my $error_trap;
     my $outdata_dir;
     my $outscript_dir;
@@ -447,21 +445,6 @@ sub setup_script {
             defined     => 1,
             required    => 1,
             store       => \$directory_id,
-            strict_type => 1,
-        },
-        email_types_ref => {
-            allow => [
-                sub {
-                    check_allowed_array_values(
-                        {
-                            allowed_values_ref => [qw{ NONE BEGIN END FAIL REQUEUE ALL }],
-                            values_ref         => $arg_href->{email_types_ref},
-                        }
-                    );
-                }
-            ],
-            default     => \@{ $arg_href->{active_parameter_href}{email_types} },
-            store       => \$email_types_ref,
             strict_type => 1,
         },
         error_trap => {
@@ -566,7 +549,6 @@ sub setup_script {
 
     use MIP::Language::Shell
       qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
-    use MIP::List qw{ check_allowed_array_values };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
@@ -655,7 +637,7 @@ sub setup_script {
             {
                 core_number       => $core_number,
                 email             => $active_parameter_href->{email},
-                email_types_ref   => $email_types_ref,
+                email_types_ref   => $active_parameter_href->{email_types},
                 filehandle        => $filehandle,
                 job_name          => $job_name,
                 memory_allocation => $memory_allocation,
