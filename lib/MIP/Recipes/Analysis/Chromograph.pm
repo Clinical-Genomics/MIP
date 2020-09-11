@@ -251,7 +251,7 @@ sub analysis_chromograph_cov {
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
-                dependency_method    => q{case_to_sample},
+                dependency_method    => q{sample_to_island},
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
@@ -518,7 +518,7 @@ sub analysis_chromograph_upd {
             {
                 base_command      => $profile_base_command,
                 case_id           => $case_id,
-                dependency_method => q{case_to_sample},
+                dependency_method => q{sample_to_island},
                 job_id_chain      => $job_id_chain,
                 job_id_href       => $job_id_href,
                 log               => $log,
