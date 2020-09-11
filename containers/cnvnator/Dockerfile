@@ -5,7 +5,7 @@ FROM ubuntu:bionic
 ################## METADATA ######################
 
 LABEL base_image="ubuntu:bionic"
-LABEL version="1"
+LABEL version="2"
 LABEL software="CNVnator"
 LABEL software.version="0.4.1"
 LABEL extra.binaries="cnvnator, cnvnator2VCF.pl, plotbaf.py, plotcircular.py, plotrdbaf.py, pytools.py"
@@ -42,13 +42,14 @@ WORKDIR /app
 RUN wget --no-verbose https://root.cern.ch/download/root_v6.20.06.Linux-ubuntu18-x86_64-gcc7.5.tar.gz && \
     tar -xvf root_v6.20.06.Linux-ubuntu18-x86_64-gcc7.5.tar.gz && \
     rm root_v6.20.06.Linux-ubuntu18-x86_64-gcc7.5.tar.gz && \
-    rm -rf root/tutorials
+    rm -rf root/tutorials && \
+    echo /app/root/lib >> /etc/ld.so.conf && \
+    ldconfig 
 
 ## Set paths for ROOT
 ENV PATH=/usr/local/bin:${PATH}
 ENV ROOTSYS=/app/root
-ENV PATH=${PATH}:${ROOTSYS}/bin
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${ROOTSYS}/lib
+ENV PATH=${ROOTSYS}/bin:${PATH}
 
 ## Install samtools
 RUN wget --no-verbose https://github.com/samtools/samtools/releases/download/1.10/samtools-1.10.tar.bz2 && \
