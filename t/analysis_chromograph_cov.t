@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph }],
+        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_cov }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph };
+use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_cov };
 
-diag(   q{Test analysis_chromograph from Chromograph.pm v}
+diag(   q{Test analysis_chromograph_cov from Chromograph.pm v}
       . $MIP::Recipes::Analysis::Chromograph::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -64,7 +64,7 @@ Readonly my $TIDDIT_BIN_SIZE => 500;
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{chromograph_ar};
+my $recipe_name    = q{chromograph_cov};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -102,7 +102,7 @@ $parameter{$recipe_name}{chain} = q{MAIN};
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
-my $is_ok = analysis_chromograph(
+my $is_ok = analysis_chromograph_cov(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,

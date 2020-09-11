@@ -434,7 +434,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_chromograph set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -442,7 +442,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
-      qw{ analysis_chromograph analysis_chromograph_proband };
+      qw{ analysis_chromograph_cov analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -497,6 +497,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
+    use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
@@ -549,14 +550,17 @@ sub pipeline_analyse_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus => \&analysis_analysisrunstatus,
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
-        bwa_mem           => undef,                          # Depends on genome build
+        bwa_mem           => undef,                           # Depends on genome build
         bwa_mem2          => undef,
         cadd_ar           => \&analysis_cadd,
         chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-        chromograph_ar    => undef,                          # Depends on pedigree
-        cnvnator_ar       => \&analysis_cnvnator,
-        delly_call        => \&analysis_delly_call,
-        delly_reformat    => \&analysis_delly_reformat,
+        chromograph_cov   => \&analysis_chromograph_cov,
+        chromograph_upd   => \$sample_info_href->{has_trio}
+        ? \&analysis_chromograph_upd
+        : undef,                                              # Depends on pedigree
+        cnvnator_ar                 => \&analysis_cnvnator,
+        delly_call                  => \&analysis_delly_call,
+        delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,
@@ -601,6 +605,7 @@ sub pipeline_analyse_rd_dna {
         telomerecat_ar            => \&analysis_telomerecat,
         tiddit                    => \&analysis_tiddit,
         tiddit_coverage        => \&analysis_tiddit_coverage,
+        upd_ar                 => $sample_info_href->{has_trio} ? \&analysis_upd : undef,
         varg_ar                => \&analysis_varg,
         varianteffectpredictor => \&analysis_vep_wgs,
         variant_annotation     => \&analysis_variant_annotation,
@@ -672,15 +677,6 @@ sub pipeline_analyse_rd_dna {
 
           SAMPLE_ID:
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-                ## Set chromograph recipe depending on pedigree and proband
-                set_recipe_chromograph(
-                    {
-                        analysis_recipe_href => \%analysis_recipe,
-                        sample_id            => $sample_id,
-                        sample_info_href     => $sample_info_href,
-                    }
-                );
 
                 $analysis_recipe{$recipe}->(
                     {
