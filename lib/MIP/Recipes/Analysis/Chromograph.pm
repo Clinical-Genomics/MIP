@@ -25,16 +25,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_chromograph analysis_chromograph_proband };
+    our @EXPORT_OK =
+      qw{ analysis_chromograph analysis_chromograph_cov analysis_chromograph_upd };
 
 }
 
-sub analysis_chromograph {
+sub analysis_chromograph_cov {
 
-## Function : Visualize chromosomes using chromograph using tiddit coverage data
+## Function : Visualize chromosomes using chromograph with tiddit coverage data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -125,7 +126,6 @@ sub analysis_chromograph {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Tar qw{ tar };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -144,12 +144,12 @@ sub analysis_chromograph {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{tiddit_coverage},
-            stream         => q{out},
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
-    my $infile_name_prefix = $io{out}{file_name_prefix};
-    my $infile_path        = $io{out}{file_path};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path        = $io{in}{file_path};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -166,6 +166,8 @@ sub analysis_chromograph {
         }
     );
 
+    my @contigs               = grep { !/M/xms } @{ $file_info_href->{contigs} };
+    my @outfile_name_prefixes = map  { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
     %io = (
         %io,
         parse_io_outfiles(
@@ -173,16 +175,15 @@ sub analysis_chromograph {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
+                file_name_prefixes_ref => \@outfile_name_prefixes,
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
             }
         )
     );
-
-    my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my @outfile_paths = @{ $io{out}{file_paths} };
+    my $outdir_path   = $io{out}{dir_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -205,37 +206,13 @@ sub analysis_chromograph {
     );
 
     ### SHELL:
-
     say {$filehandle} q{## } . $recipe_name;
-
-    ## Process the wig file from tiddit_coverage
     chromograph(
         {
             coverage_file_path => $infile_path,
             filehandle         => $filehandle,
-            outdir_path        => catdir( $outfile_path_prefix, q{coverage} ),
+            outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Generate chromosome ideograms
-    chromograph(
-        {
-            filehandle     => $filehandle,
-            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
-            outdir_path    => catdir( $outfile_path_prefix, q{ideogram} ),
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    tar(
-        {
-            create       => 1,
-            filehandle   => $filehandle,
-            file_path    => $outfile_path,
-            filter_gzip  => 1,
-            in_paths_ref => [$outfile_path_prefix],
         }
     );
     say {$filehandle} $NEWLINE;
@@ -248,22 +225,27 @@ sub analysis_chromograph {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path,
+                path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
-        set_file_path_to_store(
-            {
-                format           => q{tar},
-                id               => $sample_id,
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+      OUTFILE_PATH:
+        foreach my $outfile_path (@outfile_paths) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $sample_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => q{tcov},
+                }
+            );
+        }
 
         submit_recipe(
             {
@@ -285,9 +267,9 @@ sub analysis_chromograph {
     return 1;
 }
 
-sub analysis_chromograph_proband {
+sub analysis_chromograph_upd {
 
-## Function : Visualize chromosomes using chromograph with tiddit_coverage and upd data
+## Function : Visualize chromosomes using chromograph with upd data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -378,37 +360,41 @@ sub analysis_chromograph_proband {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_sort };
-    use MIP::Program::Tar qw{ tar };
-    use MIP::Program::Chromograph qw{ chromograph };
-    use MIP::Program::Upd qw{ upd_call };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Reference qw{ write_contigs_size_file };
-    use MIP::Sample_info
-      qw{ get_family_member_id set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Program::Chromograph qw{ chromograph };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
+    my $is_sample_proband_in_trio = is_sample_proband_in_trio(
+        {
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    ## Only run on proband in trio
+    return if ( not $is_sample_proband_in_trio );
+
     ## Unpack parameters
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $case_id,
+            id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
         }
     );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_path        = $infile_path_prefix . q{.vcf.gz};
+    my @infile_name_prefixes =
+      map { s/$io{in}{file_suffix}//xmsr } @{ $io{in}{file_names} };
+    my $infile_path_href = $io{in}{file_path_href};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -425,8 +411,14 @@ sub analysis_chromograph_proband {
         }
     );
 
-    ## Switch from case id to sample id for the outfiles since this is done per sample
-    $infile_name_prefix =~ s/$case_id/$sample_id/xms;
+    my @outfile_name_prefixes;
+    my @contigs = grep { !/M/xms } @{ $file_info_href->{contigs} };
+  INFILE_NAME_PREFIX:
+    foreach my $infile_name_prefix (@infile_name_prefixes) {
+
+        push @outfile_name_prefixes,
+          map { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
+    }
     %io = (
         %io,
         parse_io_outfiles(
@@ -434,17 +426,15 @@ sub analysis_chromograph_proband {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
+                file_name_prefixes_ref => \@outfile_name_prefixes,
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
             }
         )
     );
-
-    my $outdir_path         = $io{out}{dir_path};
-    my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outdir_path   = $io{out}{dir_path};
+    my @outfile_paths = @{ $io{out}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -466,115 +456,16 @@ sub analysis_chromograph_proband {
         }
     );
 
-    ## Create chromosome name and size file
-    my $contigs_size_file_path =
-      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
-    write_contigs_size_file(
-        {
-            fai_file_path => $active_parameter_href->{human_genome_reference}
-              . $DOT . q{fai},
-            outfile_path => $contigs_size_file_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    %io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => q{tiddit_coverage},
-            stream         => q{out},
-        }
-    );
-    my $tiddit_cov_infile_path = $io{out}{file_path};
     ### SHELL:
 
     say {$filehandle} q{## } . $recipe_name;
-
-    ## UPD
-    ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
-
-    gnu_mkdir(
-        {
-            filehandle       => $filehandle,
-            indirectory_path => $outfile_path_prefix,
-            parents          => 1,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    my @call_types         = qw{ sites regions };
-    my $upd_outfile_suffix = $DOT . q{bed};
-
-  CALL_TYPE:
-    foreach my $call_type (@call_types) {
-
-        my $upd_oufile_prefix_path = $outfile_path_prefix . $UNDERSCORE . $call_type;
-        my $upd_outfile_path       = $upd_oufile_prefix_path . $upd_outfile_suffix;
-        my $sort_outfile_path =
-          $upd_oufile_prefix_path . $UNDERSCORE . q{sorted} . $upd_outfile_suffix;
-        my $ucsc_outfile_prefix_path = catfile( $outfile_path_prefix, $call_type );
-
-        upd_call(
-            {
-                af_tag       => q{GNOMADAF},
-                call_type    => $call_type,
-                father_id    => $family_member_id{father},
-                filehandle   => $filehandle,
-                infile_path  => $infile_path,
-                mother_id    => $family_member_id{mother},
-                outfile_path => $upd_outfile_path,
-                proband_id   => $sample_id,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        say {$filehandle} q{## Sort bed file};
-        gnu_sort(
-            {
-                filehandle   => $filehandle,
-                keys_ref     => [ q{1,1}, q{2,2n} ],
-                infile_path  => $upd_outfile_path,
-                outfile_path => $sort_outfile_path,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        say {$filehandle} q{## Create bed index files};
-        ucsc_bed_to_big_bed(
-            {
-                contigs_size_file_path => $contigs_size_file_path,
-                filehandle             => $filehandle,
-                infile_path            => $sort_outfile_path,
-                outfile_path           => $ucsc_outfile_prefix_path . $DOT . q{bb},
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
-
-    ## Process the wig file from tiddit_coverage
-    chromograph(
-        {
-            coverage_file_path => $tiddit_cov_infile_path,
-            filehandle         => $filehandle,
-            outdir_path        => catdir( $outfile_path_prefix, q{coverage} ),
-            step               => $active_parameter_href->{tiddit_coverage_bin_size},
-        }
-    );
-    say {$filehandle} $NEWLINE;
 
     ## Process regions file from UPD
     chromograph(
         {
             filehandle            => $filehandle,
-            outdir_path           => catdir( $outfile_path_prefix, q{upd_regions} ),
-            upd_regions_file_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{regions}
-              . $upd_outfile_suffix,
+            outdir_path           => $outdir_path,
+            upd_regions_file_path => $infile_path_href->{regions},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -583,37 +474,13 @@ sub analysis_chromograph_proband {
     chromograph(
         {
             filehandle          => $filehandle,
-            outdir_path         => catdir( $outfile_path_prefix, q{upd_sites} ),
-            upd_sites_file_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{sites}
-              . $upd_outfile_suffix,
+            outdir_path         => $outdir_path,
+            upd_sites_file_path => $infile_path_href->{sites},
         }
     );
     say {$filehandle} $NEWLINE;
 
-    ## Generate chromosome ideograms
-    chromograph(
-        {
-            filehandle     => $filehandle,
-            ideo_file_path => $active_parameter_href->{chromograph_cytoband_file},
-            outdir_path    => catdir( $outfile_path_prefix, q{ideogram} ),
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    tar(
-        {
-            create       => 1,
-            filehandle   => $filehandle,
-            file_path    => $outfile_path,
-            filter_gzip  => 1,
-            in_paths_ref => [$outfile_path_prefix],
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Close filehandleS
+    # Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
@@ -621,22 +488,31 @@ sub analysis_chromograph_proband {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path,
+                path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
-        set_file_path_to_store(
-            {
-                format           => q{tar},
-                id               => $sample_id,
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
+      CALL_TYPE:
+        foreach my $call_type (qw{ regions sites }) {
+
+          OUTFILE_PATH:
+            foreach my $outfile_path (@outfile_paths) {
+
+                set_file_path_to_store(
+                    {
+                        format           => q{meta},
+                        id               => $sample_id,
+                        path             => $outfile_path,
+                        recipe_name      => $recipe_name,
+                        sample_info_href => $sample_info_href,
+                        tag              => $call_type,
+                    }
+                );
             }
-        );
+        }
 
         submit_recipe(
             {
