@@ -57,11 +57,24 @@ diag(   q{Test write_source_environment_command from Manager.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given a filehandle
+my $filehandle = IO::Handle->new();
+
+## When no environment command
+my $return = write_source_environment_command(
+    {
+        filehandle => $filehandle,
+    }
+);
+
+## Then return zero
+is( $return, 0, q{Skipped writing of command} );
+
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open my $filehandle, q{>}, \$file_content
+open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle and a environment command

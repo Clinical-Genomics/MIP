@@ -104,18 +104,17 @@ sub write_source_environment_command {
 
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
-    if ( @{$source_environment_commands_ref} ) {
+    return 0 if ( not @{$source_environment_commands_ref} );
 
-        say {$filehandle} q{## Activate environment};
+    say {$filehandle} q{## Activate environment};
 
-        unix_write_to_file(
-            {
-                commands_ref => $source_environment_commands_ref,
-                filehandle   => $filehandle,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
+    unix_write_to_file(
+        {
+            commands_ref => $source_environment_commands_ref,
+            filehandle   => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
     return;
 }
 
