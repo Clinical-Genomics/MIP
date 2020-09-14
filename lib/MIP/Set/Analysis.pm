@@ -91,7 +91,7 @@ sub set_recipe_bwa_mem {
         }
 
         # Human genome version <= grch37
-        # Use bwa mem recipen
+        # Use bwa mem recipes
         $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
         $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
         return;
