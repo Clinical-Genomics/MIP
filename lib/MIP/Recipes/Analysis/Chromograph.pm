@@ -372,14 +372,16 @@ sub analysis_chromograph_upd {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $is_sample_proband_in_trio = is_sample_proband_in_trio(
-        {
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
     ## Only run on proband in trio
-    return if ( not $is_sample_proband_in_trio );
+    return
+      if (
+        not $is_sample_proband_in_trio = is_sample_proband_in_trio(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        )
+      );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
