@@ -20,6 +20,7 @@ CHAIN_ALL:
       - samtools_subsample_mt
     - CHAIN_TCOV:
       - tiddit_coverage
+      - chromograph_cov
     - CHAIN_SBCOV:
       - sambamba_depth
     - CHAIN_SMN:
@@ -77,8 +78,9 @@ CHAIN_ALL:
     - variant_annotation
     - CHAIN_RHOCALL_VIZ:
       - rhocall_viz
-    - CHAIN_CHROMOGRAPH:
-      - chromograph_ar
+    - CHAIN_UPD:
+      - upd_ar
+      - chromograph_upd
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor
