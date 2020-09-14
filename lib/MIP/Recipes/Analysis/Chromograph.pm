@@ -375,7 +375,7 @@ sub analysis_chromograph_upd {
     ## Only run on proband in trio
     return
       if (
-        not $is_sample_proband_in_trio = is_sample_proband_in_trio(
+        not is_sample_proband_in_trio(
             {
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
