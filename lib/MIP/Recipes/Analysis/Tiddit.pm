@@ -126,10 +126,8 @@ sub analysis_tiddit {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Svdb qw{ svdb_merge };
@@ -283,20 +281,6 @@ sub analysis_tiddit {
     my @svdb_infile_paths =
       map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
       @{ $active_parameter_href->{sample_ids} };
-
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{svdb},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            filehandle                      => $filehandle,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
 
     svdb_merge(
         {
