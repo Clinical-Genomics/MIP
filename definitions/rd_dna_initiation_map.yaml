@@ -55,7 +55,7 @@ CHAIN_ALL:
       - bcftools_mpileup
       - CHAIN_DEEPVAR:
         - deepvariant
-        - glnexus
+        - glnexus_merge
       - GATK_HAPLOTYPECALLER:
         - gatk_haplotypecaller
         - gatk_genotypegvcfs

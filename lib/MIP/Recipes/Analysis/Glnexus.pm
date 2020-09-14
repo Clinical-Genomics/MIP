@@ -1,10 +1,11 @@
-package MIP::Recipes::Analysis::Deepvariant;
+package MIP::Recipes::Analysis::Glnexus;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -27,11 +28,11 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_deepvariant };
+    our @EXPORT_OK = qw{ analysis_glnexus };
 
 }
 
-sub analysis_deepvariant {
+sub analysis_glnexus {
 
 ## Function : DESCRIPTION OF RECIPE
 ## Returns  :
@@ -42,7 +43,6 @@ sub analysis_deepvariant {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
-##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -53,7 +53,6 @@ sub analysis_deepvariant {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
-    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -105,12 +104,6 @@ sub analysis_deepvariant {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -119,18 +112,15 @@ sub analysis_deepvariant {
             strict_type => 1,
         },
     };
-
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Deepvariant qw{ deepvariant };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_io_files };
 
     ### PREPROCESSING:
 
@@ -138,57 +128,53 @@ sub analysis_deepvariant {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => q{markduplicates},
-            stream         => q{out},
-        }
-    );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{out}{file_path_prefix};
-    my $infile_suffix      = $io{out}{file_suffix};  
-    my $infile_path        = $infile_path_prefix . $infile_suffix;
-
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
         }
     );
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my $recipe_mode          = $active_parameter_href->{$recipe_name};
+    my $recipe_files_tracker = 0;
+
+    ## Gatk genotype is most safely processed in single thread mode, but we need some java heap allocation
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
+    my $time        = $recipe_resource{time};
 
-    %io = (
-        %io,
-        parse_io_outfiles(
-            {
-                chain_id               => $job_id_chain,
-                id                     => $sample_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
-            }
-        )
-    );
+    ## Get the io infiles per chain and id
+    my @genotype_infile_paths;
 
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
-    my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
+    SAMPLE_ID:
+        foreach my $sample_id ( @{$active_parameter_href->{sample_ids}} )
+        {
+
+            ## Get the io infiles per chain and id
+            my %sample_io = get_io_files(
+                {
+                    id             => $sample_id,
+                    file_info_href => $file_info_href,
+                    parameter_href => $parameter_href,
+                    recipe_name    => $recipe_name,
+                    stream         => q{in},
+                }
+            );
+            push @genotype_infile_paths, $sample_io{in}{file_path};
+        };
+    use Data::Printer;
+    p @genotype_infile_paths;
+    
+ #   my @outfile_paths       = @{ $io{out}{file_paths} };
+ #   my $outfile_path_prefix = $io{out}{file_path_prefix};
+ #   my %outfile_path        = %{ $io{out}{file_path_href} };
+ #   my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -199,7 +185,7 @@ sub analysis_deepvariant {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
+            directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             memory_allocation               => $recipe_resource{memory},
@@ -213,62 +199,43 @@ sub analysis_deepvariant {
     ### SHELL:
 
     say {$filehandle} q{## } . $recipe_name;
-    
-    deepvariant(
-	{
+
+
+    glnexus_merge(
+        {
             filehandle => $filehandle,
-	        infile_path => $infile_path,
-            model_type => uc $analysis_type,
-            num_shards => $recipe_resource{core_number},
-            referencefile_path => $active_parameter_href->{human_genome_reference},
-            outfile_path => $outfile_path,
+            infile_paths_ref => \@genotype_infile_paths,
+            config => "DeepVariant",
+            stdoutfile_path => "test",
         }
     );
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    ## my @concat_vcf_paths; 
-    ## push @concat_vcf_paths, $outfile_path;
-    set_io_files(
-        {
-            chain_id       => $job_id_chain,
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            file_paths_ref => [$outfile_path],
-            recipe_name    => $recipe_name,
-            stream         => q{out},
-        }
-    );
-
-
     if ( $recipe_mode == 1 ) {
-
+=head
         ## Collect QC metadata info for later use
-        set_recipe_outfile_in_sample_info(
+         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix,
-                path             => $outfile_path,
+                path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
-
-        ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
+=cut
         submit_recipe(
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
+                dependency_method    => q{sample_to_island},
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );

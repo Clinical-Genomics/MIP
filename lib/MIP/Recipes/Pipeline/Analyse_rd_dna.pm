@@ -452,6 +452,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
+    use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -570,8 +571,8 @@ sub pipeline_analyse_rd_dna {
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
-        gatk_variantrecalibration =>
-          undef,    # Depends on analysis type and/or number of samples
+        gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
+        glnexus_merge                     => \&analysis_glnexus,
         gzip_fastq                   => \&analysis_gzip_fastq,
         manta                        => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,

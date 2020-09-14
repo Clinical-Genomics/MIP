@@ -159,6 +159,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    glnexus_merge: 36
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -270,6 +271,7 @@ recipe_time:
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
