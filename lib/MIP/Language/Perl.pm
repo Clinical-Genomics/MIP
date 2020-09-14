@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $SPACE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $SPACE $SINGLE_QUOTE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -207,6 +207,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
+        build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
         q{get_fastq_header_v1.4}             => \&_get_fastq_header_v1_4,
@@ -226,6 +227,9 @@ sub perl_nae_oneliners {
     );
 
     my %oneliner_option = (
+        build_md5sum_check => {
+            file_path => $oneliner_parameter,
+        },
         get_vcf_header_id_line => {
             id => $oneliner_parameter,
         },
@@ -285,6 +289,37 @@ sub perl_nae_oneliners {
         }
     );
     return @commands;
+}
+
+sub _build_md5sum_check {
+
+## Function : Build a md5sum check file on format: "md5sum  file"
+## Returns  : $build_md5sum_check
+## Arguments: file_path => Path to file that md5sum was calculated for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Print first md5sum from $md5_file_path
+    my $build_md5sum_check = $SINGLE_QUOTE . q?print $F[0].q{? . $SPACE x 2;
+
+    # Print file name in the same line that correspond to md5sum hash
+    $build_md5sum_check .= $file_path . q?}? . $SINGLE_QUOTE;
+
+    return $build_md5sum_check;
 }
 
 sub _genepred_to_refflat {

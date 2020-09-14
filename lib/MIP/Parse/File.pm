@@ -28,44 +28,8 @@ BEGIN {
     our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_file_suffix parse_io_outfiles };
+    our @EXPORT_OK = qw{ parse_io_outfiles };
 
-}
-
-sub parse_file_suffix {
-
-## Function : Parse file suffix in filename.suffix(.gz). Removes suffix if matching else return undef
-## Returns  : undef | $file_name
-## Arguments: $file_name   => File name
-##          : $file_suffix => File suffix to be removed
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-    my $file_suffix;
-
-    my $tmpl = {
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        file_suffix => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_suffix
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my ($file_name_nosuffix) =
-      $file_name =~ / (\S+)($file_suffix$ | $file_suffix.gz$) /xsm;
-
-    return $file_name_nosuffix;
 }
 
 sub parse_io_outfiles {

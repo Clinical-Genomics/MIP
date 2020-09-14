@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_panel };
@@ -551,7 +551,7 @@ sub analysis_cadd_panel {
     );
 
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
-    my $job_id_chain = get_recipe_attributes(
+    my $job_id_chain      = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -783,15 +783,15 @@ sub _parse_cadd_outfile {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Htslib qw{ htslib_bgzip };
 
     return $infile_path if $reference_version eq q{37};
 
-    my $synonyms_file_path = parse_file_suffix(
+    my $synonyms_file_path = remove_file_path_suffix(
         {
-            file_name   => $infile_path,
-            file_suffix => q{.tsv},
+            file_path         => $infile_path,
+            file_suffixes_ref => [qw{ .tsv .tsv.gz }],
         }
     );
     $synonyms_file_path .= $UNDERSCORE . q{synonyms.tsv.gz};

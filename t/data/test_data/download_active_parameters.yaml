@@ -2,6 +2,8 @@
 bash_set_errexit: 1
 bash_set_nounset: 1
 bash_set_pipefail: 1
+email_types:
+  - FAIL
 load_env:
   mip_rd_dna:
     method: conda
