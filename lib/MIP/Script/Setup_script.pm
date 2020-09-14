@@ -10,7 +10,6 @@ use File::Path qw{ make_path };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
@@ -40,7 +39,7 @@ BEGIN {
       setup_script
       write_return_to_environment
       write_return_to_conda_environment
-      write_source_environment_command };
+    };
 }
 
 sub build_script_directories_and_paths {
@@ -547,6 +546,7 @@ sub setup_script {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Language::Shell
       qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
@@ -797,7 +797,8 @@ sub write_return_to_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Environment::Manager qw{ get_env_method_cmds };
+    use MIP::Environment::Manager
+      qw{ get_env_method_cmds write_source_environment_command };
 
     my @env_method_cmds;
 
@@ -854,6 +855,7 @@ sub write_return_to_conda_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Conda qw{ conda_deactivate };
+    use MIP::Environment::Manager qw{ write_source_environment_command };
 
     ## Return to main environment
     if ( @{$source_main_environment_commands_ref}
@@ -878,47 +880,6 @@ sub write_return_to_conda_environment {
             }
         );
         print {$filehandle} $NEWLINE;
-    }
-    return;
-}
-
-sub write_source_environment_command {
-
-## Function : Write source environment commmands to filehandle
-## Returns  :
-## Arguments: $filehandle                      => Filehandle to write to
-##          : $source_environment_commands_ref => Source environment command {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $source_environment_commands_ref;
-
-    my $tmpl = {
-        filehandle                      => { required => 1, store => \$filehandle, },
-        source_environment_commands_ref => {
-            default     => [],
-            store       => \$source_environment_commands_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-    if ( @{$source_environment_commands_ref} ) {
-
-        say {$filehandle} q{## Activate environment};
-
-        unix_write_to_file(
-            {
-                commands_ref => $source_environment_commands_ref,
-                filehandle   => $filehandle,
-            }
-        );
-        say {$filehandle} $NEWLINE;
     }
     return;
 }

@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Script::Setup_script} => [qw{ write_source_environment_command }],
+        q{MIP::Environment::Manager} => [qw{ write_source_environment_command }],
         q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Script::Setup_script qw{ write_source_environment_command };
+use MIP::Environment::Manager qw{ write_source_environment_command };
 
-diag(   q{Test write_source_environment_command from Setup_script.pm v}
-      . $MIP::Script::Setup_script::VERSION
+diag(   q{Test write_source_environment_command from Manager.pm v}
+      . $MIP::Environment::Manager::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,14 +57,11 @@ diag(   q{Test write_source_environment_command from Setup_script.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $filehandle, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle and a environment command
@@ -84,7 +76,7 @@ write_source_environment_command(
 close $filehandle;
 
 ## Then env comment and env should be written to file
-my ($title) = $file_content =~ /^(## Activate environment)/ms;
+my ($title) = $file_content =~ /\A ## Activate environment \z/mxs;
 
 ok( $title, q{Wrote environment title} );
 
