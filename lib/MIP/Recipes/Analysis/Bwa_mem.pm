@@ -27,6 +27,7 @@ BEGIN {
     # Set the version for version checking
     our $VERSION = 1.27;
 
+
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
@@ -254,7 +255,6 @@ sub analysis_bwa_mem {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
@@ -692,7 +692,6 @@ sub analysis_bwa_mem2 {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
@@ -770,7 +769,7 @@ sub analysis_bwa_mem2 {
         );
         say {$filehandle} $NEWLINE;
 
-        ## Set samtools sort input; Pipe from samtools view
+        ## Set samtools sort input;
         my $samtools_sort_infile = $samtools_view_outfile_path;
 
         ## Increment paired end tracker
@@ -1132,7 +1131,6 @@ sub analysis_run_bwa_mem {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},

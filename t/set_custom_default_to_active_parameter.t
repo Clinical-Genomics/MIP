@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.19;
+our $VERSION = 1.20;
 
 $VERBOSE = test_standard_cli(
     {
@@ -189,7 +189,7 @@ while ( my ( $parameter_name, $meta_data_href ) = each %expected_default ) {
 }
 
 ## Given an download pipe
-$active_parameter{download_pipeline_type} = q{rd_dna};
+$active_parameter{download_pipeline} = 1;
 
 set_custom_default_to_active_parameter(
     {

@@ -85,6 +85,7 @@ reference:
     - r2.0.1
     - r2.1.1
     - r2.1.1_sv
+    - r3.0
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -678,8 +679,6 @@ reference_feature:
         file_index: gnomad_v2_sv.sites.vcf.gz.tbi
         outfile: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz.tbi
-        outfile_decompress: gzip
-        outfile_index_decompress: gzip
         url_prefix: https://storage.googleapis.com/gnomad-public/papers/2019-sv/
     grch38:
       r2.1.1:
@@ -688,6 +687,12 @@ reference_feature:
         outfile: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz
         outfile_index: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/liftover_grch38/vcf/genomes/
+      r3.0:
+        file: gnomad.genomes.r3.0.sites.vcf.bgz
+        file_index: gnomad.genomes.r3.0.sites.vcf.bgz.tbi
+        outfile: grch38_gnomad.genomes_-r3.0-.vcf.bgz
+        outfile_index: grch38_gnomad.genomes_-r3.0-.vcf.bgz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
       r2.1.1:

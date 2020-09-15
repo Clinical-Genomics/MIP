@@ -43,12 +43,11 @@ jobs:
           conda activate mip_ci
           prove -lrs -f -j 2 t
 
-      - name: Run MIP download tests
+      - name: Run MIP download test
         shell: bash -l {0}
         run: |
           conda activate mip_ci
-          perl t/mip_download_rd_dna.test
-          perl t/mip_download_rd_rna.test
+          perl t/mip_download.test
 
       - name: Run MIP analyse tests
         shell: bash -l {0}

@@ -112,12 +112,14 @@ rd_dna:
     - chromograph
     - cnvnator
     - cyrius
+    - deepvariant
     - delly
     - expansionhunter
     - fastqc
     - gatk
     - gatk4
     - genmod
+    - glnexus
     - htslib
     - manta
     - mip_scripts

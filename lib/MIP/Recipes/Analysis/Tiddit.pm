@@ -6,14 +6,12 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $AMPERSAND $ASTERISK $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -24,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
@@ -129,14 +127,13 @@ sub analysis_tiddit {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Tiddit qw{ tiddit_sv };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -207,7 +204,6 @@ sub analysis_tiddit {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $memory_allocation,
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
@@ -285,20 +281,6 @@ sub analysis_tiddit {
     my @svdb_infile_paths =
       map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
       @{ $active_parameter_href->{sample_ids} };
-
-    my @program_source_commands = get_package_source_env_cmds(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => q{svdb},
-        }
-    );
-
-    write_source_environment_command(
-        {
-            filehandle                      => $filehandle,
-            source_environment_commands_ref => \@program_source_commands,
-        }
-    );
 
     svdb_merge(
         {

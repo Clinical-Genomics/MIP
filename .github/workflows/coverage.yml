@@ -44,12 +44,11 @@ jobs:
           conda activate mip_ci
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -f -j 2 t
 
-      - name: Run MIP download tests
+      - name: Run MIP download test
         shell: bash -l {0}
         run: |
           conda activate mip_ci
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_dna.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download_rd_rna.test
+          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_download.test
 
       - name: Run MIP analyse tests
         shell: bash -l {0}

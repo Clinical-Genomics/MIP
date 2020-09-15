@@ -10,7 +10,6 @@ use File::Path qw{ make_path };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
@@ -30,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,7 +39,7 @@ BEGIN {
       setup_script
       write_return_to_environment
       write_return_to_conda_environment
-      write_source_environment_command };
+    };
 }
 
 sub build_script_directories_and_paths {
@@ -383,11 +382,9 @@ sub setup_script {
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##          : $core_number                     => Number of cores to allocate {Optional}
 ##          : $directory_id                    => $sample id | $case_id
-##          : $email_types_ref                 => Email type
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
 ##          : $job_id_href                     => The job_id hash {REF}
-##          : $log                             => Log object
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
@@ -399,7 +396,6 @@ sub setup_script {
 ##          : $set_nounset                     => Bash set -u {Optional}
 ##          : $set_pipefail                    => Pipe fail switch {Optional}
 ##          : $sleep                           => Sleep for X seconds {Optional}
-##          : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
 ##          : $temp_directory                  => Temporary directory for recipe {Optional}
 ##          : $ulimit_n                        => Set ulimit -n for recipe {Optional}
@@ -412,7 +408,6 @@ sub setup_script {
     my $filehandle;
     my $job_id_href;
     my $memory_allocation;
-    my $log;
     my $recipe_data_directory_path;
     my $recipe_directory;
     my $recipe_name;
@@ -421,7 +416,6 @@ sub setup_script {
 
     ## Default(s)
     my $core_number;
-    my $email_types_ref;
     my $error_trap;
     my $outdata_dir;
     my $outscript_dir;
@@ -430,7 +424,6 @@ sub setup_script {
     my $set_nounset;
     my $set_pipefail;
     my $sleep;
-    my $slurm_quality_of_service;
     my $temp_directory;
 
     my $tmpl = {
@@ -453,21 +446,6 @@ sub setup_script {
             store       => \$directory_id,
             strict_type => 1,
         },
-        email_types_ref => {
-            allow => [
-                sub {
-                    check_allowed_array_values(
-                        {
-                            allowed_values_ref => [qw{ NONE BEGIN END FAIL REQUEUE ALL }],
-                            values_ref         => $arg_href->{email_types_ref},
-                        }
-                    );
-                }
-            ],
-            default     => \@{ $arg_href->{active_parameter_href}{email_types} },
-            store       => \$email_types_ref,
-            strict_type => 1,
-        },
         error_trap => {
             allow       => [ 0, 1 ],
             default     => 1,
@@ -482,7 +460,6 @@ sub setup_script {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log               => { defined => 1, required => 1, store => \$log, },
         memory_allocation => {
             allow       => [ undef, qr{ \A\d+\z }sxm ],
             store       => \$memory_allocation,
@@ -550,12 +527,6 @@ sub setup_script {
             store       => \$sleep,
             strict_type => 1,
         },
-        slurm_quality_of_service => {
-            allow       => [qw{ low high normal }],
-            default     => $arg_href->{active_parameter_href}{slurm_quality_of_service},
-            store       => \$slurm_quality_of_service,
-            strict_type => 1,
-        },
         source_environment_commands_ref => {
             default     => [],
             store       => \$source_environment_commands_ref,
@@ -575,12 +546,14 @@ sub setup_script {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Language::Shell
       qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
-    use MIP::List qw{ check_allowed_array_values };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
@@ -662,17 +635,18 @@ sub setup_script {
         @sacct_format_fields = @{ $active_parameter_href->{sacct_format_fields} };
         @sbatch_headers      = slurm_build_sbatch_header(
             {
-                core_number              => $core_number,
-                email                    => $active_parameter_href->{email},
-                email_types_ref          => $email_types_ref,
-                filehandle               => $filehandle,
-                job_name                 => $job_name,
-                memory_allocation        => $memory_allocation,
-                process_time             => $process_time . q{:00:00},
-                project_id               => $active_parameter_href->{project_id},
-                slurm_quality_of_service => $slurm_quality_of_service,
-                stderrfile_path          => $stderrfile_path,
-                stdoutfile_path          => $stdoutfile_path,
+                core_number       => $core_number,
+                email             => $active_parameter_href->{email},
+                email_types_ref   => $active_parameter_href->{email_types},
+                filehandle        => $filehandle,
+                job_name          => $job_name,
+                memory_allocation => $memory_allocation,
+                process_time      => $process_time . q{:00:00},
+                project_id        => $active_parameter_href->{project_id},
+                slurm_quality_of_service =>
+                  $active_parameter_href->{slurm_quality_of_service},
+                stderrfile_path => $stderrfile_path,
+                stdoutfile_path => $stdoutfile_path,
             }
         );
     }
@@ -823,7 +797,8 @@ sub write_return_to_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Environment::Manager qw{ get_env_method_cmds };
+    use MIP::Environment::Manager
+      qw{ get_env_method_cmds write_source_environment_command };
 
     my @env_method_cmds;
 
@@ -880,6 +855,7 @@ sub write_return_to_conda_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Conda qw{ conda_deactivate };
+    use MIP::Environment::Manager qw{ write_source_environment_command };
 
     ## Return to main environment
     if ( @{$source_main_environment_commands_ref}
@@ -904,47 +880,6 @@ sub write_return_to_conda_environment {
             }
         );
         print {$filehandle} $NEWLINE;
-    }
-    return;
-}
-
-sub write_source_environment_command {
-
-## Function : Write source environment commmands to filehandle
-## Returns  :
-## Arguments: $filehandle                      => Filehandle to write to
-##          : $source_environment_commands_ref => Source environment command {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $source_environment_commands_ref;
-
-    my $tmpl = {
-        filehandle                      => { required => 1, store => \$filehandle, },
-        source_environment_commands_ref => {
-            default     => [],
-            store       => \$source_environment_commands_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-    if ( @{$source_environment_commands_ref} ) {
-
-        say {$filehandle} q{## Activate environment};
-
-        unix_write_to_file(
-            {
-                commands_ref => $source_environment_commands_ref,
-                filehandle   => $filehandle,
-            }
-        );
-        say {$filehandle} $NEWLINE;
     }
     return;
 }

@@ -1,17 +1,21 @@
 package MIP::Program::Gnu::Bash;
 
-use strict;
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use autodie;
-use Params::Check qw{ check allow last_error };
+
+## CPANM
+use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::List qw{ check_allowed_array_values };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -21,11 +25,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gnu_cd gnu_export gnu_trap gnu_set gnu_ulimit gnu_unset gnu_wait };
+      qw{ gnu_cd gnu_export gnu_set gnu_trap gnu_ulimit gnu_unset gnu_wait };
 
 }
 
@@ -154,93 +158,6 @@ sub gnu_export {
     return @commands;
 }
 
-sub gnu_trap {
-
-##Function : Perl wrapper for writing trap recipe to already open $filehandle or return commands array. Based on trap 4.0
-##Returns  : @commands
-##Arguments: $filehandle             => Filehandle to write to
-##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Append stderr info to file
-##         : $trap_function_call     => The trap function argument
-##         : $trap_signals_ref       => Array with signals to enable trap for {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $trap_signals_ref;
-    my $trap_function_call;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-
-    my $tmpl = {
-        filehandle => {
-            store => \$filehandle,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path_append => {
-            store       => \$stderrfile_path_append,
-            strict_type => 1,
-        },
-        trap_function_call => {
-            store       => \$trap_function_call,
-            strict_type => 1,
-        },
-        trap_signals_ref => {
-            allow => [
-                sub {
-                    check_allowed_array_values(
-                        {
-                            allowed_values_ref => [qw(ERR EXIT TERM INT DEBUG)],
-                            values_ref         => $arg_href->{trap_signals_ref},
-                        }
-                    );
-                }
-            ],
-            default     => [],
-            store       => \$trap_signals_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::List qw(check_allowed_array_values);
-
-    my @commands = qw{ trap };
-
-    if ($trap_function_call) {
-
-        # Quote function call to prevent word splitting
-        push @commands, $SINGLE_QUOTE . $trap_function_call . $SINGLE_QUOTE;
-    }
-    if ( @{$trap_signals_ref} ) {
-
-        push @commands, join $SPACE, @{$trap_signals_ref};
-    }
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path        => $stderrfile_path,
-            stderrfile_path_append => $stderrfile_path_append,
-        }
-      );
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            filehandle   => $filehandle,
-            separator    => $SPACE,
-        }
-    );
-    return @commands;
-}
-
 sub gnu_set {
 
 ##Function : Perl wrapper for writing set recipe to already open $filehandle or return commands array. Based on set 4.0
@@ -330,6 +247,91 @@ sub gnu_set {
             commands_ref => \@commands,
             filehandle   => $filehandle,
             separator    => $NEWLINE,
+        }
+    );
+    return @commands;
+}
+
+sub gnu_trap {
+
+##Function : Perl wrapper for writing trap recipe to already open $filehandle or return commands array. Based on trap 4.0
+##Returns  : @commands
+##Arguments: $filehandle             => Filehandle to write to
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
+##         : $trap_function_call     => Trap function argument
+##         : $trap_signals_ref       => Array with signals to enable trap for {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    ## Default(s)
+    my $trap_function_call;
+    my $trap_signals_ref;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        trap_function_call => {
+            store       => \$trap_function_call,
+            strict_type => 1,
+        },
+        trap_signals_ref => {
+            allow => [
+                sub {
+                    check_allowed_array_values(
+                        {
+                            allowed_values_ref => [qw{ ERR EXIT TERM INT DEBUG }],
+                            values_ref         => $arg_href->{trap_signals_ref},
+                        }
+                    );
+                }
+            ],
+            default     => [],
+            store       => \$trap_signals_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ trap };
+
+    if ($trap_function_call) {
+
+        # Quote function call to prevent word splitting
+        push @commands, $SINGLE_QUOTE . $trap_function_call . $SINGLE_QUOTE;
+    }
+    if ( @{$trap_signals_ref} ) {
+
+        push @commands, join $SPACE, @{$trap_signals_ref};
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
         }
     );
     return @commands;

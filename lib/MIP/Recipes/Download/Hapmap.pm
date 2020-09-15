@@ -159,7 +159,6 @@ sub download_hapmap {
             directory_id               => q{mip_download},
             filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
-            log                        => $log,
             memory_allocation          => $recipe_resource{memory},
             outdata_dir                => $reference_dir,
             outscript_dir              => $reference_dir,

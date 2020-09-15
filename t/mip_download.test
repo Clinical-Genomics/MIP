@@ -19,7 +19,7 @@ use warnings qw{ FATAL utf8 };
 ## Cpanm
 use autodie qw{open close :all};
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{ 2018 };
+use Modern::Perl qw{2018};
 use Readonly;
 
 ## MIPs lib/
@@ -31,18 +31,20 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 ## Set paths
-my $conda_path = catdir( dirname($Bin), qw{ t data modules miniconda} );
-my $config_file =
-  catfile( dirname($Bin), qw{ templates mip_download_rd_rna_config_-1.0-.yaml } );
+my $conda_path       = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $config_files_ref = [
+    catfile( dirname($Bin), qw{ templates mip_download_rd_dna_config_-1.0-.yaml } ),
+    catfile( dirname($Bin), qw{ templates mip_download_rd_rna_config_-1.0-.yaml } )
+];
 my $mip_path = catfile( dirname($Bin), q{mip} );
 
 ### User Options
 GetOptions(
 
-    q{c|config_file:s} => \$config_file,
+    q{c|config_file:s} => \$config_files_ref,
 
     ## Display help text
     q{h|help} => sub {
@@ -73,19 +75,22 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 
 ## Test execution of mip download
 # Create array ref for cmd
-my $cmds_ref = [
-    q{perl},      $mip_path,       qw{ download rd_rna }, q{--config},
-    $config_file, q{--conda_path}, $conda_path,           qw{ --dra },
-];
+foreach my $config_file ( @{$config_files_ref} ) {
 
-my %process_return = child_process(
-    {
-        commands_ref => $cmds_ref,
-        process_type => q{ipc_cmd_run},
-        verbose      => $VERBOSE,
-    }
-);
-ok( $process_return{success}, q{Executed mip download rd_rna sbatch mode} );
+    my $cmds_ref = [
+        q{perl},      $mip_path,       q{download}, q{--config},
+        $config_file, q{--conda_path}, $conda_path, qw{ --dra },
+    ];
+
+    my %process_return = child_process(
+        {
+            commands_ref => $cmds_ref,
+            process_type => q{ipc_cmd_run},
+            verbose      => $VERBOSE,
+        }
+    );
+    ok( $process_return{success}, q{Executed mip download with config: } . $config_file );
+}
 
 ## Clean-up
 my @clenup_dirs = qw{ mip_download mip_log };
@@ -123,7 +128,7 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options]
-    -c/--config_file YAML config file for download parameters (defaults to ../templates/mip_download_rd_rna_config_-1.0-.yaml")
+    -c/--config_file YAML config file for download parameters (defaults to ../templates/mip_download_rd_dna_config_-1.0-.yaml")
     -t/--travis Travis parameters
     -vb/--verbose    Verbose
     -h/--help        Display this help message

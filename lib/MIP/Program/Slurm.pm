@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ slurm_build_sbatch_header slurm_sacct };
@@ -118,6 +118,7 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
         },
         slurm_quality_of_service => {
+            allow       => [ undef, qw{ high low normal } ],
             store       => \$slurm_quality_of_service,
             strict_type => 1,
         },

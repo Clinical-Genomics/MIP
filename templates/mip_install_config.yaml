@@ -76,6 +76,13 @@ container:
     executable:
       fastqc:
     uri: docker.io/clinicalgenomics/fastqc:0.11.9
+  deepvariant:
+    executable:
+      run_deepvariant: /opt/deepvariant/bin/run_deepvariant
+      make_examples: /opt/deepvariant/bin/make_examples
+      call_variants: /opt/deepvariant/bin/call_variants
+      postprocess_variants: /opt/deepvariant/bin/postprocess_variants
+    uri: docker.io/google/deepvariant:0.10.0
   delly:
     executable:
       delly:
@@ -96,6 +103,10 @@ container:
     executable:
       gffcompare:
     uri: docker.io/clinicalgenomics/gffcompare:0.11.2
+  glnexus:
+    executable:
+      glnexus_cli:
+    uri: quay.io/mlin/glnexus:v1.2.7
   htslib:
     executable:
       bcftools:
@@ -199,7 +210,7 @@ container:
   trim-galore:
     executable:
       trim_galore:
-    uri: library://jemten/mip_containers/trim-galore:0.6.4
+    uri: docker.io/clinicalgenomics/trim_galore:0.6.4
   ucsc:
     executable:
       bedToBigBed:

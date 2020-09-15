@@ -1,4 +1,4 @@
-package MIP::Check::File;
+package MIP::Validate::File;
 
 use 5.026;
 use Carp;
@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_file_md5sum };
@@ -62,7 +61,7 @@ sub check_file_md5sum {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
 
     ## Skip file
     return if ( not defined $check_method );
@@ -70,10 +69,10 @@ sub check_file_md5sum {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
     ## Parse file suffix in filename.suffix(.gz).
     ## Removes suffix if matching else return undef
-    my $file_path = parse_file_suffix(
+    my $file_path = remove_file_path_suffix(
         {
-            file_name   => $md5_file_path,
-            file_suffix => $DOT . q{md5},
+            file_path         => $md5_file_path,
+            file_suffixes_ref => [ $DOT . q{md5} ],
         }
     );
 
@@ -90,7 +89,6 @@ sub check_file_md5sum {
         }
     );
 
-    ## Perform md5sum check
     gnu_md5sum(
         {
             check       => 1,
@@ -100,7 +98,6 @@ sub check_file_md5sum {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Clean-up
     gnu_rm(
         {
             filehandle  => $filehandle,
@@ -149,18 +146,17 @@ sub _write_md5sum_check_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Build perl regexp
-    # Execute perl
-    my $perl_regexp = q?perl -nae '?;
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
 
-    # Print first md5sum from $md5_file_path with 2 white spaces
-    $perl_regexp .= q?print $F[0].q{  ?;
-
-    # Print file name in the same line that correspond to md5sum hash
-    $perl_regexp .= $file_path . q?} ' ?;
-
-    ## Write perl command to create md5sum check file
-    print {$filehandle} $perl_regexp . $md5_file_path . q{ > } . $md5sum_check_file;
+    perl_nae_oneliners(
+        {
+            filehandle         => $filehandle,
+            oneliner_name      => q{build_md5sum_check},
+            oneliner_parameter => $file_path,
+            stdinfile_path => $md5_file_path,
+            stdoutfile_path    => $md5sum_check_file,
+        }
+    );
     say   {$filehandle} $NEWLINE;
     return;
 }

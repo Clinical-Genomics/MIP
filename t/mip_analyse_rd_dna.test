@@ -31,7 +31,7 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.14;
+our $VERSION = 1.15;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
@@ -43,6 +43,11 @@ my $toml_template_path  = catfile( $test_reference_path,
     q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
 my $toml_config_path =
   catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
+
+my %pedigree = (
+    wes => catfile( $cluster_constant_path, qw{ test_data pedigree_wes.yaml } ),
+    wgs => catfile( $cluster_constant_path, qw{ test_data pedigree_wgs.yaml } ),
+);
 
 ### User Options
 GetOptions(
@@ -89,7 +94,7 @@ write_toml_config(
 
 ## Test execution of mip
 # Create array ref for cmd
-my $cmds_ref = [
+my @cmds = (
     q{perl},
     $mip_path,
     qw{ analyse rd_dna 643594-miptest },
@@ -111,7 +116,7 @@ my $cmds_ref = [
     catfile(
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
-    qw{ --dra --sv_varianteffectpredictor 0 --vb },
+    qw{ --dra --vb },
     q{--vcfanno_config},
     $toml_config_path,
     q{--varg_ar},
@@ -121,20 +126,25 @@ my $cmds_ref = [
         $cluster_constant_path,
         qw{ test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf }
     ),
-];
-
-my %process_return = child_process(
-    {
-        commands_ref => $cmds_ref,
-        process_type => q{ipc_cmd_run},
-        verbose      => $VERBOSE,
-    }
 );
-ok( $process_return{success}, q{Executed mip rd_dna} );
 
-my $qc_sample_info_file = catfile( $cluster_constant_path,
-    qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml } );
-ok( -f $qc_sample_info_file, q{Checking for 643594-miptest_qc_sample_info.yaml} );
+while ( my ( $pedigree, $pedigree_path ) = each %pedigree ) {
+
+    my @test_cmds = ( @cmds, q{--pedigree}, $pedigree_path );
+
+    my %process_return = child_process(
+        {
+            commands_ref => \@test_cmds,
+            process_type => q{ipc_cmd_run},
+            verbose      => $VERBOSE,
+        }
+    );
+    ok( $process_return{success}, q{Executed mip rd_dna } . $pedigree );
+
+    my $qc_sample_info_file = catfile( $cluster_constant_path,
+        qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml } );
+    ok( -f $qc_sample_info_file, q{Checking for 643594-miptest_qc_sample_info.yaml} );
+}
 
 ## Clean-up
 remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
