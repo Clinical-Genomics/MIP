@@ -237,7 +237,7 @@ sub analysis_chromograph_cov {
 
             set_file_path_to_store(
                 {
-                    format           => q{meta},
+                    format           => q{png},
                     id               => $sample_id,
                     path             => $outfile_path,
                     recipe_name      => $recipe_name,
@@ -505,7 +505,7 @@ sub analysis_chromograph_upd {
 
                 set_file_path_to_store(
                     {
-                        format           => q{meta},
+                        format           => q{png},
                         id               => $sample_id,
                         path             => $outfile_path,
                         recipe_name      => $recipe_name,
