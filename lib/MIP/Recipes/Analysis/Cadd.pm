@@ -551,7 +551,7 @@ sub analysis_cadd_panel {
     );
 
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
-    my $job_id_chain      = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
