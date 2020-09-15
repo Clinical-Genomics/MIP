@@ -15,12 +15,15 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $LOG_NAME };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
@@ -128,8 +131,7 @@ sub parse_config {
 
     ## Constants
     ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @REMOVE_KEYS =
-      qw{ binary_path found_female found_male found_other gender log_file dry_run_all };
+    my @REMOVE_KEYS = qw{ binary_path include_y gender log_file dry_run_all };
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     my %config_parameter = read_from_file(
@@ -222,7 +224,8 @@ sub parse_dynamic_config_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
+    use MIP::Update::Parameters
+      qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
 
     ## Loop through all config dynamic parameters and update value
   DYNAMIC_PARAM:
@@ -231,10 +234,9 @@ sub parse_dynamic_config_parameters {
         ## Updates the dynamic config parameters using supplied $case_id
         update_dynamic_config_parameters(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_ref => \$active_parameter_href->{$dynamic_param_name},
                 dynamic_parameter_href =>
                   { case_id => $active_parameter_href->{case_id}, },
-                parameter_name => $dynamic_param_name,
             }
         );
     }
@@ -246,19 +248,13 @@ sub parse_dynamic_config_parameters {
         case_id                => $active_parameter_href->{case_id},
     );
 
-    ## Loop through all parameters and update info
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$parameter_href} ) {
-
-        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-        update_dynamic_config_parameters(
-            {
-                active_parameter_href  => $active_parameter_href,
-                dynamic_parameter_href => \%dynamic_parameter,
-                parameter_name         => $parameter_name,
-            }
-        );
-    }
+    ## Go through all active parameters and update info
+    update_with_dynamic_config_parameters(
+        {
+            active_parameter_href  => $active_parameter_href,
+            dynamic_parameter_href => \%dynamic_parameter,
+        }
+    );
     return 1;
 }
 
@@ -381,7 +377,6 @@ sub write_mip_config {
 ## Function : Write config file for analysis
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
 ##          : $remove_keys_ref       => Keys to remove before writing to file {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
 
@@ -389,7 +384,6 @@ sub write_mip_config {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $remove_keys_ref;
     my $sample_info_href;
 
@@ -400,11 +394,6 @@ sub write_mip_config {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         remove_keys_ref => {
             default     => [],
@@ -427,13 +416,18 @@ sub write_mip_config {
     use File::Basename qw{ dirname };
     use File::Path qw{ make_path };
     use MIP::Io::Write qw{ write_to_file };
+    use MIP::Sample_info qw{ set_in_sample_info };
 
     return if ( not $active_parameter_href->{config_file_analysis} );
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Create directory unless it already exists
     make_path( dirname( $active_parameter_href->{config_file_analysis} ) );
 
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read
+    ## from pedigree or cmd
     delete @{$active_parameter_href}{ @{$remove_keys_ref} };
 
     ## Writes hash to file
@@ -444,11 +438,17 @@ sub write_mip_config {
             path      => $active_parameter_href->{config_file_analysis},
         }
     );
-    $log->info( q{Wrote: } . $active_parameter_href->{config_file_analysis} );
+    $log->info(
+        q{Wrote config file to: } . $active_parameter_href->{config_file_analysis} );
 
     ## Add to sample_info for use downstream
-    $sample_info_href->{config_file_analysis} =
-      $active_parameter_href->{config_file_analysis};
+    set_in_sample_info(
+        {
+            key              => q{config_file_analysis},
+            sample_info_href => $sample_info_href,
+            value            => $active_parameter_href->{config_file_analysis},
+        }
+    );
     return;
 }
 

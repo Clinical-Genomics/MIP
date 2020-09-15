@@ -163,43 +163,6 @@ my %attribute = get_sample_info_sample_recipe_attributes(
 $attribute{path} = <string>;
 ```
 
-get_sequence_run_type:
-Return scalar sequence run type, (e.g. paired-end or single-end) or a hash of sequence run types per infile prefix
-```Perl
-# Scalar
-my $sequence_run_type = get_sequence_run_type(
-        {
-            infile_lane_prefix => $infile_lane_prefix,
-            sample_id          => $sample_id,
-            sample_info_href   => $sample_info_href,
-        }
-    );
-$sequence_run_type = <string>;
-
-# Hash
-my %sequence_run_type = get_sequence_run_type(
-        {
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
-        }
-    );
-$sequence_run_type{$infile_lane_prefix} => <string>;
-```
-
-get_sequence_run_type_is_interleaved:
-Return boolean depending on interleaved status of fastq file
-```Perl
-my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
-        {
-            infile_lane_prefix => $infile_prefix,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
-        }
-    );
-$is_interleaved_fastq = <boolean>;
-```
-
 set_file_path_to_store:
 Set file path under store according to file type and file_tag
 ```Perl

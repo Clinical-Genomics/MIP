@@ -25,9 +25,9 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $DOUBLE_QUOTE $NEWLINE $LOG_NAME $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
-use MIP::Get::Parameter qw{ get_env_method_cmds };
-use MIP::Gnu::Bash qw{ gnu_set };
-use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
+use MIP::Environment::Manager qw{ get_env_method_cmds };
+use MIP::Program::Gnu::Bash qw{ gnu_set };
+use MIP::Program::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -89,7 +89,7 @@ sub check_mip_installation {
         keys %{ $active_parameter_href->{conda} },
         keys %{ $active_parameter_href->{pip} },
         keys %{ $active_parameter_href->{shell} },
-        keys %{ $active_parameter_href->{singularity} },
+        keys %{ $active_parameter_href->{container} },
     );
 
     check_program_installations(
@@ -336,7 +336,7 @@ sub build_perl_program_check_command {
     ## Constants
     Readonly my $OPEN_STRING  => q/q{/;
     Readonly my $CLOSE_STRING => q/}/;
-    Readonly my $TIMEOUT      => 20;
+    Readonly my $TIMEOUT      => 60;
 
     ## Array for storing test commands
     my @program_test_commands;
@@ -347,16 +347,6 @@ sub build_perl_program_check_command {
         ## Skip programs that lacks a test_command
         next PROGRAM if ( not $program_test_command_href->{$program} );
 
-        ## Add path test
-        if ( $program_test_command_href->{$program}{path} ) {
-            my $path_test =
-              $OPEN_STRING . $program_test_command_href->{$program}{path} . $CLOSE_STRING;
-            my $path_test_name =
-              $OPEN_STRING . q{Program in path: } . $program . $CLOSE_STRING;
-            my $path_test_command =
-              qq{ok(can_run( $path_test ), $path_test_name)} . $SEMICOLON;
-            push @program_test_commands, $path_test_command;
-        }
         ## Add execution test
         if ( $program_test_command_href->{$program}{execution} ) {
             my $execution_test =
@@ -369,6 +359,16 @@ sub build_perl_program_check_command {
 qq{ok(run(command => $execution_test, timeout => $TIMEOUT), $execution_test_name)}
               . $SEMICOLON;
             push @program_test_commands, $execution_test_command;
+        }
+        ## Add path test if no execution test is available
+        elsif ( $program_test_command_href->{$program}{path} ) {
+            my $path_test =
+              $OPEN_STRING . $program_test_command_href->{$program}{path} . $CLOSE_STRING;
+            my $path_test_name =
+              $OPEN_STRING . q{Program in path: } . $program . $CLOSE_STRING;
+            my $path_test_command =
+              qq{ok(can_run( $path_test ), $path_test_name)} . $SEMICOLON;
+            push @program_test_commands, $path_test_command;
         }
     }
 

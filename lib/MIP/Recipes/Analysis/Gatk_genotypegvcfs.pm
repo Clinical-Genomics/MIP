@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -43,7 +43,6 @@ sub analysis_gatk_genotypegvcfs {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending"
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -56,7 +55,6 @@ sub analysis_gatk_genotypegvcfs {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -85,13 +83,6 @@ sub analysis_gatk_genotypegvcfs {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -138,7 +129,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
@@ -204,13 +195,13 @@ sub analysis_gatk_genotypegvcfs {
     my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            execution_mode        => q{system},
-            fam_file_path         => $fam_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            execution_mode   => q{system},
+            fam_file_path    => $fam_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -258,7 +249,7 @@ sub analysis_gatk_genotypegvcfs {
                     stream         => q{in},
                 }
             );
-            if ( $consensus_analysis_type eq q{wes} ) {
+            if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
                 push @sample_vcf_path_lines,
                   $sample_id . $TAB . $sample_io{in}{file_path} . $NEWLINE;
@@ -289,7 +280,7 @@ sub analysis_gatk_genotypegvcfs {
         say {$filehandle} q{## GATK GenomicsDBImport};
 
         ## Files to import into GenomicsDB
-        if ( $consensus_analysis_type eq q{wes} ) {
+        if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
             $sample_name_map_path =
               catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
@@ -318,8 +309,9 @@ sub analysis_gatk_genotypegvcfs {
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 sample_name_map_path => $sample_name_map_path,
-                temp_directory       => $temp_directory,
-                verbosity            => $active_parameter_href->{gatk_logging_level},
+                shared_posixfs_optimizations => 1,
+                temp_directory               => $temp_directory,
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -343,8 +335,6 @@ sub analysis_gatk_genotypegvcfs {
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 temp_directory       => $temp_directory,
                 verbosity            => $active_parameter_href->{gatk_logging_level},
-                use_new_qual_calculator =>
-                  $active_parameter_href->{gatk_use_new_qual_calculator},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -355,15 +345,16 @@ sub analysis_gatk_genotypegvcfs {
 
             submit_recipe(
                 {
-                    base_command            => $profile_base_command,
-                    case_id                 => $case_id,
-                    dependency_method       => q{sample_to_case_parallel},
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_chain            => $job_id_chain,
-                    job_id_href             => $job_id_href,
+                    base_command      => $profile_base_command,
+                    case_id           => $case_id,
+                    dependency_method => q{sample_to_case_parallel},
+                    job_id_chain      => $job_id_chain,
+                    job_id_href       => $job_id_href,
                     job_reservation_name =>
                       $active_parameter_href->{job_reservation_name},
-                    log                  => $log,
+                    log => $log,
+                    max_parallel_processes_count_href =>
+                      $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $recipe_files_tracker,
                     sample_ids_ref       => \@{ $active_parameter_href->{sample_ids} },

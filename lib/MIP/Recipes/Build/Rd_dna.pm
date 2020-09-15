@@ -15,21 +15,19 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_dna_meta_files };
 }
-
-## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $EMPTY_STR => q{};
-Readonly my $TAB       => qq{\t};
 
 sub build_rd_dna_meta_files {
 
@@ -37,7 +35,6 @@ sub build_rd_dna_meta_files {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
@@ -48,7 +45,6 @@ sub build_rd_dna_meta_files {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_href;
@@ -67,13 +63,6 @@ sub build_rd_dna_meta_files {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -106,7 +95,8 @@ sub build_rd_dna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
+    use MIP::Recipes::Build::Bwa_prerequisites
+      qw{ build_bwa_prerequisites build_bwa_mem2_prerequisites };
     use MIP::Recipes::Build::Capture_file_prerequisites
       qw{ build_capture_file_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites
@@ -115,6 +105,7 @@ sub build_rd_dna_meta_files {
 
     my %build_recipe = (
         bwa_build_reference                 => \&build_bwa_prerequisites,
+        bwa_mem2_build_reference            => \&build_bwa_mem2_prerequisites,
         exome_target_bed                    => \&build_capture_file_prerequisites,
         human_genome_reference_file_endings => \&build_human_genome_prerequisites,
         rtg_vcfeval_reference_genome        => \&build_rtg_prerequisites,
@@ -135,11 +126,10 @@ sub build_rd_dna_meta_files {
 
             $build_recipe{$parameter_build_name}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    log                   => $log,
                     parameter_build_suffixes_ref =>
                       \@{ $file_info_href->{$parameter_build_name} },
                     parameter_href   => $parameter_href,

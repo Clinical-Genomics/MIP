@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.09;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,11 +62,7 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 my %active_parameter_test = (
-    binary_path        => { bcftools => q{bcftools}, },
-    fqa_vcfanno_config => catfile(
-        $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
-    ),
-    frequency_annotation               => 1,
+    binary_path                        => { bcftools => q{bcftools}, },
     gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
         catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf } ),
@@ -86,13 +82,13 @@ my %active_parameter_test = (
         q{grch37_mills_and_1000g_-gold_standard_indels-.vcf} =>
           q{mills,known=false,training=true,truth=true,prior=12.0},
     },
+    variant_annotation => 1,
+    vcfanno_config     => catfile(
+        $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
+    ),
 );
 
 my %parameter_test = (
-    fqa_vcfanno_config => {
-        associated_recipe => [qw{ frequency_annotation }],
-        data_type         => q{SCALAR},
-    },
     gatk_baserecalibration_known_sites => {
         associated_recipe => [qw{ gatk_baserecalibration }],
         data_type         => q{ARRAY},
@@ -103,15 +99,18 @@ my %parameter_test = (
     },
     gatk_variantrecalibration_resource_indel =>
       { associated_recipe => [qw{ gatk_variantrecalibration }], data_type => q{HASH}, },
+    vcfanno_config => {
+        associated_recipe => [qw{ variant_annotation }],
+        data_type         => q{SCALAR},
+    },
 );
 
 my @vt_references_test =
-  qw{ fqa_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel };
+  qw{ gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp gatk_variantrecalibration_resource_indel vcfanno_config };
 
 my @refs_to_process = check_references_for_vt(
     {
         active_parameter_href => \%active_parameter_test,
-        log                   => $log,
         parameter_href        => \%parameter_test,
         vt_references_ref     => \@vt_references_test,
     }

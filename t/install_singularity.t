@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -70,7 +70,7 @@ open my $filehandle, q{>}, \$file_content
 
 ## Given isntall parameters
 my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{install_rd_rna_active_parameter}, } );
+  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
 $active_parameter{reference_dir} = catdir(qw{ a dir });
 
 my $is_ok = install_singularity_containers(

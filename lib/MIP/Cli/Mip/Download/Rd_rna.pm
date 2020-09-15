@@ -18,9 +18,8 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Download qw{ mip_download };
-use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.04;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -48,14 +47,6 @@ sub run {
     my %parameter =
       get_parameter_from_definition_files( { level => q{download_rd_rna}, } );
 
-    ## Print parameters from config file and exit
-    print_parameter_defaults(
-        {
-            parameter_href          => \%parameter,
-            print_parameter_default => $arg_href->{print_parameter_default},
-        }
-    );
-
     ## Start generating the installation script
     mip_download(
         {
@@ -80,6 +71,17 @@ sub _build_usage {
             is      => q{rw},
             isa     => Str,
         )
+    );
+
+    option(
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            cmd_tags      => [q{Default: mip_rd_rna}],
+            documentation => q{Set environment name},
+            is            => q{rw},
+            isa           => Str,
+        ),
     );
     return;
 }

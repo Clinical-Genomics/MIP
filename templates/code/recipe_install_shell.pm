@@ -111,11 +111,11 @@ sub install_PROGRAM {
 
     ## Modules
     use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+    use MIP::Program::Gnu::Bash qw{ gnu_cd };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
+    use MIP::Program::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+    use MIP::Program::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Wget qw{ wget };
     use MIP::Program::Zip qw{ unzip };
 

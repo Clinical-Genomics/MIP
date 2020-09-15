@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.32;
+our $VERSION = 1.39;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -89,13 +89,13 @@ sub run {
         }
     );
 
-## File info hash
+    ## File info hash
     my %file_info = (
-
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
+        transcript_annotation_file_endings  => [qw{ .refFlat .rrna.interval_list }],
     );
 
     mip_analyse(
@@ -118,7 +118,6 @@ sub _build_usage {
 
     option(
         q{arriba_ar} => (
-            cmd_aliases   => [qw{ arriba }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect and visualize fusions using Arriba},
             is            => q{rw},
@@ -128,7 +127,6 @@ sub _build_usage {
 
     option(
         q{arriba_blacklist_path} => (
-            cmd_aliases   => [qw{ abp }],
             cmd_tags      => [q{Recipe argument}],
             documentation => q{Path to arriba blacklist file},
             is            => q{rw},
@@ -138,7 +136,6 @@ sub _build_usage {
 
     option(
         q{arriba_cytoband_path} => (
-            cmd_aliases   => [qw{ acbp }],
             cmd_tags      => [q{Recipe argument}],
             documentation => q{Path to arriba cytoband file},
             is            => q{rw},
@@ -148,7 +145,6 @@ sub _build_usage {
 
     option(
         q{arriba_proteindomain_path} => (
-            cmd_aliases   => [qw{ apdp }],
             cmd_tags      => [q{Recipe argument}],
             documentation => q{Path to arriba protein domain file},
             is            => q{rw},
@@ -158,7 +154,6 @@ sub _build_usage {
 
     option(
         q{bcftools_merge} => (
-            cmd_aliases   => [qw{ bcfm }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge vcfs before annotation},
             is            => q{rw},
@@ -168,7 +163,6 @@ sub _build_usage {
 
     option(
         q{blobfish} => (
-            cmd_aliases   => [qw{ blb }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BlobFish on salmon quant files},
             is            => q{rw},
@@ -178,7 +172,6 @@ sub _build_usage {
 
     option(
         q{bootstrapann} => (
-            cmd_aliases   => [qw{ ba }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BootstrapAnn on ASE file},
             is            => q{rw},
@@ -188,7 +181,6 @@ sub _build_usage {
 
     option(
         q{dna_vcf_file} => (
-            cmd_aliases   => [qw{ dvf }],
             cmd_flag      => q{dna_vcf_file},
             cmd_tags      => [q{Format: vcf | bcf}],
             documentation => q{Variantcalls made on wgs or wes data },
@@ -199,7 +191,6 @@ sub _build_usage {
 
     option(
         q{force_dna_ase} => (
-            cmd_aliases   => [qw{ fda }],
             documentation => q{Force ASE analysis on partially matching dna-rna samples},
             is            => q{rw},
             isa           => Bool,
@@ -208,7 +199,6 @@ sub _build_usage {
 
     option(
         q{gatk_disable_auto_index_and_file_lock} => (
-            cmd_aliases   => [qw{ gdai }],
             cmd_flag      => q{gatk_dis_auto_ind_fl},
             documentation => q{Disable auto index creation and locking when reading rods},
             is            => q{rw},
@@ -217,18 +207,7 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_use_new_qual_calculator} => (
-            cmd_aliases   => [qw{ gatknq }],
-            cmd_flag      => q{gatk_new_qual},
-            documentation => q{Use new qual calculator},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{genebody_coverage} => (
-            cmd_aliases   => [qw{ gbc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run geneBody_coverage2.py on bam},
             is            => q{rw},
@@ -248,7 +227,6 @@ sub _build_usage {
 
     option(
         q{picardtools_path} => (
-            cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
@@ -257,7 +235,6 @@ sub _build_usage {
 
     option(
         q{time_point} => (
-            cmd_aliases   => [qw{ timp }],
             cmd_tags      => [q{sample_id=time_point}],
             documentation => q{Time point of replicate},
             is            => q{rw},
@@ -267,7 +244,6 @@ sub _build_usage {
 
     option(
         q{split_fastq_file} => (
-            cmd_aliases   => [qw{ sfq }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Split fastq files in batches of X reads and exits},
             is            => q{rw},
@@ -277,7 +253,6 @@ sub _build_usage {
 
     option(
         q{split_fastq_file_read_batch} => (
-            cmd_aliases   => [qw{ sfqrdb }],
             cmd_flag      => q{spt_fsq_rd_bt},
             cmd_tags      => [q{Default: 25,000,000}],
             documentation => q{Number of sequence reads to place in each batch},
@@ -288,7 +263,6 @@ sub _build_usage {
 
     option(
         q{gzip_fastq} => (
-            cmd_aliases   => [qw{ gz }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},
             is            => q{rw},
@@ -298,7 +272,6 @@ sub _build_usage {
 
     option(
         q{fastqc_ar} => (
-            cmd_aliases   => [qw{ fqc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sequence quality analysis using FastQC},
             is            => q{rw},
@@ -308,7 +281,6 @@ sub _build_usage {
 
     option(
         q{picardtools_mergesamfiles} => (
-            cmd_aliases   => [qw{ pms }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge bam files using Picardtools},
             is            => q{rw},
@@ -317,9 +289,18 @@ sub _build_usage {
     );
 
     option(
+        q{picardtools_collectrnaseqmetrics} => (
+            cmd_flag      => q{ppt_col_rna_met},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collect RNA seq metrics},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{gatk_baserecalibration} => (
-            cmd_aliases => [qw{ gbr }],
-            cmd_tags    => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
               q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
             is  => q{rw},
@@ -329,9 +310,8 @@ sub _build_usage {
 
     option(
         q{gatk_baserecalibration_covariates} => (
-            cmd_aliases => [qw{ gbrcov }],
-            cmd_flag    => q{gatk_baserecal_covariates},
-            cmd_tags    => [
+            cmd_flag => q{gatk_baserecal_covariates},
+            cmd_tags => [
 q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCovariate}
             ],
             documentation => q{GATK BaseReCalibration covariates},
@@ -348,7 +328,6 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
 
     option(
         q{gatk_baserecalibration_disable_indel_qual} => (
-            cmd_aliases   => [qw{ gbrdiq }],
             cmd_flag      => q{gatk_baserecal_dis_indel_q},
             documentation => q{Disable indel quality scores},
             is            => q{rw},
@@ -358,9 +337,8 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
 
     option(
         q{gatk_baserecalibration_known_sites} => (
-            cmd_aliases => [qw{ gbrkst }],
-            cmd_flag    => q{gatk_baserecal_ks},
-            cmd_tags    => [
+            cmd_flag => q{gatk_baserecal_ks},
+            cmd_tags => [
 q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
             documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
@@ -371,7 +349,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{gatk_baserecalibration_read_filters} => (
-            cmd_aliases   => [qw{ gbrrf }],
             cmd_flag      => q{gatk_baserecal_read_filts},
             cmd_tags      => [q{Default: OverclippedRead}],
             documentation => q{Filter out reads according to set filter},
@@ -382,7 +359,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{gatk_baserecalibration_static_quantized_quals} => (
-            cmd_aliases   => [qw{ gbrsqq }],
             cmd_flag      => q{gatk_baserecal_sta_qua_qua},
             cmd_tags      => [q{Default: 10,20,30,40}],
             documentation => q{Static binning of base quality scores},
@@ -393,7 +369,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{salmon_quant} => (
-            cmd_aliases   => [qw{ sqt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Quantify transcripts using salmon},
             is            => q{rw},
@@ -403,7 +378,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{star_aln} => (
-            cmd_aliases   => [qw{ stn }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
             is            => q{rw},
@@ -413,7 +387,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{star_ulimit_n} => (
-            cmd_aliases   => [qw{ sun }],
             documentation => q{Set ulimit -n for star recipe},
             is            => q{rw},
             isa           => Str,
@@ -422,7 +395,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{align_intron_max} => (
-            cmd_aliases   => [qw{ stn_aim }],
             cmd_tags      => [q{Default: 100,000}],
             documentation => q{Maximum intron size},
             is            => q{rw},
@@ -432,7 +404,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{align_mates_gap_max} => (
-            cmd_aliases   => [qw{ stn_amg }],
             cmd_tags      => [q{Default: 100,000}],
             documentation => q{Maximum gap between two mates},
             is            => q{rw},
@@ -442,7 +413,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{align_sjdb_overhang_min} => (
-            cmd_aliases   => [qw{ stn_asom }],
             cmd_tags      => [q{Default: 10}],
             documentation => q{Minimum overhang (i.e. block size) for spliced alignments},
             is            => q{rw},
@@ -452,7 +422,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{chim_junction_overhang_min} => (
-            cmd_aliases   => [qw{ stn_cjom }],
             cmd_tags      => [q{Default: 12}],
             documentation => q{Minimum overhang for a chimeric junction},
             is            => q{rw},
@@ -462,7 +431,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{chim_out_type} => (
-            cmd_aliases   => [qw{ stn_cot }],
             cmd_tags      => [q{Default: WithinBam}],
             documentation => q{Type of chimeric output},
             is            => q{rw},
@@ -472,7 +440,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{chim_segment_min} => (
-            cmd_aliases   => [qw{ stn_csm }],
             cmd_tags      => [q{Default: 12}],
             documentation => q{Minimum length of chimeric segment},
             is            => q{rw},
@@ -482,7 +449,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{pe_overlap_nbases_min} => (
-            cmd_aliases   => [qw{ stn_ponm }],
             cmd_tags      => [q{Default: 10}],
             documentation => q{Min bases overlap to merge reads whne alingning },
             is            => q{rw},
@@ -492,7 +458,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{two_pass_mode} => (
-            cmd_aliases   => [qw{ stn_tpm }],
             cmd_tags      => [q{Default: Basic}],
             documentation => q{Two pass mode setting},
             is            => q{rw},
@@ -502,7 +467,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{star_fusion} => (
-            cmd_aliases   => [qw{ stf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
@@ -512,7 +476,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{star_fusion_min_junction_reads} => (
-            cmd_tags      => [q{Star-Fusion parameter}],
             documentation => q{STAR-Fusion: Minimum junction spanning reads},
             is            => q{rw},
             isa           => Int,
@@ -521,7 +484,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{star_fusion_pfam_db} => (
-            cmd_tags      => [q{Star-Fusion parameter}],
             documentation => q{Pfam db, used when building Star-Fusion references},
             is            => q{rw},
             isa           => Str,
@@ -530,7 +492,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{rseq} => (
-            cmd_aliases   => [qw{ rseq }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Qc using rseqc},
             is            => q{rw},
@@ -540,7 +501,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{rseqc_transcripts_file} => (
-            cmd_aliases   => [qw{ rseqctf }],
             cmd_tags      => [q{Rseqc transcripts file: Format: GTF}],
             documentation => q{Input for rseqc to build transcript bed format file},
             is            => q{rw},
@@ -550,7 +510,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -560,9 +519,8 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{gatk_haplotypecaller_annotation} => (
-            cmd_aliases => [qw{ ghcann }],
-            cmd_flag    => q{gatk_haplotype_ann},
-            cmd_tags    => [
+            cmd_flag => q{gatk_haplotype_ann},
+            cmd_tags => [
 q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleBySample, FisherStrand, MappingQualityRankSumTest, QualByDepth, RMSMappingQuality, ReadPosRankSumTest, StrandOddsRatio}
             ],
             documentation => q{GATK HaploTypeCaller annotations},
@@ -573,7 +531,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_emit_ref_confidence} => (
-            cmd_aliases   => [qw{ ghcerc }],
             cmd_flag      => q{gatk_haplotype_emit_ref_conf},
             cmd_tags      => [q{Default: NONE}],
             documentation => q{VCF to produce},
@@ -584,7 +541,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_pcr_indel_model} => (
-            cmd_aliases   => [qw{ ghcpim }],
             cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
             cmd_tags      => [q{Default: CONSERVATIVE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
@@ -596,7 +552,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_snp_known_set} => (
-            cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
             cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
@@ -607,7 +562,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{markduplicates} => (
-            cmd_aliases   => [qw{ pmd }],
             cmd_flag      => q{markduplicates},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Markduplicate reads},
@@ -618,7 +572,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{markduplicates_picardtools_opt_dup_dist} => (
-            cmd_aliases   => [qw{ mdpodd }],
             cmd_flag      => q{picard_mdup_odd},
             cmd_tags      => [q{Default: 2500}],
             documentation => q{Picardtools markduplicates optical duplicate distance},
@@ -629,7 +582,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_splitncigarrreads} => (
-            cmd_aliases   => [qw{ gs }],
             cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Split reads that contain Ns in their cigar},
@@ -640,7 +592,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -650,9 +601,8 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_annotation} => (
-            cmd_aliases => [qw{ ghcann }],
-            cmd_flag    => q{gatk_haplotype_ann},
-            cmd_tags    => [
+            cmd_flag => q{gatk_haplotype_ann},
+            cmd_tags => [
 q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleBySample, FisherStrand, MappingQualityRankSumTest, QualByDepth, RMSMappingQuality, ReadPosRankSumTest, StrandOddsRatio}
             ],
             documentation => q{GATK HaploTypeCaller annotations},
@@ -663,7 +613,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_no_soft_clipped_bases} => (
-            cmd_aliases   => [qw{ ghcscb }],
             cmd_flag      => q{gatk_haplotype_no_soft_cb},
             documentation => q{Do not include soft clipped bases in the variant calling},
             is            => q{rw},
@@ -673,7 +622,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_pcr_indel_model} => (
-            cmd_aliases   => [qw{ ghcpim }],
             cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
             cmd_tags      => [q{Default: None; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
@@ -684,7 +632,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_snp_known_set} => (
-            cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
             cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
@@ -695,7 +642,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_asereadcounter} => (
-            cmd_aliases   => [qw{ gae }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Allel specific expression},
             is            => q{rw},
@@ -705,7 +651,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration} => (
-            cmd_aliases   => [qw{ gvf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Hard filterering of variants},
             is            => q{rw},
@@ -715,9 +660,8 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration_cluster_size} => (
-            cmd_aliases => [qw{ gvfc }],
-            cmd_flag    => q{gatk_variantfiltration_cluster_size},
-            cmd_tags    => [q{Default: 3}],
+            cmd_flag => q{gatk_variantfiltration_cluster_size},
+            cmd_tags => [q{Default: 3}],
             documentation =>
               q{GATK VariantFiltration, the number of SNPs which make up a cluster},
             is  => q{rw},
@@ -727,7 +671,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration_filter} => (
-            cmd_aliases   => [qw{ gvff }],
             cmd_flag      => q{gatk_variantfiltration_filter},
             cmd_tags      => [q{filter_name=filter_expression}],
             documentation => q{GATK VariantFiltration, the filter to apply},
@@ -738,9 +681,8 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration_cluster_window_size} => (
-            cmd_aliases => [qw{ gvfw }],
-            cmd_flag    => q{gatk_variantfiltration_cluster_window_size},
-            cmd_tags    => [q{Default: 35}],
+            cmd_flag => q{gatk_variantfiltration_cluster_window_size},
+            cmd_tags => [q{Default: 35}],
             documentation =>
 q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
             is  => q{rw},
@@ -750,7 +692,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{gffcompare_ar} => (
-            cmd_aliases   => [qw{ gffcmp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare RNA transcripts to reference using GffCompare},
             is            => q{rw},
@@ -759,9 +700,54 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
+        q{qccollect_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collect QC metrics from recipes output},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{qccollect_eval_metric_file} => (
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            documentation => q{File containing Qccollect evaluation metrics},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{qccollect_regexp_file} => (
+            cmd_tags => [q{Default: qc_regexp_-v1.25-.yaml}],
+            documentation =>
+q{Regular expression file containing the regular expression to be used for each program},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_sampleinfo_file} => (
+            cmd_tags =>
+              [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
+            documentation =>
+              q{Sample info file containing info on what to parse from this analysis run},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_skip_evaluation} => (
+            documentation => q{Skip evaluation step in qccollect},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+    option(
         q{multiqc_ar} => (
-            cmd_aliases => [qw{ mqc }],
-            cmd_tags    => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
               q{Create aggregate bioinformatics analysis report across many samples},
             is  => q{rw},
@@ -771,7 +757,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{multiqc_per_sample} => (
-            cmd_aliases   => [qw{ mqcps }],
             documentation => q{Generate sample specific reports},
             is            => q{rw},
             isa           => Bool,
@@ -780,7 +765,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{preseq_ar} => (
-            cmd_aliases   => [qw{ prs }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Estimate library complexity},
             is            => q{rw},
@@ -790,7 +774,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{recipe_core_number} => (
-            cmd_aliases   => [qw{ rcn }],
             cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each recipe},
             is            => q{rw},
@@ -800,7 +783,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{recipe_memory} => (
-            cmd_aliases   => [qw{ rm }],
             cmd_tags      => [q{recipe_name=X(G)}],
             documentation => q{Set the memory for each recipe},
             is            => q{rw},
@@ -810,7 +792,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{recipe_time} => (
-            cmd_aliases   => [qw{ rot }],
             cmd_tags      => [q{recipe_name=time(hours)}],
             documentation => q{Set the time allocation for each recipe},
             is            => q{rw},
@@ -820,7 +801,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{stringtie_ar} => (
-            cmd_aliases   => [qw{ strg }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Assemble alignments using StringTie},
             is            => q{rw},
@@ -830,7 +810,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{stringtie_junction_reads} => (
-            cmd_aliases   => [qw{ strj }],
             documentation => q{StringTie min junction spanning reads},
             is            => q{rw},
             isa           => Str,
@@ -839,7 +818,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{stringtie_minimum_coverage} => (
-            cmd_aliases   => [qw{ strmc }],
             documentation => q{StringTie min transcript coverage},
             is            => q{rw},
             isa           => Str,
@@ -848,7 +826,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{library_type} => (
-            cmd_aliases   => [qw{ lt }],
             cmd_flag      => q{library_type},
             cmd_tags      => [q{Default: reverse_stranded}],
             documentation => q{Strandedness of library},
@@ -860,7 +837,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{transcript_annotation} => (
-            cmd_aliases   => [qw{ ttf }],
             cmd_tags      => [q{Transcripts file: Format: GTF}],
             documentation => q{Transcript file for the rd_rna pipeline},
             is            => q{rw},
@@ -870,7 +846,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{trim_galore_ar} => (
-            cmd_aliases   => [qw{ trg }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Trim fastq files using Trim galore},
             is            => q{rw},
@@ -880,7 +855,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{varianteffectpredictor} => (
-            cmd_aliases   => [qw{ vep }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Annotate variants using VEP},
             is            => q{rw},
@@ -890,7 +864,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{vep_custom_annotation} => (
-            cmd_aliases   => [qw{ vepcann }],
             documentation => q{VEP custom annotation},
             is            => q{rw},
             isa           => HashRef,
@@ -899,7 +872,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{vep_directory_cache} => (
-            cmd_aliases   => [qw{ vepc }],
             documentation => q{Specify the cache directory to use},
             is            => q{rw},
             isa           => Str,
@@ -908,8 +880,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{vep_features} => (
-            cmd_aliases => [qw{ vepf }],
-            cmd_tags    => [
+            cmd_tags => [
 q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds, uniprot, biotype, regulatory, tsl, canonical, per_gene, appris}
             ],
             documentation => q{VEP features},
@@ -917,6 +888,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             isa           => ArrayRef [Str],
         )
     );
+
+    option(
+        q{vep_plugins_dir_path} => (
+            documentation => q{Path to directory with VEP plugins},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 

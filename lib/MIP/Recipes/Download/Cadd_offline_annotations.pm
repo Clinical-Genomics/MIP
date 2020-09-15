@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_cadd_offline_annotations };
@@ -122,7 +122,7 @@ sub download_cadd_offline_annotations {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -199,19 +199,6 @@ sub download_cadd_offline_annotations {
             verbose        => $verbose,
         }
     );
-
-    if ( $genome_version eq q{grch37} and $reference_version eq q{v1.4} ) {
-
-        gnu_mv(
-            {
-                filehandle   => $filehandle,
-                force        => 1,
-                infile_path  => catdir( $outdir_path, q{GRCh37} ),
-                outfile_path => catdir( $outdir_path, q{GRCh37_v1.4} ),
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
 
     ## Replace big tar file with almost empty content to avoid large storage footprint
     my $echo_message = q{Files downloaded and moved to} . $SPACE . $outdir_path;

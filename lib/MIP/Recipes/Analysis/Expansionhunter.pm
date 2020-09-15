@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -39,7 +39,6 @@ sub analysis_expansionhunter {
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => The file_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -53,7 +52,6 @@ sub analysis_expansionhunter {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -83,13 +81,6 @@ sub analysis_expansionhunter {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -372,9 +363,10 @@ sub analysis_expansionhunter {
       $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
-            filehandle      => $filehandle,
-            infile_path     => $svdb_outfile_path,
-            stdoutfile_path => $stranger_outfile_path,
+            filehandle        => $filehandle,
+            infile_path       => $svdb_outfile_path,
+            repeats_file_path => $variant_catalog_file_path,
+            stdoutfile_path   => $stranger_outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -420,17 +412,18 @@ sub analysis_expansionhunter {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

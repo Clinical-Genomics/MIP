@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln analysis_star_aln_mixed };
@@ -40,7 +40,6 @@ sub analysis_star_aln {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -54,7 +53,6 @@ sub analysis_star_aln {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -84,13 +82,6 @@ sub analysis_star_aln {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -140,16 +131,16 @@ sub analysis_star_aln {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{
       get_rg_header_line
-      get_sequence_run_type
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -245,18 +236,23 @@ sub analysis_star_aln {
     my @reverse_files;
     my @read_groups;
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     ## Perform per single-end or read pair
   INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
@@ -369,14 +365,12 @@ sub analysis_star_aln {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        my $star_aln_log = $outfile_path_prefix . $DOT . q{Log.final.out};
-        set_recipe_metafile_in_sample_info(
+        my $qc_stats_outfile_path = $outfile_path_prefix . $DOT . q{Log.final.out};
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name,
-                metafile_tag     => q{log},
-                path             => $star_aln_log,
-                recipe_name      => $recipe_name,
+                path             => $qc_stats_outfile_path,
+                recipe_name      => q{star_log},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -384,17 +378,18 @@ sub analysis_star_aln {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -408,7 +403,6 @@ sub analysis_star_aln_mixed {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -422,7 +416,6 @@ sub analysis_star_aln_mixed {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -452,13 +445,6 @@ sub analysis_star_aln_mixed {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -508,16 +494,16 @@ sub analysis_star_aln_mixed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{
       get_rg_header_line
-      get_sequence_run_type
       set_recipe_outfile_in_sample_info
       set_recipe_metafile_in_sample_info
       set_processing_metafile_in_sample_info };
@@ -540,11 +526,9 @@ sub analysis_star_aln_mixed {
             temp_directory => $temp_directory,
         }
     );
-    my @infile_paths         = @{ $io{in}{file_paths} };
-    my @infile_names         = @{ $io{in}{file_names} };
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my $recipe_mode          = $active_parameter_href->{$recipe_name};
-    my $job_id_chain         = get_recipe_attributes(
+    my @infile_paths = @{ $io{in}{file_paths} };
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -558,6 +542,13 @@ sub analysis_star_aln_mixed {
         }
     );
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     %io = (
         %io,
         parse_io_outfiles(
@@ -565,7 +556,7 @@ sub analysis_star_aln_mixed {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                file_name_prefixes_ref => $file_info_sample{no_direction_infile_prefixes},
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
@@ -588,7 +579,7 @@ sub analysis_star_aln_mixed {
     ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
+        each @{ $file_info_sample{no_direction_infile_prefixes} } )
     {
 
         ## Assign file features
@@ -597,11 +588,12 @@ sub analysis_star_aln_mixed {
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
         # Collect paired-end or single-end sequence run mode
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
@@ -746,15 +738,16 @@ sub analysis_star_aln_mixed {
 
             submit_recipe(
                 {
-                    base_command            => $profile_base_command,
-                    case_id                 => $case_id,
-                    dependency_method       => q{sample_to_sample_parallel},
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_chain            => $job_id_chain,
-                    job_id_href             => $job_id_href,
+                    base_command      => $profile_base_command,
+                    case_id           => $case_id,
+                    dependency_method => q{sample_to_sample_parallel},
+                    job_id_chain      => $job_id_chain,
+                    job_id_href       => $job_id_href,
                     job_reservation_name =>
                       $active_parameter_href->{job_reservation_name},
-                    log                  => $log,
+                    log => $log,
+                    max_parallel_processes_count_href =>
+                      $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
                     recipe_files_tracker => $infile_index,
                     sample_id            => $sample_id,

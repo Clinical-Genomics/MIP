@@ -26,27 +26,21 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.09;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_analyse_dragen_rd_dna };
+    our @EXPORT_OK = qw{ parse_dragen_rd_dna pipeline_analyse_dragen_rd_dna };
 }
 
-sub pipeline_analyse_dragen_rd_dna {
+sub parse_dragen_rd_dna {
 
-## Function : Pipeline recipe for Dragen wgs data analysis
-## Returns  :
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
-##          : $file_info_href                  => File info hash {REF}
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                     => Job id hash {REF}
-##          : $log                             => Log object to write to
-##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref               => Order of recipes
-##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Function : Dragen rare disease DNA pipeline specific checks and parsing
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -54,8 +48,234 @@ sub pipeline_analyse_dragen_rd_dna {
     my $active_parameter_href;
     my $broadcasts_ref;
     my $file_info_href;
-    my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
+    my $order_parameters_ref;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{
+      check_sample_id_in_hash_parameter
+      parse_infiles
+      parse_vep_plugin
+      set_vcfparser_outfile_counter
+      write_references
+    };
+    use MIP::Analysis qw{ broadcast_parameters };
+    use MIP::Config qw{ write_mip_config };
+    use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Fastq qw{ parse_fastq_infiles };
+    use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
+    use MIP::Parameter qw{ get_cache };
+    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Reference qw{ get_select_file_contigs };
+    use MIP::Sample_info qw{ set_parameter_in_sample_info };
+    use MIP::Vep qw{
+      check_vep_api_cache_versions
+      check_vep_custom_annotation
+    };
+
+    ## Constants
+    Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Update the expected number of outfiles after vcfparser
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
+
+    ## Collect select file contigs to loop over downstream
+    parse_select_file_contigs(
+        {
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+            select_file_path        => $active_parameter_href->{vcfparser_select_file},
+        }
+    );
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
+        }
+    );
+
+    broadcast_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            order_parameters_ref  => $order_parameters_ref,
+        }
+    );
+
+    ## Write references for this analysis to yaml
+    write_references(
+        {
+            active_parameter_href => $active_parameter_href,
+            outfile_path          => $active_parameter_href->{reference_info_file},
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Write config file for case
+    write_mip_config(
+        {
+            active_parameter_href => $active_parameter_href,
+            remove_keys_ref       => \@REMOVE_CONFIG_KEYS,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            include_y               => $active_parameter_href->{include_y},
+        }
+    );
+
+    ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+        }
+    );
+
+    ## Reformat file names to MIP format, get file name info and add info to sample_info
+    parse_fastq_infiles(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    parse_fastq_for_gender(
+        {
+            active_parameter_href   => $active_parameter_href,
+            consensus_analysis_type => $consensus_analysis_type,
+            file_info_href          => $file_info_href,
+        }
+    );
+
+    ## Add to sample info
+    set_parameter_in_sample_info(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    return;
+}
+
+sub pipeline_analyse_dragen_rd_dna {
+
+## Function : Pipeline recipe for Dragen wgs data analysis
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $log                   => Log object to write to
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $order_recipes_ref     => Order of recipes
+##          : $parameter_href        => Parameter hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $file_info_href;
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
@@ -83,18 +303,6 @@ sub pipeline_analyse_dragen_rd_dna {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -141,9 +349,8 @@ sub pipeline_analyse_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_dragen_rd_dna };
-    use MIP::Constants qw{ set_singularity_constants };
-    use MIP::Parse::Reference qw{ parse_reference_for_vt };
+    use MIP::Constants qw{ set_container_constants };
+    use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
@@ -154,7 +361,6 @@ sub pipeline_analyse_dragen_rd_dna {
       qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
-    use MIP::Recipes::Analysis::Frequency_annotation qw{ analysis_frequency_annotation };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
@@ -167,58 +373,52 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
+    use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
+      qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Dragen_rd_dna qw{build_dragen_rd_dna_meta_files};
 
     ### Pipeline specific checks
-    check_dragen_rd_dna(
+    parse_dragen_rd_dna(
         {
-            active_parameter_href           => $active_parameter_href,
-            broadcasts_ref                  => $broadcasts_ref,
-            file_info_href                  => $file_info_href,
-            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
-            log                             => $log,
-            order_parameters_ref            => $order_parameters_ref,
-            parameter_href                  => $parameter_href,
-            sample_info_href                => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            broadcasts_ref        => $broadcasts_ref,
+            file_info_href        => $file_info_href,
+            order_parameters_ref  => $order_parameters_ref,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
     ## Set analysis constants
-    set_singularity_constants( { active_parameter_href => $active_parameter_href, } );
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
     build_dragen_rd_dna_meta_files(
         {
-            active_parameter_href   => $active_parameter_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
-            sample_info_href        => $sample_info_href,
+            active_parameter_href => $active_parameter_href,
+            file_info_href        => $file_info_href,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
-    ## Check if vt has processed references
+    ## Check if references needs preprocessing
     ## If not try to reprocesses them before launching recipes
-    $log->info(q{[Reference check - Reference processed by VT]});
-    parse_reference_for_vt(
+    parse_references(
         {
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            log                     => $log,
-            parameter_href          => $parameter_href,
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => $job_id_href,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -230,7 +430,6 @@ sub pipeline_analyse_dragen_rd_dna {
         dragen_dna_align_vc              => \&analysis_dragen_dna_align_vc,
         dragen_dna_joint_calling         => \&analysis_dragen_dna_joint_calling,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
-        frequency_annotation             => \&analysis_frequency_annotation,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         rankvariant    => undef,                         # Depends on sample features
@@ -240,10 +439,11 @@ sub pipeline_analyse_dragen_rd_dna {
         sv_rankvariant => undef,                         # Depends on sample features
         sv_reformat    => \&analysis_reformat_sv,
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
-        sv_varianteffectpredictor => undef,                    # Depends on analysis type,
-        sv_vcfparser              => undef,                    # Depends on analysis type
-        varianteffectpredictor    => \&analysis_vep,
-        vcfparser_ar              => \&analysis_mip_vcfparser,
+        sv_varianteffectpredictor => undef,                # Depends on analysis type,
+        sv_vcfparser              => undef,                # Depends on analysis type
+        varianteffectpredictor    => \&analysis_vep_wgs,
+        variant_annotation => \&analysis_variant_annotation,
+        vcfparser_ar       => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
         version_collect_ar => \&analysis_mip_vercollect,
         vt_ar              => \&analysis_vt,
@@ -292,14 +492,13 @@ sub pipeline_analyse_dragen_rd_dna {
 
                 $analysis_recipe{$recipe}->(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
+                        active_parameter_href => $active_parameter_href,
+                        file_info_href        => $file_info_href,
+                        job_id_href           => $job_id_href,
+                        parameter_href        => $parameter_href,
+                        recipe_name           => $recipe,
+                        sample_id             => $sample_id,
+                        sample_info_href      => $sample_info_href,
                     }
                 );
             }
@@ -310,13 +509,12 @@ sub pipeline_analyse_dragen_rd_dna {
 
             $analysis_recipe{$recipe}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    recipe_name             => $recipe,
-                    sample_info_href        => $sample_info_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    parameter_href        => $parameter_href,
+                    recipe_name           => $recipe,
+                    sample_info_href      => $sample_info_href,
                 }
             );
         }

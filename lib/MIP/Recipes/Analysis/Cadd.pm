@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -19,7 +18,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+  qw{ $CLOSE_PARENTHESIS $COMMA $DASH $DOT $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,18 +26,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_gb_38 };
+    our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_panel };
 
 }
 
 ## Constants
-Readonly my $GENOME_BUILD_NR_38 => 38;
-Readonly my $REGION_START       => 2;
-Readonly my $REGION_END         => 2;
-Readonly my $SEQUENCE_NAME      => 1;
+Readonly my $REGION_START  => 2;
+Readonly my $REGION_END    => 2;
+Readonly my $SEQUENCE_NAME => 1;
 
 sub analysis_cadd {
 
@@ -47,7 +45,6 @@ sub analysis_cadd {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -59,7 +56,6 @@ sub analysis_cadd {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $profile_base_command;
@@ -87,13 +83,6 @@ sub analysis_cadd {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -132,12 +121,11 @@ sub analysis_cadd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -166,7 +154,7 @@ sub analysis_cadd {
 
     my $human_genome_reference_version =
       $file_info_href->{human_genome_reference_version};
-    my ( $assembly_version, $cadd_version ) = _get_cadd_reference_params(
+    my $assembly_version = _get_cadd_reference_param(
         {
             reference_source  => $file_info_href->{human_genome_reference_source},
             reference_version => $human_genome_reference_version,
@@ -217,33 +205,16 @@ sub analysis_cadd {
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $recipe_resource{core_number},
-        }
-    );
-    ## Update memory depending on how many cores that are being used
-    my $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $memory_allocation,
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -252,11 +223,14 @@ sub analysis_cadd {
     );
 
     ### SHELL:
-
     say {$filehandle} q{## } . $recipe_name;
 
     ## Add reference dir for CADD mounting point
-    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    my $bash_variable =
+        q{MIP_BIND}
+      . $EQUALS
+      . catdir( $active_parameter_href->{reference_dir},
+        qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -271,7 +245,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number      => $core_number,
+            core_number      => $recipe_resource{core_number},
             filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
@@ -281,7 +255,7 @@ sub analysis_cadd {
 
     ## Process per contig
   CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
+    while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
         my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
@@ -289,11 +263,40 @@ sub analysis_cadd {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
+        my $view_infile_path = $infile_path{$contig};
+
+        if ( $contig =~ / MT | chrM /xms ) {
+
+            $view_infile_path = $outfile_path_prefix . $DOT . $contig . q{plus.vcf};
+            bcftools_concat(
+                {
+                    filehandle       => $xargsfilehandle,
+                    infile_paths_ref => [
+                        $infile_path{ $contigs_size_ordered[ $index - 1 ] },
+                        $infile_path{$contig}
+                    ],
+                    outfile_path    => $view_infile_path,
+                    output_type     => q{v},
+                    rm_dups         => 0,
+                    stderrfile_path => $stderrfile_path,
+                }
+            );
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
+        }
+
+        $view_infile_path = _parse_cadd_infile(
+            {
+                escape_oneliner   => 1,
+                filehandle        => $xargsfilehandle,
+                infile_path       => $view_infile_path,
+                reference_version => $file_info_href->{human_genome_reference_version},
+            }
+        );
 
         bcftools_view(
             {
                 filehandle      => $xargsfilehandle,
-                infile_path     => $infile_path{$contig},
+                infile_path     => $view_infile_path,
                 types           => q{indels},
                 outfile_path    => $view_outfile_path,
                 output_type     => q{v},
@@ -309,8 +312,6 @@ sub analysis_cadd {
                 infile_path            => $view_outfile_path,
                 outfile_path           => $cadd_outfile_path,
                 stderrfile_path_append => $stderrfile_path,
-                temp_dir_path          => $active_parameter_href->{temp_directory},
-                version                => $cadd_version,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -323,7 +324,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $recipe_resource{core_number},
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -341,7 +342,17 @@ sub analysis_cadd {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         # Corresponds to cadd outfile path
-        my $tabix_infile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+
+        ## Parse outfile in case of grch38
+        $cadd_outfile_path = _parse_cadd_outfile(
+            {
+                escape_oneliner   => 1,
+                filehandle        => $xargsfilehandle,
+                infile_path       => $cadd_outfile_path,
+                reference_version => $file_info_href->{human_genome_reference_version},
+            }
+        );
 
         ## Create tabix index
         htslib_tabix(
@@ -350,7 +361,7 @@ sub analysis_cadd {
                 end             => $REGION_END,
                 filehandle      => $xargsfilehandle,
                 force           => 1,
-                infile_path     => $tabix_infile_path,
+                infile_path     => $cadd_outfile_path,
                 sequence        => $SEQUENCE_NAME,
                 stderrfile_path => $stderrfile_path,
             }
@@ -359,13 +370,14 @@ sub analysis_cadd {
 
         bcftools_annotate(
             {
-                annotations_file_path  => $tabix_infile_path,
+                annotations_file_path  => $cadd_outfile_path,
                 columns_name           => $cadd_columns_name,
                 filehandle             => $xargsfilehandle,
                 headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
                 infile_path            => $infile_path{$contig},
                 outfile_path           => $outfile_path{$contig},
                 output_type            => q{v},
+                regions_ref            => [$contig],
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -398,31 +410,31 @@ sub analysis_cadd {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{sample_to_case},
+                case_id              => $case_id,
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
     return 1;
 }
 
-sub analysis_cadd_gb_38 {
+sub analysis_cadd_panel {
 
 ## Function : Annotate variants with CADD score for genome build 38
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -434,7 +446,6 @@ sub analysis_cadd_gb_38 {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $profile_base_command;
@@ -462,13 +473,6 @@ sub analysis_cadd_gb_38 {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -507,19 +511,16 @@ sub analysis_cadd_gb_38 {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -539,11 +540,11 @@ sub analysis_cadd_gb_38 {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my $infile_path        = $io{in}{file_path};
 
     my $human_genome_reference_version =
       $file_info_href->{human_genome_reference_version};
-    my ( $assembly_version, $cadd_version ) = _get_cadd_reference_params(
+    my $assembly_version = _get_cadd_reference_param(
         {
             reference_source  => $file_info_href->{human_genome_reference_source},
             reference_version => $human_genome_reference_version,
@@ -551,8 +552,7 @@ sub analysis_cadd_gb_38 {
     );
 
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -572,55 +572,35 @@ sub analysis_cadd_gb_38 {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
-                id               => $case_id,
-                file_info_href   => $file_info_href,
-                file_name_prefix => $infile_name_prefix,
-                iterators_ref    => \@contigs_size_ordered,
-                outdata_dir      => $active_parameter_href->{outdata_dir},
-                parameter_href   => $parameter_href,
-                recipe_name      => $recipe_name,
+                chain_id               => $job_id_chain,
+                id                     => $case_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
             }
         )
     );
 
-    my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path        = $io{out}{file_path};
     my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
-    my $filehandle      = IO::Handle->new();
-    my $xargsfilehandle = IO::Handle->new();
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $recipe_resource{core_number},
-        }
-    );
-    ## Update memory depending on how many cores that are being used
-    my $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
-        }
-    );
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $memory_allocation,
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -629,11 +609,15 @@ sub analysis_cadd_gb_38 {
     );
 
     ### SHELL:
-
-    say {$filehandle} q{## } . $recipe_name;
+    ## View indels and calculate CADD
+    say {$filehandle} q{## CADD};
 
     ## Add reference dir for CADD mounting point
-    my $bash_variable = q{MIP_BIND} . $EQUALS . $active_parameter_href->{reference_dir};
+    my $bash_variable =
+        q{MIP_BIND}
+      . $EQUALS
+      . catdir( $active_parameter_href->{reference_dir},
+        qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -642,174 +626,77 @@ sub analysis_cadd_gb_38 {
     );
     say {$filehandle} $NEWLINE;
 
-    ## View indels and calculate CADD
-    say {$filehandle} q{## CADD};
-
-    ## Create file commands for xargs
-    my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+    ## Get parameters
+    my $view_infile_path = _parse_cadd_infile(
         {
-            core_number      => $core_number,
-            filehandle       => $filehandle,
-            file_path        => $recipe_file_path,
-            recipe_info_path => $recipe_info_path,
-            xargsfilehandle  => $xargsfilehandle,
+            filehandle        => $filehandle,
+            infile_path       => $infile_path,
+            reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
+    my $view_outfile_path =
+      $outfile_path_prefix . $UNDERSCORE . q{view} . $outfile_suffix;
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $view_infile_path,
+            types        => q{indels},
+            outfile_path => $view_outfile_path,
+            output_type  => q{v},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
-    ## Process per contig
-  CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
+    my $cadd_outfile_path = $outfile_path_prefix . $DOT . q{tsv.gz};
+    cadd(
+        {
+            filehandle   => $filehandle,
+            genome_build => $assembly_version,
+            infile_path  => $view_outfile_path,
+            outfile_path => $cadd_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
-        ## Get parameters
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $view_outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
-
-        bcftools_view(
-            {
-                filehandle      => $xargsfilehandle,
-                infile_path     => $infile_path{$contig},
-                types           => q{indels},
-                outfile_path    => $view_outfile_path,
-                output_type     => q{v},
-                stderrfile_path => $stderrfile_path,
-            }
-        );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-        ### Need to create synonym contigs for CADD.sh with grch38
-        my $synonyms_outfile_path =
-            $outfile_path_prefix
-          . $UNDERSCORE . q{view}
-          . $UNDERSCORE
-          . q{synonyms}
-          . $DOT
-          . $contig
-          . $outfile_suffix;
-
-        ## Perl
-        perl_nae_oneliners(
-            {
-                filehandle      => $xargsfilehandle,
-                oneliner_name   => q{synonyms_grch38_to_grch37},
-                stdinfile_path  => $view_outfile_path,
-                stdoutfile_path => $synonyms_outfile_path,
-            }
-        );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-        cadd(
-            {
-                filehandle             => $xargsfilehandle,
-                genome_build           => $assembly_version,
-                infile_path            => $synonyms_outfile_path,
-                outfile_path           => $cadd_outfile_path,
-                stderrfile_path_append => $stderrfile_path,
-                temp_dir_path          => $active_parameter_href->{temp_directory},
-                version                => $cadd_version,
-            }
-        );
-        say {$xargsfilehandle} $NEWLINE;
-    }
+    ## Parse outfile in case of grch38
+    $cadd_outfile_path = _parse_cadd_outfile(
+        {
+            filehandle        => $filehandle,
+            infile_path       => $cadd_outfile_path,
+            reference_version => $file_info_href->{human_genome_reference_version},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ### Annotate
     ## Tabix cadd outfile and annotate original vcf file with indel CADD score
     say {$filehandle} q{## Tabix and bcftools annotate};
 
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+    ## Create tabix index
+    htslib_tabix(
         {
-            core_number        => $core_number,
-            filehandle         => $filehandle,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            xargsfilehandle    => $xargsfilehandle,
-            xargs_file_counter => $xargs_file_counter,
+            begin       => $REGION_START,
+            end         => $REGION_END,
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $cadd_outfile_path,
+            sequence    => $SEQUENCE_NAME,
         }
     );
+    say {$filehandle} $NEWLINE;
 
-    ## Process per contig
-  CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
-
-        ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-
-        # Corresponds to cadd outfile path
-        my $tabix_infile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-
-        htslib_bgzip(
-            {
-                decompress      => 1,
-                filehandle      => $xargsfilehandle,
-                force           => 1,
-                infile_path     => $tabix_infile_path,
-                write_to_stdout => 1,
-            }
-        );
-        print {$xargsfilehandle} $PIPE . $SPACE;
-
-        my $perl_outfile_path =
-            $outfile_path_prefix
-          . $UNDERSCORE
-          . q{synonyms}
-          . $DOT
-          . $contig
-          . $DOT . q{tsv};
-
-        ## Perl
-        perl_nae_oneliners(
-            {
-                filehandle      => $xargsfilehandle,
-                oneliner_name   => q{synonyms_grch37_to_grch38},
-                stdoutfile_path => $perl_outfile_path,
-            }
-        );
-
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-        htslib_bgzip(
-            {
-                filehandle      => $xargsfilehandle,
-                force           => 1,
-                infile_path     => $perl_outfile_path,
-                stdoutfile_path => $tabix_infile_path,
-                write_to_stdout => 1,
-            }
-        );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-        ## Create tabix index
-        htslib_tabix(
-            {
-                begin           => $REGION_START,
-                end             => $REGION_END,
-                filehandle      => $xargsfilehandle,
-                force           => 1,
-                infile_path     => $tabix_infile_path,
-                sequence        => $SEQUENCE_NAME,
-                stderrfile_path => $stderrfile_path,
-            }
-        );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-        bcftools_annotate(
-            {
-                annotations_file_path  => $tabix_infile_path,
-                columns_name           => $cadd_columns_name,
-                filehandle             => $xargsfilehandle,
-                headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
-                infile_path            => $infile_path{$contig},
-                outfile_path           => $outfile_path{$contig},
-                output_type            => q{v},
-                stderrfile_path_append => $stderrfile_path,
-            }
-        );
-        say {$xargsfilehandle} $NEWLINE;
-    }
+    bcftools_annotate(
+        {
+            annotations_file_path => $cadd_outfile_path,
+            columns_name          => $cadd_columns_name,
+            filehandle            => $filehandle,
+            headerfile_path       => $active_parameter_href->{cadd_vcf_header_file},
+            infile_path           => $infile_path,
+            outfile_path          => $outfile_path,
+            output_type           => q{v},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     gnu_unset(
         {
@@ -821,15 +708,13 @@ sub analysis_cadd_gb_38 {
 
     ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
-    close $xargsfilehandle
-      or $log->logcroak(q{Could not close xargsfilehandle});
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_paths[0],
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -837,27 +722,192 @@ sub analysis_cadd_gb_38 {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{sample_to_case},
+                case_id              => $case_id,
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
     return 1;
 }
 
-sub _get_cadd_reference_params {
+sub _parse_cadd_outfile {
 
-## Function : Get the assembly and corresponding cadd version for reference build
-## Returns  : $assembly_version, $cadd_version
+## Function : Parse and return outfile from CADD depending on reference version
+## Returns  : $infile_path | $synonyms_file_path
+## Arguments: $escape_oneliner   => Escape perl oneliner
+##          : $filehandle        => Filehandle
+##          : $infile_path       => Cadd outfile path
+##          : $reference_version => Genome reference
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $escape_oneliner;
+    my $filehandle;
+    my $infile_path;
+    my $reference_version;
+
+    my $tmpl = {
+        escape_oneliner => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$escape_oneliner,
+            strict_type => 1,
+        },
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        reference_version => {
+            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
+
+    return $infile_path if $reference_version eq q{37};
+
+    my $synonyms_file_path = parse_file_suffix(
+        {
+            file_name   => $infile_path,
+            file_suffix => q{.tsv},
+        }
+    );
+    $synonyms_file_path .= $UNDERSCORE . q{synonyms.tsv.gz};
+
+    htslib_bgzip(
+        {
+            decompress      => 1,
+            filehandle      => $filehandle,
+            force           => 1,
+            infile_path     => $infile_path,
+            write_to_stdout => 1,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    perl_nae_oneliners(
+        {
+            escape_oneliner => $escape_oneliner,
+            filehandle      => $filehandle,
+            oneliner_name   => q{synonyms_grch37_to_grch38},
+        }
+    );
+
+    print {$filehandle} $PIPE . $SPACE;
+
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            force           => 1,
+            stdoutfile_path => $synonyms_file_path,
+            write_to_stdout => 1,
+        }
+    );
+    print {$filehandle} $SEMICOLON . $SPACE;
+
+    return $synonyms_file_path;
+}
+
+sub _parse_cadd_infile {
+
+## Function : Parse CADD infile and preproccess if necessary, depending on reference version
+## Returns  : $infile_path | undef
+## Arguments: $escape_oneliner   => Escape perl oneliner
+##          : $filehandle        => Filehandle
+##          : $infile_path       => Infile path
+##          : $reference_version => Genome reference
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $escape_oneliner;
+    my $filehandle;
+    my $infile_path;
+    my $reference_version;
+
+    my $tmpl = {
+        escape_oneliner => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$escape_oneliner,
+            strict_type => 1,
+        },
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        reference_version => {
+            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_view };
+
+    return $infile_path if $reference_version eq q{37};
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+            output_type => q{v},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Perl
+    my @infile_commands = perl_nae_oneliners(
+        {
+            escape_oneliner => $escape_oneliner,
+            filehandle      => $filehandle,
+            oneliner_name   => q{synonyms_grch38_to_grch37},
+            stdinfile_path  => $infile_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    return;
+}
+
+sub _get_cadd_reference_param {
+
+## Function : Get the genome assembly and version for CADD
+## Returns  : $assembly_version
 ## Arguments: $reference_source  => Reference source
 ##          : $reference_version => Reference version
 
@@ -883,22 +933,14 @@ sub _get_cadd_reference_params {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Constants
-    Readonly my $GENOME_BUILD_38 => 38;
-    Readonly my $GENOME_BUILD_37 => 37;
-
     my %cadd_map = (
-        grch         => q{GRCh} . $reference_version,
-        hg           => q{GRCh} . $reference_version,
-        cadd_version => {
-            $GENOME_BUILD_38 => q{v1.5},
-            $GENOME_BUILD_37 => q{v1.4},
-        },
+        grch37 => q{GRCh37},
+        grch38 => q{GRCh38},
+        hg19   => q{GRCh37},
     );
 
-    my $assembly_version = $cadd_map{$reference_source};
-    my $cadd_version     = $cadd_map{cadd_version}{$reference_version};
-    return $assembly_version, $cadd_version;
+    my $assembly_version = $cadd_map{ $reference_source . $reference_version };
+    return $assembly_version;
 }
 
 1;

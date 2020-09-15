@@ -41,7 +41,6 @@ sub analysis_bcftools_merge {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -53,7 +52,6 @@ sub analysis_bcftools_merge {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -81,13 +79,6 @@ sub analysis_bcftools_merge {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -128,7 +119,7 @@ sub analysis_bcftools_merge {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_merge bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -295,17 +286,18 @@ sub analysis_bcftools_merge {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{sample_to_case},
+                case_id              => $case_id,
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

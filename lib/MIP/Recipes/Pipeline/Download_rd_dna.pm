@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -79,14 +79,11 @@ sub pipeline_download_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Download::1000g_all_sv qw{ download_1000g_all_sv };
-    use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
     use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
     use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
-    use MIP::Recipes::Download::Cadd_bravo_topmed qw{ download_cadd_bravo_topmed };
-    use MIP::Recipes::Download::Cadd_gnomad_genomes qw{ download_cadd_gnomad_genomes };
     use MIP::Recipes::Download::Cadd_offline_annotations
       qw{ download_cadd_offline_annotations };
     use MIP::Recipes::Download::Cadd_to_vcf_header qw{ download_cadd_to_vcf_header };
@@ -98,7 +95,6 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
-    use MIP::Recipes::Download::Fqa_vcfanno_config qw{ download_fqa_vcfanno_config };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
     use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
@@ -117,25 +113,24 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Runstatus qw{ download_runstatus };
     use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
-    use MIP::Recipes::Download::Sv_fqa_vcfanno_config
-      qw{ download_sv_fqa_vcfanno_config };
+    use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
     use MIP::Recipes::Download::Vcf2cytosure_blacklist_regions
       qw{ download_vcf2cytosure_blacklist_regions };
+    use MIP::Recipes::Download::Vcfanno_config qw{ download_vcfanno_config };
+    use MIP::Recipes::Download::Vcfanno_functions qw{ download_vcfanno_functions };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
-        q{1000g_all_sv}                => \&download_1000g_all_sv,
-        q{1000g_all_wgs}               => \&download_1000g_all_wgs,
         q{1000g_indels}                => \&download_1000g_indels,
         q{1000g_omni}                  => \&download_1000g_omni,
         q{1000g_sites}                 => \&download_1000g_sites,
         q{1000g_snps}                  => \&download_1000g_snps,
-        cadd_bravo_topmed              => \&download_cadd_bravo_topmed,
-        cadd_gnomad_genomes            => \&download_cadd_gnomad_genomes,
         cadd_offline_annotations       => \&download_cadd_offline_annotations,
         cadd_to_vcf_header             => \&download_cadd_to_vcf_header,
         cadd_whole_genome_snvs         => \&download_cadd_whole_genome_snvs,
@@ -145,7 +140,6 @@ sub pipeline_download_rd_dna {
         dbsnp                          => \&download_dbsnp,
         delly_exclude                  => \&download_delly_exclude,
         expansionhunter                => \&download_expansionhunter,
-        fqa_vcfanno_config             => \&download_fqa_vcfanno_config,
         gatk_mitochondrial_ref         => \&download_gatk_mitochondrial_ref,
         genbank_haplogroup             => \&download_genbank_haplogroup,
         genomic_superdups              => \&download_genomic_superdups,
@@ -160,8 +154,10 @@ sub pipeline_download_rd_dna {
         reduced_penetrance             => \&download_reduced_penetrance,
         scout_exons                    => \&download_scout_exons,
         svrank_model                   => \&download_svrank_model,
-        sv_fqa_vcfanno_config          => \&download_sv_fqa_vcfanno_config,
+        sv_vcfanno_config              => \&download_sv_vcfanno_config,
         vcf2cytosure_blacklist_regions => \&download_vcf2cytosure_blacklist_regions,
+        vcfanno_config                 => \&download_vcfanno_config,
+        vcfanno_functions              => \&download_vcfanno_functions,
     );
 
     # Storing job_ids from SLURM, however currently all are independent

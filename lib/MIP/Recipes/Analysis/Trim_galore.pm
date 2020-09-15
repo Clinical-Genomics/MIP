@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_trim_galore };
@@ -40,7 +40,6 @@ sub analysis_trim_galore {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name             => Recipe name
@@ -52,7 +51,6 @@ sub analysis_trim_galore {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -81,13 +79,6 @@ sub analysis_trim_galore {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -133,12 +124,13 @@ sub analysis_trim_galore {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Trim_galore qw{ trim_galore };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_sequence_run_type set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -158,6 +150,7 @@ sub analysis_trim_galore {
         }
     );
     my @infile_paths         = @{ $io{in}{file_paths} };
+    my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
 
     my $job_id_chain = get_recipe_attributes(
@@ -178,13 +171,13 @@ sub analysis_trim_galore {
     ## Construct outfiles
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
+
     my @outfile_paths = _construct_trim_galore_outfile_paths(
         {
-            infile_lane_prefixes_ref => $infile_lane_prefix_href->{$sample_id},
+            file_info_href           => $file_info_href,
             infile_name_prefixes_ref => \@infile_name_prefixes,
             outsample_directory      => $outsample_directory,
             sample_id                => $sample_id,
-            sample_info_href         => $sample_info_href,
         }
     );
 
@@ -203,17 +196,28 @@ sub analysis_trim_galore {
         )
     );
     my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my $outdata_dir_path      = $io{out}{dir_path};
+    my @qc_outfile_paths =
+      map { catfile( $outdata_dir_path, $_ . q{_trimming_report.txt} ) } @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
         {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar @{ $infile_lane_prefix_href->{$sample_id} },
-            recipe_core_number   => $recipe_resource{core_number},
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            modifier_core_number =>
+              scalar @{ $file_info_sample{no_direction_infile_prefixes} },
+            recipe_core_number => $recipe_resource{core_number},
         }
     );
 
@@ -250,21 +254,24 @@ sub analysis_trim_galore {
 
     # Keep track of paired end files
     my $paired_end_tracker = 0;
+    my %qc_files;
 
   INFILE_PREFIX:
-    foreach my $infile_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
-        ## Check sequence run type
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
-        ## Infile(s)
+        ## Get files
         my @fastq_files = $infile_paths[$paired_end_tracker];
+        $qc_files{ $infile_names[$paired_end_tracker] } =
+          $qc_outfile_paths[$paired_end_tracker];
 
         my $paired_reads;
 
@@ -276,6 +283,8 @@ sub analysis_trim_galore {
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
             push @fastq_files, $infile_paths[$paired_end_tracker];
+            $qc_files{ $infile_names[$paired_end_tracker] } =
+              $qc_outfile_paths[$paired_end_tracker];
         }
 
         my $stderrfile_path =
@@ -296,6 +305,7 @@ sub analysis_trim_galore {
 
         ## Increment paired end tracker
         $paired_end_tracker++;
+
     }
     say {$filehandle} q{wait};
 
@@ -319,19 +329,35 @@ sub analysis_trim_galore {
             }
         );
 
+      FASTQ_INFILE:
+        foreach my $fastq_infile ( keys %qc_files ) {
+
+            ## Collect QC metadata info for later use
+            set_recipe_outfile_in_sample_info(
+                {
+                    infile           => $fastq_infile,
+                    path             => $qc_files{$fastq_infile},
+                    recipe_name      => q{trim_galore_stats},
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
+
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -343,27 +369,25 @@ sub _construct_trim_galore_outfile_paths {
 
 ## Function : Construct outfile paths for Trim galore
 ## Returns  : @outfile_paths
-## Arguments: $infile_lane_prefixes_ref => Array with infile lane prefixes {REF}
+## Arguments: $file_info_href           => File info hash {REF}
 ##          : $infile_name_prefixes_ref => Array with infile name prefixes {REF}
 ##          : $outsample_directory      => Outsample directory
 ##          : $sample_id                => Sample id
-##          : $sample_info_href         => Hash with sample info {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_lane_prefixes_ref;
+    my $file_info_href;
     my $infile_name_prefixes_ref;
     my $outsample_directory;
     my $sample_id;
-    my $sample_info_href;
 
     my $tmpl = {
-        infile_lane_prefixes_ref => {
-            default     => [],
+        file_info_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infile_lane_prefixes_ref,
+            store       => \$file_info_href,
             strict_type => 1,
         },
         infile_name_prefixes_ref => {
@@ -383,39 +407,31 @@ sub _construct_trim_galore_outfile_paths {
             store       => \$sample_id,
             strict_type => 1,
         },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
+    use MIP::File_info qw{ get_sample_file_attribute };
 
     my @outfile_paths;
 
     my $paired_end_tracker = 0;
 
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
   INFILE_PREFIX:
-    foreach my $infile_prefix ( @{$infile_lane_prefixes_ref} ) {
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
-        # Collect sequence run mode
-        my $sequence_run_type = get_sequence_run_type(
+        my $sequence_run_type = get_sample_file_attribute(
             {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-        my $is_interleaved = get_sequence_run_type_is_interleaved(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
             }
         );
 
@@ -424,8 +440,7 @@ sub _construct_trim_galore_outfile_paths {
             ${$infile_name_prefixes_ref}[$paired_end_tracker] );
 
         ## The suffixes differs depending on whether the reads are paired or not
-        if ( ( $sequence_run_type eq q{paired-end} ) and ( not $is_interleaved ) ) {
-
+        if ( $sequence_run_type eq q{paired-end} ) {
             ## Add read 1
             push @outfile_paths, $outfile_path_prefix . q{_val_1.fq.gz};
 
@@ -441,10 +456,8 @@ sub _construct_trim_galore_outfile_paths {
         else {
             push @outfile_paths, $outfile_path_prefix . q{_trimmed.fq.gz};
         }
-
         $paired_end_tracker++;
     }
-
     return @outfile_paths;
 }
 1;

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_write_to_file write_toml_config };
@@ -102,7 +102,7 @@ sub test_write_to_file {
 
 sub write_toml_config {
 
-## Function : Copy toml template and update to system specific path
+## Function : Copy TOML template and update to system specific path
 ## Returns  :
 ## Arguments: $test_reference_path => Test reference path
 ##          : $toml_config_path    => Path to new toml config
@@ -132,22 +132,38 @@ sub write_toml_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Copy qw{ cp };
-    use Path::Tiny qw{ path };
+    use MIP::Io::Read qw{ read_from_file };
+    use MIP::Io::Write qw{ write_to_file };
 
     ## Create copy of template
     cp( $toml_template_path, $toml_config_path );
 
-    ## Create Path::Tiny object
-    $toml_config_path = path($toml_config_path);
-
-    ## Read into memory
-    my $toml_config = $toml_config_path->slurp_utf8;
+    my %toml = read_from_file(
+        {
+            format => q{toml},
+            path   => $toml_config_path,
+        }
+    );
 
     ## Replace with system specific path
-    $toml_config =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+    if ( $toml{functions} and $toml{functions}{file} ) {
 
-    ## Write to file
-    $toml_config_path->spew_utf8($toml_config);
+        $toml{functions}{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+    }
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $toml{annotation} } ) {
+
+        $annotation_href->{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+    }
+
+    write_to_file(
+        {
+            data_href => \%toml,
+            format    => q{toml},
+            path      => $toml_config_path,
+        }
+    );
 
     return;
 }

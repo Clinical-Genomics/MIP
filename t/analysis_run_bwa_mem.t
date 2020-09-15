@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,11 +79,10 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{platform}                       = q{ILLUMINA};
-$active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
-$active_parameter{bwa_mem_cram}                   = 1;
-$active_parameter{bwa_mem_bamstats}               = 1;
-$active_parameter{human_genome_reference}         = q{grch37_homo_sapiens_-d5-.fasta};
+$active_parameter{platform}               = q{ILLUMINA};
+$active_parameter{bwa_mem_cram}           = 1;
+$active_parameter{bwa_mem_bamstats}       = 1;
+$active_parameter{human_genome_reference} = q{grch37_homo_sapiens_-d5-.fasta};
 
 my %file_info = test_mip_hashes(
     {
@@ -92,8 +91,6 @@ my %file_info = test_mip_hashes(
     }
 );
 
-my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
-my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -108,12 +105,27 @@ my %sample_info = (
     sample => {
         $sample_id => {
             file => {
-                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
+                ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7 => {
                     sequence_run_type   => q{paired-end},
                     read_direction_file => {
-                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_1 => {
                             flowcell       => q{TestFilev2},
                             lane           => q{1},
+                            sample_barcode => q{GAGATTC},
+                        },
+                        ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7_2 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{1},
+                            sample_barcode => q{GAGATTC},
+                        },
+                    },
+                },
+                ADM1059A1_161011_TestFilev2_GAGATTCC_lane2 => {
+                    sequence_run_type   => q{single-end},
+                    read_direction_file => {
+                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane2_1 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{2},
                             sample_barcode => q{GAGATTC},
                         },
                     },
@@ -125,6 +137,9 @@ my %sample_info = (
 ## Special case - add second infile defined in test data
 push @{ $file_info{ADM1059A1}{mip_infiles} },
   q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_2.fastq};
+my $mip_file_format = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane2};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
+$file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
 
 ## Will test the run-bwamem
 $file_info{human_genome_reference_source}  = q{grch};
@@ -132,15 +147,14 @@ $file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_38;
 
 my $is_ok = analysis_run_bwa_mem(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 
@@ -156,15 +170,14 @@ $file_info{human_genome_reference_source}  = q{hg};
 $file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_20;
 $is_ok                                     = analysis_run_bwa_mem(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 

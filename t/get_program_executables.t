@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_program_executables }],
+        q{MIP::Parameter}      => [qw{ get_program_executables }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_program_executables };
+use MIP::Parameter qw{ get_program_executables };
 
 diag(   q{Test get_program_executables from Parameter.pm v}
-      . $MIP::Get::Parameter::VERSION
+      . $MIP::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,14 +59,13 @@ diag(   q{Test get_program_executables from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given parameters with program executables when no recipes in cache
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
 
 trap {
     get_program_executables( { parameter_href => \%parameter, } )
 };
 
-## Then all program executables is returned
 ## Then croak and exist
 is( $trap->leaveby, q{die}, q{Exit if no recipe is found} );
 like(

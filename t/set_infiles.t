@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -17,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_infiles }],
+        q{MIP::File_info}      => [qw{ set_infiles }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_infiles };
+use MIP::File_info qw{ set_infiles };
 
-diag(   q{Test set_infiles from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test set_infiles from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

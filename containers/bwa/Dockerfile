@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="bwa"
 LABEL software.version="0.7.17"
 LABEL extra.binaries="bwa"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install bwa=0.7.17=ha92aebf_3
 
@@ -19,4 +17,3 @@ RUN conda install bwa=0.7.17=ha92aebf_3
 RUN /opt/conda/bin/conda clean -tipsy
 
 WORKDIR /data/
-

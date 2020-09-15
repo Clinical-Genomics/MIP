@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
@@ -24,14 +23,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_ase_chain_recipes
       set_rankvariants_ar
       set_recipe_bwa_mem
-      set_recipe_cadd
       set_recipe_chromograph
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
@@ -78,7 +75,8 @@ sub set_recipe_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
+    use MIP::Recipes::Analysis::Bwa_mem
+      qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
     Readonly my $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS => 37;
     Readonly my $GENOME_BUILD_VERSION_HG_PRIOR_ALTS   => 19;
@@ -95,7 +93,8 @@ sub set_recipe_bwa_mem {
 
         # Human genome version <= grch37
         # Use bwa mem recipe
-        $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+        $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
+        $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
         return;
     }
 
@@ -111,57 +110,9 @@ sub set_recipe_bwa_mem {
 
     ## Human genome version <= hg19
     # Use bwa mem recipe
-    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+    $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
+    $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
 
-    return;
-}
-
-sub set_recipe_cadd {
-
-## Function : Set correct cadd recipe depending on version of the human_genome_reference
-## Returns  :
-## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
-##          : $human_genome_reference_version => Human genome reference version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $human_genome_reference_version;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        human_genome_reference_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$human_genome_reference_version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
-
-    ## Constants
-    Readonly my $GENOME_BUILD_NR_38 => 38;
-
-    # Human genome version > grch37
-    if ( $human_genome_reference_version >= $GENOME_BUILD_NR_38 ) {
-
-        # Use cadd recipe for genome build 38
-        $analysis_recipe_href->{cadd_ar} = \&analysis_cadd_gb_38;
-        return;
-    }
-
-    # Human genome version <= grch37
-    $analysis_recipe_href->{cadd_ar} = \&analysis_cadd;
     return;
 }
 
@@ -328,6 +279,7 @@ sub set_recipe_on_analysis_type {
       qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
+    use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
 
     my %analysis_type_recipe = (
@@ -436,61 +388,20 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     return;
 }
 
-sub set_ase_chain_recipes {
-
-## Function : Update analysis recipes for ASE on dna vcf
-## Returns  :
-## Arguments: $active_parameter_href => Active parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Keep default if no DNA vcf
-    if ( not $active_parameter_href->{dna_vcf_file} ) {
-
-        ## Turn off vcf reformat
-        $active_parameter_href->{dna_vcf_reformat} = 0;
-    }
-    else {
-
-        ## Turn off variantcalling part of RNA pipeline
-        $active_parameter_href->{gatk_splitncigarreads}  = 0;
-        $active_parameter_href->{gatk_baserecalibration} = 0;
-        $active_parameter_href->{gatk_haplotypecaller}   = 0;
-        $active_parameter_href->{gatk_variantfiltration} = 0;
-    }
-
-    return;
-}
-
 sub set_recipe_star_aln {
 
 ## Function : Set star_aln analysis recipe depending on mix of fastq files
 ## Returns  :
-## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $sample_info_href        => Sample info hash {REF}
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $file_info_href       => File_info hash {REF}
+##          : $sample_ids_ref       => Sample ids
 
     my ($arg_href) = @_;
 
     ## Flatten arguments
     my $analysis_recipe_href;
-    my $infile_lane_prefix_href;
-    my $sample_info_href;
+    my $file_info_href;
+    my $sample_ids_ref;
 
     my $tmpl = {
         analysis_recipe_href => {
@@ -500,45 +411,39 @@ sub set_recipe_star_aln {
             store       => \$analysis_recipe_href,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
+        file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infile_lane_prefix_href,
+            store       => \$file_info_href,
             strict_type => 1,
         },
-        sample_info_href => {
-            default     => {},
+        sample_ids_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$sample_info_href,
+            store       => \$sample_ids_ref,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_consensus_sequence_run_type };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln analysis_star_aln_mixed };
-    use MIP::Sample_info qw{ get_sequence_run_type };
 
-    ## Get sequence run types
-  SAMPLE_ID:
-    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
-
-        my %sequence_run_type = get_sequence_run_type(
-            {
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_id               => $sample_id,
-                sample_info_href        => $sample_info_href,
-            }
-        );
-
-        ## Use regular star_aln_mixed recipe if multiple sequence types are present
-        if ( uniq( values %sequence_run_type ) > 1 ) {
-
-            $analysis_recipe_href->{star_aln} = \&analysis_star_aln_mixed;
-            return;
+    ## Get consensus sequence run types
+    my $is_compatible = get_consensus_sequence_run_type(
+        {
+            file_info_href => $file_info_href,
+            sample_ids_ref => $sample_ids_ref,
         }
+    );
+
+    if ( not $is_compatible ) {
+
+        $analysis_recipe_href->{star_aln} = \&analysis_star_aln_mixed;
+        return;
     }
 
     ## The fastq files are either all single or paired end

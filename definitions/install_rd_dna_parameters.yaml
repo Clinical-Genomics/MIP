@@ -1,8 +1,0 @@
----
-environment_name:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: mip_rd-dna
-  mandatory: no
-  type: mip

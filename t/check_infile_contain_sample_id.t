@@ -18,15 +18,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,10 +35,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_infile_contain_sample_id }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Validate::Case} => [qw{ check_infile_contain_sample_id }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
+use MIP::Validate::Case qw{ check_infile_contain_sample_id };
 
-diag(   q{Test check_infile_contain_sample_id from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_infile_contain_sample_id from Case.pm v}
+      . $MIP::Validate::Case::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,19 +64,15 @@ my $log = test_log( {} );
 
 ## Given proper input data
 my $infile_sample_id = q{sample-1};
-my $file_index       = 0;
 my $sample_id        = q{sample-1};
 
-my %active_parameter = ( sample_ids  => [ qw{ sample-1 sample-2 }, ], );
-my %infile           = ( q{sample-1} => { mip_infiles => [qw{ sample-1.fastq }], }, );
+my %infile = ( $sample_id => { mip_infiles => [ $sample_id . q{.fastq} ], }, );
 
 my $is_ok = check_infile_contain_sample_id(
     {
-        infile_name      => $infile{q{sample-1}}{mip_infiles}[0],
+        infile_name      => $infile{$sample_id}{mip_infiles}[0],
         infile_sample_id => $infile_sample_id,
-        log              => $log,
         sample_id        => $sample_id,
-        sample_ids_ref   => \@{ $active_parameter{sample_ids} },
     }
 );
 ## Then return true
@@ -94,15 +86,17 @@ trap {
         {
             infile_name      => $infile{q{sample-1}}{mip_infiles}[0],
             infile_sample_id => $infile_sample_id,
-            log              => $log,
             sample_id        => $sample_id,
-            sample_ids_ref   => \@{ $active_parameter{sample_ids} },
         }
     )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if sample_id do not match} );
-like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if sample_id do not match} );
+like(
+    $trap->stderr,
+    qr/supplied \s+ and \s+ sample_id/xms,
+    q{Throw fatal log message if sample_id do not match}
+);
 
 done_testing();

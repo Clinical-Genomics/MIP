@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,11 +77,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{sv_vcfparser_outfile_count}                  = 2;
 $active_parameter{vcfparser_outfile_count}                     = 2;
-$active_parameter{endvariantannotationblock_remove_genes_file} = 1;
-$active_parameter{rankvariant_binary_file}                     = 1;
-$active_parameter{sv_reformat_remove_genes_file}               = q{a_file};
+$active_parameter{endvariantannotationblock_remove_genes_file} = q{a_file};
 
 my %file_info = test_mip_hashes(
     {
@@ -94,7 +91,6 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -109,15 +105,14 @@ my %sample_info;
 
 my $is_ok = analysis_endvariantannotationblock(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

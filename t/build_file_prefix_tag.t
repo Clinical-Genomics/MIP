@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Mip} => [qw{ build_file_prefix_tag }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
+        q{MIP::Io::Recipes}    => [qw{ build_file_prefix_tag }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Mip qw{ build_file_prefix_tag };
+use MIP::Io::Recipes qw{ build_file_prefix_tag };
 
-diag(   q{Test build_file_prefix_tag from Mip.pm v}
-      . $MIP::File::Format::Mip::VERSION
+diag(   q{Test build_file_prefix_tag from Recipes.pm v}
+      . $MIP::Io::Recipes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,14 +57,15 @@ diag(   q{Test build_file_prefix_tag from Mip.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $sample_id     = q{homer};
+my $case_id       = q{simpsons};
 my $current_chain = q{MAIN};
 my $other_chain   = q{SV};
+my $sample_id     = q{homer};
 
 my @order_recipes = qw{ bwa_mem pmerge pmark manta };
 
 my %active_parameter = (
-    case_id               => q{simpsons},
+    case_id               => $case_id,
     bwa_mem               => 1,
     manta                 => 1,
     pmark                 => 1,
@@ -102,9 +99,11 @@ my %parameter = (
 build_file_prefix_tag(
     {
         active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
         file_info_href        => \%file_info,
         order_recipes_ref     => \@order_recipes,
         parameter_href        => \%parameter,
+        sample_ids_ref        => $active_parameter{sample_ids},
     }
 );
 
@@ -114,7 +113,7 @@ my %expected_file_tag = (
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
     },
-    q{simpsons} => {
+    $case_id => {
         bwa_mem => { file_tag => q{mem}, },
         pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },

@@ -1,3 +1,4 @@
+---
 default_gene_panels:
   - IEM
 customer: 'cust000'
@@ -10,7 +11,7 @@ samples:
     mother: ADM1059A3
     phenotype: affected
     sample_id: ADM1059A2
-    sample_name: NA12882
+    sample_display_name: NA12882
     sex: male
     time_point: 0
   - analysis_type: wes
@@ -20,7 +21,7 @@ samples:
     mother: '0'
     phenotype: unaffected
     sample_id: ADM1059A1
-    sample_name: NA12877
+    sample_display_name: NA12877
     sex: male
     time_point: 0
   - analysis_type: wes
@@ -30,6 +31,6 @@ samples:
     mother: '0'
     phenotype: unaffected
     sample_id: ADM1059A3
-    sample_name: NA12878
+    sample_display_name: NA12878
     sex: female
     time_point: 0

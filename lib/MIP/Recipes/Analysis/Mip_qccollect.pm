@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -38,7 +38,6 @@ sub analysis_mip_qccollect {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $infile_path             => Infile path
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -51,7 +50,6 @@ sub analysis_mip_qccollect {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $infile_path;
     my $job_id_href;
     my $parameter_href;
@@ -80,13 +78,6 @@ sub analysis_mip_qccollect {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         infile_path => {
@@ -197,15 +188,15 @@ sub analysis_mip_qccollect {
     ### SHELL:
 
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
-
     mip_qccollect(
         {
+            eval_metric_file => $active_parameter_href->{qccollect_eval_metric_file},
+            filehandle       => $filehandle,
             infile_path      => $infile_path,
-            outfile_path     => $outfile_path,
             log_file_path    => $log_file_path,
+            outfile_path     => $outfile_path,
             regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
             skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
-            filehandle       => $filehandle,
         }
     );
     say {$filehandle} $NEWLINE;

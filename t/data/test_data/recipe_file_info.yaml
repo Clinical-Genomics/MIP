@@ -1,16 +1,41 @@
 ---
 ADM1059A1:
+  ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7:
+    sequence_run_type: single-end
+  infile_lane_prefix:
+    - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
+  no_direction_infile_prefixes:
+    - ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane7
   mip_infiles_dir: infile_dir
   mip_infiles:
-   - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
+    - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
+  7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq:
+    date: 161011
+    direction: 1
+    flowcell: HHJJCCCXY
+    index: NAATGCGC
+    infile_sample_id: ADM1059A1
+    is_file_compressed: 0
+    is_interleaved: 1
+    lane: 7
+    read_file_command: cat
+    read_length: 151
 ADM1059A2:
+  infile_lane_prefix:
+    - ADM1059A2
   mip_infiles_dir: infile_dir
   mip_infiles:
-   - ADM1059A2.fastq
+    - ADM1059A2.fastq
+  ADM1059A2.fastq:
+    is_file_compressed: 0
 ADM1059A3:
+  infile_lane_prefix:
+    - ADM1059A3
   mip_infiles_dir: infile_dir
   mip_infiles:
-   - ADM1059A3.fastq
+    - ADM1059A3.fastq
+  ADM1059A3.fastq:
+    is_file_compressed: 0
 bwa_build_reference:
   - .bwt
   - .ann
@@ -18,109 +43,109 @@ bwa_build_reference:
   - .pac
   - .sa
 bam_contigs:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - 8
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 21
- - 22
- - X
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - X
+  - Y
+  - MT
 bam_contigs_size_ordered:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - 8
- - X
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 22
- - 21
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - X
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 22
+  - 21
+  - Y
+  - MT
 contigs:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - 8
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 21
- - 22
- - X
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - X
+  - Y
+  - MT
 contigs_size_ordered:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - 8
- - X
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 22
- - 21
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - X
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 22
+  - 21
+  - Y
+  - MT
 exome_target_bed:
   - .interval_list
   - .pad100.interval_list
@@ -132,6 +157,10 @@ human_genome_reference_file_endings:
   - .dict
   - .fai
 human_genome_reference_name_prefix: grch37_homo_sapiens_-d5-
+max_parallel_processes_count:
+  ADM1059A1: 0
+  ADM1059A2: 0
+  ADM1059A3: 0
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:
@@ -139,54 +168,57 @@ salmon_quant_reference_genome:
 star_aln_reference_genome:
   - _star_aln_genome_dir
 select_file_contigs:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - 8
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 21
- - 22
- - X
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - X
+  - Y
+  - MT
 sorted_select_file_contigs:
- - 1
- - 2
- - 3
- - 4
- - 5
- - 6
- - 7
- - X
- - 8
- - 9
- - 10
- - 11
- - 12
- - 13
- - 14
- - 15
- - 16
- - 17
- - 18
- - 19
- - 20
- - 22
- - 21
- - Y
- - MT
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - X
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 22
+  - 21
+  - Y
+  - MT
+transcript_annotation_file_endings:
+  - .refFlat
+  - .rrna.interval_list

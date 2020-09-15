@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,19 +42,21 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}    => [qw{ check_vcfanno_toml }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
-        q{MIP::Unix::System}   => [qw{ system_cmd_call }],
+        q{MIP::Environment::Child_process} => [qw{child_process}],
+        q{MIP::Test::Fixtures}             => [qw{test_log test_standard_cli}],
+        q{MIP::Toml}                       => [qw{ load_toml write_toml }],
+        q{MIP::Vcfanno}                    => [qw{check_vcfanno_toml}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_vcfanno_toml };
-use MIP::Unix::System qw{ system_cmd_call };
+use MIP::Environment::Child_process qw{ child_process };
+use MIP::Toml qw{ load_toml write_toml };
+use MIP::Vcfanno qw{ check_vcfanno_toml };
 
-diag(   q{Test check_vcfanno_toml from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test check_vcfanno_toml from Vcfanno.pm v}
+      . $MIP::Vcfanno::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,34 +71,45 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqa_vcfanno_config =
+my $vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
-    qw{ grch37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
+my $test_vcfanno_config = catfile( $test_reference_dir,
+    qw{ grch37_frequency_vcfanno_filter_config_test_check_vcfanno_-v1.0-.toml  } );
 
-my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
+my $toml_href = load_toml(
+    {
+        path => $vcfanno_config,
+    }
+);
 
-## Replace line starting with "file=" with dynamic file path
-my $parse_path =
-    q?perl -nae 'chomp;if($_=~/file=/) {say STDOUT q{file="?
-  . $file_path
-  . q?"};} else {say STDOUT $_}' ?;
+## Set test file paths
+$toml_href->{functions}{file} =
+  catfile( $Bin, qw{ data references vcfanno_functions_-v1.0-.lua } );
+$toml_href->{annotation}[0]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+$toml_href->{annotation}[1]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.1.1_sv-.vcf } );
+$toml_href->{annotation}[2]{file} =
+  catfile( $Bin, qw{ data references grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz } );
 
-## Parse original file and create new config for test
-my $command_string = join $SPACE,
-  ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
+write_toml(
+    {
+        data_href => $toml_href,
+        path      => $test_vcfanno_config,
+    }
+);
 
-my %return = system_cmd_call( { command_string => $command_string, } );
+my %active_parameter = ( vcfanno_config => $test_vcfanno_config, );
 
 ## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
-        log               => $log,
-        parameter_name    => q{fqa_vcfanno_config},
-        vcfanno_file_toml => $test_fqa_vcfanno_config,
+        active_parameter_href => \%active_parameter,
+        vcfanno_config_name   => q{vcfanno_config},
+        vcfanno_functions     => q{vcfanno_functions},
     }
 );
 
@@ -104,18 +117,19 @@ my $is_ok = check_vcfanno_toml(
 ok( $is_ok, q{Passed check for toml file} );
 
 ## Clean-up
-rmtree($test_fqa_vcfanno_config);
+rmtree($test_vcfanno_config);
 
 ## Given a toml config file, when mandatory features are absent
-my $faulty_fqa_vcfanno_config_file = catfile( $Bin,
+my $faulty_vcfanno_config_file = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
+$active_parameter{vcfanno_config} = $faulty_vcfanno_config_file;
 trap {
     check_vcfanno_toml(
         {
-            log               => $log,
-            parameter_name    => q{fqa_vcfanno_config},
-            vcfanno_file_toml => $faulty_fqa_vcfanno_config_file,
+            active_parameter_href => \%active_parameter,
+            vcfanno_config_name   => q{vcfanno_config},
+            vcfanno_functions     => q{vcfanno_functions},
         }
     )
 };

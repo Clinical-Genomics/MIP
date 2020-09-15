@@ -18,15 +18,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.09;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,10 +35,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::File}    => [qw{ parse_fastq_infiles }],
+        q{MIP::Fastq}          => [qw{ parse_fastq_infiles }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::File qw{ parse_fastq_infiles };
+use MIP::Fastq qw{ parse_fastq_infiles };
 
-diag(   q{Test parse_fastq_infiles from File.pm v}
-      . $MIP::Parse::File::VERSION
+diag(   q{Test parse_fastq_infiles from Fastq.pm v}
+      . $MIP::Fastq::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -68,11 +64,11 @@ my $log = test_log( {} );
 
 ## Given compressed file, when proper data
 my %active_parameter = (
-    sample_ids    => [qw{ ADM1059A1 }],
     analysis_type => {
         ADM1059A1 => q{wgs},
         ADM1059A2 => q{wgs},
     },
+    sample_ids => [qw{ ADM1059A1 }],
 );
 my %file_info = (
     ADM1059A1 => {
@@ -81,23 +77,18 @@ my %file_info = (
         mip_infiles => [qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz }],
     },
 );
-my %infile_both_strands_prefix;
-my %infile_lane_prefix;
 my %sample_info;
 
 parse_fastq_infiles(
     {
-        active_parameter_href           => \%active_parameter,
-        file_info_href                  => \%file_info,
-        infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-        infile_lane_prefix_href         => \%infile_lane_prefix,
-        log                             => $log,
-        sample_info_href                => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        sample_info_href      => \%sample_info,
     }
 );
 
 ## Then return undef
-is( $file_info{is_file_uncompressed}{ADM1059A1}, undef, q{No files uncompressed} );
+is( $file_info{is_files_compressed}{ADM1059A1}, 1, q{All files compressed} );
 
 ## Given uncompressed file
 push @{ $active_parameter{sample_ids} }, q{ADM1059A2};
@@ -108,48 +99,15 @@ $file_info{ADM1059A2}{mip_infiles_dir} =
 
 parse_fastq_infiles(
     {
-        active_parameter_href           => \%active_parameter,
-        file_info_href                  => \%file_info,
-        infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-        infile_lane_prefix_href         => \%infile_lane_prefix,
-        log                             => $log,
-        sample_info_href                => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        sample_info_href      => \%sample_info,
     }
 );
 
 ## Then return true
-ok(
-    $file_info{is_file_uncompressed}{ADM1059A2},
-    q{Files uncompressed and got run info from headers}
-);
-
-## Given wts analysis type
-$active_parameter{analysis_type}{ADM1059A2} = q{wts};
-push @{ $file_info{ADM1059A2}{mip_infiles} }, qw{ 1_171118_interleaved.fastq };
-
-trap {
-    parse_fastq_infiles(
-        {
-            active_parameter_href           => \%active_parameter,
-            file_info_href                  => \%file_info,
-            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_lane_prefix_href         => \%infile_lane_prefix,
-            log                             => $log,
-            sample_info_href                => \%sample_info,
-        }
-    );
-};
-
-## Special case as it seems to make trap work with prove and not exit - Unclear why this works
-say {*STDOUT} $SPACE;
-
-## Then exit and throw fatal log message
-ok( $trap->exit, q{Exit if wts and interleaved fastq} );
-like(
-    $trap->stderr,
-    qr/MIP\s+ rd_rna \s+ does \s+ not \s+ support/xms,
-    q{Throw fatal log message if wts and fastq file is interleaved}
-);
+is( $file_info{is_files_compressed}{ADM1059A2},
+    0, q{Files uncompressed and got run info from headers} );
 
 ## Remove ADM1059A2 from processing
 pop @{ $active_parameter{sample_ids} };
@@ -163,18 +121,12 @@ $file_info{ADM1059A3}{mip_infiles_dir} =
 trap {
     parse_fastq_infiles(
         {
-            active_parameter_href           => \%active_parameter,
-            file_info_href                  => \%file_info,
-            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_lane_prefix_href         => \%infile_lane_prefix,
-            log                             => $log,
-            sample_info_href                => \%sample_info,
+            active_parameter_href => \%active_parameter,
+            file_info_href        => \%file_info,
+            sample_info_href      => \%sample_info,
         }
     );
 };
-
-## Special case as it seems to make trap work with prove and not exit - Unclear why this works
-say {*STDOUT} $SPACE;
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if sample_id in file name cannot be found} );

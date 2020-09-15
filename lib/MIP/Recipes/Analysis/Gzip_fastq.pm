@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -39,7 +39,6 @@ sub analysis_gzip_fastq {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -52,7 +51,6 @@ sub analysis_gzip_fastq {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -81,13 +79,6 @@ sub analysis_gzip_fastq {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -134,6 +125,7 @@ sub analysis_gzip_fastq {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Environment::Cluster qw{ check_max_core_number };
+    use MIP::File_info qw{ get_is_sample_files_compressed get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -141,8 +133,14 @@ sub analysis_gzip_fastq {
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## No uncompressed fastq infiles
-    return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
+    my $is_files_compressed = get_is_sample_files_compressed(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+    ## No uncompressed fastq infiles for this sample_id
+    return if ($is_files_compressed);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -162,7 +160,6 @@ sub analysis_gzip_fastq {
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my @infile_paths         = @{ $io{in}{file_paths} };
-    my @infile_suffixes      = @{ $io{in}{file_suffixes} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -207,16 +204,29 @@ sub analysis_gzip_fastq {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-  INFILE_LANE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
 
+  INFILE_LANE:
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
+
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
         $core_number = update_core_number_to_seq_mode(
             {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
+                core_number       => $core_number,
+                sequence_run_type => $sequence_run_type,
             }
         );
     }
@@ -257,8 +267,16 @@ sub analysis_gzip_fastq {
   INFILE:
     while ( my ( $infile_index, $infile ) = each @infile_names ) {
 
+        my $is_file_compressed = get_sample_file_attribute(
+            {
+                attribute      => q{is_file_compressed},
+                file_info_href => $file_info_href,
+                file_name      => $infile,
+                sample_id      => $sample_id,
+            }
+        );
         ## For files ending with ".fastq" required since there can be a mixture (also .fastq.gz) within the sample dir
-        if ( $infile_suffixes[$infile_index] eq q{.fastq} ) {
+        if ( not $is_file_compressed ) {
 
             ## Using only $active_parameter{max_cores_per_node} cores
             if ( $uncompressed_file_counter ==
@@ -272,8 +290,8 @@ sub analysis_gzip_fastq {
             ## Perl wrapper for writing gzip recipe to $filehandle
             gzip(
                 {
-                    filehandle  => $filehandle,
-                    infile_path => $infile_paths[$infile_index],
+                    filehandle       => $filehandle,
+                    infile_paths_ref => [ $infile_paths[$infile_index] ],
                 }
             );
             say {$filehandle} q{&};

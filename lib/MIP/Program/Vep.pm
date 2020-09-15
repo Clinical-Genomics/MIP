@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
@@ -47,6 +47,7 @@ sub variant_effect_predictor {
 ##          : $infile_path             => Infile path to read from
 ##          : $infile_format           => Input file format - one of "ensembl", "vcf", "hgvs", "id"
 ##          : $max_sv_size             => Extend the maximum Structural Variant size VEP can process
+##          : $no_headers              => Don't write headers to output file
 ##          : $outfile_format          => Output file format
 ##          : $outfile_path            => Outfile path to write to
 ##          : $plugins_dir_path        => Path to plugins directory
@@ -56,6 +57,7 @@ sub variant_effect_predictor {
 ##          : $stderrfile_path         => Stderr file path to write to {OPTIONAL}
 ##          : $stderrfile_path_append  => Append stderr info to file path
 ##          : $stdoutfile_path         => Stdoutfile path
+##          : $stdoutfile_path_append  => Append stdout info to file path
 ##          : $synonyms_file_path      => Contig synonyms
 ##          : $vep_features_ref        => Features to add to VEP
 
@@ -68,6 +70,7 @@ sub variant_effect_predictor {
     my $custom_annotations_ref;
     my $filehandle;
     my $infile_path;
+    my $no_headers;
     my $outfile_path;
     my $plugins_dir_path;
     my $plugins_ref;
@@ -76,6 +79,7 @@ sub variant_effect_predictor {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $stdoutfile_path_append;
     my $synonyms_file_path;
     my $vep_features_ref;
 
@@ -136,6 +140,11 @@ sub variant_effect_predictor {
             store       => \$max_sv_size,
             strict_type => 1,
         },
+        no_headers => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_headers,
+            strict_type => 1,
+        },
         outfile_format => {
             allow       => [qw{ vcf tab json }],
             default     => q{vcf},
@@ -174,6 +183,10 @@ sub variant_effect_predictor {
         },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        stdoutfile_path_append => {
+            store       => \$stdoutfile_path_append,
             strict_type => 1,
         },
         synonyms_file_path => {
@@ -221,6 +234,11 @@ sub variant_effect_predictor {
 
     push @commands, q{--max_sv_size} . $SPACE . $max_sv_size;
 
+    if ($no_headers) {
+
+        push @commands, q{--no_headers};
+    }
+
     if ($outfile_format) {
 
         push @commands, q{--} . $outfile_format;
@@ -265,6 +283,7 @@ sub variant_effect_predictor {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
             stdoutfile_path        => $stdoutfile_path,
+            stdoutfile_path_append => $stdoutfile_path_append,
         }
       );
 

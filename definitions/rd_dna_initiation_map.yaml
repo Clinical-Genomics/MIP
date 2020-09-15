@@ -9,7 +9,8 @@ CHAIN_ALL:
     - fastqc_ar
   - CHAIN_MAIN:
     - bwa_mem
-    - picardtools_mergesamfiles
+    - bwa_mem2
+    - samtools_merge
     - markduplicates
     - gatk_baserecalibration
     # Parallel chains (branches), which inherit from MAIN in initiation
@@ -23,6 +24,10 @@ CHAIN_ALL:
       - sambamba_depth
     - CHAIN_SMN:
       - smncopynumbercaller
+    - CHAIN_CYRIUS:
+      - star_caller
+    - CHAIN_TEL:
+      - telomerecat_ar
     - CHAIN_PTMME:
       - picardtools_collectmultiplemetrics
     - CHAIN_PTCHSM:
@@ -69,7 +74,7 @@ CHAIN_ALL:
     - prepareforvariantannotationblock
     - rhocall_ar
     - vt_ar
-    - frequency_annotation
+    - variant_annotation
     - CHAIN_RHOCALL_VIZ:
       - rhocall_viz
     - CHAIN_CHROMOGRAPH:

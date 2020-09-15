@@ -6,8 +6,8 @@ custom_default_parameters:
   data_type: ARRAY
   default:
     - analysis_type
+    - conda_path
     - exome_target_bed
-    - gatk_path
     - infile_dirs
     - pedigree_fam_file
     - picardtools_path
@@ -24,9 +24,8 @@ decompose_normalize_references:
     - mip
   data_type: ARRAY
   default:
-    - fqa_vcfanno_config
-    - sv_fqa_vcfanno_config
-  element_separator: ,
+    - sv_vcfanno_config
+    - vcfanno_config
   type: mip
 gatk_logging_level:
   associated_recipe:
@@ -40,9 +39,8 @@ gatk_path:
     - varianteffectpredictor
     - rankvariant
   data_type: SCALAR
-  exists_check: directory
+  default: /usr/
   type: path
-  update_path: absolute_path
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
@@ -72,11 +70,9 @@ infile_dirs:
   update_path: absolute_path
 picardtools_path:
   associated_recipe:
-    - prepareforvariantannotationblock
+    - sv_reformat
   data_type: SCALAR
-  exists_check: directory
   type: path
-  update_path: absolute_path
 #### Bash
 recipe_core_number:
   associated_recipe:
@@ -84,10 +80,10 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    cadd_ar: 13
     dragen_dna_align_vc: 1
     dragen_dna_joint_calling: 1
     endvariantannotationblock: 1
-    frequency_annotation: 13
     frequency_filter: 13
     rhocall_ar: 15
     sacct: 1
@@ -96,6 +92,8 @@ recipe_core_number:
     sv_reformat: 1
     sv_varianteffectpredictor: 0
     sv_vcfparser: 16
+    variant_annotation: 13
+    vcfanno_preops: 36
     version_collect_ar: 1
     vt_ar: 13
     vt_core: 1
@@ -108,7 +106,7 @@ recipe_memory:
     # Per process
     cadd_ar: 3
     endvariantannotationblock: 8
-    frequency_annotation: 3
+    variant_annotation: 3
     rhocall_ar: 2
     sv_reformat: 24
     sv_varianteffectpredictor: 7
@@ -124,7 +122,6 @@ recipe_time:
     dragen_dna_align_vc: 5
     dragen_dna_joint_calling: 5
     endvariantannotationblock: 2
-    frequency_annotation: 1
     frequency_filter: 2
     prepareforvariantannotationblock: 5
     rankvariant: 10
@@ -135,7 +132,9 @@ recipe_time:
     sv_reformat: 1
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
+    variant_annotation: 1
     varianteffectpredictor: 10
+    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -199,20 +198,11 @@ sv_annotate:
 sv_fqa_annotations:
   associated_recipe:
     - sv_annotate
-  element_separator: ,
   data_type: ARRAY
   default:
     - GNOMADAF
     - GNOMADAF_POPMAX
   type: recipe_argument
-sv_fqa_vcfanno_config:
-  associated_recipe:
-    - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 sv_bcftools_view_filter:
   associated_recipe:
     - sv_annotate
@@ -239,6 +229,14 @@ sv_svdb_query_db_files:
   is_reference: 1
   reference: reference_dir
   type: path
+sv_vcfanno_config:
+  associated_recipe:
+    - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 sv_varianteffectpredictor:
   analysis_mode: case
   associated_recipe:
@@ -253,7 +251,6 @@ sv_varianteffectpredictor:
 sv_vep_features:
   associated_recipe:
     - sv_varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
     - appris
@@ -302,7 +299,6 @@ sv_vcfparser_add_all_mt_var:
 sv_vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -331,7 +327,6 @@ sv_vcfparser_per_gene:
 sv_vcfparser_select_feature_annotation_columns:
   associated_recipe:
     - sv_vcfparser
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -409,7 +404,6 @@ sv_reformat:
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
-    - grep
     - picard
   type: recipe
 sv_rankvariant_binary_file:
@@ -468,7 +462,6 @@ vt_ar:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
@@ -509,11 +502,10 @@ vt_core:
   file_tag: _vt
   program_executables:
     - vt
-    - sed
     - bgzip
     - tabix
   type: recipe
-frequency_annotation:
+variant_annotation:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -525,14 +517,24 @@ frequency_annotation:
     - bcftools
     - vcfanno
   type: recipe
-fqa_vcfanno_config:
+vcfanno_config:
   associated_recipe:
-    - frequency_annotation
+    - variant_annotation
   data_type: SCALAR
   exists_check: file
   is_reference: 1
   reference: reference_dir
   type: path
+vcfanno_preops:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  program_executables:
+    - bcftools
+    - vcfanno
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -540,14 +542,13 @@ frequency_filter:
   data_type: SCALAR
   default: 1
   file_tag: _frqf
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe
 fqf_annotations:
   associated_recipe:
     - frequency_filter
-  element_separator: ,
   data_type: ARRAY
   default:
     - GNOMADAF
@@ -575,7 +576,6 @@ cadd_ar:
 cadd_column_names:
   associated_recipe:
     - cadd_ar
-  element_separator: ,
   data_type: ARRAY
   default:
     - Chrom
@@ -623,7 +623,6 @@ vep_directory_cache:
 vep_features:
   associated_recipe:
     - varianteffectpredictor
-  element_separator: ,
   data_type: ARRAY
   default:
     - appris
@@ -690,7 +689,6 @@ vcfparser_outfile_count:
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -706,7 +704,6 @@ vcfparser_range_feature_file:
 vcfparser_select_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar
-  element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
@@ -741,30 +738,12 @@ rankvariant:
   program_executables:
     - genmod
   type: recipe
-genmod_annotate_cadd_files:
-  associated_recipe:
-    - rankvariant
-  data_type: ARRAY
-  element_separator: ,
-  exists_check: file
-  is_reference: 1
-  mandatory: no
-  reference: reference_dir
-  type: path
 genmod_annotate_regions:
   associated_recipe:
     - rankvariant
   data_type: SCALAR
   default: 0
   type: recipe_argument
-genmod_annotate_spidex_file:
-  associated_recipe:
-    - rankvariant
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
@@ -803,15 +782,8 @@ endvariantannotationblock:
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
-    - grep
     - gatk
   type: recipe
-rankvariant_binary_file:
-  associated_recipe:
-    - endvariantannotationblock
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 endvariantannotationblock_remove_genes_file:
   associated_recipe:
     - endvariantannotationblock

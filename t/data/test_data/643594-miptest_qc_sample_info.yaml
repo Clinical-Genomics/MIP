@@ -1,3 +1,12 @@
+---
+analysis_type:
+  ADM1059A1: wgs
+  ADM1059A2: wgs
+  ADM1059A3: wts
+expected_coverage:
+  ADM1059A1: 150
+  ADM1059A2: 150
+  ADM1059A3: 150
 recipe:
   pedigree_check:
     path: t/data/643594-miptest/analysis/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf
@@ -5,6 +14,8 @@ recipe:
     path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.plink_sexcheck.sexcheck
   relation_check:
     path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.relation_check.mibs
+  variant_integrity_ar_mendel:
+    path: /home/proj/stage/rare-disease/cases/justhusky/analysis/justhusky/variant_integrity_ar/justhusky_gatkcomb_integrity.mendel.txt
 sample:
   ADM1059A1:
     analysis_type: wgs
@@ -21,6 +32,9 @@ sample:
       chanjo_sexcheck:
         ADM1059A1_lanes_1_sorted_md_brecal_sex:
           path: t/data/643594-miptest/analysis/ADM1059A1/chanjo_sexcheck/ADM1059A1_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A1_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A1/picardtools_collectmultiplemetrics/ADM1059A1_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics
   ADM1059A2:
     analysis_type: wgs
     capture_kit: agilent_sureselect.v5
@@ -29,6 +43,13 @@ sample:
     father: 0
     mother: 0
     phenotype: unaffected
+    recipe:
+      chanjo_sexcheck:
+        ADM1059A2_lanes_1_sorted_md_brecal_sex:
+          path: t/data/643594-miptest/analysis/ADM1059A2/chanjo_sexcheck/ADM1059A2_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A2_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A2/picardtools_collectmultiplemetrics/ADM1059A2_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics
     sample_id: ADM1059A2
     sample_name: ADM1059A2
     sex: male
@@ -40,6 +61,13 @@ sample:
     father: 0
     mother: 0
     phenotype: unaffected
+    recipe:
+      chanjo_sexcheck:
+        ADM1059A3_lanes_1_sorted_md_brecal_sex:
+          path: t/data/643594-miptest/analysis/ADM1059A3/chanjo_sexcheck/ADM1059A3_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A3_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A3/picardtools_collectmultiplemetrics/ADM1059A3_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics
     sample_id: ADM1059A3
     sample_name: ADM1059A3
     sex: unknown

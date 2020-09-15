@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +40,7 @@ BEGIN {
       bcftools_merge
       bcftools_mpileup
       bcftools_norm
+      bcftools_query
       bcftools_reheader
       bcftools_rename_vcf_samples
       bcftools_roh
@@ -452,8 +453,6 @@ sub bcftools_concat {
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $rm_dups                => Output duplicate records present in multiple files only once: <snps|indels|both|all|none>
-##          : $samples_file_path      => File of samples to annotate
-##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
@@ -466,8 +465,6 @@ sub bcftools_concat {
     my $infile_paths_ref;
     my $outfile_path;
     my $regions_ref;
-    my $samples_file_path;
-    my $samples_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -502,12 +499,6 @@ sub bcftools_concat {
             store       => \$rm_dups,
             strict_type => 1,
         },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
-        samples_ref       => {
-            default     => [],
-            store       => \$samples_ref,
-            strict_type => 1,
-        },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -527,13 +518,11 @@ sub bcftools_concat {
     ## Bcftools base args
     @commands = bcftools_base(
         {
-            commands_ref      => \@commands,
-            outfile_path      => $outfile_path,
-            output_type       => $output_type,
-            regions_ref       => $regions_ref,
-            samples_file_path => $samples_file_path,
-            samples_ref       => $samples_ref,
-            threads           => $threads,
+            commands_ref => \@commands,
+            outfile_path => $outfile_path,
+            output_type  => $output_type,
+            regions_ref  => $regions_ref,
+            threads      => $threads,
         }
     );
 
@@ -838,10 +827,7 @@ sub bcftools_index {
         push @commands, q{--} . $output_type;
     }
 
-    if ($infile_path) {
-
-        push @commands, $infile_path;
-    }
+    push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
@@ -1142,8 +1128,8 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle, },
-        infile_path => { store => \$infile_path, strict_type => 1, },
+        filehandle   => { store => \$filehandle, },
+        infile_path  => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
             allow       => [qw{ + - }],
             store       => \$multiallelic,
@@ -1220,6 +1206,134 @@ sub bcftools_norm {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub bcftools_query {
+
+## Function : Perl wrapper for writing bcftools query recipe to $filehandle or return commands array. Based on bcftools 1.10.
+## Returns  : @commands
+## Arguments: $exclude                => Exclude sites for which the expression is true
+##          : $filehandle             => Filehandle to write to
+##          : $format                 => Format
+##          : $include                => Include only sites for which the expression is true
+##          : $infile_paths_ref       => Infile paths to read from {REF}
+##          : $outfile_path           => Outfile path to write to
+##          : $print_header           => Print header
+##          : $regions_ref            => Regions to process {REF}
+##          : $samples_file_path      => File of samples to annotate
+##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
+##          : $stderrfile_path        => Stderr file path to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile file path to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $exclude;
+    my $filehandle;
+    my $format;
+    my $include;
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $print_header;
+    my $regions_ref;
+    my $samples_file_path;
+    my $samples_ref;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $output_type;
+
+    my $tmpl = {
+        exclude    => { store => \$exclude, strict_type => 1, },
+        filehandle => { store => \$filehandle, },
+        format => {
+            store       => \$format,
+            strict_type => 1,
+        },
+        include          => { store => \$include, strict_type => 1, },
+        infile_paths_ref => {
+            default     => [],
+            store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        print_header => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$print_header,
+            strict_type => 1,
+        },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
+            default     => [],
+            store       => \$samples_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ bcftools query };
+
+    ## Bcftools base args
+    @commands = bcftools_base(
+        {
+            commands_ref      => \@commands,
+            regions_ref       => $regions_ref,
+            samples_file_path => $samples_file_path,
+            samples_ref       => $samples_ref,
+        }
+    );
+
+    if ($exclude) {
+
+        push @commands, q{--exclude} . $SPACE . $exclude;
+    }
+    if ($format) {
+
+        push @commands, q{--format} . $SPACE . $format;
+    }
+    if ($include) {
+
+        push @commands, q{--include} . $SPACE . $include;
+    }
+    if ($outfile_path) {
+
+        push @commands, q{--output} . $SPACE . $outfile_path;
+    }
+    if ($print_header) {
+
+        push @commands, q{--print-header};
+    }
+    if ($infile_paths_ref) {
+
+        push @commands, join $SPACE, @{$infile_paths_ref};
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -1463,7 +1577,7 @@ sub bcftools_create_reheader_samples_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_printf };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_printf };
 
     ## Create new sample names file
     say {$filehandle} q{## Create new sample(s) names file};
@@ -1730,6 +1844,7 @@ sub bcftools_view {
 ##          : $max_alleles            => Max alleles listed in REF and ALT columns
 ##          : $min_ac                 => Min allele count for sites to be printed
 ##          : $min_alleles            => Min alleles listed in REF and ALT columns
+##          : $no_header              => No header
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
@@ -1754,6 +1869,7 @@ sub bcftools_view {
     my $max_alleles;
     my $min_ac;
     my $min_alleles;
+    my $no_header;
     my $outfile_path;
     my $regions_ref;
     my $samples_file_path;
@@ -1796,6 +1912,11 @@ sub bcftools_view {
         min_alleles => {
             allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$min_alleles,
+            strict_type => 1,
+        },
+        no_header => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_header,
             strict_type => 1,
         },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
@@ -1880,6 +2001,11 @@ sub bcftools_view {
     if ($min_alleles) {
 
         push @commands, q{--min-alleles} . $SPACE . $min_alleles;
+    }
+
+    if ($no_header) {
+
+        push @commands, q{--no-header};
     }
 
     if ($outfile_path) {

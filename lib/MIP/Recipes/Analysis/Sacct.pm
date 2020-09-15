@@ -7,14 +7,12 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 # MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
@@ -25,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sacct };
@@ -39,7 +37,6 @@ sub analysis_sacct {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -51,7 +48,6 @@ sub analysis_sacct {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -79,13 +75,6 @@ sub analysis_sacct {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -126,8 +115,8 @@ sub analysis_sacct {
 
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Slurm qw{ slurm_sacct };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Workloadmanager::Slurm qw{ slurm_sacct };
 
     ### PREPROCESSING:
 

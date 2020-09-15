@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -41,7 +41,6 @@ sub build_human_genome_prerequisites {
 ##          : $filehandle                   => Filehandle to write to. A new sbatch script will be generated if $filehandle is lacking, else write to exising $filehandle {Optional}
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
-##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => The human genome reference associated file endings {REF}
@@ -58,7 +57,6 @@ sub build_human_genome_prerequisites {
     my $active_parameter_href;
     my $filehandle;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_build_suffixes_ref;
@@ -97,13 +95,6 @@ sub build_human_genome_prerequisites {
         human_genome_reference => {
             default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -157,7 +148,7 @@ sub build_human_genome_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_ln };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Program::Gzip qw{ gzip };
@@ -220,9 +211,9 @@ sub build_human_genome_prerequisites {
         ## Perl wrapper for writing gzip recipe to $filehandle
         gzip(
             {
-                decompress  => 1,
-                infile_path => $human_genome_reference,
-                filehandle  => $filehandle,
+                decompress       => 1,
+                infile_paths_ref => [$human_genome_reference],
+                filehandle       => $filehandle,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -244,7 +235,6 @@ sub build_human_genome_prerequisites {
                 active_parameter_href        => $active_parameter_href,
                 filehandle                   => $filehandle,
                 file_info_href               => $file_info_href,
-                infile_lane_prefix_href      => $infile_lane_prefix_href,
                 job_id_href                  => $job_id_href,
                 log                          => $log,
                 parameter_build_suffixes_ref => \@{ $file_info_href->{exome_target_bed} },

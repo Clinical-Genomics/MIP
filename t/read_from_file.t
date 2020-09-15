@@ -65,7 +65,18 @@ my %hash_to_return = read_from_file(
     }
 );
 
-## Then hash should contain keys
-ok( keys %hash_to_return, q{Read from file} );
+## Then return should be a hash with keys
+ok( keys %hash_to_return, q{Read from file returning hash} );
+
+my @lines_to_return = read_from_file(
+    {
+        chomp  => 1,
+        format => q{line_by_line},
+        path   => catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+    }
+);
+
+## Then return should be a array with elements
+ok( @lines_to_return, q{Read from file returning array} );
 
 done_testing();

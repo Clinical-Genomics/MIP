@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,19 +41,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Reference} => [qw{ write_references }],
-        q{MIP::Io::Read}                => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures}          => [qw{ test_log test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ write_references }],
+        q{MIP::Io::Read}         => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Reference qw{ write_references };
+use MIP::Active_parameter qw{ write_references };
 use MIP::Io::Read qw{ read_from_file };
 
-diag(   q{Test write_references from Reference.pm v}
-      . $MIP::File::Format::Reference::VERSION
+diag(   q{Test write_references from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

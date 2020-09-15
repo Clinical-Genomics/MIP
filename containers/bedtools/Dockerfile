@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="bedtools"
 LABEL software.version="2.29.0"
 LABEL extra.binaries="bedtools"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install bedtools=2.29.0
 
@@ -19,4 +17,3 @@ RUN conda install bedtools=2.29.0
 RUN /opt/conda/bin/conda clean -tipsy
 
 WORKDIR /data/
-

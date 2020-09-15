@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.36;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,18 +36,19 @@ BEGIN {
       get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
-      get_sequence_run_type
-      get_sequence_run_type_is_interleaved
       reload_previous_pedigree_info
       set_file_path_to_store
       set_gene_panel
       set_infile_info
-      set_most_complete_vcf
+      set_no_dry_run_parameters
+      set_no_read_direction_file_attributes
       set_parameter_in_sample_info
       set_processing_metafile_in_sample_info
+      set_read_direction_file_attributes
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info
       set_in_sample_info
+      write_sample_info_to_file
     };
 
 }
@@ -135,7 +135,7 @@ sub get_family_member_id {
 sub get_pedigree_sample_id_attributes {
 
 ## Function : Get pedigree sample id attribute
-## Returns  : $attribute
+## Returns  : $attribute | %attribute
 ## Arguments: $attribute        => Attribute key
 ##          : $sample_id        => Sample id to get attribute for
 ##          : $sample_info_href => Info on samples and case hash {REF}
@@ -183,16 +183,19 @@ sub get_pedigree_sample_id_attributes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Data::Diver qw{ Dive };
+
     if ( not $attribute ) {
 
         ## Return entire sample id hash
         return %{ $sample_info_href->{sample}{$sample_id} };
     }
     ## Get attribute
-    my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
+    if ( defined Dive( $sample_info_href, ( q{sample}, $sample_id, $attribute ) ) ) {
 
-    ## Return requested attribute
-    return $stored_attribute;
+        return $sample_info_href->{sample}{$sample_id}{$attribute};
+    }
+    return;
 }
 
 sub get_read_group {
@@ -461,122 +464,6 @@ sub get_sample_info_sample_recipe_attributes {
     return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name} };
 }
 
-sub get_sequence_run_type {
-
-## Function : Return sequence run type
-## Returns  : $sequence_run_type | %sequence_run_type
-## Arguments: $infile_lane_prefix      => Infile lane prefix
-##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $infile_lane_prefix_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( %{$infile_lane_prefix_href} ) {
-
-        my %sequence_run_type;
-
-      INFILE_LANE_PREFIX:
-        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
-            $sequence_run_type{$infile_lane_prefix} =
-              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-              {sequence_run_type};
-        }
-
-        return %sequence_run_type;
-    }
-    elsif ( defined $infile_lane_prefix ) {
-
-        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-          {sequence_run_type};
-
-    }
-
-    croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
-}
-
-sub get_sequence_run_type_is_interleaved {
-
-## Function : Get sequence run type interleaved info
-## Returns  : undef (not interleaved) | 1 (is interleaved)
-## Arguments: $infile_lane_prefix => Infile lane prefix
-##          : $sample_id          => Sample id
-##          : $sample_info_href   => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            required    => 1,
-            defined     => 1,
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return
-      if (
-        ref $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-        {sequence_run_type} ne q{HASH} );
-
-    return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-      {sequence_run_type}{interleaved};
-
-}
-
 sub reload_previous_pedigree_info {
 
 ## Function : Updates sample_info hash with previous run pedigree info
@@ -660,7 +547,7 @@ sub set_file_path_to_store {
 
     my $tmpl = {
         format => {
-            allow       => [qw{ fastq bam bcf bed cram meta tar vcf }],
+            allow       => [qw{ bam bb bcf bed bw cram fastq meta tar vcf wig }],
             defined     => 1,
             required    => 1,
             store       => \$format,
@@ -873,66 +760,24 @@ sub set_gene_panel {
 
 sub set_infile_info {
 
-## Function : Sets information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
+## Function : Sets information derived from fastq infile name or header to file_info and sample_info hash
 ## Returns  : $lane_tracker
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $date                            => Flow-cell sequencing date
-##          : $direction                       => Sequencing read direction
-##          : $file_index                      => Index of file
-##          : $file_info_href                  => File info hash {REF}
-##          : $flowcell                        => Flow-cell id
-##          : $index                           => The DNA library preparation molecular barcode
-##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $is_interleaved                  => Infile is interleaved
-##          : $lane                            => Flow-cell lane
-##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
-##          : $read_length                     => Sequence read length
-##          : $sample_id                       => Sample id
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $file_info_href   => File info hash {REF}
+##          : $file_name        => File name
+##          : $lane_tracker     => Counts the number of lanes sequenced {REF}
+##          : $sample_id        => Sample id
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $date;
-    my $direction;
-    my $file_index;
     my $file_info_href;
-    my $flowcell;
-    my $index;
-    my $infile_both_strands_prefix_href;
-    my $infile_lane_prefix_href;
-    my $is_interleaved;
-    my $lane;
+    my $file_name;
     my $lane_tracker;
-    my $read_length;
     my $sample_id;
     my $sample_info_href;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
-        direction => {
-            allow       => [ 1, 2 ],
-            defined     => 1,
-            required    => 1,
-            store       => \$direction,
-            strict_type => 1,
-        },
-        file_index => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$file_index,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -940,48 +785,16 @@ sub set_infile_info {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        flowcell => {
+        file_name => {
             defined     => 1,
             required    => 1,
-            store       => \$flowcell,
-            strict_type => 1,
-        },
-        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        infile_both_strands_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        is_interleaved => {
-            required    => 1,
-            store       => \$is_interleaved,
-            strict_type => 1,
-        },
-        lane => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane,
+            store       => \$file_name,
             strict_type => 1,
         },
         lane_tracker => {
             defined     => 1,
             required    => 1,
             store       => \$lane_tracker,
-            strict_type => 1,
-        },
-        read_length => {
-            required    => 1,
-            store       => \$read_length,
             strict_type => 1,
         },
         sample_id => {
@@ -1001,140 +814,163 @@ sub set_infile_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $parsed_date = Time::Piece->strptime( $date, q{%y%m%d} );
+    use MIP::Fastq qw{ define_mip_fastq_file_features };
+    use MIP::File_info qw{
+      add_sample_no_direction_infile_prefixes
+      get_sample_file_attribute
+      set_sample_file_attribute
+      set_sample_max_parallel_processes_count
+    };
+
+    my %attribute = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            file_name      => $file_name,
+            sample_id      => $sample_id,
+        }
+    );
+
+    my $parsed_date = Time::Piece->strptime( $attribute{date}, q{%y%m%d} );
     $parsed_date = $parsed_date->ymd;
 
     my ( $mip_file_format, $mip_file_format_with_direction,
         $original_file_name_prefix, $run_barcode )
-      = _file_name_formats(
+      = define_mip_fastq_file_features(
         {
-            date               => $date,
-            direction          => $direction,
-            flowcell           => $flowcell,
-            index              => $index,
-            lane               => $lane,
-            original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+            date               => $attribute{date},
+            direction          => $attribute{direction},
+            flowcell           => $attribute{flowcell},
+            index              => $attribute{index},
+            lane               => $attribute{lane},
+            original_file_name => $file_name,
             sample_id          => $sample_id,
         }
       );
 
-    ## Read 1
-    if ( $direction == 1 ) {
+    if ( $attribute{direction} == 1 ) {
 
-        ## Add lane
-        push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
-
-# Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
-        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
-
-        ## Detect Undetermined in flowcell id
-        if ( $flowcell =~ /Undetermined/ixsm ) {
-
-            ## Set Undetermined to true for file
-            $file_info_href->{undetermined_in_file_name}{$mip_file_format} = 1;
-        }
-
-        my %direction_one_metric = (
-            interleaved       => $is_interleaved,
-            sequence_length   => $read_length,
-            sequence_run_type => q{single-end},
+        add_sample_no_direction_infile_prefixes(
+            {
+                file_info_href  => $file_info_href,
+                mip_file_format => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
+        my $sequence_run_type =
+          $attribute{is_interleaved} ? q{interleaved} : q{single-end};
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => $sequence_run_type,
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
+                sample_id       => $sample_id,
+            }
         );
 
-        ## Alias
-        my $file_level_href =
-          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %direction_one_metric ) {
+        set_sample_max_parallel_processes_count(
+            {
+                file_info_href               => $file_info_href,
+                max_parallel_processes_count => $lane_tracker,
+                sample_id                    => $sample_id,
+            }
+        );
 
-            $file_level_href->{$file_key} = $file_value;
-        }
-
+        my %direction_one_metric = (
+            interleaved       => $attribute{is_interleaved},
+            sequence_length   => $attribute{read_length},
+            sequence_run_type => q{single-end},
+        );
+        set_no_read_direction_file_attributes(
+            {
+                file_name              => $mip_file_format,
+                no_read_direction_href => \%direction_one_metric,
+                sample_id              => $sample_id,
+                sample_info_href       => $sample_info_href,
+            }
+        );
         $lane_tracker++;
     }
-    if ( $direction == 2 ) {
-        ## 2nd read direction
+    if ( $attribute{direction} == 2 ) {
 
-        ## $lane_tracker -1 since it gets incremented after direction eq 1
-        # Alias
-        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
+        set_sample_file_attribute(
+            {
+                attribute       => q{sequence_run_type},
+                attribute_value => q{paired-end},
+                file_info_href  => $file_info_href,
+                file_name       => $mip_file_format,
+                sample_id       => $sample_id,
+            }
+        );
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
-
-        ## Alias
-        my $file_level_href =
-          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
-      INFO:
-        while ( my ( $file_key, $file_value ) = each %direction_two_metric ) {
-
-            $file_level_href->{$file_key} = $file_value;
-        }
+        set_no_read_direction_file_attributes(
+            {
+                file_name              => $mip_file_format,
+                no_read_direction_href => \%direction_two_metric,
+                sample_id              => $sample_id,
+                sample_info_href       => $sample_info_href,
+            }
+        );
     }
-
-# Save new format in hash with sample id as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and the file suffix is removed (.fastq).
-    $infile_both_strands_prefix_href->{$sample_id}[$file_index] =
-      $mip_file_format_with_direction;
 
     my %both_directions_metric = (
-        date               => $parsed_date,
-        flowcell           => $flowcell,
-        lane               => $lane,
-        original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+        date                      => $parsed_date,
+        flowcell                  => $attribute{flowcell},
+        lane                      => $attribute{lane},
+        original_file_name        => $file_name,
         original_file_name_prefix => $original_file_name_prefix,
-        read_direction            => $direction,
+        read_direction            => $attribute{direction},
         run_barcode               => $run_barcode,
-        sample_barcode            => $index,
+        sample_barcode            => $attribute{index},
     );
 
-    ## Alias
-    my $direction_level_href =
-      \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format}
-          {read_direction_file}{$mip_file_format_with_direction} };
-
-  INFO:
-    while ( my ( $file_key, $file_value ) = each %both_directions_metric ) {
-
-        $direction_level_href->{$file_key} = $file_value;
-    }
-
+    set_read_direction_file_attributes(
+        {
+            direction_file_name => $mip_file_format_with_direction,
+            file_name           => $mip_file_format,
+            read_direction_href => \%both_directions_metric,
+            sample_id           => $sample_id,
+            sample_info_href    => $sample_info_href,
+        }
+    );
     return $lane_tracker;
 }
 
-sub set_most_complete_vcf {
+sub set_no_dry_run_parameters {
 
-## Function : Sets the most complete vcf file to sample_info
+## Function : Set parameters for true run i.e. not a dry run
 ## Returns  :
-## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
-##          : $path                      => Path to file
-##          : $recipe_name               => Recipe name
-##          : $sample_info_href          => Info on samples and case hash {REF}
-##          : $vcf_file_key              => Key for labelling most complete vcf
-##          : $vcfparser_outfile_counter => Number of outfile files from in vcfParser (select, range)
+## Arguments: $analysis_date    => Analysis date
+##          : $is_dry_run_all   => Dry run boolean
+##          : $mip_version      => MIP version
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $path;
-    my $recipe_name;
+    my $analysis_date;
+    my $is_dry_run_all;
+    my $mip_version;
     my $sample_info_href;
 
-    ## Default(s)
-    my $vcf_file_key;
-    my $vcfparser_outfile_counter;
-
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        analysis_date => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$analysis_date,
             strict_type => 1,
         },
-        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
-        recipe_name => {
+        is_dry_run_all => {
+            allow       => [ 0, 1, undef ],
+            required    => 1,
+            store       => \$is_dry_run_all,
+            strict_type => 1,
+        },
+        mip_version => {
             defined     => 1,
             required    => 1,
-            store       => \$recipe_name,
+            store       => \$mip_version,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1144,62 +980,67 @@ sub set_most_complete_vcf {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        vcf_file_key => {
-            allow   => [qw{ vcf_file vcf_binary_file sv_vcf_file sv_vcf_binary_file }],
-            default => q{vcf_file},
-            store   => \$vcf_file_key,
-            strict_type => 1,
-        },
-        vcfparser_outfile_counter => {
-            default     => 0,
-            store       => \$vcfparser_outfile_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $active_parameter_href->{$recipe_name} == 1 ) {
+    return if ($is_dry_run_all);
 
-        if ( $vcfparser_outfile_counter == 1 ) {
+    my %no_dry_run_info = (
+        analysisrunstatus => q{not_finished},
+        analysis_date     => $analysis_date,
+        mip_version       => $mip_version,
+    );
 
-            $sample_info_href->{$vcf_file_key}{clinical}{path} = $path;
-        }
-        else {
+  PARAMETER_NAME:
+    while ( my ( $parameter_name, $parameter_value ) = each %no_dry_run_info ) {
 
-            $sample_info_href->{$vcf_file_key}{research}{path} = $path;
-        }
+        set_in_sample_info(
+            {
+                key              => $parameter_name,
+                sample_info_href => $sample_info_href,
+                value            => $parameter_value,
+            }
+        );
     }
     return;
 }
 
-sub set_parameter_in_sample_info {
+sub set_no_read_direction_file_attributes {
 
-##Function : Sets parameter to sample info
+##Function : Sets file attributes for no read direction file
 ##Returns  :
-##Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $key_to_add            => Key and value to add
-##         : $sample_info_href      => Info on samples and case hash {REF}
+##Arguments: $file_name              => File name
+##         : $no_read_direction_href => No read direction keys and values to set
+##         : $sample_id              => Sample id
+##         : $sample_info_href       => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $key_to_add;
+    my $file_name;
+    my $no_read_direction_href;
+    my $sample_id;
     my $sample_info_href;
 
     my $tmpl = {
-        active_parameter_href => {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        no_read_direction_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$no_read_direction_href,
             strict_type => 1,
         },
-        key_to_add => {
+        sample_id => {
             defined     => 1,
             required    => 1,
-            store       => \$key_to_add,
+            store       => \$sample_id,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1213,11 +1054,117 @@ sub set_parameter_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( exists $active_parameter_href->{$key_to_add} ) {
+    while ( my ( $attribute, $attribute_value ) = each %{$no_read_direction_href} ) {
 
-        $sample_info_href->{$key_to_add} = $active_parameter_href->{$key_to_add};
+        $sample_info_href->{sample}{$sample_id}{file}{$file_name}{$attribute} =
+          $attribute_value;
     }
+    return;
+}
 
+sub set_in_sample_info {
+
+##Function : Sets key and value in sample info
+##Returns  :
+##Arguments: $key              => Key to add
+##         : $sample_info_href => Info on samples and case hash {REF}
+##         : $value            => Value to add
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $key;
+    my $sample_info_href;
+    my $value;
+
+    my $tmpl = {
+        key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$key,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        value => {
+            required => 1,
+            store    => \$value,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $value );
+
+    $sample_info_href->{$key} = $value;
+    return;
+}
+
+sub set_read_direction_file_attributes {
+
+##Function : Sets read direction file attributes
+##Returns  :
+##Arguments: $direction_file_name => File name with read direction
+##         : $file_name           => File name
+##         : $read_direction_href => Read direction keys and values to set
+##         : $sample_id           => Sample id
+##         : $sample_info_href    => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $direction_file_name;
+    my $file_name;
+    my $read_direction_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        direction_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$direction_file_name,
+            strict_type => 1,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        read_direction_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$read_direction_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    while ( my ( $attribute, $attribute_value ) = each %{$read_direction_href} ) {
+
+        $sample_info_href->{sample}{$sample_id}{file}{$file_name}
+          {read_direction_file}{$direction_file_name}{$attribute} = $attribute_value;
+    }
     return;
 }
 
@@ -1509,16 +1456,13 @@ sub set_recipe_metafile_in_sample_info {
     return;
 }
 
-sub set_in_sample_info {
+sub set_parameter_in_sample_info {
 
-## Function : Sets parameter info to sample_info
+## Function : Sets parameter to sample_info from active_parameter and file_info
 ## Returns  :
-## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
-##          : $case_id_ref            => The case_id_ref {REF}
-##          : $file_info_href         => File info hash {REF}
-##          : $human_genome_reference => Human genome reference
-##          : $outdata_dir            => Outdata directory
-##          : $sample_info_href       => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_info_href        => File info hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -1526,11 +1470,6 @@ sub set_in_sample_info {
     my $active_parameter_href;
     my $file_info_href;
     my $sample_info_href;
-
-    ## Default(s)
-    my $case_id_ref;
-    my $human_genome_reference;
-    my $outdata_dir;
 
     my $tmpl = {
         active_parameter_href => {
@@ -1540,26 +1479,11 @@ sub set_in_sample_info {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        case_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{case_id},
-            store       => \$case_id_ref,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        human_genome_reference => {
-            default     => $arg_href->{active_parameter_href}{human_genome_reference},
-            store       => \$human_genome_reference,
-            strict_type => 1,
-        },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            store       => \$outdata_dir,
             strict_type => 1,
         },
         sample_info_href => {
@@ -1575,144 +1499,117 @@ sub set_in_sample_info {
 
     use MIP::Pedigree qw{ has_trio };
 
-    ## Add parameter key to sample info
-    my @add_keys = qw{ analysis_type expected_coverage };
+    my %set_parameter_map = (
+        analysis_type => {
+            key    => q{analysis_type},
+            set_at => $sample_info_href,
+            value  => $active_parameter_href->{analysis_type},
+        },
+        expected_coverage => {
+            key    => q{expected_coverage},
+            set_at => $sample_info_href,
+            value  => $active_parameter_href->{expected_coverage},
+        },
+        has_trio => {
+            key    => q{has_trio},
+            set_at => $sample_info_href,
+            value  => has_trio(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                }
+            ),
+        },
+        human_genome_build_path => {
+            key    => q{path},
+            set_at => \%{ $sample_info_href->{human_genome_build} },
+            value  => $active_parameter_href->{human_genome_reference},
+        },
+        human_genome_build_source => {
+            key    => q{source},
+            set_at => \%{ $sample_info_href->{human_genome_build} },
+            value  => $file_info_href->{human_genome_reference_source},
+        },
+        human_genome_build_version => {
+            key    => q{version},
+            set_at => \%{ $sample_info_href->{human_genome_build} },
+            value  => $file_info_href->{human_genome_reference_version},
+        },
+        last_log_file_path => {
+            key    => q{last_log_file_path},
+            set_at => $sample_info_href,
+            value  => $active_parameter_href->{log_file},
+        },
+        log_file_dir => {
+            key    => q{log_file_dir},
+            set_at => $sample_info_href,
+            value  => dirname( dirname( $active_parameter_href->{log_file} ) ),
+        },
+        pedigree_file_path => {
+            key    => q{path},
+            set_at => \%{ $sample_info_href->{pedigree_file} },
+            value  => $active_parameter_href->{pedigree_file},
+        },
+    );
 
-  PARAMETER:
-    foreach my $key_to_add (@add_keys) {
+  PARMETER_MAP_HREF:
+    foreach my $parameter_href ( values %set_parameter_map ) {
 
-        set_parameter_in_sample_info(
+        set_in_sample_info(
             {
-                active_parameter_href => $active_parameter_href,
-                key_to_add            => $key_to_add,
-                sample_info_href      => $sample_info_href,
+                key              => $parameter_href->{key},
+                sample_info_href => $parameter_href->{set_at},
+                value            => $parameter_href->{value},
             }
         );
     }
-
-    ## Addition of genome build version to sample_info
-    if ( defined $human_genome_reference ) {
-
-        $sample_info_href->{human_genome_build}{path} = $human_genome_reference;
-
-        my @human_genome_features = qw{ source version };
-        foreach my $feature (@human_genome_features) {
-
-            $sample_info_href->{human_genome_build}{$feature} =
-              $file_info_href->{ q{human_genome_reference_} . $feature };
-        }
-    }
-    if ( exists( $active_parameter_href->{pedigree_file} ) ) {
-
-        ## Add pedigree_file to sample_info
-        $sample_info_href->{pedigree_file}{path} =
-          $active_parameter_href->{pedigree_file};
-    }
-    if ( exists( $active_parameter_href->{log_file} ) ) {
-
-        ## Add log_file_dir to sample info file
-        my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
-        $sample_info_href->{log_file_dir}       = $path;
-        $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
-    }
-    ## Check for trio and set
-    $sample_info_href->{has_trio} = has_trio(
-        {
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-        }
-    );
-
     return;
 }
 
-sub _file_name_formats {
+sub write_sample_info_to_file {
 
-## Function : Define format using information derived from infile name.
-## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
-## Arguments: $date               => Flow-cell sequencing date
-##          : $direction          => Sequencing read direction
-##          : $original_file_name => Original file name
-##          : $flowcell           => Flow-cell id
-##          : $index              => The DNA library preparation molecular barcode
-##          : $lane               => Flow-cell lane
-##          : $sample_id          => Sample id
+## Function : Write sample info to file
+## Returns  :
+## Arguments: $sample_info_file => Sample info file to write to
+##          : $sample_info_href => Records on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $date;
-    my $direction;
-    my $flowcell;
-    my $index;
-    my $lane;
-    my $original_file_name;
-    my $sample_id;
+    my $sample_info_file;
+    my $sample_info_href;
 
     my $tmpl = {
-        date => {
-            defined     => 1,
+        sample_info_file => { strict_type => 1, store => \$sample_info_file },
+        sample_info_href => {
             required    => 1,
-            store       => \$date,
-            strict_type => 1,
-        },
-        direction => {
-            allow       => [ 1, 2 ],
             defined     => 1,
-            required    => 1,
-            store       => \$direction,
+            default     => {},
             strict_type => 1,
-        },
-        flowcell => {
-            defined     => 1,
-            required    => 1,
-            store       => \$flowcell,
-            strict_type => 1,
-        },
-        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane  => {
-            allow       => qr{ \A\d+\z }xsm,
-            defined     => 1,
-            required    => 1,
-            store       => \$lane,
-            strict_type => 1,
-        },
-        original_file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$original_file_name,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
+            store       => \$sample_info_href,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $mip_file_format =
-        $sample_id
-      . $UNDERSCORE
-      . $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $index
-      . $UNDERSCORE . q{lane}
-      . $lane;
+    use MIP::Io::Write qw{ write_to_file };
 
-    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
+    return if ( not $sample_info_file );
 
-    my $original_file_name_prefix = substr $original_file_name, 0,
-      index $original_file_name, q{.fastq};
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $run_barcode =
-      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
-    return $mip_file_format, $mip_file_format_with_direction,
-      $original_file_name_prefix, $run_barcode;
+    ## Writes a YAML hash to file
+    write_to_file(
+        {
+            data_href => $sample_info_href,
+            format    => q{yaml},
+            path      => $sample_info_file,
+        }
+    );
+    $log->info( q{Wrote: } . $sample_info_file );
+
+    return;
 }
 
 sub _update_sample_info_hash_pedigree_data {

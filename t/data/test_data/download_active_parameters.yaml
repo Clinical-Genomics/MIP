@@ -3,17 +3,13 @@ bash_set_errexit: 1
 bash_set_nounset: 1
 bash_set_pipefail: 1
 load_env:
-  MIP_rd_dna:
+  mip_rd_dna:
     method: conda
     mip: ~
 project_id: development
 node_ram_memory: '128'
 core_ram_memory: 5
 reference:
-  1000g_all_sv:
-    - phase3_v8.20130502
-  1000g_all_wgs:
-    - phase3_v5b.20130502
   1000g_indels:
     - phase1
   1000g_omni:
@@ -54,8 +50,6 @@ reference:
     - 20150915
   expansionhunter:
     - 3.0.0
-  fqa_vcfanno_config:
-    - v1.2
   gatk_mitochondrial_ref:
     - v0_m_amb
     - v0_m_ann
@@ -115,29 +109,15 @@ reference:
     - 201701
   svrank_model:
     - v1.8
-  sv_fqa_vcfanno_config:
+  sv_vcfanno_config:
     - v1.2
   vcf2cytosure_blacklist_regions:
     - 1.0
+  vcfanno_config:
+    - v1.2
+  vcfanno_functions:
+    - v1.0
 reference_feature:
-  1000g_all_sv:
-    grch37:
-      phase3_v8.20130502:
-        file: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz
-        file_index: ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz.tbi
-        outfile: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_sv_-phase3_v8.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
-    grch38: {}
-  1000g_all_wgs:
-    grch37:
-      phase3_v5b.20130502:
-        file: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
-        file_index: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz.tbi
-        outfile: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-        outfile_index: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
-    grch38: {}
   1000g_indels:
     grch37:
       phase1:
@@ -334,7 +314,7 @@ reference_feature:
       3.5a:
         file: dbNSFPv3.5a.zip
         outfile: grch37_dbnsfp_-v3.5a-.zip
-        outfile_decompress: unzp
+        outfile_decompress: unzip
         url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
     grch38:
       3.2a:
@@ -404,15 +384,6 @@ reference_feature:
         file: variant_catalog_grch37.json
         outfile: grch37_expansionhunter_variant_catalog_-3.0.0-.json
         url_prefix: https://github.com/Clinical-Genomics/reference-files/blob/master/ExpansionHunter-v3.0.0/
-  fqa_vcfanno_config:
-    grch37:
-      v1.2:
-        file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
-        file_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
-        outfile: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
-        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   gatk_mitochondrial_ref:
     grch37: {}
     grch38:
@@ -716,7 +687,7 @@ reference_feature:
         outfile_check: svrank_model_cmms_-v1.8-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
-  sv_fqa_vcfanno_config:
+  sv_vcfanno_config:
     grch37:
       v1.2:
         file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
@@ -734,6 +705,24 @@ reference_feature:
         outfile_check: grch37_cytosure_blacklist_-1.0-.bed.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
+  vcfanno_config:
+    grch37:
+      v1.2:
+        file: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.2-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.2-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+  vcfanno_functions:
+    grch37:
+      v1.0:
+        file: vcfanno_functions_-v1.0-.lua
+        file_check: vcfanno_functions_-v1.0-.lua.md5
+        outfile: vcfanno_functions_-v1.0-.lua
+        outfile_check: vcfanno_functions_-v1.0-.lua.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
 reference_genome_versions:
   - grch37
   - grch38

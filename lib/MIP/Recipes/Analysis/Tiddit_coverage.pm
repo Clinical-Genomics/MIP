@@ -18,7 +18,7 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -40,7 +40,6 @@ sub analysis_tiddit_coverage {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => The file_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -53,7 +52,6 @@ sub analysis_tiddit_coverage {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -82,13 +80,6 @@ sub analysis_tiddit_coverage {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -138,7 +129,9 @@ sub analysis_tiddit_coverage {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
+    use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -192,6 +185,7 @@ sub analysis_tiddit_coverage {
         )
     );
 
+    my $outdir_path         = $io{out}{dir_path};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
@@ -233,7 +227,32 @@ sub analysis_tiddit_coverage {
         }
     );
     say {$filehandle} $NEWLINE;
-    close $filehandle;
+
+    ## Create chromosome name and size file
+    my $contigs_size_file_path =
+      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference}
+              . $DOT . q{fai},
+            outfile_path => $contigs_size_file_path,
+        }
+    );
+
+    say {$filehandle} q{## Create wig index files};
+    my $index_file_path = $outfile_path_prefix . $DOT . q{bw};
+    ucsc_wig_to_big_wig(
+        {
+            clip                   => 1,
+            contigs_size_file_path => $contigs_size_file_path,
+            filehandle             => $filehandle,
+            infile_path            => $outfile_path_prefix . $DOT . q{wig},
+            outfile_path           => $index_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
 
@@ -248,19 +267,30 @@ sub analysis_tiddit_coverage {
             }
         );
 
+        set_file_path_to_store(
+            {
+                format           => q{bw},
+                id               => $sample_id,
+                path             => $index_file_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_sample},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{sample_to_sample},
+                case_id              => $case_id,
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

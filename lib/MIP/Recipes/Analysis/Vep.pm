@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE %PRIMARY_CONTIG $SPACE $UNDERSCORE };
 use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
 BEGIN {
@@ -29,19 +29,25 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_vep analysis_vep_rna analysis_vep_sv_wes analysis_vep_sv_wgs };
+    our @EXPORT_OK = qw{
+      analysis_vep
+      analysis_vep_wgs
+      analysis_vep_sv_wes
+      analysis_vep_sv_wgs
+    };
 
 }
 
 ## Constants
 Readonly my $ANNOTATION_DISTANCE    => $ANALYSIS{ANNOTATION_DISTANCE};
 Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
+Readonly my $BUFFER_SIZE            => 20_000;
+Readonly my $BUFFER_SIZE_SV         => 100;
 
-sub analysis_vep {
+sub analysis_vep_wgs {
 
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
@@ -49,7 +55,6 @@ sub analysis_vep {
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -64,7 +69,6 @@ sub analysis_vep {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -96,14 +100,7 @@ sub analysis_vep {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path               => { store => \$file_path, strict_type => 1, },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
+        file_path   => { store => \$file_path, strict_type => 1, },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -306,16 +303,11 @@ sub analysis_vep {
 
     ## Get parameters
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     # VEP plugins
     my @plugins =
@@ -355,7 +347,7 @@ sub analysis_vep {
         variant_effect_predictor(
             {
                 assembly               => $assembly_version,
-                buffer_size            => 20_000,
+                buffer_size            => $BUFFER_SIZE,
                 cache_directory        => $active_parameter_href->{vep_directory_cache},
                 custom_annotations_ref => \@custom_annotations,
                 distance               => $distance,
@@ -405,17 +397,18 @@ sub analysis_vep {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -430,7 +423,6 @@ sub analysis_vep_sv_wes {
 ##          : $case_id                 => Family id
 ##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -445,7 +437,6 @@ sub analysis_vep_sv_wes {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -475,13 +466,6 @@ sub analysis_vep_sv_wes {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -680,16 +664,11 @@ sub analysis_vep_sv_wes {
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP plugins
     my @plugins =
@@ -712,7 +691,7 @@ sub analysis_vep_sv_wes {
     variant_effect_predictor(
         {
             assembly           => $assembly_version,
-            buffer_size        => 100,
+            buffer_size        => $BUFFER_SIZE_SV,
             cache_directory    => $active_parameter_href->{vep_directory_cache},
             filehandle         => $filehandle,
             fork               => $VEP_FORK_NUMBER,
@@ -745,17 +724,18 @@ sub analysis_vep_sv_wes {
         );
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -770,7 +750,6 @@ sub analysis_vep_sv_wgs {
 ##          : $case_id                 => Family id
 ##          : $filehandle              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -784,7 +763,6 @@ sub analysis_vep_sv_wgs {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -814,13 +792,6 @@ sub analysis_vep_sv_wgs {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -1028,16 +999,11 @@ sub analysis_vep_sv_wgs {
       $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
     # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP plugins
     my @plugins =
@@ -1105,7 +1071,7 @@ sub analysis_vep_sv_wgs {
         variant_effect_predictor(
             {
                 assembly           => $assembly_version,
-                buffer_size        => 100,
+                buffer_size        => $BUFFER_SIZE_SV,
                 cache_directory    => $active_parameter_href->{vep_directory_cache},
                 distance           => $distance,
                 filehandle         => $xargsfilehandle,
@@ -1156,32 +1122,32 @@ sub analysis_vep_sv_wgs {
         );
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
     return 1;
 }
 
-sub analysis_vep_rna {
+sub analysis_vep {
 
-## Function : Varianteffectpredictor performs effect predictions and annotation of variantsi from RNA-seq data.
+## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -1196,7 +1162,6 @@ sub analysis_vep_rna {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -1226,14 +1191,7 @@ sub analysis_vep_rna {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path               => { store => \$file_path, strict_type => 1, },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
+        file_path   => { store => \$file_path, strict_type => 1, },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -1272,6 +1230,7 @@ sub analysis_vep_rna {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::List qw{ get_splitted_lists };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
@@ -1301,7 +1260,9 @@ sub analysis_vep_rna {
     my $infile_path        = $io{in}{file_path};
     my $infile_suffix      = $io{in}{file_suffix};
 
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -1315,7 +1276,6 @@ sub analysis_vep_rna {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = parse_io_outfiles(
@@ -1330,9 +1290,9 @@ sub analysis_vep_rna {
         }
     );
 
-    my $outfile_name   = $io{out}{file_names}->[0];
-    my $outfile_path   = $io{out}{file_path};
-    my $outfile_suffix = $io{out}{file_suffix};
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my $outfile_path       = $io{out}{file_path};
+    my $outfile_suffix     = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -1360,38 +1320,61 @@ sub analysis_vep_rna {
     ## Varianteffectpredictor
     say {$filehandle} q{## Varianteffectpredictor};
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version } );
 
-    ## Get parameters
-    # VEP custom annotations
-    my @custom_annotations;
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
 
-        @custom_annotations = _get_custom_annotation_cmds(
-            {
-                vep_custom_annotation_href =>
-                  $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    ## Get contigs
+    my ( $mt_contig_ref, $contigs_ref ) = get_splitted_lists(
+        {
+            regexp   => qr/M/,
+            list_ref => $file_info_href->{bam_contigs},
+        }
+    );
+
+    ## Get plugins
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{vep_plugin}, } );
+
+    # Get VEP custom annotations
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP features
-    my @vep_features_ref;
+    my ( @vep_features_ref, @vep_features_mt_ref );
+
   FEATURE:
     foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } ) {
 
         # Add VEP features to the output.
-        push @vep_features_ref, $vep_feature;
+        push @vep_features_ref,    $vep_feature;
+        push @vep_features_mt_ref, $vep_feature;
+
+        # Special case for mitochondrial contig annotation
+        if ( $vep_feature eq q{refseq} ) {
+
+            push @vep_features_mt_ref, q{all_refseq};
+        }
     }
 
     variant_effect_predictor(
         {
             assembly               => $assembly_version,
-            buffer_size            => 20_000,
+            buffer_size            => $BUFFER_SIZE,
             cache_directory        => $active_parameter_href->{vep_directory_cache},
             custom_annotations_ref => \@custom_annotations,
             distance               => $ANNOTATION_DISTANCE,
@@ -1401,8 +1384,38 @@ sub analysis_vep_rna {
             infile_path            => $infile_path,
             outfile_format         => substr( $outfile_suffix, 1 ),
             outfile_path           => $outfile_path,
+            plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref            => \@plugins,
             reference_path         => $active_parameter_href->{human_genome_reference},
+            regions_ref            => $contigs_ref,
+            synonyms_file_path     => $vep_synonyms_file_path,
             vep_features_ref       => \@vep_features_ref,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## VEP for MT
+    variant_effect_predictor(
+        {
+            assembly               => $assembly_version,
+            buffer_size            => $BUFFER_SIZE,
+            cache_directory        => $active_parameter_href->{vep_directory_cache},
+            custom_annotations_ref => \@custom_annotations,
+            distance               => $ANNOTATION_DISTANCE_MT,
+            filehandle             => $filehandle,
+            fork                   => $VEP_FORK_NUMBER,
+            infile_format          => substr( $infile_suffix, 1 ),
+            infile_path            => $infile_path,
+            no_headers             => 1,
+            outfile_format         => substr( $outfile_suffix, 1 ),
+            outfile_path           => q{STDOUT},
+            plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref            => \@plugins,
+            reference_path         => $active_parameter_href->{human_genome_reference},
+            regions_ref            => $mt_contig_ref,
+            synonyms_file_path     => $vep_synonyms_file_path,
+            stdoutfile_path_append => $outfile_path,
+            vep_features_ref       => \@vep_features_mt_ref,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -1414,36 +1427,39 @@ sub analysis_vep_rna {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
-        set_file_path_to_store(
-            {
-                format           => q{vcf},
-                id               => $case_id,
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+        if ( $consensus_analysis_type eq q{wts} ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{vcf},
+                    id               => $case_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -1463,8 +1479,7 @@ sub _get_custom_annotation_cmds {
 
     my $tmpl = {
         vep_custom_annotation_href => {
-            default     => {},
-            defined     => 1,
+            default     => $arg_href->{vep_custom_annotation_href} ||= undef,
             required    => 1,
             store       => \$vep_custom_annotation_href,
             strict_type => 1,
@@ -1472,6 +1487,8 @@ sub _get_custom_annotation_cmds {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $vep_custom_annotation_href );
 
     my @custom_annotations;
     my @order_custom_options =
@@ -1546,8 +1563,7 @@ sub _get_plugin_cmds {
 
     my $tmpl = {
         vep_plugin_href => {
-            default     => {},
-            defined     => 1,
+            default     => $arg_href->{vep_plugin_href} ||= undef,
             required    => 1,
             store       => \$vep_plugin_href,
             strict_type => 1,

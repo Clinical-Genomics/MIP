@@ -8,14 +8,12 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
@@ -26,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_runstatus };
@@ -88,8 +86,8 @@ sub download_runstatus {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_mip_process_files };
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Language::Shell qw{ check_mip_process_paths };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
 
@@ -142,7 +140,7 @@ sub download_runstatus {
     ## Set status flagg
     say {$filehandle} q?STATUS="0"?;
 
-    check_mip_process_files(
+    check_mip_process_paths(
         {
             filehandle => $filehandle,
             paths_ref  => $active_parameter_href->{runstatus_paths},

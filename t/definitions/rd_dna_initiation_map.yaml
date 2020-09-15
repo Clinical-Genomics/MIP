@@ -1,3 +1,4 @@
+---
 CHAIN_ALL:
-   - CHAIN_FASTQ:
-      - fastqc_ar
+  - CHAIN_FASTQ:
+    - fastqc_ar

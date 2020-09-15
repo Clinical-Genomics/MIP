@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -529,7 +529,7 @@ sub get_qc_recipe_data {
 sub get_regexp_qc_data {
 
 ## Function  : Use reg exp to collect qc data via system call
-## Returns   : @{ $chld_handler{output} } or @{ $chld_handler{error} }
+## Returns   : @{ $process_return{stdouts_ref} } or @{ $process_return{stderrs_ref} }
 ## Arguments : $data_file_path => Path to data file from which to collect
 ##           : $regexp         => Regular expression to collect data
 
@@ -551,20 +551,24 @@ sub get_regexp_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Environment::Child_process qw{ child_process };
 
     ## Get return from reg exp system call
-    my %chld_handler =
-      system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
+    my %process_return = child_process(
+        {
+            commands_ref => [ qq{$regexp $data_file_path}, ],
+            process_type => q{open3},
+        }
+    );
 
     ## Print stderr if returned from regexp
-    if ( @{ $chld_handler{error} } ) {
+    if ( @{ $process_return{stderrs_ref} } ) {
 
         ## Be verbose that something went wrong
-        say {*STDERR} join $NEWLINE, @{ $chld_handler{error} };
-        return @{ $chld_handler{error} };
+        say {*STDERR} join $NEWLINE, @{ $process_return{stderrs_ref} };
+        return;
     }
-    return @{ $chld_handler{output} };
+    return @{ $process_return{stdouts_ref} };
 }
 
 sub parse_qc_recipe_data {

@@ -1,6 +1,6 @@
 ---
 load_env:
-  mip_travis:
+  mip_ci:
     endvariantannotationblock:
     gatk:
     method: conda

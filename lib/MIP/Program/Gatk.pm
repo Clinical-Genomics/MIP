@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1639,7 +1639,7 @@ sub gatk_concatenate_variants {
             strict_type => 1,
         },
         outfile_suffix => {
-            allow       => [qw{ .vcf .selected.vcf }],
+            allow       => [qw{ .all.vcf .selected.vcf .vcf }],
             default     => q{.vcf},
             store       => \$outfile_suffix,
             strict_type => 1,
@@ -1972,20 +1972,21 @@ sub gatk_genomicsdbimport {
 
 ## Function : Perl wrapper for writing GATK GenomicsDBImport recipe to $filehandle. Based on GATK 4.0.8
 ## Returns  : @commands
-## Arguments: $filehandle                => Sbatch filehandle to write to
-##          : $genomicsdb_workspace_path => Workspace for GenomicsDB
-##          : $infile_paths_ref          => GVCF files to be imported to GenomicsDB {REF}
-##          : $intervals_ref             => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages      => Use java large pages
-##          : $memory_allocation         => Memory allocation to run Gatk
-##          : $pedigree                  => Pedigree files
-##          : $read_filters_ref          => Filters to apply on reads {REF}
-##          : $referencefile_path        => Reference sequence file
-##          : $sample_name_map_path      => Sample name map for merged references (Format: sample_id\tfile.vcf )
-##          : $stderrfile_path           => Stderrfile path
-##          : $temp_directory            => Redirect tmp files to java temp
-##          : $verbosity                 => Set the minimum level of logging
-##          : $xargs_mode                => Set if the program will be executed via xargs
+## Arguments: $filehandle                   => Sbatch filehandle to write to
+##          : $genomicsdb_workspace_path    => Workspace for GenomicsDB
+##          : $infile_paths_ref             => GVCF files to be imported to GenomicsDB {REF}
+##          : $intervals_ref                => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages         => Use java large pages
+##          : $memory_allocation            => Memory allocation to run Gatk
+##          : $pedigree                     => Pedigree files
+##          : $read_filters_ref             => Filters to apply on reads {REF}
+##          : $referencefile_path           => Reference sequence file
+##          : $sample_name_map_path         => Sample name map for merged references (Format: sample_id\tfile.vcf )
+##          : $shared_posixfs_optimizations => Turn on disable file locking and minimize write to disc
+##          : $stderrfile_path              => Stderrfile path
+##          : $temp_directory               => Redirect tmp files to java temp
+##          : $verbosity                    => Set the minimum level of logging
+##          : $xargs_mode                   => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -2003,6 +2004,7 @@ sub gatk_genomicsdbimport {
     my $temp_directory;
 
     ## Default(s)
+    my $shared_posixfs_optimizations;
     my $verbosity;
     my $xargs_mode;
 
@@ -2049,6 +2051,12 @@ sub gatk_genomicsdbimport {
             store       => \$sample_name_map_path,
             strict_type => 1,
         },
+        shared_posixfs_optimizations => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$shared_posixfs_optimizations,
+            strict_type => 1,
+        },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
         verbosity       => {
@@ -2085,6 +2093,11 @@ sub gatk_genomicsdbimport {
         push @commands,
           q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
           @{$infile_paths_ref};
+    }
+
+    if ($shared_posixfs_optimizations) {
+
+        push @commands, q{--genomicsdb-shared-posixfs-optimizations};
     }
 
     if ($sample_name_map_path) {
@@ -2138,7 +2151,6 @@ sub gatk_genotypegvcfs {
 ##          : $referencefile_path       => Reference sequence file
 ##          : $stderrfile_path          => Stderrfile path
 ##          : $temp_directory           => Redirect tmp files to java temp
-##          : $use_new_qual_calculator  => Use the new AF model instead of the so-called exact model
 ##          : $verbosity                => Set the minimum level of logging
 ##          : $xargs_mode               => Set if the program will be executed via xargs
 
@@ -2159,7 +2171,6 @@ sub gatk_genotypegvcfs {
     ## Default(s)
     my $include_nonvariant_sites;
     my $java_use_large_pages;
-    my $use_new_qual_calculator;
     my $verbosity;
     my $xargs_mode;
 
@@ -2220,12 +2231,6 @@ sub gatk_genotypegvcfs {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        use_new_qual_calculator => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$use_new_qual_calculator,
-            strict_type => 1,
-        },
         verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
@@ -2276,11 +2281,6 @@ sub gatk_genotypegvcfs {
         push @commands, q{--include-non-variant-sites};
     }
 
-    if ($use_new_qual_calculator) {
-
-        push @commands, q{--use-new-qual-calculator};
-    }
-
     if ($dbsnp_path) {
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
     }
@@ -2306,7 +2306,7 @@ sub gatk_genotypegvcfs {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.0.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.8.1.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
@@ -2316,19 +2316,17 @@ sub gatk_haplotypecaller {
 ##          : $infile_path                                   => Infile paths
 ##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                          => Use java large pages
+###         : $linked_de_bruijn_graph                        => Use linked de bruijn graph assembly mode
 ##          : $memory_allocation                             => Memory allocation to run Gatk
-##          : $num_ref_samples_if_no_call                    => Number of hom-ref genotypes to infer at sites not present in a panel
 ##          : $outfile_path                                  => Outfile path
 ##          : $pcr_indel_model                               => The PCR indel model to use
 ##          : $pedigree                                      => Pedigree files for samples
-##          : $population_callset                            => Callset to use in calculating genotype priors
 ##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path                            => Reference sequence file
 ##          : $sample_ploidy                                 => Ploidy per sample
 ##          : $standard_min_confidence_threshold_for_calling => The minimum phred-scaled confidence threshold at which variants should be called
 ##          : $stderrfile_path                               => Stderrfile path
 ##          : $temp_directory                                => Redirect tmp files to java temp
-##          : $use_new_qual_calculator                       => Use the new AF model instead of the so-called exact model
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
@@ -2342,11 +2340,9 @@ sub gatk_haplotypecaller {
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
-    my $num_ref_samples_if_no_call;
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
-    my $population_callset;
     my $read_filters_ref;
     my $referencefile_path;
     my $sample_ploidy;
@@ -2357,7 +2353,7 @@ sub gatk_haplotypecaller {
     ## Default(s)
     my $emit_ref_confidence;
     my $java_use_large_pages;
-    my $use_new_qual_calculator;
+    my $linked_de_bruijn_graph;
     my $verbosity;
     my $xargs_mode;
 
@@ -2405,13 +2401,14 @@ sub gatk_haplotypecaller {
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-        memory_allocation => {
-            store       => \$memory_allocation,
+        linked_de_bruijn_graph => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$linked_de_bruijn_graph,
             strict_type => 1,
         },
-        num_ref_samples_if_no_call => {
-            allow       => [ undef, qr/ ^\d+$ /sxm ],
-            store       => \$num_ref_samples_if_no_call,
+        memory_allocation => {
+            store       => \$memory_allocation,
             strict_type => 1,
         },
         outfile_path => {
@@ -2427,10 +2424,6 @@ sub gatk_haplotypecaller {
         pcr_indel_model => {
             allow       => [ undef, qw{ NONE HOSTILE AGGRESSIVE CONSERVATIVE } ],
             store       => \$pcr_indel_model,
-            strict_type => 1,
-        },
-        population_callset => {
-            store       => \$population_callset,
             strict_type => 1,
         },
         read_filters_ref => {
@@ -2459,12 +2452,6 @@ sub gatk_haplotypecaller {
         },
         temp_directory => {
             store       => \$temp_directory,
-            strict_type => 1,
-        },
-        use_new_qual_calculator => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$use_new_qual_calculator,
             strict_type => 1,
         },
         verbosity => {
@@ -2528,19 +2515,8 @@ sub gatk_haplotypecaller {
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
     }
 
-    if ($population_callset) {
-
-        push @commands, q{--population-callset} . $SPACE . $population_callset;
-    }
-
-    if ($num_ref_samples_if_no_call) {
-        push @commands,
-          q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
-    }
-
-    if ($use_new_qual_calculator) {
-
-        push @commands, q{--use-new-qual-calculator};
+    if ($linked_de_bruijn_graph) {
+        push @commands, q{--linked-de-bruijn-graph};
     }
 
     ## No soft clipped bases
@@ -2594,7 +2570,7 @@ sub gatk_haplotypecaller {
 
 sub gatk_indexfeaturefile {
 
-## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $filehandle. Based on GATK 4.0.10.
+## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $filehandle. Based on GATK 4.1.6.
 ## Returns  : @commands
 ## Arguments: $filehandle           => Filehandle to write to
 ##          : $infile_path          => Path to feature file
@@ -2673,7 +2649,7 @@ sub gatk_indexfeaturefile {
 
     push @commands, q{IndexFeatureFile};
 
-    push @commands, q{--feature-file} . $SPACE . $infile_path;
+    push @commands, q{--input} . $SPACE . $infile_path;
 
     ## Add common options
     gatk_common_options(

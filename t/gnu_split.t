@@ -1,136 +1,125 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{ 2018 };
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.026;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
-
-our $USAGE = build_usage( {} );
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_split }],
+        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
-    }
-
-##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Coreutils qw(gnu_split);
-use MIP::Test::Commands qw(test_function);
+use MIP::Program::Gnu::Coreutils qw{ gnu_split };
 
-diag("Test gnu_split $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(   q{Test gnu_split from Coreutils.pm v}
+      . $MIP::Program::Gnu::Coreutils::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+Readonly my $NUMBER_OF_FILES => 12;
 
 ## Base arguments
-my @function_base_commands = 'split';
+my @function_base_commands = qw{ split };
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
-    },
-    stderrfile_path_append => {
-        input           => 'stderrfile.test',
-        expected_output => '2>> stderrfile.test',
-    },
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
 );
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+    files => {
+        input           => $NUMBER_OF_FILES,
+        expected_output => q{--number=l/} . $NUMBER_OF_FILES,
     },
-    prefix => {
-        input           => 'test',
-        expected_output => 'test',
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
     lines => {
         input           => 10,
-        expected_output => '--lines=10',
-    },
-    suffix_length => {
-        input           => 2,
-        expected_output => '--suffix-length=2',
+        expected_output => q{--lines=10},
     },
     numeric_suffixes => {
         input           => 1,
-        expected_output => '--numeric-suffixes',
+        expected_output => q{--numeric-suffixes},
+    },
+    prefix => {
+        input           => q{test},
+        expected_output => q{test},
     },
     quiet => {
         input           => 1,
-        expected_output => '--quiet',
+        expected_output => q{--quiet},
+    },
+    suffix_length => {
+        input           => 2,
+        expected_output => q{--suffix-length=2},
     },
     verbose => {
         input           => 1,
-        expected_output => '--verbose',
+        expected_output => q{--verbose},
     },
 );
 
@@ -144,47 +133,12 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
+            do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

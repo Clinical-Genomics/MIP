@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_rna };
@@ -80,6 +80,7 @@ sub pipeline_download_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
     use MIP::Recipes::Download::Ctat_resource_lib qw{ download_ctat_resource_lib };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
@@ -93,6 +94,8 @@ sub pipeline_download_rd_rna {
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Download recipes
     ## Create code reference table for download recipes

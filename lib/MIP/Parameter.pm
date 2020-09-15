@@ -14,7 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
+use List::MoreUtils qw { any uniq };
 use Readonly;
 
 ## MIPs lib/
@@ -26,20 +26,23 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_parameter_hash
+      check_recipe_vs_binary_name
       get_cache
       get_capture_kit
       get_order_of_parameters
       get_parameter_attribute
+      get_program_executables
       parse_reference_path
       parse_parameter_files
       parse_parameter_recipe_names
       print_recipe
       set_cache
+      set_cache_program_executables
       set_cache_sample_id_parameter
       set_custom_default_to_active_parameter
       set_default
@@ -116,6 +119,62 @@ sub check_parameter_hash {
                 parameter_href => $parameter_href,
             }
         );
+    }
+    return 1;
+}
+
+sub check_recipe_vs_binary_name {
+
+## Function : Check that recipe name and program binaries are not identical
+## Returns  : 1
+## Arguments: $parameter_href   => Parameter hash {REF}
+##          : $recipe_names_ref => Recipe names {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $recipe_names_ref;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_names_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get all program executables
+    my @program_executables = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{program_executables},
+        }
+    );
+
+    ## Create hash map for check
+    my %binary_name;
+    @binary_name{@program_executables} = undef;
+
+  RECIPE:
+    foreach my $recipe ( @{$recipe_names_ref} ) {
+
+        next RECIPE if ( not exists $binary_name{$recipe} );
+
+        my $err_msg =
+qq{Identical names for recipe and program: $recipe. Recipes cannot be identical to program binaries };
+        croak($err_msg);
     }
     return 1;
 }
@@ -276,16 +335,19 @@ sub get_parameter_attribute {
                 qw{ analysis_mode
                   associated_recipe
                   build_file
+                  chain
                   data_type
                   default
                   exists_check
                   file_tag
                   is_reference
+                  mandatory
                   outfile_suffix
                   program_executables
                   recipe_type
                   reference
                   type
+                  variant_caller
                   }
             ],
             store       => \$attribute,
@@ -322,6 +384,47 @@ sub get_parameter_attribute {
 
     ## Return scalar parameter attribute value
     return $parameter_attribute;
+}
+
+sub get_program_executables {
+
+## Function : Get the parameter file program executables per recipe
+## Returns  : uniq @program_executables
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get all program executables
+    my @program_executables;
+
+    my $err_msg = q{No keys 'cache' and 'recipe' in parameter hash};
+    croak($err_msg) if ( not exists $parameter_href->{cache}{recipe} );
+
+  RECIPE:
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
+
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
+
+        push @program_executables, @{ $parameter_href->{$recipe}{program_executables} };
+    }
+
+    ## Make unique and return
+    return uniq(@program_executables);
 }
 
 sub parse_parameter_files {
@@ -638,6 +741,35 @@ sub set_cache {
     return;
 }
 
+sub set_cache_program_executables {
+
+## Function : Set program executables per recipe to parameter cache
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    @{ $parameter_href->{cache}{program_executables} } =
+      get_program_executables( { parameter_href => $parameter_href, } );
+
+    return;
+}
+
 sub set_cache_sample_id_parameter {
 
 ## Function : Set parameter information to parameter cache at sample level
@@ -725,6 +857,7 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
+      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_pedigree_fam_file
@@ -733,6 +866,7 @@ sub set_custom_default_to_active_parameter {
       set_default_reference_info_file
       set_default_store_file
       set_default_temp_directory
+      set_default_transcript_annotation
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
     };
@@ -741,52 +875,167 @@ sub set_custom_default_to_active_parameter {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set default value only to active_parameter
-    my %set_to_active_parameter = (
-        analysis_type                 => \&set_default_analysis_type,
-        bwa_build_reference           => \&set_default_human_genome,
-        infile_dirs                   => \&set_default_infile_dirs,
-        pedigree_fam_file             => \&set_default_pedigree_fam_file,
-        program_test_file             => \&set_default_program_test_file,
-        reference_dir                 => \&set_default_reference_dir,
-        reference_info_file           => \&set_default_reference_info_file,
-        rtg_vcfeval_reference_genome  => \&set_default_human_genome,
-        salmon_quant_reference_genome => \&set_default_human_genome,
-        select_programs               => \&set_default_uninitialized_parameter,
-        shell_install                 => \&set_default_uninitialized_parameter,
-        skip_programs                 => \&set_default_uninitialized_parameter,
-        star_aln_reference_genome     => \&set_default_human_genome,
-        star_fusion_reference_genome  => \&set_default_human_genome,
-        store_file                    => \&set_default_store_file,
-        sv_vcfparser_select_file      => \&set_default_vcfparser_select_file,
-        temp_directory                => \&set_default_temp_directory,
-        vcfparser_select_file         => \&set_default_vcfparser_select_file,
-    );
-
-    ## Set default value to parameter and/or active parameter
-    my %set_to_parameter = (
-        exome_target_bed => \&_set_default_capture_kit,
-        sample_info_file => \&_set_default_sample_info_file,
-    );
-
-    if ( exists $set_to_active_parameter{$parameter_name} ) {
-
-        $set_to_active_parameter{$parameter_name}->(
-            {
+    my %set_default_parameter = (
+        analysis_type => {
+            method   => \&set_default_analysis_type,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        conda_path => {
+            method   => \&set_default_conda_path,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                conda_path            => $parameter_name,
+            },
+        },
+        bwa_build_reference => {
+            method   => \&set_default_human_genome,
+            arg_href => {
                 active_parameter_href => $active_parameter_href,
                 parameter_name        => $parameter_name,
-            }
-        );
-    }
-
-    if ( exists $set_to_parameter{$parameter_name} ) {
-
-        $set_to_parameter{$parameter_name}->(
-            {
+            },
+        },
+        bwa_mem2_build_reference => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        exome_target_bed => {
+            method   => \&_set_default_capture_kit,
+            arg_href => {
                 active_parameter_href => $active_parameter_href,
                 parameter_href        => $parameter_href,
+            },
+        },
+        infile_dirs => {
+            method   => \&set_default_infile_dirs,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        pedigree_fam_file => {
+            method   => \&set_default_pedigree_fam_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        program_test_file => {
+            method   => \&set_default_program_test_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        reference_dir => {
+            method   => \&set_default_reference_dir,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        reference_info_file => {
+            method   => \&set_default_reference_info_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        rtg_vcfeval_reference_genome => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
                 parameter_name        => $parameter_name,
-            }
-        );
+            },
+        },
+        salmon_quant_reference_genome => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        sample_info_file => {
+            method   => \&_set_default_sample_info_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_href        => $parameter_href,
+            },
+        },
+        select_programs => {
+            method   => \&set_default_uninitialized_parameter,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        shell_install => {
+            method   => \&set_default_uninitialized_parameter,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        skip_programs => {
+            method   => \&set_default_uninitialized_parameter,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        star_aln_reference_genome => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        star_fusion_reference_genome => {
+            method   => \&set_default_human_genome,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        store_file => {
+            method   => \&set_default_store_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        sv_vcfparser_select_file => {
+            method   => \&set_default_vcfparser_select_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        temp_directory => {
+            method   => \&set_default_temp_directory,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        transcript_annotation_file_endings => {
+            method   => \&set_default_transcript_annotation,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+        vcfparser_select_file => {
+            method   => \&set_default_vcfparser_select_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
+    );
+
+    if ( exists $set_default_parameter{$parameter_name} ) {
+
+        my %hash = $set_default_parameter{$parameter_name}{method}
+          ->( { %{ $set_default_parameter{$parameter_name}{arg_href} } } );
+
     }
     return;
 }
@@ -1320,14 +1569,12 @@ sub _set_default_capture_kit {
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
 ##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -1344,7 +1591,6 @@ sub _set_default_capture_kit {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1387,14 +1633,12 @@ sub _set_default_sample_info_file {
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
 ##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $parameter_href;
-    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -1411,7 +1655,6 @@ sub _set_default_sample_info_file {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

@@ -15,10 +15,10 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
 ## MIPs lib/
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+## MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.02;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -59,7 +59,6 @@ sub _build_usage {
 
     option(
         q{print_parameter_default} => (
-            cmd_aliases   => [qw{ ppd }],
             cmd_flag      => q{print_parameter_default},
             documentation => q{print the default parameters},
             is            => q{rw},
@@ -69,7 +68,6 @@ sub _build_usage {
 
     option(
         q{project_id} => (
-            cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
             is            => q{rw},
             isa           => Str,
@@ -98,7 +96,7 @@ sub _build_usage {
 
     option(
         q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
+            cmd_aliases   => [qw{ rgv }],
             cmd_flag      => q{reference_genome_versions},
             cmd_tags      => [q{Default: grch37, grch38}],
             documentation => q{Reference genomes to download},
@@ -109,8 +107,7 @@ sub _build_usage {
 
     option(
         q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
+            cmd_tags => [
 q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
             ],
             documentation => q{Format and fields of sacct output},
@@ -121,7 +118,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{submission_profile} => (
-            cmd_aliases   => [qw{ sbp }],
             documentation => q{Submission profile},
             is            => q{rw},
             isa           => enum( [qw{ slurm }] ),
@@ -130,7 +126,7 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{temp_directory} => (
-            cmd_aliases   => [qw{ tmd }],
+            cmd_aliases   => [qw{ temp }],
             cmd_tags      => [q{Default: "/Current_dir/mip_download/$SLURM_JOB_ID"}],
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},

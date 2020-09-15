@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,7 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $GENOME_BUILD_VERSION_HG => 20;
+Readonly my $GENOME_BUILD_VERSION_HG   => 20;
+Readonly my $GENOME_BUILD_VERSION_GRCH => 37;
 
 BEGIN {
 
@@ -78,7 +79,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{found_other} = 1;
+$active_parameter{gender}{others} = [qw{ ADM1059A3 }];
 
 my %file_info = test_mip_hashes(
     {
@@ -94,7 +95,6 @@ my %file_info = test_mip_hashes(
 $file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_HG;
 $file_info{human_genome_reference_source}  = q{hg};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -106,24 +106,47 @@ my %parameter = test_mip_hashes(
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 $parameter{cache}{consensus_analysis_type} = q{wes};
 
-my %sample_info;
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+        recipe_name   => $recipe_name,
+    }
+);
 
 my $is_ok = analysis_plink(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok, q{Executed analysis recipe } . $recipe_name );
+
+## Given a grch reference
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_GRCH;
+$file_info{human_genome_reference_source}  = q{grch};
+$is_ok                                     = analysis_plink(
+    {
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{Executed analysis recipe } . $recipe_name );
 
 ## Given no eliglbe test to run
 # Reduce to single sample
@@ -131,15 +154,14 @@ ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 my $return = analysis_plink(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

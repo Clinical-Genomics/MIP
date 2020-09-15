@@ -27,20 +27,23 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       picardtools_addorreplacereadgroups
       picardtools_base
+      picardtools_bedtointervallist
       picardtools_createsequencedictionary
       picardtools_collecthsmetrics
       picardtools_collectmultiplemetrics
+      picardtools_collectrnaseqmetrics
       picardtools_gatherbamfiles
       picardtools_intervallisttools
       picardtools_markduplicates
       picardtools_mergesamfiles
       picardtools_sortvcf
+      picardtools_updatevcfsequencedictionary
       sort_vcf
     };
 }
@@ -286,6 +289,122 @@ sub picardtools_base {
         }
     );
     return @commands;
+}
+
+sub picardtools_bedtointervallist {
+
+## Function : Perl wrapper for writing picardtools BedToIntervalList recipe to $filehandle. Based on picardtools 2.22.4.
+## Returns  : @commands
+## Arguments: $filehandle              => Sbatch filehandle to write to
+##          : $infile_path             => Infile paths
+##          : $java_jar                => Java jar
+##          : $java_use_large_pages    => Use java large pages
+##          : $memory_allocation       => Memory allocation for java
+##          : $outfile_path            => Outfile path
+##          : $sequence_dictionary     => Sequence dictionry
+##          : $stderrfile_path         => Stderrfile path
+##          : $stderrfile_path_append  => Stderrfile path append
+##          : $temp_directory          => Redirect tmp files to java temp
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $java_jar;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $outfile_path;
+    my $sequence_dictionary;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $temp_directory;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        java_jar             => { strict_type => 1, store => \$java_jar, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sequence_dictionary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sequence_dictionary,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Return java core commands
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
+            }
+        );
+    }
+
+    push @commands, q{BedToIntervalList};
+
+    ## Picardtools base args
+    @commands = picardtools_base(
+        {
+            commands_ref => \@commands,
+        }
+    );
+
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
+
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
+
+    push @commands, q{-SEQUENCE_DICTIONARY} . $SPACE . $sequence_dictionary;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+
 }
 
 sub picardtools_createsequencedictionary {
@@ -1481,6 +1600,275 @@ sub sort_vcf {
         }
     );
     return;
+}
+
+sub picardtools_collectrnaseqmetrics {
+
+## Function : Perl wrapper for writing picardtools CollectRnaSeqMetrics recipe to $filehandle. Based on picardtools 2.22.3.
+## Returns  : @commands
+## Arguments: $chart_outfile_path        => Interval list file(s) that contains the locations of the baits used {REF}
+##          : $filehandle                => Sbatch filehandle to write to
+##          : $gene_annotation_file_path => Gene annotations in refFlat format
+##          : $infile_path               => Infile paths
+##          : $java_jar                  => Java jar
+##          : $java_use_large_pages      => Use java large pages
+##          : $memory_allocation         => Memory allocation for java
+##          : $outfile_path              => Outfile path
+##          : $rrna_intervals_file_path  => rRNA intervals in interval_list format
+##          : $stderrfile_path           => Stderrfile path
+##          : $strand_specificity        => Strand specificity
+##          : $temp_directory            => Redirect tmp files to java temp
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chart_outfile_path;
+    my $filehandle;
+    my $gene_annotation_file_path;
+    my $infile_path;
+    my $java_jar;
+    my $memory_allocation;
+    my $outfile_path;
+    my $rrna_intervals_file_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $strand_specificity;
+    my $temp_directory;
+
+    ## Default(s)
+    my $java_use_large_pages;
+
+    my $tmpl = {
+        chart_outfile_path => {
+            store       => \$chart_outfile_path,
+            strict_type => 1,
+        },
+        filehandle                => { store => \$filehandle, },
+        gene_annotation_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$gene_annotation_file_path,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        java_jar             => { store => \$java_jar, strict_type => 1, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        rrna_intervals_file_path => {
+            allow       => [ undef, qr{ [.]interval_list \z}xms ],
+            store       => \$rrna_intervals_file_path,
+            strict_type => 1,
+        },
+        stderrfile_path        => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        strand_specificity => {
+            allow => [
+                qw{ FIRST_READ_TRANSCRIPTION_STRAND NONE SECOND_READ_TRANSCRIPTION_STRAND }
+            ],
+            required    => 1,
+            store       => \$strand_specificity,
+            strict_type => 1,
+        },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Return java core commands
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                java_use_large_pages      => $java_use_large_pages,
+                java_jar                  => $java_jar,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
+            }
+        );
+    }
+
+    ## Picardtools collecthsmetrics
+    push @commands, q{CollectRnaSeqMetrics};
+
+    ## Picardtools base args
+    @commands = picardtools_base(
+        {
+            commands_ref => \@commands,
+        }
+    );
+
+    if ($chart_outfile_path) {
+
+        push @commands, q{-CHART_OUTPUT} . $SPACE . $chart_outfile_path;
+    }
+
+    push @commands, q{-REF_FLAT} . $SPACE . $gene_annotation_file_path;
+
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
+
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
+
+    if ($rrna_intervals_file_path) {
+
+        push @commands, q{-RIBOSOMAL_INTERVALS} . $SPACE . $rrna_intervals_file_path;
+    }
+
+    push @commands, q{-STRAND_SPECIFICITY} . $SPACE . $strand_specificity;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+sub picardtools_updatevcfsequencedictionary {
+
+## Function : Perl wrapper for writing picardtools UpdateVcfSequenceDictionary recipe to $filehandle. Based on picardtools 2.22.4.
+## Returns  : @commands
+## Arguments: $filehandle              => Sbatch filehandle to write to
+##          : $infile_path             => Infile paths
+##          : $java_jar                => Java jar
+##          : $java_use_large_pages    => Use java large pages
+##          : $memory_allocation       => Memory allocation for java
+##          : $outfile_path            => Outfile path
+##          : $sequence_dictionary     => Sequence dictionry
+##          : $stderrfile_path         => Stderrfile path
+##          : $stderrfile_path_append  => Stderrfile path append
+##          : $temp_directory          => Redirect tmp files to java temp
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $java_jar;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $outfile_path;
+    my $sequence_dictionary;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $temp_directory;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        java_jar             => { strict_type => 1, store => \$java_jar, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => { store => \$memory_allocation, strict_type => 1, },
+        outfile_path      => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sequence_dictionary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sequence_dictionary,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Return java core commands
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                java_jar                  => $java_jar,
+                java_use_large_pages      => $java_use_large_pages,
+                memory_allocation         => $memory_allocation,
+                picard_use_barclay_parser => 1,
+                temp_directory            => $temp_directory,
+            }
+        );
+    }
+
+    push @commands, q{UpdateVcfSequenceDictionary};
+
+    ## Picardtools base args
+    @commands = picardtools_base(
+        {
+            commands_ref => \@commands,
+        }
+    );
+
+    push @commands, q{-INPUT} . $SPACE . $infile_path;
+
+    push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
+
+    push @commands, q{-SEQUENCE_DICTIONARY} . $SPACE . $sequence_dictionary;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
 }
 
 1;

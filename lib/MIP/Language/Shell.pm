@@ -10,18 +10,30 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use Readonly;
+use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $AMPERSAND $COMMA $DOT $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{
+  $AMPERSAND
+  $CLOSE_PARENTHESIS
+  $COMMA
+  $DOT
+  $DOUBLE_QUOTE
+  $EQUALS
+  $NEWLINE
+  $OPEN_PARENTHESIS
+  $PIPE
+  $SINGLE_QUOTE
+  $SPACE
+  $TAB
+  $UNDERSCORE
+};
 
 BEGIN {
 
@@ -29,12 +41,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_shebang
       check_exist_and_move_file
+      check_mip_process_paths
       clear_trap
       create_error_trap_function
       create_housekeeping_function
@@ -46,12 +59,11 @@ BEGIN {
 
 sub build_shebang {
 
-## Function : Build bash shebang line. Returns @commands or writes to already opened filehandle.
+## Function : Build bash shebang line. Returns @commands or writes to already opened filehandle
 ## Returns  : @commands
-## Arguments: $filehandle         => Filehandle to write to
-##          : $bash_bin_path      => Location of bash bin
+## Arguments: $bash_bin_path      => Location of bash bin
+##          : $filehandle         => Filehandle to write to
 ##          : $invoke_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
-##          : $separator          => Separator to use when writing
 
     my ($arg_href) = @_;
 
@@ -61,7 +73,6 @@ sub build_shebang {
     ## Default(s)
     my $bash_bin_path;
     my $invoke_login_shell;
-    my $separator;
 
     my $tmpl = {
         bash_bin_path => {
@@ -77,11 +88,6 @@ sub build_shebang {
             store       => \$invoke_login_shell,
             strict_type => 1,
         },
-        separator => {
-            default     => $NEWLINE,
-            store       => \$separator,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -89,23 +95,88 @@ sub build_shebang {
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     ## Build shebang
-    # Stores commands depending on input parameters
-    my @commands = ( q{#!} . $bash_bin_path );
+    my @commands = ( q{#!} . $SPACE . $bash_bin_path );
 
-    ##Invoke as login shell
     if ($invoke_login_shell) {
 
-        $commands[0] .= $SPACE . q{--login};
+        push @commands, q{--login};
     }
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
             filehandle   => $filehandle,
-            separator    => $separator,
+            separator    => $SPACE,
         }
     );
     return @commands;
+}
+
+sub check_mip_process_paths {
+
+## Function : Check existence of all paths that are supposed to be created after mip processing
+## Returns  :
+## Arguments: $filehandle => Filehandle to write to
+##          : $paths_ref  => Paths to files to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $paths_ref;
+
+    my $tmpl = {
+        filehandle => {
+            defined  => 1,
+            required => 1,
+            store    => \$filehandle,
+        },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## First analysis and dry run will otherwise cause try to print uninitialized values
+    my @defined_paths = grep { defined } @{$paths_ref};
+    my @paths = map { $DOUBLE_QUOTE . $_ . $DOUBLE_QUOTE . $SPACE } @defined_paths;
+
+    ## Create bash array
+    print {$filehandle} q?readonly PATHS? . $EQUALS . $OPEN_PARENTHESIS;
+
+    ## Add to bash array "PATHS"
+    print {$filehandle} @paths;
+
+    ## Close bash array
+    say {$filehandle} $CLOSE_PARENTHESIS;
+
+    ## Loop over files
+    say {$filehandle} q?for path in "${PATHS[@]}"?;
+
+    ## For each element in array do
+    say {$filehandle} q?do? . $SPACE;
+
+    ## File exists and is larger than zero
+    say {$filehandle} $TAB . q?if [ -s "$path" ]; then?;
+
+    ## Echo
+    say {$filehandle} $TAB x 2 . q?echo "Found file $path"?;
+    say {$filehandle} $TAB . q?else?;
+
+    ## Redirect to STDERR
+    say {$filehandle} $TAB x 2 . q?echo "Could not find $path" >&2?;
+
+    ## Set status flag so that "notFinished" remains in sample_info_file
+    say {$filehandle} $TAB x 2 . q?STATUS="1"?;
+    say {$filehandle} $TAB . q?fi?;
+    say {$filehandle} q?done ?, $NEWLINE;
+
+    return 1;
 }
 
 sub create_housekeeping_function {
@@ -167,7 +238,7 @@ sub create_housekeeping_function {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
 
     ## Create housekeeping function and trap
     say {$filehandle} $trap_function_name . q?() {?, $NEWLINE;
@@ -339,7 +410,7 @@ sub clear_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_trap };
+    use MIP::Program::Gnu::Bash qw{ gnu_trap };
 
     ## Clear trap for signal ERR
     say {$filehandle} $NEWLINE . q{## Clear trap for signal(s) } . join $SPACE,
@@ -390,7 +461,7 @@ sub enable_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_trap };
+    use MIP::Program::Gnu::Bash qw{ gnu_trap };
 
     say {$filehandle} $NEWLINE . q{## Enable trap for signal(s) } . join $SPACE,
       @{$trap_signals_ref};
@@ -408,7 +479,7 @@ sub enable_trap {
 
 sub track_progress {
 
-## Function : Output SLURM info on each job via sacct command and write to log file(.status)
+## Function : Output Slurm info on each job via sacct command and write to log file(.status)
 ## Returns  :
 ## Arguments: $filehandle              => Sbatch filehandle to write to
 ##          : $job_ids_ref             => Job ids
@@ -441,35 +512,35 @@ sub track_progress {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Workloadmanager::Slurm qw{ slurm_sacct slurm_reformat_sacct_output };
+    use MIP::Program::Slurm qw{ slurm_sacct };
+    use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
-    if ( @{$job_ids_ref} ) {
+    return if ( not @{$job_ids_ref} );
 
-        ## Copy array
-        my @reformat_sacct_headers = @{$sacct_format_fields_ref};
+    my @reformat_sacct_headers = @{$sacct_format_fields_ref};
+
+  HEADER_ELEMENT:
+    foreach my $element (@reformat_sacct_headers) {
 
         ## Remove "%digits" from headers
-      HEADER_ELEMENT:
-        foreach my $element (@reformat_sacct_headers) {
-
-            $element =~ s/%\d+//gsxm;
-        }
-        my @commands = slurm_sacct(
-            {
-                fields_format_ref => \@{$sacct_format_fields_ref},
-                job_ids_ref       => \@{$job_ids_ref},
-            }
-        );
-
-        slurm_reformat_sacct_output(
-            {
-                commands_ref               => \@commands,
-                filehandle                 => $filehandle,
-                log_file_path              => $log_file_path,
-                reformat_sacct_headers_ref => \@reformat_sacct_headers,
-            }
-        );
+        $element =~ s/%\d+//gsxm;
     }
+
+    my @commands = slurm_sacct(
+        {
+            fields_format_ref => \@{$sacct_format_fields_ref},
+            job_ids_ref       => \@{$job_ids_ref},
+        }
+    );
+
+    slurm_reformat_sacct_output(
+        {
+            commands_ref               => \@commands,
+            filehandle                 => $filehandle,
+            log_file_path              => $log_file_path,
+            reformat_sacct_headers_ref => \@reformat_sacct_headers,
+        }
+    );
     return;
 }
 
@@ -536,7 +607,7 @@ sub check_exist_and_move_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv};
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_mv};
 
     ## Check file exists and is larger than 0
     print {$filehandle} q{[ -s } . $intended_file_path . q{ ]} . $SPACE;

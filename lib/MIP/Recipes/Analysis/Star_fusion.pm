@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -39,7 +39,6 @@ sub analysis_star_fusion {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -53,7 +52,6 @@ sub analysis_star_fusion {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -83,13 +81,6 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -142,7 +133,7 @@ sub analysis_star_fusion {
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -236,26 +227,22 @@ sub analysis_star_fusion {
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
     create_star_fusion_sample_file(
         {
-            filehandle              => $filehandle,
-            infile_paths_ref        => \@infile_paths,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            samples_file_path       => $sample_files_path,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
+            filehandle        => $filehandle,
+            file_info_href    => $file_info_href,
+            infile_paths_ref  => \@infile_paths,
+            samples_file_path => $sample_files_path,
+            sample_id         => $sample_id,
         }
     );
     say {$filehandle} $NEWLINE;
 
-    my $referencefile_dir_path =
-        $active_parameter_href->{star_fusion_reference_genome}
-      . $file_info_href->{star_fusion_reference_genome}[0];
     star_fusion(
         {
             cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
             filehandle            => $filehandle,
             fusion_inspector      => q{inspect},
-            genome_lib_dir_path   => $referencefile_dir_path,
+            genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             min_junction_reads =>
               $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
@@ -290,17 +277,18 @@ sub analysis_star_fusion {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_island},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $recipe_attribute{chain},
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_island},
+                job_id_chain         => $recipe_attribute{chain},
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

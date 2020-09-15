@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -40,7 +40,6 @@ sub analysis_fastqc {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -54,7 +53,6 @@ sub analysis_fastqc {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -83,13 +81,6 @@ sub analysis_fastqc {
             default     => {},
             defined     => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -141,9 +132,10 @@ sub analysis_fastqc {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode update_memory_allocation };
     use MIP::Environment::Cluster qw{ check_max_core_number };
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Fastqc qw{ fastqc };
@@ -218,16 +210,30 @@ sub analysis_fastqc {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-  INFILE_LANE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    my %file_info_sample = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
+  INFILE_PREFIX:
+    foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
+
+        my $sequence_run_type = get_sample_file_attribute(
+            {
+                attribute      => q{sequence_run_type},
+                file_info_href => $file_info_href,
+                file_name      => $infile_prefix,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
         $core_number = update_core_number_to_seq_mode(
             {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
+                core_number       => $core_number,
+                sequence_run_type => $sequence_run_type,
             }
         );
     }
@@ -329,17 +335,18 @@ sub analysis_fastqc {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_island},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                dependency_method    => q{sample_to_island},
+                case_id              => $case_id,
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

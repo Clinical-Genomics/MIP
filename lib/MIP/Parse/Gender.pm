@@ -36,11 +36,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ build_stream_file_cmd get_number_of_male_reads get_sampling_fastq_files parse_fastq_for_gender update_gender_info };
+    our @EXPORT_OK = qw{ build_stream_file_cmd
+      get_number_of_male_reads
+      get_sampling_fastq_files
+      parse_fastq_for_gender
+      update_gender_info
+    };
 }
 
 sub build_stream_file_cmd {
@@ -66,7 +70,7 @@ sub build_stream_file_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_tail };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
 
     ## Constants
     Readonly my $BYTE_START_POS => 10_000;
@@ -77,13 +81,10 @@ sub build_stream_file_cmd {
   FILE:
     foreach my $file_path ( @{$fastq_files_ref} ) {
 
-        my @cmds_cat = gnu_cat( { infile_paths_ref => [$file_path], } );
-
-        ## Check gzipped status of file path to choose correct cat binary (cat or zcat). Also prepend stream character.
-        $cmds_cat[0] = _get_file_gzipped_status(
+        ## Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
+        my @cmds_cat = _get_file_read_commands(
             {
-                cmds_cat_ref => \@cmds_cat,
-                file_path    => $file_path,
+                file_path => $file_path,
             }
         );
 
@@ -128,7 +129,7 @@ sub get_number_of_male_reads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use IPC::Cmd qw(run);
+    use MIP::Environment::Child_process qw{ child_process };
     use File::Path qw{ remove_tree };
 
     ## Constants
@@ -152,11 +153,15 @@ sub get_number_of_male_reads {
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
 
-    my $cmds_ref = [ q{bash}, $bash_temp_file ];
-    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-      run( command => $cmds_ref, verbose => 0 );
+    my $cmds_ref       = [ q{bash}, $bash_temp_file ];
+    my %process_return = child_process(
+        {
+            commands_ref => $cmds_ref,
+            process_type => q{ipc_cmd_run},
+        }
+    );
 
-    my $y_read_count = $stdout_buf_ref->[0];
+    my $y_read_count = $process_return{stdouts_ref}->[0];
 
     ## Clean-up
     close $filehandle;
@@ -169,25 +174,21 @@ sub get_sampling_fastq_files {
 
 ## Function : Get fastq files to sample reads from
 ## Returns  : $is_interleaved_fastq, @fastq_files
-## Arguments: $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $infile_paths_ref        => Infile paths {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $file_info_sample_href => File info sample hash
+##          : $infile_paths_ref      => Infile paths {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_lane_prefix_href;
+    my $file_info_sample_href;
     my $infile_paths_ref;
-    my $sample_id;
-    my $sample_info_href;
 
     my $tmpl = {
-        infile_lane_prefix_href => {
+        file_info_sample_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infile_lane_prefix_href,
+            store       => \$file_info_sample_href,
             strict_type => 1,
         },
         infile_paths_ref => {
@@ -197,56 +198,24 @@ sub get_sampling_fastq_files {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Sample_info qw{ get_sequence_run_type get_sequence_run_type_is_interleaved };
 
     my @fastq_files;
 
     ## Perform per single-end or read pair
     my $paired_end_tracker = 0;
-    my $is_interleaved_fastq;
 
   INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
+    foreach
+      my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } )
     {
 
-        # Collect paired-end or single-end sequence run type
-        my $sequence_run_type = get_sequence_run_type(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
-        # Collect interleaved status for fastq file
-        $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
-            {
-                infile_lane_prefix => $infile_prefix,
-                sample_id          => $sample_id,
-                sample_info_href   => $sample_info_href,
-            }
-        );
-
-        ## Infile(s)
         push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
+
+        my $sequence_run_type =
+          $file_info_sample_href->{$infile_prefix}{sequence_run_type};
 
         # If second read direction is present
         if ( $sequence_run_type eq q{paired-end} ) {
@@ -255,10 +224,13 @@ sub get_sampling_fastq_files {
             $paired_end_tracker = $paired_end_tracker + 1;
             push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
         }
+
+        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
+
         ## Only perform once per sample and fastq file(s)
-        last INFILE_PREFIX;
+        return $is_interleaved_fastq, @fastq_files;
     }
-    return $is_interleaved_fastq, @fastq_files;
+    return;
 }
 
 sub parse_fastq_for_gender {
@@ -266,17 +238,15 @@ sub parse_fastq_for_gender {
 ## Function : Parse fastq infiles for gender. Update contigs depending on results.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $consensus_analysis_type => Consensus analysis_type
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $consensus_analysis_type;
     my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $sample_info_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -286,6 +256,12 @@ sub parse_fastq_for_gender {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -293,30 +269,25 @@ sub parse_fastq_for_gender {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_cut };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Program::Bwa qw{ bwa_mem };
+    use MIP::Active_parameter qw{ get_active_parameter_attribute };
+    use MIP::File_info qw{ get_sample_file_attribute };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Bwa qw{ bwa_mem2_mem };
 
-    ## All sample ids have a gender - non need to continue
-    return if ( not $active_parameter_href->{found_other} );
+    my $other_gender_count = get_active_parameter_attribute(
+        {
+            active_parameter_href => $active_parameter_href,
+            attribute             => q{others},
+            parameter_name        => q{gender},
+        }
+    );
+    ## All sample ids have a gender - no need to continue
+    return if ( not $other_gender_count );
 
     ## Unpack
     my $log                = Log::Log4perl->get_logger($LOG_NAME);
@@ -325,7 +296,6 @@ sub parse_fastq_for_gender {
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{gender}{others} } ) {
 
-        ## Only for sample with wgs analysis type
         next SAMPLE_ID
           if ( not $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} );
 
@@ -334,16 +304,19 @@ sub parse_fastq_for_gender {
 
         ### Estimate gender from reads
 
-        ## Get infile directory
-        my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
+        my %file_info_sample = get_sample_file_attribute(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
 
-        ## Get fastq files to sample reads from
+        my $infiles_dir = $file_info_sample{mip_infiles_dir};
+
         my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
             {
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_paths_ref        => $file_info_href->{$sample_id}{mip_infiles},
-                sample_id               => $sample_id,
-                sample_info_href        => $sample_info_href,
+                file_info_sample_href => \%file_info_sample,
+                infile_paths_ref      => $file_info_sample{mip_infiles},
             }
         );
 
@@ -354,7 +327,7 @@ sub parse_fastq_for_gender {
         my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } );
 
         ## Build bwa mem command
-        my @commands = bwa_mem(
+        my @commands = bwa_mem2_mem(
             {
                 idxbase                 => $referencefile_path,
                 infile_path             => $bwa_infiles[0],
@@ -394,29 +367,32 @@ sub parse_fastq_for_gender {
         ## Update gender info in active_parameter and update contigs depending on results
         update_gender_info(
             {
-                active_parameter_href => $active_parameter_href,
-                file_info_href        => $file_info_href,
-                sample_id             => $sample_id,
-                y_read_count          => $y_read_count,
+                active_parameter_href   => $active_parameter_href,
+                consensus_analysis_type => $consensus_analysis_type,
+                file_info_href          => $file_info_href,
+                sample_id               => $sample_id,
+                y_read_count            => $y_read_count,
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub update_gender_info {
 
 ## Function : Update gender info in active_parameter and update contigs depending on results.
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_info_href        => File info hash {REF}
-##          : $sample_id             => Sample id
-##          : $y_read_count          => Y read count
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $consensus_analysis_type => Consensus analysis_type
+##          : $file_info_href          => File info hash {REF}
+##          : $sample_id               => Sample id
+##          : $y_read_count            => Y read count
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $consensus_analysis_type;
     my $file_info_href;
     my $sample_id;
     my $y_read_count;
@@ -427,6 +403,12 @@ sub update_gender_info {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
             strict_type => 1,
         },
         file_info_href => {
@@ -450,54 +432,72 @@ sub update_gender_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Update::Contigs qw{ update_contigs_for_run };
+    use MIP::Active_parameter
+      qw{ add_gender remove_sample_id_from_gender set_gender_estimation set_include_y };
+    use MIP::Contigs qw{ update_contigs_for_run };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Constants
     Readonly my $MALE_THRESHOLD => 36;
 
-    if ( $y_read_count > $MALE_THRESHOLD ) {
+    my $gender  = $y_read_count > $MALE_THRESHOLD ? q{male} : q{female};
+    my $genders = $gender . q{s};
+    $log->info(qq{Found $gender according to fastq reads});
 
-        $log->info(q{Found male according to fastq reads});
+    add_gender(
+        {
+            active_parameter_href => $active_parameter_href,
+            sample_id             => $sample_id,
+            gender                => $genders,
+        }
+    );
 
-        ## Increment found_male
-        $active_parameter_href->{found_male}++;
-        $active_parameter_href->{gender_estimation}{$sample_id} = q{male};
-        return 1;
-    }
+    ## For tracability
+    set_gender_estimation(
+        {
+            active_parameter_href => $active_parameter_href,
+            gender                => $gender,
+            sample_id             => $sample_id,
+        }
+    );
 
-    $log->info(q{Found female according to fastq reads});
+    remove_sample_id_from_gender(
+        {
+            active_parameter_href => $active_parameter_href,
+            gender                => q{others},
+            sample_id             => $sample_id,
+        }
+    );
 
-    ## Decrement found_male
-    $active_parameter_href->{found_male}--;
-    $active_parameter_href->{gender_estimation}{$sample_id} = q{female};
+    set_include_y(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
 
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href      => $file_info_href,
-            found_male          => $active_parameter_href->{found_male},
-            log                 => $log,
+            consensus_analysis_type => $consensus_analysis_type,
+            exclude_contigs_ref     => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href          => $file_info_href,
+            include_y               => $active_parameter_href->{include_y},
         }
     );
     return 1;
 }
 
-sub _get_file_gzipped_status {
+sub _get_file_read_commands {
 
-## Function : Check gzipped status of file path to choose correct cat binary (cat or zcat). Also prepend stream character.
-## Returns  : $cmd
-## Arguments: $cmds_cat_ref => Command array for cat {REF}
-##          : $file_path    => Fastq File path
+## Function : Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
+## Returns  : @read_cmds
+## Arguments: $file_path => Fastq File path to check status for
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $file_path;
-    my $cmds_cat_ref;
 
     my $tmpl = {
         file_path => {
@@ -506,38 +506,39 @@ sub _get_file_gzipped_status {
             store       => \$file_path,
             strict_type => 1,
         },
-        cmds_cat_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$cmds_cat_ref,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gzip qw{ gzip };
 
-    my $cmd;
+    my @read_cmds;
 
-    ## Parse file suffix in filename.suffix(.gz).
-    ## Removes suffix if matching else return undef
-    my $is_gzipped = parse_file_suffix(
+    my $is_gzipped = check_gzipped(
         {
-            file_name   => $file_path,
-            file_suffix => $DOT . q{gz},
+            file_name => $file_path,
         }
     );
     if ($is_gzipped) {
 
-        $cmd = q{<} . $OPEN_PARENTHESIS . q{z} . $cmds_cat_ref->[0];
+        @read_cmds = gzip(
+            {
+                decompress       => 1,
+                infile_paths_ref => [$file_path],
+                stdout           => 1,
+            }
+        );
     }
     else {
 
-        $cmd = q{<} . $OPEN_PARENTHESIS . $cmds_cat_ref->[0];
+        @read_cmds = gnu_cat( { infile_paths_ref => [$file_path], } );
     }
-    return $cmd;
+
+    $read_cmds[0] = q{<} . $OPEN_PARENTHESIS . $read_cmds[0];
+
+    return @read_cmds;
 }
 
 1;

@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -42,17 +42,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_vep_plugin }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Vep}            => [qw{ check_vep_plugin }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_vep_plugin };
+use MIP::Vep qw{ check_vep_plugin };
 
-diag(   q{Test check_vep_plugin from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_vep_plugin from Vep.pm v}
+      . $MIP::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,7 +67,6 @@ my %vep_plugin;
 
 my $is_not_ok = check_vep_plugin(
     {
-        log             => $log,
         parameter_name  => q{vep_plugin},
         vep_plugin_href => \%vep_plugin,
     }
@@ -85,7 +84,6 @@ is( $is_not_ok, 0, q{Nothing to check} );
 
 my $is_ok = check_vep_plugin(
     {
-        log             => $log,
         parameter_name  => q{vep_plugin},
         vep_plugin_href => \%vep_plugin,
     }
@@ -100,7 +98,6 @@ $vep_plugin{not_valid_annotation} = [q{not_a_valid_ref}];
 trap {
     check_vep_plugin(
         {
-            log             => $log,
             parameter_name  => q{vep_plugin},
             vep_plugin_href => \%vep_plugin,
         }

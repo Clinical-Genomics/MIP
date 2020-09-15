@@ -136,7 +136,7 @@ sample_info_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
-singularity_recipe_bind_path:
+recipe_bind_path:
   associated_recipe:
     - mip
   data_type: HASH
@@ -181,12 +181,6 @@ supported_capture_kit:
     agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
     twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed
     latest: genome_reference_source_version_twist_target_-1-.bed
-  type: mip
-with_singularity:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
   type: mip
 ### Programs
 ## AnalysisRunStatus

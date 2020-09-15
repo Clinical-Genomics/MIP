@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,9 +61,9 @@ diag(   q{Test write_to_file from Write.pm v}
 
 my $test_dir = File::Temp->newdir();
 
-## Given a hash and a file path
+## Given a hash when writing in YAML format
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my $yaml_file_path   = catfile( $test_dir, q{write_to_file_test.yaml} );
+my $yaml_file_path   = catfile( $test_dir, q{write_yaml_to_file_test.yaml} );
 
 write_to_file(
     {
@@ -75,5 +75,24 @@ write_to_file(
 
 ## Then yaml file should exist
 ok( -e $yaml_file_path, q{Created yaml file} );
+
+## Given a hash when writing in TOML format
+my $toml_file_path = catfile( $test_dir, q{write_toml_to_file_test.yaml} );
+
+my %toml_hash = (
+    hash  => q{toml},
+    array => [qw{ toml toml }],
+);
+
+write_to_file(
+    {
+        data_href => \%toml_hash,
+        format    => q{toml},
+        path      => $toml_file_path,
+    }
+);
+
+## Then yaml file should exist
+ok( -e $toml_file_path, q{Created toml file} );
 
 done_testing();

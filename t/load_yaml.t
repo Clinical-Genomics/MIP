@@ -21,10 +21,10 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Yaml}           => [qw{ load_yaml }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -59,13 +59,13 @@ diag(   q{Test load_yaml from Yaml.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a yaml file to load
-my %hash_to_return = load_yaml(
+my $hash_ref = load_yaml(
     {
         path => catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
     }
 );
 
 ## Then hash should contain keys
-ok( keys %hash_to_return, q{Loaded yaml file} );
+ok( keys %{$hash_ref}, q{Loaded yaml file} );
 
 done_testing();

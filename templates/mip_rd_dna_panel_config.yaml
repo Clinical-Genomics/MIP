@@ -1,0 +1,77 @@
+---
+## Environment
+analysis_constant_path: analysis
+load_env:
+  mip_ci:
+    method: conda
+    mip:
+max_cores_per_node: 36
+node_ram_memory: 192
+project_id: travis_test
+slurm_quality_of_service: low
+## Input
+pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
+reference_dir: cluster_constant_path!/references
+vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
+## Output
+config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
+outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
+outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
+sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+## References
+gatk_genotypegvcfs_ref_gvcf: grch37_gatk_merged_reference_samples.txt
+genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
+qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
+qccollect_regexp_file: qc_regexp_-v1.26-.yaml
+rank_model_file: rank_model_-v1.29-.ini
+sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
+vcfanno_config: grch37_vcfanno_config_v1.11-.toml
+### Analysis
+### Programs
+## Parameters
+fqf_annotations:
+  - GNOMADAF
+  - GNOMADAF_popmax
+  - SWEGENAF
+gatk_combinevariants_prioritize_caller: haplotypecaller
+picardtools_path: /usr/picard
+qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+vep_custom_annotation:
+  genomic_superdups_frac_match:
+    annotation_type: overlap
+    force_report_coordinates: 0
+    key: genomic_superdups_frac_match
+    file_type: bed
+    path: cluster_constant_path!/references/grch37_genomic_superdups_reformated_-20181009-.bed.gz
+  clinvar:
+    annotation_type: exact
+    force_report_coordinates: 0
+    key: CLINVAR
+    file_type: vcf
+    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20200728-.vcf.gz
+    vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-100/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins
+vep_plugin:
+  dbNSFP:
+    exists_check: file
+    parameters:
+      - GERP++_RS
+      - GERP++_NR
+      - phyloP100way_vertebrate
+      - phastCons100way_vertebrate
+      - REVEL_rankscore
+    path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
+  ExACpLI:
+    exists_check: file
+    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exists_check: file
+    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exists_check: directory
+    parameters:
+      - SWA
+      - NCSS
+    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload

@@ -32,7 +32,6 @@ sub build_dragen_rd_dna_meta_files {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
@@ -43,7 +42,6 @@ sub build_dragen_rd_dna_meta_files {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_href;
@@ -62,13 +60,6 @@ sub build_dragen_rd_dna_meta_files {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -122,11 +113,10 @@ sub build_dragen_rd_dna_meta_files {
 
             $build_recipe{$parameter_build_name}->(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    job_id_href           => $job_id_href,
+                    log                   => $log,
                     parameter_build_suffixes_ref =>
                       \@{ $file_info_href->{$parameter_build_name} },
                     parameter_href   => $parameter_href,

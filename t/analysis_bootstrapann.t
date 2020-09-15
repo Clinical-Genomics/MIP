@@ -89,7 +89,6 @@ $file_info{io}{CHAIN_MAIN}{ADM1059A1}{gatk_variantfiltration}{out}{file_path_pre
 $file_info{io}{CHAIN_MAIN}{ADM1059A1}{gatk_variantfiltration}{out}{file_suffix} =
   q{file_suffix};
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -102,15 +101,14 @@ my %sample_info;
 
 my $is_ok = analysis_bootstrapann(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 
@@ -121,15 +119,14 @@ ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 $active_parameter{no_ase_samples} = [qw{ ADM1059A1 }];
 $is_ok = analysis_bootstrapann(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 

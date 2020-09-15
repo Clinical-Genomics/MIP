@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -43,7 +43,6 @@ sub analysis_reformat_sv {
 ##          : $case_id                 => Family id
 ##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -57,7 +56,6 @@ sub analysis_reformat_sv {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_info_href;
     my $parameter_href;
@@ -87,13 +85,6 @@ sub analysis_reformat_sv {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -145,13 +136,13 @@ sub analysis_reformat_sv {
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };
-    use MIP::Sample_info qw{ set_file_path_to_store
-      set_most_complete_vcf
+    use MIP::Sample_info qw{
+      set_file_path_to_store
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -340,35 +331,6 @@ sub analysis_reformat_sv {
 
             my $outfile_path = $outfile_paths[$infile_index];
 
-            set_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_path,
-                    recipe_name           => $recipe_name,
-                    sample_info_href      => $sample_info_href,
-                    vcf_file_key          => q{sv}
-                      . $UNDERSCORE
-                      . substr( $outfile_suffixes[0], 1 )
-                      . $UNDERSCORE . q{file},
-                    vcfparser_outfile_counter => $infile_index,
-                }
-            );
-            set_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_path . $DOT . q{gz},
-                    recipe_name           => $recipe_name,
-                    sample_info_href      => $sample_info_href,
-                    vcf_file_key          => q{sv}
-                      . $UNDERSCORE
-                      . substr( $outfile_suffixes[0], 1 )
-                      . $UNDERSCORE
-                      . q{binary_file},
-                    vcfparser_outfile_counter => $infile_index,
-                }
-            );
-
-            # Save clinical candidate list path
             set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $metafile_tag,
@@ -398,17 +360,18 @@ sub analysis_reformat_sv {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

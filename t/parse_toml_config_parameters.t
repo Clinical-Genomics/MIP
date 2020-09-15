@@ -22,10 +22,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +35,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,19 +42,21 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Parameter} => [qw{ parse_toml_config_parameters }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
-        q{MIP::Unix::System}     => [qw{ system_cmd_call }],
+        q{MIP::Environment::Child_process} => [qw{ child_process }],
+        q{MIP::Test::Fixtures}             => [qw{ test_log test_standard_cli }],
+        q{MIP::Toml}                       => [qw{ load_toml write_toml }],
+        q{MIP::Vcfanno}                    => [qw{ parse_toml_config_parameters }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Parameter qw{ parse_toml_config_parameters };
-use MIP::Unix::System qw{ system_cmd_call };
+use MIP::Environment::Child_process qw{ child_process };
+use MIP::Vcfanno qw{ parse_toml_config_parameters };
+use MIP::Toml qw{ load_toml write_toml };
 
-diag(   q{Test parse_toml_config_parameters from Parameter.pm v}
-      . $MIP::Parse::Parameter::VERSION
+diag(   q{Test parse_toml_config_parameters from Vcfanno.pm v}
+      . $MIP::Vcfanno::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -72,37 +71,43 @@ my $log = test_log( {} );
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
 ### Prepare temporary file for testing
-my $fqa_vcfanno_config =
+my $vcfanno_config =
   catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
-my $test_fqa_vcfanno_config = catfile( $test_reference_dir,
+my $test_vcfanno_config = catfile( $test_reference_dir,
     qw{ grch37_frequency_vcfanno_filter_config_test_parse_toml_-v1.0-.toml  } );
 
-my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
+my $toml_href = load_toml(
+    {
+        path => $vcfanno_config,
+    }
+);
 
-## Replace line starting with "file=" with dynamic file path
-my $parse_path =
-    q?perl -nae 'chomp;if($_=~/file=/) {say STDOUT q{file="?
-  . $file_path
-  . q?"};} else {say STDOUT $_}' ?;
+## Set test file paths
+$toml_href->{annotation}[0]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+$toml_href->{annotation}[1]{file} =
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.1.1_sv-.vcf } );
+$toml_href->{annotation}[2]{file} =
+  catfile( $Bin, qw{ data references grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz } );
 
-## Parse original file and create new config for test
-my $command_string = join $SPACE,
-  ( $parse_path, $fqa_vcfanno_config, q{>}, $test_fqa_vcfanno_config );
-
-my %return = system_cmd_call( { command_string => $command_string, } );
+write_toml(
+    {
+        data_href => $toml_href,
+        path      => $test_vcfanno_config,
+    }
+);
 
 ## Given a toml config file
 my %active_parameter = (
-    frequency_filter   => 1,
-    fqa_vcfanno_config => $test_fqa_vcfanno_config,
+    frequency_filter => 1,
+    vcfanno_config   => $test_vcfanno_config,
 );
 
 my $is_ok = parse_toml_config_parameters(
     {
-        log                   => $log,
         active_parameter_href => \%active_parameter,
     }
 );
@@ -111,6 +116,6 @@ my $is_ok = parse_toml_config_parameters(
 ok( $is_ok, q{Passed parsing for toml file} );
 
 ## Clean-up
-rmtree($test_fqa_vcfanno_config);
+rmtree($test_vcfanno_config);
 
 done_testing();

@@ -16,14 +16,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $COLON $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +31,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -53,7 +48,7 @@ BEGIN {
 
 use MIP::Language::Shell qw{ track_progress };
 
-diag(   q{Test track_progress from SHELL.pm v}
+diag(   q{Test track_progress from Shell.pm v}
       . $MIP::Language::Shell::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -73,7 +68,7 @@ open $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a job_id
-my @job_ids       = (qw{job_id_test});
+my @job_ids       = (qw{ job_id_test });
 my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
 
 track_progress(

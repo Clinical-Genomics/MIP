@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
 
@@ -36,6 +36,8 @@ BEGIN {
       $CLOSE_PARENTHESIS
       $COLON
       $COMMA
+      @CONTAINER_BIND_PATHS
+      $CONTAINER_MANAGER
       $DASH
       $DOLLAR_SIGN
       $DOT
@@ -58,13 +60,11 @@ BEGIN {
       %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
-      @SINGULARITY_BIND_PATHS
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
       $TAB
-      $WITH_SINGULARITY
       $UNDERSCORE
-      set_singularity_constants
+      set_container_constants
       set_genome_build_constants
       set_log_name_constant
     };
@@ -80,7 +80,7 @@ Readonly our %ANALYSIS => (
 );
 
 ## Set MIP version
-Readonly our $MIP_VERSION => q{v8.2.6};
+Readonly our $MIP_VERSION => q{v9.0.0};
 
 ## Cli
 Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
@@ -349,9 +349,9 @@ Readonly our $SPACE             => q{ };
 Readonly our $TAB               => qq{\t};
 Readonly our $UNDERSCORE        => q{_};
 
-sub set_singularity_constants {
+sub set_container_constants {
 
-## Function : Set analysis constants
+## Function : Set container constants
 ## Returns  :
 ## Arguments: $active_parameter_href => Analysis recipe hash {REF}
 
@@ -372,24 +372,22 @@ sub set_singularity_constants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::Singularity qw{ reduce_dir_paths };
+    use MIP::Environment::Path qw{ reduce_dir_paths };
 
-    ## Gather default bind paths for singularity
-    my @singularity_bind_paths = (
+    my @container_bind_paths = (
         $active_parameter_href->{reference_dir},
         $active_parameter_href->{outdata_dir},
         $active_parameter_href->{temp_directory},
     );
 
-    ## Remove potential overlaps
-    @singularity_bind_paths = reduce_dir_paths(
+    @container_bind_paths = reduce_dir_paths(
         {
-            dir_paths_ref => \@singularity_bind_paths,
+            dir_paths_ref => \@container_bind_paths,
         }
     );
 
-    Readonly our @SINGULARITY_BIND_PATHS => @singularity_bind_paths;
-    Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
+    Readonly our @CONTAINER_BIND_PATHS => @container_bind_paths;
+    Readonly our $CONTAINER_MANAGER    => $active_parameter_href->{container_manager};
 
     return;
 }

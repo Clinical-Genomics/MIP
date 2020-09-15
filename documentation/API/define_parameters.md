@@ -24,6 +24,7 @@ recipe: { # Recipe hash
   program_executables: string, value="<executable_name>" # Set to check if can run when executing mip
   recipe_type: string, value="aligners | variant_callers | structural_variant_callers", # For collecting output from multiple analysis recipes
   type: string, value="recipe(=analysis_recipe_switch)"
+  variant_caller: string, # Set to check prioritization order of caller when merging different call sets
 }
 recipe_argument: {
   associated_recipe: [

@@ -62,13 +62,13 @@ source "$CONDA_PATH"/etc/profile.d/conda.sh
 ## Create or install conda env
 if [ "$EXISTING_ENV" = true ] && [ -d ${CONDA_PATH}/envs/${ENV_NAME} ]
 then
-  conda install --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64
+  conda install --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64=7.3.0 python=3.7.7
 elif [ -d ${CONDA_PATH}/envs/${ENV_NAME} ]
 then
     echo "Environment already exists. Please supply flag -x to command"
     exit 1
 else
-  conda create --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64
+  conda create --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64=7.3.0 python=3.7.7
 fi
 
 conda install --name "$ENV_NAME" --yes -c bioconda -c conda-forge perl=5.26 perl-app-cpanminus perl-log-log4perl perl-moosex-app perl-file-copy-recursive perl-timedate perl-set-intervaltree
@@ -80,7 +80,7 @@ cpanm --installdeps .
 if [ "$DEV" = true ]; then 
     
     ## Install dev modules from cpan
-    cpanm Perl::Tidy@20200110 Perl::Critic@1.138
+    cpanm Perl::Tidy@20200110 Perl::Critic@1.138 Data::Printer@0.40
 
     ## Install yamllint 
     conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0

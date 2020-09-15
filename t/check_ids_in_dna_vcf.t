@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::File}    => [qw{ check_ids_in_dna_vcf }],
+        q{MIP::Analysis}       => [qw{ check_ids_in_dna_vcf }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::File qw{ check_ids_in_dna_vcf };
+use MIP::Analysis qw{ check_ids_in_dna_vcf };
 
-diag(   q{Test check_ids_in_dna_vcf from File.pm v}
-      . $MIP::Check::File::VERSION
+diag(   q{Test check_ids_in_dna_vcf from Analysis.pm v}
+      . $MIP::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,10 +61,10 @@ diag(   q{Test check_ids_in_dna_vcf from File.pm v}
 my $log = test_log( {} );
 
 ## Given matching dna and rna sample ids
-my $vcf_file_path = catfile( dirname($Bin),
-    qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter} } );
 my %sample_info      = test_mip_hashes( { mip_hash_name => q{qc_sample_info} } );
+my $vcf_file_path    = catfile( dirname($Bin),
+    qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
 
 my $is_ok = check_ids_in_dna_vcf(
     {
@@ -96,7 +95,11 @@ trap {
 
 ## Then exit and print fatal message
 is( $trap->exit, 1, q{Exit when no samples match} );
-like( $trap->stderr, qr/No\smatching\ssample\sids/xms, q{Print error message} );
+like(
+    $trap->stderr,
+    qr/No\smatching\ssample\sids/xms,
+    q{Print error message when no samples match}
+);
 
 ## Given that some dna samples match
 @{ $active_parameter{sample_ids} } = qw{ ADM1059A1 ADM1059A5 ADM1059A6 };
@@ -112,7 +115,8 @@ trap {
 };
 ## Then exit and print fatal message
 is( $trap->exit, 1, q{Exit on partial sample match} );
-like( $trap->stderr, qr/Only\spartial\smatch/xms, q{Print error message} );
+like( $trap->stderr, qr/Only\spartial\smatch/xms,
+    q{Print error message on partial sample match} );
 
 ## Given partial match and force flag
 $active_parameter{force_dna_ase} = 1;
@@ -128,7 +132,8 @@ trap {
 
 ## Then warn and set no_ase_samples array
 is( $trap->leaveby, q{return}, q{Return on partial sample match and force flag} );
-like( $trap->stderr, qr/Turning\soff\sASE/xms, q{Print warning message} );
+like( $trap->stderr, qr/Turning\soff\sASE/xms,
+    q{Print warning message on partial sample match and force flag} );
 is_deeply( \@{ $active_parameter{no_ase_samples} },
     [qw{ADM1059A5 ADM1059A6}], q{Set no ASE samples} );
 

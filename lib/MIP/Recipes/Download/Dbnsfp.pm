@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_dbnsfp };
@@ -129,8 +129,8 @@ sub download_dbnsfp {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_sort };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_sort };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Language::Awk qw{ awk };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
@@ -476,10 +476,10 @@ sub _reformat_dbnsfp {
     ## Read chr file
     gzip(
         {
-            decompress  => 1,
-            filehandle  => $filehandle,
-            infile_path => $dbnsfp_chr1_file_path,
-            stdout      => 1,
+            decompress       => 1,
+            filehandle       => $filehandle,
+            infile_paths_ref => [$dbnsfp_chr1_file_path],
+            stdout           => 1,
         }
     );
     print {$filehandle} $PIPE . $SPACE;
@@ -497,11 +497,11 @@ sub _reformat_dbnsfp {
     ## Read files
     gzip(
         {
-            decompress  => 1,
-            filehandle  => $filehandle,
-            force       => 1,
-            infile_path => $infile_path . $ASTERISK,
-            stdout      => 1,
+            decompress       => 1,
+            filehandle       => $filehandle,
+            force            => 1,
+            infile_paths_ref => [ $infile_path . $ASTERISK ],
+            stdout           => 1,
         }
     );
     say {$filehandle} $PIPE . $SPACE . $BACKWARD_SLASH;

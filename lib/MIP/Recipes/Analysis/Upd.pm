@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
+use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_upd };
@@ -40,7 +40,6 @@ sub analysis_upd {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -53,7 +52,6 @@ sub analysis_upd {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -82,13 +80,6 @@ sub analysis_upd {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -137,9 +128,14 @@ sub analysis_upd {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
     use MIP::Program::Upd qw{ upd_call };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ get_family_member_id set_recipe_outfile_in_sample_info };
+    use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Sample_info qw{ get_family_member_id
+      set_file_path_to_store
+      set_recipe_outfile_in_sample_info
+    };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -233,6 +229,17 @@ sub analysis_upd {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    ## Create chromosome name and size file
+    my $contigs_size_file_path =
+      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference}
+              . $DOT . q{fai},
+            outfile_path => $contigs_size_file_path,
+        }
+    );
+
     ## Get family hash
     my %family_member_id =
       get_family_member_id( { sample_info_href => $sample_info_href } );
@@ -252,6 +259,19 @@ sub analysis_upd {
             }
         );
         say {$filehandle} $NEWLINE;
+
+        say {$filehandle} q{## Create bed index files};
+        my $index_file_path_prefix =
+          fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+        ucsc_bed_to_big_bed(
+            {
+                contigs_size_file_path => $contigs_size_file_path,
+                filehandle             => $filehandle,
+                infile_path            => $outfile_path{$call_type},
+                outfile_path           => $index_file_path_prefix . $DOT . q{bb},
+            }
+        );
+        say {$filehandle} $NEWLINE;
     }
 
     ## Close filehandleS
@@ -268,20 +288,31 @@ sub analysis_upd {
                 sample_info_href => $sample_info_href,
             }
         );
+        my $index_file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
+        set_file_path_to_store(
+            {
+                format           => q{bb},
+                id               => $sample_id,
+                path             => $index_file_path_prefix . $DOT . q{bb},
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{case_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{case_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

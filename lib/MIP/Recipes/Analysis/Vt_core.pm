@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -44,7 +44,6 @@ sub analysis_vt_core {
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
 ##          : $case_id                 => The case ID
 ##          : $filehandle              => Filehandle to write to
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $infile_path             => Infile path
 ##          : $instream                => Data to vt is supplied as a unix pipe
@@ -66,7 +65,6 @@ sub analysis_vt_core {
     my $active_parameter_href;
     my $contig;
     my $filehandle;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $infile_path;
     my $parameter_href;
@@ -148,13 +146,6 @@ sub analysis_vt_core {
             store       => \$human_genome_reference,
             strict_type => 1,
         },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -208,8 +199,8 @@ sub analysis_vt_core {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
@@ -595,8 +586,8 @@ sub analysis_vt_core_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };

@@ -27,7 +27,7 @@ use MIP::Constants qw{ %ANALYSIS $COLON $DASH $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Main::Vcfparser qw{ mip_vcfparser };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 command_short_description(q{MIP vcfparser command});
 
@@ -129,7 +129,6 @@ sub _build_usage {
 
     option(
         q{parse_vep} => (
-            cmd_aliases   => [qw{ pvep }],
             documentation => q{Parse VEP transcript specific entries},
             is            => q{rw},
             isa           => Bool,
@@ -138,7 +137,7 @@ sub _build_usage {
 
     option(
         q{log_file} => (
-            cmd_aliases   => [qw{ l }],
+            cmd_aliases   => [qw{ l log }],
             default       => catfile( cwd(), q{vcfparser.log} ),
             documentation => q{Log file},
             is            => q{rw},
@@ -148,7 +147,6 @@ sub _build_usage {
 
     option(
         q{padding} => (
-            cmd_aliases   => [qw{ pad }],
             cmd_flag      => q{padding},
             default       => $ANNOTATION_DISTANCE,
             documentation => q{Number of nucleotides to pad},
@@ -159,7 +157,6 @@ sub _build_usage {
 
     option(
         q{per_gene} => (
-            cmd_aliases   => [qw{ peg }],
             documentation => q{Output most severe annotations},
             is            => q{rw},
             isa           => Bool,
@@ -168,7 +165,6 @@ sub _build_usage {
 
     option(
         q{pli_values_file} => (
-            cmd_aliases   => [qw{ pli }],
             cmd_tags      => [q{Format: TSV}],
             documentation => q{Pli value file path},
             is            => q{rw},
@@ -178,7 +174,6 @@ sub _build_usage {
 
     option(
         q{range_feature_file} => (
-            cmd_aliases   => [qw{ rf }],
             cmd_tags      => [q{Format: TSV}],
             documentation => q{Range feature file path},
             is            => q{rw},
@@ -188,7 +183,6 @@ sub _build_usage {
 
     option(
         q{range_feature_annotation_columns} => (
-            cmd_aliases   => [qw{ rf_ac }],
             cmd_flag      => q{range_feature_annotation_columns},
             documentation => q{Range feature file annotation columns},
             is            => q{rw},
@@ -198,7 +192,6 @@ sub _build_usage {
 
     option(
         q{select_feature_file} => (
-            cmd_aliases   => [qw{ sf }],
             cmd_tags      => [q{Format: TSV}],
             documentation => q{Select feature file path},
             is            => q{rw},
@@ -208,7 +201,6 @@ sub _build_usage {
 
     option(
         q{select_feature_matching_column} => (
-            cmd_aliases   => [qw{ sf_mc }],
             cmd_flag      => q{select_feature_matching_column},
             documentation => q{Select feature file annotation columns},
             is            => q{rw},
@@ -218,7 +210,6 @@ sub _build_usage {
 
     option(
         q{select_feature_annotation_columns} => (
-            cmd_aliases   => [qw{ sf_ac }],
             cmd_flag      => q{select_feature_annotation_columns},
             documentation => q{Select feature file annotation columns},
             is            => q{rw},
@@ -228,7 +219,6 @@ sub _build_usage {
 
     option(
         q{select_outfile} => (
-            cmd_aliases   => [qw{ sof }],
             cmd_tags      => [q{Format: VCF}],
             documentation => q{Select feature outfile},
             is            => q{rw},
@@ -238,7 +228,6 @@ sub _build_usage {
 
     option(
         q{write_software_tag} => (
-            cmd_aliases   => [qw{ wst }],
             default       => 1,
             documentation => q{Write software tag},
             is            => q{rw},

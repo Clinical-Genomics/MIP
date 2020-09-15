@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,14 +40,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qccollect} => [qw{ define_evaluate_metric evaluate_case_qc_parameters }],
+        q{MIP::Qccollect}      => [qw{ evaluate_case_qc_parameters }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qccollect qw{ define_evaluate_metric evaluate_case_qc_parameters };
+use MIP::Qccollect qw{ evaluate_case_qc_parameters };
 
 diag(   q{Test evaluate_case_qc_parameters from Qccollect.pm v}
       . $MIP::Qccollect::VERSION
@@ -58,22 +58,26 @@ diag(   q{Test evaluate_case_qc_parameters from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.3;
+
 ## Given
 my $metric_lt = q{fraction_of_common_variants};
 my $recipe_lt = q{variant_integrity_ar_father};
-my %qc_data   = ( recipe => { $recipe_lt => { $metric_lt => 0.05 }, }, );
+my %qc_data =
+  ( recipe => { $recipe_lt => { $metric_lt => $FRACTION_OF_COMMON_VARIANTS }, }, );
+
+my %evaluate_metric = (
+    variant_integrity_ar_father => {
+        fraction_of_common_variants => {
+            lt => $FRACTION_OF_COMMON_VARIANTS,
+        },
+    },
+);
 
 my %sample_info = test_mip_hashes(
     {
         mip_hash_name => q{qc_sample_info},
         recipe_name   => $recipe_lt,
-    }
-);
-
-## Defines recipes, metrics and thresholds to evaluate
-my %evaluate_metric = define_evaluate_metric(
-    {
-        sample_info_href => \%sample_info,
     }
 );
 

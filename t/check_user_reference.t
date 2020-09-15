@@ -16,16 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
+use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Download} => [qw{ check_user_reference }],
-        q{MIP::Test::Fixtures}  => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Download}       => [qw{ check_user_reference }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Download qw{ check_user_reference };
+use MIP::Download qw{ check_user_reference };
 
 diag(   q{Test check_user_reference from Download.pm v}
-      . $MIP::Check::Download::VERSION
+      . $MIP::Download::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,21 +60,22 @@ diag(   q{Test check_user_reference from Download.pm v}
 
 my $log = test_log( { log_name => uc q{mip_download}, } );
 
-## Given a bad reference key
+## Given some references
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{download_active_parameter}, } );
 
 ## Clean-up since there are already references in there
 delete $active_parameter{reference};
+
+## When using a bad reference key
 $active_parameter{reference}{not_a_reference} = [qw{ decoy_5 }];
 
 trap {
     check_user_reference(
         {
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref => \%{ $active_parameter{reference_feature} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     )
 };
@@ -91,17 +91,17 @@ like(
 # Clean-up
 delete $active_parameter{reference};
 
-## Given a valid reference key with a bad reference version
+## Given a valid reference key
 
+## When using a bad reference version
 $active_parameter{reference}{human_reference} = [qw{ bad_version }];
 
 trap {
     check_user_reference(
         {
-            user_supplied_reference_ref => \%{ $active_parameter{reference} },
-            reference_genome_versions_ref =>
-              \@{ $active_parameter{reference_genome_versions} },
-            reference_ref => \%{ $active_parameter{reference_feature} },
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
         }
     )
 };
@@ -110,22 +110,25 @@ trap {
 like(
     $trap->stderr,
     qr/Cannot \s+ find \s+ version \s+ key/xms,
-    q{Throw warn log message if the reference key cannot be found}
+    q{Throw warn log message if the reference version cannot be found}
 );
 
-## Given an valid reference
+## When using a valid reference
 $active_parameter{reference}{human_reference} = [qw{ decoy_5 }];
 
-my $is_ok = check_user_reference(
-    {
-        user_supplied_reference_ref => \%{ $active_parameter{reference} },
-        reference_genome_versions_ref =>
-          \@{ $active_parameter{reference_genome_versions} },
-        reference_ref => \%{ $active_parameter{reference_feature} },
-    }
-);
-
+my @returns = trap {
+    check_user_reference(
+        {
+            reference_genome_versions_ref => $active_parameter{reference_genome_versions},
+            reference_ref                 => $active_parameter{reference_feature},
+            user_supplied_reference_ref   => $active_parameter{reference},
+        }
+    )
+};
 ## Then return true
-ok( $is_ok, q{Checked reference} );
+ok( $returns[0], q{Checked reference} );
+
+## Then throw no warning
+is( $trap->stderr, $EMPTY_STR, q{Found all references} );
 
 done_testing();

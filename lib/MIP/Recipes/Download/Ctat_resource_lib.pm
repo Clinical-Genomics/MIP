@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_ctat_resource_lib };
@@ -122,7 +122,7 @@ sub download_ctat_resource_lib {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -194,6 +194,7 @@ sub download_ctat_resource_lib {
     ## Move dir
     gnu_mv(
         {
+            filehandle   => $filehandle,
             infile_path  => $reformated_outdir_path,
             outfile_path => catfile( $reference_dir, lc $reformated_outdir_name ),
         }

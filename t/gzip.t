@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -84,9 +84,9 @@ my %required_argument = (
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{infile_path},
+    infile_paths_ref => {
+        inputs_ref      => [qw{ infile_path_1 infile_path_2 }],
+        expected_output => q{infile_path1 infile_path_2},
     },
 );
 

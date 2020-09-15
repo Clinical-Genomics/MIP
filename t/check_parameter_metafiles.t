@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -43,19 +40,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Reference} => [qw{ check_parameter_metafiles }],
-        q{MIP::Io::Read}         => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::File_info}      => [qw{ check_parameter_metafiles }],
+        q{MIP::Io::Read}       => [qw{ read_from_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Reference qw{ check_parameter_metafiles };
+use MIP::File_info qw{ check_parameter_metafiles };
 use MIP::Io::Read qw{ read_from_file };
 
-diag(   q{Test check_parameter_metafiles from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+diag(   q{Test check_parameter_metafiles from File_info.pm v}
+      . $MIP::File_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,9 +95,9 @@ my %active_parameter = (
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -120,9 +117,9 @@ is( $parameter{$parameter_name}{build_file}, 1,
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -143,9 +140,9 @@ is( $parameter{$parameter_name}{build_file},
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -160,9 +157,9 @@ $active_parameter{exome_target_bed}
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -171,16 +168,15 @@ is( $parameter{exome_target_bed}{build_file},
     1, q{Set build file switch for hash parameter reference with mixed existence to 1} );
 
 ## Given scalar entries with active parameter, files exists, and active associated programs
-$active_parameter{bwa_build_reference} = 1;
-$active_parameter{human_genome_reference} =
+$active_parameter{bwa_build_reference} =
   catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } );
 $active_parameter{bwa_mem} = 1;
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -198,9 +194,9 @@ q{Active parameter, existing file and active associated program for scalar param
 
 check_parameter_metafiles(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
+        parameter_href        => \%parameter,
     }
 );
 

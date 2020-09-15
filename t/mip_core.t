@@ -25,7 +25,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.11;
+our $VERSION = 1.15;
 
 our $USAGE = build_usage( {} );
 
@@ -275,7 +275,7 @@ sub test_modules {
 
     ## Execution of programs
     use IPC::Cmd qw{ can_run run };
-    ok( can_run(q{perl}), q{Can run IPC::Cmd} );
+    ok( can_run(q{perl}),                        q{Can run IPC::Cmd} );
     ok( my $bool = IPC::Cmd->can_capture_buffer, q{IPC::Cmd can capture buffer} );
 
     return;
@@ -301,8 +301,7 @@ sub mip_scripts {
             qw{ analyse_parameters.yaml
               download_rd_dna_parameters.yaml
               download_rd_rna_parameters.yaml
-              install_rd_dna_parameters.yaml
-              install_rd_rna_parameters.yaml
+              install_parameters.yaml
               required_parameters.yaml
               mip_parameters.yaml
               not_required_parameters.yaml
@@ -330,15 +329,14 @@ sub mip_scripts {
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml
               mip_dragen_rd_dna_config.yaml
-              mip_install_rd_dna_config_-1.0-.yaml
-              mip_install_rd_rna_config_-1.0-.yaml
+              mip_install_config.yaml
               mip_log.yaml
               mip_rd_dna_config.yaml
               mip_rd_dna_vcf_rerun_config.yaml
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
-              qc_regexp_-v1.24-.yaml
-              rank_model_cmms_-v1.28-.ini
+              qc_regexp_-v1.26-.yaml
+              rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
               }
         ],

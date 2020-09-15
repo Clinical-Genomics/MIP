@@ -17,21 +17,20 @@ use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EQUALS $LOG_NAME $NEWLINE $SPACE $TAB };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_if_processed_by_vt
-      check_object_suffixes_to_build
-      check_parameter_metafiles
-      check_references_for_vt };
+      check_references_for_vt
+    };
 }
 
 sub check_if_processed_by_vt {
@@ -39,14 +38,12 @@ sub check_if_processed_by_vt {
 ## Function : Check if vt has processed references using regexp
 ## Returns  : @process_references
 ## Arguments: $bcftools_binary_path => Path to bcftools binary
-##          : $log                  => Log object
 ##          : $reference_file_path  => The reference file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $bcftools_binary_path;
-    my $log;
     my $reference_file_path;
 
     my $tmpl = {
@@ -55,11 +52,6 @@ sub check_if_processed_by_vt {
             required    => 1,
             store       => \$bcftools_binary_path,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         reference_file_path => {
             defined     => 1,
@@ -71,10 +63,12 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::File::Format::Vcf qw{ get_vcf_header_line_by_id };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %vt_regexp;
-
     $vt_regexp{vt_decompose}{vcf_key} = q{OLD_MULTIALLELIC};
     $vt_regexp{vt_normalize}{vcf_key} = q{OLD_VARIANT};
 
@@ -89,34 +83,17 @@ sub check_if_processed_by_vt {
 
   VT_PARAMETER_NAME:
     foreach my $vt_parameter_name ( keys %vt_regexp ) {
-        ## MIP flags
 
-        ### Assemble perl regexp for detecting VT keys in vcf
-        ## Execute perl
-        my $regexp = q?perl -nae '?;
-
-        ## Find vcf_key
-        $regexp .= q?if($_=~/ID\=? . $vt_regexp{$vt_parameter_name}{vcf_key} . q?/) { ?;
-
-        ## Write to stdout
-        $regexp .= q?print $_} ?;
-
-        ## If header is finished quit
-        $regexp .= q?if($_=~/#CHROM/) {last}'?;
-
-        ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
-        my $export_cmd = join $SPACE,
-          gnu_export( { bash_variable => q{MIP_BIND} . $EQUALS . $reference_file_path } );
-
-        ## Unset MIP_BIND after system parsing
-        my $unset_cmd = join $SPACE, gnu_unset( { bash_variable => q{MIP_BIND}, } );
-
-        ## Detect if vt program has processed reference
-        my $ret =
-`$export_cmd; $bcftools_binary_path view $reference_file_path | $regexp; $unset_cmd`;
+        my $header_id_line = get_vcf_header_line_by_id(
+            {
+                bcftools_binary_path => $bcftools_binary_path,
+                header_id            => $vt_regexp{$vt_parameter_name}{vcf_key},
+                vcf_file_path        => $reference_file_path,
+            }
+        );
 
         ## No trace of vt processing found
-        if ( not $ret ) {
+        if ( not $header_id_line ) {
 
             ## Add reference for downstream processing
             push @to_process_references, $reference_file_path;
@@ -128,8 +105,8 @@ sub check_if_processed_by_vt {
                   . $NEWLINE );
         }
         else {
-            ## Found vt processing trace
 
+            ## Found vt processing trace
             $log->info( $TAB
                   . q{Reference check: }
                   . $reference_file_path
@@ -142,206 +119,11 @@ sub check_if_processed_by_vt {
     return uniq(@to_process_references);
 }
 
-sub check_object_suffixes_to_build {
-
-## Function : Checks files to be built by combining object name prefix with suffix.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $object_suffixes_ref    => Reference to the object suffix to be added to the object name prefix {REF}
-##          : $file_name             => File name
-##          : $parameter_href        => Parameter hash {REF}
-##          : $parameter_name        => MIP parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $object_suffixes_ref;
-    my $file_name;
-    my $parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        object_suffixes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$object_suffixes_ref,
-            strict_type => 1,
-        },
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Path qw{ check_filesystem_objects_existance };
-
-    ## Count the number of files that exists
-    my $existence_check_counter = 0;
-
-    ## Get parameter object type i.e file or directory
-    my $object_type = $parameter_href->{$parameter_name}{exists_check};
-
-  FILE_SUFFIX:
-    foreach my $file_suffix ( @{$object_suffixes_ref} ) {
-
-        my ($exist) = check_filesystem_objects_existance(
-            {
-                object_name    => catfile( $file_name . $file_suffix ),
-                object_type    => $object_type,
-                parameter_name => $parameter_name,
-            }
-        );
-        ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $exist;
-    }
-
-    ## Files need to be built
-    if ( $existence_check_counter != scalar @{$object_suffixes_ref} ) {
-
-        $parameter_href->{$parameter_name}{build_file} = 1;
-    }
-    else {
-
-        # All file exist in this check
-        $parameter_href->{$parameter_name}{build_file} = 0;
-    }
-    return;
-}
-
-sub check_parameter_metafiles {
-
-## Function : Checks parameter metafile exists
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $file_info_href        => File info hash {REF}
-##          : $parameter_href        => Holds all parameters
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$file_info_href} ) {
-
-        ## Active parameter
-        my $parameter = $active_parameter_href->{$parameter_name};
-
-        next PARAMETER if ( not $parameter );
-
-      ASSOCIATED_RECIPE:
-        foreach my $associated_recipe (
-            @{ $parameter_href->{$parameter_name}{associated_recipe} } )
-        {
-
-            ## Active associated recipe
-            my $active_associated_recipe = $active_parameter_href->{$associated_recipe};
-
-            ## Only check active parmeters
-            next ASSOCIATED_RECIPE
-              if ( not defined $active_associated_recipe );
-
-            if ( ref $parameter eq q{HASH} ) {
-
-              PATH:
-                for my $path ( keys %{$parameter} ) {
-
-                    ## Checks files to be built by combining filename stub with fileendings
-                    check_object_suffixes_to_build(
-                        {
-                            active_parameter_href => $active_parameter_href,
-                            file_name             => $path,
-                            object_suffixes_ref =>
-                              \@{ $file_info_href->{$parameter_name} },
-                            parameter_href => $parameter_href,
-                            parameter_name => $parameter_name,
-                        }
-                    );
-
-                    ## If single $path needs building - build for all as switch
-                    ## is set on parameter_name and not path
-                    next PARAMETER
-                      if ( $parameter_href->{$parameter_name}{build_file} );
-                }
-            }
-            else {
-
-                ## Checks files to be built by combining filename stub with fileendings
-                check_object_suffixes_to_build(
-                    {
-                        active_parameter_href => $active_parameter_href,
-                        file_name => $active_parameter_href->{human_genome_reference},
-                        object_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
-                        parameter_href      => $parameter_href,
-                        parameter_name      => $parameter_name,
-                    }
-                );
-            }
-        }
-    }
-    return;
-}
-
 sub check_references_for_vt {
 
 ## Function : Check if vt has processed references
 ## Returns  : @to_process_references
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
 ##          : $parameter_href        => Parameter hash {REF}
 ##          : $vt_references_ref     => The references to check with vt {REF}
 
@@ -349,7 +131,6 @@ sub check_references_for_vt {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $log;
     my $parameter_href;
     my $vt_references_ref;
 
@@ -361,7 +142,6 @@ sub check_references_for_vt {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        log            => { store => \$log, },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -380,6 +160,8 @@ sub check_references_for_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_binary_path };
+
     ## Checked references
     my @checked_references;
 
@@ -390,12 +172,17 @@ sub check_references_for_vt {
     my %seen;
 
     ## Use MIPs own bcftools
-    my $bcftools_binary_path = $active_parameter_href->{binary_path}{bcftools};
+    my $bcftools_binary_path = get_binary_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            binary                => q{bcftools},
+        }
+    );
 
     ## TOML parameters
     my %toml = (
-        fqa_vcfanno_config    => 1,
-        sv_fqa_vcfanno_config => 1,
+        sv_vcfanno_config => 1,
+        vcfanno_config    => 1,
     );
 
   PARAMETER_NAME:
@@ -422,7 +209,6 @@ sub check_references_for_vt {
                     _parse_vcfanno_toml_path(
                         {
                             bcftools_binary_path      => $bcftools_binary_path,
-                            log                       => $log,
                             seen_href                 => \%seen,
                             toml_file_path            => $annotation_file,
                             to_process_references_ref => \@to_process_references,
@@ -435,7 +221,6 @@ sub check_references_for_vt {
                     @checked_references = check_if_processed_by_vt(
                         {
                             bcftools_binary_path => $bcftools_binary_path,
-                            log                  => $log,
                             reference_file_path  => $annotation_file,
                         }
                     );
@@ -457,7 +242,6 @@ sub check_references_for_vt {
                         @checked_references = check_if_processed_by_vt(
                             {
                                 bcftools_binary_path => $bcftools_binary_path,
-                                log                  => $log,
                                 reference_file_path  => $annotation_file,
                             }
                         );
@@ -480,7 +264,6 @@ sub check_references_for_vt {
                         @checked_references = check_if_processed_by_vt(
                             {
                                 bcftools_binary_path => $bcftools_binary_path,
-                                log                  => $log,
                                 reference_file_path  => $annotation_file,
                             }
                         );
@@ -499,7 +282,6 @@ sub _parse_vcfanno_toml_path {
 ## Function : Parse TOML config for path to check with vt
 ## Returns  :
 ## Arguments: $bcftools_binary_path      => Path to bcftools binary
-##          : $log                       => Log object
 ##          : $seen_href                 => Avoid checking the same reference multiple times
 ##          : $toml_file_path            => Toml config file path
 ##          : $to_process_references_ref => Store references to process later
@@ -508,7 +290,6 @@ sub _parse_vcfanno_toml_path {
 
     ## Flatten argument(s)
     my $bcftools_binary_path;
-    my $log;
     my $seen_href;
     my $toml_file_path;
     my $to_process_references_ref;
@@ -520,7 +301,6 @@ sub _parse_vcfanno_toml_path {
             store       => \$bcftools_binary_path,
             strict_type => 1,
         },
-        log       => { store => \$log, },
         seen_href => {
             default     => {},
             defined     => 1,
@@ -562,13 +342,18 @@ sub _parse_vcfanno_toml_path {
         ## Annotation file path to check
         my $annotation_file_path = $annotation_href->{file};
 
+        ## Only check vcf files which should have the fields annotation
+        next ANNOTATION if ( not exists $annotation_href->{fields} );
+
+        ## Skip files not set for normalization in the toml
+        next ANNOTATION if ( $annotation_href->{skip_split_and_normalize} );
+
         if ( not exists $seen_href->{$annotation_file_path} ) {
 
             ## Check if vt has processed references using regexp
             my @checked_references = check_if_processed_by_vt(
                 {
                     bcftools_binary_path => $bcftools_binary_path,
-                    log                  => $log,
                     reference_file_path  => $annotation_file_path,
                 }
             );

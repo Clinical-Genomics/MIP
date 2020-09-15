@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,56 +67,40 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => q{bwa_mem},
     }
 );
-my $sample_id = $active_parameter{sample_ids}[2];
-$active_parameter{found_other} = 0;
-my %file_info = test_mip_hashes(
+my $consensus_analysis_type = q{wgs};
+my $sample_id               = $active_parameter{sample_ids}[2];
+my %file_info               = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
     }
 );
-push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
-my $infile_lane_prefix = $sample_id;
-my %infile_lane_prefix = ( $sample_id => [ $infile_lane_prefix, $infile_lane_prefix ], );
+push @{ $file_info{$sample_id}{mip_infiles} },                  q{ADM1059A3.fastq};
+push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
+$file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
 
-my %sample_info = (
-    sample => {
-        $sample_id => {
-            file => {
-                $infile_lane_prefix => {
-                    sequence_run_type => q{paired-end},
-                },
-            },
-        },
-    },
-);
-
-my $is_gender_other = parse_fastq_for_gender(
+my $estimated_unknown_gender = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        sample_info_href        => \%sample_info,
     }
 );
 
 ## Then skip estimation using reads
-is( $is_gender_other, undef, q{No unknown gender} );
+is( $estimated_unknown_gender, undef, q{No unknown gender - skip} );
 
 ## Given a sample when gender unknown
-$active_parameter{found_other}    = 1;
-$active_parameter{found_male}     = 1;
 $active_parameter{gender}{others} = [$sample_id];
 
-$is_gender_other = parse_fastq_for_gender(
+$estimated_unknown_gender = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
+        consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        sample_info_href        => \%sample_info,
     }
 );
 
 ## Then skip estimation using reads
-is( $is_gender_other, undef, q{Unknown gender} );
+is( $estimated_unknown_gender, 1, q{Estimated unknown gender} );
 
 done_testing();

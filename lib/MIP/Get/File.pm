@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 use List::MoreUtils qw{ any };
-use Path::Iterator::Rule;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
@@ -26,20 +25,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_exom_target_bed_file
-      get_fastq_file_header_info
-      get_files
       get_io_files
-      get_matching_values_key
       get_merged_infile_prefix
       get_path_entries
-      get_read_length
-      get_sample_ids_from_vcf
-      get_select_file_contigs
     };
 }
 
@@ -122,160 +115,6 @@ sub get_exom_target_bed_file {
         $NEWLINE
     );
     exit 1;
-}
-
-sub get_fastq_file_header_info {
-
-## Function : Get run info from fastq file header
-## Returns  : @fastq_info_headers
-## Arguments: $file_path         => File path to parse
-##          : $log               => Log object
-##          : $read_file_command => Command used to read file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-    my $log;
-    my $read_file_command;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        read_file_command => {
-            defined     => 1,
-            required    => 1,
-            store       => \$read_file_command,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Casava qw{ casava_header_regexp };
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    my $fastq_info_header_string;
-
-    my %fastq_header_info;
-
-    my %casava_header_regexp = casava_header_regexp();
-    my %regexp;
-
-    ## Select relevant regexps from hash
-    @regexp{qw{ 1.4 1.8 }} = @casava_header_regexp{qw{ 1.4 1.8 }};
-
-  REGEXP:
-    while ( my ( $casava_version, $regexp ) = each %regexp ) {
-
-        ## Define cmd
-        my $get_header_cmd = qq{$read_file_command $file_path | $regexp;};
-
-        ## Collect fastq header info
-        my %return = system_cmd_call( { command_string => $get_header_cmd, } );
-
-        $fastq_info_header_string = $return{output}[0];
-
-        ## If successful regexp
-        if ($fastq_info_header_string) {
-
-            # Get features
-            my @features =
-              @{ $casava_header_regexp{ $casava_version . q{_header_features} } };
-
-            # Parse header string into array
-            my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
-
-            # Add to hash to be returned
-            @fastq_header_info{@features} = @fastq_info_headers;
-            last REGEXP;
-        }
-    }
-
-    if ( not $fastq_info_header_string ) {
-
-        $log->fatal( q{Error parsing file header: } . $file_path );
-        $log->fatal(
-q{Could not detect required sample sequencing run info from fastq file header - Please proved MIP file in MIP file convention format to proceed}
-        );
-        exit 1;
-    }
-
-    return %fastq_header_info;
-}
-
-sub get_files {
-
-## Function : Get the file(s) from filesystem
-## Returns  : @files
-## Arguments: $file_directory   => File directory
-##          : $rule_name        => Rule name string
-##          : $rule_skip_subdir => Rule skip sub directories
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_directory;
-    my $rule_name;
-    my $rule_skip_subdir;
-
-    my $tmpl = {
-        file_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_directory,
-            strict_type => 1,
-        },
-        rule_name => {
-            store       => \$rule_name,
-            strict_type => 1,
-        },
-        rule_skip_subdir => {
-            store       => \$rule_skip_subdir,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @files;
-
-    ## Get all files in supplied indirectories
-    my $rule = Path::Iterator::Rule->new;
-
-    ### Set rules
-    ## Ignore if sub directory
-    if ($rule_skip_subdir) {
-
-        $rule->skip_subdirs($rule_skip_subdir);
-    }
-
-    ## Look for particular file name
-    if ($rule_name) {
-
-        $rule->name($rule_name);
-    }
-
-    # Initilize iterator
-    my $iter = $rule->iter($file_directory);
-
-  DIRECTORY:
-    while ( my $file = $iter->() ) {
-
-        my ( $volume, $directory, $file_name ) = splitpath($file);
-        push @files, $file_name;
-    }
-
-    return @files;
 }
 
 sub get_io_files {
@@ -468,57 +307,6 @@ sub get_io_files {
     return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
 }
 
-sub get_matching_values_key {
-
-## Function : Return the key if the hash value and query match
-## Returns  : "key pointing to matched value"
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => MIP parameter name
-##          : $query_value           => Value to query in the hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-    my $query_value;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        query_value => {
-            defined     => 1,
-            required    => 1,
-            store       => \$query_value,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not exists $active_parameter_href->{$parameter_name} );
-
-    ## Values are now keys and vice versa
-    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
-
-    if ( exists $reversed{$query_value} ) {
-
-        return $reversed{$query_value};
-    }
-    return;
-}
-
 sub get_merged_infile_prefix {
 
 ## Function : Get the merged infile prefix for sample id
@@ -635,198 +423,6 @@ sub get_path_entries {
         }
     }
     return;
-}
-
-sub get_read_length {
-
-## Function : Collect read length from an infile
-## Returns  : $read_length
-## Arguments: $file_path => File to parse
-##          : $read_file => Command used to read file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-    my $read_file_command;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        read_file_command => {
-            defined     => 1,
-            required    => 1,
-            store       => \$read_file_command,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    ## Prints sequence length and exits
-    # Execute perl
-    my $seq_length_regexp = q?perl -ne '?;
-
-    # Skip header line
-    $seq_length_regexp .= q?if ($_!~/@/) {?;
-
-    # Remove newline
-    $seq_length_regexp .= q?chomp;?;
-
-    # Count chars
-    $seq_length_regexp .= q?my $seq_length = length;?;
-
-    # Print and exit
-    $seq_length_regexp .= q?print $seq_length;last;}' ?;
-
-    my $read_length_cmd = qq{$read_file_command $file_path | $seq_length_regexp;};
-
-    my %return = system_cmd_call( { command_string => $read_length_cmd, } );
-
-    ## Return read length
-    return $return{output}[0];
-}
-
-sub get_select_file_contigs {
-
-## Function : Collects sequences contigs used in select file
-## Returns  :
-## Arguments: $log              => Log object
-##          : $select_file_path => Select file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $select_file_path;
-
-    my $tmpl = {
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        select_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$select_file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    # Execute perl
-    my $find_contig_name = q?perl -nae ?;
-
-    # Get contig name
-    $find_contig_name .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
-
-    # Alias capture
-    $find_contig_name .= q?my $contig_name = $1; ?;
-
-    # Write contig name and comma
-    $find_contig_name .= q?print $contig_name, q{,};} ?;
-
-    # Quit if #CHROM found in line
-    $find_contig_name .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
-
-    # Returns a comma seperated string of sequence contigs from file
-    my $find_contig_cmd = qq{$find_contig_name $select_file_path};
-
-    # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
-
-    # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
-
-    if ( not @contigs ) {
-
-        $log->fatal(
-            q{Could not detect any '##contig' in meta data header in select file: }
-              . $select_file_path );
-        exit 1;
-    }
-    return @contigs;
-}
-
-sub get_sample_ids_from_vcf {
-
-## Function : Get sample ids from a vcf file
-## Returns  : @sample_ids
-## Arguments: $vcf_file_path => Unannotated case vcf file from dna pipeline
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vcf_file_path;
-
-    my $tmpl = {
-        vcf_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$vcf_file_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Bcftools qw{ bcftools_view };
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Get sample_ids from vcf
-    my @commands = bcftools_view(
-        {
-            header_only => 1,
-            infile_path => $vcf_file_path,
-        }
-    );
-
-    push @commands, $PIPE;
-
-    my $get_sample_ids_cmd =
-      q?'if ($_ =~ /^#CHROM/ and $F[8] eq q{FORMAT}) {print "@F[9..$#F]"}'?;
-
-    push @commands,
-      perl_nae_oneliners(
-        {
-            oneliner_cmd => $get_sample_ids_cmd,
-        }
-      );
-
-    my $command_string = join $SPACE, @commands;
-
-    my %cmd_return = system_cmd_call( { command_string => $command_string, } );
-
-    ## Some error handling
-    if ( scalar @{ $cmd_return{error} } or not scalar @{ $cmd_return{output} } ) {
-
-        $log->fatal(qq{Could not retrieve sample id from vcf: $vcf_file_path});
-
-        ## Print error message
-      ERROR_LINE:
-        foreach my $error_line ( @{ $cmd_return{error} } ) {
-            $log->fatal(qq{ERROR: $error_line});
-        }
-        exit 1;
-    }
-
-    my @sample_ids = split $SPACE, $cmd_return{output}->[0];
-
-    return @sample_ids;
 }
 
 sub _check_and_add_to_array {

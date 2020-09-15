@@ -1,17 +1,15 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:latest
+FROM clinicalgenomics/mip:2.0
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:latest"
+LABEL base_image="clinicalgenomics/mip:2.0"
 LABEL version="1"
 LABEL software="vt"
 LABEL software.version="2015.11.10"
 LABEL extra.binaries="vt"
-
-################## MAINTAINER ######################
-MAINTAINER Clinical-Genomics/MIP
+LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN conda install vt=2015.11.10
 

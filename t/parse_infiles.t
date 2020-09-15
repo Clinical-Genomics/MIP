@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Parameter} => [qw{ parse_infiles }],
+        q{MIP::Active_parameter} => [qw{ parse_infiles }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Parameter qw{ parse_infiles };
+use MIP::Active_parameter qw{ parse_infiles };
 
-diag(   q{Test parse_infiles from Parameter.pm v}
-      . $MIP::Parse::Parameter::VERSION
+diag(   q{Test parse_infiles from Active_parameter.pm v}
+      . $MIP::Active_parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,10 +65,10 @@ my $log = test_log( {} );
 my $sample_id        = q{ADM1059A1};
 my %active_parameter = (
     infile_dirs => {
-        catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } ) =>
-          q{ADM1059A1},
+        catfile( $Bin, qw{ data 643594-miptest test_data }, $sample_id, qw{ fastq } ) =>
+          $sample_id,
     },
-    sample_ids => [qw{ ADM1059A1 }],
+    sample_ids => [$sample_id],
 );
 my %file_info;
 
@@ -77,7 +77,6 @@ my @returns = trap {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            log                   => $log,
         }
     )
 };
@@ -96,7 +95,6 @@ trap {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            log                   => $log,
         }
     )
 };

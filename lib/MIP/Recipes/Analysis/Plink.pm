@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -48,7 +48,6 @@ sub analysis_plink {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -61,7 +60,6 @@ sub analysis_plink {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -90,13 +88,6 @@ sub analysis_plink {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -212,13 +203,14 @@ sub analysis_plink {
       PLINK_PROGRAM:
         while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} ) {
 
-            if ( scalar @sample_ids > 1 and $mode eq q{multiple_samples} ) {
+            if ( @sample_ids > 1 and $mode eq q{multiple_samples} ) {
 
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
-            if (    $active_parameter_href->{found_other} ne scalar @sample_ids
+            if (    defined $active_parameter_href->{gender}{others}
+                and @{ $active_parameter_href->{gender}{others} } != @sample_ids
                 and $mode eq q{check_for_sex} )
             {
                 $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
@@ -228,7 +220,7 @@ sub analysis_plink {
     }
 
     ## No eligible test to run
-    if ( not scalar @plink_outfiles ) {
+    if ( not @plink_outfiles ) {
         $log->warn(
             q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'}
         );
@@ -290,15 +282,15 @@ sub analysis_plink {
 
     my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
-    ## Create .fam file to be used in variant calling analyses
+    ## Create .fam file to be used in plink analyses
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $case_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $case_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -370,7 +362,9 @@ sub analysis_plink {
     my $allow_no_sex;
 
     ## If not all samples have a known sex
-    if ( $active_parameter_href->{found_other} ) {
+    if ( $active_parameter_href->{gender}{others}
+        and @{ $active_parameter_href->{gender}{others} } )
+    {
 
         $allow_no_sex = 1;
     }
@@ -391,7 +385,7 @@ sub analysis_plink {
     say {$filehandle} $NEWLINE;
 
     # Only perform if more than 1 sample
-    if ( scalar @sample_ids > 1 ) {
+    if ( @sample_ids > 1 ) {
 
         my $inbreeding_outfile_prefix_hets =
           $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
@@ -426,7 +420,9 @@ sub analysis_plink {
         say {$filehandle} $NEWLINE;
     }
 
-    if ( $active_parameter_href->{found_other} ne scalar @sample_ids ) {
+    if ( defined $active_parameter_href->{gender}{others}
+        and @{ $active_parameter_href->{gender}{others} } != @sample_ids )
+    {
 
         ## Only if not all samples have unknown sex
         ### Plink sex-check
@@ -465,7 +461,7 @@ sub analysis_plink {
         my $extract_file;
         my $read_freqfile_path;
 
-        if ( scalar @sample_ids > 1 ) {
+        if ( @sample_ids > 1 ) {
 
             $extract_file       = $binary_fileset_prefix . $DOT . q{prune.in};
             $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
@@ -507,17 +503,18 @@ sub analysis_plink {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{case_to_island},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{case_to_island},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -4,19 +4,17 @@ FROM ubuntu:16.04
 ################## METADATA ######################
 
 LABEL base_image="ubuntu:16.04"
-LABEL version="1"
-LABEL software="mip"
-LABEL software.version="7.1.4"
+LABEL version="2"
+LABEL software="mip.base"
+LABEL software.version="8.2.0"
 LABEL about.summary="Base image for MIP's dependency tools"
 LABEL about.home="https://github.com/Clinical-Genomics/MIP"
 LABEL about.documentation="https://clinical-genomics.gitbook.io/project-mip/"
 LABEL about.license_file="https://github.com/Clinical-Genomics/MIP/blob/master/LICENSE"
 LABEL about.license="MIT License (MIT)"
 LABEL about.tags="Clinical,variants,analysis,pipeline"
-
-################## MAINTAINER ######################
-MAINTAINER Henrik Stranneheim <henrik.stranneheim@scilifelab.se>
-MAINTAINER Anders Jemt <anders.jemt@scilifelab.se>
+LABEL maintainer="Henrik Stranneheim <henrik.stranneheim@scilifelab.se>"
+LABEL maintainer="Anders Jemt <anders.jemt@scilifelab.se>"
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -29,7 +27,7 @@ deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-security main restricted univ
     cat /etc/apt/sources.list
 
 RUN apt-get update --fix-missing && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         build-essential \
         coreutils \
         dialog \
@@ -50,7 +48,7 @@ RUN apt-get update --fix-missing && \
 
 # Install conda and give write permissions to conda folder
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.7.10-Linux-x86_64.sh -O ~/miniconda.sh && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh
 
@@ -63,7 +61,7 @@ RUN conda config --add channels bioconda
 RUN conda config --add channels conda-forge
 
 # Clean up after conda
-RUN  /opt/conda/bin/conda clean -tipsy
+RUN  /opt/conda/bin/conda clean -ay
 
 VOLUME ["/data", "/config"]
 

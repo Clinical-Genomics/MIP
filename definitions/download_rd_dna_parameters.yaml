@@ -1,20 +1,6 @@
 ---
 ## Version: 1.0.0
 # Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
-1000g_all_sv:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
-1000g_all_wgs:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
 1000g_indels:
   analysis_mode: case
   associated_recipe:
@@ -126,13 +112,6 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   type: recipe
-fqa_vcfanno_config:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: recipe
 genbank_haplogroup:
   analysis_mode: case
   associated_recipe:
@@ -215,8 +194,6 @@ recipe_core_number:
     - mip
   data_type: HASH
   default:
-    1000g_all_sv: 1
-    1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
     1000g_sites: 1
@@ -232,7 +209,7 @@ recipe_core_number:
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
-    fqa_vcfanno_config: 1
+    vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
@@ -248,8 +225,9 @@ recipe_core_number:
     reduced_penetrance: 1
     scout_exons: 1
     svrank_model: 1
-    sv_fqa_vcfanno_config: 1
+    sv_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
+    vcfanno_functions: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -264,8 +242,6 @@ recipe_time:
     - mip
   data_type: HASH
   default:
-    1000g_all_sv: 1
-    1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
     1000g_sites: 1
@@ -277,11 +253,11 @@ recipe_time:
     cadd_whole_genome_snvs: 15
     chromograph_cytoband: 1
     clinvar: 1
-    dbnsfp: 15
+    dbnsfp: 25
     dbsnp: 1
     delly_exclude: 1
     expansionhunter: 1
-    fqa_vcfanno_config: 1
+    vcfanno_config: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
@@ -297,8 +273,9 @@ recipe_time:
     runstatus: 1
     scout_exons: 1
     svrank_model: 1
-    sv_fqa_vcfanno_config: 1
+    sv_vcfanno_config: 1
     vcf2cytosure_blacklist_regions: 1
+    vcfanno_functions: 1
   type: mip
 reduced_penetrance:
   analysis_mode: case
@@ -333,7 +310,7 @@ svrank_model:
   data_type: SCALAR
   default: 1
   type: recipe
-sv_fqa_vcfanno_config:
+sv_vcfanno_config:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -341,6 +318,20 @@ sv_fqa_vcfanno_config:
   default: 1
   type: recipe
 vcf2cytosure_blacklist_regions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_config:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+vcfanno_functions:
   analysis_mode: case
   associated_recipe:
     - mip

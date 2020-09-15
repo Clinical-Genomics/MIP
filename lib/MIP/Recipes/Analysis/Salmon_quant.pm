@@ -40,7 +40,6 @@ sub analysis_salmon_quant {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -54,7 +53,6 @@ sub analysis_salmon_quant {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -84,13 +82,6 @@ sub analysis_salmon_quant {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -140,13 +131,13 @@ sub analysis_salmon_quant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_sequence_run_type set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
@@ -213,19 +204,6 @@ sub analysis_salmon_quant {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-    ## Get sequence run type
-    my %sequence_run_type = get_sequence_run_type(
-        {
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_id               => $sample_id,
-            sample_info_href        => $sample_info_href,
-        }
-    );
-
-    my @sequence_run_types = uniq( values %sequence_run_type );
-
-    my $sequence_run_mode = $sequence_run_types[0];
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -249,8 +227,25 @@ sub analysis_salmon_quant {
     ## Salmon quant
     say {$filehandle} q{## Quantifying transcripts using } . $recipe_name;
 
+    my @infile_prefixes = get_sample_file_attribute(
+        {
+            file_info_href => $file_info_href,
+            file_name      => q{no_direction_infile_prefixes},
+            sample_id      => $sample_id,
+        }
+    );
+
+    my $sequence_run_type = get_sample_file_attribute(
+        {
+            attribute      => q{sequence_run_type},
+            file_info_href => $file_info_href,
+            file_name      => $infile_prefixes[0],
+            sample_id      => $sample_id,
+        }
+    );
+
     ## For paired end
-    if ( $sequence_run_mode eq q{paired-end} ) {
+    if ( $sequence_run_type eq q{paired-end} ) {
 
         ## Grep every other read file and place in new arrays
         # Even array indexes get a 0 remainder and are evalauted as false
@@ -315,17 +310,18 @@ sub analysis_salmon_quant {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -92,7 +92,7 @@ my $active_parameter_href = {
             version => 2,
         },
     },
-    singularity => {
+    container => {
         multiqc => {
             executable => undef,
             uri        => q{docker://ewels/multiqc:v1.7},
@@ -157,7 +157,7 @@ $installation_href = clone($active_parameter_copy_href);
 delete $installation_href->{conda}{qw{ bio_prog_1 picard }};
 delete $installation_href->{pip}{qw{ py_prog_1 py_prog_2 }};
 delete $installation_href->{shell}{bio_prog_1};
-delete $installation_href->{singularity}{multiqc};
+delete $installation_href->{container}{multiqc};
 
 is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
 

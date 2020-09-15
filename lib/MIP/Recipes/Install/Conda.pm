@@ -22,10 +22,10 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $BACKTICK $COLON $DOT $EQUALS $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
-use MIP::Gnu::Bash qw{ gnu_unset };
-use MIP::Gnu::Coreutils qw{ gnu_ln };
+use MIP::Program::Gnu::Bash qw{ gnu_unset };
+use MIP::Program::Gnu::Coreutils qw{ gnu_ln };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
-use MIP::Package_manager::Conda qw{ conda_create conda_install };
+use MIP::Program::Conda qw{ conda_create conda_install };
 
 BEGIN {
 
@@ -33,7 +33,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };

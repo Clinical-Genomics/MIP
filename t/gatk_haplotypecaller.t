@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -55,7 +55,6 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $HOM_REF_GENOTYPES_IN_CALL_SET                 => 7854;
 Readonly my $SAMPLE_PLOIDY                                 => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 
@@ -113,10 +112,9 @@ my %specific_argument = (
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
-    num_ref_samples_if_no_call => {
-        input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
-        expected_output => q{--num-reference-samples-if-no-call }
-          . $HOM_REF_GENOTYPES_IN_CALL_SET,
+    linked_de_bruijn_graph => {
+        input           => 1,
+        expected_output => q{--linked-de-bruijn-graph},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
@@ -126,11 +124,6 @@ my %specific_argument = (
         input           => q{NONE},
         expected_output => q{--pcr-indel-model NONE},
     },
-    population_callset => {
-        input           => catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
-        expected_output => q{--population-callset }
-          . catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
-    },
     sample_ploidy => {
         input           => $SAMPLE_PLOIDY,
         expected_output => q{--sample-ploidy } . $SAMPLE_PLOIDY,
@@ -139,10 +132,6 @@ my %specific_argument = (
         input           => $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
         expected_output => q{--standard-min-confidence-threshold-for-calling }
           . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
-    },
-    use_new_qual_calculator => {
-        input           => 1,
-        expected_output => q{--use-new-qual-calculator},
     },
 );
 

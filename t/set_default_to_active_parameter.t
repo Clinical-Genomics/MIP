@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.10;
+our $VERSION = 1.12;
 
 $VERBOSE = test_standard_cli(
     {
@@ -70,16 +70,15 @@ my @order_parameters =
   sv_vcfparser_range_feature_file };
 
 my %active_parameter = (
-    bwa_mem_bamstats                          => 0,
-    expansionhunter                           => 1,
-    gatk_genotypegvcfs_ref_gvcf               => q{test_file},
-    markduplicates_picardtools_markduplicates => 1,
-    mip                                       => 1,
-    bwa_mem                                   => 0,
-    gatk_baserecalibration                    => 1,
-    gatk_genotypegvcfs                        => 1,
-    gatk_variantrecalibration                 => 1,
-    sv_vcfparser                              => 1,
+    bwa_mem_bamstats            => 0,
+    expansionhunter             => 1,
+    gatk_genotypegvcfs_ref_gvcf => q{test_file},
+    mip                         => 1,
+    bwa_mem                     => 0,
+    gatk_baserecalibration      => 1,
+    gatk_genotypegvcfs          => 1,
+    gatk_variantrecalibration   => 1,
+    sv_vcfparser                => 1,
 );
 
 my %parameter = read_from_file(
@@ -111,20 +110,17 @@ is( $active_parameter{gatk_genotypegvcfs_ref_gvcf},
 is( $active_parameter{bwa_mem_bamstats},
     q{1}, q{Set default for non active associated_recipe parameter} );
 
-is( $active_parameter{markduplicates_picardtools_markduplicates},
-    q{1}, q{Did not set default for not defined associated_recipe parameter} );
-
 is( $active_parameter{bcftools_mpileup_filter_variant},
     0, q{Set default for scalar parameter} );
 
 my @expected_decompose_normalize_references = qw{
-  fqa_vcfanno_config
   gatk_baserecalibration_known_sites
   gatk_haplotypecaller_snp_known_set
-  gatk_variantrecalibration_resource_indel
-  gatk_varianteval_gold
   gatk_varianteval_dbsnp
-  sv_fqa_vcfanno_config
+  gatk_varianteval_gold
+  gatk_variantrecalibration_resource_indel
+  sv_vcfanno_config
+  vcfanno_config
 };
 is_deeply(
     \@{ $active_parameter{decompose_normalize_references} },

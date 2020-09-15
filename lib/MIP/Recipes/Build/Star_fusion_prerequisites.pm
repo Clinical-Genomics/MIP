@@ -40,7 +40,6 @@ sub build_star_fusion_prerequisites {
 ##          : $case_id                      => Case id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
-##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_href               => Parameter hash {REF}
@@ -55,7 +54,6 @@ sub build_star_fusion_prerequisites {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
     my $parameter_href;
@@ -92,13 +90,6 @@ sub build_star_fusion_prerequisites {
         human_genome_reference => {
             default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -155,7 +146,7 @@ sub build_star_fusion_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Star_fusion qw{ star_fusion_prep_genome_lib };

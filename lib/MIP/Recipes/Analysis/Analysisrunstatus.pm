@@ -8,14 +8,12 @@ use FindBin qw{ $Bin };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
@@ -26,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -40,7 +38,6 @@ sub analysis_analysisrunstatus {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -52,7 +49,6 @@ sub analysis_analysisrunstatus {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -80,13 +76,6 @@ sub analysis_analysisrunstatus {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -125,9 +114,9 @@ sub analysis_analysisrunstatus {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_mip_process_files };
     use MIP::Get::File qw{ get_path_entries };
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Language::Shell qw{ check_mip_process_paths };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -181,7 +170,7 @@ sub analysis_analysisrunstatus {
     );
 
     ### Test all file that are supposed to exists as they are present in the sample_info file
-    check_mip_process_files(
+    check_mip_process_paths(
         {
             filehandle => $filehandle,
             paths_ref  => \@paths

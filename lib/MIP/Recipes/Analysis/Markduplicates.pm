@@ -27,10 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.28;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rna };
+    our @EXPORT_OK =
+      qw{ analysis_markduplicates analysis_markduplicates_panel analysis_markduplicates_rna };
 
 }
 
@@ -42,12 +43,11 @@ Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
 
 sub analysis_markduplicates {
 
-## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
+## Function : Mark duplicated reads using Picardtools markduplicates in files generated from alignment (sorted, merged).
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -62,7 +62,6 @@ sub analysis_markduplicates {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $profile_base_command;
@@ -93,13 +92,6 @@ sub analysis_markduplicates {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -158,17 +150,13 @@ sub analysis_markduplicates {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
-    use MIP::Program::Sambamba qw{ sambamba_flagstat sambamba_markdup };
-    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates };
+    use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info qw{
-      set_recipe_metafile_in_sample_info
-      set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -252,25 +240,19 @@ sub analysis_markduplicates {
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    # Store which program performed the markduplication
-    my $markduplicates_program;
-
     ## Update recipe memory allocation for picard
     ## Variables used downstream of if statment
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     ## Update the memory allocation
-    if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
+    $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+        }
+    );
 
-        # Get recipe memory allocation
-        $memory_allocation = update_memory_allocation(
-            {
-                node_ram_memory           => $active_parameter_href->{node_ram_memory},
-                parallel_processes        => $core_number,
-                process_memory_allocation => $process_memory_allocation,
-            }
-        );
-    }
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -294,130 +276,66 @@ sub analysis_markduplicates {
     ## Marking Duplicates
     say {$filehandle} q{## Marking Duplicates};
 
-    ## Picardtools
-    if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
-
-        $markduplicates_program = q{picardtools_markduplicates};
-
-        my $parallel_processes = get_parallel_processes(
-            {
-                core_number               => $core_number,
-                process_memory_allocation => $process_memory_allocation,
-                recipe_memory_allocation  => $recipe_resource{memory},
-            }
-        );
-
-        ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-            {
-                core_number        => $parallel_processes,
-                filehandle         => $filehandle,
-                file_path          => $recipe_file_path,
-                recipe_info_path   => $recipe_info_path,
-                xargsfilehandle    => $xargsfilehandle,
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
-
-      CONTIG:
-        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
-
-            my $stderrfile_path =
-              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-            my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
-            picardtools_markduplicates(
-                {
-                    create_index     => q{true},
-                    filehandle       => $xargsfilehandle,
-                    infile_paths_ref => [ $infile_path{$contig} ],
-                    java_jar         => catfile(
-                        $active_parameter_href->{picardtools_path}, q{picard.jar}
-                    ),
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                    metrics_file      => $metrics_file,
-                    optical_duplicate_distance =>
-                      $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
-                    outfile_path       => $outfile_path{$contig},
-                    referencefile_path => $referencefile_path,
-                    stderrfile_path    => $stderrfile_path,
-                    temp_directory     => $temp_directory,
-                }
-            );
-            print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-            ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            sambamba_flagstat(
-                {
-                    filehandle   => $xargsfilehandle,
-                    infile_path  => $outfile_path{$contig},
-                    outfile_path => $outfile_path_prefix
-                      . $DOT
-                      . $contig
-                      . $UNDERSCORE
-                      . q{metric},
-                    stderrfile_path_append => $stderrfile_path,
-                }
-            );
-            say {$xargsfilehandle} $NEWLINE;
+    my $parallel_processes = get_parallel_processes(
+        {
+            core_number               => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
         }
-    }
+    );
 
-    ## Sambamba
-    if ( $active_parameter_href->{markduplicates_sambamba_markdup} ) {
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            core_number        => $parallel_processes,
+            filehandle         => $filehandle,
+            file_path          => $recipe_file_path,
+            recipe_info_path   => $recipe_info_path,
+            xargsfilehandle    => $xargsfilehandle,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
 
-        $markduplicates_program = q{sambamba_markdup};
+  CONTIG:
+    foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        my $stderrfile_path =
+          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+        picardtools_markduplicates(
             {
-                core_number        => $core_number,
-                filehandle         => $filehandle,
-                file_path          => $recipe_file_path,
-                recipe_info_path   => $recipe_info_path,
-                xargsfilehandle    => $xargsfilehandle,
-                xargs_file_counter => $xargs_file_counter,
+                create_index     => q{true},
+                filehandle       => $xargsfilehandle,
+                infile_paths_ref => [ $infile_path{$contig} ],
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                metrics_file         => $metrics_file,
+                optical_duplicate_distance =>
+                  $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
+                outfile_path       => $outfile_path{$contig},
+                referencefile_path => $referencefile_path,
+                stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
             }
         );
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
-      CONTIG:
-        foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
-
-            my $stderrfile_path =
-              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-            sambamba_markdup(
-                {
-                    filehandle      => $xargsfilehandle,
-                    hash_table_size => $active_parameter_href
-                      ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => $infile_path{$contig},
-                    io_buffer_size => $active_parameter_href
-                      ->{markduplicates_sambamba_markdup_io_buffer_size},
-                    overflow_list_size => $active_parameter_href
-                      ->{markduplicates_sambamba_markdup_overflow_list_size},
-                    show_progress   => 1,
-                    stderrfile_path => $stderrfile_path,
-                    stdoutfile_path => $outfile_path{$contig},
-                    temp_directory  => $temp_directory,
-                }
-            );
-            print {$xargsfilehandle} $SEMICOLON . $SPACE;
-
-            ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            sambamba_flagstat(
-                {
-                    filehandle   => $xargsfilehandle,
-                    infile_path  => $outfile_path{$contig},
-                    outfile_path => $outfile_path_prefix
-                      . $DOT
-                      . $contig
-                      . $UNDERSCORE
-                      . q{metric},
-                    stderrfile_path_append => $stderrfile_path,
-                }
-            );
-            say {$xargsfilehandle} $NEWLINE;
-        }
+        ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+        samtools_flagstat(
+            {
+                filehandle      => $xargsfilehandle,
+                infile_path     => $outfile_path{$contig},
+                stdoutfile_path => $outfile_path_prefix
+                  . $DOT
+                  . $contig
+                  . $UNDERSCORE
+                  . q{metric},
+                stderrfile_path_append => $stderrfile_path,
+            }
+        );
+        say {$xargsfilehandle} $NEWLINE;
     }
 
     ## Concatenate all metric files
@@ -440,28 +358,6 @@ sub analysis_markduplicates {
         }
     );
 
-    ## Gather bam files in contig order
-    my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
-    my $store_outfile_path   = $outfile_path_prefix . $outfile_suffix;
-    my $store_outfile_suffix = $outfile_suffix;
-
-    picardtools_gatherbamfiles(
-        {
-            create_index     => q{true},
-            filehandle       => $filehandle,
-            infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx4g},
-            outfile_path         => $outfile_path_prefix . $outfile_suffix,
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $temp_directory,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Close filehandles
     close $xargsfilehandle;
     close $filehandle;
@@ -479,41 +375,294 @@ sub analysis_markduplicates {
             }
         );
 
-        set_recipe_outfile_in_sample_info(
+        submit_recipe(
             {
-                infile           => $outfile_name_prefix . $store_outfile_suffix,
-                path             => $store_outfile_path,
-                recipe_name      => $recipe_name . $UNDERSCORE . q{alignment},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
+    }
+    return 1;
+}
 
-# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
-        set_recipe_metafile_in_sample_info(
+sub analysis_markduplicates_panel {
+
+## Function : Mark duplicated reads using Picardtools markduplicates in files generated from alignment (sorted, merged).
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File info hash {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $job_id_href;
+    my $parameter_href;
+    my $recipe_name;
+    my $sample_id;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $case_id;
+    my $profile_base_command;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Cluster qw{ update_memory_allocation };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates };
+    use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+        }
+    );
+    my $infile_path        = $io{in}{file_path};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+
+    my %rec_atr = get_recipe_attributes(
+        {
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $job_id_chain       = $rec_atr{chain};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my %recipe_resource    = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+    my $core_number       = $recipe_resource{core_number};
+    my $memory_allocation = $recipe_resource{memory};
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
             {
-                infile           => $outfile_name_prefix,
-                metafile_tag     => q{marking_duplicates},
-                processed_by     => $markduplicates_program,
-                recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
+            }
+        )
+    );
+
+    #my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $filehandle = IO::Handle->new();
+
+    ## Update recipe memory allocation for picard
+    ## Variables used downstream of if statment
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    # Get recipe memory allocation
+    $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+        }
+    );
+
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            temp_directory                  => ${active_parameter_href}->{temp_directory},
+        }
+    );
+
+    ### SHELL:
+
+    ## Marking Duplicates
+    say {$filehandle} q{## Marking Duplicates};
+
+    my $metrics_file = $outfile_path_prefix . $DOT . q{metric};
+    picardtools_markduplicates(
+        {
+            create_index     => q{true},
+            filehandle       => $filehandle,
+            infile_paths_ref => [$infile_path],
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            metrics_file         => $metrics_file,
+            optical_duplicate_distance =>
+              $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
+            outfile_path       => $outfile_path,
+            referencefile_path => $referencefile_path,
+            temp_directory     => ${active_parameter_href}->{temp_directory},
+        }
+    );
+    print {$filehandle} $SEMICOLON . $SPACE;
+
+    ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+    samtools_flagstat(
+        {
+            filehandle      => $filehandle,
+            infile_path     => $outfile_path,
+            stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Collect duplicate reads and reads mapped across all metric contig files. Calculate fraction duplicates.
+    ## Write it to stdout.
+    _calculate_fraction_duplicates_for_all_metric_files(
+        {
+            filehandle          => $filehandle,
+            outfile_path_prefix => $outfile_path_prefix,
+        }
+    );
+
+    ## Close filehandles
+    close $filehandle;
+
+    if ( $recipe_mode == 1 ) {
+
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                infile      => $outfile_name_prefix,
+                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name => q{markduplicates},
+                sample_id   => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -527,7 +676,6 @@ sub analysis_markduplicates_rna {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -542,7 +690,6 @@ sub analysis_markduplicates_rna {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $profile_base_command;
@@ -573,13 +720,6 @@ sub analysis_markduplicates_rna {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -638,12 +778,12 @@ sub analysis_markduplicates_rna {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
-    use MIP::Program::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
       set_file_path_to_store
@@ -731,9 +871,6 @@ sub analysis_markduplicates_rna {
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    # Store which program performed the markduplication
-    my $markduplicates_program;
-
     ## Update recipe memory allocation for picard
     ## Variables used downstream of if statment
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
@@ -769,10 +906,6 @@ sub analysis_markduplicates_rna {
 
     ## Marking Duplicates
     say {$filehandle} q{## Marking Duplicates};
-
-    ## Picardtools
-
-    $markduplicates_program = q{picardtools_markduplicates};
 
     my $parallel_processes = get_parallel_processes(
         {
@@ -820,12 +953,12 @@ sub analysis_markduplicates_rna {
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
-        ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-        sambamba_flagstat(
+        ## Process BAM with samtools flagstat to produce metric file for downstream analysis
+        samtools_flagstat(
             {
-                filehandle   => $xargsfilehandle,
-                infile_path  => $outfile_path{$contig},
-                outfile_path => $outfile_path_prefix
+                filehandle      => $xargsfilehandle,
+                infile_path     => $outfile_path{$contig},
+                stdoutfile_path => $outfile_path_prefix
                   . $DOT
                   . $contig
                   . $UNDERSCORE
@@ -944,17 +1077,18 @@ sub analysis_markduplicates_rna {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_id               => $sample_id,
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_id          => $sample_id,
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

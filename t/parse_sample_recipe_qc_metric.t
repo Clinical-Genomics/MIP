@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE $UNDERSCORE};
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,14 +40,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qccollect} => [qw{ parse_sample_recipe_qc_metric define_evaluate_metric }],
+        q{MIP::Qccollect}      => [qw{ parse_sample_recipe_qc_metric }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qccollect qw{ parse_sample_recipe_qc_metric define_evaluate_metric };
+use MIP::Qccollect qw{ parse_sample_recipe_qc_metric };
 
 diag(   q{Test parse_sample_recipe_qc_metric from Qccollect.pm v}
       . $MIP::Qccollect::VERSION
@@ -59,9 +59,8 @@ diag(   q{Test parse_sample_recipe_qc_metric from Qccollect.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $PCT_TARGET_BASES_10X         => 0.95;
+Readonly my $PERCENTAGE_MAPPED_READS_EVAL => 95;
 Readonly my $PERCENTAGE_MAPPED_READS_PASS => 99;
-Readonly my $PERCENTAGE_MAPPED_READS_FAIL => 90;
 
 ## Given sample recipe qc data when metric lacks a header
 my $infile    = q{an_infile};
@@ -87,12 +86,17 @@ my %sample_info = test_mip_hashes(
 );
 
 ## Defines recipes, metrics and thresholds to evaluate
-my %evaluate_metric = define_evaluate_metric(
-    {
-        sample_info_href => \%sample_info,
-    }
+my %evaluate_metric = (
+    $sample_id => {
+        $recipe => {
+            $metric => {
+                lt => $PERCENTAGE_MAPPED_READS_EVAL,
+            },
+        },
+    },
 );
 
+## Then 
 my $is_ok = parse_sample_recipe_qc_metric(
     {
         evaluate_metric_href => \%evaluate_metric,

@@ -27,13 +27,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-
 }
+
+Readonly my $FOUR                   => 4;
+Readonly my $MAX_PARALLEL_PROCESSES => 13;
 
 sub analysis_rankvariant {
 
@@ -42,7 +44,6 @@ sub analysis_rankvariant {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -56,7 +57,6 @@ sub analysis_rankvariant {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -86,13 +86,6 @@ sub analysis_rankvariant {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -177,8 +170,7 @@ sub analysis_rankvariant {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -262,12 +254,12 @@ sub analysis_rankvariant {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $case_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $case_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -275,9 +267,10 @@ sub analysis_rankvariant {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
+    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $xargs_core_number,
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -287,8 +280,9 @@ sub analysis_rankvariant {
     );
 
     ## Get parameters
-    ## Track which genmod modules has been processed
-    my $genmod_module = $EMPTY_STR;
+    ## Output stream
+    my $genmod_outfile_path = catfile( dirname( devnull() ), q{stdout} );
+    my $genmod_indata       = $DASH;
 
     my $use_vep;
     ## Use VEP annotations in compound models
@@ -302,97 +296,75 @@ sub analysis_rankvariant {
     ## Process per contig
     while ( my ( $contig_index, $infile_path ) = each %infile_path ) {
 
-        ## Get parameters
-        # Restart for next contig
-        $genmod_module = $EMPTY_STR;
-
-        ## Infile
-        my $genmod_indata = $infile_path;
-
-        ## Output stream
-        my $genmod_outfile_path =
-          catfile( dirname( devnull() ), q{stdout} );
-
         my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig_index;
 
         ## Genmod Annotate
-        $genmod_module = $UNDERSCORE . q{annotate};
-
+        my $genmod_module = $UNDERSCORE . q{annotate};
         my $annotate_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
 
         genmod_annotate(
             {
-                annotate_region => $active_parameter_href->{genmod_annotate_regions},
-                cadd_file_paths_ref =>
-                  \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                filehandle       => $xargsfilehandle,
-                infile_path      => $genmod_indata,
-                outfile_path     => $genmod_outfile_path,
-                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path  => $annotate_stderrfile_path,
+                annotate_region     => $active_parameter_href->{genmod_annotate_regions},
+                filehandle          => $xargsfilehandle,
+                infile_path         => $infile_path,
+                outfile_path        => $genmod_outfile_path,
+                stderrfile_path     => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
         );
-
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
-
-        # Preparation for next module
-        $genmod_indata = $DASH;
 
         ## Genmod Models
         $genmod_module .= $UNDERSCORE . q{models};
-
         my $models_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_models(
             {
                 filehandle   => $xargsfilehandle,
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
                 infile_path  => $genmod_indata,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                outfile_path => $genmod_outfile_path,
                 reduced_penetrance_file_path =>
                   $active_parameter_href->{genmod_models_reduced_penetrance_file},
                 stderrfile_path     => $models_stderrfile_path,
                 temp_directory_path => $temp_directory,
-                thread_number       => 4,
+                thread_number       => $FOUR,
                 vep                 => $use_vep,
                 verbosity           => q{v},
                 whole_gene          => $active_parameter_href->{genmod_models_whole_gene},
             }
         );
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Score
         $genmod_module .= $UNDERSCORE . q{score};
-
         my $score_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_score(
             {
                 case_file            => $case_file_path,
                 case_type            => $active_parameter_href->{genmod_models_case_type},
                 filehandle           => $xargsfilehandle,
                 infile_path          => $genmod_indata,
-                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
+                outfile_path         => $genmod_outfile_path,
                 rank_result          => 1,
                 rank_model_file_path => $active_parameter_href->{rank_model_file},
                 stderrfile_path      => $score_stderrfile_path,
                 verbosity            => q{v},
             }
         );
-        ## Pipe
         print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Compound
         $genmod_module .= q{_compound};
-
         my $compound_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+
         genmod_compound(
             {
                 filehandle          => $xargsfilehandle,
@@ -441,17 +413,18 @@ sub analysis_rankvariant {
         }
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -465,7 +438,6 @@ sub analysis_rankvariant_unaffected {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -479,7 +451,6 @@ sub analysis_rankvariant_unaffected {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -509,13 +480,6 @@ sub analysis_rankvariant_unaffected {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -600,8 +564,7 @@ sub analysis_rankvariant_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -685,12 +648,12 @@ sub analysis_rankvariant_unaffected {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $case_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $case_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -698,9 +661,10 @@ sub analysis_rankvariant_unaffected {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
+    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $xargs_core_number,
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -734,14 +698,11 @@ sub analysis_rankvariant_unaffected {
 
         genmod_annotate(
             {
-                annotate_region => $active_parameter_href->{genmod_annotate_regions},
-                cadd_file_paths_ref =>
-                  \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                filehandle       => $xargsfilehandle,
-                infile_path      => $genmod_indata,
-                outfile_path     => $genmod_outfile_path,
-                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path  => $annotate_stderrfile_path,
+                annotate_region     => $active_parameter_href->{genmod_annotate_regions},
+                filehandle          => $xargsfilehandle,
+                infile_path         => $genmod_indata,
+                outfile_path        => $genmod_outfile_path,
+                stderrfile_path     => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
@@ -783,17 +744,18 @@ sub analysis_rankvariant_unaffected {
         }
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -808,7 +770,6 @@ sub analysis_rankvariant_sv {
 ##          : $case_id                 => Family id
 ##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -822,7 +783,6 @@ sub analysis_rankvariant_sv {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -852,13 +812,6 @@ sub analysis_rankvariant_sv {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -938,8 +891,7 @@ sub analysis_rankvariant_sv {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -1014,12 +966,12 @@ sub analysis_rankvariant_sv {
     ## Create .fam file
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $fam_file_path,
-            filehandle            => $filehandle,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $fam_file_path,
+            filehandle       => $filehandle,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -1179,17 +1131,18 @@ sub analysis_rankvariant_sv {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -1204,7 +1157,6 @@ sub analysis_rankvariant_sv_unaffected {
 ##          : $case_id                 => Family id
 ##          : $filehandle              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -1218,7 +1170,6 @@ sub analysis_rankvariant_sv_unaffected {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -1248,13 +1199,6 @@ sub analysis_rankvariant_sv_unaffected {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -1332,8 +1276,7 @@ sub analysis_rankvariant_sv_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -1467,17 +1410,18 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

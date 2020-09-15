@@ -1,0 +1,12 @@
+# TOML
+
+title = "Vcfanno configuration file" 
+
+[functions]
+file = "TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+
+[[annotation]]
+file="TEST_REFERENCES!/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
+fields = ["AF", "AF_POPMAX", "MISSING_TAG"]
+ops=["self", "self", "self"]
+names=["GNOMADAF", "GNOMADAF_POPMAX", "MISSING_TAG"]

@@ -19,7 +19,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 command_short_description(q{MIP vercollect command});
 
@@ -57,7 +57,6 @@ sub run {
     mip_vercollect(
         {
             infile_path => $infile_path,
-            log         => $log,
             outfile     => $outfile,
         }
     );
@@ -74,7 +73,7 @@ sub _build_usage {
 
     option(
         q{log_file} => (
-            cmd_aliases   => [qw{ l }],
+            cmd_aliases   => [qw{ l log }],
             default       => catfile( cwd(), q{vercollect.log} ),
             documentation => q{Log file},
             is            => q{rw},
@@ -95,7 +94,7 @@ sub _build_usage {
 
     option(
         q{infile_path} => (
-            cmd_aliases   => [qw{ i inf }],
+            cmd_aliases   => [qw{ i }],
             cmd_tags      => [q{YAML}],
             documentation => q{Binary file for executables used in the analysis},
             is            => q{rw},

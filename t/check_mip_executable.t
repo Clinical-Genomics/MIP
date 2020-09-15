@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +75,7 @@ my $is_ok = check_mip_executable(
 ok( $is_ok, q{Found no existing executable} );
 
 ## Given an existing mip binary
-$conda_prefix_path = catfile( $Bin, qw{ data modules miniconda envs mip_travis } );
+$conda_prefix_path = catfile( $Bin, qw{ data modules miniconda envs mip_ci } );
 
 trap {
     check_mip_executable(

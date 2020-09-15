@@ -1,0 +1,51 @@
+---
+CHAIN_ALL:
+  - CHAIN_MAIN:
+    - gzip_fastq
+  # Parallel chain (branch)
+  - CHAIN_FASTQ:
+    - fastqc_ar
+  - CHAIN_MAIN:
+    - bwa_mem
+    - bwa_mem2
+    - samtools_merge
+    - markduplicates
+    - gatk_baserecalibration
+    # Parallel chains (branches), which inherit from MAIN in initiation
+    - CHAIN_SBCOV:
+      - sambamba_depth
+    - CHAIN_PTMME:
+      - picardtools_collectmultiplemetrics
+    - CHAIN_PTCHSM:
+      - picardtools_collecthsmetrics
+  - CHAIN_MAIN:
+    # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
+    - PARALLEL:
+      - GATK_HAPLOTYPECALLER:
+        - gatk_haplotypecaller
+        - gatk_genotypegvcfs
+        - gatk_gathervcfs
+        - gatk_variantrecalibration
+    - gatk_combinevariantcallsets
+    - CHAIN_VINTEGRITY:
+      - variant_integrity_ar
+    - CHAIN_RTEVAL:
+      - rtg_vcfeval
+    - CHAIN_GATKEVALALL:
+      - gatk_variantevalall
+  - CHAIN_MAIN:
+    - vt_ar
+    - variant_annotation
+    - frequency_filter
+    - cadd_ar
+    - varianteffectpredictor
+    - vcfparser_ar
+    - rankvariant
+    - endvariantannotationblock
+    - CHAIN_GATKEVALEXO:
+      - gatk_variantevalexome
+  - qccollect_ar
+  - version_collect_ar
+  - multiqc_ar
+  - analysisrunstatus
+  - sacct

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -44,7 +44,6 @@ sub analysis_bcftools_mpileup {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -58,7 +57,6 @@ sub analysis_bcftools_mpileup {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -88,13 +86,6 @@ sub analysis_bcftools_mpileup {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -225,13 +216,13 @@ sub analysis_bcftools_mpileup {
     my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
     create_fam_file(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $fam_file_path,
-            filehandle            => $filehandle,
-            include_header        => 0,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
+            case_id          => $case_id,
+            fam_file_path    => $fam_file_path,
+            filehandle       => $filehandle,
+            include_header   => 0,
+            parameter_href   => $parameter_href,
+            sample_ids_ref   => $active_parameter_href->{sample_ids},
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -443,17 +434,20 @@ sub analysis_bcftools_mpileup {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command      => $profile_base_command,
+                dependency_method => q{sample_to_case},
+                case_id           => $case_id,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

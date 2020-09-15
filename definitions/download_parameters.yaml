@@ -20,6 +20,12 @@ dry_run_all:
   data_type: SCALAR
   mandatory: no
   type: mip
+environment_name:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 load_env:
   associated_recipe:
     - mip

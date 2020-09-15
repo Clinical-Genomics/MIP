@@ -39,7 +39,6 @@ sub analysis_gatk_combinevariantcallsets {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -52,7 +51,6 @@ sub analysis_gatk_combinevariantcallsets {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -81,13 +79,6 @@ sub analysis_gatk_combinevariantcallsets {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -133,14 +124,13 @@ sub analysis_gatk_combinevariantcallsets {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Gatk qw{ gatk_combinevariants };
-    use MIP::Sample_info
-      qw{ set_file_path_to_store set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -325,26 +315,17 @@ sub analysis_gatk_combinevariantcallsets {
             }
         );
 
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $outfile_path,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
-            my $bcf_suffix = $DOT . q{bcf};
-            my $most_complete_bcf_key =
-              q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
+            my $bcf_suffix    = $DOT . q{bcf};
             my $bcf_file_path = $outfile_path_prefix . $bcf_suffix;
-            set_processing_metafile_in_sample_info(
+            set_file_path_to_store(
                 {
-                    metafile_tag     => $most_complete_bcf_key,
+                    format           => q{bcf},
+                    id               => $case_id,
                     path             => $bcf_file_path,
+                    path_index       => $bcf_file_path . $DOT . q{csi},
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -362,18 +343,19 @@ sub analysis_gatk_combinevariantcallsets {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                parallel_chains_ref     => \@parallel_chains,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                parallel_chains_ref => \@parallel_chains,
+                recipe_file_path    => $recipe_file_path,
+                sample_ids_ref      => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }

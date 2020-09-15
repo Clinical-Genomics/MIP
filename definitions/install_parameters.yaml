@@ -12,6 +12,12 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+container_manager:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: singularity
+  type: mip
 core_number:
   associated_recipe:
     - mip
@@ -29,20 +35,29 @@ custom_default_parameters:
     - shell_install
     - skip_programs
   type: mip
+environment_name:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: mip
+  mandatory: no
+  type: mip
 pip:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
   type: mip
-prefer_shell:
+pipelines:
   associated_recipe:
     - mip
-  data_type: SCALAR
-  default: 0
+  data_type: ARRAY
+  default:
+    - rd_dna
+    - rd_rna
   mandatory: no
   type: mip
-prefer_singularity:
+prefer_shell:
   associated_recipe:
     - mip
   data_type: SCALAR
@@ -83,6 +98,81 @@ reference_dir:
   mandatory: no
   type: path
   update_path: absolute_path
+rd_dna:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - bedtools
+    - bwa
+    - bwakit
+    - bwa-mem2
+    - cadd
+    - chanjo
+    - chromograph
+    - cnvnator
+    - cyrius
+    - delly
+    - expansionhunter
+    - fastqc
+    - gatk
+    - gatk4
+    - genmod
+    - htslib
+    - manta
+    - mip_scripts
+    - multiqc
+    - peddy
+    - picard
+    - plink
+    - python
+    - rhocall
+    - rtg-tools
+    - sambamba
+    - smncopynumbercaller
+    - stranger
+    - svdb
+    - telomerecat
+    - tiddit
+    - ucsc
+    - upd
+    - varg
+    - variant_integrity
+    - vcf2cytosure
+    - vcfanno
+    - vep
+    - vt
+  mandatory: no
+  type: mip
+rd_rna:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - arriba
+    - blobfish
+    - bootstrapann
+    - fastqc
+    - gatk4
+    - gffcompare
+    - htslib
+    - mip_scripts
+    - multiqc
+    - picard
+    - preseq
+    - python
+    - rseqc
+    - salmon
+    - sambamba
+    - star
+    - star-fusion
+    - stringtie
+    - trim-galore
+    - ucsc
+    - utilities
+    - vep
+  mandatory: no
+  type: mip
 sbatch_mode:
   associated_recipe:
     - mip
@@ -96,7 +186,7 @@ shell:
   data_type: HASH
   mandatory: no
   type: mip
-singularity:
+container:
   associated_recipe:
     - mip
   data_type: HASH

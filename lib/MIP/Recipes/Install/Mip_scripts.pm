@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
-use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
+use MIP::Program::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
 BEGIN {
@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -124,15 +124,15 @@ sub install_mip_scripts {
               mip_download_rd_dna_config_-1.0-.yaml
               mip_download_rd_rna_config_-1.0-.yaml
               mip_dragen_rd_dna_config.yaml
-              mip_install_rd_dna_config_-1.0-.yaml
-              mip_install_rd_rna_config_-1.0-.yaml
+              mip_install_config.yaml
               mip_log.yaml
               mip_rd_dna_config.yaml
               mip_rd_dna_vcf_rerun_config.yaml
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
-              qc_regexp_-v1.24-.yaml
-              rank_model_cmms_-v1.28-.ini
+              qc_eval_metric_-v1.2-.yaml
+              qc_regexp_-v1.26-.yaml
+              rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
               }
         ],

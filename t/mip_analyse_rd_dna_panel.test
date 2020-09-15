@@ -1,0 +1,170 @@
+#!/usr/bin/env perl
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname basename };
+use File::Path qw{ remove_tree };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error};
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## Cpanm
+use IPC::Cmd qw{ can_run run};
+use Modern::Perl qw{ 2018 };
+use Readonly;
+use autodie qw{open close :all};
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Environment::Child_process qw{ child_process };
+use MIP::Script::Utils qw{ help };
+use MIP::Test::Writefile qw{ write_toml_config };
+
+our $USAGE = build_usage( {} );
+
+my $VERBOSE = 1;
+our $VERSION = 1.03;
+
+## Set paths
+my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
+my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_dna_panel_config.yaml } );
+my $mip_path    = catfile( dirname($Bin), q{mip} );
+my $test_reference_path = catdir( $cluster_constant_path, q{references} );
+my $toml_template_path  = catfile( $test_reference_path,
+    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_config_path =
+  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
+
+### User Options
+GetOptions(
+
+    q{c|config_file:s} => \$config_file,
+
+    ## Display help text
+    q{h|help} => sub {
+        done_testing();
+        say {*STDOUT} $USAGE;
+        exit;
+    },
+
+    ## Display version number
+    q{v|version} => sub {
+        done_testing();
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        exit;
+    },
+    q{vb|verbose} => $VERBOSE,
+  )
+  or (
+    done_testing(),
+    help(
+        {
+            USAGE     => $USAGE,
+            exit_code => 1,
+        }
+    )
+  );
+
+ok( can_run(q{mip}), q{Checking can run mip} );
+
+## Update path in toml config
+write_toml_config(
+    {
+        test_reference_path => $test_reference_path,
+        toml_config_path    => $toml_config_path,
+        toml_template_path  => $toml_template_path,
+    }
+);
+
+## Test execution of mip
+# Create array ref for cmd
+my $cmds_ref = [
+    q{perl},
+    $mip_path,
+    qw{ analyse rd_dna_panel 643594-miptest },
+    q{--config},
+    $config_file,
+    q{--conda_path},
+    $conda_path,
+    q{--cluster_constant_path},
+    $cluster_constant_path,
+    q{--ifd},
+    catfile(
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A1 fastq=ADM1059A1 }
+    ),
+    q{--ifd},
+    catfile(
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A2 fastq=ADM1059A2 }
+    ),
+    q{--ifd},
+    catfile(
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
+    ),
+    qw{ --dra --vb },
+    q{--vcfanno_config},
+    $toml_config_path,
+    q{--pedigree},
+    catfile( $cluster_constant_path, qw{ 643594-miptest 643594-panel_pedigree.yaml } ),
+];
+
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
+    }
+);
+ok( $process_return{success}, q{Executed mip rd_dna_panel} );
+
+my $qc_sample_info_file = catfile( $cluster_constant_path,
+    qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml } );
+ok( -f $qc_sample_info_file, q{Checking for 643594-miptest_qc_sample_info.yaml} );
+
+## Clean-up
+remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
+unlink $toml_config_path;
+
+done_testing();
+
+######################
+####SubRoutines#######
+######################
+
+sub build_usage {
+
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options]
+    -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_rd_dna_config.yaml")
+    -vb/--verbose    Verbose
+    -h/--help        Display this help message
+    -v/--version     Display version
+END_USAGE
+}

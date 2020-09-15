@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -92,7 +91,6 @@ my %file_info = test_mip_hashes(
 ## Reduce the test to a single contig
 @{ $file_info{contigs} } = (1);
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -104,19 +102,23 @@ my %parameter = test_mip_hashes(
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 $parameter{cache}{consensus_analysis_type} = q{wgs};
 
-my %sample_info;
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+        recipe_name   => $recipe_name,
+    }
+);
 
 my $is_ok = analysis_gatk_genotypegvcfs(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

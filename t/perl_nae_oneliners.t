@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -93,7 +93,7 @@ my %specific_argument = (
     oneliner_name => {
         input => q{synonyms_grch37_to_grch38},
         expected_output =>
-          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
+          q?'if($_=~s/^MT/chrM/g) {} elsif ($_=~s/^([^#])/chr$1/g) {} print $_'?,
     },
 );
 
@@ -119,7 +119,7 @@ foreach my $argument_href (@arguments) {
 
 ## Given more oneliner_names
 my %oneliner_map = ( synonyms_grch38_to_grch37 =>
-      q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?, );
+      q?'if($_=~s/^chrM/MT/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_'?, );
 
 ONELINER:
 while ( my ( $name, $oneliner ) = each %oneliner_map ) {
@@ -135,5 +135,20 @@ while ( my ( $name, $oneliner ) = each %oneliner_map ) {
         }
     );
 }
+
+## Given escape argument
+my @perl_cmds = perl_nae_oneliners(
+    {
+        escape_oneliner => 1,
+        oneliner_name   => q{synonyms_grch38_to_grch37},
+    }
+);
+
+## Then escape the perl expression
+my @expected_oneliner = (
+    qw{ perl -n -a -e },
+    q?\'if($_=~s/^chrM/MT/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?
+);
+is_deeply( \@perl_cmds, \@expected_oneliner, q{Escape oneliner} );
 
 done_testing();

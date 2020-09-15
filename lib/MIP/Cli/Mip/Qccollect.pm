@@ -19,14 +19,15 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 command_short_description(q{MIP qccollect command});
 
 command_long_description(q{Entry point for collecting MIP QC metrics});
 
 command_usage(
-    q{qccollect <options> -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]});
+q{qccollect <options> -si [sample_info.yaml] -r [regexp.yaml] -e [eval_metric.yaml] -o [outfile]}
+);
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -40,14 +41,15 @@ sub run {
     delete $arg_href->{extra_argv};
 
     # Flatten argument(s)
+    my $eval_metric_file      = $arg_href->{eval_metric_file};
     my $evaluate_plink_gender = $arg_href->{evaluate_plink_gender};
+    my $log_file              = $arg_href->{log_file};
+    my $outfile               = $arg_href->{outfile};
     my $print_regexp          = $arg_href->{print_regexp};
+    my $print_regexp_outfile  = $arg_href->{print_regexp_outfile};
     my $regexp_file           = $arg_href->{regexp_file};
     my $sample_info_file      = $arg_href->{sample_info_file};
     my $skip_evaluation       = $arg_href->{skip_evaluation};
-    my $log_file              = $arg_href->{log_file};
-    my $print_regexp_outfile  = $arg_href->{print_regexp_outfile};
-    my $outfile               = $arg_href->{outfile};
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
     use MIP::Main::Qccollect qw{ mip_qccollect };
@@ -71,12 +73,12 @@ sub run {
 
     mip_qccollect(
         {
+            eval_metric_file      => $eval_metric_file,
             evaluate_plink_gender => $evaluate_plink_gender,
+            outfile               => $outfile,
             regexp_file           => $regexp_file,
             sample_info_file      => $sample_info_file,
             skip_evaluation       => $skip_evaluation,
-            log                   => $log,
-            outfile               => $outfile,
         }
     );
     return;
@@ -91,8 +93,16 @@ sub _build_usage {
     my ($arg_href) = @_;
 
     option(
+        q{eval_metric_file} => (
+            cmd_tags      => [q{YAML}],
+            documentation => q{Evaluation_metric file path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{evaluate_plink_gender} => (
-            cmd_aliases   => [qw{ epg }],
             documentation => q{Evaluate plink gender},
             is            => q{rw},
             isa           => Bool,
@@ -101,7 +111,7 @@ sub _build_usage {
 
     option(
         q{log_file} => (
-            cmd_aliases   => [qw{ l }],
+            cmd_aliases   => [qw{ l log }],
             default       => catfile( cwd(), q{qccollect.log} ),
             documentation => q{Log file},
             is            => q{rw},
@@ -133,7 +143,6 @@ sub _build_usage {
 
     option(
         q{regexp_file} => (
-            cmd_aliases   => [qw{ rxf }],
             cmd_tags      => [q{YAML}],
             documentation => q{Regular expression file path},
             is            => q{rw},
@@ -144,7 +153,6 @@ sub _build_usage {
 
     option(
         q{sample_info_file} => (
-            cmd_aliases   => [qw{ sif }],
             cmd_tags      => [q{YAML}],
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
@@ -155,7 +163,6 @@ sub _build_usage {
 
     option(
         q{skip_evaluation} => (
-            cmd_aliases   => [qw{ ske }],
             documentation => q{Skip evaluation step},
             is            => q{rw},
             isa           => Bool,

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -41,7 +41,6 @@ sub analysis_sv_annotate {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -55,7 +54,6 @@ sub analysis_sv_annotate {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
@@ -85,13 +83,6 @@ sub analysis_sv_annotate {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
         job_id_href => {
@@ -142,7 +133,7 @@ sub analysis_sv_annotate {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw(gnu_mv);
+    use MIP::Program::Gnu::Coreutils qw(gnu_mv);
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -387,10 +378,11 @@ sub analysis_sv_annotate {
         say {$filehandle} q{## Remove common variants};
         vcfanno(
             {
-                filehandle  => $filehandle,
-                infile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                filehandle   => $filehandle,
+                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                luafile_path => $active_parameter_href->{vcfanno_functions},
                 stderrfile_path_append => $stderrfile_path,
-                toml_configfile_path   => $active_parameter_href->{sv_fqa_vcfanno_config},
+                toml_configfile_path   => $active_parameter_href->{sv_vcfanno_config},
             }
         );
         print {$filehandle} $PIPE . $SPACE;
@@ -401,22 +393,22 @@ sub analysis_sv_annotate {
         my %vcfanno_config = read_from_file(
             {
                 format => q{toml},
-                path   => $active_parameter_href->{sv_fqa_vcfanno_config},
+                path   => $active_parameter_href->{sv_vcfanno_config},
             }
         );
 
-        ## Store vcf anno annotations
-        my @vcf_anno_annotations;
+        ## Store vcfanno annotations
+        my @vcfanno_annotations;
 
       ANNOTATION:
         foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-            push @vcf_anno_annotations, @{ $annotation_href->{names} };
+            push @vcfanno_annotations, @{ $annotation_href->{names} };
         }
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                annotations_ref => \@vcf_anno_annotations,
+                annotations_ref => \@vcfanno_annotations,
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }
@@ -466,17 +458,18 @@ sub analysis_sv_annotate {
 
         submit_recipe(
             {
-                base_command            => $profile_base_command,
-                case_id                 => $case_id,
-                dependency_method       => q{sample_to_case},
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_chain            => $job_id_chain,
-                job_id_href             => $job_id_href,
-                job_reservation_name    => $active_parameter_href->{job_reservation_name},
-                log                     => $log,
-                recipe_file_path        => $recipe_file_path,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                submission_profile      => $active_parameter_href->{submission_profile},
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $job_id_chain,
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

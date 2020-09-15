@@ -26,7 +26,7 @@ use MIP::Constants
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,7 +71,7 @@ open my $filehandle, q{>}, \$file_content
 
 ## Given install parameters
 my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
+  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
 $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_cadd(
     {
@@ -85,35 +85,10 @@ my $is_ok = install_cadd(
 ## Then return TRUE
 ok( $is_ok, q{Executed install cadd recipe } );
 
-## Given existing bind paths
-$active_parameter{singularity}{cadd}{program_bind_paths} = [q{extra_dir}];
-$is_ok = install_cadd(
-    {
-        active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{singularity}{cadd},
-        container_path        => catfile(q{cadd.sif}),
-        filehandle            => $filehandle,
-    }
-);
-
-## Then return TRUE and append bind baths
-my $expected = [
-    q{extra_dir},
-    catdir( $active_parameter{reference_dir}, qw{ CADD-scripts data annotations } )
-      . $COLON
-      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } )
-];
-ok( $is_ok, q{Execute with extra bind path} );
-is_deeply(
-    $expected,
-    $active_parameter{singularity}{cadd}{program_bind_paths},
-    q{Add extra bind paths}
-);
-
 ## Given no reference directory
-$active_parameter{reference_dir}                         = undef;
+$active_parameter{reference_dir} = undef;
 $active_parameter{singularity}{cadd}{program_bind_paths} = undef;
-$expected                                                = [
+my $expected = [
     catdir(
         $BACKWARD_SLASH
           . $DOUBLE_QUOTE
@@ -124,7 +99,7 @@ $expected                                                = [
         qw{ CADD-scripts data annotations }
       )
       . $COLON
-      . catdir( $FORWARD_SLASH, qw{ opt CADD-scripts data annotations } )
+      . catdir( $FORWARD_SLASH, qw{ opt conda share CADD-scripts data annotations } )
 ];
 install_cadd(
     {

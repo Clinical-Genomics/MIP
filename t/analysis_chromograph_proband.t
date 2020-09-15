@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,7 +76,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{tiddit_coverage_bin_size}         = $TIDDIT_BIN_SIZE;
+$active_parameter{human_genome_reference} =
+  catfile( $Bin, qw{ data references grch38_homo_sapiens_-d5-.fasta} );
+$active_parameter{tiddit_coverage_bin_size} = $TIDDIT_BIN_SIZE;
 my $sample_id = $active_parameter{sample_ids}[0];
 my $case_id   = $active_parameter{case_id};
 
@@ -92,7 +94,6 @@ my %file_info = test_mip_hashes(
     }
 );
 
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -106,15 +107,14 @@ my %sample_info;
 
 my $is_ok = analysis_chromograph_proband(
     {
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 

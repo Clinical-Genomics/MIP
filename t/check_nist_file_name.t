@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_nist_file_name }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Reference}      => [qw{ check_nist_file_name }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_nist_file_name };
+use MIP::Reference qw{ check_nist_file_name };
 
-diag(   q{Test check_nist_file_name from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_nist_file_name from Reference.pm v}
+      . $MIP::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,23 +61,17 @@ diag(   q{Test check_nist_file_name from Parameter.pm v}
 my $log = test_log( {} );
 
 ## Given nist info
-my %active_parameter = (
-    nist_call_set_vcf =>
-      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
-    nist_call_set_bed =>
-      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
-    nist_id       => { sample_1 => q{NA12878}, },
-    nist_versions => [qw{ 3.3.2 }],
-    reference_dir => catdir( $Bin, qw{ data references } ),
-    sample_ids    => [qw{ sample_1 }],
-);
-my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+my $file_name      = q{grch37_nist_hg001_-na12878_v3.3.2-.vcf};
+my $nist_id        = q{NA12878};
+my $nist_parameter = q{nist_call_set_vcf};
+my $nist_version   = q{3.3.2};
 
 my $is_ok = check_nist_file_name(
     {
-        active_parameter_href => \%active_parameter,
-        log                   => $log,
-        nist_parameters_ref   => \@nist_parameters,
+        file_name      => $file_name,
+        nist_id        => $nist_id,
+        nist_parameter => $nist_parameter,
+        nist_version   => $nist_version,
     }
 );
 
@@ -89,14 +79,14 @@ my $is_ok = check_nist_file_name(
 ok( $is_ok, q{Checked nist file name is defined in nist hash parameters} );
 
 ## Given an undefined file name
-$active_parameter{nist_call_set_bed}{q{3.3.2}}{NA12878} = undef;
 
 trap {
     check_nist_file_name(
         {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            nist_parameters_ref   => \@nist_parameters,
+            file_name      => undef,
+            nist_id        => $nist_id,
+            nist_parameter => $nist_parameter,
+            nist_version   => $nist_version,
         }
     )
 };

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -80,7 +80,7 @@ $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{sv_frequency_filter}           = 1;
 $active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
-$active_parameter{sv_fqa_vcfanno_config}         = catfile( $Bin,
+$active_parameter{sv_vcfanno_config}             = catfile( $Bin,
     qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{sv_svdb_query} = 1;
 $active_parameter{sv_svdb_query_db_files} =
@@ -100,7 +100,6 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -115,15 +114,14 @@ my %sample_info;
 
 my $is_ok = analysis_sv_annotate(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

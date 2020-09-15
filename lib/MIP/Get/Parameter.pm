@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,265 +13,29 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use List::MoreUtils qw { uniq };
 use Readonly;
-
-## MIPs lib/
-use MIP::Constants
-  qw{ $COLON $COMMA $DOUBLE_QUOTE $DOT $EMPTY_STR $EQUALS $PIPE $SEMICOLON @SINGULARITY_BIND_PATHS $SPACE $WITH_SINGULARITY };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_bin_file_path
-      get_dynamic_conda_path
-      get_env_method_cmds
       get_gatk_intervals
       get_install_parameter_attribute
-      get_package_env_attributes
       get_package_source_env_cmds
-      get_program_executables
       get_program_version
       get_programs_for_shell_installation
       get_recipe_resources
       get_recipe_attributes
-      get_vep_version
     };
 }
 
 ## Constants
-Readonly my $MINUS_ONE => -1;
-Readonly my $TWO       => 2;
-
-sub get_bin_file_path {
-
-## Function : Get the absolute path to the binary file
-## Returns  : $bin_file_path
-## Arguments: $bin_file              => Name of binary file
-##          : $conda_path            => Path to conda directory
-##          : $environment_href      => Hash with programs and their environments {REF}
-##          : $environment_key       => Key to the environment_href [program]
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bin_file;
-    my $conda_path;
-    my $environment_href;
-    my $environment_key;
-
-    my $tmpl = {
-        bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        conda_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$conda_path,
-        },
-        environment_href => {
-            default  => {},
-            required => 1,
-            store    => \$environment_href,
-        },
-        environment_key => {
-            defined  => 1,
-            required => 1,
-            store    => \$environment_key,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-
-    ## Get environment and set test path;
-    my $environment   = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-    my $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-
-    ## Return absolute path
-    return ( abs_path($bin_file_path), $environment );
-}
-
-sub get_dynamic_conda_path {
-
-## Function : Attempts to find path to directory with binary in conda env
-## Returns  : Path to directory
-## Arguments: $active_parameter_href  => Active parameter hash {REF}
-##          : $bin_file               => Bin file to test
-##          : $conda_bin_file         => Conda bin file name
-##          : $environment_key        => Key to conda environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $bin_file;
-    my $conda_bin_file;
-    my $environment_key;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default  => {},
-            required => 1,
-            store    => \$active_parameter_href,
-        },
-        bin_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$bin_file,
-        },
-        conda_bin_file => {
-            default => q{conda},
-            store   => \$conda_bin_file,
-        },
-        environment_key => {
-            store => \$environment_key,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Path qw{ get_conda_path };
-
-    ## Establish path to conda
-    if ( not $active_parameter_href->{conda_path} ) {
-
-        $active_parameter_href->{conda_path} =
-          get_conda_path( { bin_file => $conda_bin_file, } );
-    }
-    if (   not $active_parameter_href->{conda_path}
-        or not -d $active_parameter_href->{conda_path} )
-    {
-
-        return q{Failed to find default conda path};
-    }
-    my $conda_path = $active_parameter_href->{conda_path};
-
-    ## Get module and program environments in use
-    my %environment;
-
-    ## Load env
-    my ( $env_name, $env_method ) = get_package_env_attributes(
-        {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $environment_key,
-        }
-    );
-
-    ## Could not find recipe within env
-    if ( not $env_name ) {
-
-        ## Fall back to MIPs MAIN env
-        ( $env_name, $env_method ) = get_package_env_attributes(
-            {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{mip},
-            }
-        );
-    }
-
-    ## Get env load command
-    my @env_method_cmds = get_env_method_cmds(
-        {
-            action     => q{load},
-            env_name   => $env_name,
-            env_method => $env_method,
-        }
-    );
-
-    ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-    $environment{$environment_key} = [@env_method_cmds];
-
-    ## Get the bin file path
-    my ( $bin_file_path, $environment ) = get_bin_file_path(
-        {
-            bin_file         => $bin_file,
-            conda_path       => $conda_path,
-            environment_href => \%environment,
-            environment_key  => $environment_key,
-        }
-    );
-
-    ## Test if path exists
-    if (   not $bin_file_path
-        or not -f $bin_file_path )
-    {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $environment;
-    }
-
-    ## Get directory path
-    my @bin_path_dirs = File::Spec->splitdir($bin_file_path);
-    pop @bin_path_dirs;
-
-    return catdir(@bin_path_dirs);
-}
-
-sub get_env_method_cmds {
-
-## Function : Get the standard load and unload env command for environment method
-## Returns  : @env_method_cmds
-## Arguments: $action     => What to do with the environment
-##          : $env_method => Method used to load environment
-##          : $env_name   => Name of environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $action;
-    my $env_method;
-    my $env_name;
-
-    my $tmpl = {
-        action => {
-            allow       => [qw{ load unload }],
-            defined     => 1,
-            required    => 1,
-            store       => \$action,
-            strict_type => 1,
-        },
-        env_method => {
-            allow       => [qw{ conda }],
-            defined     => 1,
-            required    => 1,
-            store       => \$env_method,
-            strict_type => 1,
-        },
-        env_name => {
-            required    => 1,
-            store       => \$env_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-
-    my %method_cmd = (
-        conda => {
-            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
-            unload => [ ( conda_deactivate( {} ), ) ],
-        },
-    );
-
-    return ( @{ $method_cmd{$env_method}{$action} } );
-}
+Readonly my $TWO => 2;
 
 sub get_gatk_intervals {
 
@@ -435,51 +199,6 @@ sub get_install_parameter_attribute {
     return $parameter_href->{$parameter_name};
 }
 
-sub get_package_env_attributes {
-
-## Function : Get environment name and method for package (recipe, program or MIP)
-## Returns  : $env_name, $env_method or "undef"
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $package_name          => Package name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $package_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        package_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  ENV:
-    foreach my $env_name ( keys %{ $active_parameter_href->{load_env} } ) {
-
-        ## Found recipe within env
-        if ( exists $active_parameter_href->{load_env}{$env_name}{$package_name} ) {
-
-            ## Unpack
-            my $env_method = $active_parameter_href->{load_env}{$env_name}{method};
-            return $env_name, $env_method;
-        }
-    }
-    return;
-}
-
 sub get_package_source_env_cmds {
 
 ## Function : Get package source environment commands
@@ -511,15 +230,17 @@ sub get_package_source_env_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::Singularity qw{ parse_sing_bind_paths };
+    use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
+    use MIP::Environment::Container qw{ parse_container_bind_paths };
 
     ## Initilize variable
     my @source_environment_cmds;
 
     my ( $env_name, $env_method ) = get_package_env_attributes(
         {
-            active_parameter_href => $active_parameter_href,
-            package_name          => $package_name,
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $package_name,
         }
     );
 
@@ -529,8 +250,8 @@ sub get_package_source_env_cmds {
         ## Fall back to MIPs MAIN env
         ( $env_name, $env_method ) = get_package_env_attributes(
             {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{mip},
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
             }
         );
     }
@@ -542,8 +263,8 @@ sub get_package_source_env_cmds {
         push @source_environment_cmds, $prior_to_load_cmd;
     }
 
-    ## Append singularity bind variable to source_environment_cmds_ref if applicable
-    parse_sing_bind_paths(
+    ## Append container bind variable to source_environment_cmds_ref
+    parse_container_bind_paths(
         {
             active_parameter_href       => $active_parameter_href,
             package_name                => $package_name,
@@ -562,48 +283,6 @@ sub get_package_source_env_cmds {
     push @source_environment_cmds, @env_method_cmds;
 
     return @source_environment_cmds;
-}
-
-sub get_program_executables {
-
-## Function : Get the parameter file program executables per recipe
-## Returns  : uniq @program_executables
-## Arguments: $parameter_href => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Get all program executables
-    my @program_executables;
-
-    my $err_msg = q{No keys 'cache' and 'recipe' in parameter hash};
-    croak($err_msg) if ( not exists $parameter_href->{cache}{recipe} );
-
-  RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
-
-        if ( exists $parameter_href->{$recipe}{program_executables} ) {
-
-            push @program_executables,
-              @{ $parameter_href->{$recipe}{program_executables} };
-        }
-    }
-    ## Make unique and return
-    return uniq(@program_executables);
 }
 
 sub get_programs_for_shell_installation {
@@ -829,48 +508,6 @@ sub get_recipe_resources {
     ## Return recipe resource hash
     return %recipe_resource;
 
-}
-
-sub get_vep_version {
-
-## Function : Get version of VEP API in use
-## Returns  : $vep_version
-## Arguments: $vep_bin_path => Path to vep binary
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vep_bin_path;
-
-    my $tmpl = {
-        vep_bin_path => {
-            default     => q{vep},
-            defined     => 1,
-            store       => \$vep_bin_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    my @perl_commands = perl_nae_oneliners(
-        {
-            oneliner_name => q{get_vep_version},
-        }
-    );
-    my @get_vep_version_cmds = ( $vep_bin_path, $PIPE, @perl_commands );
-
-    my %vep_cmd_output = system_cmd_call(
-        {
-            command_string => join $SPACE,
-            @get_vep_version_cmds,
-        }
-    );
-
-    return $vep_cmd_output{output}[0];
 }
 
 1;

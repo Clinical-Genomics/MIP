@@ -25,7 +25,7 @@ use MIP::Constants qw{ $BACKWARD_SLASH $COLON $COMMA $DOUBLE_QUOTE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -70,7 +70,7 @@ open my $filehandle, q{>}, \$file_content
 
 ## Given install parameters
 my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{install_rd_dna_active_parameter}, } );
+  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
 my $is_ok = install_htslib(
     {
         active_parameter_href => \%active_parameter,
@@ -79,21 +79,8 @@ my $is_ok = install_htslib(
         filehandle            => $filehandle,
     }
 );
-
-my $expected =
-  [     $BACKWARD_SLASH
-      . $DOUBLE_QUOTE
-      . $BACKWARD_SLASH
-      . q{$MIP_BIND}
-      . $BACKWARD_SLASH
-      . $DOUBLE_QUOTE ];
-
 ## Then return TRUE
 ok( $is_ok, q{Executed install htslib recipe } );
-
-## Then append relative bind baths
-is_deeply( $active_parameter{singularity}{htslib}{program_bind_paths},
-    $expected, q{Add MIP_BIND relative bind path} );
 close $filehandle;
 
 done_testing();

@@ -200,10 +200,10 @@ sub update_memory_allocation {
 
 sub update_core_number_to_seq_mode {
 
-## Function : Update the number of cores to be used in the analysis according to sequencing mode requirements.
+## Function : Update the number of cores to be used in the analysis according to sequencing run type requirements.
 ## Returns  : $core_number
 ## Arguments: $core_number       => Number of cores to use in the analysis
-##          : $sequence_run_type => Type of sequencing [paired-end|single-end]
+##          : $sequence_run_type => Type of sequencing
 
     my ($arg_href) = @_;
 
@@ -218,7 +218,7 @@ sub update_core_number_to_seq_mode {
             strict_type => 1,
         },
         sequence_run_type => {
-            allow       => [qw{ paired-end single-end }],
+            allow       => [qw{ interleaved paired-end single-end }],
             required    => 1,
             store       => \$sequence_run_type,
             strict_type => 1,
@@ -227,17 +227,14 @@ sub update_core_number_to_seq_mode {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Second read direction if present
-    if ( $sequence_run_type eq q{paired-end} ) {
+    # Only 1 file and one process
+    $core_number = $core_number + 1;
 
-        # 2 processes per file
-        $core_number = $core_number + 2;
-    }
-    elsif ( $sequence_run_type eq q{single-end} ) {
+    return $core_number if ( $sequence_run_type ne q{paired-end} );
 
-        # Only 1 file and one process
-        $core_number = $core_number + 1;
-    }
+    # 2 processes per file
+    $core_number = $core_number + 1;
+
     return $core_number;
 }
 

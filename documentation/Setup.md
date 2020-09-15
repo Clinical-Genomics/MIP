@@ -139,6 +139,12 @@ Corresponding MIP references:
 ## Gene panel for the clinical test
 MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panels.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panels.bed`.  
 
+#### SpliceAI - Splicing predicition
+Annotations for all possible substitutions, 1 base insertions and 1-4 base deletions. Available from https://basespace.illumina.com/s/5u6ThOblecrh
+
+Corresponding MIP references:
+ - grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+ - grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
 
 [Bcftools]: http://www.htslib.org/
 [BedTools]: http://bedtools.readthedocs.org/en/latest/

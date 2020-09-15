@@ -7,7 +7,7 @@ custom_default_parameters:
   data_type: ARRAY
   default:
     - analysis_type
-    - gatk_path
+    - conda_path
     - infile_dirs
     - pedigree_fam_file
     - picardtools_path
@@ -19,6 +19,7 @@ custom_default_parameters:
     - star_fusion_reference_genome
     - store_file
     - temp_directory
+    - transcript_annotation_file_endings
   type: mip
 human_genome_reference:
   associated_recipe:
@@ -60,20 +61,30 @@ transcript_annotation:
     - arriba_ar
     - blobfish
     - gffcompare_ar
+    - picardtools_collectrnaseqmetrics
     - salmon_quant
     - star_aln
     - star_fusion
     - stringtie_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v31-.gtf
   exists_check: file
   is_reference: 1
   reference: reference_dir
   type: path
+transcript_annotation_file_endings:
+  associated_recipe:
+    - picardtools_collectrnaseqmetrics
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: mip
 library_type:
   associated_recipe:
-    - stringtie_ar
     - genebody_coverage
+    - picardtools_collectrnaseqmetrics
+    - stringtie_ar
   data_type: SCALAR
   default: reverse_stranded
   type: recipe_argument
@@ -86,21 +97,6 @@ gatk_logging_level:
     - gatk_variantfiltration
   data_type: SCALAR
   default: INFO
-  type: recipe_argument
-gatk_path:
-  associated_recipe:
-    - gatk_asereadcounter
-    - gatk_baserecalibration
-    - gatk_haplotypecaller
-    - gatk_splitncigarreads
-    - gatk_variantfiltration
-  data_type: SCALAR
-  type: path
-gatk_use_new_qual_calculator:
-  associated_recipe:
-    - gatk_haplotypecaller
-  data_type: SCALAR
-  default: 1
   type: recipe_argument
 infile_dirs:
   associated_recipe:
@@ -143,8 +139,10 @@ recipe_time:
     gzip_fastq: 2
     markduplicates: 8
     multiqc_ar: 1
+    picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 2
     preseq_ar: 2
+    qccollect_ar: 1
     rseqc: 3
     sacct: 1
     salmon_quant: 5
@@ -167,6 +165,7 @@ recipe_memory:
     gatk_variantfiltration: 8
     genebody_coverage: 8
     multiqc_ar: 10
+    picardtools_collectrnaseqmetrics: 5
     picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 25
@@ -200,8 +199,10 @@ recipe_core_number:
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
+    picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
+    qccollect_ar: 1
     rseqc: 1
     sacct: 1
     salmon_quant: 20
@@ -214,6 +215,7 @@ recipe_core_number:
 picardtools_path:
   associated_recipe:
     - markduplicates
+    - picardtools_collectrnaseqmetrics
     - picardtools_mergesamfiles
     - star_aln
   data_type: SCALAR
@@ -240,8 +242,6 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_executables:
-    - gzip
   type: recipe
 ## FastQC
 fastqc_ar:
@@ -411,7 +411,6 @@ star_fusion_min_junction_reads:
 star_fusion_pfam_db:
   associated_recipe:
     - star_fusion
-  build_file: 1
   data_type: SCALAR
   exists_check: directory
   is_reference: 1
@@ -467,6 +466,16 @@ picardtools_mergesamfiles:
   outfile_suffix: ".bam"
   program_executables:
     - sambamba
+  type: recipe
+## Picardtools CollectRnaSwqMetrics
+picardtools_collectrnaseqmetrics:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _collectrnaseqmetrics
+  outfile_suffix: ".txt"
   type: recipe
 ## StringTie
 stringtie_ar:
@@ -837,6 +846,62 @@ vep_features:
     - symbol
     - tsl
     - uniprot
+  type: recipe_argument
+vep_plugin:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: HASH
+  is_reference: 1
+  mandatory: no
+  type: recipe_argument
+vep_plugins_dir_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  is_reference: 1
+  mandatory: no
+  type: path
+  update_path: absolute_path
+## QCCollect
+qccollect_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _qc_metrics
+  outfile_suffix: ".yaml"
+  type: recipe
+qccollect_eval_metric_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: qc_eval_metric_-v1.2-.yaml
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+qccollect_regexp_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: qc_regexp_-v1.26-.yaml
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+qccollect_sampleinfo_file:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  type: recipe_argument
+  update_path: absolute_path
+qccollect_skip_evaluation:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 0
   type: recipe_argument
 ## MultiQC
 multiqc_ar:

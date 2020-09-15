@@ -21,10 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $COLON $NEWLINE $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,12 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
 
 BEGIN {
 
@@ -54,7 +49,7 @@ BEGIN {
 }
 
 use MIP::Language::Shell qw{ build_shebang };
-use MIP::Gnu::Bash qw{ gnu_set };
+use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
 diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}
@@ -68,7 +63,6 @@ diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}
 
 ###  PREPROCESSING
 
-## Initialize variables
 # Test input from sacct command
 my $test_data_file_path =
   catfile( $Bin, qw{ data test_data slurm_reformat_sacct_output_input.txt } );
@@ -81,31 +75,28 @@ my @reformat_sacct_headers =
 my $bash_file_path = catfile( $Bin, q{test_slurm_reformat_sacct_output.sh} );
 
 # File with sacct output to reformat
-my $log_file_path = catfile( $Bin, q{slurm_reformat_sacct_output.txt} );
+my $sacct_output_path = catfile( $Bin, q{slurm_reformat_sacct_output.txt} );
 
 # Output file with reformated sacct output
-my $outfile_path = $log_file_path . q{.status};
+my $outfile_path = $sacct_output_path . q{.status};
 
 ## Create test file
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
+my $bash_filehandle = IO::Handle->new();
 
-# Open filehandle
-open $filehandle, q{>}, $bash_file_path
+open $bash_filehandle, q{>}, $bash_file_path
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 # Write reformat command to bash file
 my @commands = ( q{less}, $test_data_file_path );
 _build_test_file_recipe(
     {
-        bash_file_path             => $bash_file_path,
         commands_ref               => \@commands,
-        filehandle                 => $filehandle,
-        log_file_path              => $log_file_path,
+        filehandle                 => $bash_filehandle,
+        log_file_path              => $sacct_output_path,
         reformat_sacct_headers_ref => \@reformat_sacct_headers,
     }
 );
-close $filehandle;
+close $bash_filehandle;
 
 # File is created and has content
 ok( -s $bash_file_path, q{Create bash} );
@@ -120,17 +111,17 @@ my $ok = run( command => [ q{bash}, $bash_file_path ] );
 ok( -s $outfile_path, q{Created: } . $outfile_path );
 
 # Create anonymous filehandle
-$filehandle = IO::Handle->new();
+my $outfile_filehandle = IO::Handle->new();
 
 # Open filehandle
-open $filehandle, q{<}, $outfile_path
+open $outfile_filehandle, q{<}, $outfile_path
   or croak( q{Cannot read '} . $outfile_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Then the tests should be passed (check the _parse_outfile sub for more information on the tests)
-_parse_outfile( { filehandle => $filehandle, } );
+_parse_outfile( { filehandle => $outfile_filehandle, } );
 
 ### CLEANUP
-close $filehandle;
+close $outfile_filehandle;
 
 # Remove test files
 unlink $bash_file_path, $outfile_path or croak q{Could not remove test files};
@@ -145,8 +136,7 @@ sub _build_test_file_recipe {
 
 ## Function : Builds the test file for testing the housekeeping function
 ## Returns  :
-## Arguments: $bash_file_path             => Test file to write recipe to
-##          : $commands_ref               => Commands to stream to perl oneliner
+## Arguments: $commands_ref               => Commands to stream to perl oneliner
 ##          : $filehandle                 => Sbatch filehandle to write to
 ##          : $log_file_path              => The log file {REF}
 ##          : $reformat_sacct_headers_ref => Reformated sacct headers
@@ -154,7 +144,6 @@ sub _build_test_file_recipe {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bash_file_path;
     my $commands_ref;
     my $filehandle;
     my $log_file_path;
@@ -183,10 +172,6 @@ sub _build_test_file_recipe {
             required => 1,
             store    => \$filehandle,
         },
-        bash_file_path => {
-            required => 1,
-            store    => \$bash_file_path,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
@@ -197,6 +182,7 @@ sub _build_test_file_recipe {
             filehandle => $filehandle,
         }
     );
+    print {$filehandle} $NEWLINE;
 
     ## Set shell attributes
     gnu_set(
@@ -220,7 +206,7 @@ sub _build_test_file_recipe {
 
 sub _parse_outfile {
 
-## Function : Test the outfile from the bash script is properly formatted
+## Function : Test that the outfile from the bash script is properly formatted
 ## Returns  :
 ## Aeguments: $filehandle => Filehandle to read from
 

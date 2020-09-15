@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.13;
+our $VERSION = 1.15;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -44,7 +44,6 @@ sub _build_usage {
 
     option(
         q{analysis_constant_path} => (
-            cmd_aliases   => [qw{ acp }],
             documentation => q{Set the analysis constant path},
             is            => q{rw},
             isa           => Str,
@@ -53,8 +52,7 @@ sub _build_usage {
 
     option(
         q{analysisrunstatus} => (
-            cmd_aliases => [qw{ ars }],
-            cmd_tags    => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
 q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
             is  => q{rw},
@@ -64,7 +62,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{analysis_type} => (
-            cmd_aliases   => [qw{ at }],
             cmd_tags      => [q{sample_id=analysis_type}],
             documentation => q{Type of analysis},
             is            => q{rw},
@@ -74,7 +71,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{cluster_constant_path} => (
-            cmd_aliases   => [qw{ ccp }],
             documentation => q{Set the cluster constant path},
             is            => q{rw},
             isa           => Str,
@@ -93,7 +89,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{config_file_analysis} => (
-            cmd_aliases   => [qw{ cfa }],
             cmd_tags      => [q{YAML}],
             documentation => q{Write YAML configuration file the analysis parameters},
             is            => q{rw},
@@ -113,7 +108,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{exclude_contigs} => (
-            cmd_aliases   => [qw{ exc }],
             documentation => q{Exclude contigs from analysis},
             is            => q{rw},
             isa           => ArrayRef,
@@ -131,7 +125,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{gatk_logging_level} => (
-            cmd_aliases   => [qw{ gll }],
             cmd_tags      => [q{Default: INFO}],
             documentation => q{Set the GATK log level},
             is            => q{rw},
@@ -140,17 +133,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
-        q{gatk_path} => (
-            cmd_aliases   => [qw{ gtp }],
-            documentation => q{Path to GATK},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
             documentation => q{Use large page memory},
             is            => q{rw},
             isa           => Bool,
@@ -159,7 +142,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{outdata_dir} => (
-            cmd_aliases   => [qw{ odd }],
             documentation => q{Data output directory},
             is            => q{rw},
             isa           => Str,
@@ -168,7 +150,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{outscript_dir} => (
-            cmd_aliases   => [qw{ osd }],
             documentation => q{Script files (.sh) output directory},
             is            => q{rw},
             isa           => Str,
@@ -177,7 +158,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{pedigree_file} => (
-            cmd_aliases   => [qw{ ped }],
+            cmd_aliases   => [qw{ pedigree }],
             cmd_tags      => [q{YAML}],
             documentation => q{Meta data on samples},
             is            => q{rw},
@@ -187,7 +168,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{platform} => (
-            cmd_aliases   => [qw{ pla }],
             cmd_tags      => [q{Default: ILLUMINA}],
             documentation => q{Platform/technology used to produce the reads},
             is            => q{rw},
@@ -197,7 +177,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{print_recipe} => (
-            cmd_aliases   => [qw{ pr }],
             documentation => q{Print all recipes that are supported},
             is            => q{rw},
             isa           => Bool,
@@ -206,7 +185,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{print_recipe_mode} => (
-            cmd_aliases   => [qw{ prm }],
             documentation => q{Print all recipes that are supported in [mode]},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
@@ -215,7 +193,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{project_id} => (
-            cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
             is            => q{rw},
             isa           => Str,
@@ -234,7 +211,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{reference_info_file} => (
-            cmd_aliases   => [qw{ rif }],
             cmd_tags      => [q{YAML}],
             documentation => q{File for reference info used in the analysis},
             is            => q{rw},
@@ -244,8 +220,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{sacct} => (
-            cmd_aliases => [qw{ sac }],
-            cmd_tags    => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
               q{Generating sbatch script for SLURM info on each submitted job},
             is  => q{rw},
@@ -255,8 +230,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
+            cmd_tags => [
 q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
             ],
             documentation => q{Format and fields of sacct output},
@@ -267,7 +241,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{sample_ids} => (
-            cmd_aliases   => [qw{ spi }],
             documentation => q{Sample ids},
             is            => q{rw},
             isa           => q{ArrayRef[Str]},
@@ -276,7 +249,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{sample_info_file} => (
-            cmd_aliases   => [qw{ sif }],
             cmd_tags      => [q{YAML}],
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
@@ -295,7 +267,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{submission_profile} => (
-            cmd_aliases   => [qw{ sbp }],
             documentation => q{Submission profile},
             is            => q{rw},
             isa           => enum( [qw{ slurm }] ),
@@ -304,7 +275,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{supported_capture_kit} => (
-            cmd_aliases   => [qw{ sck }],
             cmd_tags      => [q{acronym=file.bed}],
             documentation => q{Set the capture kit acronym shortcut in pedigree file},
             is            => q{rw},
@@ -314,7 +284,7 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{temp_directory} => (
-            cmd_aliases   => [qw{ tmd }],
+            cmd_aliases   => [qw{ temp }],
             cmd_tags      => [q{Default: "$outdata_dir/$SLURM_JOB_ID"}],
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
@@ -324,21 +294,10 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{version_collect} => (
-            cmd_aliases   => [qw{ verc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Collects executable versions across the analysis},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{with_singularity} => (
-            cmd_aliases => [qw{ wsi }],
-            documentation =>
-              q{Run programs inside a singularity container where available},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

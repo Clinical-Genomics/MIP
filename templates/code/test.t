@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
 use 5.026;
 use Carp;
@@ -58,6 +58,8 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
+
+## When
 
 ## Then
 ########################

@@ -2,9 +2,18 @@
 
 title = "Vcfanno configuration file" 
 
+[functions]
+file = "TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+
 [[annotation]]
 file="TEST_REFERENCES!/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
 fields = ["AF", "AF_POPMAX"]
 ops=["self", "self"]
 names=["GNOMADAF", "GNOMADAF_POPMAX"]
 
+[[annotation]]
+file="TEST_REFERENCES!/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz"
+preops={ fields = ["SpliceAI"], ops = ["lua:spliceai_max_score(vals)"], names = ["SpliceAI_DS_max"] }
+fields=["SpliceAI", "SpliceAI_DS_max"]
+ops=["self", "self"]
+names=["SpliceAI", "SpliceAI_DS_max"]

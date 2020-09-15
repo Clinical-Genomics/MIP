@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,30 +40,30 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_vep_custom_annotation }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Vep}            => [qw{ check_vep_custom_annotation }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_vep_custom_annotation };
+use MIP::Vep qw{ check_vep_custom_annotation };
 
-diag(   q{Test check_vep_custom_annotation from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_vep_custom_annotation from Vep.pm v}
+      . $MIP::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
 my $log = test_log( {} );
 
 ## Given a undefined vep_custom_annotation
 my %vep_custom_ann_undef;
 my $is_not_ok = check_vep_custom_annotation(
     {
-        log                 => $log,
         vep_custom_ann_href => \%vep_custom_ann_undef,
     }
 );
@@ -83,14 +79,14 @@ my %vep_custom_ann = (
         key                      => q{genomic_superdups_frac_match},
         file_type                => q{bed},
         path                     => catfile(
-            $Bin, qw{ data references grch37_genomics_super_dups_-20181009.bed.gz }
+            $Bin,
+            qw{ data references grch37_genomic_superdups_reformated_-20181009-.bed.gz }
         ),
     },
 );
 
 my $is_ok = check_vep_custom_annotation(
     {
-        log                 => $log,
         vep_custom_ann_href => \%vep_custom_ann,
     }
 );
@@ -103,7 +99,6 @@ $vep_custom_ann{not_valid_annotation} = [q{not_a_valid_ref}];
 trap {
     check_vep_custom_annotation(
         {
-            log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann,
         }
     )
@@ -127,7 +122,6 @@ my %vep_custom_ann_not_valid_option = (
 trap {
     check_vep_custom_annotation(
         {
-            log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_not_valid_option,
         }
     )
@@ -154,7 +148,6 @@ my %vep_custom_ann_bad_path = (
 trap {
     check_vep_custom_annotation(
         {
-            log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_path,
         }
     )
@@ -176,7 +169,6 @@ my %vep_custom_ann_bad_key = (
 trap {
     check_vep_custom_annotation(
         {
-            log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_key,
         }
     )
