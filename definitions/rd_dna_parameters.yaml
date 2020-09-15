@@ -209,7 +209,7 @@ recipe_memory:
     - mip
   data_type: HASH
   default:
-    cadd_ar: 4
+    cadd_ar: 6
     chanjo_sexcheck: 2
     chromograph_cov: 5
     chromograph_upd: 5
@@ -302,7 +302,7 @@ recipe_time:
     sv_reformat: 1
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
-    telomerecat_ar: 1
+    telomerecat_ar: 5
     tiddit: 20
     tiddit_coverage: 5
     upd_ar: 1
@@ -393,7 +393,7 @@ bwa_mem:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -414,7 +414,7 @@ bwa_mem2:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
