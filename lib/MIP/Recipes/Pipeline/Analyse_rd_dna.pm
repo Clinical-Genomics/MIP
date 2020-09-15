@@ -556,21 +556,14 @@ sub pipeline_analyse_rd_dna {
         bwa_mem2          => undef,
         cadd_ar           => \&analysis_cadd,
         chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-<<<<<<< HEAD
-        chromograph_ar    => undef,                          # Depends on pedigree
-        cnvnator_ar       => \&analysis_cnvnator,
-        deepvariant       => \&analysis_deepvariant,
-        delly_call        => \&analysis_delly_call,
-        delly_reformat    => \&analysis_delly_reformat,
-=======
         chromograph_cov   => \&analysis_chromograph_cov,
         chromograph_upd   => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
         : undef,                                              # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
+        deepvariant       => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
->>>>>>> 3bfe19f7ca4dc5d40a749224e7b57f968d58472c
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         fastqc_ar                   => \&analysis_fastqc,

@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -117,7 +117,9 @@ sub analysis_glnexus {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Glnexus qw{ glnexus_merge };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -168,13 +170,22 @@ sub analysis_glnexus {
             );
             push @genotype_infile_paths, $sample_io{in}{file_path};
         };
-    use Data::Printer;
-    p @genotype_infile_paths;
     
- #   my @outfile_paths       = @{ $io{out}{file_paths} };
- #   my $outfile_path_prefix = $io{out}{file_path_prefix};
- #   my %outfile_path        = %{ $io{out}{file_path_href} };
- #   my $outfile_suffix      = $io{out}{file_suffix};
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $case_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$case_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            recipe_name            => $recipe_name,
+        }
+    );
+
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -206,24 +217,43 @@ sub analysis_glnexus {
             filehandle => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
             config => "DeepVariant",
-            stdoutfile_path => "test",
         }
     );
+    
+    print {$filehandle} $PIPE . $SPACE;
+    
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => "-",
+        }
+    );
+
+    print {$filehandle} $PIPE . $SPACE;
+    
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            stdoutfile_path => $outfile_path,
+            write_to_stdout => 1,
+        }
+    );
+
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
-=head
+
         ## Collect QC metadata info for later use
          set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_paths[0],
+                path             => "test",
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
-=cut
+
         submit_recipe(
             {
                 base_command         => $profile_base_command,

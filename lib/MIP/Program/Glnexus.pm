@@ -77,7 +77,6 @@ sub glnexus_merge {
 
     push @commands, q{--config} . $SPACE . $config;
     push @commands, join $SPACE, @{$infile_paths_ref};
-    push @commands, join $SPACE, q{1>} . $SPACE . $stdoutfile_path;
 
     unix_write_to_file(
         {
