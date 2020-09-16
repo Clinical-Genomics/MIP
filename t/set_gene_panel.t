@@ -123,7 +123,7 @@ like(
     q{Throw warning log message}
 );
 
-## Given a file without gene_panle information
+## Given a file without gene_panel information
 trap {
     set_gene_panel(
         {
@@ -139,7 +139,7 @@ trap {
 };
 
 ## Then throw fatal message and exit
-like( $trap->stderr, qr/FATAL/xms,  q{Throw fatal log message} );
-like( $trap->die,    qr/Unable/xms, q{Die on failing regexp} );
+like( $trap->stderr, qr/Unable \s to \s parse /xms, q{Throw fatal log message} );
+like( $trap->die,    qr/Unable/xms,                 q{Die on failing regexp} );
 
 done_testing();

@@ -510,10 +510,10 @@ sub _get_gene_panel_info {
     my ($arg_href) = @_;
 
     # If line starts with gene panel comment
-    my $gene_panel_info_regexp = q?'if (/ \A \#\# (gene_panel= .*) \n /xms ){ ?;
+    my $gene_panel_info_regexp = q?'if (/ \A [#]{2} (gene_panel= .*) \n /xms ){ ?;
 
     # Append ":". Skip rest if it's a comment
-    $gene_panel_info_regexp .= q?print $1 . q{:}} elsif (/ \A \#\w /xms ) {last;}'?;
+    $gene_panel_info_regexp .= q?print $1 . q{:}} elsif (/ \A [#]{1} \w /xms ) {last;}'?;
 
     return $gene_panel_info_regexp;
 }
