@@ -71,7 +71,7 @@ my $return = track_job_id_status(
         filehandle => $filehandle,
     }
 );
-is( $return, 0, q{Do not write command to track job_ids} );
+is( $return, 0, q{Skip sub} );
 
 ## Given a job_id and a log path
 my @job_ids       = (qw{ job_id_test });
