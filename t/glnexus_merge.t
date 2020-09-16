@@ -59,12 +59,17 @@ diag(   q{Test glnexus_merge from Glnexus.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
+
 my @function_base_commands = qw{ glnexus_cli };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    config => {
+        input           => q{DeepVariant},
+        expected_output => q{--config } . q{DeepVariant},
+    },
+    infile_paths_ref => {
+        inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
+        expected_output => catfile(qw{ dir infile1.vcf }),
     },
 );
 

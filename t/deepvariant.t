@@ -83,7 +83,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    bamfile => {
+    infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--reads=} . catfile(qw{ dir infile.bam }),
     },
