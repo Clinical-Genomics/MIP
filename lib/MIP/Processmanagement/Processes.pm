@@ -56,6 +56,7 @@ BEGIN {
       limit_job_id_string
       print_wait
       submit_recipe
+      track_job_id_status
       write_job_ids_to_file
     };
 }
@@ -1884,6 +1885,68 @@ sub submit_recipe {
         }
     );
     return 1;
+}
+
+sub track_job_id_status {
+
+## Function : Write command to track job_ids status
+## Returns  :
+## Arguments: $filehandle              => Filehandle to write to
+##          : $job_ids_ref             => Job ids
+##          : $log_file_path           => Log file to write job_id progress to
+##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $job_ids_ref;
+    my $log_file_path;
+    my $sacct_format_fields_ref;
+
+    ## Default(s)
+    my $submission_profile;
+
+    my $tmpl = {
+        filehandle => { required => 1, store => \$filehandle, },
+        job_ids_ref   => { default     => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path => { strict_type => 1,  store => \$log_file_path, },
+        sacct_format_fields_ref => {
+            default     => [],
+            store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Workloadmanager::Slurm qw{ slurm_track_progress };
+
+    return 0
+      if (  not @{$job_ids_ref}
+        and not defined $log_file_path
+        and not $log_file_path );
+
+    if ( $submission_profile eq q{slurm} ) {
+        ## Output SLURM info on each job via sacct command
+        ## and write to log file path
+
+        slurm_track_progress(
+            {
+                filehandle              => $filehandle,
+                job_ids_ref             => $job_ids_ref,
+                log_file_path           => $log_file_path,
+                sacct_format_fields_ref => $sacct_format_fields_ref,
+            }
+        );
+    }
+    return;
 }
 
 sub write_job_ids_to_file {
