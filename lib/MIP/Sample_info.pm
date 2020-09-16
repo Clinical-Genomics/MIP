@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.36;
+    our $VERSION = 1.37;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -612,8 +612,6 @@ sub set_gene_panel {
 ## Returns  :
 ## Arguments: $aggregate_gene_panel_file => Database file
 ##          : $aggregate_gene_panels_key => Database key i.e. select or range
-##          : $case_id                   => Case ID
-##          : $log                       => Log object
 ##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and case hash {REF}
 
@@ -622,8 +620,6 @@ sub set_gene_panel {
     ## Flatten argument(s)
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
-    my $case_id;
-    my $log;
     my $recipe_name;
     my $sample_info_href;
 
@@ -635,17 +631,6 @@ sub set_gene_panel {
             required    => 1,
             store       => \$aggregate_gene_panels_key,
             strict_type => 1,
-        },
-        case_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$case_id,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         recipe_name => {
             defined     => 1,
@@ -663,98 +648,67 @@ sub set_gene_panel {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ($aggregate_gene_panel_file) {
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Environment::Child_process qw{ child_process };
 
-        # Collect each gene panel features
-        my %gene_panel;
-        my %header = (
-            display_name => q{display_name},
-            gene_panel   => q{gene_panel},
-            updated_at   => q{updated_at},
-            version      => q{version},
-        );
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-        # Execute perl
-        my $sub_database_regexp = q?perl -nae '?;
+    return if ( not $aggregate_gene_panel_file );
 
-        # If line starts with gene panel comment
-        $sub_database_regexp .= q?if ($_=~/^##gene_panel=/)? . $SPACE;
-
-        # Remove newline char and split fields
-        $sub_database_regexp .= q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
-
-        # Join fields with comma separator appending ":". Skip rest if it's a comment
-        $sub_database_regexp .=
-          q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
-
-        # Collect header_lines(s) from select_file header
-        my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;
-
-        # Split each gene panel meta data header line into array element
-        my @header_lines = split /:/sxm, $ret;
-
-      LINE:
-        foreach my $line (@header_lines) {
-
-            # Split each member database line into features
-            my @features = split /,/sxm, $line;
-
-          ELEMENT:
-            foreach my $feature_element (@features) {
-
-              KEY_VALUE:
-                foreach my $gene_panel_header_element ( keys %header ) {
-
-                    # Parse the features using defined header keys
-                    if ( $feature_element =~ /$gene_panel_header_element=/sxm ) {
-
-                        my @temps = split /=/sxm, $feature_element;
-
-                        # Value
-                        $gene_panel{ $header{$gene_panel_header_element} } =
-                          $temps[1];
-                        last;
-                    }
-                }
-            }
-
-            if ( defined $gene_panel{gene_panel} ) {
-
-                # Create unique gene panel ID
-                my $gene_panel_name = $gene_panel{gene_panel};
-
-                ## Add new entries
-              FEATURE:
-                foreach my $feature ( keys %gene_panel ) {
-
-                    $sample_info_href->{$recipe_name}
-                      {$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature}
-                      = $gene_panel{$feature};
-                }
-            }
-            else {
-
-                $log->warn( q{Unable to write}
-                      . $SPACE
-                      . $aggregate_gene_panels_key
-                      . $SPACE
-                      . q{aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header.}
-                      . $NEWLINE );
-            }
-
-            # Reset hash for next line
-            %gene_panel = ();
+    # Collect each gene panel features
+    my @get_gene_panel_header_cmds = perl_nae_oneliners(
+        {
+            oneliner_name  => q{get_gene_panel_header},
+            stdinfile_path => $aggregate_gene_panel_file,
         }
+    );
 
-        # Call set_processing_metafile_in_sample_info with case parameter
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $aggregate_gene_panels_key,
-                sample_info_href => $sample_info_href,
-                path             => $aggregate_gene_panel_file,
-            }
-        );
+    my %return = child_process(
+        {
+            commands_ref => \@get_gene_panel_header_cmds,
+            process_type => q{open3},
+        }
+    );
+
+    my $ret = $return{stdouts_ref}[0]
+      or $log->logdie(
+        qq{Unable to parse gene panel information from $aggregate_gene_panel_file});
+
+  LINE:
+
+    # Loop over each gene panel meta data header line
+    foreach my $line ( split /:/sxm, $ret ) {
+
+        # Split each info line into gene panel hash
+        my %gene_panel = ( split /[,=]/sxm, $line );
+
+        # Gene panel name must exist
+        if (    ( defined $gene_panel{gene_panel} )
+            and ( not $gene_panel{gene_panel} eq $EMPTY_STR ) )
+        {
+
+            # Create unique gene panel ID
+            my $gene_panel_name = $gene_panel{gene_panel};
+            $sample_info_href->{$recipe_name}{$aggregate_gene_panels_key}{gene_panel}
+              {$gene_panel_name} = \%gene_panel;
+        }
+        else {
+
+            $log->warn(
+qq{Unable to write $aggregate_gene_panels_key aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] in aggregate gene panel(s) header.}
+            );
+        }
     }
+
+    # Call set_processing_metafile_in_sample_info with case parameter
+    set_processing_metafile_in_sample_info(
+        {
+            metafile_tag     => $aggregate_gene_panels_key,
+            sample_info_href => $sample_info_href,
+            path             => $aggregate_gene_panel_file,
+        }
+    );
     return;
 }
 

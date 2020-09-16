@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -68,45 +64,44 @@ my $aggregate_gene_panel_file =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 my $aggregate_gene_panels_key = q{select_file};
 my $gene_panel                = q{TEST};
-my $case_id_test              = q{case_id};
 my $recipe_name_test          = q{vcfparser_ar};
 my %sample_info;
 
 my %header_info = (
-    display_name => q{gene_panel_test},
-    gene_panel   => $gene_panel,
-    updated_at   => q{2016-12-08},
-    version      => q{1.0},
+    $gene_panel => {
+        display_name => q{gene_panel_test},
+        gene_panel   => $gene_panel,
+        updated_at   => q{2016-12-08},
+        version      => q{1.0},
+    }
 );
 
+## Given no aggregate_gene_panel_file
 set_gene_panel(
     {
-        aggregate_gene_panel_file => $aggregate_gene_panel_file,
         aggregate_gene_panels_key => $aggregate_gene_panels_key,
-        case_id                   => $case_id_test,
-        log                       => $log,
         recipe_name               => $recipe_name_test,
         sample_info_href          => \%sample_info,
     }
 );
 
-is(
-    exists $sample_info{$recipe_name_test}{$aggregate_gene_panels_key}
-      {gene_panel}{$gene_panel},
-    1,
-    q{Gene panel key added to $sample_info}
+## Then don't set gene panel
+is( $sample_info{$recipe_name_test}{$aggregate_gene_panels_key},
+    undef, q{Leave gene panel unset if no gene panel file} );
+
+## Given a bed like file with gene panel information
+set_gene_panel(
+    {
+        aggregate_gene_panel_file => $aggregate_gene_panel_file,
+        aggregate_gene_panels_key => $aggregate_gene_panels_key,
+        recipe_name               => $recipe_name_test,
+        sample_info_href          => \%sample_info,
+    }
 );
 
-while ( my ( $key, $value ) = each %header_info ) {
-
-## Test gene panel info
-    my $set_header_value =
-      $sample_info{$recipe_name_test}{$aggregate_gene_panels_key}{gene_panel}
-      {$gene_panel}{$key};
-
-    is( $set_header_value, $value,
-        q{Gene panel header info value for key: } . $key . q{ added to $sample_info} );
-}
+## Then set gene panel
+is_deeply( $sample_info{$recipe_name_test}{$aggregate_gene_panels_key}{gene_panel},
+    \%header_info, q{Set gene panel} );
 
 ## Given a not valid gene panel
 trap {
@@ -115,8 +110,6 @@ trap {
             aggregate_gene_panel_file =>
               catfile( $Bin, qw{ data test_data not_valid_gene_panel.bed } ),
             aggregate_gene_panels_key => $aggregate_gene_panels_key,
-            case_id                   => $case_id_test,
-            log                       => $log,
             recipe_name               => $recipe_name_test,
             sample_info_href          => \%sample_info,
         }
@@ -127,7 +120,26 @@ trap {
 like(
     $trap->stderr,
     qr/Unable \s+ to \s+ write \s+ select_file/xms,
-    q{Throw fatal log message}
+    q{Throw warning log message}
 );
+
+## Given a file without gene_panle information
+trap {
+    set_gene_panel(
+        {
+            aggregate_gene_panel_file => catfile(
+                $Bin,
+                qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
+            ),
+            aggregate_gene_panels_key => $aggregate_gene_panels_key,
+            recipe_name               => $recipe_name_test,
+            sample_info_href          => \%sample_info,
+        }
+    )
+};
+
+## Then throw fatal message and exit
+like( $trap->stderr, qr/FATAL/xms,  q{Throw fatal log message} );
+like( $trap->die,    qr/Unable/xms, q{Die on failing regexp} );
 
 done_testing();
