@@ -116,15 +116,15 @@ sub analysis_smncopynumbercaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{get_io_files};
-    use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources};
-    use MIP::Language::Perl qw{perl_base};
-    use MIP::Program::Gnu::Coreutils qw{gnu_echo};
-    use MIP::Parse::File qw{parse_io_outfiles};
-    use MIP::Processmanagement::Processes qw{submit_recipe};
-    use MIP::Program::Smncopynumbercaller qw{smn_caller};
-    use MIP::Sample_info qw{set_file_path_to_store set_recipe_outfile_in_sample_info};
-    use MIP::Script::Setup_script qw{setup_script};
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Language::Perl qw{ perl_base };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Smncopynumbercaller qw{ smn_caller };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -334,7 +334,7 @@ sub _use_sample_id_in_output {
         );
         push @perl_commands,
           (
-            $SINGLE_QUOTE, qq{s/$file_name_prefix/$sample_id/gc},
+            $SINGLE_QUOTE, qq{s/$file_name_prefix/$sample_id/g},
             $SINGLE_QUOTE, $outfile_path
           );
         say {$filehandle} join $SPACE, @perl_commands;
