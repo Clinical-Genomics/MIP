@@ -33,7 +33,7 @@ BEGIN {
 
 sub analysis_deepvariant {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Returns gvcfs from bam files using DeepVariant caller.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -130,7 +130,6 @@ sub analysis_deepvariant {
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_io_files };
 
     ### PREPROCESSING:
 
@@ -148,7 +147,7 @@ sub analysis_deepvariant {
             stream         => q{out},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{out}{file_path_prefix};
     my $infile_suffix      = $io{out}{file_suffix};
@@ -188,7 +187,6 @@ sub analysis_deepvariant {
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -228,19 +226,6 @@ sub analysis_deepvariant {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    ## my @concat_vcf_paths;
-    ## push @concat_vcf_paths, $outfile_path;
-    set_io_files(
-        {
-            chain_id       => $job_id_chain,
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            file_paths_ref => [$outfile_path],
-            recipe_name    => $recipe_name,
-            stream         => q{out},
-        }
-    );
-
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
@@ -254,7 +239,6 @@ sub analysis_deepvariant {
             }
         );
 
-        ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
         submit_recipe(
             {
                 base_command         => $profile_base_command,

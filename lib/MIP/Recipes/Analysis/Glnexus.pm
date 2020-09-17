@@ -34,7 +34,7 @@ BEGIN {
 
 sub analysis_glnexus {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Merges gvcfs from DeepVariant to generate a cohort vcf.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -138,10 +138,8 @@ sub analysis_glnexus {
             recipe_name    => $recipe_name,
         }
     );
-    my $recipe_mode          = $active_parameter_href->{$recipe_name};
-    my $recipe_files_tracker = 0;
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
-    ## Gatk genotype is most safely processed in single thread mode, but we need some java heap allocation
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -153,8 +151,6 @@ sub analysis_glnexus {
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
-
-    my $analysis_type;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -170,7 +166,6 @@ sub analysis_glnexus {
             }
         );
         push @genotype_infile_paths, $sample_io{in}{file_path};
-        $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     }
 
     my %io = parse_io_outfiles(
@@ -213,7 +208,7 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $config_type = q{DeepVariant} . uc $analysis_type;
+    my $config_type = q{DeepVariant} . uc $consensus_analysis_type;
 
     glnexus_merge(
         {
@@ -222,7 +217,6 @@ sub analysis_glnexus {
             config           => $config_type,
         }
     );
-
     print {$filehandle} $PIPE . $SPACE;
 
     bcftools_view(
@@ -231,7 +225,6 @@ sub analysis_glnexus {
             infile_path => $DASH,
         }
     );
-
     print {$filehandle} $PIPE . $SPACE;
 
     htslib_bgzip(

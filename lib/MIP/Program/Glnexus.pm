@@ -42,6 +42,8 @@ sub glnexus_merge {
     my $config;
     my $filehandle;
     my $infile_paths_ref;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
@@ -64,6 +66,14 @@ sub glnexus_merge {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
             strict_type => 1,
@@ -77,6 +87,15 @@ sub glnexus_merge {
 
     push @commands, q{--config} . $SPACE . $config;
     push @commands, join $SPACE, @{$infile_paths_ref};
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
 
     unix_write_to_file(
         {
