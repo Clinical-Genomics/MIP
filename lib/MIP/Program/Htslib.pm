@@ -41,6 +41,7 @@ sub htslib_bgzip {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $threads                => Number of threads to use
 ##          : $write_to_stdout        => Write on standard output, keep original files unchanged
 
     my ($arg_href) = @_;
@@ -55,6 +56,7 @@ sub htslib_bgzip {
     ## Default(s)
     my $decompress;
     my $force;
+    my $threads;
     my $write_to_stdout;
 
     my $tmpl = {
@@ -86,6 +88,11 @@ sub htslib_bgzip {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
+        threads => {
+            allow => qr/ \A \d+ \z /xms,
+            store => \$threads,
+            strict_type => 1,
+        },
         write_to_stdout => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -116,6 +123,11 @@ sub htslib_bgzip {
     if ($infile_path) {
 
         push @commands, $infile_path;
+    }
+
+    if ($threads) {
+
+        push @commands, q{--threads} . $SPACE . $threads;
     }
 
     push @commands,
