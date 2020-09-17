@@ -147,7 +147,7 @@ sub analysis_smncopynumbercaller {
     );
 
     my @infile_paths;
-    my %sample_file_path_prefixes;
+    my %sample_file_prefix;
     SAMPLE_ID:
     foreach my $sample_id (@{$active_parameter_href->{sample_ids}}) {
 
@@ -161,10 +161,11 @@ sub analysis_smncopynumbercaller {
                 stream         => q{in},
             }
         );
+        my $file_name_prefix = $sample_io{in}{file_name_prefix};
         my $file_path_prefix = $sample_io{in}{file_path_prefix};
         my $file_suffix = $sample_io{in}{file_suffix};
         push @infile_paths, $file_path_prefix . $file_suffix;
-        $sample_file_path_prefixes{$sample_id} = $file_path_prefix;
+        $sample_file_prefix{$sample_id} = $file_name_prefix;
     }
 
     my %io = parse_io_outfiles(
@@ -233,7 +234,7 @@ sub analysis_smncopynumbercaller {
     say {$filehandle} $NEWLINE;
 
     ## Rename output from $file_path_prefixes to $sample_id
-    while (my ($sample_id, $file_path_prefixes) = each %sample_file_path_prefixes) {
+    while (my ($sample_id, $file_name_prefix) = each %sample_file_prefix) {
 
     my @perl_commands = perl_base(
         {
@@ -242,7 +243,7 @@ sub analysis_smncopynumbercaller {
             print        => 1,
         }
     );
-    push @perl_commands, ($SINGLE_QUOTE, qq{s/$file_path_prefixes/$sample_id/gc}, $SINGLE_QUOTE, $outfile_path);
+    push @perl_commands, ($SINGLE_QUOTE, qq{s/$file_name_prefix/$sample_id/gc}, $SINGLE_QUOTE, $outfile_path);
         say {$filehandle} join $SPACE, @perl_commands;
     }
 
