@@ -151,7 +151,7 @@ sub analysis_deepvariant {
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{out}{file_path_prefix};
-    my $infile_suffix      = $io{out}{file_suffix};  
+    my $infile_suffix      = $io{out}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
@@ -161,7 +161,7 @@ sub analysis_deepvariant {
             recipe_name    => $recipe_name,
         }
     );
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
+    my $analysis_type   = $active_parameter_href->{analysis_type}{$sample_id};
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
         {
@@ -213,22 +213,22 @@ sub analysis_deepvariant {
     ### SHELL:
 
     say {$filehandle} q{## } . $recipe_name;
-    
+
     deepvariant(
-	{
-            filehandle => $filehandle,
-	        infile_path => $infile_path,
-            model_type => uc $analysis_type,
-            num_shards => $recipe_resource{core_number},
+        {
+            filehandle         => $filehandle,
+            infile_path        => $infile_path,
+            model_type         => uc $analysis_type,
+            num_shards         => $recipe_resource{core_number},
             referencefile_path => $active_parameter_href->{human_genome_reference},
-            outfile_path => $outfile_path,
+            outfile_path       => $outfile_path,
         }
     );
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    ## my @concat_vcf_paths; 
+    ## my @concat_vcf_paths;
     ## push @concat_vcf_paths, $outfile_path;
     set_io_files(
         {
@@ -240,7 +240,6 @@ sub analysis_deepvariant {
             stream         => q{out},
         }
     );
-
 
     if ( $recipe_mode == 1 ) {
 

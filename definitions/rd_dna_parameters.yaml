@@ -488,7 +488,7 @@ markduplicates_picardtools_opt_dup_dist:
 ## Deepvariant
 deepvariant:
   analysis_mode: sample
-  associated_recipe: 
+  associated_recipe:
     - mip
   data_type: SCALAR
   default: 1

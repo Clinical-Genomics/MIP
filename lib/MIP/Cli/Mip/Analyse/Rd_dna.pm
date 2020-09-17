@@ -370,7 +370,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{deepvariant} => (
             documentation => q{Use deepvariant for variant calling},
             is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ]),
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

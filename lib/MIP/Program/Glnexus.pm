@@ -81,7 +81,7 @@ sub glnexus_merge {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            filehandle => $filehandle,
+            filehandle   => $filehandle,
             separator    => $SPACE,
 
         }

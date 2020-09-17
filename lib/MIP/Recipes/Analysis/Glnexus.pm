@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -154,23 +154,25 @@ sub analysis_glnexus {
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
 
-    SAMPLE_ID:
-        foreach my $sample_id ( @{$active_parameter_href->{sample_ids}} )
-        {
+    my $analysis_type;
 
-            ## Get the io infiles per chain and id
-            my %sample_io = get_io_files(
-                {
-                    id             => $sample_id,
-                    file_info_href => $file_info_href,
-                    parameter_href => $parameter_href,
-                    recipe_name    => $recipe_name,
-                    stream         => q{in},
-                }
-            );
-            push @genotype_infile_paths, $sample_io{in}{file_path};
-        };
-    
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                stream         => q{in},
+            }
+        );
+        push @genotype_infile_paths, $sample_io{in}{file_path};
+        $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
+    }
+
     my %io = parse_io_outfiles(
         {
             chain_id               => $job_id_chain,
@@ -211,26 +213,27 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    my $config_type = q{DeepVariant} . uc $analysis_type;
 
     glnexus_merge(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
-            config => "DeepVariant",
-        }
-    );
-    
-    print {$filehandle} $PIPE . $SPACE;
-    
-    bcftools_view(
-        {
-            filehandle   => $filehandle,
-            infile_path  => "-",
+            config           => $config_type,
         }
     );
 
     print {$filehandle} $PIPE . $SPACE;
-    
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $DASH,
+        }
+    );
+
+    print {$filehandle} $PIPE . $SPACE;
+
     htslib_bgzip(
         {
             filehandle      => $filehandle,
@@ -239,20 +242,10 @@ sub analysis_glnexus {
         }
     );
 
-
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
-
-        ## Collect QC metadata info for later use
-         set_recipe_outfile_in_sample_info(
-            {
-                path             => "test",
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         submit_recipe(
             {
