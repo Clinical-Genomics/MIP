@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ htslib_bgzip htslib_tabix };
@@ -89,8 +89,8 @@ sub htslib_bgzip {
             store       => \$stdoutfile_path,
         },
         threads => {
-            allow => qr/ \A \d+ \z /xms,
-            store => \$threads,
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$threads,
             strict_type => 1,
         },
         write_to_stdout => {
