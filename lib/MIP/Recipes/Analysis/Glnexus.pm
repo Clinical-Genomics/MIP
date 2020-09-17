@@ -231,6 +231,7 @@ sub analysis_glnexus {
         {
             filehandle      => $filehandle,
             stdoutfile_path => $outfile_path,
+            threads => $core_number,
             write_to_stdout => 1,
         }
     );
