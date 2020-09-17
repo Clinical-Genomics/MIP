@@ -16,7 +16,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $GENOME_VERSION $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants
+  qw{ $GENOME_VERSION $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_smncopynumbercaller };
@@ -116,7 +117,8 @@ sub analysis_smncopynumbercaller {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Language::Perl qw{ perl_base };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -146,6 +148,7 @@ sub analysis_smncopynumbercaller {
     );
 
     my @infile_paths;
+    my %sample_file_prefix;
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
@@ -159,9 +162,11 @@ sub analysis_smncopynumbercaller {
                 stream         => q{in},
             }
         );
+        my $file_name_prefix = $sample_io{in}{file_name_prefix};
         my $file_path_prefix = $sample_io{in}{file_path_prefix};
         my $file_suffix      = $sample_io{in}{file_suffix};
         push @infile_paths, $file_path_prefix . $file_suffix;
+        $sample_file_prefix{$sample_id} = $file_name_prefix;
     }
 
     my %io = parse_io_outfiles(
@@ -203,7 +208,7 @@ sub analysis_smncopynumbercaller {
 
     say {$filehandle} q{## } . $recipe_name;
 
-## Create manifest file
+    ## Create manifest file
     my $manifest_file_path = catfile( $outdir_path_prefix, q{manifest.txt} );
 
     gnu_echo(
@@ -229,7 +234,15 @@ sub analysis_smncopynumbercaller {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    _use_sample_id_in_output(
+        {
+            filehandle              => $filehandle,
+            outfile_path            => $outfile_path,
+            sample_file_prefix_href => \%sample_file_prefix,
+        }
+    );
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
@@ -271,6 +284,62 @@ sub analysis_smncopynumbercaller {
         );
     }
     return 1;
+}
+
+sub _use_sample_id_in_output {
+
+## Function : Rename file_name_prefix to sample_id for sample column
+## Returns  :
+## Arguments: $filehandle              => Filehandle to write to
+##          : $outfile_path            => Outfile path to use for search and replace
+##          : $sample_file_prefix_href => Map of file_name_prefix and sample_id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $outfile_path;
+    my $sample_file_prefix_href;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sample_file_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_file_prefix_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    while ( my ( $sample_id, $file_name_prefix ) = each %{$sample_file_prefix_href} ) {
+
+        my @perl_commands = perl_base(
+            {
+                command_line => 1,
+                inplace      => 1,
+                print        => 1,
+            }
+        );
+        push @perl_commands,
+          (
+            $SINGLE_QUOTE, qq{s/$file_name_prefix/$sample_id/g},
+            $SINGLE_QUOTE, $outfile_path
+          );
+        say {$filehandle} join $SPACE, @perl_commands;
+    }
+    return;
 }
 
 1;
