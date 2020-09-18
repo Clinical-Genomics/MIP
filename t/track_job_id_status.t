@@ -57,25 +57,37 @@ diag(   q{Test track_job_id_status from Processes.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a filehandle
+## Given a filehandle and a log file path
 # For storing info to write
 my $file_content;
+my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
 
 ## Store file content in memory by using referenced variable
 open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## When no log_file_path and job_ids
+## When no job_ids
 my $return = track_job_id_status(
     {
-        filehandle => $filehandle,
+        filehandle    => $filehandle,
+        log_file_path => $log_file_path,
     }
 );
-is( $return, 0, q{Skip sub} );
+is( $return, 0, q{No job_ids - skip sub} );
 
-## Given a job_id and a log path
-my @job_ids       = (qw{ job_id_test });
-my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
+## Given a job_id
+my @job_ids = (qw{ job_id_test });
+
+## When no log_file_path
+$return = track_job_id_status(
+    {
+        filehandle  => $filehandle,
+        job_ids_ref => \@job_ids,
+    }
+);
+is( $return, 0, q{No log file path - skip sub} );
+
+## Given a job_id and a log file path
 
 ## When no submission profile
 $return = track_job_id_status(

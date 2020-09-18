@@ -1928,9 +1928,9 @@ sub track_job_id_status {
 
     use MIP::Workloadmanager::Slurm qw{ slurm_track_progress };
 
-    return 0
-      if (  not @{$job_ids_ref}
-        and not defined $log_file_path
+    return 0 if ( not @{$job_ids_ref} );
+
+    return 0 if ( not defined $log_file_path
         and not $log_file_path );
 
     if ( $submission_profile eq q{slurm} ) {

@@ -166,6 +166,8 @@ sub slurm_reformat_sacct_output {
             store    => \$filehandle,
         },
         log_file_path => {
+            defined     => 1,
+            required    => 1,
             store       => \$log_file_path,
             strict_type => 1,
         },
