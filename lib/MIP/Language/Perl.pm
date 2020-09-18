@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
 }
@@ -215,6 +215,7 @@ sub perl_nae_oneliners {
         q{get_fastq_header_v1.8}             => \&_get_fastq_header_v1_8,
         q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
         get_fastq_read_length                => \&_get_fastq_read_length,
+        get_gene_panel_header                => \&_get_gene_panel_info,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
@@ -498,6 +499,23 @@ sub _get_fastq_read_length {
     $read_length_regexp .= q?print $seq_length;last;}' ?;
 
     return $read_length_regexp;
+}
+
+sub _get_gene_panel_info {
+
+## Function : Return gene panel data from header
+## Returns  : $gene_panel_info_regexp
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # If line starts with gene panel comment
+    my $gene_panel_info_regexp = q?'if (/ \A [#]{2} (gene_panel= .*) \n /xms ){ ?;
+
+    # Append ":". Skip rest if it's a comment
+    $gene_panel_info_regexp .= q?print $1 . q{:}} elsif (/ \A [#]{1} \w /xms ) {last;}'?;
+
+    return $gene_panel_info_regexp;
 }
 
 sub _reformat_sacct_headers {

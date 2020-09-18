@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.25;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -398,8 +398,6 @@ sub analysis_mip_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id                   => $case_id,
-                    log                       => $log,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -765,8 +763,6 @@ sub analysis_mip_vcfparser_panel {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id                   => $case_id,
-                    log                       => $log,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -1091,10 +1087,8 @@ sub analysis_mip_vcfparser_sv_wes {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id          => $arg_href->{active_parameter_href}{case_id},
-                    log              => $log,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
+                    recipe_name               => $recipe_name,
+                    sample_info_href          => $sample_info_href,
                 }
             );
         }
@@ -1497,10 +1491,8 @@ sub analysis_mip_vcfparser_sv_wgs {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id          => $arg_href->{active_parameter_href}{case_id},
-                    log              => $log,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
+                    recipe_name               => $recipe_name,
+                    sample_info_href          => $sample_info_href,
                 }
             );
         }
