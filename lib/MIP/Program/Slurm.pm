@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ slurm_build_sbatch_header slurm_sacct };
@@ -234,7 +234,7 @@ sub slurm_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{sacct};
+    my @commands = qw{ sacct };
 
     if ( @{$fields_format_ref} ) {
         push @commands, q{--format=} . join $COMMA, @{$fields_format_ref};

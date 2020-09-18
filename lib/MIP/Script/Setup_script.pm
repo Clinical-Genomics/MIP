@@ -560,7 +560,8 @@ sub setup_script {
     Readonly my %SUBMISSION_METHOD    => ( slurm => q{sbatch}, );
 
     ## Unpack parameters
-    my $submission_profile = $active_parameter_href->{submission_profile};
+    my $submission_profile  = $active_parameter_href->{submission_profile};
+    my @sacct_format_fields = @{ $active_parameter_href->{sacct_format_fields} };
 
     my $script_type = $SUBMISSION_METHOD{$submission_profile};
 
@@ -621,19 +622,15 @@ sub setup_script {
     );
     print {$filehandle} $NEWLINE;
 
-    ### Sbatch header
-    ## Get parameters
-    my $job_name        = $recipe_name . $UNDERSCORE . $directory_id;
-    my $stderrfile_path = $file_info_path . $file_name_version . $DOT . q{stderr.txt};
-    my $stdoutfile_path = $file_info_path . $file_name_version . $DOT . q{stdout.txt};
-
     ## SLURM specific headers and parameters
-    my @sbatch_headers;
-    my @sacct_format_fields;
     if ( $submission_profile eq q{slurm} ) {
 
-        @sacct_format_fields = @{ $active_parameter_href->{sacct_format_fields} };
-        @sbatch_headers      = slurm_build_sbatch_header(
+        ## Get parameters
+        my $job_name        = $recipe_name . $UNDERSCORE . $directory_id;
+        my $stderrfile_path = $file_info_path . $file_name_version . $DOT . q{stderr.txt};
+        my $stdoutfile_path = $file_info_path . $file_name_version . $DOT . q{stdout.txt};
+
+        slurm_build_sbatch_header(
             {
                 core_number       => $core_number,
                 email             => $active_parameter_href->{email},
@@ -734,6 +731,7 @@ sub setup_script {
                 log_file_path           => $active_parameter_href->{log_file},
                 remove_dir              => $temp_directory_bash,
                 sacct_format_fields_ref => \@sacct_format_fields,
+                submission_profile      => $submission_profile,
                 trap_function_call      => q{$(finish } . $temp_directory_bash . q{)},
                 trap_function_name      => q{finish},
                 trap_signals_ref        => [qw{ EXIT TERM INT }],
@@ -759,6 +757,7 @@ sub setup_script {
                 job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
                 log_file_path           => $active_parameter_href->{log_file},
                 sacct_format_fields_ref => \@sacct_format_fields,
+                submission_profile      => $submission_profile,
                 trap_signals_ref        => [qw{ ERR }],
                 trap_function_call      => q{$(error "$previous_command" "$?")},
                 trap_function_name      => q{error},

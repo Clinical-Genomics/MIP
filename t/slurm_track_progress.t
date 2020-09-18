@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Language::Shell} => [qw{ track_progress }],
+        q{MIP::Workloadmanager::Slurm} => [qw{ slurm_track_progress }],
         q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Shell qw{ track_progress };
+use MIP::Workloadmanager::Slurm qw{ slurm_track_progress };
 
-diag(   q{Test track_progress from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test slurm_track_progress from Slurm.pm v}
+      . $MIP::Workloadmanager::Slurm::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,21 +57,18 @@ diag(   q{Test track_progress from Shell.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $filehandle, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## Given a job_id
+## Given a job_id and a log_file_path
 my @job_ids       = (qw{ job_id_test });
 my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
 
-track_progress(
+slurm_track_progress(
     {
         filehandle    => $filehandle,
         job_ids_ref   => \@job_ids,
@@ -85,6 +82,6 @@ close $filehandle;
 ## Then track progress cmd should be written to file
 my ($wrote_string) = $file_content =~ /(sacct \s+ --format=)/xms;
 
-ok( $wrote_string, q{Wrote instruction to track progress} );
+ok( $wrote_string, q{Wrote instruction to track slurm job_ids progress} );
 
 done_testing();
