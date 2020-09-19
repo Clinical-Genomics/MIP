@@ -320,7 +320,7 @@ reference_feature:
         outfile_index: grch37_clinvar_-20200728-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2020/
-     20200905:
+      20200905:
         file: clinvar_20200905.vcf.gz
         file_check: clinvar_20200905.vcf.gz.md5
         file_index: clinvar_20200905.vcf.gz.tbi
