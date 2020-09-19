@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [9.0.2]
+**References**
+- clinvar_20200728 -> clinvar_20200905
+
+## [9.0.1]
+- Use sample_id in smncopynumber caller instead of file_name_prefix
+
 ## [9.0.0]
 - Moved annotationof CADD and SPIDEX to vcfanno´s toml config
 - Removed CADD and SPIDEX annotations from Rankvariants recipe, CLI and parameters
