@@ -231,7 +231,7 @@ sub analysis_glnexus {
         {
             filehandle      => $filehandle,
             stdoutfile_path => $outfile_path,
-            threads => $core_number,
+            threads         => $core_number,
             write_to_stdout => 1,
         }
     );
@@ -246,6 +246,7 @@ sub analysis_glnexus {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
                 dependency_method    => q{sample_to_island},
+                log                  => $log,
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
