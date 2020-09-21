@@ -87,6 +87,16 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+    $file_info{io}{TEST}{$sample_id}{$recipe_name} = test_mip_hashes(
+        {
+            mip_hash_name => q{io},
+        }
+    );
+}
+
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -98,7 +108,12 @@ my %parameter = test_mip_hashes(
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 $parameter{cache}{consensus_analysis_type} = q{wgs};
 
-my %sample_info;
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+        recipe_name   => $recipe_name,
+    }
+);
 
 my $is_ok = analysis_glnexus(
     {

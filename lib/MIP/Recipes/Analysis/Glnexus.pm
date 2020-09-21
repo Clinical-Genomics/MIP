@@ -245,7 +245,7 @@ sub analysis_glnexus {
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
+                dependency_method    => q{sample_to_case},
                 log                  => $log,
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
