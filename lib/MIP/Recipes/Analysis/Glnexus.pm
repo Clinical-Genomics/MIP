@@ -212,9 +212,9 @@ sub analysis_glnexus {
 
     glnexus_merge(
         {
+            config           => $config_type,
             filehandle       => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
-            config           => $config_type,
         }
     );
     print {$filehandle} $PIPE . $SPACE;

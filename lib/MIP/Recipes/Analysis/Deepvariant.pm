@@ -123,7 +123,7 @@ sub analysis_deepvariant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_attributes  get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Deepvariant qw{ deepvariant };
@@ -218,8 +218,8 @@ sub analysis_deepvariant {
             infile_path        => $infile_path,
             model_type         => uc $analysis_type,
             num_shards         => $recipe_resource{core_number},
-            referencefile_path => $active_parameter_href->{human_genome_reference},
             outfile_path       => $outfile_path,
+            referencefile_path => $active_parameter_href->{human_genome_reference},
         }
     );
 

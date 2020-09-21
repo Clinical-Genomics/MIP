@@ -452,7 +452,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
-    use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -463,6 +462,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome
       qw{ analysis_gatk_variantevalexome };
+    use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };

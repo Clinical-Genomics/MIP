@@ -376,7 +376,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{glnexus} => (
-            documentation => q{Use glnexus to merge sample vcfs},
+            documentation => q{Use glnexus to merge sample vcfs from deepvariant},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
