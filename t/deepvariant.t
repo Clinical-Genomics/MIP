@@ -97,10 +97,13 @@ my %required_argument = (
         expected_output => q{--model_type=WES},
     },
     outfile_path => {
-        input           => catfile(q{ dir outfile.vcf }),
-        expected_output => q{--output_gvcf=} . catfile(qw{ dir outfile.vcf }),
+        input           => catfile(q{ dir outfile.g.vcf }),
+        expected_output => q{--output_gvcf=} . catfile(qw{ dir outfile.g.vcf }),
     },
-
+    outfile_path_vcf => {
+        input           => catfile(q{ dir outfile.vcf }),
+        expected_output => q{--output_vcf=} . catfile(qw{ dir outfile.vcf }),
+    },
 );
 
 my %specific_argument = (
