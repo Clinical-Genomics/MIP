@@ -39,6 +39,7 @@ sub deepvariant {
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
 ##          : $outfile_path           => Path to the output gvcf file
+##          : $outfile_path_vcf       => Path to the output vcf file
 ##          : $referencefile_path     => Path to genome reference
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -54,6 +55,7 @@ sub deepvariant {
     my $model_type;
     my $num_shards;
     my $outfile_path;
+    my $outfile_path_vcf;
     my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -94,6 +96,12 @@ sub deepvariant {
             store       => \$outfile_path,
             strict_type => 1,
         },
+        outfile_path_vcf => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_vcf,
+            strict_type => 1,
+        },
         referencefile_path => {
             defined     => 1,
             required    => 1,
@@ -126,6 +134,7 @@ sub deepvariant {
     push @commands, q{--reads} . $EQUALS . $infile_path;
     push @commands, q{--ref} . $EQUALS . $referencefile_path;
     push @commands, q{--output_gvcf} . $EQUALS . $outfile_path;
+    push @commands, q{--output_vcf} . $EQUALS . $outfile_path_vcf;
     push @commands, q{--model_type} . $EQUALS . $model_type;
 
     if ($bedfile) {

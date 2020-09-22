@@ -33,7 +33,7 @@ BEGIN {
 
 sub analysis_deepvariant {
 
-## Function : Returns gvcfs from bam files using DeepVariant caller.
+## Function : Returns vcfs and gvcfs from bam files using DeepVariant caller.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -187,7 +187,7 @@ sub analysis_deepvariant {
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-
+    my $outfile_path_vcf    = $io{out}{file_path_prefix} . q{.vcf.gz};
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
@@ -219,6 +219,7 @@ sub analysis_deepvariant {
             model_type         => uc $analysis_type,
             num_shards         => $recipe_resource{core_number},
             outfile_path       => $outfile_path,
+            outfile_path_vcf   => $outfile_path_vcf,
             referencefile_path => $active_parameter_href->{human_genome_reference},
         }
     );
