@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $CLOSE_PARENTHESIS $DOLLAR_SIGN $DOT $EMPTY_STR $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -35,6 +35,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       build_script_directories_and_paths
       check_script_file_path_exist
+      create_script_temp_dir
       setup_install_script
       setup_script
       write_return_to_environment
@@ -193,6 +194,105 @@ sub check_script_file_path_exist {
         $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
     }
     return ( $file_path, $file_name_version );
+}
+
+sub create_script_temp_dir {
+
+## Function : Create script temporary directory to use and set trap to remove it
+## Returns  :
+## Arguments: $filehandle              => Filehandle to write to
+##          : $log_file_path           => Log file to write job_id progress to {REF}
+##          : $job_ids_ref             => Job_ids to update status on {REF}
+##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
+##          : $temp_directory          => Temporary directory for recipe
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $log_file_path;
+    my $job_ids_ref;
+    my $sacct_format_fields_ref;
+    my $submission_profile;
+    my $temp_directory;
+
+    my $tmpl = {
+        filehandle    => { required => 1,               store       => \$filehandle, },
+        log_file_path => { store    => \$log_file_path, strict_type => 1, },
+        job_ids_ref   => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$job_ids_ref,
+            strict_type => 1,
+        },
+        sacct_format_fields_ref => {
+            default     => [],
+            store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Shell qw{ create_housekeeping_function quote_bash_variable };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
+
+    # Not all recipes need a temporary directory
+    return 0 if ( not defined $temp_directory );
+
+    say {$filehandle} q{## Create temporary directory};
+
+    ## Double quote incoming variables in string
+    my $temp_directory_quoted =
+      quote_bash_variable( { string_with_variable_to_quote => $temp_directory, } );
+
+    # Assign batch variable
+    say {$filehandle} q{readonly TEMP_DIRECTORY} . $EQUALS . $temp_directory_quoted;
+
+    # Update perl scalar to bash variable
+    my $temp_directory_bash = quote_bash_variable(
+        { string_with_variable_to_quote => $DOLLAR_SIGN . q{TEMP_DIRECTORY}, } );
+
+    gnu_mkdir(
+        {
+            filehandle       => $filehandle,
+            indirectory_path => $temp_directory_bash,
+            parents          => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    my $trap_function_name = q{finish};
+    create_housekeeping_function(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => $job_ids_ref,
+            log_file_path           => $log_file_path,
+            remove_dir              => $temp_directory_bash,
+            sacct_format_fields_ref => $sacct_format_fields_ref,
+            submission_profile      => $submission_profile,
+            trap_function_call      => $DOLLAR_SIGN
+              . $OPEN_PARENTHESIS
+              . $trap_function_name
+              . $SPACE
+              . $temp_directory_bash
+              . $CLOSE_PARENTHESIS,
+            trap_function_name => $trap_function_name,
+            trap_signals_ref   => [qw{ EXIT TERM INT }],
+        }
+    );
+    return;
 }
 
 sub setup_install_script {
@@ -548,9 +648,9 @@ sub setup_script {
 
     use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Language::Shell
-      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
+      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_sleep };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -700,44 +800,15 @@ sub setup_script {
         );
     }
 
-    # Not all recipes need a temporary directory
-    if ( defined $temp_directory ) {
-
-        say {$filehandle} q{## Create temporary directory};
-
-        ## Double quote incoming variables in string
-        my $temp_directory_quoted =
-          quote_bash_variable( { string_with_variable_to_quote => $temp_directory, } );
-
-        # Assign batch variable
-        say {$filehandle} q{readonly TEMP_DIRECTORY=} . $temp_directory_quoted;
-
-        # Update perl scalar to bash variable
-        my $temp_directory_bash = q{"$TEMP_DIRECTORY"};
-
-        gnu_mkdir(
-            {
-                filehandle       => $filehandle,
-                indirectory_path => $temp_directory_bash,
-                parents          => 1,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        create_housekeeping_function(
-            {
-                filehandle              => $filehandle,
-                job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
-                log_file_path           => $active_parameter_href->{log_file},
-                remove_dir              => $temp_directory_bash,
-                sacct_format_fields_ref => \@sacct_format_fields,
-                submission_profile      => $submission_profile,
-                trap_function_call      => q{$(finish } . $temp_directory_bash . q{)},
-                trap_function_name      => q{finish},
-                trap_signals_ref        => [qw{ EXIT TERM INT }],
-            }
-        );
-    }
+    create_script_temp_dir(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+            log_file_path           => $active_parameter_href->{log_file},
+            sacct_format_fields_ref => \@sacct_format_fields,
+            temp_directory          => $temp_directory,
+        }
+    );
 
     if ($error_trap) {
 
