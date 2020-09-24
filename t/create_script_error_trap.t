@@ -86,7 +86,7 @@ my $return = create_script_error_trap(
     }
 );
 
-## Then the recipe file path should be returned
+## Then the recipe zero should be returned
 is( $return, 0, q{Skip sub - error_trap is false} );
 
 ## When error_trap is true
