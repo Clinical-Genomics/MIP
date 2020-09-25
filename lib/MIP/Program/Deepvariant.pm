@@ -133,6 +133,7 @@ sub deepvariant {
 
     push @commands, q{--reads} . $EQUALS . $infile_path;
     push @commands, q{--ref} . $EQUALS . $referencefile_path;
+    push @commands, q{--num_shards} . $EQUALS . $num_shards;
     push @commands, q{--output_gvcf} . $EQUALS . $outfile_path;
     push @commands, q{--output_vcf} . $EQUALS . $outfile_path_vcf;
     push @commands, q{--model_type} . $EQUALS . $model_type;

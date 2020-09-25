@@ -153,7 +153,8 @@ sub analysis_markduplicates {
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools qw{ picardtools_markduplicates };
+    use MIP::Program::Picardtools
+      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -354,6 +355,26 @@ sub analysis_markduplicates {
         {
             filehandle          => $filehandle,
             outfile_path_prefix => $outfile_path_prefix,
+        }
+    );
+
+    ## Gather bams for deepvariant
+    my @gather_infile_paths =
+      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
+    my $store_outfile_path = $outfile_path_prefix . $outfile_suffix;
+
+    picardtools_gatherbamfiles(
+        {
+            create_index     => q{true},
+            filehandle       => $filehandle,
+            infile_paths_ref => \@gather_infile_paths,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx4g},
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
         }
     );
 
