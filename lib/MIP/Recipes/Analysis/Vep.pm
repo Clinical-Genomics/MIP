@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.29;
+    our $VERSION = 1.30;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1577,7 +1577,7 @@ sub _get_plugin_cmds {
   PLUGIN:
     while ( my ( $plugin_name, $plugin_href ) = each %{$vep_plugin_href} ) {
 
-        my $cmd = $plugin_name . $COMMA . $plugin_href->{path};
+        my $cmd = $plugin_name;
 
         if ( exists $plugin_href->{parameters} ) {
 

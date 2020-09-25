@@ -41,7 +41,7 @@ sv_svdb_query_db_files:
 qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
 qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
-vcfanno_config: grch37_vcfanno_config_-v1.12-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.13-.toml
 ### Analysis
 ### Programs
 ## Parameters
@@ -56,8 +56,11 @@ qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_pat
 sv_genmod_models_case_type: cmms
 sv_vep_plugin:
   ExACpLI:
-    exists_check: file
-    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    parameters:
+      - cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 vep_custom_annotation:
   genomic_superdups_frac_match:
     annotation_type: overlap
@@ -76,23 +79,42 @@ vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-100/ca
 vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins
 vep_plugin:
   dbNSFP:
-    exists_check: file
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
     parameters:
+      - cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
       - GERP++_RS
       - GERP++_NR
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-    path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
   ExACpLI:
-    exists_check: file
-    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoFtool:
-    exists_check: file
-    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
-  MaxEntScan:
-    exists_check: directory
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
     parameters:
+      - cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exist_check:
+      - type: directory
+        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
       - SWA
       - NCSS
-    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+  SpliceAI:
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
+      - type: file
+        path: cluster_constant_path!/references/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+    parameters:
+      - snv=cluster_constant_path!/references/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+      - indel=cluster_constant_path!/references/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz

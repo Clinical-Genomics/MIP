@@ -244,4 +244,5 @@ vep_plugins:
   - ExACpLI
   - LoFtool
   - MaxEntScan
+  - SpliceAI
 vep_auto_flag: cfp
