@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1213,7 +1212,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
+    use MIP::List qw{ check_element_exist_hash_of_array };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
