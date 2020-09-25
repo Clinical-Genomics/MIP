@@ -24,9 +24,9 @@ genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 qccollect_eval_metric_file: qc_eval_metric_-v1.2-.yaml
 qccollect_regexp_file: qc_regexp_-v1.26-.yaml
-rank_model_file: rank_model_-v1.29-.ini
+rank_model_file: rank_model_-v1.30-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-vcfanno_config: grch37_vcfanno_config_v1.11-.toml
+vcfanno_config: grch37_vcfanno_config_v1.13-.toml
 ### Analysis
 ### Programs
 ## Parameters
@@ -55,23 +55,42 @@ vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-100/ca
 vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins
 vep_plugin:
   dbNSFP:
-    exists_check: file
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
     parameters:
+      - cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
       - GERP++_RS
       - GERP++_NR
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-    path: cluster_constant_path!/references/grch37_dbnsfp_-v3.5a-.txt.gz
   ExACpLI:
-    exists_check: file
-    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoFtool:
-    exists_check: file
-    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
-  MaxEntScan:
-    exists_check: directory
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
     parameters:
+      - cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exist_check:
+      - type: directory
+        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
       - SWA
       - NCSS
-    path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+  SpliceAI:
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
+      - type: file
+        path: cluster_constant_path!/references/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+    parameters:
+      - snv=cluster_constant_path!/references/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+      - indel=cluster_constant_path!/references/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
