@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $CLOSE_PARENTHESIS $DOLLAR_SIGN $DOT $EMPTY_STR $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $CLOSE_PARENTHESIS $DOLLAR_SIGN $DOT $DOUBLE_QUOTE $EMPTY_STR $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,12 +29,13 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_script_directories_and_paths
       check_script_file_path_exist
+      create_script_error_trap
       create_script_temp_dir
       setup_install_script
       setup_script
@@ -194,6 +195,100 @@ sub check_script_file_path_exist {
         $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
     }
     return ( $file_path, $file_name_version );
+}
+
+sub create_script_error_trap {
+
+## Function : Create script error trap
+## Returns  : 0 | undef
+## Arguments: $error_trap              => Create error trap
+##          : $filehandle              => Filehandle to write to
+##          : $log_file_path           => Log file to write job_id progress to {REF}
+##          : $job_ids_ref             => Job_ids to update status on {REF}
+##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $error_trap;
+    my $filehandle;
+    my $log_file_path;
+    my $job_ids_ref;
+    my $sacct_format_fields_ref;
+    my $submission_profile;
+
+    my $tmpl = {
+        error_trap => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$error_trap,
+            strict_type => 1,
+        },
+        filehandle    => { required => 1,               store       => \$filehandle, },
+        log_file_path => { store    => \$log_file_path, strict_type => 1, },
+        job_ids_ref   => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$job_ids_ref,
+            strict_type => 1,
+        },
+        sacct_format_fields_ref => {
+            default     => [],
+            store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Shell
+      qw{ create_error_trap_function enable_trap quote_bash_variable };
+
+    return 0 if ( not $error_trap );
+
+    my $enable_trap_function_call = quote_bash_variable(
+        { string_with_variable_to_quote => q{previous_command=$BASH_COMMAND}, } );
+
+    ## Create debug trap
+    enable_trap(
+        {
+            filehandle         => $filehandle,
+            trap_function_call => $enable_trap_function_call,
+            trap_signals_ref   => [qw{ DEBUG }],
+        }
+    );
+
+    ## Create error handling function and trap
+    my $trap_function_name = q{error};
+    my $previous_cmd =
+      quote_bash_variable( { string_with_variable_to_quote => q{$previous_command}, } );
+    my $previous_cmd_value =
+      $SPACE . $DOUBLE_QUOTE . q{$?} . $DOUBLE_QUOTE . $CLOSE_PARENTHESIS;
+
+    create_error_trap_function(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => $job_ids_ref,
+            log_file_path           => $log_file_path,
+            sacct_format_fields_ref => $sacct_format_fields_ref,
+            submission_profile      => $submission_profile,
+            trap_signals_ref        => [qw{ ERR }],
+            trap_function_call      => $DOLLAR_SIGN
+              . $OPEN_PARENTHESIS
+              . $trap_function_name
+              . $previous_cmd
+              . $previous_cmd_value,
+            trap_function_name => $trap_function_name,
+        }
+    );
+    return;
 }
 
 sub create_script_temp_dir {
@@ -647,8 +742,7 @@ sub setup_script {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Manager qw{ write_source_environment_command };
-    use MIP::Language::Shell
-      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap };
+    use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_sleep };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
@@ -810,31 +904,14 @@ sub setup_script {
         }
     );
 
-    if ($error_trap) {
-
-        ## Create debug trap
-        enable_trap(
-            {
-                filehandle         => $filehandle,
-                trap_function_call => q{previous_command="$BASH_COMMAND"},
-                trap_signals_ref   => [qw{ DEBUG }],
-            }
-        );
-
-        ## Create error handling function and trap
-        create_error_trap_function(
-            {
-                filehandle              => $filehandle,
-                job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
-                log_file_path           => $active_parameter_href->{log_file},
-                sacct_format_fields_ref => \@sacct_format_fields,
-                submission_profile      => $submission_profile,
-                trap_signals_ref        => [qw{ ERR }],
-                trap_function_call      => q{$(error "$previous_command" "$?")},
-                trap_function_name      => q{error},
-            }
-        );
-    }
+    create_script_error_trap(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+            log_file_path           => $active_parameter_href->{log_file},
+            sacct_format_fields_ref => \@sacct_format_fields,
+        }
+    );
 
     # Return filen path, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
