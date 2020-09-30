@@ -41,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -52,6 +52,7 @@ BEGIN {
       create_error_trap_function
       create_housekeeping_function
       enable_trap
+      log_host_name
       quote_bash_variable
     };
 }
@@ -476,6 +477,34 @@ sub enable_trap {
         }
     );
     say {$filehandle} $NEWLINE;
+    return;
+}
+
+sub log_host_name {
+
+## Function : Log host name
+## Returns  :
+## Arguments: $filehandle => filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+
+    my $tmpl = { filehandle => { required => 1, store => \$filehandle, }, };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
+
+    say {$filehandle} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
+
+    gnu_echo(
+        {
+            filehandle  => $filehandle,
+            strings_ref => [q{Running on: $(hostname)}],
+        }
+    );
     return;
 }
 
