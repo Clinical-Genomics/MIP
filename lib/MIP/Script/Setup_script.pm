@@ -69,7 +69,7 @@ sub _broadcast_script_paths {
             store       => \$file_path,
             strict_type => 1,
         },
-                recipe_data_directory_path => {
+        recipe_data_directory_path => {
             defined     => 1,
             required    => 1,
             store       => \$recipe_data_directory_path,
@@ -93,7 +93,7 @@ sub _broadcast_script_paths {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-     $log->info( q{Creating }
+    $log->info( q{Creating }
           . $script_type
           . q{ script for }
           . $recipe_name
@@ -107,7 +107,7 @@ sub _broadcast_script_paths {
           . q{ data files will be written to: }
           . $recipe_data_directory_path
           . $NEWLINE );
-    return
+    return;
 }
 
 sub build_script_directories_and_paths {
@@ -844,11 +844,14 @@ sub setup_script {
         }
     );
 
-    _broadcast_script_paths({ file_path => $file_path,
-        recipe_data_directory_path      => $recipe_data_directory_path,
-        recipe_name                     => $recipe_name,
-        script_type                     => $script_type,
-    });
+    _broadcast_script_paths(
+        {
+            file_path                  => $file_path,
+            recipe_data_directory_path => $recipe_data_directory_path,
+            recipe_name                => $recipe_name,
+            script_type                => $script_type,
+        }
+    );
 
     ## Script file
     open $filehandle, q{>}, $file_path
@@ -903,12 +906,12 @@ sub setup_script {
         }
     );
 
-        write_source_environment_command(
-            {
-                filehandle                      => $filehandle,
-                source_environment_commands_ref => $source_environment_commands_ref,
-            }
-        );
+    write_source_environment_command(
+        {
+            filehandle                      => $filehandle,
+            source_environment_commands_ref => $source_environment_commands_ref,
+        }
+    );
 
     create_script_temp_dir(
         {
