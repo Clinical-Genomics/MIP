@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,6 +39,7 @@ BEGIN {
       create_script_temp_dir
       setup_install_script
       setup_script
+      set_script_shell_attributes
       write_return_to_environment
       write_return_to_conda_environment
     };
@@ -710,12 +711,6 @@ sub setup_script {
             store       => \$set_pipefail,
             strict_type => 1,
         },
-        set_pipefail => {
-            allow       => [ 0, 1 ],
-            default     => $arg_href->{active_parameter_href}{bash_set_pipefail},
-            store       => \$set_pipefail,
-            strict_type => 1,
-        },
         sleep => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -750,8 +745,7 @@ sub setup_script {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Constants
-    Readonly my $MAX_SECONDS_TO_SLEEP => 240;
-    Readonly my %SUBMISSION_METHOD    => ( slurm => q{sbatch}, );
+    Readonly my %SUBMISSION_METHOD => ( slurm => q{sbatch}, );
 
     ## Unpack parameters
     my $submission_profile  = $active_parameter_href->{submission_profile};
@@ -843,45 +837,17 @@ sub setup_script {
     }
 
     ## Set shell attributes
-    gnu_set(
+    set_script_shell_attributes(
         {
             filehandle   => $filehandle,
             set_errexit  => $set_errexit,
             set_nounset  => $set_nounset,
             set_pipefail => $set_pipefail,
+            sleep        => $sleep,
+            ulimit_n     => $ulimit_n,
         }
     );
-    if ($ulimit_n) {
-        gnu_ulimit(
-            {
-                filehandle     => $filehandle,
-                max_open_files => $ulimit_n,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
 
-    say {$filehandle} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
-
-    gnu_echo(
-        {
-            filehandle  => $filehandle,
-            strings_ref => [q{Running on: $(hostname)}],
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
-    if ($sleep) {
-
-        gnu_sleep(
-            {
-                filehandle       => $filehandle,
-                seconds_to_sleep => int rand $MAX_SECONDS_TO_SLEEP,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
     if ( @{$source_environment_commands_ref}
         && $source_environment_commands_ref->[0] )
     {
@@ -915,6 +881,106 @@ sub setup_script {
 
     # Return filen path, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
+}
+
+sub set_script_shell_attributes {
+
+## Function : Set script shell attributes, such as "set -e", "ulimit" etc
+## Returns  :
+## Arguments: $filehandle   => filehandle to write to
+##          : $set_errexit  => Bash set -e {Optional}
+##          : $set_nounset  => Bash set -u {Optional}
+##          : $set_pipefail => Pipe fail switch {Optional}
+##          : $sleep        => Sleep for X seconds {Optional}
+##          : $ulimit_n     => Set ulimit -n for recipe {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $ulimit_n;
+
+    ## Default(s)
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
+    my $sleep;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        set_errexit => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$set_errexit,
+            strict_type => 1,
+        },
+        set_nounset => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$set_nounset,
+            strict_type => 1,
+        },
+        set_pipefail => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$set_pipefail,
+            strict_type => 1,
+        },
+        sleep => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$sleep,
+            strict_type => 1,
+        },
+        ulimit_n => {
+            allow       => [ undef, qr/ \A \d+ \z /xms ],
+            store       => \$ulimit_n,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Shell qw{ log_host_name };
+    use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_sleep};
+
+    Readonly my $MAX_SECONDS_TO_SLEEP => 240;
+
+    gnu_set(
+        {
+            filehandle   => $filehandle,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
+        }
+    );
+
+    if ($ulimit_n) {
+        gnu_ulimit(
+            {
+                filehandle     => $filehandle,
+                max_open_files => $ulimit_n,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+
+    log_host_name( { filehandle => $filehandle, } );
+    say {$filehandle} $NEWLINE;
+
+# Let the process sleep for a random couple of seconds (0-240) to avoid race conditions in mainly conda sourcing activate
+    if ($sleep) {
+
+        gnu_sleep(
+            {
+                filehandle       => $filehandle,
+                seconds_to_sleep => int rand $MAX_SECONDS_TO_SLEEP,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+    return;
 }
 
 sub write_return_to_environment {
