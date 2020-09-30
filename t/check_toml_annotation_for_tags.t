@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,7 +59,6 @@ diag(   q{Test check_toml_annotation_for_tags from Vcfanno.pm v}
 
 my $bcftools_binary_path = q{bcftools};
 my %missing_tag;
-my %preops;
 my %annotation = (
     file => catfile(
         $Bin, qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz }
@@ -74,7 +73,6 @@ my $is_ok = check_toml_annotation_for_tags(
         annotation_href      => \%annotation,
         bcftools_binary_path => $bcftools_binary_path,
         missing_tag_href     => \%missing_tag,
-        preops_href          => \%preops,
     }
 );
 
@@ -90,7 +88,6 @@ check_toml_annotation_for_tags(
         annotation_href      => \%annotation,
         bcftools_binary_path => $bcftools_binary_path,
         missing_tag_href     => \%missing_tag,
-        preops_href          => \%preops,
     }
 );
 
@@ -101,38 +98,5 @@ my %expected = (
       [qw{ MISSING_TAG}], );
 
 is_deeply( \%missing_tag, \%expected, q{Populate missing tag hash} );
-
-## Given preops
-$annotation{preops} =
-  { fields => [q{EUR_AF}], ops => [q{some_code.lua}], names => [q{MISSING_TAG}], };
-
-check_toml_annotation_for_tags(
-    {
-        annotation_href      => \%annotation,
-        bcftools_binary_path => $bcftools_binary_path,
-        missing_tag_href     => \%missing_tag,
-        preops_href          => \%preops,
-    }
-);
-
-## Then populate preops hash with new annotation
-%expected = (
-    catfile( $Bin,
-        qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } ) => {
-        annotation => [
-            {
-                file => catfile(
-                    $Bin,
-                    qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz }
-                ),
-                fields => [q{EUR_AF}],
-                ops    => [q{some_code.lua}],
-                names  => [q{MISSING_TAG}],
-            },
-        ],
-        },
-);
-
-is_deeply( \%preops, \%expected, q{Populate preops hash} );
 
 done_testing();

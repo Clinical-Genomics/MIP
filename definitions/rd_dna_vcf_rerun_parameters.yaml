@@ -81,7 +81,6 @@ recipe_core_number:
     sv_vcfparser: 13
     variant_annotation: 13
     vcf_rerun_reformat: 1
-    vcfanno_preops: 36
     version_collect_ar: 1
     vt_ar: 13
     vt_core: 1
@@ -122,7 +121,6 @@ recipe_time:
     variant_annotation: 1
     varianteffectpredictor: 10
     vcf_rerun_reformat: 1
-    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -511,16 +509,6 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-vcfanno_preops:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  program_executables:
-    - bcftools
-    - vcfanno
-  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
