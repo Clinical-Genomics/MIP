@@ -191,7 +191,6 @@ recipe_core_number:
     variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
-    vcfanno_preops: 36
     vt_ar: 13
     vt_core: 1
   type: mip
@@ -306,7 +305,6 @@ recipe_time:
     variant_integrity_ar: 1
     varianteffectpredictor: 10
     vcf2cytosure_ar: 20
-    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -1560,16 +1558,6 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-vcfanno_preops:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  program_executables:
-    - bcftools
-    - vcfanno
-  type: recipe
 rhocall_viz:
   analysis_mode: sample
   associated_recipe:

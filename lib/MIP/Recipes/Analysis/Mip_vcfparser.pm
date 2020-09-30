@@ -1039,12 +1039,13 @@ sub analysis_mip_vcfparser_sv_wes {
 
     mip_vcfparser(
         {
-            filehandle           => $filehandle,
-            infile_path          => $infile_path,
-            log_file_path        => $log_file_path,
-            parse_vep            => $active_parameter_href->{sv_varianteffectpredictor},
-            per_gene             => $active_parameter_href->{sv_vcfparser_per_gene},
-            pli_values_file_path => $active_parameter_href->{vep_plugin}{ExACpLI}{path},
+            filehandle    => $filehandle,
+            infile_path   => $infile_path,
+            log_file_path => $log_file_path,
+            parse_vep     => $active_parameter_href->{sv_varianteffectpredictor},
+            per_gene      => $active_parameter_href->{sv_vcfparser_per_gene},
+            pli_values_file_path =>
+              $active_parameter_href->{vep_plugin}{ExACpLI}{parameters}[0],
             range_feature_annotation_columns_ref =>
               \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns}
               },
@@ -1400,7 +1401,7 @@ sub analysis_mip_vcfparser_sv_wgs {
                 parse_vep     => $active_parameter_href->{sv_varianteffectpredictor},
                 per_gene      => $active_parameter_href->{sv_vcfparser_per_gene},
                 pli_values_file_path =>
-                  $active_parameter_href->{vep_plugin}{ExACpLI}{path},
+                  $active_parameter_href->{vep_plugin}{ExACpLI}{parameters}[0],
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
                       ->{sv_vcfparser_range_feature_annotation_columns}

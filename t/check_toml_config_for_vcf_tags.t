@@ -26,7 +26,7 @@ use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Test::Writefile qw{ write_toml_config };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,8 +68,6 @@ my $toml_template_path     = catfile( $cluster_reference_path,
     q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
 my $toml_config_path =
   catfile( $cluster_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
-my $spliceai_annotation_path =
-  catfile( $cluster_reference_path, q{grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz} );
 
 ## Update path in toml config
 write_toml_config(
@@ -80,33 +78,20 @@ write_toml_config(
     }
 );
 
-## Given a toml config with preops
+## Given a toml config with all vcf tags present in vcf
 my %active_parameter_test = (
     binary_path        => { bcftools => q{bcftools}, },
     variant_annotation => 1,
     vcfanno_config     => $toml_config_path,
 );
 
-my %preop_annotations = check_toml_config_for_vcf_tags(
+## Then all is ok
+my $is_ok = check_toml_config_for_vcf_tags(
     {
         active_parameter_href => \%active_parameter_test,
     }
 );
-
-## Then return the preop annotation hash
-my %expected = (
-    catfile($spliceai_annotation_path) => {
-        annotation => [
-            {
-                file   => $spliceai_annotation_path,
-                fields => [q{SpliceAI}],
-                ops    => [q{lua:spliceai_max_score(vals)}],
-                names  => [q{SpliceAI_DS_max}],
-            },
-        ],
-    },
-);
-is_deeply( \%preop_annotations, \%expected, q{Set preops} );
+ok( $is_ok, q{Vcf file contains required annotations} );
 
 ## Given a vcfanno annotation request that tries to use a non-existing vcf tag
 $toml_template_path =
