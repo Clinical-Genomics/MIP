@@ -45,6 +45,71 @@ BEGIN {
     };
 }
 
+sub _broadcast_script_paths {
+
+## Function : Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header.
+## Returns  :
+## Arguments: $file_path                  => Script file path
+##          : $recipe_data_directory_path => Recipe data file output directory
+##          : $recipe_name                => Name of recipe
+##          : $script_type                => Dry run or sharp
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $recipe_data_directory_path;
+    my $recipe_name;
+    my $script_type;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+                recipe_data_directory_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_data_directory_path,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        script_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$script_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+     $log->info( q{Creating }
+          . $script_type
+          . q{ script for }
+          . $recipe_name
+          . q{ and writing script file(s) to: }
+          . $file_path
+          . $NEWLINE );
+    $log->info(
+            ucfirst $script_type
+          . q{ script }
+          . $recipe_name
+          . q{ data files will be written to: }
+          . $recipe_data_directory_path
+          . $NEWLINE );
+    return
+}
+
 sub build_script_directories_and_paths {
 
 ## Function : Builds and makes recipe directories (info & data & script) and recipe script paths
@@ -779,21 +844,11 @@ sub setup_script {
         }
     );
 
-    ### Info and Log
-    $log->info( q{Creating }
-          . $script_type
-          . q{ script for }
-          . $recipe_name
-          . q{ and writing script file(s) to: }
-          . $file_path
-          . $NEWLINE );
-    $log->info(
-            ucfirst $script_type
-          . q{ script }
-          . $recipe_name
-          . q{ data files will be written to: }
-          . $recipe_data_directory_path
-          . $NEWLINE );
+    _broadcast_script_paths({ file_path => $file_path,
+        recipe_data_directory_path      => $recipe_data_directory_path,
+        recipe_name                     => $recipe_name,
+        script_type                     => $script_type,
+    });
 
     ## Script file
     open $filehandle, q{>}, $file_path
@@ -848,17 +903,12 @@ sub setup_script {
         }
     );
 
-    if ( @{$source_environment_commands_ref}
-        && $source_environment_commands_ref->[0] )
-    {
-
         write_source_environment_command(
             {
                 filehandle                      => $filehandle,
                 source_environment_commands_ref => $source_environment_commands_ref,
             }
         );
-    }
 
     create_script_temp_dir(
         {
