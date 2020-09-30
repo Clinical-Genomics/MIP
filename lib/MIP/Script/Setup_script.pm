@@ -969,7 +969,7 @@ sub set_script_shell_attributes {
     log_host_name( { filehandle => $filehandle, } );
     say {$filehandle} $NEWLINE;
 
-# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+# Let the process sleep for a random couple of seconds (0-240) to avoid race conditions in mainly conda sourcing activate
     if ($sleep) {
 
         gnu_sleep(
