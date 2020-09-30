@@ -47,7 +47,7 @@ BEGIN {
 
 sub _broadcast_script_paths {
 
-## Function : Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header.
+## Function : Broadcast script and data directory paths
 ## Returns  :
 ## Arguments: $file_path                  => Script file path
 ##          : $recipe_data_directory_path => Recipe data file output directory
