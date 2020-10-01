@@ -28,8 +28,7 @@ BEGIN {
     our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_chromograph analysis_chromograph_cov analysis_chromograph_upd };
+    our @EXPORT_OK = qw{ analysis_chromograph_cov analysis_chromograph_upd };
 
 }
 
@@ -438,6 +437,7 @@ sub analysis_chromograph_upd {
     );
     my $outdir_path   = $io{out}{dir_path};
     my @outfile_paths = @{ $io{out}{file_paths} };
+    my %outfile_path  = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -499,23 +499,20 @@ sub analysis_chromograph_upd {
             }
         );
 
-      CALL_TYPE:
-        foreach my $call_type (qw{ regions sites }) {
+      OUTFILE_PATH:
+        while ( my ( $call_region, $outfile_path ) = each %outfile_path ) {
 
-          OUTFILE_PATH:
-            foreach my $outfile_path (@outfile_paths) {
-
-                set_file_path_to_store(
-                    {
-                        format           => q{png},
-                        id               => $sample_id,
-                        path             => $outfile_path,
-                        recipe_name      => $recipe_name,
-                        sample_info_href => $sample_info_href,
-                        tag              => $call_type,
-                    }
-                );
-            }
+            my ($call_type) = $call_region =~ /(sites|regions)/xms;
+            set_file_path_to_store(
+                {
+                    format           => q{png},
+                    id               => $sample_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $call_type,
+                }
+            );
         }
 
         submit_recipe(
