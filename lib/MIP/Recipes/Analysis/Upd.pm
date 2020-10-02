@@ -298,15 +298,16 @@ sub analysis_upd {
 
       CALL_TYPE:
         foreach my $call_type (@call_types) {
-            my $file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
+            my $file_path_prefix = fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
 
             set_file_path_to_store(
                 {
                     format           => q{bb},
                     id               => $sample_id,
                     path             => $file_path_prefix . $DOT . q{bb},
-                    recipe_name      => q{upd_} . $call_type,
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
+                    tag              => $call_type,
                 }
             );
         }
