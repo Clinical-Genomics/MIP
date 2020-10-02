@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [9.0.3]
+- SpliceAI annotation with VEP instead of vcfanno
+- Files from Chromograph are no longer compressed into a tarball 
+- Sample specific naming of outfiles from rhocall viz
+
 ## [9.0.2]
 **References**
 - clinvar_20200728 -> clinvar_20200905
