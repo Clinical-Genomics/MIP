@@ -1564,11 +1564,12 @@ rhocall_viz:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
-  outfile_suffix: ".roh"
+  file_tag: "_rhoviz"
+  outfile_suffix: ".bw"
   program_executables:
     - bcftools
     - rhocall
+    - wigToBigWig
   type: recipe
 upd_ar:
   analysis_mode: sample
