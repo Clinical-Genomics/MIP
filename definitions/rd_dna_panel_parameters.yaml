@@ -1025,6 +1025,16 @@ vcfparser_outfile_count:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+vcfparser_pli_score_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: gnomad_pli_per_gene_-_r2.1.1-.txt
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar
