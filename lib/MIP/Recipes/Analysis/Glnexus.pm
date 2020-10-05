@@ -181,7 +181,7 @@ sub analysis_glnexus {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_suffix      = $io{out}{file_constant_suffix};
     my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
