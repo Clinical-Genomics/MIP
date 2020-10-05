@@ -23,7 +23,7 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 gatk_genotypegvcfs_ref_gvcf: grch37_gatk_merged_reference_samples.txt
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_-v1.30-.ini
+rank_model_file: rank_model_-v1.31-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.3-.toml
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
