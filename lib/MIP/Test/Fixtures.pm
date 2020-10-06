@@ -31,7 +31,113 @@ BEGIN {
     our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
+    our @EXPORT_OK =
+      qw{ test_add_io_for_recipe test_import test_log test_mip_hashes test_standard_cli };
+}
+
+sub test_add_io_for_recipe {
+
+## Function : Add io from upstream recipe
+## Returns  :
+## Arguments: $chain_id          => Chain id of recipe
+##          : $file_info_href    => File info hash {REF}
+##          : $id                => Sample or case
+##          : $parameter_href    => Parameter hash {REF}
+##          : $order_recipes_ref => Order of recipes {REF}
+##          : $recipe_name       => Recipe name
+##          : $step              => Level to inherit from
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $parameter_href;
+    my $order_recipes_ref;
+    my $recipe_name;
+
+    ## Default(s)
+    my $id;
+    my $chain_id;
+    my $step;
+
+    my $tmpl = {
+        chain_id => {
+            default     => q{TEST},
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        id => {
+            default     => q{ADM1059A1},
+            store       => \$id,
+            strict_type => 1,
+        },
+        order_recipes_ref => {
+            default     => [],
+            store       => \$order_recipes_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        step => {
+            allow       => [qw{ fastq bam vcf }],
+            default     => q{fastq},
+            store       => \$step,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @order_recipes =
+        @{$order_recipes_ref}
+      ? @{$order_recipes_ref}
+      : ( qw{ first_recipe }, $recipe_name );
+
+    ## Add a chain to the recipe
+    $parameter_href->{$recipe_name}{chain} = $chain_id;
+
+    if ( $step eq q{fastq} ) {
+
+        @{ $parameter_href->{cache}{order_recipes_ref} } = $recipe_name;
+    }
+    if ( $step eq q{bam} ) {
+
+        %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} } = test_mip_hashes(
+            {
+                mip_hash_name => q{io_bam},
+            }
+        );
+        @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
+        $parameter_href->{$recipe_name}{outfile_suffix} = q{.bam};
+    }
+    if ( $step eq q{vcf} ) {
+
+        %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} } = test_mip_hashes(
+            {
+                mip_hash_name => q{io_vcf},
+            }
+        );
+        @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
+        $parameter_href->{$recipe_name}{outfile_suffix} = q{.vcf};
+    }
+    return;
 }
 
 sub build_usage {
@@ -190,6 +296,8 @@ sub test_mip_hashes {
                   file_info
                   install_active_parameter
                   io
+                  io_bam
+                  io_vcf
                   job_id
                   pedigree
                   recipe_parameter
@@ -230,6 +338,8 @@ sub test_mip_hashes {
         install_active_parameter =>
           catfile( $Bin, qw{ data test_data install_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
+        io_bam           => catfile( $Bin, qw{ data test_data io_bam.yaml } ),
+        io_vcf           => catfile( $Bin, qw{ data test_data io_vcf.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
@@ -258,6 +368,7 @@ sub test_mip_hashes {
         $hash_to_return{outscript_dir} = catfile( $temp_directory, q{test_script_dir} );
         $hash_to_return{temp_directory} = $temp_directory;
     }
+    ## TO DO - REMOVE THIS CONDITION ONCE ALL ANALYSIS_RECIPES USE test_add_io_for_recipe
     if ( $mip_hash_name eq q{recipe_parameter} ) {
 
         ## Adds a recipe chain
