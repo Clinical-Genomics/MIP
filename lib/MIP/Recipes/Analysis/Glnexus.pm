@@ -221,8 +221,9 @@ sub analysis_glnexus {
 
     glnexus_merge(
         {
-            config           => $config_type,
-            filehandle       => $filehandle,
+            config     => $config_type,
+            dir        => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+            filehandle => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
         }
     );

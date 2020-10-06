@@ -42,6 +42,7 @@ sub glnexus_merge {
 
     ## Flatten argument(s)
     my $config;
+    my $dir;
     my $filehandle;
     my $infile_paths_ref;
     my $stderrfile_path;
@@ -56,6 +57,11 @@ sub glnexus_merge {
             ],
             required    => 1,
             store       => \$config,
+            strict_type => 1,
+        },
+        dir => {
+            required    => 1,
+            store       => \$dir,
             strict_type => 1,
         },
         filehandle => {
@@ -88,6 +94,7 @@ sub glnexus_merge {
     my @commands = qw{ glnexus_cli };
 
     push @commands, q{--config} . $SPACE . $config;
+    push @commands, q{--dir} . $SPACE . $dir;
     push @commands, join $SPACE, @{$infile_paths_ref};
 
     push @commands,
