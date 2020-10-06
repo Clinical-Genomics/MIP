@@ -97,8 +97,8 @@ reference:
   mills_and_1000g_indels:
     - gold_standard_indels
   rank_model:
-    - v1.29
     - v1.30
+    - v1.31
   reduced_penetrance:
     - 2017
   scout_exons:

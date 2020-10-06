@@ -123,6 +123,7 @@ sub analysis_chromograph_cov {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Chromograph qw{ chromograph };
@@ -165,7 +166,13 @@ sub analysis_chromograph_cov {
         }
     );
 
-    my @contigs               = grep { !/M/xms } @{ $file_info_href->{contigs} };
+    ## Get all contigs excluding the mitochondria
+    my @contigs = delete_contig_elements( 
+        { 
+            contigs_ref => $file_info_href->{contigs}, 
+            remove_contigs_ref => [qw{ MT }],
+        }
+    );
     my @outfile_name_prefixes = map  { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
     %io = (
         %io,
