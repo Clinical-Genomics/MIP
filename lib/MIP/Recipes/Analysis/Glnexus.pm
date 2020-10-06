@@ -130,8 +130,19 @@ sub analysis_glnexus {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $consensus_analysis_type;
+    if ( uc $parameter_href->{cache}{consensus_analysis_type} eq q{PANEL} ) {
+        $consensus_analysis_type = q{WES};
+    }
+    elsif ( uc $parameter_href->{cache}{consensus_analysis_type} eq q{MIXED} ) {
+        $consensus_analysis_type = q{WGS};
+    }
+    else {
+        $consensus_analysis_type =
+          uc( $parameter_href->{cache}{consensus_analysis_type} );
+    }
+
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -180,9 +191,7 @@ sub analysis_glnexus {
         }
     );
 
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_constant_suffix};
-    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -208,7 +217,7 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $config_type = q{DeepVariant} . uc $consensus_analysis_type;
+    my $config_type = q{DeepVariant} . $consensus_analysis_type;
 
     glnexus_merge(
         {
@@ -240,6 +249,14 @@ sub analysis_glnexus {
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
+
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         submit_recipe(
             {

@@ -33,7 +33,7 @@ sub deepvariant {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $bedfile                => Bed file containing the list of  regions we want to process
+## Arguments: $bedfile                => Bed file containing the list of regions we want to process
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Aligned, sorted, indexed bam file containing the reads we want to call
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO

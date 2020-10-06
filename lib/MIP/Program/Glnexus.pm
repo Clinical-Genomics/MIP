@@ -35,6 +35,8 @@ sub glnexus_merge {
 ## Returns  : @commands
 ## Arguments: $config                 => Allows us to process vcf files from different variant callers.
 ##          : $infile_paths_ref       => Space separated list of input vcf files
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
     my ($arg_href) = @_;
 
@@ -102,7 +104,6 @@ sub glnexus_merge {
             commands_ref => \@commands,
             filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;
