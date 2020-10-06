@@ -118,8 +118,6 @@ my $is_ok = analysis_chanjo_sex_check(
         sample_info_href      => \%sample_info,
     }
 );
-use Data::Printer;
-p(%file_info);
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
