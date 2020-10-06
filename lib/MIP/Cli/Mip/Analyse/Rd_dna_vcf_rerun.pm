@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.32;
+our $VERSION = 1.33;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -650,6 +650,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Add all MT variants in select vcf},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{vcfparser_pli_score_file} => (
+            cmd_tags      => [q{Format: tsv}],
+            documentation => q{Gene pLI score file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
