@@ -80,6 +80,10 @@ my %required_argument = (
         input           => q{DeepVariant},
         expected_output => q{--config } . q{DeepVariant},
     },
+    dir => {
+        input           => catfile(qw{ dir glnexus }),
+        expected_output => q{--dir } . catfile(qw{ dir glnexus }),
+    },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
@@ -90,6 +94,10 @@ my %specific_argument = (
     config => {
         input           => q{DeepVariant},
         expected_output => q{--config } . q{DeepVariant},
+    },
+    dir => {
+        input           => catfile(qw{ dir glnexus }),
+        expected_output => q{--dir } . catfile(qw{ dir glnexus }),
     },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
