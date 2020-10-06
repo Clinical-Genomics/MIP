@@ -96,6 +96,10 @@ my %required_argument = (
         input           => q{WES},
         expected_output => q{--model_type=WES},
     },
+    num_shards => {
+        input           => q{36},
+        expected_output => q{--num_shards 36},
+    },
     outfile_path => {
         input           => catfile(q{ dir outfile.g.vcf }),
         expected_output => q{--output_gvcf=} . catfile(qw{ dir outfile.g.vcf }),
