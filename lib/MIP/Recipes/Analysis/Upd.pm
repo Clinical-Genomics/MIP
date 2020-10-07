@@ -126,7 +126,7 @@ sub analysis_upd {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
     use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gnu::Coreutils qw{ gnu_sort };
@@ -298,7 +298,12 @@ sub analysis_upd {
 
       CALL_TYPE:
         foreach my $call_type (@call_types) {
-            my $file_path_prefix = fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+            my $file_path_prefix = parse_file_suffix(
+                {
+                    file_name   => $outfile_path{$call_type},
+                    file_suffix => q{.bed},
+                }
+            );
 
             set_file_path_to_store(
                 {
