@@ -368,12 +368,6 @@ sub test_mip_hashes {
         $hash_to_return{outscript_dir} = catfile( $temp_directory, q{test_script_dir} );
         $hash_to_return{temp_directory} = $temp_directory;
     }
-    ## TO DO - REMOVE THIS CONDITION ONCE ALL ANALYSIS_RECIPES USE test_add_io_for_recipe
-    if ( $mip_hash_name eq q{recipe_parameter} ) {
-
-        ## Adds a recipe chain
-        $hash_to_return{$recipe_name}{chain} = q{TEST};
-    }
     return %hash_to_return;
 }
 
