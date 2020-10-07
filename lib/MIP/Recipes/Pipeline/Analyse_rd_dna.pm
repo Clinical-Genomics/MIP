@@ -444,6 +444,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph_cov analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
@@ -461,6 +462,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome
       qw{ analysis_gatk_variantevalexome };
+    use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
@@ -559,6 +561,7 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                              # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
+        deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -574,6 +577,7 @@ sub pipeline_analyse_rd_dna {
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration =>
           undef,    # Depends on analysis type and/or number of samples
+        glnexus_merge                => \&analysis_glnexus,
         gzip_fastq                   => \&analysis_gzip_fastq,
         manta                        => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,

@@ -33,12 +33,13 @@ sub deepvariant {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $bamfile                => Aligned, sorted, indexed bam file containing the reads we want to call
-##          : $bedfile                => Bed file containing the list of  regions we want to process
+## Arguments: $bedfile                => Bed file containing the list of regions we want to process
 ##          : $filehandle             => Filehandle to write to
+##          : $infile_path            => Aligned, sorted, indexed bam file containing the reads we want to call
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
 ##          : $outfile_path           => Path to the output gvcf file
+##          : $outfile_path_vcf       => Path to the output vcf file
 ##          : $referencefile_path     => Path to genome reference
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -48,12 +49,13 @@ sub deepvariant {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bamfile;
     my $bedfile;
     my $filehandle;
+    my $infile_path;
     my $model_type;
     my $num_shards;
     my $outfile_path;
+    my $outfile_path_vcf;
     my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -61,13 +63,6 @@ sub deepvariant {
     my $stdoutfile_path;
 
     my $tmpl = {
-        bamfile => {
-            allow       => qr/ bam \z /xms,
-            defined     => 1,
-            required    => 1,
-            store       => \$bamfile,
-            strict_type => 1,
-        },
         bedfile => {
             defined     => 1,
             store       => \$bedfile,
@@ -75,6 +70,13 @@ sub deepvariant {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        infile_path => {
+            allow       => qr/ bam \z /xms,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
         },
         model_type => {
             allow       => [qw{ WES WGS PACBIO }],
@@ -92,6 +94,12 @@ sub deepvariant {
             defined     => 1,
             required    => 1,
             store       => \$outfile_path,
+            strict_type => 1,
+        },
+        outfile_path_vcf => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_vcf,
             strict_type => 1,
         },
         referencefile_path => {
@@ -123,9 +131,11 @@ sub deepvariant {
     ## Stores commands depending on input parameters
     my @commands = qw{ run_deepvariant };
 
-    push @commands, q{--reads} . $EQUALS . $bamfile;
+    push @commands, q{--reads} . $EQUALS . $infile_path;
     push @commands, q{--ref} . $EQUALS . $referencefile_path;
+    push @commands, q{--num_shards} . $EQUALS . $num_shards;
     push @commands, q{--output_gvcf} . $EQUALS . $outfile_path;
+    push @commands, q{--output_vcf} . $EQUALS . $outfile_path_vcf;
     push @commands, q{--model_type} . $EQUALS . $model_type;
 
     if ($bedfile) {

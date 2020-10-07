@@ -144,6 +144,7 @@ recipe_core_number:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 13
+    deepvariant: 36
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
@@ -159,6 +160,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    glnexus_merge: 36
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -255,6 +257,7 @@ recipe_time:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 1
+    deepvariant: 10
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
@@ -270,6 +273,7 @@ recipe_time:
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
@@ -479,6 +483,31 @@ markduplicates_picardtools_opt_dup_dist:
   data_type: SCALAR
   default: 2500
   type: recipe_argument
+## Deepvariant
+deepvariant:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _deepvar
+  outfile_suffix: ".g.vcf.gz"
+  program_executables:
+    - run_deepvariant
+  type: recipe
+glnexus_merge:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _glnex
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - glnexus_cli
+    - bcftools
+    - bgzip
+  type: recipe
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample

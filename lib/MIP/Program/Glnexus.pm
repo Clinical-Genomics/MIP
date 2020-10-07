@@ -34,20 +34,19 @@ sub glnexus_merge {
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
 ## Arguments: $config                 => Allows us to process vcf files from different variant callers.
-##          : $infiles_ref            => Space separated list of input vcf files
+##          : $infile_paths_ref       => Space separated list of input vcf files
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $config;
-    my $infiles_ref;
+    my $dir;
+    my $filehandle;
+    my $infile_paths_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $stdinfile_path;
     my $stdoutfile_path;
 
     my $tmpl = {
@@ -60,10 +59,19 @@ sub glnexus_merge {
             store       => \$config,
             strict_type => 1,
         },
-        infiles_ref => {
-            default     => [],
+        dir => {
             required    => 1,
-            store       => \$infiles_ref,
+            store       => \$dir,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -72,10 +80,6 @@ sub glnexus_merge {
         },
         stderrfile_path_append => {
             store       => \$stderrfile_path_append,
-            strict_type => 1,
-        },
-        stdinfile_path => {
-            store       => \$stdinfile_path,
             strict_type => 1,
         },
         stdoutfile_path => {
@@ -90,14 +94,14 @@ sub glnexus_merge {
     my @commands = qw{ glnexus_cli };
 
     push @commands, q{--config} . $SPACE . $config;
-    push @commands, join $SPACE, @{$infiles_ref};
+    push @commands, q{--dir} . $SPACE . $dir;
+    push @commands, join $SPACE, @{$infile_paths_ref};
 
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdinfile_path         => $stdinfile_path,
             stdoutfile_path        => $stdoutfile_path,
         }
       );
@@ -105,8 +109,8 @@ sub glnexus_merge {
     unix_write_to_file(
         {
             commands_ref => \@commands,
+            filehandle   => $filehandle,
             separator    => $SPACE,
-
         }
     );
     return @commands;

@@ -59,20 +59,17 @@ diag(   q{Test glnexus_merge from Glnexus.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
+
 my @function_base_commands = qw{ glnexus_cli };
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
+    config => {
+        input           => q{DeepVariant},
+        expected_output => q{--config } . q{DeepVariant},
     },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    infile_paths_ref => {
+        inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
+        expected_output => catfile(qw{ dir infile1.vcf }),
     },
 );
 
@@ -83,7 +80,11 @@ my %required_argument = (
         input           => q{DeepVariant},
         expected_output => q{--config } . q{DeepVariant},
     },
-    infiles_ref => {
+    dir => {
+        input           => catfile(qw{ dir glnexus }),
+        expected_output => q{--dir } . catfile(qw{ dir glnexus }),
+    },
+    infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
@@ -94,7 +95,11 @@ my %specific_argument = (
         input           => q{DeepVariant},
         expected_output => q{--config } . q{DeepVariant},
     },
-    infiles_ref => {
+    dir => {
+        input           => catfile(qw{ dir glnexus }),
+        expected_output => q{--dir } . catfile(qw{ dir glnexus }),
+    },
+    infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
