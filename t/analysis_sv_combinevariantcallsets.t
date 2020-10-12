@@ -16,16 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,7 +42,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Sv_combinevariantcallsets} =>
           [qw{ analysis_sv_combinevariantcallsets }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -92,21 +91,6 @@ my %file_info = test_mip_hashes(
     }
 );
 
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
-
-SV_CALLER:
-foreach my $sv_caller (@structural_variant_callers) {
-    %{ $file_info{io}{TEST}{$case_id}{$sv_caller} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -114,22 +98,33 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ tiddit manta delly_reformat cnvnator_ar }, $recipe_name );
-$parameter{cache}{structural_variant_callers} =
-  [qw{ tiddit manta delly_reformat cnvnator_ar }];
+$parameter{cache}{structural_variant_callers} = [@structural_variant_callers];
+
+my @order_recipes = ( @structural_variant_callers, $recipe_name );
 
 SV_CALLER:
 foreach my $sv_caller (@structural_variant_callers) {
-    $parameter{$sv_caller}{chain} = uc q{test};
+    test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $case_id,
+        parameter_href    => \%parameter,
+        recipe_name       => $sv_caller,
+        step              => q{vcf},
+    }
+);
 }
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
-SV_CALLER:
-foreach my $sv_caller (@structural_variant_callers) {
-
-    $parameter{$sv_caller}{outfile_suffix} = q{.vcf};
-}
+    test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $case_id,
+        order_recipes_ref => \@order_recipes,
+        parameter_href    => \%parameter,
+        recipe_name       => $recipe_name,
+        step              => q{vcf},
+    }
+);
 
 my %sample_info;
 
@@ -149,7 +144,7 @@ my $is_ok = analysis_sv_combinevariantcallsets(
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
-## Given a single samples
+## Given a single sample
 @{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
 
 $is_ok = analysis_sv_combinevariantcallsets(

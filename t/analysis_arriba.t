@@ -102,12 +102,12 @@ test_add_io_for_recipe(
     {
         file_info_href => \%file_info,
         id             => $sample_id,
+        outfile_suffix => q{.tsv},
         parameter_href => \%parameter,
         recipe_name    => $recipe_name,
         step           => q{bam},
     }
 );
-$parameter{$recipe_name}{outfile_suffix} = q{.tsv};
 
 my %sample_info = (
     sample => {

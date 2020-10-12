@@ -22,10 +22,10 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -46,7 +46,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_asereadcounter} =>
           [qw{ analysis_gatk_asereadcounter }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -86,55 +86,47 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
-
-## Special case since gatk_asereadcounter needs to collect from recipe not immediate upstream
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{markduplicates} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-## Ensure correct file suffix
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{markduplicates}{out}{file_path_prefix} =
-      q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{markduplicates}{out}{file_suffix} =
-      q{.bam};
-}
-
-## Set recipe io files
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
 
 my %job_id;
+
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ markduplicates }, $recipe_name );
 
-## Enable gatk baserecalibration io collection
-$parameter{markduplicates}{chain} = q{TEST};
+## Special case since gatk_asereadcounter needs to collect from recipe not immediate upstream
+my @order_recipes = ( qw{ markduplicates }, $recipe_name );
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    test_add_io_for_recipe(
+        {
+            file_info_href => \%file_info,
+            id             => $sample_id,
+            parameter_href => \%parameter,
+            recipe_name    => q{markduplicates},
+            step           => q{bam},
+        }
+    );
+}
+
+## Set recipe io files
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $sample_id,
+        parameter_href    => \%parameter,
+        order_recipes_ref => \@order_recipes,
+        recipe_name       => $recipe_name,
+        step              => q{vcf},
+    }
+);
+}
 
 my %sample_info;
 

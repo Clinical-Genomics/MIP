@@ -16,16 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,7 +42,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_combinevariantcallsets} =>
           [qw{ analysis_gatk_combinevariantcallsets }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -82,7 +81,7 @@ my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ gatk_variantrecalibration bcftools_mpielup };
+my @variant_callers = qw{ gatk_variantrecalibration bcftools_mpileup };
 
 my %file_info = test_mip_hashes(
     {
@@ -90,21 +89,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
-
-CALLER:
-foreach my $caller (@variant_callers) {
-    %{ $file_info{io}{TEST}{$case_id}{$caller} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -112,21 +96,34 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ gatk_variantrecalibration }, $recipe_name );
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 CALLER:
 foreach my $caller (@variant_callers) {
 
-    $parameter{$caller}{outfile_suffix} = q{.vcf};
-    push @{ $parameter{cache}{variant_callers} }, $caller;
+    test_add_io_for_recipe(
+        {
+            file_info_href => \%file_info,
+            id             => $case_id,
+            parameter_href => \%parameter,
+            recipe_name    => $caller,
+            step           => q{vcf},
+        }
+    );
+        push @{ $parameter{cache}{variant_callers} }, $caller;
 }
 
-CALLER:
-foreach my $caller (@variant_callers) {
-    $parameter{$caller}{chain} = uc q{test};
-}
+my @order_recipes = ( qw{ gatk_variantrecalibration }, $recipe_name );
+
+test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $case_id,
+        parameter_href    => \%parameter,
+        order_recipes_ref => \@order_recipes,
+        recipe_name       => $recipe_name,
+        step              => q{vcf},
+    }
+);
 
 my %sample_info;
 

@@ -44,6 +44,7 @@ sub test_add_io_for_recipe {
 ##          : $id                => Sample or case
 ##          : $parameter_href    => Parameter hash {REF}
 ##          : $order_recipes_ref => Order of recipes {REF}
+##          : $outfile_suffix    => Set outfile suffix in parameters
 ##          : $recipe_name       => Recipe name
 ##          : $step              => Level to inherit from
 
@@ -53,6 +54,7 @@ sub test_add_io_for_recipe {
     my $file_info_href;
     my $parameter_href;
     my $order_recipes_ref;
+    my $outfile_suffix;
     my $recipe_name;
 
     ## Default(s)
@@ -81,6 +83,10 @@ sub test_add_io_for_recipe {
         order_recipes_ref => {
             default     => [],
             store       => \$order_recipes_ref,
+            strict_type => 1,
+        },
+        outfile_suffix => {
+            store       => \$outfile_suffix,
             strict_type => 1,
         },
         parameter_href => {
@@ -116,6 +122,7 @@ sub test_add_io_for_recipe {
     if ( $step eq q{fastq} ) {
 
         @{ $parameter_href->{cache}{order_recipes_ref} } = $recipe_name;
+         $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{bam} ) {
 
@@ -125,7 +132,7 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = q{.bam};
+        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{vcf} ) {
 
@@ -135,7 +142,7 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = q{.vcf};
+        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.vcf};
     }
     return;
 }
@@ -367,6 +374,11 @@ sub test_mip_hashes {
         $hash_to_return{outdata_dir}   = catfile( $temp_directory, q{test_data_dir} );
         $hash_to_return{outscript_dir} = catfile( $temp_directory, q{test_script_dir} );
         $hash_to_return{temp_directory} = $temp_directory;
+    }
+    if ( $mip_hash_name eq q{recipe_parameter} ) {
+
+        ## Adds a recipe chain
+        $hash_to_return{$recipe_name}{chain} = q{TEST};
     }
     return %hash_to_return;
 }

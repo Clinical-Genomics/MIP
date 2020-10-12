@@ -129,6 +129,7 @@ test_add_io_for_recipe(
         step              => q{vcf},
     }
 );
+
 my %job_id;
 
 my %sample_info = (
