@@ -268,8 +268,12 @@ sub analysis_upd {
         say {$filehandle} $NEWLINE;
 
         say {$filehandle} q{## Create big bed files};
-        my $big_bed_file_path_prefix =
-          fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+        my $big_bed_file_path_prefix = parse_file_suffix(
+            {
+                file_name   => $outfile_path{$call_type},
+                file_suffix => q{.bed},
+            }
+        );
         ucsc_bed_to_big_bed(
             {
                 contigs_size_file_path => $contigs_size_file_path,
