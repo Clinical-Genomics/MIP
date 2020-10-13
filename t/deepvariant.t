@@ -83,7 +83,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    bamfile => {
+    infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--reads=} . catfile(qw{ dir infile.bam }),
     },
@@ -96,11 +96,18 @@ my %required_argument = (
         input           => q{WES},
         expected_output => q{--model_type=WES},
     },
-    outfile_path => {
-        input           => catfile(q{ dir outfile.vcf }),
-        expected_output => q{--output_gvcf=} . catfile(qw{ dir outfile.vcf }),
+    num_shards => {
+        input           => q{36},
+        expected_output => q{--num_shards 36},
     },
-
+    outfile_path => {
+        input           => catfile(q{ dir outfile.g.vcf }),
+        expected_output => q{--output_gvcf=} . catfile(qw{ dir outfile.g.vcf }),
+    },
+    outfile_path_vcf => {
+        input           => catfile(q{ dir outfile.vcf }),
+        expected_output => q{--output_vcf=} . catfile(qw{ dir outfile.vcf }),
+    },
 );
 
 my %specific_argument = (

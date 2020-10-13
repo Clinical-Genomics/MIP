@@ -144,6 +144,7 @@ recipe_core_number:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 13
+    deepvariant: 36
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
@@ -159,6 +160,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    glnexus_merge: 36
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -191,7 +193,6 @@ recipe_core_number:
     variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
-    vcfanno_preops: 36
     vt_ar: 13
     vt_core: 1
   type: mip
@@ -256,6 +257,7 @@ recipe_time:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 1
+    deepvariant: 10
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
@@ -271,6 +273,7 @@ recipe_time:
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
@@ -306,7 +309,6 @@ recipe_time:
     variant_integrity_ar: 1
     varianteffectpredictor: 10
     vcf2cytosure_ar: 20
-    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -481,6 +483,31 @@ markduplicates_picardtools_opt_dup_dist:
   data_type: SCALAR
   default: 2500
   type: recipe_argument
+## Deepvariant
+deepvariant:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _deepvar
+  outfile_suffix: ".g.vcf.gz"
+  program_executables:
+    - run_deepvariant
+  type: recipe
+glnexus_merge:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _glnex
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - glnexus_cli
+    - bcftools
+    - bgzip
+  type: recipe
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample
@@ -1560,16 +1587,6 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-vcfanno_preops:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  program_executables:
-    - bcftools
-    - vcfanno
-  type: recipe
 rhocall_viz:
   analysis_mode: sample
   associated_recipe:
@@ -1808,6 +1825,16 @@ vcfparser_outfile_count:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+vcfparser_pli_score_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: gnomad_pli_per_gene_-_r2.1.1-.txt
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar

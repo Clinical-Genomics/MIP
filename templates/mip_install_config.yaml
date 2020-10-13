@@ -82,7 +82,7 @@ container:
       make_examples: /opt/deepvariant/bin/make_examples
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
-    uri: docker.io/google/deepvariant:0.10.0
+    uri: docker.io/google/deepvariant:1.0.0
   delly:
     executable:
       delly:
@@ -255,4 +255,5 @@ vep_plugins:
   - ExACpLI
   - LoFtool
   - MaxEntScan
+  - SpliceAI
 vep_auto_flag: cfp

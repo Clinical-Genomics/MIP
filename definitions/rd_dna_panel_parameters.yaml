@@ -148,7 +148,6 @@ recipe_core_number:
     samtools_merge: 2
     variant_integrity_ar: 1
     varianteffectpredictor: 1
-    vcfanno_preops: 36
     vcfparser_ar: 1
     version_collect_ar: 1
     vt_ar: 1
@@ -220,7 +219,6 @@ recipe_time:
     samtools_merge: 2
     variant_integrity_ar: 1
     varianteffectpredictor: 4
-    vcfanno_preops: 22
     vcfparser_ar: 1
     version_collect_ar: 1
     vt_ar: 2
@@ -835,16 +833,6 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-vcfanno_preops:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  program_executables:
-    - bcftools
-    - vcfanno
-  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -1037,6 +1025,16 @@ vcfparser_outfile_count:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+vcfparser_pli_score_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: gnomad_pli_per_gene_-_r2.1.1-.txt
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -226,19 +226,20 @@ sub check_vep_plugin {
         my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
         croak($err_msg) if ( ref $value_href ne q{HASH} );
 
-        next PLUGIN if ( not exists $value_href->{path} );
+        next PLUGIN if ( not exists $value_href->{exist_check} );
 
-        next PLUGIN if ( not exists $value_href->{exists_check} );
+      OBJECT:
+        foreach my $object_href ( @{ $value_href->{exist_check} } ) {
 
-        ## Check path object exists
-        check_filesystem_objects_and_index_existance(
-            {
-                object_name    => $plugin,
-                object_type    => $value_href->{exists_check},
-                parameter_name => $parameter_name,
-                path           => $value_href->{path},
-            }
-        );
+            check_filesystem_objects_and_index_existance(
+                {
+                    object_name    => $plugin,
+                    object_type    => $object_href->{type},
+                    parameter_name => $parameter_name,
+                    path           => $object_href->{path},
+                }
+            );
+        }
     }
     return 1;
 }

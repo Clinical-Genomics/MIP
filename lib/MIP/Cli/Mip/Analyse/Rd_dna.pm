@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.60;
+our $VERSION = 1.61;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -363,6 +363,22 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Use soft clipping for supplementary alignments},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{deepvariant} => (
+            documentation => q{Use deepvariant for variant calling},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{glnexus} => (
+            documentation => q{Use glnexus to merge sample vcfs from deepvariant},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -1693,6 +1709,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Add all MT variants in select vcf},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{vcfparser_pli_score_file} => (
+            cmd_tags      => [q{Format: tsv}],
+            documentation => q{Gene pLI score file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
