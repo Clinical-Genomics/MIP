@@ -274,13 +274,10 @@ sub analysis_reformat_sv {
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
 
-            my $filter_metafile_tag = q{sv_reformat_remove_genes_file_research};
-
-            ## Update metafile_tag depending on select or research
-            if ( $infile_index == 1 ) {
-
-                $filter_metafile_tag = q{sv_reformat_remove_genes_file_clinical};
-            }
+            my $filter_metafile_tag =
+              $infile_index == 1
+              ? q{sv_reformat_remove_genes_file_clinical}
+              : q{sv_reformat_remove_genes_file_research};
 
             my $filter_file_path = catfile( $reference_dir,
                 $active_parameter_href->{sv_reformat_remove_genes_file} );
