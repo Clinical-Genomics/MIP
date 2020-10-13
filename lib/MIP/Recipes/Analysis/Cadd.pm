@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_panel };
@@ -195,10 +195,11 @@ sub analysis_cadd {
         )
     );
 
-    my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my @outfile_paths       = @{ $io{out}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -253,12 +254,14 @@ sub analysis_cadd {
         }
     );
 
+    my %cadd_outfile_path;
     ## Process per contig
   CONTIG:
     while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+        $cadd_outfile_path{$contig} = catfile( $active_parameter_href->{temp_directory},
+            $contig, $outfile_name_prefix . $DOT . $contig . $DOT . q{tsv.gz} );
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
@@ -310,7 +313,7 @@ sub analysis_cadd {
                 filehandle             => $xargsfilehandle,
                 genome_build           => $assembly_version,
                 infile_path            => $view_outfile_path,
-                outfile_path           => $cadd_outfile_path,
+                outfile_path           => $cadd_outfile_path{$contig},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -341,15 +344,12 @@ sub analysis_cadd {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
-        # Corresponds to cadd outfile path
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-
         ## Parse outfile in case of grch38
-        $cadd_outfile_path = _parse_cadd_outfile(
+        my $cadd_outfile_path = _parse_cadd_outfile(
             {
                 escape_oneliner   => 1,
                 filehandle        => $xargsfilehandle,
-                infile_path       => $cadd_outfile_path,
+                infile_path       => $cadd_outfile_path{$contig},
                 reference_version => $file_info_href->{human_genome_reference_version},
             }
         );
