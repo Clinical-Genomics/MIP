@@ -21,7 +21,8 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures
+  qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.04;
@@ -42,7 +43,8 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_combinevariantcallsets} =>
           [qw{ analysis_gatk_combinevariantcallsets }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} =>
+          [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -74,7 +76,7 @@ my %active_parameter = test_mip_hashes(
 );
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{gatk_variantrecalibration}        = 1;
-$active_parameter{bcftools_mpielup}                 = 1;
+$active_parameter{bcftools_mpileup}                 = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
@@ -109,10 +111,10 @@ foreach my $caller (@variant_callers) {
             step           => q{vcf},
         }
     );
-        push @{ $parameter{cache}{variant_callers} }, $caller;
+    push @{ $parameter{cache}{variant_callers} }, $caller;
 }
 
-my @order_recipes = ( qw{ gatk_variantrecalibration }, $recipe_name );
+my @order_recipes = ( qw{ gatk_variantrecalibration bcftools_mpileup }, $recipe_name );
 
 test_add_io_for_recipe(
     {

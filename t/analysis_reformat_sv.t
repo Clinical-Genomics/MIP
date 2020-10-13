@@ -21,7 +21,8 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures
+  qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.01;
@@ -41,7 +42,8 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Sv_reformat} => [qw{ analysis_reformat_sv }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} =>
+          [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -94,17 +96,18 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 
 ## Special case since SV only operates single file
-my $single_file_path = $file_info{io}{TEST}{$case_id}{$recipe_name}{in}{file_paths}[0];
-$file_info{io}{TEST}{$case_id}{$recipe_name}{in}{file_paths} = [$single_file_path];
+my @single_file_paths =
+  @{ $file_info{io}{TEST}{$case_id}{$recipe_name}{in}{file_paths} }[ 0 .. 1 ];
+$file_info{io}{TEST}{$case_id}{$recipe_name}{in}{file_paths} = [@single_file_paths];
 
 my %sample_info;
 
