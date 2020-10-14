@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -37,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_frequency_filter analysis_frequency_filter_panel };
