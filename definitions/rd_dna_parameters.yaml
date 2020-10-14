@@ -507,7 +507,9 @@ glnexus_merge:
     - glnexus_cli
     - bcftools
     - bgzip
+  recipe_type: variant_callers
   type: recipe
+  variant_caller: deepvariant
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample

@@ -232,7 +232,7 @@ sub analysis_gatk_combinevariantcallsets {
             }
         );
         my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
-        my $infile_suffix      = $sample_io{$stream}{file_suffix};
+        my $infile_suffix      = $sample_io{$stream}{file_suffixes}[0];
         my $infile_path        = $infile_path_prefix . $infile_suffix;
 
         ## Only use first part of name

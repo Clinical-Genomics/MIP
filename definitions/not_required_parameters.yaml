@@ -47,6 +47,7 @@ variant_caller:
   key_data_type: SCALAR
   values:
     - cnvnator
+    - deepvariant
     - delly
     - expansionhunter
     - haplotypecaller
