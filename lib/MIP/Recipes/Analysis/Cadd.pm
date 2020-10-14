@@ -124,6 +124,7 @@ sub analysis_cadd {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
@@ -200,6 +201,9 @@ sub analysis_cadd {
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %temp_outdir_path =
+      map { $_ => catdir( $active_parameter_href->{temp_directory}, $_ ) }
+      @contigs_size_ordered;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -240,6 +244,20 @@ sub analysis_cadd {
     );
     say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Create temp directories};
+  TEMP_OUTDIR:
+    foreach my $temp_outdir ( values %temp_outdir_path ) {
+
+        gnu_mkdir(
+            {
+                filehandle       => $filehandle,
+                indirectory_path => $temp_outdir,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+    print {$filehandle} $NEWLINE;
+
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
 
@@ -260,8 +278,8 @@ sub analysis_cadd {
     while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
-        $cadd_outfile_path{$contig} = catfile( $active_parameter_href->{temp_directory},
-            $contig, $outfile_name_prefix . $DOT . $contig . $DOT . q{tsv.gz} );
+        $cadd_outfile_path{$contig} = catfile( $temp_outdir_path{$contig},
+            $outfile_name_prefix . $DOT . $contig . $DOT . q{tsv.gz} );
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
