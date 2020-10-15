@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -236,8 +236,14 @@ sub analysis_gatk_combinevariantcallsets {
         my $infile_path        = $infile_path_prefix . $infile_suffix;
 
         ## Only use first part of name
-        my ($variant_caller_prio_tag) = split /_/sxm, $variant_caller;
+        my $variant_caller_prio_tag;
 
+        if ($variant_caller eq "gatk_variantrecalibration"){
+            $variant_caller_prio_tag = "haplotypecaller";
+        }
+        elsif ($variant_caller eq "glnexus_merge"){
+            $variant_caller_prio_tag = "deepvariant";
+        }
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
         ## For single caller use - collect infile path without prio tag
@@ -264,7 +270,7 @@ sub analysis_gatk_combinevariantcallsets {
                 java_jar             => $gatk_jar,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 logging_level        => $active_parameter_href->{gatk_logging_level},
-                memory_allocation    => q{Xmx2g},
+                memory_allocation    => q{Xmx20g},
                 outfile_path         => $outfile_path,
                 prioritize_caller =>
                   $active_parameter_href->{gatk_combinevariants_prioritize_caller},
