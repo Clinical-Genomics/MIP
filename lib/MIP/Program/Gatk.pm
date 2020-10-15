@@ -1327,6 +1327,7 @@ sub gatk_combinevariants {
     my $gatk_disable_auto_index_and_file_lock;
     my $logging_level;
     my $pedigree_validation_type;
+    my $xargs_mode;
 
     my $tmpl = {
         downsample_to_coverage => {
@@ -1361,7 +1362,6 @@ sub gatk_combinevariants {
             strict_type => 1,
         },
         intervals_ref => { default => [], store => \$intervals_ref, strict_type => 1, },
-        java_jar             => { store => \$java_jar, strict_type => 1, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -1397,23 +1397,28 @@ sub gatk_combinevariants {
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
+            xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    my @commands = qw{ gatk3 };;
 
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-        @commands = java_core(
-            {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
-            }
-        );
-    }
+    ## Add java options
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
+        }
+    );
+
 
     @commands = gatk_base(
         {
@@ -1430,8 +1435,6 @@ sub gatk_combinevariants {
         }
     );
 
-    ## Add binary to beginning
-    unshift @commands, q{gatk3};
 
     if ($exclude_nonvariants) {
 
