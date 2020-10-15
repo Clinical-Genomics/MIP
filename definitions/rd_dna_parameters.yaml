@@ -190,7 +190,6 @@ recipe_core_number:
     tiddit_coverage: 1
     upd_ar: 1
     varg_ar: 1
-    variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
@@ -306,7 +305,6 @@ recipe_time:
     tiddit_coverage: 5
     upd_ar: 1
     varg_ar: 1
-    variant_integrity_ar: 1
     varianteffectpredictor: 10
     vcf2cytosure_ar: 20
     vcfparser_ar: 5
@@ -1898,16 +1896,6 @@ plink:
     - plink2
     - bcftools
   type: recipe
-variant_integrity_ar:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _integrity
-  program_executables:
-    - variant_integrity
-  type: recipe
 rtg_vcfeval:
   analysis_mode: sample
   associated_recipe:
@@ -1987,7 +1975,6 @@ genmod_annotate_regions:
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
-    - variant_integrity_ar
   data_type: SCALAR
   default: ped
   type: recipe_argument

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,17 +59,17 @@ diag(   q{Test evaluate_analysis from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.3;
+Readonly my $PERCENTAGE_MAPPED_READS => 0.9;
 
 my $log = test_log( {} );
 
 ## Given
-my $metric_lt = q{fraction_of_common_variants};
-my $recipe_lt = q{variant_integrity_ar_father};
+my $metric_lt = q{percentage_mapped_reads};
+my $recipe_lt = q{bamstats};
 my %qc_data   = (
     recipe => {
         $recipe_lt => {
-            $metric_lt => $FRACTION_OF_COMMON_VARIANTS
+            $metric_lt => $PERCENTAGE_MAPPED_READS
         },
     },
 );
@@ -81,7 +81,7 @@ my %sample_info = test_mip_hashes(
 );
 
 my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.1-.yaml} );
+  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
 
 ## Then set the relevant evaluation metrics for the analysis
 my $is_ok = evaluate_analysis(

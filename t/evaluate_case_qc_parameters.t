@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,29 +58,41 @@ diag(   q{Test evaluate_case_qc_parameters from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.3;
+Readonly my $PCT_PF_READS_ALIGNED => 0.9;
+Readonly my $PCT_ADAPTER          => 0.0005;
 
-## Given
-my $metric_lt = q{fraction_of_common_variants};
-my $recipe_lt = q{variant_integrity_ar_father};
-my %qc_data =
-  ( recipe => { $recipe_lt => { $metric_lt => $FRACTION_OF_COMMON_VARIANTS }, }, );
+## Given qc_data with metrics from an analysis
+my $metric_gt = q{PCT_ADAPTER};
+my $metric_lt = q{PCT_PF_READS_ALIGNED};
+my $recipe    = q{collectmultiplemetrics};
+my %qc_data   = (
+    recipe => {
+        $recipe => { $metric_lt => $PCT_PF_READS_ALIGNED },
+        $recipe => { $metric_gt => $PCT_ADAPTER },
+    },
+);
 
+## Given evaluation thresholds
 my %evaluate_metric = (
-    variant_integrity_ar_father => {
-        fraction_of_common_variants => {
-            lt => $FRACTION_OF_COMMON_VARIANTS,
+    collectmultiplemetrics => {
+        PCT_PF_READS_ALIGNED => {
+            lt => $PCT_PF_READS_ALIGNED,
+        },
+        PCT_ADAPTER => {
+            gt => $PCT_ADAPTER,
         },
     },
 );
 
-my %sample_info = test_mip_hashes(
+## Given a the recipe in qc_sample_info
+test_mip_hashes(
     {
         mip_hash_name => q{qc_sample_info},
-        recipe_name   => $recipe_lt,
+        recipe_name   => $recipe,
     }
 );
 
+## When evaluating the recipe and metrics
 my $is_ok = evaluate_case_qc_parameters(
     {
         evaluate_metric_href => \%evaluate_metric,
@@ -88,7 +100,7 @@ my $is_ok = evaluate_case_qc_parameters(
     }
 );
 
-## Then
+## Then metrics should be evaluated and return true
 ok( $is_ok, q{Evaluated case qc parameter} );
 
 done_testing();

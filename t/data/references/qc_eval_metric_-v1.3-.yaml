@@ -1,0 +1,69 @@
+---
+panel:
+  bamstats:
+    percentage_mapped_reads:
+      lt: 95
+  collecthsmetrics:
+    PCT_TARGET_BASES_10X:
+      lt: 0.95
+    MEAN_TARGET_COVERAGE:
+      lt: 26
+  collectmultiplemetrics:
+    PCT_PF_READS_ALIGNED:
+      lt: 0.95
+    PCT_ADAPTER:
+      gt: 0.0005
+  markduplicates:
+    fraction_duplicates:
+      gt: 0.8
+wgs:
+  bamstats:
+    percentage_mapped_reads:
+      lt: 95
+  collecthsmetrics:
+    PCT_TARGET_BASES_10X:
+      lt: 0.95
+    MEAN_TARGET_COVERAGE:
+      lt: 26
+  collectmultiplemetrics:
+    PCT_PF_READS_ALIGNED:
+      lt: 0.95
+    PCT_ADAPTER:
+      gt: 0.0005
+  markduplicates:
+    fraction_duplicates:
+      gt: 0.2
+wes:
+  bamstats:
+    percentage_mapped_reads:
+      lt: 95
+  collecthsmetrics:
+    PCT_TARGET_BASES_10X:
+      lt: 0.95
+    MEAN_TARGET_COVERAGE:
+      lt: 26
+  collectmultiplemetrics:
+    PCT_PF_READS_ALIGNED:
+      lt: 0.95
+    PCT_ADAPTER:
+      gt: 0.0005
+  markduplicates:
+    fraction_duplicates:
+      gt: 0.2
+wts:
+  collectrnaseqmetrics:
+    PCT_MRNA_BASES:
+      lt: 0.9
+    PCT_RIBOSOMAL_BASES:
+      gt: 0.05
+  markduplicates:
+    fraction_duplicates:
+      gt: 0.5
+  star_log:
+    percentage_uniquely_mapped_reads:
+      lt: 75
+  trim_galore_stats:
+    percentage_bp_after_trimming:
+      lt: 60
+    percentage_reads_after_trimming:
+      lt: 80

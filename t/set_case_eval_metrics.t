@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,10 +58,8 @@ diag(   q{Test set_case_eval_metrics from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_PF_READS_ALIGNED              => 0.95;
-Readonly my $PCT_ADAPTER                       => 0.0005;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_MIXED => 0.08;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_WGS   => 0.06;
+Readonly my $PCT_PF_READS_ALIGNED => 0.95;
+Readonly my $PCT_ADAPTER          => 0.0005;
 
 my $log = test_log( { no_screen => 1, } );
 
@@ -70,6 +68,10 @@ my %sample_info = test_mip_hashes(
         mip_hash_name => q{qc_sample_info},
     }
 );
+
+## Remove RNA sample from test to get a wgs consensus type
+delete $sample_info{sample}{ADM1059A3};
+delete $sample_info{analysis_type}{ADM1059A3};
 
 ## Given a hash of evaluation metrics
 my %eval_metric = (
@@ -80,18 +82,6 @@ my %eval_metric = (
             },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
-            },
-        },
-        variant_integrity_ar_mendel => {
-            fraction_of_errors => {
-                gt => $VARIANT_INTEGRITY_AR_MENDEL_WGS,
-            },
-        },
-    },
-    mixed => {
-        variant_integrity_ar_mendel => {
-            fraction_of_errors => {
-                gt => $VARIANT_INTEGRITY_AR_MENDEL_MIXED,
             },
         },
     },
@@ -108,9 +98,12 @@ set_case_eval_metrics(
 );
 
 my %expected = (
-    variant_integrity_ar_mendel => {
-        fraction_of_errors => {
-            gt => $VARIANT_INTEGRITY_AR_MENDEL_MIXED,
+    collectmultiplemetrics => {
+        PCT_PF_READS_ALIGNED => {
+            lt => $PCT_PF_READS_ALIGNED,
+        },
+        PCT_ADAPTER => {
+            gt => $PCT_ADAPTER,
         },
     },
 );
