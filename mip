@@ -22,7 +22,7 @@ our $VERSION = 0.03;
 
 BEGIN {
 
-    require MIP::Check::Modules;
+    require MIP::Language::Perl;
     use MIP::Language::Perl qw{ check_modules_existance get_cpan_file_modules };
 
     my @modules =
