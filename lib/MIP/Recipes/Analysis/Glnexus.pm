@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -117,7 +117,7 @@ sub analysis_glnexus {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -241,6 +241,16 @@ sub analysis_glnexus {
         {
             filehandle      => $filehandle,
             stdoutfile_path => $outfile_path,
+            threads         => $core_number,
+            write_to_stdout => 1,
+        }
+    );
+    print {$filehandle} $SEMICOLON . $SPACE;
+    bcftools_index(
+        {
+            filehandle      => $filehandle,
+            infile_path     => $outfile_path,
+            output_type     => q{tbi},
             threads         => $core_number,
             write_to_stdout => 1,
         }
