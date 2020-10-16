@@ -21,7 +21,8 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures
+  qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.01;
@@ -41,7 +42,8 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Glnexus} => [qw{ analysis_glnexus }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} =>
+          [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -89,7 +91,6 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$parameter{cache}{consensus_analysis_type} = q{wgs};
 
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -112,20 +113,24 @@ my %sample_info = test_mip_hashes(
     }
 );
 
-my $is_ok = analysis_glnexus(
-    {
-        active_parameter_href => \%active_parameter,
-        case_id               => $case_id,
-        file_info_href        => \%file_info,
-        job_id_href           => \%job_id,
-        parameter_href        => \%parameter,
-        profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        sample_info_href      => \%sample_info,
-    }
-);
-
+my @consensus_analysis_types = qw { mixed panel wgs wes };
+foreach my $analysis_type (@consensus_analysis_types) {
+    $parameter{cache}{consensus_analysis_type} = $analysis_type;
+    my $is_ok = analysis_glnexus(
+        {
+            active_parameter_href => \%active_parameter,
+            case_id               => $case_id,
+            file_info_href        => \%file_info,
+            job_id_href           => \%job_id,
+            parameter_href        => \%parameter,
+            profile_base_command  => $slurm_mock_cmd,
+            recipe_name           => $recipe_name,
+            sample_info_href      => \%sample_info,
+        }
+    );
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+    ok( $is_ok,
+        q{ Executed analysis recipe } . $recipe_name . q{ with type } . $analysis_type );
+}
 
 done_testing();
