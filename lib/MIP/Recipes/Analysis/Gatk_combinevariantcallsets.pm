@@ -244,6 +244,9 @@ sub analysis_gatk_combinevariantcallsets {
         elsif ( $variant_caller eq 'glnexus_merge' ) {
             $variant_caller_prio_tag = 'deepvariant';
         }
+        elsif ( $variant_caller eq 'bcftools_mpileup' ) {
+            $variant_caller_prio_tag = 'mpileup';
+        }
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
         ## For single caller use - collect infile path without prio tag
