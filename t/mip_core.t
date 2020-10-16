@@ -21,11 +21,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.16;
+our $VERSION = 1.17;
 
 our $USAGE = build_usage( {} );
 
@@ -37,7 +37,7 @@ BEGIN {
     my @modules = (q{Test::More});
 
     # Evaluate that all modules required are installed
-    check_perl_modules(
+    check_modules_existance(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
@@ -259,7 +259,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -275,7 +275,7 @@ sub test_modules {
 
     ## Execution of programs
     use IPC::Cmd qw{ can_run run };
-    ok( can_run(q{perl}),                        q{Can run IPC::Cmd} );
+    ok( can_run(q{perl}), q{Can run IPC::Cmd} );
     ok( my $bool = IPC::Cmd->can_capture_buffer, q{IPC::Cmd can capture buffer} );
 
     return;

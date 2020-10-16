@@ -24,12 +24,71 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
-    our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
+    our @EXPORT_OK = qw{ check_modules_existance perl_base perl_nae_oneliners };
 }
 
 Readonly my $MINUS_ONE => -1;
+
+sub check_modules_existance {
+
+## Function : Evaluate that all perl modules required by MIP are installed
+## Returns  :
+## Arguments: $modules_ref  => Array of module names
+##          : $program_name => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $modules_ref;
+    my $program_name;
+
+    my $tmpl = {
+        modules_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$modules_ref,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    require Try::Tiny;
+    use Try::Tiny;
+
+  MODULE:
+    foreach my $module ( @{$modules_ref} ) {
+
+        ## Special case for Readonly::XS since it is not a standalone module
+        $module =~ s{Readonly::XS}{Readonly}sxmg;
+
+        ## Replace "::" with "/" since the automatic replacement magic only occurs for bare words.
+        $module =~ s{::}{/}sxmg;
+
+        ## Add perl module ending for the same reason
+        $module .= q{.} . q{pm};
+
+        try {
+            require $module;
+        }
+        catch {
+            say {*STDERR} q{FATAL: }
+              . $module
+              . q{ not installed - Please install to run }
+              . $program_name . qq{\n};
+            croak(q{NOTE: Aborting!});
+        };
+    }
+    return 1;
+}
 
 sub perl_base {
 
