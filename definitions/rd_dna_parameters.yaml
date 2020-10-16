@@ -217,6 +217,7 @@ recipe_memory:
     expansionhunter: 2
     variant_annotation: 3
     gatk_baserecalibration: 10
+    gatk_combinevariantcallsets: 25
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30

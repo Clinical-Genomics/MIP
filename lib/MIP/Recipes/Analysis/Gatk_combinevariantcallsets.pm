@@ -238,11 +238,11 @@ sub analysis_gatk_combinevariantcallsets {
         ## Only use first part of name
         my $variant_caller_prio_tag;
 
-        if ($variant_caller eq "gatk_variantrecalibration"){
-            $variant_caller_prio_tag = "haplotypecaller";
+        if ( $variant_caller eq 'gatk_variantrecalibration' ) {
+            $variant_caller_prio_tag = 'haplotypecaller';
         }
-        elsif ($variant_caller eq "glnexus_merge"){
-            $variant_caller_prio_tag = "deepvariant";
+        elsif ( $variant_caller eq 'glnexus_merge' ) {
+            $variant_caller_prio_tag = 'deepvariant';
         }
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
