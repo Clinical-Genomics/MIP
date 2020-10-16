@@ -86,6 +86,10 @@ trap {
 };
 
 ## Then exit and throw FATAL log message
-like( $trap->stderr, qr/FATAL/xms, q{Could not find module - croaked and exited} );
+like(
+    $trap->stderr,
+    qr/not \s+ installed \s+ - \s+ Please/xms,
+    q{Could not find module - croaked and exited}
+);
 
 done_testing();

@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $SPACE $SINGLE_QUOTE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $SPACE $SINGLE_QUOTE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -74,17 +74,15 @@ sub check_modules_existance {
         $module =~ s{::}{/}sxmg;
 
         ## Add perl module ending for the same reason
-        $module .= q{.} . q{pm};
+        $module .= $DOT . q{pm};
 
         try {
             require $module;
         }
         catch {
-            say {*STDERR} q{FATAL: }
-              . $module
-              . q{ not installed - Please install to run }
-              . $program_name . qq{\n};
-            croak(q{NOTE: Aborting!});
+            say {*STDERR}
+              qq{FATAL: $module not installed - Please install to run $program_name};
+            croak(q{FATAL: Aborting!});
         };
     }
     return 1;
