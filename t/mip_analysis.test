@@ -35,11 +35,11 @@ our $USAGE = build_usage( {} );
 
 BEGIN {
 
-    require MIP::Check::Modules;
-    use MIP::Check::Modules qw{ parse_cpan_file };
+    require MIP::Language::Perl;
+    use MIP::Language::Perl qw{ check_modules_existance get_cpan_file_modules };
 
     my @modules =
-      parse_cpan_file { cpanfile_path => catfile( dirname($Bin), q{cpanfile} ), };
+      get_cpan_file_modules { cpanfile_path => catfile( dirname($Bin), q{cpanfile} ), };
 
     ## Evaluate that all modules required throughout entire analysis are installed
     check_modules_existance(
@@ -53,7 +53,7 @@ BEGIN {
 my ( $config_file, $infile );
 my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.11;
+our $VERSION = 2.12;
 
 if ( scalar @ARGV == 0 ) {
 

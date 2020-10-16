@@ -26,7 +26,8 @@ BEGIN {
     # Set the version for version checking
     our $VERSION = 1.15;
 
-    our @EXPORT_OK = qw{ check_modules_existance perl_base perl_nae_oneliners };
+    our @EXPORT_OK =
+      qw{ check_modules_existance get_cpan_file_modules perl_base perl_nae_oneliners };
 }
 
 Readonly my $MINUS_ONE => -1;
@@ -86,6 +87,42 @@ sub check_modules_existance {
         };
     }
     return 1;
+}
+
+sub get_cpan_file_modules {
+
+## Function : Get perl modules from cpan file
+## Returns  : @cpanm_modules
+## Arguments: $cpanfile_path => Path to cpanfile
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cpanfile_path;
+
+    my $tmpl = {
+        cpanfile_path => {
+            default     => 1,
+            required    => 1,
+            store       => \$cpanfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Module::CPANfile;
+    use CPAN::Meta::Prereqs;
+
+    ## Load cpanfile
+    my $file = Module::CPANfile->load($cpanfile_path);
+    ## Get hash_ref without objects
+    my $file_href = $file->prereqs->as_string_hash;
+
+    ## Get cpanm modules
+    my @cpanm_modules = sort keys %{ $file_href->{runtime}{requires} };
+
+    return @cpanm_modules;
 }
 
 sub perl_base {

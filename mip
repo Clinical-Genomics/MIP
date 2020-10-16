@@ -23,11 +23,10 @@ our $VERSION = 0.03;
 BEGIN {
 
     require MIP::Check::Modules;
-    use MIP::Check::Modules qw{ parse_cpan_file };
-    use MIP::Language::Perl qw{ check_modules_existance };
+    use MIP::Language::Perl qw{ check_modules_existance get_cpan_file_modules };
 
     my @modules =
-      parse_cpan_file {
+      get_cpan_file_modules {
         cpanfile_path => catfile( $Bin, q{cpanfile} ),
       };
 
