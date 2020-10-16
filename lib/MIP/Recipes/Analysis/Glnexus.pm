@@ -251,8 +251,6 @@ sub analysis_glnexus {
             filehandle      => $filehandle,
             infile_path     => $outfile_path,
             output_type     => q{tbi},
-            threads         => $core_number,
-            write_to_stdout => 1,
         }
     );
 
