@@ -152,7 +152,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Base arguments
-@function_base_commands = qw{ java };
+@function_base_commands = qw{ gatk3 java };
 
 my %specific_java_argument = (
     java_jar => {
@@ -169,7 +169,7 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            base_commands_index        => 0,
+            base_commands_index        => 1,
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
