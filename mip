@@ -17,8 +17,9 @@ use autodie qw{ :all };
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Cli::Mip;
+use MIP::Constants qw{ $MIP_VERSION };
 
-our $VERSION = 0.03;
+our $VERSION = $MIP_VERSION;
 
 BEGIN {
 
