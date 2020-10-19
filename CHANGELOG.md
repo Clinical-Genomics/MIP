@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - SpliceAI annotation with VEP instead of vcfanno
 - Files from Chromograph are no longer compressed into a tarball 
 - Sample specific naming of outfiles from rhocall viz
+- Use temporary contig directory for CADD indel calling in order to avoid race condition
 
 **Tools**
 chromograph: 0.1.3 -> 0.2.0 
