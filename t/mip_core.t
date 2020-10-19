@@ -31,7 +31,7 @@ our $USAGE = build_usage( {} );
 
 BEGIN {
 
-    require MIP::Check::Modules;
+    require MIP::Language::Perl;
 
     ## Special case to initiate testing
     my @modules = (q{Test::More});
