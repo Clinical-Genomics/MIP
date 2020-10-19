@@ -1862,6 +1862,7 @@ sub bcftools_view {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
 ##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
+##          : $threads                => Number of threads to use
 
     my ($arg_href) = @_;
 
@@ -1886,6 +1887,7 @@ sub bcftools_view {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $types;
+    my $threads;
 
     ## Default(s)
     my $output_type;
@@ -1947,6 +1949,11 @@ sub bcftools_view {
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
         types           => {
             store       => \$types,
+            strict_type => 1,
+        },
+        threads => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$threads,
             strict_type => 1,
         },
     };
@@ -2026,6 +2033,11 @@ sub bcftools_view {
         push @commands, q{--types} . $SPACE . $types;
     }
 
+    if ($threads) {
+
+        push @commands, q{--threads} . $SPACE . $threads;
+    }
+
     ## Infile
     if ($infile_path) {
 
@@ -2061,6 +2073,7 @@ sub bcftools_view_and_index_vcf {
 ##          : $infile_path         => Path to infile to compress and index
 ##          : $outfile_path_prefix => Out file path no file_ending {Optional}
 ##          : $output_type         => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $threads             => Number of threads to use
 
     my ($arg_href) = @_;
 
@@ -2073,6 +2086,7 @@ sub bcftools_view_and_index_vcf {
     my $index;
     my $index_type;
     my $output_type;
+    my $threads;
 
     my $tmpl = {
         filehandle  => { defined => 1, required => 1, store => \$filehandle, },
@@ -2101,6 +2115,13 @@ sub bcftools_view_and_index_vcf {
             store       => \$output_type,
             strict_type => 1,
         },
+        threads => {
+            allow       => qr/ \A \d+ \z /xms,
+            default     => 1, 
+            store       => \$threads,
+            strict_type => 1,
+        },
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -2124,6 +2145,7 @@ sub bcftools_view_and_index_vcf {
             infile_path  => $infile_path,
             outfile_path => $outfile_path,
             output_type  => $output_type,
+            threads      => $threads,
         }
     );
     say {$filehandle} $NEWLINE;
