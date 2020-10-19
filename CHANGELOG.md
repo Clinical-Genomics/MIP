@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Files from Chromograph are no longer compressed into a tarball 
 - Sample specific naming of outfiles from rhocall viz
 
+**Tools**
+chromograph: 0.1.3 -> 0.2.0 
+
 ## [9.0.2]
 **References**
 - clinvar_20200728 -> clinvar_20200905

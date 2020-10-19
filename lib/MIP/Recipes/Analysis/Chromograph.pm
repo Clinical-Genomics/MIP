@@ -167,13 +167,13 @@ sub analysis_chromograph_cov {
     );
 
     ## Get all contigs excluding the mitochondria
-    my @contigs = delete_contig_elements( 
-        { 
-            contigs_ref => $file_info_href->{contigs}, 
+    my @contigs = delete_contig_elements(
+        {
+            contigs_ref        => $file_info_href->{contigs},
             remove_contigs_ref => [qw{ MT }],
         }
     );
-    my @outfile_name_prefixes = map  { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
+    my @outfile_name_prefixes = map { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
     %io = (
         %io,
         parse_io_outfiles(
@@ -217,6 +217,7 @@ sub analysis_chromograph_cov {
     chromograph(
         {
             coverage_file_path => $infile_path,
+            euploid            => 1,
             filehandle         => $filehandle,
             outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
@@ -474,6 +475,7 @@ sub analysis_chromograph_upd {
     ## Process regions file from UPD
     chromograph(
         {
+            euploid               => 1,
             filehandle            => $filehandle,
             outdir_path           => $outdir_path,
             upd_regions_file_path => $infile_path_href->{regions},
@@ -484,6 +486,7 @@ sub analysis_chromograph_upd {
     ## Process sites file from UPD
     chromograph(
         {
+            euploid             => 1,
             filehandle          => $filehandle,
             outdir_path         => $outdir_path,
             upd_sites_file_path => $infile_path_href->{sites},

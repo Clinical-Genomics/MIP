@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,6 +97,10 @@ my %specific_argument = (
     coverage_file_path => {
         input           => catfile(qw{ path to wig }),
         expected_output => q{--coverage} . $SPACE . catfile(qw{ path to wig }),
+    },
+    euploid => {
+        input           => 1,
+        expected_output => q{--euploid},
     },
     ideo_file_path => {
         input           => catfile(qw{ a file.bed }),
