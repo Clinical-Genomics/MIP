@@ -23,10 +23,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_cmd_config_vs_definition_file
+      get_install_containers
       parse_config
       parse_dynamic_config_parameters
       set_config_to_active_parameters
@@ -92,6 +93,37 @@ sub check_cmd_config_vs_definition_file {
         }
     }
     return;
+}
+
+sub get_install_containers {
+
+## Function : Get install containers from install config file
+## Returns  : $install_config{container}
+## Arguments: $install_config_file => File with containers from install config
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $install_config_file;
+
+    my $tmpl = {
+        install_config_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$install_config_file,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %install_config = read_from_file(
+        {
+            format => q{yaml},
+            path   => $install_config_file,
+        }
+    );
+    return %{ $install_config{container} };
 }
 
 sub parse_config {

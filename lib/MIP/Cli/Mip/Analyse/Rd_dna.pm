@@ -2,8 +2,9 @@ package MIP::Cli::Mip::Analyse::Rd_dna;
 
 use 5.026;
 use Carp;
+use File::Spec::Functions qw{ catfile };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.61;
+our $VERSION = 1.62;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 

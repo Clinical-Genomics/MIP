@@ -9,6 +9,7 @@ custom_default_parameters:
     - analysis_type
     - conda_path
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir

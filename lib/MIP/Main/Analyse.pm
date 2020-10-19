@@ -39,7 +39,7 @@ use MIP::Active_parameter qw{
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
 use MIP::Analysis qw{ check_analysis_type_to_pipeline get_overall_analysis_type };
-use MIP::Config qw{ parse_config };
+use MIP::Config qw{ get_install_containers parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.58;
+    our $VERSION = 1.59;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -255,6 +255,10 @@ sub mip_analyse {
             parameter_href        => $parameter_href,
         }
     );
+
+    $active_parameter_href->{container} =
+      get_install_containers(
+        { install_config_file => $active_parameter_href->{install_config_file}, } );
 
 ### Checks
     check_analysis_type_to_pipeline(
