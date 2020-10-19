@@ -18,7 +18,7 @@ requires qw{ Moose::Util::TypeConstraints 2.2010 }; # MIP
 requires qw{ MooseX::App 1.39 };                    # MIP
 requires qw{ MooseX::Types::Moose 0.50 };           # MIP
 requires qw{ MooseX::Types::Structured 0.36 };      # MIP
-requires qw{ Params::Validate 1.29 }                # MIP
+requires qw{ Params::Validate 1.29 };                # MIP
 requires qw{ Path::Iterator::Rule 1.012 };          # MIP
 requires qw{ Path::Tiny 0.114 };                    # MIP
 requires qw{ Readonly::XS 1.05 };                   # MIP
