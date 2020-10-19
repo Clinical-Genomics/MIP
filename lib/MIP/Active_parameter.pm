@@ -2134,7 +2134,7 @@ sub set_default_install_config_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Build default for (sv_)vcfparser select file
+    ## Build default for mip install config
     my $path = catfile( $Bin, qw{ templates mip_install_config.yaml } );
 
     $active_parameter_href->{$parameter_name} = $path;
