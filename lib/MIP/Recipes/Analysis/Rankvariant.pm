@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -266,7 +266,8 @@ sub analysis_rankvariant {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
-    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
+    my $xargs_core_number =
+      $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $xargs_core_number,
@@ -306,6 +307,7 @@ sub analysis_rankvariant {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $infile_path,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -659,7 +661,8 @@ sub analysis_rankvariant_unaffected {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
-    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
+    my $xargs_core_number =
+      $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $xargs_core_number,
@@ -698,6 +701,7 @@ sub analysis_rankvariant_unaffected {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $genmod_indata,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -1001,6 +1005,7 @@ sub analysis_rankvariant_sv {
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 filehandle      => $filehandle,
+                genome_build    => $file_info_href->{human_genome_reference_version},
                 infile_path     => $genmod_indata,
                 outfile_path    => $genmod_outfile_path,
                 stderrfile_path => $recipe_info_path
@@ -1353,6 +1358,7 @@ sub analysis_rankvariant_sv_unaffected {
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 filehandle      => $filehandle,
+                genome_build    => $file_info_href->{human_genome_reference_version},
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $recipe_info_path

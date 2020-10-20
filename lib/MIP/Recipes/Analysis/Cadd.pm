@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cadd analysis_cadd_panel };
@@ -894,7 +894,6 @@ sub _parse_cadd_infile {
             escape_oneliner => $escape_oneliner,
             filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch38_to_grch37},
-            stdinfile_path  => $infile_path,
         }
     );
     print {$filehandle} $PIPE . $SPACE;

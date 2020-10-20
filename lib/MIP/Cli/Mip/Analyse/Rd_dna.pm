@@ -17,7 +17,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.61;
+our $VERSION = 1.62;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1091,15 +1091,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Remove variants with hgnc_ids from file},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_rankvariant_binary_file} => (
-            documentation =>
-              q{Produce binary file from the rank variant chromosome sorted vcfs},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

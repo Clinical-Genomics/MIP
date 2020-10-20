@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -559,7 +559,7 @@ sub pipeline_analyse_rd_dna {
         chromograph_cov   => \&analysis_chromograph_cov,
         chromograph_upd   => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,                                              # Depends on pedigree
+        : undef,    # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
@@ -642,8 +642,6 @@ sub pipeline_analyse_rd_dna {
     set_recipe_bwa_mem(
         {
             analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }
@@ -668,7 +666,6 @@ sub pipeline_analyse_rd_dna {
         ## Skip recipe if not part of dispatch table (such as gzip_fastq)
         next RECIPE if ( not $analysis_recipe{$recipe} );
 
-        ### Analysis recipes
         ## For displaying
         log_display_recipe_for_user(
             {

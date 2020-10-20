@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna_panel pipeline_analyse_rd_dna_panel };
@@ -484,8 +484,6 @@ sub pipeline_analyse_rd_dna_panel {
     set_recipe_bwa_mem(
         {
             analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }
