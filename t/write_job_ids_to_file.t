@@ -77,7 +77,7 @@ my $is_ok = write_job_ids_to_file(
 ## Then return false
 is( $is_ok, undef, q{Skip when no job ids} );
 
-## Given a job_ids
+## Given job_ids
 %job_id = ( ALL => { ALL => [ qw{ job_id_1 job_id_2 }, undef, ], }, );
 
 ## When job_ids to write to file
