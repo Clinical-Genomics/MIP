@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [9.0.3]
+- Changed path and name of slurm job ids file to facilitate analysis monitoring
+
 ## [9.0.2]
 **References**
 - clinvar_20200728 -> clinvar_20200905

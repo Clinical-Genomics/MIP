@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use FindBin qw{ $Bin };
-use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -27,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1890,43 +1889,35 @@ sub write_job_ids_to_file {
 
 ## Function : Write all job_ids to file
 ## Returns  :
-## Arguments: $case_id         => Case id
-##          : $date_time_stamp => The date and time
-##          : $log_file        => Log file
-##          : $job_id_href     => Job id hash {REF}
+## Arguments: $case_id           => Case id
+##          : $job_id_href       => Job id hash {REF}
+##          : $job_ids_file_path => Path to write job_ids to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $case_id;
-    my $date_time_stamp;
-    my $log_file;
     my $job_id_href;
+    my $job_ids_file_path;
 
     my $tmpl = {
-        case_id => {
+        case_id         => {
             defined     => 1,
             required    => 1,
             store       => \$case_id,
             strict_type => 1,
         },
-        date_time_stamp => {
-            defined     => 1,
-            required    => 1,
-            store       => \$date_time_stamp,
-            strict_type => 1,
-        },
-        log_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$log_file,
-            strict_type => 1,
-        },
-        job_id_href => {
+        job_id_href     => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
+        },
+        job_ids_file_path    => => {
+            defined     => 1,
+            required    => 1,
+            store       => \$job_ids_file_path,
             strict_type => 1,
         },
     };
@@ -1940,10 +1931,6 @@ sub write_job_ids_to_file {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $log_dir      = dirname($log_file);
-    my $job_ids_file = catfile( $log_dir,
-        q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
-
     ## Remove all undef elements from return array of all job_ids
     my @job_ids =
       grep { defined } get_all_job_ids( { job_id_href => $job_id_href, } );
@@ -1954,10 +1941,10 @@ sub write_job_ids_to_file {
         {
             data_href => \%out_job_id,
             format    => q{yaml},
-            path      => $job_ids_file,
+            path      => $job_ids_file_path,
         }
     );
-    $log->info( q{Wrote: } . $job_ids_file );
+    $log->info( q{Wrote: } . $job_ids_file_path );
     return 1;
 }
 
