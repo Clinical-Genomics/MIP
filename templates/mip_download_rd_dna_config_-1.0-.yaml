@@ -97,8 +97,8 @@ reference:
   mills_and_1000g_indels:
     - gold_standard_indels
   rank_model:
-    - v1.29
     - v1.30
+    - v1.31
   reduced_penetrance:
     - 2017
   scout_exons:
@@ -111,8 +111,8 @@ reference:
   vcf2cytosure_blacklist_regions:
     - 1.0
   vcfanno_config:
-    - v1.11
     - v1.12
+    - v1.13
   vcfanno_functions:
     - v1.0
 reference_feature:
@@ -757,18 +757,18 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   rank_model:
     grch37:
-      v1.29:
-        file: rank_model_-v1.29-.ini
-        file_check: rank_model_-v1.29-.ini.md5
-        outfile: rank_model_-v1.29-.ini
-        outfile_check: rank_model_-v1.29-.ini.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
       v1.30:
         file: rank_model_-v1.30-.ini
         file_check: rank_model_-v1.30-.ini.md5
         outfile: rank_model_-v1.30-.ini
         outfile_check: rank_model_-v1.30-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+      v1.31:
+        file: rank_model_-v1.31-.ini
+        file_check: rank_model_-v1.31-.ini.md5
+        outfile: rank_model_-v1.31-.ini
+        outfile_check: rank_model_-v1.31-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
   reduced_penetrance:
@@ -823,18 +823,18 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   vcfanno_config:
     grch37:
-      v1.11:
-        file: grch37_vcfanno_config_-v1.11-.toml
-        file_check: grch37_vcfanno_config_-v1.11-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.11-.toml
-        outfile_check: grch37_vcfanno_config_-v1.11-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
       v1.12:
         file: grch37_vcfanno_config_-v1.12-.toml
         file_check: grch37_vcfanno_config_-v1.12-.toml.md5
         outfile: grch37_vcfanno_config_-v1.12-.toml
         outfile_check: grch37_vcfanno_config_-v1.12-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+      v1.13:
+        file: grch37_vcfanno_config_-v1.13-.toml
+        file_check: grch37_vcfanno_config_-v1.13-.toml.md5
+        outfile: grch37_vcfanno_config_-v1.13-.toml
+        outfile_check: grch37_vcfanno_config_-v1.13-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   vcfanno_functions:

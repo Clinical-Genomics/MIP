@@ -4,6 +4,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [9.0.3]
 - Changed path and name of slurm job ids file to facilitate analysis monitoring
+- SpliceAI annotation with VEP instead of vcfanno
+- Files from Chromograph are no longer compressed into a tarball 
+- Sample specific naming of outfiles from rhocall viz
+- Use temporary contig directory for CADD indel calling in order to avoid race condition
+
+**Tools**
+chromograph: 0.1.3 -> 0.2.1 
 
 ## [9.0.2]
 **References**

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -476,7 +476,6 @@ sub check_toml_config_for_vcf_tags {
     );
 
     my %missing_tag;
-    my %preop_annotations;
 
   VCFANNO_RECIPE:
     while ( my ( $vcfanno_recipe, $vcfanno_toml_config ) = each %toml ) {
@@ -502,7 +501,6 @@ sub check_toml_config_for_vcf_tags {
                     annotation_href      => $annotation_href,
                     bcftools_binary_path => $bcftools_binary_path,
                     missing_tag_href     => \%missing_tag,
-                    preops_href          => \%preop_annotations,
                 }
             );
         }
@@ -525,7 +523,7 @@ sub check_toml_config_for_vcf_tags {
         exit 1;
     }
 
-    return %preop_annotations;
+    return 1;
 }
 
 sub get_dict_contigs {
