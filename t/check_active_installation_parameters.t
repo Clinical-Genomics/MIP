@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_active_installation_parameters }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Mip_install}    => [qw{ check_active_installation_parameters }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_active_installation_parameters };
+use MIP::Mip_install qw{ check_active_installation_parameters };
 
-diag(   q{Test check_active_installation_parameters from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test check_active_installation_parameters from Mip_install.pm v}
+      . $MIP::Mip_install::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,10 +60,11 @@ diag(   q{Test check_active_installation_parameters from Parameter.pm v}
 
 my $log = test_log( {} );
 
-## Given sbatch mode when project id
+## Given sbatch mode and a project id
 my $project_id  = q{test};
 my $sbatch_mode = 1;
 
+## When installing in sbatch mode with a project id
 my $is_ok = check_active_installation_parameters(
     {
         project_id  => $project_id,
@@ -75,7 +75,9 @@ my $is_ok = check_active_installation_parameters(
 ## Then return true
 ok( $is_ok, q{Project id was supplied in sbatch mode} );
 
-## Given sbatch mode when no project id
+## Given sbatch mode
+
+## When installing in sbatch mode with no project id
 trap {
     check_active_installation_parameters(
         {
@@ -87,6 +89,9 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if no project id in sbatch mode} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if no project id in sbatch mode} );
+like(
+    $trap->stderr,
+    qr/The \s+ option \s+  "project_id"/xms,
+    q{Throw fatal log message if no project id in sbatch mode}
+);
 done_testing();

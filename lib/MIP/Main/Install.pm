@@ -13,11 +13,11 @@ use warnings;
 
 ## MIPs lib/
 use MIP::Active_parameter qw{ update_to_absolute_path };
-use MIP::Check::Parameter qw{ check_active_installation_parameters };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants qw{ $COLON $MIP_VERSION $SPACE };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
+use MIP::Mip_install qw{ check_active_installation_parameters };
 use MIP::Parameter qw{ set_default };
 use MIP::Pipeline qw{ run_install_pipeline };
 use MIP::Set::Parameter qw{ set_conda_path };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.17;
+    our $VERSION = 2.18;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
