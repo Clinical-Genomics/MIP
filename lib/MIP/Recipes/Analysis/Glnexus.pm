@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_glnexus };
@@ -117,7 +117,7 @@ sub analysis_glnexus {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
+    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -131,16 +131,13 @@ sub analysis_glnexus {
 
     ## Unpack parameters
     my $consensus_analysis_type;
-    if ( uc $parameter_href->{cache}{consensus_analysis_type} eq q{PANEL} ) {
-        $consensus_analysis_type = q{WES};
-    }
-    elsif ( uc $parameter_href->{cache}{consensus_analysis_type} eq q{MIXED} ) {
-        $consensus_analysis_type = q{WGS};
-    }
-    else {
-        $consensus_analysis_type =
-          uc( $parameter_href->{cache}{consensus_analysis_type} );
-    }
+
+    my %consensus_analysis_type_map =
+      ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
+
+    $consensus_analysis_type =
+      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type}
+      };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -191,7 +188,9 @@ sub analysis_glnexus {
         }
     );
 
-    my $outfile_path = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = catdir( $active_parameter_href->{temp_directory},
+        $io{out}{file_name_prefix} . q{.vcf} );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -225,32 +224,19 @@ sub analysis_glnexus {
             dir        => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
             filehandle => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
+            stdoutfile_path  => $outfile_path,
         }
     );
-    print {$filehandle} $PIPE . $SPACE;
+    print {$filehandle} $NEWLINE . $NEWLINE . q{## View} . $NEWLINE;
 
-    bcftools_view(
+    bcftools_view_and_index_vcf(
         {
-            filehandle  => $filehandle,
-            infile_path => $DASH,
-        }
-    );
-    print {$filehandle} $PIPE . $SPACE;
-
-    htslib_bgzip(
-        {
-            filehandle      => $filehandle,
-            stdoutfile_path => $outfile_path,
-            threads         => $core_number,
-            write_to_stdout => 1,
-        }
-    );
-    print {$filehandle} $SEMICOLON . $SPACE;
-    bcftools_index(
-        {
-            filehandle      => $filehandle,
-            infile_path     => $outfile_path,
-            output_type     => q{tbi},
+            filehandle          => $filehandle,
+            index_type          => q{tbi},
+            infile_path         => $outfile_path,
+            outfile_path_prefix => $outfile_path_prefix,
+            output_type         => q{z},
+            threads             => $core_number,
         }
     );
 

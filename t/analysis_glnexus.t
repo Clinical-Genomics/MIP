@@ -113,8 +113,8 @@ my %sample_info = test_mip_hashes(
     }
 );
 
-my @consensus_analysis_types = qw { mixed panel wgs wes };
-foreach my $analysis_type (@consensus_analysis_types) {
+CONSENSUS_ANALYSIS:
+foreach my $analysis_type (qw { mixed panel wgs wes }) {
     $parameter{cache}{consensus_analysis_type} = $analysis_type;
     my $is_ok = analysis_glnexus(
         {
@@ -128,7 +128,7 @@ foreach my $analysis_type (@consensus_analysis_types) {
             sample_info_href      => \%sample_info,
         }
     );
-## Then return TRUE
+    ## Then return TRUE
     ok( $is_ok,
         q{ Executed analysis recipe } . $recipe_name . q{ with type } . $analysis_type );
 }

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ glnexus_merge };
@@ -38,6 +38,7 @@ sub glnexus_merge {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $threads => Number of threads to use
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -48,6 +49,7 @@ sub glnexus_merge {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $threads;
 
     my $tmpl = {
         config => {
@@ -86,6 +88,12 @@ sub glnexus_merge {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        threads => {
+            default     => 36,
+            defined     => 1,
+            store       => \$threads,
+            strict_type => 1,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -93,6 +101,7 @@ sub glnexus_merge {
     ## Stores commands depending on input parameters
     my @commands = qw{ glnexus_cli };
 
+    push @commands, q{--threads} . $SPACE . $threads;
     push @commands, q{--config} . $SPACE . $config;
     push @commands, q{--dir} . $SPACE . $dir;
     push @commands, join $SPACE, @{$infile_paths_ref};

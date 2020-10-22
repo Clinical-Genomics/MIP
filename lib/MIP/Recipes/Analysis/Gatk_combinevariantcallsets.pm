@@ -238,15 +238,14 @@ sub analysis_gatk_combinevariantcallsets {
         ## Only use first part of name
         my $variant_caller_prio_tag;
 
-        if ( $variant_caller eq q{gatk_variantrecalibration} ) {
-            $variant_caller_prio_tag = q{haplotypecaller};
-        }
-        elsif ( $variant_caller eq q{glnexus_merge} ) {
-            $variant_caller_prio_tag = q{deepvariant};
-        }
-        elsif ( $variant_caller eq q{bcftools_mpileup} ) {
-            $variant_caller_prio_tag = q{mpileup};
-        }
+        my %variant_caller_tag_map = (
+            gatk_variantrecalibration => q{haplotypecaller},
+            glnexus_merge             => q{deepvariant},
+            bcftools_mpileup          => q{mpileup},
+        );
+
+        $variant_caller_prio_tag = $variant_caller_tag_map{$variant_caller};
+
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
         ## For single caller use - collect infile path without prio tag
