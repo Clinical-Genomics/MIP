@@ -1233,7 +1233,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_eval_metric_file} => (
-            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.3-.yaml}],
             documentation => q{File containing Qccollect evaluation metrics},
             is            => q{rw},
             isa           => Str,
