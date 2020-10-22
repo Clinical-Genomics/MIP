@@ -184,7 +184,14 @@ sub analysis_upd {
         }
     );
 
-    my @call_types = qw{ sites regions };
+    my @call_types = qw{ sites };
+
+    ## Only run upd regions on wgs samples, wes might generate empty files
+    if ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} ) {
+
+        push @call_types, q{regions};
+    }
+
     %io = (
         %io,
         parse_io_outfiles(

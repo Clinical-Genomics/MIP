@@ -472,16 +472,19 @@ sub analysis_chromograph_upd {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    ## Process regions file from UPD
-    chromograph(
-        {
-            euploid               => 1,
-            filehandle            => $filehandle,
-            outdir_path           => $outdir_path,
-            upd_regions_file_path => $infile_path_href->{regions},
-        }
-    );
-    say {$filehandle} $NEWLINE;
+    ## Process regions file from UPD if wgs
+    if ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} ) {
+
+        chromograph(
+            {
+                euploid               => 1,
+                filehandle            => $filehandle,
+                outdir_path           => $outdir_path,
+                upd_regions_file_path => $infile_path_href->{regions},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     ## Process sites file from UPD
     chromograph(

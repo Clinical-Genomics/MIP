@@ -124,4 +124,22 @@ my $is_ok = analysis_upd(
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
+## Given a wes sample
+$active_parameter{analysis_type}{$sample_id} = q{wes};
+$is_ok = analysis_upd(
+    {
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe for wes } . $recipe_name );
+
 done_testing();
