@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $SPACE $SINGLE_QUOTE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $SPACE $SINGLE_QUOTE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,12 +24,106 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
-    our @EXPORT_OK = qw{ perl_base perl_nae_oneliners };
+    our @EXPORT_OK =
+      qw{ check_modules_existance get_cpan_file_modules perl_base perl_nae_oneliners };
 }
 
 Readonly my $MINUS_ONE => -1;
+
+sub check_modules_existance {
+
+## Function : Evaluate that all perl modules required by MIP are installed
+## Returns  :
+## Arguments: $modules_ref  => Array of module names
+##          : $program_name => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $modules_ref;
+    my $program_name;
+
+    my $tmpl = {
+        modules_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$modules_ref,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    require Try::Tiny;
+    use Try::Tiny;
+
+  MODULE:
+    foreach my $module ( @{$modules_ref} ) {
+
+        ## Special case for Readonly::XS since it is not a standalone module
+        $module =~ s{Readonly::XS}{Readonly}sxmg;
+
+        ## Replace "::" with "/" since the automatic replacement magic only occurs for bare words.
+        $module =~ s{::}{/}sxmg;
+
+        ## Add perl module ending for the same reason
+        $module .= $DOT . q{pm};
+
+        try {
+            require $module;
+        }
+        catch {
+            say {*STDERR}
+              qq{FATAL: $module not installed - Please install to run $program_name};
+            croak(q{FATAL: Aborting!});
+        };
+    }
+    return 1;
+}
+
+sub get_cpan_file_modules {
+
+## Function : Get perl modules from cpan file
+## Returns  : @cpanm_modules
+## Arguments: $cpanfile_path => Path to cpanfile
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cpanfile_path;
+
+    my $tmpl = {
+        cpanfile_path => {
+            default     => 1,
+            required    => 1,
+            store       => \$cpanfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Module::CPANfile;
+    use CPAN::Meta::Prereqs;
+
+    ## Load cpanfile
+    my $file = Module::CPANfile->load($cpanfile_path);
+    ## Get hash_ref without objects
+    my $file_href = $file->prereqs->as_string_hash;
+
+    ## Get cpanm modules
+    my @cpanm_modules = sort keys %{ $file_href->{runtime}{requires} };
+
+    return @cpanm_modules;
+}
 
 sub perl_base {
 
