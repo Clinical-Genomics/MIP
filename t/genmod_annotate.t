@@ -109,8 +109,8 @@ my %specific_argument = (
           . catfile(qw{ a test cadd_file_2 }),
     },
     genome_build => {
-        input           => $THIRTYEIGHT,
-        expected_output => q{--genome-build} . $SPACE . $THIRTYEIGHT,
+        input           => $GENOME_BUILD_VERSION,
+        expected_output => q{--genome-build} . $SPACE . $GENOME_BUILD_VERSION,
     },
     infile_path => {
         input           => catfile(qw{ a test infile }),

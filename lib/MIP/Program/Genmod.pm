@@ -93,7 +93,7 @@ sub genmod_annotate {
           { default => [], store => \$cadd_file_paths_ref, strict_type => 1, },
         filehandle   => { store => \$filehandle, },
         genome_build => {
-            allow       => [ undef, $THIRTYSEVEN, $THIRTYEIGHT ],
+            allow       => [ undef, $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 ],
             required    => 0,
             store       => \$genome_build,
             strict_type => 1,
