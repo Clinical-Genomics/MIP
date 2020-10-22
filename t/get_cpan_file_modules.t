@@ -5,7 +5,8 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile  };
+use File::Spec::Functions qw{ catdir catfile  };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -16,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Language::Perl} => [qw{ check_modules_existance }],
+        q{MIP::Language::Perl} => [qw{ get_cpan_file_modules }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Perl qw{ check_modules_existance };
+use MIP::Language::Perl qw{ get_cpan_file_modules };
 
-diag(   q{Test check_modules_existance from Perl.pm v}
+diag(   q{Test get_cpan_file_modules from Perl.pm v}
       . $MIP::Language::Perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,38 +58,15 @@ diag(   q{Test check_modules_existance from Perl.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a perl module that exists
-my @modules = qw{ warnings };
+## Given a cpanfile
+my $cpan_file_path = catfile( $Bin, qw{ data test_data cpanfile } );
 
-## When checking if perl module exists
-my $was_found = check_modules_existance(
-    {
-        modules_ref  => \@modules,
-        program_name => $PROGRAM_NAME,
-    }
-);
+## When reading cpanfile to get modules
+my @cpan_modules = get_cpan_file_modules( { cpanfile_path => $cpan_file_path, } );
 
-## Then return
-ok( $was_found, q{Required perl module} );
+my @expected_modules = qw{ Array::Utils Clone };
 
-## Given faulty module
-@modules = qw{ not_a_perl_module };
-
-## When checking if perl module exists
-trap {
-    check_modules_existance(
-        {
-            modules_ref  => \@modules,
-            program_name => $PROGRAM_NAME,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-like(
-    $trap->stderr,
-    qr/not \s+ installed \s+ - \s+ Please/xms,
-    q{Could not find module - croaked and exited}
-);
+## Then all the cpan modules in cpan file path should be returned in lexiographical order
+is_deeply( \@cpan_modules, \@expected_modules, q{ Got cpan module(s)} );
 
 done_testing();
