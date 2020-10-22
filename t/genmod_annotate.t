@@ -59,7 +59,7 @@ diag(   q{Test genmod_annotate from Genmod.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $THIRTYEIGHT => 38;
+Readonly my $GENOME_BUILD_VERSION => 38;
 
 ## Base arguments
 my @function_base_commands = qw{ genmod };
