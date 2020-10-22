@@ -20,8 +20,8 @@ use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 ## Constants
-Readonly my $THIRTYSEVEN => 37;
-Readonly my $THIRTYEIGHT => 38;
+Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
 
 BEGIN {
     require Exporter;
