@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_upd };
@@ -124,13 +124,14 @@ sub analysis_upd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
+    use MIP::Pedigree qw{ is_sample_proband_in_trio };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_sort };
     use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
     use MIP::Program::Upd qw{ upd_call };
-    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Reference qw{ write_contigs_size_file };
     use MIP::Sample_info qw{ get_family_member_id
       set_file_path_to_store
@@ -183,7 +184,14 @@ sub analysis_upd {
         }
     );
 
-    my @call_types = qw{ sites regions };
+    my @call_types = qw{ sites };
+
+    ## Only run upd regions on wgs samples, wes might generate empty files
+    if ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} ) {
+
+        push @call_types, q{regions};
+    }
+
     %io = (
         %io,
         parse_io_outfiles(
@@ -191,7 +199,7 @@ sub analysis_upd {
                 chain_id         => $job_id_chain,
                 id               => $sample_id,
                 file_info_href   => $file_info_href,
-                file_name_prefix => $infile_name_prefix,
+                file_name_prefix => $infile_name_prefix =~ s/$case_id/$sample_id/xmsr,
                 iterators_ref    => \@call_types,
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
@@ -199,10 +207,8 @@ sub analysis_upd {
             }
         )
     );
-
-    my $outdir_path    = $io{out}{dir_path};
-    my %outfile_path   = %{ $io{out}{file_path_href} };
-    my $outfile_suffix = $io{out}{file_suffix};
+    my $outdir_path  = $io{out}{dir_path};
+    my %outfile_path = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -248,27 +254,39 @@ sub analysis_upd {
     foreach my $call_type (@call_types) {
         upd_call(
             {
-                af_tag       => q{GNOMADAF},
-                call_type    => $call_type,
-                father_id    => $family_member_id{father},
+                af_tag      => q{GNOMADAF},
+                call_type   => $call_type,
+                father_id   => $family_member_id{father},
+                filehandle  => $filehandle,
+                infile_path => $infile_path,
+                mother_id   => $family_member_id{mother},
+                proband_id  => $sample_id,
+            }
+        );
+        print {$filehandle} $PIPE . $SPACE;
+
+        gnu_sort(
+            {
                 filehandle   => $filehandle,
-                infile_path  => $infile_path,
-                mother_id    => $family_member_id{mother},
+                keys_ref     => [ q{1,1}, q{2,2n} ],
                 outfile_path => $outfile_path{$call_type},
-                proband_id   => $sample_id,
             }
         );
         say {$filehandle} $NEWLINE;
 
-        say {$filehandle} q{## Create bed index files};
-        my $index_file_path_prefix =
-          fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+        say {$filehandle} q{## Create big bed files};
+        my $big_bed_file_path_prefix = parse_file_suffix(
+            {
+                file_name   => $outfile_path{$call_type},
+                file_suffix => q{.bed},
+            }
+        );
         ucsc_bed_to_big_bed(
             {
                 contigs_size_file_path => $contigs_size_file_path,
                 filehandle             => $filehandle,
                 infile_path            => $outfile_path{$call_type},
-                outfile_path           => $index_file_path_prefix . $DOT . q{bb},
+                outfile_path           => $big_bed_file_path_prefix . $DOT . q{bb},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -288,16 +306,27 @@ sub analysis_upd {
                 sample_info_href => $sample_info_href,
             }
         );
-        my $index_file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
-        set_file_path_to_store(
-            {
-                format           => q{bb},
-                id               => $sample_id,
-                path             => $index_file_path_prefix . $DOT . q{bb},
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+
+      CALL_TYPE:
+        foreach my $call_type (@call_types) {
+            my $file_path_prefix = parse_file_suffix(
+                {
+                    file_name   => $outfile_path{$call_type},
+                    file_suffix => q{.bed},
+                }
+            );
+
+            set_file_path_to_store(
+                {
+                    format           => q{bb},
+                    id               => $sample_id,
+                    path             => $file_path_prefix . $DOT . q{bb},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $call_type,
+                }
+            );
+        }
 
         submit_recipe(
             {

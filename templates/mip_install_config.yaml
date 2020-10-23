@@ -63,7 +63,7 @@ container:
   chromograph:
     executable:
       chromograph:
-    uri: docker.io/clinicalgenomics/chromograph:91f0988
+    uri: docker.io/clinicalgenomics/chromograph:0.3.1
   cyrius:
     executable:
       star_caller.py:
@@ -244,4 +244,5 @@ vep_plugins:
   - ExACpLI
   - LoFtool
   - MaxEntScan
+  - SpliceAI
 vep_auto_flag: cfp

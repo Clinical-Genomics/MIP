@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Variant_annotation} => [qw{ analysis_vcfanno_preop }],
+        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_upd }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_vcfanno_preop };
+use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_upd };
 
-diag(   q{Test analysis_vcfanno_preop from Variant_annotation.pm v}
-      . $MIP::Recipes::Analysis::Variant_annotation::VERSION
+diag(   q{Test analysis_chromograph_upd from Chromograph.pm v}
+      . $MIP::Recipes::Analysis::Chromograph::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,12 +59,10 @@ diag(   q{Test analysis_vcfanno_preop from Variant_annotation.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $THREADS => 36;
-
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{vcfanno_preop};
+my $recipe_name    = q{chromograph_upd};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,9 +72,21 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
-$active_parameter{recipe_core_number}{$recipe_name} = $THREADS;
+$active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id = $active_parameter{case_id};
+my $sample_id = $active_parameter{sample_ids}[0];
+
+my %file_info = test_mip_hashes(
+    {
+        mip_hash_name => q{file_info},
+        recipe_name   => $recipe_name,
+    }
+);
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+    {
+        mip_hash_name => q{io},
+    }
+);
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -85,35 +95,41 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+$parameter{$recipe_name}{outfile_suffix} = q{.png};
+my %sample_info = test_mip_hashes( { mip_hash_name => q{qc_sample_info}, } );
+$sample_info{has_trio} = 1;
 
-my %annotation = (
-    annotation => [
-        {
-            file => catfile(
-                $Bin, qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz }
-            ),
-            fields => [q{EUR_AF}],
-            ops    => [q{self}],
-            names  => [q{EUR_AF}],
-        },
-    ],
-);
-
-my $is_ok = analysis_vcfanno_preop(
+my $is_ok = analysis_chromograph_upd(
     {
         active_parameter_href => \%active_parameter,
-        annotation_href       => \%annotation,
-        case_id               => $case_id,
-        infile_path           => q{an_infile_path.vcf},
+        file_info_href        => \%file_info,
         job_id_href           => \%job_id,
         parameter_href        => \%parameter,
         profile_base_command  => $slurm_mock_cmd,
         recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
     }
 );
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
+## Given a wes sample
+$active_parameter{analysis_type}{$sample_id} = q{wes};
+$is_ok = analysis_chromograph_upd(
+    {
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe for wes} . $recipe_name );
 done_testing();

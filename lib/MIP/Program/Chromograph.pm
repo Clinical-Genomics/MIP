@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ chromograph };
@@ -36,6 +36,7 @@ sub chromograph {
 ## Function : Perl wrapper for chromograph.
 ## Returns  : @commands
 ## Arguments: $coverage_file_path     => Coverage data infile
+##          : $euploid                => Generate png files for all chromosomes
 ##          : $filehandle             => Filehandle to write to
 ##          : $ideo_file_path         => Bed file with ideogram data
 ##          : $outdir_path            => Outdir path
@@ -51,6 +52,7 @@ sub chromograph {
 
     ## Flatten argument(s)
     my $coverage_file_path;
+    my $euploid;
     my $filehandle;
     my $ideo_file_path;
     my $outdir_path;
@@ -65,6 +67,11 @@ sub chromograph {
     my $tmpl = {
         coverage_file_path => {
             store       => \$coverage_file_path,
+            strict_type => 1,
+        },
+        euploid => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$euploid,
             strict_type => 1,
         },
         filehandle => {
@@ -118,6 +125,11 @@ sub chromograph {
         push @commands, q{--coverage} . $SPACE . $coverage_file_path;
     }
 
+    if ($euploid) {
+
+        push @commands, q{--euploid};
+    }
+
     if ($ideo_file_path) {
 
         push @commands, q{--ideo} . $SPACE . $ideo_file_path;
@@ -137,7 +149,7 @@ sub chromograph {
 
     if ($upd_sites_file_path) {
 
-        push @commands, q{--upd} . $SPACE . $upd_sites_file_path;
+        push @commands, q{--sites} . $SPACE . $upd_sites_file_path;
     }
 
     push @commands,

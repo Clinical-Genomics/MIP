@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_proband }],
+        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_cov }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_proband };
+use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_cov };
 
-diag(   q{Test analysis_chromograph_proband from Chromograph.pm v}
+diag(   q{Test analysis_chromograph_cov from Chromograph.pm v}
       . $MIP::Recipes::Analysis::Chromograph::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -64,7 +64,7 @@ Readonly my $TIDDIT_BIN_SIZE => 500;
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{chromograph_ar};
+my $recipe_name    = q{chromograph_cov};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -76,11 +76,8 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{human_genome_reference} =
-  catfile( $Bin, qw{ data references grch38_homo_sapiens_-d5-.fasta} );
-$active_parameter{tiddit_coverage_bin_size} = $TIDDIT_BIN_SIZE;
+$active_parameter{tiddit_coverage_bin_size}         = $TIDDIT_BIN_SIZE;
 my $sample_id = $active_parameter{sample_ids}[0];
-my $case_id   = $active_parameter{case_id};
 
 my %file_info = test_mip_hashes(
     {
@@ -88,7 +85,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
@@ -101,11 +98,11 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$parameter{$recipe_name}{chain} = q{TEST};
-@{ $parameter{cache}{order_recipes_ref} } = ( q{tiddit_coverage}, $recipe_name );
+$parameter{$recipe_name}{chain} = q{MAIN};
+@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
-my $is_ok = analysis_chromograph_proband(
+my $is_ok = analysis_chromograph_cov(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,

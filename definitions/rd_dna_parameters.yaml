@@ -141,7 +141,8 @@ recipe_core_number:
     bwa_mem2: 36
     cadd_ar: 13
     chanjo_sexcheck: 1
-    chromograph_ar: 1
+    chromograph_cov: 1
+    chromograph_upd: 1
     cnvnator_ar: 13
     delly_call: 36
     delly_reformat: 13
@@ -190,7 +191,6 @@ recipe_core_number:
     variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
-    vcfanno_preops: 36
     vt_ar: 13
     vt_core: 1
   type: mip
@@ -208,7 +208,8 @@ recipe_memory:
   default:
     cadd_ar: 6
     chanjo_sexcheck: 2
-    chromograph_ar: 5
+    chromograph_cov: 5
+    chromograph_upd: 5
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
@@ -251,7 +252,8 @@ recipe_time:
     bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
-    chromograph_ar: 1
+    chromograph_cov: 1
+    chromograph_upd: 1
     cnvnator_ar: 1
     delly_call: 20
     delly_reformat: 7
@@ -303,7 +305,6 @@ recipe_time:
     variant_integrity_ar: 1
     varianteffectpredictor: 10
     vcf2cytosure_ar: 20
-    vcfanno_preops: 22
     vcfparser_ar: 5
     version_collect_ar: 1
     vt_ar: 10
@@ -1557,59 +1558,52 @@ vcfanno_config:
   is_reference: 1
   reference: reference_dir
   type: path
-vcfanno_preops:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  program_executables:
-    - bcftools
-    - vcfanno
-  type: recipe
 rhocall_viz:
   analysis_mode: sample
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: ""
-  outfile_suffix: ".roh"
+  file_tag: "_rhoviz"
+  outfile_suffix: ".bw"
   program_executables:
     - bcftools
     - rhocall
+    - wigToBigWig
   type: recipe
 upd_ar:
   analysis_mode: sample
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _upd
   outfile_suffix: ".bed"
   program_executables:
     - upd
   type: recipe
-chromograph_ar:
+chromograph_cov:
   analysis_mode: sample
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: "_chromograph"
-  outfile_suffix: ".tar.gz"
+  file_tag: ""
+  outfile_suffix: ".png"
   program_executables:
     - chromograph
   type: recipe
-chromograph_cytoband_file:
+chromograph_upd:
+  analysis_mode: sample
   associated_recipe:
-    - chromograph_ar
+    - mip
   data_type: SCALAR
-  default: grch37_cytoband.bed
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".png"
+  program_executables:
+    - chromograph
+  type: recipe
 frequency_filter:
   analysis_mode: case
   associated_recipe:
@@ -1803,6 +1797,16 @@ vcfparser_outfile_count:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+vcfparser_pli_score_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: gnomad_pli_per_gene_-_r2.1.1-.txt
+  exists_check: file
+  is_reference: 1
+  mandatory: no
+  reference: reference_dir
+  type: path
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
     - vcfparser_ar
