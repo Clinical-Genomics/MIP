@@ -149,7 +149,7 @@ sub chromograph {
 
     if ($upd_sites_file_path) {
 
-        push @commands, q{--upd} . $SPACE . $upd_sites_file_path;
+        push @commands, q{--sites} . $SPACE . $upd_sites_file_path;
     }
 
     push @commands,

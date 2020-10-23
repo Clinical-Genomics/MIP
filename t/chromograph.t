@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -120,7 +120,7 @@ my %specific_argument = (
     },
     upd_sites_file_path => {
         input           => catfile(qw{ path to bed }),
-        expected_output => q{--upd} . $SPACE . catfile(qw{ path to bed }),
+        expected_output => q{--sites} . $SPACE . catfile(qw{ path to bed }),
     },
 );
 
