@@ -121,8 +121,8 @@ sub analysis_analysisrunstatus {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    Readonly my $MAIN_FINAL_VCFS_RECIPE    => q{endvariantannotationblock};
-    Readonly my $MAIN_FINAL_SV_VCFS_RECIPE => q{sv_reformat};
+    Readonly my $FINAL_VCFS_RECIPE    => q{endvariantannotationblock};
+    Readonly my $FINAL_SV_VCFS_RECIPE => q{sv_reformat};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -215,8 +215,8 @@ sub analysis_analysisrunstatus {
 
     ## Test integrity of vcf data keys in header and body
     my %vcf_file = (
-        $MAIN_FINAL_SV_VCFS_RECIPE => [qw{ clinical research }],
-        $MAIN_FINAL_VCFS_RECIPE    => [qw{ clinical research }],
+        $FINAL_SV_VCFS_RECIPE => [qw{ clinical research }],
+        $FINAL_VCFS_RECIPE    => [qw{ clinical research }],
     );
 
     _check_vcf_header_and_keys(
