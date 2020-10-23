@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -120,6 +121,9 @@ sub analysis_analysisrunstatus {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    Readonly my $MAIN_FINAL_VCFS_RECIPE    => q{endvariantannotationblock};
+    Readonly my $MAIN_FINAL_SV_VCFS_RECIPE => q{sv_reformat};
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -211,8 +215,8 @@ sub analysis_analysisrunstatus {
 
     ## Test integrity of vcf data keys in header and body
     my %vcf_file = (
-        sv_vcf_file => [qw{ clinical research }],
-        vcf_file    => [qw{ clinical research }],
+        $MAIN_FINAL_SV_VCFS_RECIPE => [qw{ clinical research }],
+        $MAIN_FINAL_VCFS_RECIPE    => [qw{ clinical research }],
     );
 
     _check_vcf_header_and_keys(
