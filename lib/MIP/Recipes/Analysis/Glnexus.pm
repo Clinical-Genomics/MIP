@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -130,12 +130,10 @@ sub analysis_glnexus {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $consensus_analysis_type;
-
     my %consensus_analysis_type_map =
       ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
 
-    $consensus_analysis_type =
+    my $consensus_analysis_type =
       $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type}
       };
 
@@ -227,7 +225,9 @@ sub analysis_glnexus {
             stdoutfile_path  => $outfile_path,
         }
     );
-    print {$filehandle} $NEWLINE . $NEWLINE . q{## View} . $NEWLINE;
+    say {$filehandle} $NEWLINE;
+     
+    say {$filehandle} q{## View};
 
     bcftools_view_and_index_vcf(
         {

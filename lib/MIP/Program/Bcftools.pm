@@ -1861,8 +1861,9 @@ sub bcftools_view {
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
-##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
 ##          : $threads                => Number of threads to use
+##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
+
 
     my ($arg_href) = @_;
 
@@ -1886,8 +1887,9 @@ sub bcftools_view {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $types;
     my $threads;
+    my $types;
+
 
     ## Default(s)
     my $output_type;
@@ -1947,13 +1949,13 @@ sub bcftools_view {
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        types           => {
-            store       => \$types,
-            strict_type => 1,
-        },
         threads => {
             allow       => qr/ \A \d+ \z /xms,
             store       => \$threads,
+            strict_type => 1,
+        },
+        types           => {
+            store       => \$types,
             strict_type => 1,
         },
     };
