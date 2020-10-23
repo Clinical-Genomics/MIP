@@ -417,14 +417,14 @@ sub _check_vcf_header_and_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  FILE:
-    foreach my $file ( keys %{$vcf_file_href} ) {
+  RECIPE:
+    foreach my $recipe_name ( keys %{$vcf_file_href} ) {
 
       MODE:
-        foreach my $mode ( @{ $vcf_file_href->{$file} } ) {
+        foreach my $mode ( @{ $vcf_file_href->{$recipe_name} } ) {
 
             next MODE
-              if ( not defined $sample_info_href->{recipe}{$file}{$mode}{path} );
+              if ( not defined $sample_info_href->{recipe}{$recipe_name}{$mode}{path} );
 
             ## Execute on cmd
             print {$filehandle} q?perl -MTest::Harness -e ' ?;
@@ -439,11 +439,11 @@ sub _check_vcf_header_and_keys {
             print {$filehandle} q?test_args => { ?;
 
             ## Add test for select file using alias
-            print {$filehandle} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
+            print {$filehandle} q?"test ? . $mode . $SPACE . $recipe_name . q?" => [ ?;
 
             ## Infile
             print {$filehandle} q?"?
-              . $sample_info_href->{recipe}{$file}{$mode}{path} . q?", ?;
+              . $sample_info_href->{recipe}{$recipe_name}{$mode}{path} . q?", ?;
 
             ##ConfigFile
             print {$filehandle} q?"? . $analysis_config_file . q?", ?;
@@ -462,7 +462,7 @@ sub _check_vcf_header_and_keys {
               . q?", "test ?
               . $mode
               . $SPACE
-              . $file . q?"], ?;
+              . $recipe_name . q?"], ?;
 
             print {$filehandle} q?)'?;
             say   {$filehandle} $NEWLINE;
