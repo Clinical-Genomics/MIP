@@ -5,9 +5,9 @@ FROM clinicalgenomics/mip:2.0
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip:2.0"
-LABEL version="6"
+LABEL version="7"
 LABEL software="chromograph"
-LABEL software.version="0.3.0"
+LABEL software.version="0.3.1"
 LABEL extra.binaries="chromograph"
 LABEL maintainer="Clinical-Genomics/MIP"
 
@@ -16,12 +16,15 @@ RUN conda install pip python=3.7 matplotlib
 ## Clean up after conda
 RUN /opt/conda/bin/conda clean -tipsy
 
-## Clone git repository
-RUN git clone https://github.com/mikaell/chromograph.git /opt/conda/share/chromograph
+## Download release
+RUN wget --no-verbose https://github.com/mikaell/chromograph/archive/v0.3.1.zip -O /opt/conda/share/chromograph-0.3.1.zip
+
+## Extract
+RUN unzip -o /opt/conda/share/chromograph-0.3.1.zip -d /opt/conda/share/ && \
+    rm /opt/conda/share/chromograph-0.3.1.zip
 
 ## Move to chromograph directory
-RUN cd /opt/conda/share/chromograph && \
-    git checkout 06c1223 && \
+RUN cd /opt/conda/share/chromograph-0.3.1 && \
     python -m pip install --editable .
 
 WORKDIR /data/

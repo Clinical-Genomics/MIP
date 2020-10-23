@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Use temporary contig directory for CADD indel calling in order to avoid race condition
 
 **Tools**
-chromograph: 0.1.3 -> 0.2.1 
+chromograph: 0.1.3 -> 0.3.1 
 
 ## [9.0.2]
 **References**
