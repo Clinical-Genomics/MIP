@@ -424,7 +424,7 @@ sub _check_vcf_header_and_keys {
         foreach my $mode ( @{ $vcf_file_href->{$file} } ) {
 
             next MODE
-              if ( not defined $sample_info_href->{$file}{$mode}{path} );
+              if ( not defined $sample_info_href->{recipe}{$file}{$mode}{path} );
 
             ## Execute on cmd
             print {$filehandle} q?perl -MTest::Harness -e ' ?;
@@ -442,7 +442,8 @@ sub _check_vcf_header_and_keys {
             print {$filehandle} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
 
             ## Infile
-            print {$filehandle} q?"? . $sample_info_href->{$file}{$mode}{path} . q?", ?;
+            print {$filehandle} q?"?
+              . $sample_info_href->{recipe}{$file}{$mode}{path} . q?", ?;
 
             ##ConfigFile
             print {$filehandle} q?"? . $analysis_config_file . q?", ?;
