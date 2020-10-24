@@ -1,0 +1,191 @@
+definitions/rd_dna_panel_parameters.yaml:nist_call_set_vcf:
+definitions/rd_dna_panel_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
+definitions/rd_dna_panel_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v3.3.2-.vcf
+definitions/rd_dna_panel_parameters.yaml:      NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
+definitions/rd_dna_panel_parameters.yaml:      NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
+definitions/rd_dna_panel_parameters.yaml:nist_call_set_bed:
+definitions/rd_dna_panel_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
+definitions/rd_dna_panel_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v3.3.2-.bed
+definitions/rd_dna_panel_parameters.yaml:      NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
+definitions/rd_dna_panel_parameters.yaml:      NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
+definitions/rd_dna_panel_parameters.yaml:nist_id:
+definitions/rd_dna_panel_parameters.yaml:nist_versions:
+definitions/rd_dna_parameters.yaml:nist_call_set_vcf:
+definitions/rd_dna_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
+definitions/rd_dna_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v3.3.2-.vcf
+definitions/rd_dna_parameters.yaml:      NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
+definitions/rd_dna_parameters.yaml:      NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
+definitions/rd_dna_parameters.yaml:nist_call_set_bed:
+definitions/rd_dna_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
+definitions/rd_dna_parameters.yaml:      NA12878: grch37_nist_hg001_-na12878_v3.3.2-.bed
+definitions/rd_dna_parameters.yaml:      NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
+definitions/rd_dna_parameters.yaml:      NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
+definitions/rd_dna_parameters.yaml:nist_id:
+definitions/rd_dna_parameters.yaml:nist_versions:
+t/analysis_rtg_vcfeval.t:my $nist_id   = q{NA12878};
+t/analysis_rtg_vcfeval.t:$active_parameter{nist_id}{$sample_id} = $nist_id;
+t/analysis_rtg_vcfeval.t:my $nist_version = q{3.3.2};
+t/analysis_rtg_vcfeval.t:@{ $active_parameter{nist_versions} } = ( $nist_version, );
+t/analysis_rtg_vcfeval.t:$active_parameter{nist_call_set_vcf}{$nist_version}{$nist_id} = q{a_file.vcf};
+t/analysis_rtg_vcfeval.t:$active_parameter{nist_call_set_bed}{$nist_version}{$nist_id} = q{a_file.bed};
+t/check_nist_file_name.t:        q{MIP::Reference}      => [qw{ check_nist_file_name }],
+t/check_nist_file_name.t:use MIP::Reference qw{ check_nist_file_name };
+t/check_nist_file_name.t:diag(   q{Test check_nist_file_name from Reference.pm v}
+t/check_nist_file_name.t:## Given nist info
+t/check_nist_file_name.t:my $file_name      = q{grch37_nist_hg001_-na12878_v3.3.2-.vcf};
+t/check_nist_file_name.t:my $nist_id        = q{NA12878};
+t/check_nist_file_name.t:my $nist_parameter = q{nist_call_set_vcf};
+t/check_nist_file_name.t:my $nist_version   = q{3.3.2};
+t/check_nist_file_name.t:my $is_ok = check_nist_file_name(
+t/check_nist_file_name.t:        nist_id        => $nist_id,
+t/check_nist_file_name.t:        nist_parameter => $nist_parameter,
+t/check_nist_file_name.t:        nist_version   => $nist_version,
+t/check_nist_file_name.t:ok( $is_ok, q{Checked nist file name is defined in nist hash parameters} );
+t/check_nist_file_name.t:    check_nist_file_name(
+t/check_nist_file_name.t:            nist_id        => $nist_id,
+t/check_nist_file_name.t:            nist_parameter => $nist_parameter,
+t/check_nist_file_name.t:            nist_version   => $nist_version,
+t/check_nist_nist_id.t:        q{MIP::Reference}      => [qw{ check_nist_nist_id }],
+t/check_nist_nist_id.t:use MIP::Reference qw{ check_nist_nist_id };
+t/check_nist_nist_id.t:diag(   q{Test check_nist_nist_id from Reference.pm v}
+t/check_nist_nist_id.t:## Given nist info
+t/check_nist_nist_id.t:    nist_call_set_vcf =>
+t/check_nist_nist_id.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
+t/check_nist_nist_id.t:    nist_call_set_bed =>
+t/check_nist_nist_id.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
+t/check_nist_nist_id.t:    nist_id       => { sample_1 => q{NA12878}, },
+t/check_nist_nist_id.t:    nist_versions => [qw{ 3.3.2 }],
+t/check_nist_nist_id.t:my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+t/check_nist_nist_id.t:my $is_ok = check_nist_nist_id(
+t/check_nist_nist_id.t:        nist_id_href          => $active_parameter{nist_id},
+t/check_nist_nist_id.t:        nist_parameters_ref   => \@nist_parameters,
+t/check_nist_nist_id.t:ok( $is_ok, q{Checked nist nist_id} );
+t/check_nist_nist_id.t:## Given a missing nist_id
+t/check_nist_nist_id.t:$active_parameter{nist_id}{sample_1} = q{not_a_nist_id};
+t/check_nist_nist_id.t:    check_nist_nist_id(
+t/check_nist_nist_id.t:            nist_id_href          => $active_parameter{nist_id},
+t/check_nist_nist_id.t:            nist_parameters_ref   => \@nist_parameters,
+t/check_nist_nist_id.t:ok( $trap->exit, q{Exit if nist_id is not mapped} );
+t/check_nist_nist_id.t:like( $trap->stderr, qr/Supplied\s+nist\s+id:\s+/xms, q{Throw fatal log message} );
+t/check_nist_sample_id.t:        q{MIP::Reference}      => [qw{ check_nist_sample_id }],
+t/check_nist_sample_id.t:use MIP::Reference qw{ check_nist_sample_id };
+t/check_nist_sample_id.t:diag(   q{Test check_nist_sample_id from Reference.pm v}
+t/check_nist_sample_id.t:## Given nist info
+t/check_nist_sample_id.t:    nist_call_set_vcf =>
+t/check_nist_sample_id.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
+t/check_nist_sample_id.t:    nist_call_set_bed =>
+t/check_nist_sample_id.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
+t/check_nist_sample_id.t:    nist_id       => { sample_1 => q{NA12878}, },
+t/check_nist_sample_id.t:    nist_versions => [qw{ 3.3.2 }],
+t/check_nist_sample_id.t:my $is_ok = check_nist_sample_id(
+t/check_nist_sample_id.t:        nist_id_href   => $active_parameter{nist_id},
+t/check_nist_sample_id.t:ok( $is_ok, q{Checked nist sample_ids} );
+t/check_nist_sample_id.t:## Given an incorrect sample_id in nist_id
+t/check_nist_sample_id.t:$active_parameter{nist_id}{not_a_sample_id} = q{NA12878};
+t/check_nist_sample_id.t:    check_nist_sample_id(
+t/check_nist_sample_id.t:            nist_id_href   => $active_parameter{nist_id},
+t/check_nist_version.t:        q{MIP::Reference}      => [qw{ check_nist_version }],
+t/check_nist_version.t:use MIP::Reference qw{ check_nist_version };
+t/check_nist_version.t:diag(   q{Test check_nist_version from Reference.pm v}
+t/check_nist_version.t:## Given nist info
+t/check_nist_version.t:    nist_call_set_vcf =>
+t/check_nist_version.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
+t/check_nist_version.t:    nist_call_set_bed =>
+t/check_nist_version.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
+t/check_nist_version.t:    nist_id       => { sample_1 => q{NA12878}, },
+t/check_nist_version.t:    nist_versions => [qw{ 3.3.2 }],
+t/check_nist_version.t:my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+t/check_nist_version.t:my $is_ok = check_nist_version(
+t/check_nist_version.t:        nist_parameters_ref   => \@nist_parameters,
+t/check_nist_version.t:ok( $is_ok, q{Checked nist versions exists in nist hash parameters} );
+t/check_nist_version.t:## Given a nist version that that does not exists in nist hash parameters
+t/check_nist_version.t:$active_parameter{nist_versions} = [qw{ not_a_version }];
+t/check_nist_version.t:    check_nist_version(
+t/check_nist_version.t:            nist_parameters_ref   => \@nist_parameters,
+t/check_nist_version.t:    qr/One\s+or\s+more\s+nist\s+versions/xms,
+templates/grch38_mip_rd_dna_config.yaml:nist_call_set_vcf:
+templates/grch38_mip_rd_dna_config.yaml:    NA24385: grch38_nist_hg002_-na24385_v3.3.2-.vcf
+templates/grch38_mip_rd_dna_config.yaml:nist_call_set_bed:
+templates/grch38_mip_rd_dna_config.yaml:    NA24385: grch38_nist_hg002_-na24385_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg001_-na12878_v2.19-.bed.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg001_-na12878_v2.19-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg001_-na12878_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg001_-na12878_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg004_-na24143_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg004_-na24143_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg002_-na24385_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg002_-na24385_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg005_-na24631_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch37_nist_hg005_-na24631_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg001_-na12878_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg001_-na12878_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg004_-na24143_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg004_-na24143_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg002_-na24385_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg002_-na24385_v3.3.2-.vcf.gz
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg005_-na24631_v3.3.2-.bed
+templates/mip_download_rd_dna_config_-1.0-.yaml:        outfile: grch38_nist_hg005_-na24631_v3.3.2-.vcf.gz
+t/get_nist_file.t:        q{MIP::Reference}      => [qw{ get_nist_file }],
+t/get_nist_file.t:use MIP::Reference qw{ get_nist_file };
+t/get_nist_file.t:diag(   q{Test get_nist_file from Reference.pm v}
+t/get_nist_file.t:## Given nist info
+t/get_nist_file.t:my %nist = ( nist_call_set_vcf =>
+t/get_nist_file.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, }, );
+t/get_nist_file.t:my $nist_id        = q{NA12878};
+t/get_nist_file.t:my $nist_parameter = q{nist_call_set_vcf};
+t/get_nist_file.t:my $nist_version   = q{3.3.2};
+t/get_nist_file.t:my $nist_file = get_nist_file(
+t/get_nist_file.t:        nist_href    => $nist{$nist_parameter},
+t/get_nist_file.t:        nist_id      => $nist_id,
+t/get_nist_file.t:        nist_version => $nist_version,
+t/get_nist_file.t:my $expected_file = q{grch37_nist_hg001_-na12878_v3.3.2-.vcf};
+t/get_nist_file.t:## Then nist file should be returned
+t/get_nist_file.t:is( $nist_file, $expected_file, q{Got nist file} );
+t/parse_nist_files.t:        q{MIP::Reference}      => [qw{ parse_nist_files }],
+t/parse_nist_files.t:use MIP::Reference qw{ parse_nist_files };
+t/parse_nist_files.t:diag(   q{Test parse_nist_files from Reference.pm v}
+t/parse_nist_files.t:## Given nist info
+t/parse_nist_files.t:    nist_call_set_vcf => {
+t/parse_nist_files.t:            NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf},
+t/parse_nist_files.t:    nist_call_set_bed => {
+t/parse_nist_files.t:            NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed},
+t/parse_nist_files.t:    nist_id       => { sample_1 => q{NA12878}, },
+t/parse_nist_files.t:    nist_versions => [qw{ 3.3.2 }],
+t/parse_nist_files.t:my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+t/parse_nist_files.t:my $is_ok = parse_nist_files(
+t/parse_nist_files.t:        nist_parameters_ref   => \@nist_parameters,
+t/parse_nist_files.t:ok( $is_ok, q{Parsed nist files} );
+t/parse_nist_files.t:$active_parameter{nist_call_set_vcf}{q{3.3.2}}{NA12878} = q{not_a_existing_file};
+t/parse_nist_files.t:    parse_nist_files(
+t/parse_nist_files.t:            nist_parameters_ref   => \@nist_parameters,
+t/parse_nist_parameters.t:        q{MIP::Reference}      => [qw{ parse_nist_parameters }],
+t/parse_nist_parameters.t:use MIP::Reference qw{ parse_nist_parameters };
+t/parse_nist_parameters.t:diag(   q{Test parse_nist_parameters from Reference.pm v}
+t/parse_nist_parameters.t:## Given nist info
+t/parse_nist_parameters.t:    nist_call_set_vcf =>
+t/parse_nist_parameters.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, },
+t/parse_nist_parameters.t:    nist_call_set_bed =>
+t/parse_nist_parameters.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.bed}, }, },
+t/parse_nist_parameters.t:    nist_id       => { sample_1 => q{NA12878}, },
+t/parse_nist_parameters.t:    nist_versions => [qw{ 3.3.2 }],
+t/parse_nist_parameters.t:my $is_ok = parse_nist_parameters(
+t/parse_nist_parameters.t:ok( $is_ok, q{Parsed nist parameters} );
+t/set_nist_file_name_path.t:        q{MIP::Reference}      => [qw{ set_nist_file_name_path }],
+t/set_nist_file_name_path.t:use MIP::Reference qw{ set_nist_file_name_path };
+t/set_nist_file_name_path.t:diag(   q{Test set_nist_file_name_path from Reference.pm v}
+t/set_nist_file_name_path.t:## Given nist info
+t/set_nist_file_name_path.t:my %nist = ( nist_call_set_vcf =>
+t/set_nist_file_name_path.t:      { q{3.3.2} => { NA12878 => q{grch37_nist_hg001_-na12878_v3.3.2-.vcf}, }, }, );
+t/set_nist_file_name_path.t:my $file_name      = q{grch37_nist_hg001_-na12878_v3.3.2-.vcf};
+t/set_nist_file_name_path.t:my $nist_id        = q{NA12878};
+t/set_nist_file_name_path.t:my $nist_parameter = q{nist_call_set_vcf};
+t/set_nist_file_name_path.t:my $nist_version   = q{3.3.2};
+t/set_nist_file_name_path.t:my $is_ok = set_nist_file_name_path(
+t/set_nist_file_name_path.t:        nist_href     => $nist{nist_call_set_vcf},
+t/set_nist_file_name_path.t:        nist_id       => $nist_id,
+t/set_nist_file_name_path.t:        nist_version  => $nist_version,
+t/set_nist_file_name_path.t:ok( $is_ok, q{Set nist file name path in nist hash parameters} );
+t/set_nist_file_name_path.t:my $expected_path = catdir( $reference_dir, qw{ grch37_nist_hg001_-na12878_v3.3.2-.vcf} );
+t/set_nist_file_name_path.t:is( $nist{nist_call_set_vcf}{q{3.3.2}}{NA12878},
+t/set_parameter_to_broadcast.t:        qw{receptionist cleaner},
+t/set_parameter_to_broadcast.t:    q?Set employe to: [receptionist, cleaner, {servant => {from => Barcelona, }, }, ] ?,
