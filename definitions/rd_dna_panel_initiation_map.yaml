@@ -27,8 +27,6 @@ CHAIN_ALL:
         - gatk_gathervcfs
         - gatk_variantrecalibration
     - gatk_combinevariantcallsets
-    - CHAIN_VINTEGRITY:
-      - variant_integrity_ar
     - CHAIN_RTEVAL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:
