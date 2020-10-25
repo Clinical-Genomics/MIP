@@ -417,15 +417,23 @@ sub _check_vcf_header_and_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
+
   RECIPE:
     foreach my $recipe_name ( keys %{$vcf_file_href} ) {
 
       MODE:
         foreach my $mode ( @{ $vcf_file_href->{$recipe_name} } ) {
 
-            next MODE
-              if ( not defined $sample_info_href->{recipe}{$recipe_name}{$mode}{path} );
+            my $vcf_file_path = $sample_info_href->{recipe}{$recipe_name}{$mode}{path};
+            next MODE if ( not defined $vcf_file_path );
 
+            $vcf_file_path = remove_file_path_suffix(
+            {
+                file_path         => $vcf_file_path,
+                file_suffixes_ref => [qw{ .gz}],
+            }
+        );
             ## Execute on cmd
             print {$filehandle} q?perl -MTest::Harness -e ' ?;
 
@@ -442,8 +450,7 @@ sub _check_vcf_header_and_keys {
             print {$filehandle} q?"test ? . $mode . $SPACE . $recipe_name . q?" => [ ?;
 
             ## Infile
-            print {$filehandle} q?"?
-              . $sample_info_href->{recipe}{$recipe_name}{$mode}{path} . q?", ?;
+            print {$filehandle} q?"? . $vcf_file_path . q?", ?;
 
             ##ConfigFile
             print {$filehandle} q?"? . $analysis_config_file . q?", ?;
