@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -599,6 +599,10 @@ sub set_file_path_to_store {
         step       => $recipe_name,
         tag        => $tag,
     );
+
+    ## Remove old entries with the same path
+    @{ $sample_info_href->{files} } =
+      grep { $_->{path} ne $path } @{ $sample_info_href->{files} };
 
     ## Set file path according to file type and tag
     push @{ $sample_info_href->{files} }, {%file_info};

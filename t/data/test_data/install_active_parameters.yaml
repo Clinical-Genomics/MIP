@@ -59,7 +59,6 @@ rd_dna:
   - ucsc
   - upd
   - varg
-  - variant_integrity
   - vcf2cytosure
   - vcfanno
   - vep
@@ -119,7 +118,6 @@ select_programs:
   - ucsc
   - upd
   - varg
-  - variant_integrity
   - vcf2cytosure
   - vcfanno
   - vep
@@ -333,10 +331,6 @@ singularity:
     executable:
       varg: ~
     uri: docker://clinicalgenomics/varg:1.2.0
-  variant_integrity:
-    executable:
-      variant_integrity: ~
-    uri: docker://clinicalgenomics/variant_integrity:0.0.4
   vcf2cytosure:
     executable:
       vcf2cytosure: ~

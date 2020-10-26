@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -120,6 +121,9 @@ sub analysis_analysisrunstatus {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    Readonly my $FINAL_VCFS_RECIPE    => q{endvariantannotationblock};
+    Readonly my $FINAL_SV_VCFS_RECIPE => q{sv_reformat};
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -211,8 +215,8 @@ sub analysis_analysisrunstatus {
 
     ## Test integrity of vcf data keys in header and body
     my %vcf_file = (
-        sv_vcf_file => [qw{ clinical research }],
-        vcf_file    => [qw{ clinical research }],
+        $FINAL_SV_VCFS_RECIPE => [qw{ clinical research }],
+        $FINAL_VCFS_RECIPE    => [qw{ clinical research }],
     );
 
     _check_vcf_header_and_keys(
@@ -413,15 +417,23 @@ sub _check_vcf_header_and_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  FILE:
-    foreach my $file ( keys %{$vcf_file_href} ) {
+    use MIP::File::Path qw{ remove_file_path_suffix };
+
+  RECIPE:
+    foreach my $recipe_name ( keys %{$vcf_file_href} ) {
 
       MODE:
-        foreach my $mode ( @{ $vcf_file_href->{$file} } ) {
+        foreach my $mode ( @{ $vcf_file_href->{$recipe_name} } ) {
 
-            next MODE
-              if ( not defined $sample_info_href->{$file}{$mode}{path} );
+            my $vcf_file_path = $sample_info_href->{recipe}{$recipe_name}{$mode}{path};
+            next MODE if ( not defined $vcf_file_path );
 
+            $vcf_file_path = remove_file_path_suffix(
+            {
+                file_path         => $vcf_file_path,
+                file_suffixes_ref => [qw{ .gz}],
+            }
+        );
             ## Execute on cmd
             print {$filehandle} q?perl -MTest::Harness -e ' ?;
 
@@ -435,10 +447,10 @@ sub _check_vcf_header_and_keys {
             print {$filehandle} q?test_args => { ?;
 
             ## Add test for select file using alias
-            print {$filehandle} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
+            print {$filehandle} q?"test ? . $mode . $SPACE . $recipe_name . q?" => [ ?;
 
             ## Infile
-            print {$filehandle} q?"? . $sample_info_href->{$file}{$mode}{path} . q?", ?;
+            print {$filehandle} q?"? . $vcf_file_path . q?", ?;
 
             ##ConfigFile
             print {$filehandle} q?"? . $analysis_config_file . q?", ?;
@@ -457,7 +469,7 @@ sub _check_vcf_header_and_keys {
               . q?", "test ?
               . $mode
               . $SPACE
-              . $file . q?"], ?;
+              . $recipe_name . q?"], ?;
 
             print {$filehandle} q?)'?;
             say   {$filehandle} $NEWLINE;

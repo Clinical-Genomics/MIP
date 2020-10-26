@@ -27,18 +27,9 @@ container:
     uri: docker.io/clinicalgenomics/bwa:0.7.17
   bwakit:
     executable:
-      bwa-postalt.js:
-      fermi2:
-      fermi2.pl:
-      k8:
-      ropebwt2:
+      bwakit: "no_executable_in_image"
       run-bwamem:
-      run-HLA:
-      typeHLA.js:
-      typeHLA.sh:
-      typeHLA-selctg.js:
-      seqtk:
-    uri: docker.io/clinicalgenomics/bwakit:0.7.15
+    uri: docker.io/jemten/bwakit:0.7.17
   bwa-mem2:
     executable:
       bwa-mem2:
@@ -63,7 +54,7 @@ container:
   chromograph:
     executable:
       chromograph:
-    uri: docker.io/clinicalgenomics/chromograph:91f0988
+    uri: docker.io/clinicalgenomics/chromograph:0.3.1
   cyrius:
     executable:
       star_caller.py:
@@ -130,7 +121,7 @@ container:
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.22.4
+    uri: docker.io/broadinstitute/picard:2.23.4
   plink:
     executable:
       plink2:
@@ -230,10 +221,6 @@ container:
     executable:
       varg:
     uri: docker.io/clinicalgenomics/varg:1.2.0
-  variant_integrity:
-    executable:
-      variant_integrity:
-    uri: docker.io/clinicalgenomics/variant_integrity:0.0.4
   vcfanno:
     executable:
       vcfanno:

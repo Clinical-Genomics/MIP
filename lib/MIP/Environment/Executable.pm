@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -446,11 +445,6 @@ q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
             version_cmd => q{--version},
             version_regexp =>
               q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
-        },
-        variant_integrity => {
-            version_cmd => q{--version},
-            version_regexp =>
-q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         vcfanno => {
             version_cmd => q{2>&1 >/dev/null},

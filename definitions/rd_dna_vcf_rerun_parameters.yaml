@@ -383,12 +383,6 @@ sv_reformat:
   program_executables:
     - picard
   type: recipe
-sv_rankvariant_binary_file:
-  associated_recipe:
-    - sv_reformat
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 sv_reformat_remove_genes_file:
   associated_recipe:
     - sv_reformat

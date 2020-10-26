@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -502,7 +501,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
-    use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
@@ -559,7 +557,7 @@ sub pipeline_analyse_rd_dna {
         chromograph_cov   => \&analysis_chromograph_cov,
         chromograph_upd   => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,                                              # Depends on pedigree
+        : undef,    # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
@@ -613,7 +611,6 @@ sub pipeline_analyse_rd_dna {
         varg_ar                => \&analysis_varg,
         varianteffectpredictor => \&analysis_vep_wgs,
         variant_annotation     => \&analysis_variant_annotation,
-        variant_integrity_ar   => \&analysis_variant_integrity,
         version_collect_ar     => \&analysis_mip_vercollect,
         vcfparser_ar           => \&analysis_mip_vcfparser,
         vcf2cytosure_ar        => \&analysis_vcf2cytosure,
@@ -642,8 +639,6 @@ sub pipeline_analyse_rd_dna {
     set_recipe_bwa_mem(
         {
             analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }
@@ -668,7 +663,6 @@ sub pipeline_analyse_rd_dna {
         ## Skip recipe if not part of dispatch table (such as gzip_fastq)
         next RECIPE if ( not $analysis_recipe{$recipe} );
 
-        ### Analysis recipes
         ## For displaying
         log_display_recipe_for_user(
             {

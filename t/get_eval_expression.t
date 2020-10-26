@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,26 +58,21 @@ diag(   q{Test get_eval_expression from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_PF_READS_ALIGNED            => 0.95;
-Readonly my $PCT_ADAPTER                     => 0.0005;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_WGS => 0.06;
+Readonly my $PCT_ADAPTER          => 0.0005;
+Readonly my $PCT_PF_READS_ALIGNED => 0.95;
 
 my %analysis_eval_metric = (
     ADM1059A1 => {
         collectmultiplemetrics => {
-            PCT_PF_READS_ALIGNED => {
-                lt => $PCT_PF_READS_ALIGNED,
-            },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
             },
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
+            },
         },
     },
-    variant_integrity_ar_mendel => {
-        fraction_of_errors => {
-            gt => $VARIANT_INTEGRITY_AR_MENDEL_WGS,
-        },
-    },
+    a_recipe => { a_metric => { lt => 1, }, },
 );
 
 ## Given a sample id and recipe outfile key
@@ -90,11 +85,11 @@ my %eval_expression = get_eval_expression(
     }
 );
 my %expected = (
-    PCT_PF_READS_ALIGNED => {
-        lt => $PCT_PF_READS_ALIGNED,
-    },
     PCT_ADAPTER => {
         gt => $PCT_ADAPTER,
+    },
+    PCT_PF_READS_ALIGNED => {
+        lt => $PCT_PF_READS_ALIGNED,
     },
 );
 
@@ -105,12 +100,12 @@ is_deeply( \%eval_expression, \%expected, q{Get sample eval expression} );
 %eval_expression = get_eval_expression(
     {
         eval_metric_href => \%analysis_eval_metric,
-        recipe           => q{variant_integrity_ar_mendel},
+        recipe           => q{a_recipe},
     }
 );
 %expected = (
-    fraction_of_errors => {
-        gt => $VARIANT_INTEGRITY_AR_MENDEL_WGS,
+    a_metric => {
+        lt => 1,
     },
 );
 is_deeply( \%eval_expression, \%expected, q{Get case eval expression} );

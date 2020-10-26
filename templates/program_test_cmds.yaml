@@ -102,8 +102,6 @@ upd:
   execution: 'upd'
 varg:
   execution: 'varg --version'
-variant_integrity:
-  execution: 'variant_integrity'
 vcf2cytosure:
   execution: 'vcf2cytosure --version'
 vcfanno:

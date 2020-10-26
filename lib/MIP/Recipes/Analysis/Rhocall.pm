@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -280,7 +280,7 @@ sub analysis_rhocall_annotate {
                 infile_path  => $infile_path{$contig},
                 outfile_path => $outfile_path{$contig},
                 rohfile_path => $roh_outfile_path,
-                v14          => 1,
+                q{v14}       => 1,
 
             }
         );
@@ -412,6 +412,7 @@ sub analysis_rhocall_viz {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -475,9 +476,9 @@ sub analysis_rhocall_viz {
             }
         )
     );
-    my $outdir_path         = $io{out}{dir_path};
-    my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outdir_path    = $io{out}{dir_path};
+    my $outfile_path   = $io{out}{file_path};
+    my $outfile_suffix = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -503,8 +504,13 @@ sub analysis_rhocall_viz {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $sample_vcf = $outfile_path_prefix . $DOT . $sample_id . q{.vcf.gz};
-
+    my $sample_outfile_path_prefix = remove_file_path_suffix(
+        {
+            file_path         => $outfile_path,
+            file_suffixes_ref => [$outfile_suffix],
+        }
+    );
+    my $sample_vcf = $sample_outfile_path_prefix . q{.vcf.gz};
     bcftools_view(
         {
             filehandle   => $filehandle,
@@ -531,7 +537,7 @@ sub analysis_rhocall_viz {
             af_tag       => q{GNOMADAF},
             filehandle   => $filehandle,
             infile_path  => $sample_vcf,
-            outfile_path => $outfile_path,
+            outfile_path => $sample_outfile_path_prefix . q{.roh},
             skip_indels => 1,    # Skip indels as their genotypes are enriched for errors
         }
     );
@@ -543,7 +549,7 @@ sub analysis_rhocall_viz {
             infile_path => $sample_vcf,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            outfile_path        => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            outfile_path        => $sample_outfile_path_prefix . q{.vcf},
             sequence_dictionary => $active_parameter_href->{human_genome_reference},
         }
     );
@@ -553,9 +559,9 @@ sub analysis_rhocall_viz {
         {
             af_tag       => q{GNOMADAF},
             filehandle   => $filehandle,
-            infile_path  => $outfile_path_prefix . $DOT . $sample_id . q{.vcf},
+            infile_path  => $sample_outfile_path_prefix . q{.vcf},
             outdir_path  => $outdir_path,
-            rohfile_path => $outfile_path,
+            rohfile_path => $sample_outfile_path_prefix . q{.roh},
             wig          => 1,
         }
     );
@@ -573,14 +579,13 @@ sub analysis_rhocall_viz {
     );
 
     say {$filehandle} q{## Create wig index files};
-    my $viz_wig_outfile_path_prefix = $outdir_path . q{output};
     ucsc_wig_to_big_wig(
         {
             clip                   => 1,
             contigs_size_file_path => $contigs_size_file_path,
             filehandle             => $filehandle,
-            infile_path            => $viz_wig_outfile_path_prefix . $DOT . q{wig},
-            outfile_path           => $viz_wig_outfile_path_prefix . $DOT . q{bw},
+            infile_path            => catfile( $outdir_path, q{output.wig} ),
+            outfile_path           => $outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -594,7 +599,7 @@ sub analysis_rhocall_viz {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_path,
-                path             => $viz_wig_outfile_path_prefix . $DOT . q{wig},
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -605,7 +610,7 @@ sub analysis_rhocall_viz {
             {
                 format           => q{bw},
                 id               => $sample_id,
-                path             => $viz_wig_outfile_path_prefix . $DOT . q{bw},
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

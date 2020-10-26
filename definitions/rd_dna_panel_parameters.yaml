@@ -147,7 +147,6 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    variant_integrity_ar: 1
     varianteffectpredictor: 1
     vcfparser_ar: 1
     version_collect_ar: 1
@@ -218,7 +217,6 @@ recipe_time:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    variant_integrity_ar: 1
     varianteffectpredictor: 4
     vcfparser_ar: 1
     version_collect_ar: 1
@@ -1077,16 +1075,6 @@ vcfparser_vep_transcripts:
   default: 1
   type: recipe_argument
 ## Case_check
-variant_integrity_ar:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _integrity
-  program_executables:
-    - variant_integrity
-  type: recipe
 rtg_vcfeval:
   analysis_mode: sample
   associated_recipe:
@@ -1166,7 +1154,6 @@ genmod_annotate_regions:
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
-    - variant_integrity_ar
   data_type: SCALAR
   default: ped
   type: recipe_argument
@@ -1216,7 +1203,7 @@ qccollect_eval_metric_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_eval_metric_-v1.1-.yaml
+  default: qc_eval_metric_-v1.3-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

@@ -28,8 +28,7 @@ BEGIN {
     our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_chromograph analysis_chromograph_cov analysis_chromograph_upd };
+    our @EXPORT_OK = qw{ analysis_chromograph_cov analysis_chromograph_upd };
 
 }
 
@@ -124,6 +123,7 @@ sub analysis_chromograph_cov {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Chromograph qw{ chromograph };
@@ -166,8 +166,14 @@ sub analysis_chromograph_cov {
         }
     );
 
-    my @contigs               = grep { !/M/xms } @{ $file_info_href->{contigs} };
-    my @outfile_name_prefixes = map  { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
+    ## Get all contigs excluding the mitochondria
+    my @contigs = delete_contig_elements(
+        {
+            contigs_ref        => $file_info_href->{contigs},
+            remove_contigs_ref => [qw{ MT }],
+        }
+    );
+    my @outfile_name_prefixes = map { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
     %io = (
         %io,
         parse_io_outfiles(
@@ -210,6 +216,7 @@ sub analysis_chromograph_cov {
     chromograph(
         {
             coverage_file_path => $infile_path,
+            euploid            => 1,
             filehandle         => $filehandle,
             outdir_path        => $outdir_path,
             step               => $active_parameter_href->{tiddit_coverage_bin_size},
@@ -437,6 +444,7 @@ sub analysis_chromograph_upd {
     );
     my $outdir_path   = $io{out}{dir_path};
     my @outfile_paths = @{ $io{out}{file_paths} };
+    my %outfile_path  = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -462,19 +470,24 @@ sub analysis_chromograph_upd {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    ## Process regions file from UPD
-    chromograph(
-        {
-            filehandle            => $filehandle,
-            outdir_path           => $outdir_path,
-            upd_regions_file_path => $infile_path_href->{regions},
-        }
-    );
-    say {$filehandle} $NEWLINE;
+    ## Process regions file from UPD if wgs
+    if ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} ) {
+
+        chromograph(
+            {
+                euploid               => 1,
+                filehandle            => $filehandle,
+                outdir_path           => $outdir_path,
+                upd_regions_file_path => $infile_path_href->{regions},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
     ## Process sites file from UPD
     chromograph(
         {
+            euploid             => 1,
             filehandle          => $filehandle,
             outdir_path         => $outdir_path,
             upd_sites_file_path => $infile_path_href->{sites},
@@ -497,23 +510,20 @@ sub analysis_chromograph_upd {
             }
         );
 
-      CALL_TYPE:
-        foreach my $call_type (qw{ regions sites }) {
+      OUTFILE_PATH:
+        while ( my ( $call_region, $outfile_path ) = each %outfile_path ) {
 
-          OUTFILE_PATH:
-            foreach my $outfile_path (@outfile_paths) {
-
-                set_file_path_to_store(
-                    {
-                        format           => q{png},
-                        id               => $sample_id,
-                        path             => $outfile_path,
-                        recipe_name      => $recipe_name,
-                        sample_info_href => $sample_info_href,
-                        tag              => $call_type,
-                    }
-                );
-            }
+            my ($call_type) = $call_region =~ /(sites|regions)/xms;
+            set_file_path_to_store(
+                {
+                    format           => q{png},
+                    id               => $sample_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $call_type,
+                }
+            );
         }
 
         submit_recipe(
