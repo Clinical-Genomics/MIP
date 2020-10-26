@@ -454,22 +454,6 @@ q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;
     $regexp{sv_vcfparser}{version} =
 q?perl -nae 'if($_=~/##Software=<ID=mip,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?;
 
-    # Return variant_integrity mendel fraction errors
-    $regexp{variant_integrity_ar_mendel}{fraction_of_errors} =
-      q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
-
-    # Return variant_integrity mendel mendelian_errors
-    $regexp{variant_integrity_ar_mendel}{mendelian_errors} =
-      q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
-
-    # Return variant_integrity father fraction of common_variants
-    $regexp{variant_integrity_ar_father}{fraction_of_common_variants} =
-      q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
-
-    # Return variant_integrity father common_variants
-    $regexp{variant_integrity_ar_father}{common_variants} =
-      q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
-
     ## Writes a YAML hash to file
     write_to_file(
         {

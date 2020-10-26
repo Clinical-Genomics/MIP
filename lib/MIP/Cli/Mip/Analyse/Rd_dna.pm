@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Rd_dna;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.61;
+our $VERSION = 1.62;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1869,15 +1868,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{variant_integrity_ar} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{QC for samples relationship},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
         q{rtg_vcfeval} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare concordance with benchmark data set},
@@ -1933,7 +1923,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_eval_metric_file} => (
-            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.3-.yaml}],
             documentation => q{File containing Qccollect evaluation metrics},
             is            => q{rw},
             isa           => Str,

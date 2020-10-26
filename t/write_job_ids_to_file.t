@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,45 +60,42 @@ diag(   q{Test write_job_ids_to_file from Processes.pm v}
 
 my $log = test_log( { no_screen => 1, } );
 
-## Given a log file when no job ids
-my $case_id         = q{case_1};
-my $date_time_stamp = q{1999-12-31T12:00:00};
+## Given a case and a job ids file path
+my $case_id = q{case_1};
 my %job_id;
-my $log_file = catfile( $Bin, q{a_test.log} );
+my $job_ids_file_path = catfile( $Bin, q{slurm_job_ids} . $DOT . q{yaml} );
 
+## When no job_ids to write to file
 my $is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        date_time_stamp => $date_time_stamp,
-        job_id_href     => \%job_id,
-        log_file        => $log_file,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
+        job_ids_file_path => $job_ids_file_path,
     }
 );
 
 ## Then return false
 is( $is_ok, undef, q{Skip when no job ids} );
 
-## Given a log file when job_ids
+## Given job_ids
 %job_id = ( ALL => { ALL => [ qw{ job_id_1 job_id_2 }, undef, ], }, );
-$is_ok  = write_job_ids_to_file(
+
+## When job_ids to write to file
+$is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        date_time_stamp => $date_time_stamp,
-        job_id_href     => \%job_id,
-        log_file        => $log_file,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
+        job_ids_file_path => $job_ids_file_path,
     }
 );
 
 ## Then return true
 ok( $is_ok, q{Wrote job ids file for job ids} );
 
-## Then job_id file should exist
-my $log_dir = dirname($log_file);
-my $job_ids_file =
-  catfile( $log_dir, q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
-ok( -e $job_ids_file, q{Created file} );
+## Then job_ids file should exist
+ok( -e $job_ids_file_path, q{Created file} );
 
 ## Clean-up
-remove_tree($job_ids_file);
+remove_tree($job_ids_file_path);
 
 done_testing();

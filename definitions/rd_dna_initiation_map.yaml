@@ -68,8 +68,6 @@ CHAIN_ALL:
       - peddy_ar
     - CHAIN_PLINK:
       - plink
-    - CHAIN_VINTEGRITY:
-      - variant_integrity_ar
     - CHAIN_RTEVAL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:

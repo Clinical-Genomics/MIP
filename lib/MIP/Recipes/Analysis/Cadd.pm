@@ -124,6 +124,7 @@ sub analysis_cadd {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
@@ -195,10 +196,14 @@ sub analysis_cadd {
         )
     );
 
-    my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %temp_outdir_path =
+      map { $_ => catdir( $active_parameter_href->{temp_directory}, $_ ) }
+      @contigs_size_ordered;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -238,6 +243,20 @@ sub analysis_cadd {
     );
     say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Create temp directories};
+  TEMP_OUTDIR:
+    foreach my $temp_outdir ( values %temp_outdir_path ) {
+
+        gnu_mkdir(
+            {
+                filehandle       => $filehandle,
+                indirectory_path => $temp_outdir,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+    print {$filehandle} $NEWLINE;
+
     ## View indels and calculate CADD
     say {$filehandle} q{## CADD};
 
@@ -252,12 +271,14 @@ sub analysis_cadd {
         }
     );
 
+    my %cadd_outfile_path;
     ## Process per contig
   CONTIG:
     while ( my ( $index, $contig ) = each @contigs_size_ordered ) {
 
         ## Get parameters
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
+        $cadd_outfile_path{$contig} = catfile( $temp_outdir_path{$contig},
+            $outfile_name_prefix . $DOT . $contig . $DOT . q{tsv.gz} );
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
@@ -309,7 +330,7 @@ sub analysis_cadd {
                 filehandle             => $xargsfilehandle,
                 genome_build           => $assembly_version,
                 infile_path            => $view_outfile_path,
-                outfile_path           => $cadd_outfile_path,
+                outfile_path           => $cadd_outfile_path{$contig},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -340,15 +361,12 @@ sub analysis_cadd {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
-        # Corresponds to cadd outfile path
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-
         ## Parse outfile in case of grch38
-        $cadd_outfile_path = _parse_cadd_outfile(
+        my $cadd_outfile_path = _parse_cadd_outfile(
             {
                 escape_oneliner   => 1,
                 filehandle        => $xargsfilehandle,
-                infile_path       => $cadd_outfile_path,
+                infile_path       => $cadd_outfile_path{$contig},
                 reference_version => $file_info_href->{human_genome_reference_version},
             }
         );

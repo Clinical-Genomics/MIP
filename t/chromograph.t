@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -98,6 +98,10 @@ my %specific_argument = (
         input           => catfile(qw{ path to wig }),
         expected_output => q{--coverage} . $SPACE . catfile(qw{ path to wig }),
     },
+    euploid => {
+        input           => 1,
+        expected_output => q{--euploid},
+    },
     ideo_file_path => {
         input           => catfile(qw{ a file.bed }),
         expected_output => q{--ideo} . $SPACE . catfile(qw{ a file.bed }),
@@ -116,7 +120,7 @@ my %specific_argument = (
     },
     upd_sites_file_path => {
         input           => catfile(qw{ path to bed }),
-        expected_output => q{--upd} . $SPACE . catfile(qw{ path to bed }),
+        expected_output => q{--sites} . $SPACE . catfile(qw{ path to bed }),
     },
 );
 

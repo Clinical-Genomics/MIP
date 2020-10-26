@@ -124,6 +124,7 @@ sub analysis_upd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -184,7 +185,14 @@ sub analysis_upd {
         }
     );
 
-    my @call_types = qw{ sites regions };
+    my @call_types = qw{ sites };
+
+    ## Only run upd regions on wgs samples, wes might generate empty files
+    if ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} ) {
+
+        push @call_types, q{regions};
+    }
+
     %io = (
         %io,
         parse_io_outfiles(
@@ -267,8 +275,12 @@ sub analysis_upd {
         say {$filehandle} $NEWLINE;
 
         say {$filehandle} q{## Create big bed files};
-        my $big_bed_file_path_prefix =
-          fileparse( $outfile_path{$call_type}, qr/[.]bed/sxm );
+        my $big_bed_file_path_prefix = remove_file_path_suffix(
+            {
+                file_path         => $outfile_path{$call_type},
+                file_suffixes_ref => [q{.bed}],
+            }
+        );
         ucsc_bed_to_big_bed(
             {
                 contigs_size_file_path => $contigs_size_file_path,
@@ -297,15 +309,21 @@ sub analysis_upd {
 
       CALL_TYPE:
         foreach my $call_type (@call_types) {
-            my $file_path_prefix = fileparse( $outfile_path{sites}, qr/[.]bed/sxm );
+            my $file_path_prefix = remove_file_path_suffix(
+                {
+                    file_path         => $outfile_path{$call_type},
+                    file_suffixes_ref => [q{.bed}],
+                }
+            );
 
             set_file_path_to_store(
                 {
                     format           => q{bb},
                     id               => $sample_id,
                     path             => $file_path_prefix . $DOT . q{bb},
-                    recipe_name      => q{upd_} . $call_type,
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
+                    tag              => $call_type,
                 }
             );
         }

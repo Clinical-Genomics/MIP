@@ -139,7 +139,6 @@ rd_dna:
     - ucsc
     - upd
     - varg
-    - variant_integrity
     - vcf2cytosure
     - vcfanno
     - vep
