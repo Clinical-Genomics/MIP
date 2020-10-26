@@ -1094,15 +1094,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_rankvariant_binary_file} => (
-            documentation =>
-              q{Produce binary file from the rank variant chromosome sorted vcfs},
-            is  => q{rw},
-            isa => Bool,
-        )
-    );
-
-    option(
         q{bcftools_mpileup} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant calling using bcftools mpileup},

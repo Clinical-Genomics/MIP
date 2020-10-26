@@ -26,7 +26,7 @@ use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Test::Writefile qw{ write_toml_config };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,8 +64,8 @@ diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 0, } );
 
 my $cluster_reference_path = catdir( dirname($Bin), qw{ t data references } );
-my $toml_template_path     = catfile( $cluster_reference_path,
-    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_template_path =
+  catfile( $cluster_reference_path, q{grch37_vcfanno_config_template-v1.0-.toml} );
 my $toml_config_path =
   catfile( $cluster_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
 
