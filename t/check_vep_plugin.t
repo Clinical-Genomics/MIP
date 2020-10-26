@@ -6,7 +6,7 @@ use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -23,10 +23,12 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Io::Read qw{ read_from_file };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,30 +64,42 @@ diag(   q{Test check_vep_plugin from Vep.pm v}
 
 my $log = test_log( { no_screen => 1, } );
 
-## Given an undefine vep plugin hash
+## Read config for most up to date format
+my %rd_dna_config = read_from_file(
+    {
+        format => q{yaml},
+        path   => catfile( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } ),
+    }
+);
+my %dynamic_parameter =
+  ( cluster_constant_path => catfile( dirname($Bin), qw{ t data } ), );
+update_with_dynamic_config_parameters(
+    {
+        active_parameter_href  => \%rd_dna_config,
+        dynamic_parameter_href => \%dynamic_parameter,
+    }
+);
+## Given an undefined vep plugin hash
 my %vep_plugin;
 
 my $is_not_ok = check_vep_plugin(
     {
-        parameter_name  => q{vep_plugin},
-        vep_plugin_href => \%vep_plugin,
+        parameter_name       => q{vep_plugin},
+        vep_plugin_href      => \%vep_plugin,
+        vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
     }
 );
 ## Then there is nothing to check - return false
 is( $is_not_ok, 0, q{Nothing to check} );
 
-%vep_plugin = (
-    dbNSFP => {
-        exists_check => q{directory},
-        path         => cwd(),
-        parameters   => [qw{ param_1 param_2 }],
-    },
-);
+## Given a plugin hash
+$vep_plugin{dbNSFP} = $rd_dna_config{vep_plugin}{dbNSFP};
 
 my $is_ok = check_vep_plugin(
     {
-        parameter_name  => q{vep_plugin},
-        vep_plugin_href => \%vep_plugin,
+        parameter_name       => q{vep_plugin},
+        vep_plugin_href      => \%vep_plugin,
+        vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
     }
 );
 
@@ -98,8 +112,9 @@ $vep_plugin{not_valid_annotation} = [q{not_a_valid_ref}];
 trap {
     check_vep_plugin(
         {
-            parameter_name  => q{vep_plugin},
-            vep_plugin_href => \%vep_plugin,
+            parameter_name       => q{vep_plugin},
+            vep_plugin_href      => \%vep_plugin,
+            vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
         }
     )
 };
@@ -109,5 +124,20 @@ is( $trap->leaveby, q{die}, q{Exit if not a hash ref } );
 like( $trap->die, qr/Is\s+not\s+a/xms, q{Not a hash ref} );
 
 delete $vep_plugin{not_valid_annotation};
+
+## Given a plugin that is missing
+$vep_plugin{MockPlugin} = $rd_dna_config{vep_plugin}{ExACpLI};
+trap {
+    check_vep_plugin(
+        {
+            parameter_name       => q{vep_plugin},
+            vep_plugin_href      => \%vep_plugin,
+            vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
+        }
+    )
+};
+
+## Then exit
+is( $trap->leaveby, q{exit}, q{Exit if the plugin doesn't exist } );
 
 done_testing();

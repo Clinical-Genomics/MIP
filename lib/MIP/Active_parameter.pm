@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.31;
+    our $VERSION = 1.32;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1270,8 +1270,9 @@ sub parse_vep_plugin {
 
         check_vep_plugin(
             {
-                parameter_name  => $parameter_name,
-                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+                parameter_name       => $parameter_name,
+                vep_plugin_href      => \%{ $active_parameter_href->{$parameter_name} },
+                vep_plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
             }
         );
     }
