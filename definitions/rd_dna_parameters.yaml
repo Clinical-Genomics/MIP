@@ -225,7 +225,7 @@ recipe_memory:
     rhocall_ar: 2
     rhocall_viz: 5
     sambamba_depth: 10
-    samtools_subsample_mt: 2
+    samtools_subsample_mt: 4
     split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
