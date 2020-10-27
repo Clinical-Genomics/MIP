@@ -88,19 +88,8 @@ my %active_parameter = (
     vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
 );
 
-#my %active_parameter_href = (
-#    vep_plugin => {
-#        dbNSFP => {
-#            exists_check =>
-#                q{directory},
-#            path         => cwd(),
-#            parameters   => [qw{ param_1 param_2 }],
-#        },
-#    },
-#);
 my @mip_vep_plugins = qw{ vep_plugin };
-
-my $is_ok = parse_vep_plugin(
+my $is_ok           = parse_vep_plugin(
     {
         active_parameter_href => \%active_parameter,
         mip_vep_plugins_ref   => \@mip_vep_plugins,
