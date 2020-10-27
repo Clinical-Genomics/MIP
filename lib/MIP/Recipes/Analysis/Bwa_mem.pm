@@ -27,7 +27,6 @@ BEGIN {
     # Set the version for version checking
     our $VERSION = 1.27;
 
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
@@ -1189,7 +1188,7 @@ sub analysis_run_bwa_mem {
             }
         );
         print {$filehandle} $PIPE . $SPACE;
-        print {$filehandle} q{sh} . $SPACE;
+        print {$filehandle} q{bwakit sh} . $SPACE;
         say   {$filehandle} $NEWLINE;
 
         ## Set samtools sort input; Sort directly from run-bwakit

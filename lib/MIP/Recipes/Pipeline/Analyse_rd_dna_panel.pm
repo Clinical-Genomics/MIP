@@ -481,8 +481,6 @@ sub pipeline_analyse_rd_dna_panel {
     set_recipe_bwa_mem(
         {
             analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }

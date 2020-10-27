@@ -19,12 +19,16 @@ use MIP::Constants qw{ $DASH $NEWLINE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
+## Constants
+Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -39,6 +43,7 @@ sub genmod_annotate {
 ##          : $append_stderr_info     => Append stderr info to file
 ##          : $cadd_file_paths_ref    => Specify the path to a bgzipped cadd file (with index) with variant scores
 ##          : $filehandle             => Filehandle to write to
+##          : $genome_build           => Genome build
 ##          : $infile_path            => Infile path to read from
 ##          : $max_af                 => If the MAX AF should be annotated
 ##          : $outfile_path           => Outfile path to write to
@@ -55,6 +60,7 @@ sub genmod_annotate {
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
     my $filehandle;
+    my $genome_build;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -85,7 +91,13 @@ sub genmod_annotate {
         },
         cadd_file_paths_ref =>
           { default => [], store => \$cadd_file_paths_ref, strict_type => 1, },
-        filehandle  => { store => \$filehandle, },
+        filehandle   => { store => \$filehandle, },
+        genome_build => {
+            allow       => [ undef, $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 ],
+            required    => 0,
+            store       => \$genome_build,
+            strict_type => 1,
+        },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -134,27 +146,19 @@ sub genmod_annotate {
     ## Genmod sub command
     push @commands, q{annotate};
 
-    if ($temp_directory_path) {
-
-        push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
-    }
     if ($annotate_region) {
 
         push @commands, q{--annotate_regions};
-    }
-    if ($thousand_g_file_path) {
-
-        push @commands, q{--thousand-g} . $SPACE . $thousand_g_file_path;
-    }
-    if ($spidex_file_path) {
-
-        push @commands, q{--spidex} . $SPACE . $spidex_file_path;
     }
     if ( @{$cadd_file_paths_ref} ) {
 
         push @commands,
           q{--cadd_file} . $SPACE . join $SPACE . q{--cadd_file} . $SPACE,
           @{$cadd_file_paths_ref};
+    }
+    if ($genome_build) {
+
+        push @commands, q{--genome-build} . $SPACE . $genome_build,;
     }
     if ($max_af) {
 
@@ -163,6 +167,18 @@ sub genmod_annotate {
     if ($outfile_path) {
 
         push @commands, q{--outfile} . $SPACE . $outfile_path;
+    }
+    if ($spidex_file_path) {
+
+        push @commands, q{--spidex} . $SPACE . $spidex_file_path;
+    }
+    if ($temp_directory_path) {
+
+        push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
+    }
+    if ($thousand_g_file_path) {
+
+        push @commands, q{--thousand-g} . $SPACE . $thousand_g_file_path;
     }
 
     push @commands, $infile_path;

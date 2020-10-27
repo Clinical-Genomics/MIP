@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,6 +58,8 @@ diag(   q{Test genmod_annotate from Genmod.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $GENOME_BUILD_VERSION => 38;
 
 ## Base arguments
 my @function_base_commands = qw{ genmod };
@@ -105,6 +107,10 @@ my %specific_argument = (
           . q{--cadd_file}
           . $SPACE
           . catfile(qw{ a test cadd_file_2 }),
+    },
+    genome_build => {
+        input           => $GENOME_BUILD_VERSION,
+        expected_output => q{--genome-build} . $SPACE . $GENOME_BUILD_VERSION,
     },
     infile_path => {
         input           => catfile(qw{ a test infile }),
