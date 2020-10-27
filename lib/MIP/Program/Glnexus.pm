@@ -89,8 +89,6 @@ sub glnexus_merge {
             strict_type => 1,
         },
         threads => {
-            default     => 36,
-            defined     => 1,
             store       => \$threads,
             strict_type => 1,
         }
@@ -101,7 +99,9 @@ sub glnexus_merge {
     ## Stores commands depending on input parameters
     my @commands = qw{ glnexus_cli };
 
-    push @commands, q{--threads} . $SPACE . $threads;
+    if ($threads) {
+        push @commands, q{--threads} . $SPACE . $threads;
+    }
     push @commands, q{--config} . $SPACE . $config;
     push @commands, q{--dir} . $SPACE . $dir;
     push @commands, join $SPACE, @{$infile_paths_ref};
