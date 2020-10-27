@@ -187,7 +187,7 @@ sub check_vep_custom_annotation {
 
 sub check_vep_plugin {
 
-## Function : Check VEP plugins and ptions
+## Function : Check VEP plugins and options
 ## Returns  : 0 or 1
 ## Arguments: $parameter_name       => Parameter name
 ##          : $vep_plugin_href      => VEP plugin annotation {REF}
