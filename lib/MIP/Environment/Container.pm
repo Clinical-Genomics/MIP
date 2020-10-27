@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ install_containers parse_container_bind_paths parse_container_uri run_container };
+      qw{ install_containers parse_containers parse_container_bind_paths parse_container_uri run_container };
 }
 
 sub install_containers {
@@ -109,6 +109,46 @@ sub install_containers {
 
     $container_api{$container_manager}{method}
       ->( { %{ $container_api{$container_manager}{arg_href} } } );
+
+    return 1;
+}
+
+sub parse_containers {
+
+## Function : Parse containers to set executable command based on current container manager
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Config qw{ get_install_containers };
+    use MIP::Environment::Executable qw{ set_executable_container_cmd };
+
+    %{ $active_parameter_href->{container} } =
+      get_install_containers(
+        { install_config_file => $active_parameter_href->{install_config_file}, } );
+
+    set_executable_container_cmd(
+        {
+            container_href    => $active_parameter_href->{container},
+            container_manager => $active_parameter_href->{container_manager},
+        }
+    );
 
     return 1;
 }

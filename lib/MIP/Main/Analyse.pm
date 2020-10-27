@@ -39,7 +39,7 @@ use MIP::Active_parameter qw{
   update_recipe_mode_with_dry_run_all
   update_to_absolute_path };
 use MIP::Analysis qw{ check_analysis_type_to_pipeline get_overall_analysis_type };
-use MIP::Config qw{ get_install_containers parse_config };
+use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Contigs qw{ set_contigs };
 use MIP::Environment::User qw{ check_email_address };
@@ -256,9 +256,7 @@ sub mip_analyse {
         }
     );
 
-    $active_parameter_href->{container} =
-      get_install_containers(
-        { install_config_file => $active_parameter_href->{install_config_file}, } );
+    parse_containers( { active_parameter_href => $active_parameter_href, } );
 
 ### Checks
     check_analysis_type_to_pipeline(
