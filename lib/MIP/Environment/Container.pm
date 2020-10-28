@@ -143,7 +143,7 @@ sub parse_containers {
       get_install_containers(
         { install_config_file => $active_parameter_href->{install_config_file}, } );
 
-    set_executable_container_cmd(
+    my %container_cmd = set_executable_container_cmd(
         {
             container_href    => $active_parameter_href->{container},
             container_manager => $active_parameter_href->{container_manager},
