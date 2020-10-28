@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [9.0.4]
 - Increased memory allocation for samtools_subsample_mt
 - Check that vep plugin paths exists prior to executing mip
+- Cd into cadd temp directory before executing cadd in order to escape snakemake lock errors
 
 ## [9.0.3]
 - Changed path and name of slurm job ids file to facilitate analysis monitoring
