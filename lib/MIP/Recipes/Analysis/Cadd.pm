@@ -123,7 +123,7 @@ sub analysis_cadd {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
+    use MIP::Program::Gnu::Bash qw{ gnu_cd gnu_export gnu_unset };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
@@ -321,6 +321,16 @@ sub analysis_cadd {
                 outfile_path    => $view_outfile_path,
                 output_type     => q{v},
                 stderrfile_path => $stderrfile_path,
+            }
+        );
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
+
+        ## Attempt to escape snakemake lock
+        gnu_cd(
+            {
+                filehandle             => $xargsfilehandle,
+                directory_path         => $temp_outdir_path{$contig},
+                stderrfile_path_append => $stderrfile_path,
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
