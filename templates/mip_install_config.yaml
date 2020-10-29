@@ -33,7 +33,7 @@ container:
   bwa-mem2:
     executable:
       bwa-mem2:
-    uri: docker.io/clinicalgenomics/bwa-mem2:2.0
+    uri: docker.io/clinicalgenomics/bwa-mem2:2.1
   bedtools:
     executable:
       bedtools:
