@@ -561,14 +561,15 @@ sub set_executable_container_cmd {
 
             ## Set container option depending on singularity or docker
             $container_api{$container_manager}{arg_href}{$container_arg} =
-              $container_name;
+              $container_href->{$container_name}{uri};
 
             my @cmds = $container_api{$container_manager}{method}
               ->( { %{ $container_api{$container_manager}{arg_href} } } );
 
-            next EXECUTABLE if ( not $executable_path );
+            if ( $executable_path ) {
 
-            push @cmds, $executable_path;
+                push @cmds, $executable_path;
+            }
 
             $container_cmd{$executable_name} = join $SPACE, @cmds;
         }
