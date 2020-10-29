@@ -566,11 +566,15 @@ sub set_executable_container_cmd {
             my @cmds = $container_api{$container_manager}{method}
               ->( { %{ $container_api{$container_manager}{arg_href} } } );
 
-            if ( $executable_path ) {
+
+            if ( $executable_path and $executable_path ne q{no_executable_in_image}) {
 
                 push @cmds, $executable_path;
             }
+            else {
 
+                push @cmds, $executable_name;
+            }
             $container_cmd{$executable_name} = join $SPACE, @cmds;
         }
     }
