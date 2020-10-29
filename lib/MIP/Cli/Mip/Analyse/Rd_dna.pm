@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.62;
+our $VERSION = 1.63;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -95,8 +95,7 @@ sub run {
         # BWA human genome reference file endings
         bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
-        bwa_mem2_build_reference =>
-          [qw{ .0123 .ann .amb .bwt.2bit.64 .bwt.8bit.32 .pac }],
+        bwa_mem2_build_reference => [qw{ .0123 .ann .amb .bwt.2bit.64 .pac }],
 
         exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
