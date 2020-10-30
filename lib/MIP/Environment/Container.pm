@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ install_containers parse_containers parse_container_bind_paths parse_container_uri run_container };
+      qw{ install_containers parse_containers parse_container_bind_paths parse_container_uri run_container set_executable_container_cmd };
 }
 
 sub install_containers {
@@ -137,7 +137,6 @@ sub parse_containers {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Config qw{ get_install_containers };
-    use MIP::Environment::Executable qw{ set_executable_container_cmd };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
@@ -269,7 +268,7 @@ sub run_container {
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref         => Bind host directory to container {REF}
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
-##          : $container_manager     => Container manager
+##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
 ##          : $entrypoint             => Override container entrypoint
 ##          : $filehandle             => Filehandle to write to
@@ -376,7 +375,7 @@ sub run_container {
             arg_href => {
                 bind_paths_ref                 => $bind_paths_ref,
                 filehandle                     => $filehandle,
-                singularity_container          => $container_path,
+                image                          => $container_path,
                 singularity_container_cmds_ref => $container_cmds_ref,
                 stderrfile_path                => $stdinfile_path,
                 stderrfile_path_append         => $stderrfile_path_append,
@@ -390,6 +389,95 @@ sub run_container {
       ->( { %{ $container_api{$container_manager}{arg_href} } } );
 
     return @commands;
+}
+
+sub set_executable_container_cmd {
+
+## Function : Set executable command depending on container manager
+## Returns  :
+## Arguments: $container_href    => Containers hash {REF}
+##          : $container_manager => Container manager
+##          : $bind_paths_ref    => Array with paths to bind {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_href;
+    my $container_manager;
+    my $bind_paths_ref;
+
+    my $tmpl = {
+        container_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
+        container_manager => {
+            allow       => [qw{ docker singularity }],
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        bind_paths_ref => {
+            default     => [],
+            store       => \$bind_paths_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Singularity qw{ singularity_exec };
+    use MIP::Program::Docker qw{ docker_run };
+
+    my %container_api = (
+        docker => {
+            arg_href => {
+                bind_paths_ref => [],
+                image          => undef,
+                remove         => 1,
+            },
+            method => \&docker_run,
+        },
+        singularity => {
+            arg_href => {
+                bind_paths_ref => [],
+                image          => undef,
+            },
+            method => \&singularity_exec,
+        },
+    );
+
+    my %container_cmd;
+  CONTAINER_NAME:
+    foreach my $container_name ( keys %{$container_href} ) {
+
+      EXECUTABLE:
+        while ( my ( $executable_name, $executable_path ) =
+            each %{ $container_href->{$container_name}{executable} } )
+        {
+
+            ## Set container option depending on singularity or docker
+            $container_api{$container_manager}{arg_href}{image} =
+              $container_href->{$container_name}{uri};
+
+            my @cmds = $container_api{$container_manager}{method}
+              ->( { %{ $container_api{$container_manager}{arg_href} } } );
+
+            if ( $executable_path and $executable_path ne q{no_executable_in_image} ) {
+
+                push @cmds, $executable_path;
+            }
+            else {
+
+                push @cmds, $executable_name;
+            }
+            $container_cmd{$executable_name} = join $SPACE, @cmds;
+        }
+    }
+    return %container_cmd;
 }
 
 1;

@@ -258,7 +258,7 @@ sub setup_singularity_executable {
         my @singularity_cmds = singularity_exec(
             {
                 bind_paths_ref                 => $program_bind_paths_ref,
-                singularity_container          => $container_path,
+                image                          => $container_path,
                 singularity_container_cmds_ref => [$container_executable],
             }
         );

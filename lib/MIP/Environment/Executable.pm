@@ -30,7 +30,6 @@ BEGIN {
       get_binaries_versions
       get_executable
       get_binary_version
-      set_executable_container_cmd
     };
 }
 
@@ -487,98 +486,6 @@ q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last
         return %{ $executable{$executable_name} };
     }
     return %executable;
-}
-
-sub set_executable_container_cmd {
-
-## Function : Set executable command depending on container manager
-## Returns  :
-## Arguments: $container_href    => Containers hash {REF}
-##          : $container_manager => Container manager
-##          : $bind_paths_ref    => Array with paths to bind {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $container_href;
-    my $container_manager;
-    my $bind_paths_ref;
-
-    my $tmpl = {
-        container_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$container_href,
-            strict_type => 1,
-        },
-        container_manager => {
-            allow       => [qw{ docker singularity }],
-            required    => 1,
-            store       => \$container_manager,
-            strict_type => 1,
-        },
-        bind_paths_ref => {
-            default     => [],
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Singularity qw{ singularity_exec };
-    use MIP::Program::Docker qw{ docker_run };
-
-    my %container_api = (
-        docker => {
-            arg_href => {
-                bind_paths_ref => [],
-                image          => undef,
-            },
-            method => \&docker_run,
-        },
-        singularity => {
-            arg_href => {
-                bind_paths_ref        => [],
-                singularity_container => undef,
-            },
-            method => \&singularity_exec,
-        },
-    );
-
-    my %container_cmd;
-  CONTAINER_NAME:
-    foreach my $container_name ( keys %{$container_href} ) {
-
-      EXECUTABLE:
-        while ( my ( $executable_name, $executable_path ) =
-            each %{ $container_href->{$container_name}{executable} } )
-        {
-
-            my $container_arg =
-              $container_manager eq q{singularity} ? q{singularity_container} : q{image};
-
-            ## Set container option depending on singularity or docker
-            $container_api{$container_manager}{arg_href}{$container_arg} =
-              $container_href->{$container_name}{uri};
-
-            my @cmds = $container_api{$container_manager}{method}
-              ->( { %{ $container_api{$container_manager}{arg_href} } } );
-
-
-            if ( $executable_path and $executable_path ne q{no_executable_in_image}) {
-
-                push @cmds, $executable_path;
-            }
-            else {
-
-                push @cmds, $executable_name;
-            }
-            $container_cmd{$executable_name} = join $SPACE, @cmds;
-        }
-    }
-    return %container_cmd;
 }
 
 1;
