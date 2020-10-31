@@ -466,7 +466,10 @@ sub set_executable_container_cmd {
             my @cmds = $container_api{$container_manager}{method}
               ->( { %{ $container_api{$container_manager}{arg_href} } } );
 
-            if ( $executable_path and $executable_path ne q{no_executable_in_image} ) {
+            next EXECUTABLE
+              if ( $executable_path and $executable_path eq q{no_executable_in_image} );
+
+            if ($executable_path) {
 
                 push @cmds, $executable_path;
             }

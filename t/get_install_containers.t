@@ -74,6 +74,13 @@ my %expected_container = (
         },
         uri => q{docker://uhrigs/arriba:1.1.0},
     },
+    bwakit => {
+        executable => {
+            bwakit        => q{no_executable_in_image},
+            q{run-bwamem} => undef,
+        },
+        uri => q{docker.io/jemten/bwakit:0.7.17}
+    },
 );
 
 is_deeply( \%container, \%expected_container, q{Got install containers} );
