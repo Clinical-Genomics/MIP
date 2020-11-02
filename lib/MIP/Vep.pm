@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -187,16 +187,18 @@ sub check_vep_custom_annotation {
 
 sub check_vep_plugin {
 
-## Function : Check VEP plugin options
+## Function : Check VEP plugins and options
 ## Returns  : 0 or 1
-## Arguments: $parameter_name  => Parameter name
-##          : $vep_plugin_href => VEP plugin annotation {REF}
+## Arguments: $parameter_name       => Parameter name
+##          : $vep_plugin_href      => VEP plugin annotation {REF}
+##          : $vep_plugins_dir_path => VEP plugin dir path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_name;
     my $vep_plugin_href;
+    my $vep_plugins_dir_path;
 
     my $tmpl = {
         parameter_name => {
@@ -209,6 +211,12 @@ sub check_vep_plugin {
             defined     => 1,
             required    => 1,
             store       => \$vep_plugin_href,
+            strict_type => 1,
+        },
+        vep_plugins_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_plugins_dir_path,
             strict_type => 1,
         },
     };
@@ -225,6 +233,15 @@ sub check_vep_plugin {
 
         my $err_msg = $plugin . q{ Is not a hash ref for vep_plugin};
         croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        check_filesystem_objects_and_index_existance(
+            {
+                object_name    => $plugin,
+                object_type    => q{file},
+                parameter_name => $parameter_name,
+                path           => catfile( $vep_plugins_dir_path, $plugin . q{.pm} ),
+            }
+        );
 
         next PLUGIN if ( not exists $value_href->{exist_check} );
 

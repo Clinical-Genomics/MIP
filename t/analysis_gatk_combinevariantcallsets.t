@@ -25,7 +25,7 @@ use MIP::Test::Fixtures
   qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -114,7 +114,8 @@ foreach my $caller (@variant_callers) {
     push @{ $parameter{cache}{variant_callers} }, $caller;
 }
 
-my @order_recipes = ( qw{ gatk_variantrecalibration bcftools_mpileup }, $recipe_name );
+my @order_recipes =
+  ( qw{ gatk_variantrecalibration bcftools_mpileup glnexus_merge }, $recipe_name );
 
 test_add_io_for_recipe(
     {

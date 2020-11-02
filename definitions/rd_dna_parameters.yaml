@@ -161,7 +161,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
-    glnexus_merge: 36
+    glnexus_merge: 1
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -217,9 +217,11 @@ recipe_memory:
     expansionhunter: 2
     variant_annotation: 3
     gatk_baserecalibration: 10
+    gatk_combinevariantcallsets: 25
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
+    glnexus_merge: 150
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
@@ -227,7 +229,7 @@ recipe_memory:
     rhocall_ar: 2
     rhocall_viz: 5
     sambamba_depth: 10
-    samtools_subsample_mt: 2
+    samtools_subsample_mt: 4
     split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
@@ -506,7 +508,9 @@ glnexus_merge:
     - glnexus_cli
     - bcftools
     - bgzip
+  recipe_type: variant_callers
   type: recipe
+  variant_caller: deepvariant
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample
@@ -1927,6 +1931,7 @@ nist_call_set_vcf:
       NA12878: grch37_nist_hg001_-na12878_v3.3.2-.vcf
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
+      NA24631: grch37_nist_hg005_-na24631_v3.3.2-.vcf
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -1940,6 +1945,7 @@ nist_call_set_bed:
       NA12878: grch37_nist_hg001_-na12878_v3.3.2-.bed
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
+      NA24631: grch37_nist_hg005_-na24631_v3.3.2-.bed
   data_type: HASH
   is_reference: 1
   type: recipe_argument

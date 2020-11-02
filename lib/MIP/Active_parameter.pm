@@ -1271,8 +1271,9 @@ sub parse_vep_plugin {
 
         check_vep_plugin(
             {
-                parameter_name  => $parameter_name,
-                vep_plugin_href => \%{ $active_parameter_href->{$parameter_name} },
+                parameter_name       => $parameter_name,
+                vep_plugin_href      => \%{ $active_parameter_href->{$parameter_name} },
+                vep_plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
             }
         );
     }

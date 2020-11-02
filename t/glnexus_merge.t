@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,6 +71,10 @@ my %base_argument = (
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
+    threads => {
+        input           => q{10},
+        expected_output => q{--threads } . q{10},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -88,6 +92,10 @@ my %required_argument = (
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
+    threads => {
+        input           => q{10},
+        expected_output => q{--threads } . q{10},
+    },
 );
 
 my %specific_argument = (
@@ -102,6 +110,10 @@ my %specific_argument = (
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
+    },
+    threads => {
+        input           => q{10},
+        expected_output => q{--threads } . q{10},
     },
 );
 ## Coderef - enables generalized use of generate call
