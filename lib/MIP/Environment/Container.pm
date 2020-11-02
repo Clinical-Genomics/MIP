@@ -137,6 +137,7 @@ sub parse_containers {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Config qw{ get_install_containers };
+    use MIP::Constants qw{ set_container_cmd };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
@@ -148,6 +149,8 @@ sub parse_containers {
             container_manager => $active_parameter_href->{container_manager},
         }
     );
+
+    set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
     return 1;
 }

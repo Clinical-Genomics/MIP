@@ -37,6 +37,7 @@ BEGIN {
       $COLON
       $COMMA
       @CONTAINER_BIND_PATHS
+      %CONTAINER_CMD
       $CONTAINER_MANAGER
       $DASH
       $DOLLAR_SIGN
@@ -64,6 +65,7 @@ BEGIN {
       $SPACE
       $TAB
       $UNDERSCORE
+      set_container_cmd
       set_container_constants
       set_genome_build_constants
       set_log_name_constant
@@ -348,6 +350,34 @@ Readonly our $SINGLE_QUOTE      => q{'};
 Readonly our $SPACE             => q{ };
 Readonly our $TAB               => qq{\t};
 Readonly our $UNDERSCORE        => q{_};
+
+sub set_container_cmd {
+
+## Function : Set container commands for each executable
+## Returns  :
+## Arguments: $container_cmd_href => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_cmd_href;
+
+    my $tmpl = {
+        container_cmd_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_cmd_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    Readonly our %CONTAINER_CMD => %{$container_cmd_href};
+
+    return;
+}
 
 sub set_container_constants {
 
