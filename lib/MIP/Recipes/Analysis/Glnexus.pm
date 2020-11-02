@@ -118,6 +118,7 @@ sub analysis_glnexus {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -216,31 +217,68 @@ sub analysis_glnexus {
 
     my $config_type = q{DeepVariant} . $consensus_analysis_type;
 
-    glnexus_merge(
-        {
-            config     => $config_type,
-            dir        => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-            filehandle => $filehandle,
-            infile_paths_ref => \@genotype_infile_paths,
-            stdoutfile_path  => $outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-     
-    say {$filehandle} q{## View};
+    if ( scalar @genotype_infile_paths > 1 ) {
 
-    bcftools_view_and_index_vcf(
-        {
-            filehandle          => $filehandle,
-            index_type          => q{tbi},
-            infile_path         => $outfile_path,
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{z},
-            threads             => $core_number,
-        }
-    );
+        ## GATK CombineVariants
+        say {$filehandle} q{## Glnexus};
 
-    ## Close filehandleS
+        glnexus_merge(
+            {
+                config => $config_type,
+                dir    => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+                filehandle       => $filehandle,
+                infile_paths_ref => \@genotype_infile_paths,
+                stdoutfile_path  => $outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        say {$filehandle} q{## View};
+
+        bcftools_view_and_index_vcf(
+            {
+                filehandle          => $filehandle,
+                index_type          => q{tbi},
+                infile_path         => $outfile_path,
+                outfile_path_prefix => $outfile_path_prefix,
+                output_type         => q{z},
+                threads             => $core_number,
+            }
+        );
+    }
+    else {
+
+        say {$filehandle} q{## Copy deepvariant vcf output and index};
+
+        my %sample_io = get_io_files(
+            {
+                id             => $active_parameter_href->{sample_ids}[0],
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => q{deepvariant},
+                stream         => q{out},
+            }
+        );
+
+        gnu_cp(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $sample_io{out}{file_path_prefix} . q{.vcf.gz},
+                outfile_path => $outfile_path_prefix . q{.vcf.gz},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        gnu_cp(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $sample_io{out}{file_path_prefix} . q{.vcf.gz.tbi},
+                outfile_path => $outfile_path_prefix . q{.vcf.gz.tbi},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
