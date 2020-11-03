@@ -353,7 +353,9 @@ sub run_container {
   BIND_PATH:
     foreach my $bind_path ( @{$bind_paths_ref} ) {
 
+        # Skip if mount path in image already is specified
         next BIND_PATH if $bind_path =~ m/[:]/xms;
+        
         next BIND_PATH if $bind_path =~ m/\A \$/xms;
 
         $bind_path .= $COLON . $bind_path;
@@ -469,15 +471,16 @@ sub set_executable_container_cmd {
             each %{ $container_href->{$container_name}{executable} } )
         {
 
-            ## Set container option depending on singularity or docker
-            $container_api{$container_manager}{arg_href}{image} =
-              $container_href->{$container_name}{uri};
-
-            my @cmds = $container_api{$container_manager}{method}
-              ->( { %{ $container_api{$container_manager}{arg_href} } } );
-
-            next EXECUTABLE
+                        next EXECUTABLE
               if ( $executable_path and $executable_path eq q{no_executable_in_image} );
+
+           my @cmds = run_container(
+        {
+            bind_paths_ref     => $bind_paths_ref,
+            container_path     => $container_href->{$container_name}{uri},
+            container_manager  => $container_manager,
+        }
+    );
 
             if ($executable_path) {
 

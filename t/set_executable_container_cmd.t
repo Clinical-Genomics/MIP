@@ -67,7 +67,7 @@ my %container =
 
 ## Given a container manager and some bind paths
 my $container_manager = q{singularity};
-my @bind_paths        = ($Bin);
+my @bind_paths        = (q{test_dir});
 
 ## When parsing containers
 my %container_cmd = set_executable_container_cmd(
@@ -79,7 +79,7 @@ my %container_cmd = set_executable_container_cmd(
 );
 
 my $expected_arriba_cmd =
-  q{singularity exec docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+  q{singularity exec --bind test_dir:test_dir docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
@@ -97,7 +97,7 @@ $container_manager = q{docker};
 );
 
 my $expected_arriba_docker_cmd =
-  q{docker run --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+  q{docker run --volume test_dir:test_dir --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using docker
 is( $container_cmd{arriba}, $expected_arriba_docker_cmd,
@@ -123,7 +123,7 @@ is( exists $container_cmd{$no_executable_in_image},
 my $only_executable = q{run-bwamem};
 
 my $expected_only_executable_cmd =
-  q{docker run --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17 run-bwamem};
+  q{docker run --volume test_dir:test_dir --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17 run-bwamem};
 
 ## Then return command for how to execute the executable
 is( $container_cmd{$only_executable},
