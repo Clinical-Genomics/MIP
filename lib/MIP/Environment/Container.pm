@@ -27,7 +27,76 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ install_containers parse_containers parse_container_bind_paths parse_container_uri run_container set_executable_container_cmd };
+      qw{ get_recipe_executable_bind_path install_containers parse_containers parse_container_bind_paths parse_container_uri run_container set_executable_container_cmd };
+}
+
+sub get_recipe_executable_bind_path {
+
+## Function : Get link between recipe and executables and set recipe_binds_path to executable
+## Returns  : %recipe_executable_bind_path
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{add_recipe_bind_paths};
+    use MIP::Constants qw{@CONTAINER_BIND_PATHS};
+    use MIP::Parameter qw{get_cache get_parameter_attribute};
+
+    my %recipe_executable_bind_path;
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+    foreach my $recipe_name (@recipes) {
+
+        my @recipe_executables = get_parameter_attribute(
+            {
+                attribute      => q{program_executables},
+                parameter_href => $parameter_href,
+                parameter_name => $recipe_name,
+            }
+        );
+        foreach my $executable (@recipe_executables) {
+
+            my @export_bind_paths = @CONTAINER_BIND_PATHS;
+            add_recipe_bind_paths(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    export_bind_paths_ref => \@export_bind_paths,
+                    recipe_name           => $recipe_name,
+                }
+            );
+            $recipe_executable_bind_path{$executable} = [@export_bind_paths];
+        }
+    }
+    return %recipe_executable_bind_path;
 }
 
 sub install_containers {
@@ -456,45 +525,19 @@ sub set_executable_container_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ add_recipe_bind_paths };
     use MIP::Constants qw{ @CONTAINER_BIND_PATHS };
-    use MIP::Parameter qw{ get_cache get_parameter_attribute };
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
 
     my %container_cmd;
     my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
-    my %recipe_executable_bind_path;
 
-    my @recipes = get_cache(
+    my %recipe_executable_bind_path = get_recipe_executable_bind_path(
         {
-            parameter_href => $parameter_href,
-            parameter_name => q{recipe},
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
         }
     );
-
-    foreach my $recipe_name (@recipes) {
-
-        my @recipe_executables = get_parameter_attribute(
-            {
-                attribute      => q{program_executables},
-                parameter_href => $parameter_href,
-                parameter_name => $recipe_name,
-            }
-        );
-        foreach my $executable (@recipe_executables) {
-
-            my @export_bind_paths = @CONTAINER_BIND_PATHS;
-            add_recipe_bind_paths(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    export_bind_paths_ref => \@export_bind_paths,
-                    recipe_name           => $recipe_name,
-                }
-            );
-            $recipe_executable_bind_path{$executable} = [@export_bind_paths];
-        }
-    }
 
   CONTAINER_NAME:
     foreach my $container_name ( keys %{$container_href} ) {
@@ -516,13 +559,14 @@ sub set_executable_container_cmd {
 
             my @bind_paths =
               exists $recipe_executable_bind_path{$executable_name}
-              ? @{$recipe_executable_bind_path{$executable_name}}
+              ? @{ $recipe_executable_bind_path{$executable_name} }
               : @container_constant_bind_path;
+
             my @cmds = run_container(
                 {
                     bind_paths_ref    => \@bind_paths,
-                    container_path    => $container_href->{$container_name}{uri},
                     container_manager => $container_manager,
+                    container_path    => $container_href->{$container_name}{uri},
                 }
             );
 
