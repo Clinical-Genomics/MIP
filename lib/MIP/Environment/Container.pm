@@ -143,11 +143,12 @@ sub parse_containers {
       get_install_containers(
         { install_config_file => $active_parameter_href->{install_config_file}, } );
 
+    my @export_bind_paths = @CONTAINER_BIND_PATHS;
     my %container_cmd = set_executable_container_cmd(
         {
             container_href    => $active_parameter_href->{container},
             container_manager => $active_parameter_href->{container_manager},
-            bind_paths_ref    => \@CONTAINER_BIND_PATHS,
+            bind_paths_ref    => \@export_bind_paths,
         }
     );
 

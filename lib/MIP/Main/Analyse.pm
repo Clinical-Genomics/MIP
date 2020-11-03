@@ -42,7 +42,6 @@ use MIP::Analysis qw{ check_analysis_type_to_pipeline get_overall_analysis_type 
 use MIP::Config qw{ parse_config };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Contigs qw{ set_contigs };
-use MIP::Environment::Container qw{ parse_containers };
 use MIP::Environment::User qw{ check_email_address };
 use MIP::File_info qw{ set_dict_contigs set_human_genome_reference_features };
 use MIP::File::Path qw{ check_allowed_temp_directory };
@@ -256,8 +255,6 @@ sub mip_analyse {
             parameter_href        => $parameter_href,
         }
     );
-
-    parse_containers( { active_parameter_href => $active_parameter_href, } );
 
 ### Checks
     check_analysis_type_to_pipeline(
