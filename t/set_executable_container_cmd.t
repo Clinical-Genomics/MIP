@@ -20,7 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -41,7 +41,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Config}                 => [qw{ get_install_containers }],
         q{MIP::Environment::Container} => [qw{ set_executable_container_cmd }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}         => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -59,6 +59,18 @@ diag(   q{Test set_executable_container_cmd from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my %active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter},
+    }
+);
+
+my %parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{recipe_parameter},
+    }
+);
+
 ## Given an installation config
 my $install_config_path =
   catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
@@ -67,19 +79,19 @@ my %container =
 
 ## Given a container manager and some bind paths
 my $container_manager = q{singularity};
-my @bind_paths        = (q{test_dir});
 
 ## When parsing containers
 my %container_cmd = set_executable_container_cmd(
     {
-        container_href    => \%container,
-        container_manager => $container_manager,
-        bind_paths_ref    => \@bind_paths,
+        active_parameter_href => \%active_parameter,
+        container_href        => \%container,
+        container_manager     => $container_manager,
+        parameter_href        => \%parameter,
     }
 );
 
 my $expected_arriba_cmd =
-  q{singularity exec --bind test_dir:test_dir docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+  q{singularity exec docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
@@ -90,14 +102,15 @@ $container_manager = q{docker};
 ## When parsing containers
 %container_cmd = set_executable_container_cmd(
     {
-        container_href    => \%container,
-        container_manager => $container_manager,
-        bind_paths_ref    => \@bind_paths,
+        active_parameter_href => \%active_parameter,
+        container_href        => \%container,
+        container_manager     => $container_manager,
+        parameter_href        => \%parameter,
     }
 );
 
 my $expected_arriba_docker_cmd =
-  q{docker run --volume test_dir:test_dir --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+  q{docker run --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using docker
 is( $container_cmd{arriba}, $expected_arriba_docker_cmd,
@@ -109,9 +122,10 @@ my $no_executable_in_image = q{bwakit};
 ## When parsing containers
 %container_cmd = set_executable_container_cmd(
     {
-        container_href    => \%container,
-        container_manager => $container_manager,
-        bind_paths_ref    => \@bind_paths,
+        active_parameter_href => \%active_parameter,
+        container_href        => \%container,
+        container_manager     => $container_manager,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -123,7 +137,7 @@ is( exists $container_cmd{$no_executable_in_image},
 my $only_executable = q{run-bwamem};
 
 my $expected_only_executable_cmd =
-  q{docker run --volume test_dir:test_dir --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17 run-bwamem};
+  q{docker run --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17 run-bwamem};
 
 ## Then return command for how to execute the executable
 is( $container_cmd{$only_executable},

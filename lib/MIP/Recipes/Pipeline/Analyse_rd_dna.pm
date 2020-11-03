@@ -522,7 +522,12 @@ sub pipeline_analyse_rd_dna {
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
-    parse_containers( { active_parameter_href => $active_parameter_href, } );
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -560,7 +565,7 @@ sub pipeline_analyse_rd_dna {
         chromograph_cov   => \&analysis_chromograph_cov,
         chromograph_upd   => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,    # Depends on pedigree
+        : undef,                                              # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,

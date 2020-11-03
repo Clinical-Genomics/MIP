@@ -20,7 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -40,7 +40,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Container} => [qw{ parse_containers }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}         => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -57,22 +57,33 @@ diag(   q{Test parse_containers from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my %active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter},
+    }
+);
+
+my %parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{recipe_parameter},
+    }
+);
+
 ## Given an installation config
 my $install_config_path =
   catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
 
-## Given a container manager and some bind paths
-my $container_manager = q{singularity};
-my @bind_paths        = ($Bin);
-
-my %active_parameter = (
-    container_manager   => $container_manager,
-    bind_paths_ref      => \@bind_paths,
-    install_config_file => $install_config_path,
-);
+## Given a container manager and an install config
+$active_parameter{install_config_file} = $install_config_path;
+$active_parameter{container_manager}   = q{singularity};
 
 ## When parsing containers
-my $is_ok = parse_containers( { active_parameter_href => \%active_parameter, } );
+my $is_ok = parse_containers(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+    }
+);
 
 ## Then return true
 is( $is_ok, 1, q{Parsed containers} );

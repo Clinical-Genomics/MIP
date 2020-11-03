@@ -118,11 +118,13 @@ sub parse_containers {
 ## Function : Parse containers to set executable command based on current container manager
 ## Returns  :
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $parameter_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -132,23 +134,30 @@ sub parse_containers {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Config qw{ get_install_containers };
-    use MIP::Constants qw{ @CONTAINER_BIND_PATHS set_container_cmd };
+    use MIP::Constants qw{ set_container_cmd };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
         { install_config_file => $active_parameter_href->{install_config_file}, } );
 
-    my @export_bind_paths = @CONTAINER_BIND_PATHS;
     my %container_cmd = set_executable_container_cmd(
         {
-            container_href    => $active_parameter_href->{container},
-            container_manager => $active_parameter_href->{container_manager},
-            bind_paths_ref    => \@export_bind_paths,
+            active_parameter_href => $active_parameter_href,
+            container_href        => $active_parameter_href->{container},
+            container_manager     => $active_parameter_href->{container_manager},
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -358,7 +367,6 @@ sub run_container {
         # Skip if mount path in image already is specified
         next BIND_PATH if $bind_path =~ m/[:]/xms;
 
-
         next BIND_PATH if $bind_path =~ m/\A \$/xms;
 
         $bind_path .= $COLON . $bind_path;
@@ -403,18 +411,27 @@ sub set_executable_container_cmd {
 
 ## Function : Set executable command depending on container manager
 ## Returns  :
-## Arguments: $container_href    => Containers hash {REF}
-##          : $container_manager => Container manager
-##          : $bind_paths_ref    => Array with paths to bind {REF}
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $container_href        => Containers hash {REF}
+##          : $container_manager     => Container manager
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $container_href;
     my $container_manager;
-    my $bind_paths_ref;
+    my $parameter_href;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         container_href => {
             default     => {},
             defined     => 1,
@@ -428,44 +445,86 @@ sub set_executable_container_cmd {
             store       => \$container_manager,
             strict_type => 1,
         },
-        bind_paths_ref => {
-            default     => [],
-            store       => \$bind_paths_ref,
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ add_recipe_bind_paths };
+    use MIP::Constants qw{ @CONTAINER_BIND_PATHS };
+    use MIP::Parameter qw{ get_cache get_parameter_attribute };
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
 
     my %container_cmd;
+    my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
+    my %recipe_executable_bind_path;
+
+    my @recipes = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{recipe},
+        }
+    );
+
+    foreach my $recipe_name (@recipes) {
+
+        my @recipe_executables = get_parameter_attribute(
+            {
+                attribute      => q{program_executables},
+                parameter_href => $parameter_href,
+                parameter_name => $recipe_name,
+            }
+        );
+        foreach my $executable (@recipe_executables) {
+
+            my @export_bind_paths = @CONTAINER_BIND_PATHS;
+            add_recipe_bind_paths(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    export_bind_paths_ref => \@export_bind_paths,
+                    recipe_name           => $recipe_name,
+                }
+            );
+            $recipe_executable_bind_path{$executable} = @export_bind_paths;
+        }
+    }
+
   CONTAINER_NAME:
     foreach my $container_name ( keys %{$container_href} ) {
 
         parse_container_uri(
-                {
-                    container_manager => $container_manager,
-                    uri_ref           => \$container_href->{$container_name}{uri},
-                }
-            );
+            {
+                container_manager => $container_manager,
+                uri_ref           => \$container_href->{$container_name}{uri},
+            }
+        );
 
       EXECUTABLE:
         while ( my ( $executable_name, $executable_path ) =
             each %{ $container_href->{$container_name}{executable} } )
         {
 
-                        next EXECUTABLE
+            next EXECUTABLE
               if ( $executable_path and $executable_path eq q{no_executable_in_image} );
 
-           my @cmds = run_container(
-        {
-            bind_paths_ref     => $bind_paths_ref,
-            container_path     => $container_href->{$container_name}{uri},
-            container_manager  => $container_manager,
-        }
-    );
+            my @bind_paths =
+              exists $recipe_executable_bind_path{$executable_name}
+              ? $recipe_executable_bind_path{$executable_name}
+              : @container_constant_bind_path;
+            my @cmds = run_container(
+                {
+                    bind_paths_ref    => \@bind_paths,
+                    container_path    => $container_href->{$container_name}{uri},
+                    container_manager => $container_manager,
+                }
+            );
 
             if ($executable_path) {
 
