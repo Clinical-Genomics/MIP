@@ -492,7 +492,7 @@ sub set_executable_container_cmd {
                     recipe_name           => $recipe_name,
                 }
             );
-            $recipe_executable_bind_path{$executable} = @export_bind_paths;
+            $recipe_executable_bind_path{$executable} = [@export_bind_paths];
         }
     }
 
