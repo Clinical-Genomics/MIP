@@ -463,6 +463,12 @@ sub set_executable_container_cmd {
         {
 
             ## Set container option depending on singularity or docker
+            parse_container_uri(
+                {
+                    container_manager => $container_manager,
+                    uri_ref           => \$container_href->{$container_name}{uri},
+                }
+            );
             $container_api{$container_manager}{arg_href}{image} =
               $container_href->{$container_name}{uri};
 
