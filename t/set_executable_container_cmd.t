@@ -123,7 +123,7 @@ is( exists $container_cmd{$no_executable_in_image},
 my $only_executable = q{run-bwamem};
 
 my $expected_only_executable_cmd =
-  q{docker run --rm --entrypoint "" docker.io/jemten/bwakit:0.7.17 run-bwamem};
+  q{docker run --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17 run-bwamem};
 
 ## Then return command for how to execute the executable
 is( $container_cmd{$only_executable},

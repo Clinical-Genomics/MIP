@@ -457,18 +457,19 @@ sub set_executable_container_cmd {
   CONTAINER_NAME:
     foreach my $container_name ( keys %{$container_href} ) {
 
+        parse_container_uri(
+                {
+                    container_manager => $container_manager,
+                    uri_ref           => \$container_href->{$container_name}{uri},
+                }
+            );
+
       EXECUTABLE:
         while ( my ( $executable_name, $executable_path ) =
             each %{ $container_href->{$container_name}{executable} } )
         {
 
             ## Set container option depending on singularity or docker
-            parse_container_uri(
-                {
-                    container_manager => $container_manager,
-                    uri_ref           => \$container_href->{$container_name}{uri},
-                }
-            );
             $container_api{$container_manager}{arg_href}{image} =
               $container_href->{$container_name}{uri};
 
