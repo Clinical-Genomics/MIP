@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,6 +17,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -49,6 +49,8 @@ BEGIN {
       bcftools_view_and_index_vcf
     };
 }
+
+Readonly my $BASE_COMMAND => q{bcftools};
 
 sub bcftools_annotate {
 
@@ -129,7 +131,7 @@ sub bcftools_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools annotate };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ annotate });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -391,7 +393,7 @@ sub bcftools_call {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools call };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ call });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -521,7 +523,7 @@ sub bcftools_concat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools concat };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ concat });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -685,7 +687,7 @@ sub bcftools_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools filter };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ filter });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -815,7 +817,7 @@ sub bcftools_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools index };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ index });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -913,7 +915,7 @@ sub bcftools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools merge };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ merge });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1049,7 +1051,7 @@ sub bcftools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools mpileup };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ mpileup });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1180,7 +1182,7 @@ sub bcftools_norm {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools norm };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ norm });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1299,7 +1301,7 @@ sub bcftools_query {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools query };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ query });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1401,7 +1403,7 @@ sub bcftools_reheader {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools reheader };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ reheader });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1692,7 +1694,7 @@ sub bcftools_roh {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools roh };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ roh });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1801,7 +1803,7 @@ sub bcftools_stats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools stats };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ stats });
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1962,7 +1964,7 @@ sub bcftools_view {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools view };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ view });
 
     ## Bcftools base args
     @commands = bcftools_base(

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,11 +25,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bedtools_genomecov bedtools_intersect bedtools_makewindows };
 }
+
+Readonly my $BASE_COMMAND => q{bedtools};
 
 sub bedtools_genomecov {
 
@@ -100,16 +102,13 @@ sub bedtools_genomecov {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ bedtools genomecov };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ genomecov } );
 
-    ## Options
     if ($bam_infile_path) {
 
         push @commands, q{-ibam} . $SPACE . $bam_infile_path;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, q{-i} . $SPACE . $infile_path;
@@ -206,16 +205,13 @@ sub bedtools_intersect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ bedtools intersect };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ intersect } );
 
-    ## Options
     if ($with_header) {
 
         push @commands, q{-header};
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, q{-a} . $SPACE . $infile_path;
@@ -303,7 +299,7 @@ sub bedtools_makewindows {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bedtools makewindows };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ makewindows } );
 
     push @commands, q{-b} . $SPACE . $infile_bed_path;
 
