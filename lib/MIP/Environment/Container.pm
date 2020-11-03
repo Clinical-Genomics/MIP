@@ -516,7 +516,7 @@ sub set_executable_container_cmd {
 
             my @bind_paths =
               exists $recipe_executable_bind_path{$executable_name}
-              ? $recipe_executable_bind_path{$executable_name}
+              ? @{$recipe_executable_bind_path{$executable_name}}
               : @container_constant_bind_path;
             my @cmds = run_container(
                 {
