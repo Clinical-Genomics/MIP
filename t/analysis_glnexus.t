@@ -133,4 +133,28 @@ foreach my $analysis_type (qw { mixed panel wgs wes }) {
         q{ Executed analysis recipe } . $recipe_name . q{ with type } . $analysis_type );
 }
 
+# Test with one sample
+my %single_sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+        recipe_name   => $recipe_name,
+    }
+);
+
+$parameter{cache}{consensus_analysis_type} = q{wgs};
+my $is_ok = analysis_glnexus(
+    {
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%single_sample_info,
+    }
+);
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ with a single sample } );
+
 done_testing();

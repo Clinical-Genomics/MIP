@@ -1,0 +1,33 @@
+---
+analysis_type:
+  ADM1059A1: wgs
+expected_coverage:
+  ADM1059A1: 150
+recipe:
+  pedigree_check:
+    path: t/data/643594-miptest/analysis/643594-miptest/gatk_variantrecalibration/643594-miptest_gent_vrecal.vcf
+  plink_sexcheck:
+    path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.plink_sexcheck.sexcheck
+  relation_check:
+    path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.relation_check.mibs
+  collectmultiplemetrics:
+    path: t/data/643594-miptest/analysis/643594-miptest/collectmultiplemetrics/file.test_metric
+sample:
+  ADM1059A1:
+    analysis_type: wgs
+    capture_kit: agilent_sureselect.v5
+    dna_sample_id: ADM1059A1
+    expected_coverage: 150
+    father: 0
+    mother: 0
+    phenotype: affected
+    sample_id: ADM1059A1
+    sample_name: ADM1059A1
+    sex: female
+    recipe:
+      chanjo_sexcheck:
+        ADM1059A1_lanes_1_sorted_md_brecal_sex:
+          path: t/data/643594-miptest/analysis/ADM1059A1/chanjo_sexcheck/ADM1059A1_lanes_1_sorted_md_brecal_sex.tsv
+      collectmultiplemetrics:
+        ADM1059A1_lanes_1_sorted_md_brecal_collectmultiplemetrics:
+          path: t/data/643594-miptest/analysis/ADM1059A1/picardtools_collectmultiplemetrics/ADM1059A1_lanes_1_sorted_md_brecal_collectmultiplemetrics.alignment_summary_metrics

@@ -122,7 +122,8 @@ sub test_add_io_for_recipe {
     if ( $step eq q{fastq} ) {
 
         @{ $parameter_href->{cache}{order_recipes_ref} } = $recipe_name;
-         $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{bam} ) {
 
@@ -132,7 +133,8 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{vcf} ) {
 
@@ -142,7 +144,8 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.vcf};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.vcf};
     }
     return;
 }
@@ -308,7 +311,8 @@ sub test_mip_hashes {
                   job_id
                   pedigree
                   recipe_parameter
-                  qc_sample_info }
+                  qc_sample_info
+                  qc_single_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -352,6 +356,8 @@ sub test_mip_hashes {
         pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
         qc_sample_info =>
           catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
+        qc_single_sample_info =>
+          catfile( $Bin, qw{ data test_data 643594-miptest_qc_single_sample_info.yaml } ),
     );
 
     my %hash_to_return = read_from_file(
