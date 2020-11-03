@@ -137,7 +137,7 @@ sub parse_containers {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Config qw{ get_install_containers };
-    use MIP::Constants qw{ set_container_cmd };
+    use MIP::Constants qw{ @CONTAINER_BIND_PATHS set_container_cmd };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
@@ -147,6 +147,7 @@ sub parse_containers {
         {
             container_href    => $active_parameter_href->{container},
             container_manager => $active_parameter_href->{container_manager},
+            bind_paths_ref    => \@CONTAINER_BIND_PATHS,
         }
     );
 
@@ -223,7 +224,7 @@ sub parse_container_bind_paths {
 
     push @{$source_environment_cmds_ref}, $container_bind_var;
 
-    return;
+    return $container_bind_var;
 }
 
 sub parse_container_uri {
@@ -355,7 +356,8 @@ sub run_container {
 
         # Skip if mount path in image already is specified
         next BIND_PATH if $bind_path =~ m/[:]/xms;
-        
+
+
         next BIND_PATH if $bind_path =~ m/\A \$/xms;
 
         $bind_path .= $COLON . $bind_path;
@@ -436,24 +438,6 @@ sub set_executable_container_cmd {
 
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
-
-    my %container_api = (
-        docker => {
-            arg_href => {
-                bind_paths_ref => [],
-                image          => undef,
-                remove         => 1,
-            },
-            method => \&docker_run,
-        },
-        singularity => {
-            arg_href => {
-                bind_paths_ref => [],
-                image          => undef,
-            },
-            method => \&singularity_exec,
-        },
-    );
 
     my %container_cmd;
   CONTAINER_NAME:
