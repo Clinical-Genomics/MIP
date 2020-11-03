@@ -136,17 +136,32 @@ foreach my $analysis_type (qw { mixed panel wgs wes }) {
 # Test with one sample
 my %single_sample_info = test_mip_hashes(
     {
-        mip_hash_name => q{qc_sample_info},
+        mip_hash_name => q{qc_single_sample_info},
         recipe_name   => $recipe_name,
     }
 );
 
+my %single_sample_active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter_single_sample},
+        recipe_name   => $recipe_name,
+    }
+);
+
+my %single_sample_file_info = test_mip_hashes(
+    {
+        mip_hash_name => q{file_info_single_sample},
+        recipe_name   => $recipe_name,
+    }
+);
+
+$single_sample_file_info{io}{TEST}{"643594-miptest"}{Glnexus}{out}{file_paths} = $file_info{io}{TEST}{"643594-miptest"}{Glnexus}{out}{file_paths};
 $parameter{cache}{consensus_analysis_type} = q{wgs};
 my $is_ok = analysis_glnexus(
     {
-        active_parameter_href => \%active_parameter,
+        active_parameter_href => \%single_sample_active_parameter,
         case_id               => $case_id,
-        file_info_href        => \%file_info,
+        file_info_href        => \%single_sample_file_info,
         job_id_href           => \%job_id,
         parameter_href        => \%parameter,
         profile_base_command  => $slurm_mock_cmd,

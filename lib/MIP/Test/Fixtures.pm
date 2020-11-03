@@ -299,11 +299,13 @@ sub test_mip_hashes {
         mip_hash_name => {
             allow => [
                 qw{ active_parameter
+                  active_parameter_single_sample
                   define_parameter
                   dependency_tree_dna
                   dependency_tree_rna
                   download_active_parameter
                   file_info
+                  file_info_single_sample
                   install_active_parameter
                   io
                   io_bam
@@ -338,6 +340,8 @@ sub test_mip_hashes {
     my %test_hash = (
         active_parameter =>
           catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+        active_parameter_single_sample =>
+          catfile( $Bin, qw{ data test_data recipe_active_parameter_single_sample.yaml } ),
         define_parameter => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
         dependency_tree_dna =>
           catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
@@ -346,6 +350,7 @@ sub test_mip_hashes {
         download_active_parameter =>
           catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
         file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        file_info_single_sample => catfile( $Bin, qw{ data test_data recipe_file_info_single_sample.yaml } ),
         install_active_parameter =>
           catfile( $Bin, qw{ data test_data install_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
