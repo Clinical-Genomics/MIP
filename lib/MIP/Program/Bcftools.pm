@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -198,6 +198,7 @@ sub bcftools_base {
 ##          : $filehandle        => Filehandle to write to
 ##          : $outfile_path      => Outfile path
 ##          : $output_type       => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $regions_file_path => Bed or vcf file with reions
 ##          : $regions_ref       => Regions to process {REF}
 ##          : $samples_file_path => File of samples to annotate
 ##          : $samples_ref       => Samples to include or exclude if prefixed with "^"
@@ -210,6 +211,7 @@ sub bcftools_base {
     my $filehandle;
     my $outfile_path;
     my $output_type;
+    my $regions_file_path;
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
@@ -231,6 +233,10 @@ sub bcftools_base {
         output_type => {
             allow       => [ undef, qw{ b u z v} ],
             store       => \$output_type,
+            strict_type => 1,
+        },
+        regions_file_path => {
+            store       => \$regions_file_path,
             strict_type => 1,
         },
         regions_ref => {
@@ -265,6 +271,10 @@ sub bcftools_base {
     if ( @{$samples_ref} ) {
 
         push @commands, q{--samples} . $SPACE . join $COMMA, @{$samples_ref};
+    }
+    if ($regions_file_path) {
+
+        push @commands, q{--regions-file} . $SPACE . $regions_file_path;
     }
     if ( @{$regions_ref} ) {
 
@@ -1847,6 +1857,7 @@ sub bcftools_view {
 ##          : $no_header              => No header
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $regions_file_path      => Bed or vcf file with reions
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $samples_file_path      => File of samples to annotate
 ##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
@@ -1871,6 +1882,7 @@ sub bcftools_view {
     my $min_alleles;
     my $no_header;
     my $outfile_path;
+    my $regions_file_path;
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
@@ -1926,7 +1938,8 @@ sub bcftools_view {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_file_path => { store => \$regions_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
         samples_file_path => { store => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
@@ -1951,8 +1964,9 @@ sub bcftools_view {
     @commands = bcftools_base(
         {
             commands_ref      => \@commands,
-            regions_ref       => $regions_ref,
             output_type       => $output_type,
+            regions_file_path => $regions_file_path,
+            regions_ref       => $regions_ref,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
         }
