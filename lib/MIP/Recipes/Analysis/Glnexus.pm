@@ -158,6 +158,8 @@ sub analysis_glnexus {
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
+    my @genotype_infile_path_prefixes;
+    use Data::Printer;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -172,7 +174,8 @@ sub analysis_glnexus {
                 stream         => q{in},
             }
         );
-        push @genotype_infile_paths, $sample_io{in}{file_path};
+        push @genotype_infile_paths,         $sample_io{in}{file_path};
+        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
     }
 
     my %io = parse_io_outfiles(
@@ -248,27 +251,17 @@ sub analysis_glnexus {
     }
     else {
 
-        say {$filehandle} q{## Copy deepvariant vcf output and index};
+        say {$filehandle} q{## Single sample - copy deepvariant vcf output and index};
 
-        my %sample_io = get_io_files(
-            {
-                id             => $active_parameter_href->{sample_ids}[0],
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                recipe_name    => q{deepvariant},
-                stream         => q{out},
-            }
-        );
-
-        COPY_VCF_AND_INDEX:
-        foreach my $dv_file_name_prefix (qw { .vcf.gz .vcf.gz.tbi }){
+      COPY_VCF_AND_INDEX:
+        foreach my $dv_file_name_prefix (qw { .vcf.gz .vcf.gz.tbi }) {
             gnu_cp {
                 filehandle   => $filehandle,
-                infile_path  => $sample_io{out}{file_path_prefix} . $dv_file_name_prefix,
+                infile_path  => @genotype_infile_path_prefixes[0] . $dv_file_name_prefix,
                 outfile_path => $outfile_path_prefix . $dv_file_name_prefix,
-            }
+            };
+            say {$filehandle} $NEWLINE;
         }
-        say {$filehandle} $NEWLINE;
     }
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});

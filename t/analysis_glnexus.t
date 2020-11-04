@@ -133,10 +133,10 @@ foreach my $analysis_type (qw { mixed panel wgs wes }) {
         q{ Executed analysis recipe } . $recipe_name . q{ with type } . $analysis_type );
 }
 
-# Test with one sample
-$active_parameter{sample_ids} =  [$active_parameter{sample_ids}[0]];
+# Given a single sample
+$active_parameter{sample_ids} = [ $active_parameter{sample_ids}[0] ];
 
-$parameter{Glnexus}{chain} = q{TEST};
+$parameter{Glnexus}{chain}     = q{TEST};
 $parameter{deepvariant}{chain} = q{TEST};
 my $is_ok = analysis_glnexus(
     {
