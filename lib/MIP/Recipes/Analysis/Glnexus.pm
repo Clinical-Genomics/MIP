@@ -217,9 +217,9 @@ sub analysis_glnexus {
 
     my $config_type = q{DeepVariant} . $consensus_analysis_type;
 
-    if ( scalar @genotype_infile_paths > 1 ) {
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
-        ## GATK CombineVariants
+        ## Glnexus
         say {$filehandle} q{## Glnexus};
 
         glnexus_merge(
@@ -260,22 +260,14 @@ sub analysis_glnexus {
             }
         );
 
-        gnu_cp(
-            {
+        COPY_VCF_AND_INDEX:
+        foreach my $dv_file_name_prefix (qw { .vcf.gz .vcf.gz.tbi }){
+            gnu_cp {
                 filehandle   => $filehandle,
-                infile_path  => $sample_io{out}{file_path_prefix} . q{.vcf.gz},
-                outfile_path => $outfile_path_prefix . q{.vcf.gz},
+                infile_path  => $sample_io{out}{file_path_prefix} . $dv_file_name_prefix,
+                outfile_path => $outfile_path_prefix . $dv_file_name_prefix,
             }
-        );
-        say {$filehandle} $NEWLINE;
-
-        gnu_cp(
-            {
-                filehandle   => $filehandle,
-                infile_path  => $sample_io{out}{file_path_prefix} . q{.vcf.gz.tbi},
-                outfile_path => $outfile_path_prefix . q{.vcf.gz.tbi},
-            }
-        );
+        }
         say {$filehandle} $NEWLINE;
     }
     ## Close filehandle

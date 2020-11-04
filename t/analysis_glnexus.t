@@ -134,39 +134,20 @@ foreach my $analysis_type (qw { mixed panel wgs wes }) {
 }
 
 # Test with one sample
-my %single_sample_info = test_mip_hashes(
-    {
-        mip_hash_name => q{qc_single_sample_info},
-        recipe_name   => $recipe_name,
-    }
-);
+$active_parameter{sample_ids} =  [$active_parameter{sample_ids}[0]];
 
-my %single_sample_active_parameter = test_mip_hashes(
-    {
-        mip_hash_name => q{active_parameter_single_sample},
-        recipe_name   => $recipe_name,
-    }
-);
-
-my %single_sample_file_info = test_mip_hashes(
-    {
-        mip_hash_name => q{file_info_single_sample},
-        recipe_name   => $recipe_name,
-    }
-);
-
-$single_sample_file_info{io}{TEST}{"643594-miptest"}{Glnexus}{out}{file_paths} = $file_info{io}{TEST}{"643594-miptest"}{Glnexus}{out}{file_paths};
-$parameter{cache}{consensus_analysis_type} = q{wgs};
+$parameter{Glnexus}{chain} = q{TEST};
+$parameter{deepvariant}{chain} = q{TEST};
 my $is_ok = analysis_glnexus(
     {
-        active_parameter_href => \%single_sample_active_parameter,
+        active_parameter_href => \%active_parameter,
         case_id               => $case_id,
-        file_info_href        => \%single_sample_file_info,
+        file_info_href        => \%file_info,
         job_id_href           => \%job_id,
         parameter_href        => \%parameter,
         profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        sample_info_href      => \%single_sample_info,
+        recipe_name           => q{Glnexus},
+        sample_info_href      => \%sample_info,
     }
 );
 ## Then return TRUE
