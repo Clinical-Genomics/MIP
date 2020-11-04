@@ -36,7 +36,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_stream_file_cmd
@@ -240,6 +240,7 @@ sub parse_fastq_for_gender {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $consensus_analysis_type => Consensus analysis_type
 ##          : $file_info_href          => File info hash {REF}
+##          : $sample_info_href        => Sample info hash {REF}
 
     my ($arg_href) = @_;
 
@@ -247,6 +248,7 @@ sub parse_fastq_for_gender {
     my $active_parameter_href;
     my $consensus_analysis_type;
     my $file_info_href;
+    my $sample_info_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -267,6 +269,13 @@ sub parse_fastq_for_gender {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
@@ -371,6 +380,7 @@ sub parse_fastq_for_gender {
                 consensus_analysis_type => $consensus_analysis_type,
                 file_info_href          => $file_info_href,
                 sample_id               => $sample_id,
+                sample_info_href        => $sample_info_href,
                 y_read_count            => $y_read_count,
             }
         );
@@ -386,6 +396,7 @@ sub update_gender_info {
 ##          : $consensus_analysis_type => Consensus analysis_type
 ##          : $file_info_href          => File info hash {REF}
 ##          : $sample_id               => Sample id
+##          : $sample_info_href        => File info hash {REF}
 ##          : $y_read_count            => Y read count
 
     my ($arg_href) = @_;
@@ -395,6 +406,7 @@ sub update_gender_info {
     my $consensus_analysis_type;
     my $file_info_href;
     my $sample_id;
+    my $sample_info_href;
     my $y_read_count;
 
     my $tmpl = {
@@ -424,6 +436,13 @@ sub update_gender_info {
             store       => \$sample_id,
             strict_type => 1,
         },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
         y_read_count => {
             required => 1,
             store    => \$y_read_count,
@@ -435,6 +454,7 @@ sub update_gender_info {
     use MIP::Active_parameter
       qw{ add_gender remove_sample_id_from_gender set_gender_estimation set_include_y };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Sample_info qw{ set_sample_gender };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
@@ -445,6 +465,7 @@ sub update_gender_info {
     my $genders = $gender . q{s};
     $log->info(qq{Found $gender according to fastq reads});
 
+    ## Update in active parameter hash
     add_gender(
         {
             active_parameter_href => $active_parameter_href,
@@ -473,6 +494,15 @@ sub update_gender_info {
     set_include_y(
         {
             active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    ## Update gender in sample info hash
+    set_sample_gender(
+        {
+            gender           => $gender,
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
         }
     );
 
