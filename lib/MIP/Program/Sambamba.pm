@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use File::Spec::Functions qw{ catdir catfile };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,6 +17,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
@@ -34,6 +34,8 @@ BEGIN {
     our @EXPORT_OK =
       qw{ sambamba_depth split_and_index_aligment_file sambamba_flagstat sambamba_index sambamba_markdup sambamba_sort sambamba_view };
 }
+
+Readonly my $BASE_COMMAND => q{sambamba};
 
 sub sambamba_view {
 
@@ -100,10 +102,10 @@ sub sambamba_view {
         },
     };
 
-    check( $tmpl, $arg_href, 1 )
-      or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba view };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ view } );
 
     if ($with_header) {
 
@@ -200,7 +202,8 @@ sub sambamba_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba index };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ index } );
 
     if ($show_progress) {
 
@@ -283,7 +286,8 @@ sub sambamba_sort {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba sort };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ sort } );
 
     if ($show_progress) {
 
@@ -400,7 +404,8 @@ sub sambamba_markdup {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba markdup };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ markdup } );
 
     if ($temp_directory) {
 
@@ -486,7 +491,10 @@ sub sambamba_flagstat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba flagstat };
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ flagstat }
+    );
 
     if ($infile_path) {
 
@@ -588,7 +596,8 @@ sub sambamba_depth {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ sambamba depth };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ depth } );
 
     if ($mode) {
 
