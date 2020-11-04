@@ -74,8 +74,8 @@ my %parameter = test_mip_hashes(
 ## Given an installation config
 my $install_config_path =
   catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
-my %container =
-  get_install_containers( { install_config_file => $install_config_path, } );
+$active_parameter{container} =
+  { get_install_containers( { install_config_file => $install_config_path, } ) };
 
 ## Given a container manager and some bind paths
 my $container_manager = q{singularity};
@@ -84,14 +84,14 @@ my $container_manager = q{singularity};
 my %container_cmd = set_executable_container_cmd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => \%container,
+        container_href        => $active_parameter{container},
         container_manager     => $container_manager,
         parameter_href        => \%parameter,
     }
 );
 
 my $expected_arriba_cmd =
-  q{singularity exec docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
@@ -103,14 +103,14 @@ $container_manager = q{docker};
 %container_cmd = set_executable_container_cmd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => \%container,
+        container_href        => $active_parameter{container},
         container_manager     => $container_manager,
         parameter_href        => \%parameter,
     }
 );
 
 my $expected_arriba_docker_cmd =
-  q{docker run --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+q{docker run --volume reference_dir!/a_dir:opt/conda/share/a_dir --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
 
 ## Then return command for how to execute arriba using docker
 is( $container_cmd{arriba}, $expected_arriba_docker_cmd,
@@ -123,7 +123,7 @@ my $no_executable_in_image = q{bwakit};
 %container_cmd = set_executable_container_cmd(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => \%container,
+        container_href        => $active_parameter{container},
         container_manager     => $container_manager,
         parameter_href        => \%parameter,
     }

@@ -140,6 +140,8 @@ shell:
 shell_install: []
 container:
   arriba:
+    bind_path:
+      arriba: "reference_dir!/a_dir:opt/conda/share/a_dir"
     executable:
       arriba: /arriba_v1.1.0/arriba
       draw_fusions.R: /arriba_v1.1.0/draw_fusions.R

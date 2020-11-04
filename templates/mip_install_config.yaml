@@ -39,6 +39,8 @@ container:
       bedtools:
     uri: docker.io/clinicalgenomics/bedtools:2.2.29
   cadd:
+    bind_path:
+      CADD.sh: reference_dir!/CADD-scripts/data/annotations:/opt/conda/share/CADD-scripts/data/annotations
     executable:
       CADD.sh:
     uri: docker.io/clinicalgenomics/cadd:1.6

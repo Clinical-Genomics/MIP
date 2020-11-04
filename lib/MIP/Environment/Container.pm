@@ -216,10 +216,19 @@ sub parse_containers {
 
     use MIP::Config qw{ get_install_containers };
     use MIP::Constants qw{ set_container_cmd };
+    use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
         { install_config_file => $active_parameter_href->{install_config_file}, } );
+
+    my %dynamic_parameter = ( reference_dir => $active_parameter_href->{reference_dir}, );
+    update_with_dynamic_config_parameters(
+        {
+            active_parameter_href  => $active_parameter_href->{container},
+            dynamic_parameter_href => \%dynamic_parameter,
+        }
+    );
 
     my %container_cmd = set_executable_container_cmd(
         {
@@ -526,6 +535,7 @@ sub set_executable_container_cmd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ @CONTAINER_BIND_PATHS };
+    use Data::Diver qw{ Dive };
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
 
@@ -557,6 +567,16 @@ sub set_executable_container_cmd {
             next EXECUTABLE
               if ( $executable_path and $executable_path eq q{no_executable_in_image} );
 
+            ## Installation specific bind paths
+            if (
+                Dive(
+                    $container_href, ( $container_name, q{bind_path}, $executable_name, )
+                )
+              )
+            {
+                push @{ $recipe_executable_bind_path{$executable_name} },
+                  $container_href->{$container_name}{bind_path}{$executable_name};
+            }
             my @bind_paths =
               exists $recipe_executable_bind_path{$executable_name}
               ? @{ $recipe_executable_bind_path{$executable_name} }
