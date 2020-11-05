@@ -256,7 +256,7 @@ sub analysis_glnexus {
         foreach my $dv_file_name_prefix (qw { .vcf.gz .vcf.gz.tbi }) {
             gnu_cp {
                 filehandle   => $filehandle,
-                infile_path  => @genotype_infile_path_prefixes[0] . $dv_file_name_prefix,
+                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_prefix,
                 outfile_path => $outfile_path_prefix . $dv_file_name_prefix,
             };
             say {$filehandle} $NEWLINE;
