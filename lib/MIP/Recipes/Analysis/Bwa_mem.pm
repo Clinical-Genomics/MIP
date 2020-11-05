@@ -1357,9 +1357,15 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Add percentage mapped reads to samtools stats output
+
+    my @commands = ( get_executable_base_command( { base_command => q{perl}, qw{ -ne } } ), );
+
     # Execute perl
-    print {$filehandle} q?perl -ne '?;
+    print {$filehandle} join $SPACE, @commands;
+    print {$filehandle} q? '?;
 
     # Initiate variables
     print {$filehandle} q?$raw; $map; ?;
