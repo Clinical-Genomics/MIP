@@ -130,7 +130,7 @@ my $no_executable_in_image = q{bwakit};
 );
 
 ## Then set no command for executable
-is( exists $container_cmd{$no_executable_in_image},
+is( $container_cmd{$no_executable_in_image},
     $EMPTY_STR, q{Set no cmd for "no_executable_in_image"} );
 
 ## Given an executable with no executable_value

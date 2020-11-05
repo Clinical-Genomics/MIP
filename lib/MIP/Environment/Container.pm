@@ -564,9 +564,6 @@ sub set_executable_container_cmd {
             each %{ $container_href->{$container_name}{executable} } )
         {
 
-            next EXECUTABLE
-              if ( $executable_path and $executable_path eq q{no_executable_in_image} );
-
             ## Installation specific bind paths
             if (
                 Dive(
@@ -590,7 +587,10 @@ sub set_executable_container_cmd {
                 }
             );
 
-            if ($executable_path) {
+            ## Do not add anything to @cmds
+            if ( $executable_path and $executable_path eq q{no_executable_in_image} ) {
+            }
+            elsif ($executable_path) {
 
                 push @cmds, $executable_path;
             }

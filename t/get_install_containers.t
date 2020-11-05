@@ -68,6 +68,9 @@ my %container =
 ## Then return container info from installation config
 my %expected_container = (
     arriba => {
+        bind_path => {
+            arriba => q{reference_dir!/a_dir:opt/conda/share/a_dir}
+        },
         executable => {
             arriba            => q{/arriba_v1.1.0/arriba},
             q{draw_fusions.R} => q{/arriba_v1.1.0/draw_fusions.R},
