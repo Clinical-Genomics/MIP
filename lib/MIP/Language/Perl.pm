@@ -129,11 +129,12 @@ sub perl_base {
 
 ## Function : Perl base and switches
 ## Returns  :
-## Arguments: $autosplit    => Turns on autosplit mode when used with a -n or -p
-##          : $command_line => Enter one line of program
-##          : $inplace      => In place edit
-##          : $n            => Iterate over filename arguments
-##          : $p            => Print line
+## Arguments: $autosplit     => Turns on autosplit mode when used with a -n or -p
+##          : $command_line  => Enter one line of program
+##          : $inplace       => In place edit
+##          : $n             => Iterate over filename arguments
+##          : $p             => Print line
+##          : $use_container => Use container perl instead of main (this) process perl
 
     my ($arg_href) = @_;
 
@@ -145,44 +146,54 @@ sub perl_base {
     my $inplace;
     my $n;
     my $print;
+    my $use_container;
 
     my $tmpl = {
-        autosplit => {
+        autosplit     => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$autosplit,
             strict_type => 1,
         },
-        command_line => {
+        command_line  => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$command_line,
             strict_type => 1,
         },
-        inplace => {
+        inplace       => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$inplace,
             strict_type => 1,
         },
-        n => {
+        n             => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$n,
             strict_type => 1,
         },
-        print => {
+        print         => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$print,
+            strict_type => 1,
+        },
+        use_container => => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$use_container,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ perl };
+     use MIP::Environment::Executable qw{ get_executable_base_command };
+
+    ## Add percentage mapped reads to samtools stats output
+
+    my @commands = $use_container ? (get_executable_base_command({ base_command => q{perl}, }),) : qw{ perl };
 
     if ($n) {
 
