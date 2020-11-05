@@ -194,8 +194,9 @@ sub slurm_reformat_sacct_output {
         {
             filehandle         => $filehandle,
             oneliner_name      => q{reformat_sacct_headers},
-            oneliner_parameter => join( $COMMA, @{$reformat_sacct_headers_ref} ),
+            oneliner_parameter => join($COMMA, @{$reformat_sacct_headers_ref}),
             stdoutfile_path    => $log_file_path . q{.status} . $NEWLINE x 2,
+            use_container      => 1,
         }
     );
     return;

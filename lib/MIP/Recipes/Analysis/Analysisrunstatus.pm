@@ -155,7 +155,6 @@ sub analysis_analysisrunstatus {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -285,11 +284,16 @@ sub _eval_status_flag {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Eval status value
     say {$filehandle} q?if [ $STATUS -ne 1 ]; then?;
 
-    ## Execute perl
-    print {$filehandle} $TAB . q?perl -i -p -e '?;
+    my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
+
+    # Execute perl
+    print {$filehandle} join $SPACE, @commands;
+    print {$filehandle} $TAB . q? -i -p -e '?;
 
     ## Find analysisrunstatus line
     print {$filehandle} q?if($_=~/analysisrunstatus\:/) { ?;
@@ -417,6 +421,7 @@ sub _check_vcf_header_and_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::File::Path qw{ remove_file_path_suffix };
 
   RECIPE:
@@ -434,8 +439,12 @@ sub _check_vcf_header_and_keys {
                 file_suffixes_ref => [qw{ .gz}],
             }
         );
-            ## Execute on cmd
-            print {$filehandle} q?perl -MTest::Harness -e ' ?;
+
+            my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
+
+            # Execute perl
+            print {$filehandle} join $SPACE, @commands;
+            print {$filehandle} q? -MTest::Harness -e ' ?;
 
             ## Adjust arguments to harness object
             print {$filehandle} q?my %args = (?;

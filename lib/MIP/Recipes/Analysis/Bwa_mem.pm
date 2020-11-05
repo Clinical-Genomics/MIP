@@ -257,8 +257,6 @@ sub analysis_bwa_mem {
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -694,8 +692,6 @@ sub analysis_bwa_mem2 {
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -1133,8 +1129,6 @@ sub analysis_run_bwa_mem {
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );

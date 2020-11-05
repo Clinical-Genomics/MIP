@@ -591,7 +591,6 @@ sub setup_script {
 ##          : $set_errexit                     => Bash set -e {Optional}
 ##          : $set_nounset                     => Bash set -u {Optional}
 ##          : $set_pipefail                    => Pipe fail switch {Optional}
-##          : $sleep                           => Sleep for X seconds {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
 ##          : $temp_directory                  => Temporary directory for recipe {Optional}
 ##          : $ulimit_n                        => Set ulimit -n for recipe {Optional}
@@ -619,7 +618,6 @@ sub setup_script {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $sleep;
     my $temp_directory;
 
     my $tmpl = {
@@ -711,12 +709,6 @@ sub setup_script {
             store       => \$set_pipefail,
             strict_type => 1,
         },
-        sleep => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$sleep,
-            strict_type => 1,
-        },
         source_environment_commands_ref => {
             default     => [],
             store       => \$source_environment_commands_ref,
@@ -739,7 +731,7 @@ sub setup_script {
     use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_sleep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -836,7 +828,6 @@ sub setup_script {
             set_errexit  => $set_errexit,
             set_nounset  => $set_nounset,
             set_pipefail => $set_pipefail,
-            sleep        => $sleep,
             ulimit_n     => $ulimit_n,
         }
     );
@@ -879,7 +870,6 @@ sub set_script_shell_attributes {
 ##          : $set_errexit  => Bash set -e {Optional}
 ##          : $set_nounset  => Bash set -u {Optional}
 ##          : $set_pipefail => Pipe fail switch {Optional}
-##          : $sleep        => Sleep for X seconds {Optional}
 ##          : $ulimit_n     => Set ulimit -n for recipe {Optional}
 
     my ($arg_href) = @_;
@@ -892,7 +882,6 @@ sub set_script_shell_attributes {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $sleep;
 
     my $tmpl = {
         filehandle  => { store => \$filehandle, },
@@ -914,12 +903,6 @@ sub set_script_shell_attributes {
             store       => \$set_pipefail,
             strict_type => 1,
         },
-        sleep => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$sleep,
-            strict_type => 1,
-        },
         ulimit_n => {
             allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$ulimit_n,
@@ -931,9 +914,6 @@ sub set_script_shell_attributes {
 
     use MIP::Language::Shell qw{ log_host_name };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_sleep};
-
-    Readonly my $MAX_SECONDS_TO_SLEEP => 240;
 
     gnu_set(
         {
@@ -957,17 +937,6 @@ sub set_script_shell_attributes {
     log_host_name( { filehandle => $filehandle, } );
     say {$filehandle} $NEWLINE;
 
-# Let the process sleep for a random couple of seconds (0-240) to avoid race conditions in mainly conda sourcing activate
-    if ($sleep) {
-
-        gnu_sleep(
-            {
-                filehandle       => $filehandle,
-                seconds_to_sleep => int rand $MAX_SECONDS_TO_SLEEP,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
     return;
 }
 

@@ -222,7 +222,6 @@ sub analysis_cadd {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -840,6 +839,7 @@ sub _parse_cadd_outfile {
             escape_oneliner => $escape_oneliner,
             filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch37_to_grch38},
+            use_container   => 1,
         }
     );
 
@@ -916,12 +916,12 @@ sub _parse_cadd_infile {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Perl
-    my @infile_commands = perl_nae_oneliners(
+    perl_nae_oneliners(
         {
             escape_oneliner => $escape_oneliner,
             filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch38_to_grch37},
+            use_container   => 1,
         }
     );
     print {$filehandle} $PIPE . $SPACE;
