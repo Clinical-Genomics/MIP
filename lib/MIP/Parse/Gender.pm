@@ -506,6 +506,8 @@ sub update_gender_info {
         }
     );
 
+    ## Update cache
+
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {

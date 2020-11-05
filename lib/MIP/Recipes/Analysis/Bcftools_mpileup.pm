@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -220,7 +220,6 @@ sub analysis_bcftools_mpileup {
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
             include_header   => 0,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }

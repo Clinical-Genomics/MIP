@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -257,7 +257,6 @@ sub analysis_rankvariant {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -267,7 +266,8 @@ sub analysis_rankvariant {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
-    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
+    my $xargs_core_number =
+      $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $xargs_core_number,
@@ -651,7 +651,6 @@ sub analysis_rankvariant_unaffected {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -661,7 +660,8 @@ sub analysis_rankvariant_unaffected {
     say {$filehandle} q{## Genmod};
 
     ## Create file commands for xargs
-    my $xargs_core_number = $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
+    my $xargs_core_number =
+      $core_number > $MAX_PARALLEL_PROCESSES ? $MAX_PARALLEL_PROCESSES : $core_number;
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $xargs_core_number,
@@ -969,7 +969,6 @@ sub analysis_rankvariant_sv {
             case_id          => $case_id,
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }

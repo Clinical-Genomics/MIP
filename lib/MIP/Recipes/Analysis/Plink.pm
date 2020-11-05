@@ -288,7 +288,6 @@ sub analysis_plink {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -567,8 +566,8 @@ sub _setup_plink_for_analysis_type {
             strict_type => 1,
         },
         filehandle => {
-            required    => 1,
-            store       => \$filehandle,
+            required => 1,
+            store    => \$filehandle,
         },
         outdir_path_prefix => {
             defined     => 1,
@@ -597,15 +596,16 @@ sub _setup_plink_for_analysis_type {
 
     my @bed_file_paths;
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
 
-        push @bed_file_paths, get_exome_target_bed_file(
+        push @bed_file_paths,
+          get_exome_target_bed_file(
             {
                 exome_target_bed_href => $exome_target_bed_href,
                 sample_id             => $sample_id,
             }
-        );
+          );
     }
     @bed_file_paths = uniq(@bed_file_paths);
 
@@ -614,7 +614,7 @@ sub _setup_plink_for_analysis_type {
 
     my $intersect_bed_file_path = catfile( $outdir_path_prefix, q{intersect.bed} );
     my $infile_path             = pop @bed_file_paths;
-    BED_FILE_PATH:
+  BED_FILE_PATH:
     foreach my $bed_file_path (@bed_file_paths) {
 
         my $temp_intersect_path = catfile( $outdir_path_prefix, q{temp_intersect.bed} );

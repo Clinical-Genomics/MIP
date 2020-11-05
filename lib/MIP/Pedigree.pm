@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.23;
+    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,8 +46,6 @@ BEGIN {
       set_pedigree_capture_kit_info
       set_pedigree_case_info
       set_pedigree_sample_info
-      set_pedigree_sex_info
-      set_pedigree_phenotype_info
     };
 }
 
@@ -345,22 +343,19 @@ sub create_fam_file {
 ##          : $fam_file_path    => Case file path
 ##          : $filehandle       => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $include_header   => Include header ("1") or not ("0")
-##          : $parameter_href   => Hash with paremters from yaml file {REF}
 ##          : $sample_ids_ref   => Sample ids {REF}
 ##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $case_id;
     my $fam_file_path;
     my $filehandle;
-    my $parameter_href;
     my $sample_ids_ref;
     my $sample_info_href;
 
     ## Default(s)
-    my $case_id;
     my $execution_mode;
     my $include_header;
 
@@ -392,11 +387,6 @@ sub create_fam_file {
             store       => \$include_header,
             strict_type => 1,
         },
-        parameter_href => {
-            default     => {},
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -421,7 +411,6 @@ sub create_fam_file {
         {
             case_id          => $case_id,
             include_header   => $include_header,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $sample_ids_ref,
             sample_info_href => $sample_info_href,
         }
@@ -433,15 +422,6 @@ sub create_fam_file {
             fam_file_path  => $fam_file_path,
             fam_lines_ref  => \@fam_lines,
             filehandle     => $filehandle,
-        }
-    );
-
-    ## Add newly created case file to sample_info
-    set_in_sample_info(
-        {
-            key              => q{pedigree_minimal},
-            sample_info_href => $sample_info_href,
-            value            => $fam_file_path,
         }
     );
 
@@ -941,22 +921,6 @@ sub parse_yaml_pedigree_file {
         );
     }
 
-    ## Add sex and plink sex to dynamic parameters
-    set_pedigree_sex_info(
-        {
-            parameter_href => $parameter_href,
-            pedigree_href  => $pedigree_href,
-        }
-    );
-
-    ## Add phenotype to dynamic parameters
-    set_pedigree_phenotype_info(
-        {
-            parameter_href => $parameter_href,
-            pedigree_href  => $pedigree_href,
-        }
-    );
-
     set_active_parameter_pedigree_keys(
         {
             active_parameter_href => $active_parameter_href,
@@ -1345,144 +1309,6 @@ sub set_pedigree_sample_info {
     return @pedigree_sample_ids;
 }
 
-sub set_pedigree_sex_info {
-
-## Function : Store sex and plink sex in dynamic parameters.
-##          : Reformats pedigree sex to plink format before adding
-## Returns  :
-## Arguments: $parameter_href => Parameter hash {REF}
-##          : $pedigree_href  => YAML pedigree info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $pedigree_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        pedigree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$pedigree_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Parameter qw{ set_cache_sample_id_parameter };
-
-    ## Conversion map to plink sex
-    my %plink_sex = (
-        female  => 2,
-        male    => 1,
-        other   => q{other},
-        unknown => q{other},
-    );
-
-  SAMPLE_HREF:
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-        # Unpack
-        my $sex       = $pedigree_sample_href->{sex};
-        my $sample_id = $pedigree_sample_href->{sample_id};
-
-        next SAMPLE_HREF if ( not defined $sex );
-
-        push @{ $parameter_href->{cache}{$sex} }, $sample_id;
-
-        next SAMPLE_HREF if ( not exists $plink_sex{$sex} );
-
-        set_cache_sample_id_parameter(
-            {
-                parameter_href  => $parameter_href,
-                parameter_name  => q{plink_sex},
-                parameter_value => $plink_sex{$sex},
-                sample_id       => $sample_id,
-            }
-        );
-    }
-    return;
-}
-
-sub set_pedigree_phenotype_info {
-
-## Function : Store phenotype and plink phenotype in dynamic parameters.
-##          : Reformats pedigree phenotype to plink format before adding
-## Returns  :
-## Arguments: $parameter_href => Parameter hash {REF}
-##          : $pedigree_href  => YAML pedigree info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $pedigree_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        pedigree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$pedigree_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Parameter qw{ set_cache_sample_id_parameter };
-
-    ## Conversion map to plink phenotype
-    my %plink_phenotype = (
-        affected   => 2,
-        other      => q{other},
-        unaffected => 1,
-        unknown    => 0,
-    );
-
-  SAMPLE_HREF:
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-        # Unpack
-        my $sample_id = $pedigree_sample_href->{sample_id};
-        my $phenotype = $pedigree_sample_href->{phenotype};
-
-        next SAMPLE_HREF if ( not defined $phenotype );
-
-        push
-          @{ $parameter_href->{cache}{$phenotype} },
-          $sample_id;
-
-        next SAMPLE_HREF if ( not exists $plink_phenotype{$phenotype} );
-
-        set_cache_sample_id_parameter(
-            {
-                parameter_href  => $parameter_href,
-                parameter_name  => q{plink_phenotype},
-                parameter_value => $plink_phenotype{$phenotype},
-                sample_id       => $sample_id,
-            }
-        );
-    }
-    return;
-}
-
 sub _add_pedigree_sample_info {
 
 ## Function : Add pedigree sample level keys and values to sample info
@@ -1662,19 +1488,17 @@ sub _build_fam_file_line {
 ## Returns  : @fam_lines
 ## Arguments: $case_id          => Case_id
 ##          : $include_header   => Include header ("1") or not ("0")
-##          : $parameter_href   => Hash with paremters from yaml file {REF}
 ##          : $sample_ids_ref   => Sample ids {REF}
 ##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
+    my $case_id;
     my $sample_ids_ref;
     my $sample_info_href;
 
     ## Default(s)
-    my $case_id;
     my $include_header;
 
     my $tmpl = {
@@ -1688,11 +1512,6 @@ sub _build_fam_file_line {
             allow       => [ 0, 1 ],
             default     => 1,
             store       => \$include_header,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            store       => \$parameter_href,
             strict_type => 1,
         },
         sample_ids_ref => {
@@ -1713,12 +1532,9 @@ sub _build_fam_file_line {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parameter qw{ get_cache };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
     my @fam_headers = ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
-
-    my $header;
     my @fam_lines;
 
     ## Add fam file headers
@@ -1730,14 +1546,7 @@ sub _build_fam_file_line {
   SAMPLE_ID:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
 
-        my %cache_sample_id_attribute = get_cache(
-            {
-                parameter_href => $parameter_href,
-                parameter_name => $sample_id,
-            }
-        );
-
-        my %pedigree_sample_id_attributes = get_pedigree_sample_id_attributes(
+        my %pedigree_sample_attribute = get_pedigree_sample_id_attributes(
             {
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -1750,18 +1559,69 @@ sub _build_fam_file_line {
       HEADER:
         foreach my $header (@fam_headers) {
 
-            if ( defined $cache_sample_id_attribute{ q{plink_} . $header } ) {
+            next HEADER if ( not defined $pedigree_sample_attribute{$header} );
 
-                $sample_line .= $TAB . $cache_sample_id_attribute{ q{plink_} . $header };
-            }
-            elsif ( defined $pedigree_sample_id_attributes{$header} ) {
+            my $pedigree_attribute = $pedigree_sample_attribute{$header};
+            $pedigree_attribute = _convert_to_fam_format(
+                {
+                    header             => $header,
+                    pedigree_attribute => $pedigree_attribute,
+                }
+            );
 
-                $sample_line .= $TAB . $pedigree_sample_id_attributes{$header};
-            }
+            $sample_line .= $TAB . $pedigree_attribute;
         }
         push @fam_lines, $sample_line;
     }
     return @fam_lines;
+}
+
+sub _convert_to_fam_format {
+
+## Function : Convert pedigree attribute to fam format
+## Returns  :
+## Arguments: $header             => Pedigree header
+##          : $pedigree_attribute => Sample pedigree attribute
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $header;
+    my $pedigree_attribute;
+
+    my $tmpl = {
+        header => {
+            defined     => 1,
+            required    => 1,
+            store       => \$header,
+            strict_type => 1,
+        },
+        pedigree_attribute => {
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_attribute,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %fam_conversion = (
+        phenotype => {
+            affected   => 2,
+            other      => q{other},
+            unaffected => 1,
+            unknown    => 0,
+        },
+        sex => {
+            female  => 2,
+            male    => 1,
+            other   => q{other},
+            unknown => q{other},
+        },
+    );
+
+    return ${fam_conversion}{$header}{$pedigree_attribute} // $pedigree_attribute;
 }
 
 sub _write_fam_file {

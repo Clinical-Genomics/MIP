@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.22;
+    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -237,7 +237,6 @@ sub analysis_gatk_variantrecalibration_wes {
             execution_mode   => q{system},
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -712,7 +711,6 @@ sub analysis_gatk_variantrecalibration_wgs {
             execution_mode   => q{system},
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }

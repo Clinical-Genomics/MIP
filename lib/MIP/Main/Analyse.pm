@@ -77,7 +77,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.59;
+    our $VERSION = 1.60;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -461,7 +461,6 @@ sub mip_analyse {
             case_id          => $active_parameter_href->{case_id},
             execution_mode   => q{system},
             fam_file_path    => $active_parameter_href->{pedigree_fam_file},
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => \%sample_info,
         }
@@ -505,9 +504,12 @@ sub mip_analyse {
 
     write_job_ids_to_file(
         {
-            case_id         => $active_parameter_href->{case_id},
-            job_id_href     => \%job_id,
-            job_ids_file_path => catfile($active_parameter_href->{outdata_dir}, q{slurm_job_ids} . $DOT . q{yaml}),
+            case_id           => $active_parameter_href->{case_id},
+            job_id_href       => \%job_id,
+            job_ids_file_path => catfile(
+                $active_parameter_href->{outdata_dir},
+                q{slurm_job_ids} . $DOT . q{yaml}
+            ),
         }
     );
 
