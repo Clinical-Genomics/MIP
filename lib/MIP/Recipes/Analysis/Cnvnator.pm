@@ -540,7 +540,7 @@ sub _add_contigs_to_vcfheader {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Executable qw{ get_executable_base_command };
-    
+
     my $regexp;
 
     my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
