@@ -1361,11 +1361,11 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     ## Add percentage mapped reads to samtools stats output
 
-    my @commands = ( get_executable_base_command( { base_command => q{perl}, qw{ -ne } } ), );
+    my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
 
     # Execute perl
     print {$filehandle} join $SPACE, @commands;
-    print {$filehandle} q? '?;
+    print {$filehandle} q? -ne '?;
 
     # Initiate variables
     print {$filehandle} q?$raw; $map; ?;
