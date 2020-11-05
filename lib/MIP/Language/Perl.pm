@@ -235,6 +235,7 @@ sub perl_nae_oneliners {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $use_container          => Use container perl instead of main (this) process perl
 
     my ($arg_href) = @_;
 
@@ -253,6 +254,7 @@ sub perl_nae_oneliners {
     my $autosplit;
     my $command_line;
     my $n;
+    my $use_container;
 
     my $tmpl = {
         autosplit => {
@@ -306,6 +308,12 @@ sub perl_nae_oneliners {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        use_container => => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$use_container,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -345,9 +353,10 @@ sub perl_nae_oneliners {
     ## Stores commands depending on input parameters
     my @commands = perl_base(
         {
-            autosplit    => $autosplit,
-            command_line => $command_line,
-            n            => $n,
+            autosplit     => $autosplit,
+            command_line  => $command_line,
+            n             => $n,
+            use_container => $use_container,
         }
     );
 

@@ -155,6 +155,7 @@ sub analysis_analysisrunstatus {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -421,7 +422,6 @@ sub _check_vcf_header_and_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::File::Path qw{ remove_file_path_suffix };
 
   RECIPE:
@@ -440,11 +440,7 @@ sub _check_vcf_header_and_keys {
             }
         );
 
-            my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
-
-            # Execute perl
-            print {$filehandle} join $SPACE, @commands;
-            print {$filehandle} q? -MTest::Harness -e ' ?;
+            print {$filehandle} q?perl -MTest::Harness -e ' ?;
 
             ## Adjust arguments to harness object
             print {$filehandle} q?my %args = (?;
