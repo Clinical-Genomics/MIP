@@ -116,6 +116,10 @@ container:
     executable:
       multiqc:
     uri: docker.io/ewels/multiqc:1.9
+  perl:
+    executable:
+      perl:
+    uri: docker.io/clinicalgenomics/perl:5.26
   peddy:
     executable:
       peddy: "python -m peddy"
