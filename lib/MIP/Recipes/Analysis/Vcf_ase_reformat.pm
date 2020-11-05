@@ -8,7 +8,6 @@ use File::Basename qw{ basename fileparse };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -222,16 +221,15 @@ sub analysis_vcf_ase_reformat {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
