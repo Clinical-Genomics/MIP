@@ -19,7 +19,7 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -129,9 +129,14 @@ my $no_executable_in_image = q{bwakit};
     }
 );
 
+my $expected_no_executable_in_image =
+  q{docker run --rm --entrypoint "" docker://docker.io/jemten/bwakit:0.7.17};
 ## Then set no command for executable
-is( $container_cmd{$no_executable_in_image},
-    $EMPTY_STR, q{Set no cmd for "no_executable_in_image"} );
+is(
+    $container_cmd{$no_executable_in_image},
+    $expected_no_executable_in_image,
+    q{Set no cmd for "no_executable_in_image"}
+);
 
 ## Given an executable with no executable_value
 my $only_executable = q{run-bwamem};
