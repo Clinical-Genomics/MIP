@@ -1612,6 +1612,8 @@ sub _reformat_sv_with_no_length {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Fix SV with no length as these will fail in the annotation with VEP
     my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
 

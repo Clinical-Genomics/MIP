@@ -1134,6 +1134,8 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
 
