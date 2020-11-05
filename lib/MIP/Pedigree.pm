@@ -45,6 +45,7 @@ BEGIN {
       set_active_parameter_pedigree_keys
       set_pedigree_capture_kit_info
       set_pedigree_case_info
+      set_pedigree_phenotype_info
       set_pedigree_sample_info
     };
 }
@@ -921,6 +922,14 @@ sub parse_yaml_pedigree_file {
         );
     }
 
+    ## Add phenotype to dynamic parameters
+    set_pedigree_phenotype_info(
+        {
+            parameter_href => $parameter_href,
+            pedigree_href  => $pedigree_href,
+        }
+    );
+
     set_active_parameter_pedigree_keys(
         {
             active_parameter_href => $active_parameter_href,
@@ -1307,6 +1316,53 @@ sub set_pedigree_sample_info {
         }
     }
     return @pedigree_sample_ids;
+}
+
+sub set_pedigree_phenotype_info {
+
+## Function : Store phenotype in dynamic parameters.
+##          : Reformats pedigree phenotype to plink format before adding
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+##          : $pedigree_href  => YAML pedigree info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $pedigree_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        pedigree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  SAMPLE_HREF:
+    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
+
+        # Unpack
+        my $sample_id = $pedigree_sample_href->{sample_id};
+        my $phenotype = $pedigree_sample_href->{phenotype};
+
+        next SAMPLE_HREF if ( not defined $phenotype );
+
+        push @{ $parameter_href->{cache}{$phenotype} }, $sample_id;
+    }
+    return;
 }
 
 sub _add_pedigree_sample_info {
