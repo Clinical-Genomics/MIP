@@ -159,7 +159,6 @@ sub analysis_glnexus {
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
     my @genotype_infile_path_prefixes;
-    use Data::Printer;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
