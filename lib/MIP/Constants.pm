@@ -409,7 +409,7 @@ sub set_container_constants {
     my $temp_directory_quoted = quote_bash_variable(
         { string_with_variable_to_quote => $active_parameter_href->{temp_directory}, } );
     my $xdg_runtime_dir =
-      $temp_directory_quoted . $COLON . catfile( $EMPTY_STR, qw{ run user $(id -u)} );
+      $temp_directory_quoted . $COLON . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
 
     my @container_bind_paths = (
         $active_parameter_href->{reference_dir},
