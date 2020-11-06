@@ -412,8 +412,9 @@ sub set_container_constants {
       $temp_directory_quoted . $COLON . catfile( $EMPTY_STR, qw{ run user $(id -u)} );
 
     my @container_bind_paths = (
-        $active_parameter_href->{reference_dir},  $active_parameter_href->{outdata_dir},
-        $active_parameter_href->{temp_directory}, $xdg_runtime_dir,
+        $active_parameter_href->{reference_dir},
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{temp_directory},
     );
 
     @container_bind_paths = reduce_dir_paths(
@@ -421,6 +422,9 @@ sub set_container_constants {
             dir_paths_ref => \@container_bind_paths,
         }
     );
+
+    ## Special case for xdg_runtime_dir
+    push @container_bind_paths, $xdg_runtime_dir;
 
     Readonly our @CONTAINER_BIND_PATHS => @container_bind_paths;
     Readonly our $CONTAINER_MANAGER    => $active_parameter_href->{container_manager};
