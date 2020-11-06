@@ -1790,9 +1790,6 @@ sub _write_fam_file_to_sbatch {
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
-    ## Return if file already exists
-    return if ( -f $fam_file_path );
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
