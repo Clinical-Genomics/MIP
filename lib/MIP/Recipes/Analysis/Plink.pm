@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile splitpath};
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -162,7 +162,6 @@ sub analysis_plink {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
@@ -270,12 +269,6 @@ sub analysis_plink {
         }
     );
 
-    # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
-
-    # To enable submission to %sample_info_qc later
-    my $stdout_file_path = catfile( $directory, $recipe_info_file . q{.stdout.txt} );
-
     ### SHELL:
 
     my $plink_outfile_prefix = catfile($outfile_path_prefix);
@@ -308,7 +301,7 @@ sub analysis_plink {
 
     say {$filehandle} q{## Remove indels using bcftools};
     my $view_outfile_path =
-      $infile_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix;
     bcftools_view(
         {
             exclude_types_ref => [qw{indels}],
@@ -336,7 +329,7 @@ sub analysis_plink {
 
     ## Drops duplicate variants that appear later in the the VCF file
     my $uniq_outfile_path =
-      $infile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
     vt_uniq(
         {
             filehandle   => $filehandle,
@@ -610,7 +603,7 @@ sub _setup_plink_for_analysis_type {
     @bed_file_paths = uniq(@bed_file_paths);
 
     ## All capture kits are the same
-    return if ( @bed_file_paths == 1 );
+    return $bed_file_paths[0] if ( @bed_file_paths == 1 );
 
     my $intersect_bed_file_path = catfile( $outdir_path_prefix, q{intersect.bed} );
     my $infile_path             = pop @bed_file_paths;
