@@ -4,9 +4,9 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,7 +16,7 @@ use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA @CONTAINER_BIND_PATHS $CONTAINER_MANAGER $DOUBLE_QUOTE $EQUALS $SEMICOLON $SPACE };
+  qw{ $COLON $COMMA @CONTAINER_BIND_PATHS $CONTAINER_MANAGER $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SEMICOLON $SPACE };
 
 BEGIN {
     require Exporter;
@@ -64,7 +64,15 @@ sub get_recipe_executable_bind_path {
 
     use MIP::Active_parameter qw{add_recipe_bind_paths};
     use MIP::Constants qw{@CONTAINER_BIND_PATHS};
+    use MIP::Language::Shell qw{ quote_bash_variable };
     use MIP::Parameter qw{get_cache get_parameter_attribute};
+
+    my $temp_directory_quoted = quote_bash_variable(
+        { string_with_variable_to_quote => $active_parameter_href->{temp_directory}, } );
+    my $xdg_runtime_dir =
+        $temp_directory_quoted
+      . $COLON
+      . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
 
     my %recipe_executable_bind_path;
     my @recipes = get_cache(
@@ -93,6 +101,10 @@ sub get_recipe_executable_bind_path {
                     recipe_name           => $recipe_name,
                 }
             );
+
+            ## Special case for xdg_runtime_dir, which alwyas should be added
+            push @export_bind_paths, $xdg_runtime_dir;
+
             $recipe_executable_bind_path{$executable} = [@export_bind_paths];
         }
     }

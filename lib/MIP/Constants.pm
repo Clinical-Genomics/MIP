@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -403,13 +402,7 @@ sub set_container_constants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Shell qw{ quote_bash_variable };
     use MIP::Environment::Path qw{ reduce_dir_paths };
-
-    my $temp_directory_quoted = quote_bash_variable(
-        { string_with_variable_to_quote => $active_parameter_href->{temp_directory}, } );
-    my $xdg_runtime_dir =
-      $temp_directory_quoted . $COLON . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
 
     my @container_bind_paths = (
         $active_parameter_href->{reference_dir},
@@ -422,9 +415,6 @@ sub set_container_constants {
             dir_paths_ref => \@container_bind_paths,
         }
     );
-
-    ## Special case for xdg_runtime_dir
-    push @container_bind_paths, $xdg_runtime_dir;
 
     Readonly our @CONTAINER_BIND_PATHS => @container_bind_paths;
     Readonly our $CONTAINER_MANAGER    => $active_parameter_href->{container_manager};

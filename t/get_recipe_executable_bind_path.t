@@ -19,7 +19,7 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $EMPTY_STR $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -61,7 +61,10 @@ diag(   q{Test get_recipe_executable_bind_path from Container.pm v}
 my $recipe_name = q{bwa_mem};
 
 ## Given a recipe bind path
-my %active_parameter = ( recipe_bind_path => { $recipe_name => [qw{ a_dir }], }, );
+my %active_parameter = (
+    recipe_bind_path => { $recipe_name => [qw{ a_dir }], },
+    temp_directory   => q{a_temp_dir},
+);
 
 ## Given a cache and recipe executables
 my %parameter = (
@@ -77,7 +80,9 @@ my %recipe_executable_bind_path = get_recipe_executable_bind_path(
     }
 );
 
-my %expected_recipe_executable_bind_paths = ( bwa => [qw{ a_dir }] );
+my $xdg_runtime_dir =
+  q{a_temp_dir} . $COLON . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
+my %expected_recipe_executable_bind_paths = ( bwa => [ qw{ a_dir }, $xdg_runtime_dir ] );
 
 ## Then return recipe executable bind paths
 is_deeply(
