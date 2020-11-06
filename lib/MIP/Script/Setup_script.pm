@@ -37,6 +37,7 @@ BEGIN {
       check_script_file_path_exist
       create_script_error_trap
       create_script_temp_dir
+      set_script_env_variables
       setup_install_script
       setup_script
       set_script_shell_attributes
@@ -295,7 +296,7 @@ sub create_script_error_trap {
 sub create_script_temp_dir {
 
 ## Function : Create script temporary directory to use and set trap to remove it
-## Returns  :
+## Returns  : $temp_directory_bash
 ## Arguments: $filehandle              => Filehandle to write to
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
 ##          : $job_ids_ref             => Job_ids to update status on {REF}
@@ -388,6 +389,44 @@ sub create_script_temp_dir {
             trap_signals_ref   => [qw{ EXIT TERM INT }],
         }
     );
+    return $temp_directory_bash;
+}
+
+sub set_script_env_variables {
+
+    ## Function : Set environment variables
+    ## Returns  :
+    ## Arguments: $filehandle          => Filehandle to write to
+    ##          : $temp_directory_bash => Bash prepared temp directory
+    ##          : $xdg_runtime_dir     => XDG_RUNTIME_DIR environment variable
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $temp_directory_bash;
+    my $xdg_runtime_dir;
+
+    my $tmpl = {
+        filehandle          => { required => 1, store => \$filehandle, },
+        temp_directory_bash => {
+            store       => \$temp_directory_bash,
+            strict_type => 1,
+        },
+        xdg_runtime_dir => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$xdg_runtime_dir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $temp_directory_bash and $xdg_runtime_dir ) {
+
+        say {$filehandle} q{XDG_RUNTIME_DIR} . $EQUALS . $temp_directory_bash;
+    }
     return;
 }
 
@@ -839,13 +878,21 @@ sub setup_script {
         }
     );
 
-    create_script_temp_dir(
+    my $temp_directory_bash = create_script_temp_dir(
         {
             filehandle              => $filehandle,
             job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
             log_file_path           => $active_parameter_href->{log_file},
             sacct_format_fields_ref => \@sacct_format_fields,
             temp_directory          => $temp_directory,
+        }
+    );
+
+    set_script_env_variables(
+        {
+            filehandle          => $filehandle,
+            temp_directory_bash => $temp_directory_bash,
+            xdg_runtime_dir     => 1,
         }
     );
 
