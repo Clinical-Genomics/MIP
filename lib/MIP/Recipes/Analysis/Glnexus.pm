@@ -253,11 +253,11 @@ sub analysis_glnexus {
         say {$filehandle} q{## Single sample - copy deepvariant vcf output and index};
 
       COPY_VCF_AND_INDEX:
-        foreach my $dv_file_name_prefix (qw { .vcf.gz .vcf.gz.tbi }) {
+        foreach my $dv_file_name_suffix (qw { .vcf.gz .vcf.gz.tbi }) {
             gnu_cp {
                 filehandle   => $filehandle,
-                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_prefix,
-                outfile_path => $outfile_path_prefix . $dv_file_name_prefix,
+                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_suffix,
+                outfile_path => $outfile_path_prefix . $dv_file_name_suffix,
             };
             say {$filehandle} $NEWLINE;
         }
