@@ -32,89 +32,10 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      build_docker_bind_path_var
-      build_singularity_bind_path_var
       get_conda_path
       is_binary_in_path
       reduce_dir_paths
     };
-}
-
-## Constants
-Readonly my $MINUS_ONE => -1;
-
-sub build_docker_bind_path_var {
-
-## Function : Build bind path variable for use with docker
-## Returns  : $mip_bind_var
-## Arguments: $bind_paths_ref => Directories to be mounted {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bind_paths_ref;
-
-    my $tmpl = {
-        bind_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @mip_bind_paths = map { $_ . $COLON . $_ } @{$bind_paths_ref};
-
-    my $mip_bind = join $SPACE . q{--volume} . $SPACE, @mip_bind_paths;
-
-    my $mip_bind_var =
-        q{export MIP_BIND}
-      . $EQUALS
-      . $DOUBLE_QUOTE
-      . $mip_bind
-      . $DOUBLE_QUOTE
-      . $SEMICOLON;
-
-    return $mip_bind_var;
-}
-
-sub build_singularity_bind_path_var {
-
-## Function : Build bind path variable for use with singularity
-## Returns  : $singularity_bind_var
-## Arguments: $bind_paths_ref => Directories to be mounted {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bind_paths_ref;
-
-    my $tmpl = {
-        bind_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $singularity_bind = join $COMMA, @{$bind_paths_ref};
-
-    my $singularity_bind_var =
-        q{export SINGULARITY_BIND}
-      . $EQUALS
-      . $DOUBLE_QUOTE
-      . $singularity_bind
-      . $DOUBLE_QUOTE
-      . $SEMICOLON;
-
-    return $singularity_bind_var;
 }
 
 sub get_conda_path {
