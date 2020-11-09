@@ -136,8 +136,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
-    use MIP::Program::Bcftools
-      qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
+    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
@@ -310,19 +309,6 @@ sub analysis_rtg_vcfeval {
                 output_type         => q{z},
                 temp_directory      => $rtg_outdirectory_path,
                 sample_ids_ref      => [$sample_id],
-            }
-        );
-
-        say {$filehandle} q{## Compressing and indexing sample calls};
-        bcftools_view_and_index_vcf(
-            {
-                filehandle  => $filehandle,
-                index       => 1,
-                index_type  => q{tbi},
-                infile_path => $infile_path,
-                outfile_path_prefix =>
-                  catfile( $rtg_outdirectory_path, $outfile_name_prefix ),
-                output_type => q{z},
             }
         );
 

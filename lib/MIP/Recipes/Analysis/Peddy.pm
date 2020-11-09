@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -234,21 +234,6 @@ sub analysis_peddy {
         }
     );
 
-    ## Set suffix for infile reformat
-    my $suffix = $DOT . q{vcf.gz};
-
-    ## Reformat variant calling file and index
-    bcftools_view_and_index_vcf(
-        {
-            filehandle          => $filehandle,
-            infile_path         => $infile_path,
-            index               => 1,
-            index_type          => q{tbi},
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{z},
-        }
-    );
-
     ## Peddy
     my $genome_site = _get_genome_site( { version => $genome_reference_version } );
     peddy(
@@ -256,7 +241,7 @@ sub analysis_peddy {
             case_file_path      => $case_file_path,
             filehandle          => $filehandle,
             genome_site         => $genome_site,
-            infile_path         => $outfile_path_prefix . $suffix,
+            infile_path         => $infile_path,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );

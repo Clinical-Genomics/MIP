@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_prepareforvariantannotationblock };
@@ -141,7 +141,8 @@ sub analysis_prepareforvariantannotationblock {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw(setup_script);
 
@@ -243,29 +244,6 @@ sub analysis_prepareforvariantannotationblock {
 
     ### SHELL:
 
-    ## Compress or decompress original file or stream to outfile (if supplied)
-    my $bgzip_outfile_path = $infile_path . $DOT . q{gz};
-    htslib_bgzip(
-        {
-            filehandle      => $filehandle,
-            infile_path     => $infile_path,
-            stdoutfile_path => $bgzip_outfile_path,
-            write_to_stdout => 1,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Index file using tabix
-    htslib_tabix(
-        {
-            filehandle  => $filehandle,
-            force       => 1,
-            infile_path => $bgzip_outfile_path,
-            preset      => q{vcf},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
@@ -281,22 +259,13 @@ sub analysis_prepareforvariantannotationblock {
   CONTIG:
     foreach my $contig (@contigs) {
 
-        htslib_tabix(
+        bcftools_view(
             {
-                filehandle  => $xargsfilehandle,
-                infile_path => $bgzip_outfile_path,
-                regions_ref => [$contig],
-                with_header => 1,
-            }
-        );
-        print {$xargsfilehandle} $PIPE . $SPACE;
-
-        ## Compress or decompress original file or stream to outfile (if supplied)
-        htslib_bgzip(
-            {
-                filehandle      => $xargsfilehandle,
-                stdoutfile_path => $outfile_path{$contig},
-                write_to_stdout => 1,
+                filehandle   => $xargsfilehandle,
+                infile_path  => $infile_path,
+                regions_ref  => [$contig],
+                outfile_path => $outfile_path{$contig},
+                output_type  => q{z},
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
