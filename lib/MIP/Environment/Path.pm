@@ -35,7 +35,6 @@ BEGIN {
       build_docker_bind_path_var
       build_singularity_bind_path_var
       check_binary_in_path
-      get_conda_bin_dir_path
       get_conda_path
       is_binary_in_path
       reduce_dir_paths
@@ -156,76 +155,8 @@ sub check_binary_in_path {
 
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
-    get_conda_bin_dir_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            bin_file              => $binary,
-            environment_key       => $program_name,
-        }
-    );
 
     return;
-}
-
-sub get_conda_bin_dir_path {
-
-## Function : Attempts to find path to directory with binary in conda env
-## Returns  : $conda_bin_dir_path
-## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $bin_file              => Bin file to test
-##          : $environment_key       => Key to conda environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $bin_file;
-    my $environment_key;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        bin_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-        environment_key => {
-            store       => \$environment_key,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ get_package_env_attributes };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Unpack
-    my $conda_path = $active_parameter_href->{conda_path};
-    my ( $env_name, $env_method );
-
-    ## Get environment name and manager in use for $environment_key
-  ENV_KEY:
-    foreach my $env_key ( $environment_key, qw{ mip } ) {
-
-        ( $env_name, $env_method ) = get_package_env_attributes(
-            {
-                load_env_href => $active_parameter_href->{load_env},
-                package_name  => $env_key,
-            }
-        );
-        ## Found program|recipe within env
-        last if ($env_name);
-    }
-    return 1;
 }
 
 sub get_conda_path {
