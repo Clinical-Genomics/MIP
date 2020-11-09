@@ -165,16 +165,7 @@ sub check_binary_in_path {
         }
     );
 
-    ## Potential full path to binary
-    my $binary_path = catfile( $env_binary_path, $binary );
-
-    ## Already tested
-    return if ( exists $active_parameter_href->{binary_path}{$binary} );
-
-    ## Test binary
-    is_binary_in_path( { binary => $binary_path, } );
-
-    return $binary_path;
+    return;
 }
 
 sub get_bin_file_path {

@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ %CONTAINER_CMD $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -184,7 +184,7 @@ sub analysis_mip_vercollect {
     ## Writes a YAML hash to file
     write_to_file(
         {
-            data_href => $active_parameter_href->{binary_path},
+            data_href => \%CONTAINER_CMD,
             format    => q{yaml},
             path      => $binary_path_file_path,
         }

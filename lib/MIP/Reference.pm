@@ -456,18 +456,12 @@ sub check_toml_config_for_vcf_tags {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ get_binary_path };
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Vcfanno qw{ check_toml_annotation_for_tags };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $bcftools_binary_path = get_binary_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            binary                => q{bcftools},
-        }
-    );
+    my $bcftools_binary_path = q{bcftools};
 
     ## TOML parameters
     my %toml = (
