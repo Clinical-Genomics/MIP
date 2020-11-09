@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,7 +17,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
@@ -1981,7 +1980,11 @@ sub submit_jobs_to_sbatch {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Io::Read qw{ read_from_file };
     use MIP::Workloadmanager::Slurm qw{ slurm_sbatch };
+
+    my $job_id_stderr_path = $sbatch_file_name . $DOT . q{job_id} . $DOT . q{stderr};
+    my $job_id_stdout_path = $sbatch_file_name . $DOT . q{job_id} . $DOT . q{stdout};
 
     ## Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
@@ -1991,31 +1994,42 @@ sub submit_jobs_to_sbatch {
             infile_path      => $sbatch_file_name,
             job_ids_string   => $job_ids_string,
             reservation_name => $reservation_name,
+            stderrfile_path  => $job_id_stderr_path,
+            stdoutfile_path  => $job_id_stdout_path,
         }
     );
 
-    # Submit job process
-    my %process_return = child_process(
+    # Submit job process and write job_id to file
+    child_process(
         {
             commands_ref => \@commands,
             process_type => q{open3},
         }
     );
 
-    # Sbatch should return message and job id in stdout
-    croak(  $log->fatal( @{ $process_return{stderrs_ref} } )
-          . $log->fatal( q{Aborting run} . $NEWLINE ) )
-      if ( not $process_return{stdouts_ref}[0] );
+    my @stdout_lines = read_from_file(
+        {
+            chomp  => 1,
+            format => q{line_by_line},
+            path   => $job_id_stdout_path,
+        }
+    );
 
-    # Capture job id for submitted scripts
-    my ($job_id) =
-      $process_return{stdouts_ref}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
+    my ($job_id) = $stdout_lines[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
 
-    # Sbatch should return message and job id in stdout
-    croak(  $log->fatal( @{ $process_return{stderrs_ref} } )
-          . $log->fatal( q{Aborting run} . $NEWLINE ) )
-      if ( not $job_id );
+    if ( not $job_id ) {
 
+        my @stderr_lines = read_from_file(
+            {
+                chomp  => 1,
+                format => q{line_by_line},
+                path   => $job_id_stderr_path,
+            }
+        );
+
+        # Sbatch should return message and job id in stdout
+        croak( $log->fatal(@stderr_lines) . $log->fatal( q{Aborting run} . $NEWLINE ) );
+    }
     return $job_id;
 }
 

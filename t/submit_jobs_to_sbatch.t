@@ -7,6 +7,7 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Find;
+use File::Path qw{ remove_tree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -23,7 +24,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $COLON $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $COLON $DOT $EMPTY_STR $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
@@ -124,6 +125,12 @@ sleep 2 or croak( q{Cannot sleep } . $COLON . $OS_ERROR, $NEWLINE );
 
 ## Find file names in current working dir defined by code ref wanted
 find( \&_wanted, cwd() );
+
+## Clean-up
+remove_tree(
+    $sbatch_file_name . $DOT . q{job_id} . $DOT . q{stderr},
+    $sbatch_file_name . $DOT . q{job_id} . $DOT . q{stdout}
+);
 
 sub _wanted {
 

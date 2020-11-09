@@ -71,7 +71,6 @@ set_script_shell_attributes(
         set_errexit  => 1,
         set_nounset  => 1,
         set_pipefail => 1,
-        sleep        => 1,
         ulimit_n     => 2,
     }
 );
