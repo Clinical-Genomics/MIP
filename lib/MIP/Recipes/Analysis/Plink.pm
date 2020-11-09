@@ -162,7 +162,6 @@ sub analysis_plink {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
@@ -300,8 +299,7 @@ sub analysis_plink {
     );
 
     say {$filehandle} q{## Remove indels using bcftools};
-    my $view_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix;
+    my $view_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{no_indels.vcf};
     bcftools_view(
         {
             exclude_types_ref => [qw{indels}],
@@ -329,7 +327,7 @@ sub analysis_plink {
 
     ## Drops duplicate variants that appear later in the the VCF file
     my $uniq_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
     vt_uniq(
         {
             filehandle   => $filehandle,
