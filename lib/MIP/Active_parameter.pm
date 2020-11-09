@@ -50,7 +50,6 @@ BEGIN {
       parse_recipe_resources
       parse_vep_plugin
       remove_sample_id_from_gender
-      set_binary_path
       set_default_analysis_type
       set_default_conda_path
       set_default_human_genome
@@ -1130,9 +1129,6 @@ sub parse_program_executables {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ set_binary_path };
-    use MIP::Environment::Path qw{ check_binary_in_path };
-
   PARAMETER:
     foreach my $parameter_name ( keys %{$active_parameter_href} ) {
 
@@ -1154,22 +1150,6 @@ sub parse_program_executables {
       PROGRAM:
         foreach my $program ( @{$program_executables_ref} ) {
 
-            my $binary_path = check_binary_in_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    program_name          => $parameter_name,
-                }
-            );
-
-            ## Set to use downstream
-            set_binary_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    binary_path           => $binary_path,
-                }
-            );
         }
     }
     return;
@@ -1322,41 +1302,6 @@ sub remove_sample_id_from_gender {
 
     @{ $active_parameter_href->{gender}{$gender} } =
       grep { not /$sample_id/xms } @{ $active_parameter_href->{gender}{$gender} };
-    return;
-}
-
-sub set_binary_path {
-
-## Function : Set binary path to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $binary                => Binary to set
-##          : $binary_path           => Path to binary
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $binary;
-    my $binary_path;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        binary => { defined => 1, required => 1, store => \$binary, strict_type => 1, },
-        binary_path => { required => 1, store => \$binary_path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not defined $binary_path );
-
-    $active_parameter_href->{binary_path}{$binary} = $binary_path;
     return;
 }
 

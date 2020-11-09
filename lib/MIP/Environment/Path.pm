@@ -34,7 +34,6 @@ BEGIN {
     our @EXPORT_OK = qw{
       build_docker_bind_path_var
       build_singularity_bind_path_var
-      check_binary_in_path
       get_conda_path
       is_binary_in_path
       reduce_dir_paths
@@ -116,47 +115,6 @@ sub build_singularity_bind_path_var {
       . $SEMICOLON;
 
     return $singularity_bind_var;
-}
-
-sub check_binary_in_path {
-
-## Function : Scans through PATH for supplied binary
-## Returns  : $binary_path
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $binary                => Binary to search for
-##          : $program_name          => MIP program name (Analysis recipe switch)
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $binary;
-    my $program_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        binary => {
-            defined     => 1,
-            required    => 1,
-            store       => \$binary,
-            strict_type => 1,
-        },
-        program_name => {
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Search for binary in PATH in any MIP conda env defined by config
-    ## or conda base
-
-    return;
 }
 
 sub get_conda_path {
