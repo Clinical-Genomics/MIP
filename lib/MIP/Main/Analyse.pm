@@ -32,7 +32,6 @@ use MIP::Active_parameter qw{
   check_load_env_packages
   check_recipe_mode
   get_not_allowed_temp_dirs
-  parse_program_executables
   parse_recipe_resources
   set_gender_sample_ids
   set_parameter_reference_dir_path
@@ -342,14 +341,6 @@ sub mip_analyse {
 
     ## Check core number requested against environment provisioned
     parse_recipe_resources( { active_parameter_href => $active_parameter_href, } );
-
-    ## Check programs in path, is executable, and set binary_path
-    parse_program_executables(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
 
     ## Check that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
