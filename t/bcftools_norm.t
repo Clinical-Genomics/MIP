@@ -80,17 +80,17 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
     multiallelic => {
         input           => q{+},
         expected_output => q{--multiallelics +both},
     },
-    reference_path => {
-        input           => q{path_to_fasta_ref},
-        expected_output => q{--fasta-ref path_to_fasta_ref},
+    outfile_path => {
+        input           => q{outfile.txt},
+        expected_output => q{--output outfile.txt},
+    },
+    remove_duplicates => {
+        input           => q{1},
+        expected_output => q{--rm-dup none},
     },
 );
 
@@ -99,10 +99,6 @@ my %specific_argument = (
         input           => q{infile.test},
         expected_output => q{infile.test},
     },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
-    },
     multiallelic_type => {
         input           => q{snps},
         expected_output => q{--multiallelics +snps},
@@ -110,6 +106,14 @@ my %specific_argument = (
     output_type => {
         input           => q{v},
         expected_output => q{--output-type v},
+    },
+    reference_path => {
+        input           => q{path_to_fasta_ref},
+        expected_output => q{--fasta-ref path_to_fasta_ref},
+    },
+    remove_duplicates_type => {
+        input           => q{all},
+        expected_output => q{--rm-dup all},
     },
 );
 

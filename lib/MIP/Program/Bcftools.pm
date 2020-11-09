@@ -1110,6 +1110,8 @@ sub bcftools_norm {
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $reference_path         => Human genome reference path
 ##          : $regions_ref            => Regions to process {REF}
+##          : $remove_duplicates      => If a record is present in multiple files, output only the first instance.
+##          : $remove_duplicates_type => Controls how to treat records with duplicate positions (snps|indels|both|all|some|none|id).
 ##          : $samples_file_path      => File of samples to annotate
 ##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
@@ -1125,6 +1127,7 @@ sub bcftools_norm {
     my $outfile_path;
     my $reference_path;
     my $regions_ref;
+    my $remove_duplicates;
     my $samples_file_path;
     my $samples_ref;
     my $stderrfile_path;
@@ -1133,6 +1136,7 @@ sub bcftools_norm {
 
     ## Default(s)
     my $multiallelic_type;
+    my $remove_duplicates_type;
     my $output_type;
 
     my $tmpl = {
@@ -1160,12 +1164,22 @@ sub bcftools_norm {
             strict_type => 1,
         },
         reference_path => {
-            defined     => 1,
-            required    => 1,
             store       => \$reference_path,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        remove_duplicates => {
+            allow       => [qw{ 0 1 }],
+            default     => 0,
+            store       => \$remove_duplicates,
+            strict_type => 1,
+        },
+        remove_duplicates_type => {
+            allow       => [qw{ snps indels both all some none id }],
+            default     => q{none},
+            store       => \$remove_duplicates_type,
+            strict_type => 1,
+        },
         samples_file_path => { store => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
@@ -1202,6 +1216,11 @@ sub bcftools_norm {
     if ($reference_path) {
 
         push @commands, q{--fasta-ref} . $SPACE . $reference_path;
+    }
+
+    if ( $remove_duplicates eq q{1} ) {
+
+        push @commands, q{--rm-dup} . $SPACE . $remove_duplicates_type;
     }
 
     if ($infile_path) {
@@ -1864,7 +1883,6 @@ sub bcftools_view {
 ##          : $threads                => Number of threads to use
 ##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
 
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -1889,7 +1907,6 @@ sub bcftools_view {
     my $stdoutfile_path;
     my $threads;
     my $types;
-
 
     ## Default(s)
     my $output_type;
@@ -1949,12 +1966,12 @@ sub bcftools_view {
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        threads => {
+        threads         => {
             allow       => qr/ \A \d+ \z /xms,
             store       => \$threads,
             strict_type => 1,
         },
-        types           => {
+        types => {
             store       => \$types,
             strict_type => 1,
         },
@@ -2119,7 +2136,7 @@ sub bcftools_view_and_index_vcf {
         },
         threads => {
             allow       => qr/ \A \d+ \z /xms,
-            default     => 1, 
+            default     => 1,
             store       => \$threads,
             strict_type => 1,
         },
