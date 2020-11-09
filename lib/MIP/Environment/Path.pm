@@ -157,7 +157,7 @@ sub check_binary_in_path {
 
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
-    my $env_binary_path = get_conda_bin_dir_path(
+    get_conda_bin_dir_path(
         {
             active_parameter_href => $active_parameter_href,
             bin_file              => $binary,
@@ -302,7 +302,7 @@ sub get_conda_bin_dir_path {
     my %environment = ( $environment_key => [@env_method_cmds] );
 
     ## Get the bin file path
-    my ( $bin_file_path, $conda_env ) = get_bin_file_path(
+    my ($bin_file_path) = get_bin_file_path(
         {
             bin_file         => $bin_file,
             conda_path       => $conda_path,
@@ -310,19 +310,6 @@ sub get_conda_bin_dir_path {
             environment_key  => $environment_key,
         }
     );
-
-    ## Test if path exists
-    if (   not $bin_file_path
-        or not -f $bin_file_path )
-    {
-        $log->logcroak( q{Failed to find default path for}
-              . $SPACE
-              . $bin_file
-              . $SPACE
-              . q{in conda environment}
-              . $SPACE
-              . $conda_env );
-    }
 
     ## Remove bin file from path
     my $conda_bin_dir_path = dirname($bin_file_path);

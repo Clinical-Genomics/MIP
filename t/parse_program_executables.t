@@ -41,8 +41,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Active_parameter}    => [qw{ parse_program_executables }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Active_parameter} => [qw{ parse_program_executables }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -78,38 +78,5 @@ my $return = parse_program_executables(
 
 ## Then return undef
 is( $return, undef, q{Skip check for inactive recipes} );
-
-## Given switched on active parameter, defined program and program_executables parameter, when program is in path and executable
-$active_parameter{bwa_mem} = 1;
-
-trap {
-    parse_program_executables(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-        }
-    )
-};
-
-## Then INFO message should broadcast
-like( $trap->stderr, qr/samtools/xms,
-    q{Found bin and executable: Throw INFO log message} );
-
-## Given switched on active parameter, defined recipe and program_executables parameter, but no executable
-$parameter{bwa_mem}{program_executables} = [qw{ not_in_path }];
-
-trap {
-    parse_program_executables(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-        }
-    );
-};
-
-## Then exit and throw FATAL message
-is( $trap->leaveby, q{die}, q{Exit if binary cannot be found} );
-like( $trap->stderr, qr/not_in_path/xms,
-    q{No bin and executable - Throw FATAL log message} );
 
 done_testing();

@@ -81,20 +81,4 @@ trap {
 ## Then return true
 ok( $trap->return, q{Binary is found} );
 
-## Given no existing binary
-my $no_binary = q{Nothing to see here};
-
-trap {
-    check_binary_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            binary                => $no_binary,
-            program_name          => $program_name,
-        }
-    )
-};
-
-## Then exit and die
-is( $trap->leaveby, q{die}, q{Exit if binary cannot be found} );
-
 done_testing();

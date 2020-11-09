@@ -81,25 +81,4 @@ my $bwa_bin_path = catfile( $active_parameter{conda_path}, qw{ envs test bin } )
 
 is( $bin_path, $bwa_bin_path, q{Found dynamic conda bin path} );
 
-## Given a conda bin when bwa bin file path does not exist
-my $faulty_binary = q{not_a_bin_file};
-
-trap {
-    get_conda_bin_dir_path(
-        {
-            active_parameter_href => \%active_parameter,
-            bin_file              => $faulty_binary,
-            environment_key       => $recipe_name,
-        }
-    )
-};
-
-## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if the binary path cannot be found} );
-like(
-    $trap->die,
-    qr/Failed \s+ to \s+ find \s+ default \s+ path/xms,
-    q{Could not find default binary file path }
-);
-
 done_testing();
