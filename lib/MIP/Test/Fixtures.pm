@@ -122,7 +122,8 @@ sub test_add_io_for_recipe {
     if ( $step eq q{fastq} ) {
 
         @{ $parameter_href->{cache}{order_recipes_ref} } = $recipe_name;
-         $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{bam} ) {
 
@@ -132,7 +133,8 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.bam};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.bam};
     }
     if ( $step eq q{vcf} ) {
 
@@ -142,7 +144,8 @@ sub test_add_io_for_recipe {
             }
         );
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
-        $parameter_href->{$recipe_name}{outfile_suffix} = $outfile_suffix ? $outfile_suffix : q{.vcf};
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.vcf};
     }
     return;
 }

@@ -118,6 +118,7 @@ sub analysis_glnexus {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -157,6 +158,7 @@ sub analysis_glnexus {
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
+    my @genotype_infile_path_prefixes;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -171,7 +173,8 @@ sub analysis_glnexus {
                 stream         => q{in},
             }
         );
-        push @genotype_infile_paths, $sample_io{in}{file_path};
+        push @genotype_infile_paths,         $sample_io{in}{file_path};
+        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
     }
 
     my %io = parse_io_outfiles(
@@ -215,31 +218,50 @@ sub analysis_glnexus {
 
     my $config_type = q{DeepVariant} . $consensus_analysis_type;
 
-    glnexus_merge(
-        {
-            config     => $config_type,
-            dir        => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-            filehandle => $filehandle,
-            infile_paths_ref => \@genotype_infile_paths,
-            stdoutfile_path  => $outfile_path,
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
+
+        ## Glnexus
+        say {$filehandle} q{## Glnexus};
+
+        glnexus_merge(
+            {
+                config => $config_type,
+                dir    => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+                filehandle       => $filehandle,
+                infile_paths_ref => \@genotype_infile_paths,
+                stdoutfile_path  => $outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        say {$filehandle} q{## View};
+
+        bcftools_view_and_index_vcf(
+            {
+                filehandle          => $filehandle,
+                index_type          => q{tbi},
+                infile_path         => $outfile_path,
+                outfile_path_prefix => $outfile_path_prefix,
+                output_type         => q{z},
+                threads             => $core_number,
+            }
+        );
+    }
+    else {
+
+        say {$filehandle} q{## Single sample - copy deepvariant vcf output and index};
+
+      FILE_SUFFIX:
+        foreach my $dv_file_name_suffix (qw { .vcf.gz .vcf.gz.tbi }) {
+            gnu_cp {
+                filehandle   => $filehandle,
+                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_suffix,
+                outfile_path => $outfile_path_prefix . $dv_file_name_suffix,
+            };
+            say {$filehandle} $NEWLINE;
         }
-    );
-    say {$filehandle} $NEWLINE;
-
-    say {$filehandle} q{## View};
-
-    bcftools_view_and_index_vcf(
-        {
-            filehandle          => $filehandle,
-            index_type          => q{tbi},
-            infile_path         => $outfile_path,
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{z},
-            threads             => $core_number,
-        }
-    );
-
-    ## Close filehandleS
+    }
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe_mode == 1 ) {
