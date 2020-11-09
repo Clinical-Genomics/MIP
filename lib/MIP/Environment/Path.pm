@@ -35,7 +35,6 @@ BEGIN {
       build_docker_bind_path_var
       build_singularity_bind_path_var
       check_binary_in_path
-      get_bin_file_path
       get_conda_bin_dir_path
       get_conda_path
       is_binary_in_path
@@ -168,66 +167,6 @@ sub check_binary_in_path {
     return;
 }
 
-sub get_bin_file_path {
-
-## Function : Get the absolute path to the binary file
-##          : and the corresponding conda environment
-## Returns  : $bin_file_path, $conda_environment
-## Arguments: $bin_file         => Name of binary file
-##          : $conda_path       => Path to conda directory
-##          : $environment_href => Hash with programs and their environments {REF}
-##          : $environment_key  => Key to the environment_href [program|recipe_name]
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bin_file;
-    my $conda_path;
-    my $environment_href;
-    my $environment_key;
-
-    my $tmpl = {
-        bin_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-        conda_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$conda_path,
-            strict_type => 1,
-        },
-        environment_href => {
-            default     => {},
-            required    => 1,
-            store       => \$environment_href,
-            strict_type => 1,
-        },
-        environment_key => {
-            defined     => 1,
-            required    => 1,
-            store       => \$environment_key,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-
-    ## Get environment where binary file is located by using "conda activate <conda_env>"
-    my $conda_environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-
-    ## Place it in the conda environment binary path
-    my $bin_file_path =
-      catfile( $conda_path, q{envs}, $conda_environment, q{bin}, $bin_file );
-
-    ## Return absolute path and conda environment for binary file
-    return ( abs_path($bin_file_path), $conda_environment );
-}
-
 sub get_conda_bin_dir_path {
 
 ## Function : Attempts to find path to directory with binary in conda env
@@ -265,8 +204,6 @@ sub get_conda_bin_dir_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Environment::Path qw{ get_bin_file_path };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -288,33 +225,7 @@ sub get_conda_bin_dir_path {
         ## Found program|recipe within env
         last if ($env_name);
     }
-
-    ## Get env load command
-    my @env_method_cmds = get_env_method_cmds(
-        {
-            action     => q{load},
-            env_method => $env_method,
-            env_name   => $env_name,
-        }
-    );
-
-    ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-    my %environment = ( $environment_key => [@env_method_cmds] );
-
-    ## Get the bin file path
-    my ($bin_file_path) = get_bin_file_path(
-        {
-            bin_file         => $bin_file,
-            conda_path       => $conda_path,
-            environment_href => \%environment,
-            environment_key  => $environment_key,
-        }
-    );
-
-    ## Remove bin file from path
-    my $conda_bin_dir_path = dirname($bin_file_path);
-
-    return $conda_bin_dir_path;
+    return 1;
 }
 
 sub get_conda_path {

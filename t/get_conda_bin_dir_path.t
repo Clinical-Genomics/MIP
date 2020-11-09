@@ -68,7 +68,7 @@ my $binary      = q{bwa};
 my $recipe_name = q{bwa_mem};
 $active_parameter{conda_path} = catfile( $Bin, qw{ data modules miniconda } );
 
-my $bin_path = get_conda_bin_dir_path(
+my $is_ok = get_conda_bin_dir_path(
     {
         active_parameter_href => \%active_parameter,
         bin_file              => $binary,
@@ -76,9 +76,6 @@ my $bin_path = get_conda_bin_dir_path(
     }
 );
 
-# Expected path
-my $bwa_bin_path = catfile( $active_parameter{conda_path}, qw{ envs test bin } );
-
-is( $bin_path, $bwa_bin_path, q{Found dynamic conda bin path} );
+ok( $is_ok, q{Found dynamic conda bin path} );
 
 done_testing();
