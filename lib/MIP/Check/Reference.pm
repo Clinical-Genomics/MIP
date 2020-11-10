@@ -159,6 +159,8 @@ sub check_references_for_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Checked references
     my @checked_references;
 
@@ -168,8 +170,7 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
-    ## Use MIPs own bcftools
-    my $bcftools_binary_path = q{bcftools};
+     my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (
