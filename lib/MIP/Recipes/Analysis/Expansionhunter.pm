@@ -134,11 +134,11 @@ sub analysis_expansionhunter {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_index bcftools_norm bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
-    use MIP::Program::Vt qw{ vt_decompose };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -265,8 +265,9 @@ sub analysis_expansionhunter {
 
     ## Expansion hunter calling per sample id
     # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my @vt_infile_paths;
-    my @vt_outfile_paths;
+    my @decompose_infile_paths;
+    my @decompose_infile_path_prefixes;
+    my @decompose_outfile_paths;
 
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
@@ -311,10 +312,11 @@ sub analysis_expansionhunter {
             }
         );
         say {$filehandle} $AMPERSAND, $NEWLINE;
-        push @vt_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
-        push @vt_outfile_paths,
+        push @decompose_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
+        push @decompose_infile_path_prefixes, $sample_outfile_path_prefix;
+        push @decompose_outfile_paths,
             $outfile_path_prefix
-          . $UNDERSCORE . q{vt}
+          . $UNDERSCORE . q{decompose}
           . $UNDERSCORE
           . $sample_id
           . $outfile_suffix;
@@ -325,17 +327,34 @@ sub analysis_expansionhunter {
     ## Split multiallelic variants
     say {$filehandle} q{## Split multiallelic variants};
     ## Create iterator object
-    my $vt_file_paths_iter = each_array( @vt_infile_paths, @vt_outfile_paths );
+    my $decompose_file_paths_iter = each_array( @decompose_infile_paths, @decompose_infile_path_prefixes, @decompose_outfile_paths );
 
-  VT_FILES_ITER:
-    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths_iter->() ) {
+  DECOMPOSE_FILES_ITER:
+    while ( my ( $decompose_infile_path, $decompose_infile_path_prefix, $decompose_outfile_path ) = $decompose_file_paths_iter->() ) {
 
-        vt_decompose(
+        htslib_bgzip (
             {
                 filehandle          => $filehandle,
-                infile_path         => $vt_infile_path,
-                outfile_path        => $vt_outfile_path,
-                smart_decomposition => 1,
+                infile_path         => $decompose_infile_path,
+                stdoutfile_path     => $decompose_infile_path_prefix . q{.bcf},
+                write_to_stdout     => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+        bcftools_index (
+            {
+                filehandle          => $filehandle,
+                infile_path         => $decompose_infile_path_prefix . q{.bcf},
+                output_type         => q{tbi},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+        bcftools_norm(
+            {
+                filehandle          => $filehandle,
+                infile_path         => $decompose_infile_path_prefix . q{.bcf},
+                multiallelic        => q{-},
+                outfile_path        => $decompose_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -344,12 +363,12 @@ sub analysis_expansionhunter {
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
     my $svdb_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{decompose_svdbmerge} . $outfile_suffix;
 
     svdb_merge(
         {
             filehandle       => $filehandle,
-            infile_paths_ref => \@vt_outfile_paths,
+            infile_paths_ref => \@decompose_outfile_paths,
             notag            => 1,
             stdoutfile_path  => $svdb_outfile_path,
         }
@@ -359,7 +378,7 @@ sub analysis_expansionhunter {
     say {$filehandle} q{## Stranger annotation};
 
     my $stranger_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{decompose_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
             filehandle        => $filehandle,
