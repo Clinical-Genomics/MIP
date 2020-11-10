@@ -1243,7 +1243,7 @@ sub bcftools_norm {
         push @commands, q{--fasta-ref} . $SPACE . $reference_path;
     }
 
-    if ( $remove_duplicates eq q{1} ) {
+    if ( $remove_duplicates ) {
 
         push @commands, q{--rm-dup} . $SPACE . $remove_duplicates_type;
     }
