@@ -191,8 +191,6 @@ sub perl_base {
 
      use MIP::Environment::Executable qw{ get_executable_base_command };
 
-    ## Add percentage mapped reads to samtools stats output
-
     my @commands = $use_container ? (get_executable_base_command({ base_command => q{perl}, }),) : qw{ perl };
 
     if ($n) {
