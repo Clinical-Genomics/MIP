@@ -84,4 +84,4 @@ if [ "$DEV" = true ]; then
     conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0
 fi
 
-#conda deactivate
+conda deactivate
