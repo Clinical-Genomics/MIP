@@ -63,7 +63,6 @@ sub get_recipe_executable_bind_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{add_recipe_bind_paths};
-    use MIP::Constants qw{@CONTAINER_BIND_PATHS};
     use MIP::Language::Shell qw{ quote_bash_variable };
     use MIP::Parameter qw{get_cache get_parameter_attribute};
 
@@ -82,6 +81,7 @@ sub get_recipe_executable_bind_path {
         }
     );
 
+    RECIPE:
     foreach my $recipe_name (@recipes) {
 
         my @recipe_executables = get_parameter_attribute(
@@ -91,6 +91,7 @@ sub get_recipe_executable_bind_path {
                 parameter_name => $recipe_name,
             }
         );
+        RECIPE_EXECUTABLE:
         foreach my $executable (@recipe_executables) {
 
             my @export_bind_paths = @CONTAINER_BIND_PATHS;
@@ -546,7 +547,6 @@ sub set_executable_container_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ @CONTAINER_BIND_PATHS };
     use Data::Diver qw{ Dive };
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
