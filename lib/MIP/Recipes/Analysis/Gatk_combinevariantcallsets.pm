@@ -184,8 +184,7 @@ sub analysis_gatk_combinevariantcallsets {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
