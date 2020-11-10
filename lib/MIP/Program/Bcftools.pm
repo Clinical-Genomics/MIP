@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -44,6 +44,7 @@ BEGIN {
       bcftools_reheader
       bcftools_rename_vcf_samples
       bcftools_roh
+      bcftools_sort
       bcftools_stats
       bcftools_view
       bcftools_view_and_index_vcf
@@ -1138,8 +1139,8 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
-        filehandle   => { store => \$filehandle, },
-        infile_path  => { store => \$infile_path, strict_type => 1, },
+        filehandle  => { store => \$filehandle, },
+        infile_path => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
             allow       => [qw{ + - }],
             store       => \$multiallelic,
@@ -1270,7 +1271,7 @@ sub bcftools_query {
     my $tmpl = {
         exclude    => { store => \$exclude, strict_type => 1, },
         filehandle => { store => \$filehandle, },
-        format => {
+        format     => {
             store       => \$format,
             strict_type => 1,
         },
@@ -1747,6 +1748,106 @@ sub bcftools_roh {
     return @commands;
 }
 
+sub bcftools_sort {
+
+## Function : Perl wrapper for writing bcftools sort recipe to already open $filehandle or return commands array. Based on bcftools 1.10.
+## Returns  : @commands
+## Arguments: $filehandle             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $max_mem                => Max memory to use
+##          : $outfile_path           => Outfile path
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $temp_directory         => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $max_mem;
+    my $outfile_path;
+    my $output_type;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $temp_directory;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        infile_path => { store => \$infile_path, strict_type => 1, },
+        max_mem => {
+            allow       => qr/\A \d+ [kMG] \z/xms,
+            store       => \$max_mem,
+            strict_type => 1,
+        },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        output_type  => {
+            allow       => [ undef, qw{ b u z v} ],
+            store       => \$output_type,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        temp_directory  => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = qw{ bcftools sort };
+
+    ## Bcftools base args
+    @commands = bcftools_base(
+        {
+            commands_ref => \@commands,
+            output_type  => $output_type,
+            outfile_path => $outfile_path,
+        }
+    );
+
+    if ($max_mem) {
+
+        push @commands, q{--max-mem} . $SPACE . $max_mem;
+    }
+
+    if ($temp_directory) {
+
+        push @commands, q{--temp-dir} . $SPACE . $temp_directory;
+    }
+
+    if ($infile_path) {
+
+        push @commands, $infile_path;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
 sub bcftools_stats {
 
 ## Function : Perl wrapper for writing bcftools stats recipe to already open $filehandle or return commands array. Based on bcftools 1.6.
@@ -1939,7 +2040,7 @@ sub bcftools_view {
             strict_type => 1,
         },
         regions_file_path => { store => \$regions_file_path, strict_type => 1, },
-        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
         samples_file_path => { store => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],

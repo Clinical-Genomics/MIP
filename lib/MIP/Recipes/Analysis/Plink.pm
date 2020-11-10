@@ -136,10 +136,10 @@ sub analysis_plink {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw(bcftools_view bcftools_annotate);
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_view };
     use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use MIP::Program::Vt qw(vt_uniq);
+    use MIP::Program::Vt qw{ vt_uniq };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -298,34 +298,40 @@ sub analysis_plink {
         }
     );
 
-    say {$filehandle} q{## Remove indels using bcftools};
-    my $view_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{no_indels.vcf};
+    say {$filehandle} q{## Remove indels, annotate and sort using bcftools};
+    say {$filehandle} q{## Create uniq IDs and remove duplicate variants};
     bcftools_view(
         {
             exclude_types_ref => [qw{indels}],
             filehandle        => $filehandle,
             infile_path       => $infile_path,
-            outfile_path      => $view_outfile_path,
-            output_type       => q{v},
+            output_type       => q{u},
             regions_file_path => $regions_file_path,
         }
     );
-    say {$filehandle} $NEWLINE;
+    print {$filehandle} $PIPE . $SPACE;
 
-    say {$filehandle} q{## Create uniq IDs and remove duplicate variants};
     bcftools_annotate(
         {
             filehandle     => $filehandle,
-            infile_path    => $view_outfile_path,
-            output_type    => q{v},
+            output_type    => q{u},
             remove_ids_ref => [q{ID}],
             set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
         }
     );
-
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Drops duplicate variants that appear later in the the VCF file
+    my $sort_memory = $recipe_resource{memory} - 2;
+    bcftools_sort(
+        {
+            filehandle     => $filehandle,
+            max_mem        => $sort_memory . q{G},
+            output_type    => q{v},
+            temp_directory => $temp_directory,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
     my $uniq_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
     vt_uniq(
