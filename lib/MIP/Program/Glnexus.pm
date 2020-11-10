@@ -15,6 +15,7 @@ use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -96,8 +97,8 @@ sub glnexus_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ glnexus_cli };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{glnexus_cli}, } ), );
 
     if ($threads) {
         push @commands, q{--threads} . $SPACE . $threads;

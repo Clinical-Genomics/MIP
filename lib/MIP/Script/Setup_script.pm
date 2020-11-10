@@ -37,6 +37,7 @@ BEGIN {
       check_script_file_path_exist
       create_script_error_trap
       create_script_temp_dir
+      set_script_env_variables
       setup_install_script
       setup_script
       set_script_shell_attributes
@@ -295,7 +296,7 @@ sub create_script_error_trap {
 sub create_script_temp_dir {
 
 ## Function : Create script temporary directory to use and set trap to remove it
-## Returns  :
+## Returns  : $temp_directory_bash
 ## Arguments: $filehandle              => Filehandle to write to
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
 ##          : $job_ids_ref             => Job_ids to update status on {REF}
@@ -388,6 +389,44 @@ sub create_script_temp_dir {
             trap_signals_ref   => [qw{ EXIT TERM INT }],
         }
     );
+    return $temp_directory_bash;
+}
+
+sub set_script_env_variables {
+
+    ## Function : Set environment variables
+    ## Returns  :
+    ## Arguments: $filehandle          => Filehandle to write to
+    ##          : $temp_directory_bash => Bash prepared temp directory
+    ##          : $xdg_runtime_dir     => XDG_RUNTIME_DIR environment variable
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $temp_directory_bash;
+    my $xdg_runtime_dir;
+
+    my $tmpl = {
+        filehandle          => { required => 1, store => \$filehandle, },
+        temp_directory_bash => {
+            store       => \$temp_directory_bash,
+            strict_type => 1,
+        },
+        xdg_runtime_dir => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$xdg_runtime_dir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $temp_directory_bash and $xdg_runtime_dir ) {
+
+        say {$filehandle} q{XDG_RUNTIME_DIR} . $EQUALS . $temp_directory_bash;
+    }
     return;
 }
 
@@ -591,7 +630,6 @@ sub setup_script {
 ##          : $set_errexit                     => Bash set -e {Optional}
 ##          : $set_nounset                     => Bash set -u {Optional}
 ##          : $set_pipefail                    => Pipe fail switch {Optional}
-##          : $sleep                           => Sleep for X seconds {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
 ##          : $temp_directory                  => Temporary directory for recipe {Optional}
 ##          : $ulimit_n                        => Set ulimit -n for recipe {Optional}
@@ -619,7 +657,6 @@ sub setup_script {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $sleep;
     my $temp_directory;
 
     my $tmpl = {
@@ -711,12 +748,6 @@ sub setup_script {
             store       => \$set_pipefail,
             strict_type => 1,
         },
-        sleep => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$sleep,
-            strict_type => 1,
-        },
         source_environment_commands_ref => {
             default     => [],
             store       => \$source_environment_commands_ref,
@@ -739,7 +770,7 @@ sub setup_script {
     use MIP::Environment::Manager qw{ write_source_environment_command };
     use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_echo gnu_sleep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
     use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -836,7 +867,6 @@ sub setup_script {
             set_errexit  => $set_errexit,
             set_nounset  => $set_nounset,
             set_pipefail => $set_pipefail,
-            sleep        => $sleep,
             ulimit_n     => $ulimit_n,
         }
     );
@@ -848,13 +878,21 @@ sub setup_script {
         }
     );
 
-    create_script_temp_dir(
+    my $temp_directory_bash = create_script_temp_dir(
         {
             filehandle              => $filehandle,
             job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
             log_file_path           => $active_parameter_href->{log_file},
             sacct_format_fields_ref => \@sacct_format_fields,
             temp_directory          => $temp_directory,
+        }
+    );
+
+    set_script_env_variables(
+        {
+            filehandle          => $filehandle,
+            temp_directory_bash => $temp_directory_bash,
+            xdg_runtime_dir     => 1,
         }
     );
 
@@ -879,7 +917,6 @@ sub set_script_shell_attributes {
 ##          : $set_errexit  => Bash set -e {Optional}
 ##          : $set_nounset  => Bash set -u {Optional}
 ##          : $set_pipefail => Pipe fail switch {Optional}
-##          : $sleep        => Sleep for X seconds {Optional}
 ##          : $ulimit_n     => Set ulimit -n for recipe {Optional}
 
     my ($arg_href) = @_;
@@ -892,7 +929,6 @@ sub set_script_shell_attributes {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $sleep;
 
     my $tmpl = {
         filehandle  => { store => \$filehandle, },
@@ -914,12 +950,6 @@ sub set_script_shell_attributes {
             store       => \$set_pipefail,
             strict_type => 1,
         },
-        sleep => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$sleep,
-            strict_type => 1,
-        },
         ulimit_n => {
             allow       => [ undef, qr/ \A \d+ \z /xms ],
             store       => \$ulimit_n,
@@ -931,9 +961,6 @@ sub set_script_shell_attributes {
 
     use MIP::Language::Shell qw{ log_host_name };
     use MIP::Program::Gnu::Bash qw{ gnu_set gnu_ulimit };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_sleep};
-
-    Readonly my $MAX_SECONDS_TO_SLEEP => 240;
 
     gnu_set(
         {
@@ -957,17 +984,6 @@ sub set_script_shell_attributes {
     log_host_name( { filehandle => $filehandle, } );
     say {$filehandle} $NEWLINE;
 
-# Let the process sleep for a random couple of seconds (0-240) to avoid race conditions in mainly conda sourcing activate
-    if ($sleep) {
-
-        gnu_sleep(
-            {
-                filehandle       => $filehandle,
-                seconds_to_sleep => int rand $MAX_SECONDS_TO_SLEEP,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
     return;
 }
 

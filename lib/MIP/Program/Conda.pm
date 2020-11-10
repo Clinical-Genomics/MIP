@@ -9,7 +9,6 @@ use Getopt::Long;
 use IO::Handle;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;

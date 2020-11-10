@@ -66,25 +66,29 @@ my @function_base_commands = qw{ perl };
 ## to enable testing of each individual argument
 
 my %specific_argument = (
-    autosplit => {
+    autosplit     => {
         input           => 1,
         expected_output => q{-a},
     },
-    n => {
+    n             => {
         input           => 1,
         expected_output => q{-n},
     },
-    command_line => {
+    command_line  => {
         input           => 1,
         expected_output => q{-e},
     },
-    inplace => {
+    inplace       => {
         input           => 1,
         expected_output => q{-i},
     },
-    print => {
+    print         => {
         input           => 1,
         expected_output => q{-p},
+    },
+    use_container => => {
+        input           => 1,
+        expected_output => q{perl},
     },
 );
 
@@ -97,7 +101,7 @@ my @arguments = ( \%specific_argument );
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
             do_test_base_command       => 1,

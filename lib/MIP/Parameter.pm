@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -860,6 +860,7 @@ sub set_custom_default_to_active_parameter {
       set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
+      set_default_install_config_file
       set_default_pedigree_fam_file
       set_default_program_test_file
       set_default_reference_dir
@@ -914,6 +915,13 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_infile_dirs,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
+            },
+        },
+        install_config_file => {
+            method   => \&set_default_install_config_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
             },
         },
         pedigree_fam_file => {

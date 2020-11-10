@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -359,6 +358,7 @@ sub pipeline_analyse_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_container_constants };
+    use MIP::Environment::Container qw{ parse_containers };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -413,6 +413,13 @@ sub pipeline_analyse_rd_rna {
 
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});

@@ -430,6 +430,7 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_container_constants };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
@@ -521,6 +522,13 @@ sub pipeline_analyse_rd_dna {
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -557,7 +565,7 @@ sub pipeline_analyse_rd_dna {
         chromograph_cov   => \&analysis_chromograph_cov,
         chromograph_upd   => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,    # Depends on pedigree
+        : undef,                                              # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
