@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -81,7 +81,7 @@ sub get_recipe_executable_bind_path {
         }
     );
 
-    RECIPE:
+  RECIPE:
     foreach my $recipe_name (@recipes) {
 
         my @recipe_executables = get_parameter_attribute(
@@ -91,7 +91,7 @@ sub get_recipe_executable_bind_path {
                 parameter_name => $recipe_name,
             }
         );
-        RECIPE_EXECUTABLE:
+      RECIPE_EXECUTABLE:
         foreach my $executable (@recipe_executables) {
 
             my @export_bind_paths = @CONTAINER_BIND_PATHS;
