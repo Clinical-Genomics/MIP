@@ -67,7 +67,7 @@ my $program_name = q{genmod};
 my %active_parameter = (
     load_env => {
         q{mip_pyv3.6} => {
-            cnvnator      => q{prior_to_load_cmd;},
+            cnvnator      => undef,
             $program_name => undef,
             method        => q{conda},
         },
@@ -86,21 +86,6 @@ is_deeply(
     \@program_source_environment_cmds,
     [qw{ conda activate mip_pyv3.6 }],
     q{Got package source environment command}
-);
-
-## Given program, when using priors
-my @program_source_environment_cmd_and_priors = get_package_source_env_cmds(
-    {
-        active_parameter_href => \%active_parameter,
-        package_name          => q{cnvnator},
-    }
-);
-
-## Then return load command with priors
-is_deeply(
-    \@program_source_environment_cmd_and_priors,
-    [qw{ prior_to_load_cmd; conda activate mip_pyv3.6 }],
-    q{Got package source environment command with priors}
 );
 
 done_testing();

@@ -23,11 +23,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_recipe_executable_bind_path install_containers parse_containers parse_container_bind_paths parse_container_uri run_container set_executable_container_cmd };
+      qw{ get_recipe_executable_bind_path install_containers parse_containers parse_container_uri run_container set_executable_container_cmd };
 }
 
 sub get_recipe_executable_bind_path {
@@ -81,7 +81,7 @@ sub get_recipe_executable_bind_path {
         }
     );
 
-    RECIPE:
+  RECIPE:
     foreach my $recipe_name (@recipes) {
 
         my @recipe_executables = get_parameter_attribute(
@@ -91,7 +91,7 @@ sub get_recipe_executable_bind_path {
                 parameter_name => $recipe_name,
             }
         );
-        RECIPE_EXECUTABLE:
+      RECIPE_EXECUTABLE:
         foreach my $executable (@recipe_executables) {
 
             my @export_bind_paths = @CONTAINER_BIND_PATHS;
@@ -255,77 +255,6 @@ sub parse_containers {
     set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
     return 1;
-}
-
-sub parse_container_bind_paths {
-
-## Function : Parse container bind paths and add export command to array
-## Returns  : $singularity_bind
-## Arguments: $active_parameter_href       => The active parameters for this analysis hash {REF}
-##          : $package_name                => Package name
-##          : $source_environment_cmds_ref => Array with source environment commands {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $package_name;
-    my $source_environment_cmds_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        package_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$package_name,
-            strict_type => 1,
-        },
-        source_environment_cmds_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$source_environment_cmds_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ add_recipe_bind_paths };
-    use MIP::Environment::Path
-      qw{ build_docker_bind_path_var build_singularity_bind_path_var };
-
-    return if not $CONTAINER_MANAGER;
-
-    my @export_bind_paths = @CONTAINER_BIND_PATHS;
-    add_recipe_bind_paths(
-        {
-            active_parameter_href => $active_parameter_href,
-            export_bind_paths_ref => \@export_bind_paths,
-            recipe_name           => $package_name,
-        }
-    );
-
-    my %container = (
-        docker      => \&build_docker_bind_path_var,
-        singularity => \&build_singularity_bind_path_var,
-    );
-
-    my $container_bind_var = $container{$CONTAINER_MANAGER}->(
-        {
-            bind_paths_ref => \@export_bind_paths,
-        }
-    );
-
-    push @{$source_environment_cmds_ref}, $container_bind_var;
-
-    return $container_bind_var;
 }
 
 sub parse_container_uri {
