@@ -13,9 +13,11 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $AMPERSAND $COMMA $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Processmanagement::Processes qw{ print_wait };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -44,6 +46,8 @@ BEGIN {
       samtools_view
     };
 }
+
+Readonly my $BASE_COMMAND => q{samtools};
 
 sub samtools_base {
 
@@ -265,7 +269,8 @@ sub samtools_depth {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools depth };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ depth } );
 
     if ($max_depth_treshold) {
 
@@ -332,7 +337,8 @@ sub samtools_faidx {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools faidx };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ faidx } );
 
     push @commands, $infile_path;
 
@@ -409,7 +415,10 @@ sub samtools_flagstat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools flagstat };
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ flagstat }
+    );
 
     push @commands, $infile_path;
 
@@ -478,7 +487,10 @@ sub samtools_idxstats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools idxstats };
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ idxstats }
+    );
 
     push @commands, $infile_path;
 
@@ -540,7 +552,8 @@ sub samtools_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools index };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ index } );
 
     if ($bai_format) {
 
@@ -655,7 +668,8 @@ sub samtools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools merge };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ merge } );
 
     ## Samtools base args
     @commands = samtools_base(
@@ -787,7 +801,8 @@ sub samtools_sort {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools sort };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ sort } );
 
     ## Samtools base args
     @commands = samtools_base(
@@ -898,7 +913,8 @@ sub samtools_stats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools stats };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ stats } );
 
     if ($auto_detect_input_format) {
 
@@ -1063,7 +1079,8 @@ sub samtools_view {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ samtools view };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ view } );
 
     ## Samtools base args
     @commands = samtools_base(

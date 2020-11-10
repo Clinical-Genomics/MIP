@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.33;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -55,6 +55,7 @@ BEGIN {
       set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
+      set_default_install_config_file
       set_default_parameter
       set_default_pedigree_fam_file
       set_default_program_test_file
@@ -2105,6 +2106,39 @@ sub set_include_y {
 
         last if $active_parameter_href->{include_y} == 1;
     }
+    return;
+}
+
+sub set_default_install_config_file {
+
+## Function : Set default install config file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for mip install config
+    my $path = catfile( $Bin, qw{ templates mip_install_config.yaml } );
+
+    $active_parameter_href->{$parameter_name} = $path;
     return;
 }
 

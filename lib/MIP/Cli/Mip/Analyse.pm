@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -129,6 +129,14 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
             documentation => q{Set the GATK log level},
             is            => q{rw},
             isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
+        )
+    );
+
+    option(
+        q{install_config_file} => (
+            documentation => q{File with install configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

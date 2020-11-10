@@ -29,6 +29,7 @@ BEGIN {
       build_binary_version_cmd
       get_binaries_versions
       get_executable
+      get_executable_base_command
       get_binary_version
     };
 }
@@ -200,6 +201,35 @@ sub get_binary_version {
         $log->warn(qq{Could not find version for binary: $binary});
     }
     return $binary_version;
+}
+
+sub get_executable_base_command {
+
+## Function : Get executable base command with or without container manager commands
+## Returns  : $base_command
+## Arguments: $base_command => Executable standard base command
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $base_command;
+
+    my $tmpl = {
+        base_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$base_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Constants qw{ %CONTAINER_CMD };
+
+    return exists $CONTAINER_CMD{$base_command}
+      ? $CONTAINER_CMD{$base_command}
+      : $base_command;
 }
 
 sub get_executable {

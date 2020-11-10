@@ -101,7 +101,6 @@ my ($recipe_file_path) = setup_script(
         job_id_href           => \%job_id,
         recipe_directory      => $test_recipe_name,
         recipe_name           => $test_recipe_name,
-        sleep                 => 1,
         source_environment_commands_ref =>
           \@{ $active_parameter{source_environment_commands_ref} },
     }

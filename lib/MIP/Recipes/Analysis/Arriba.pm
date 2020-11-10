@@ -228,7 +228,6 @@ sub analysis_arriba {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
             ulimit_n                        => $active_parameter_href->{star_ulimit_n},
         }

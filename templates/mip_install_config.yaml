@@ -39,6 +39,8 @@ container:
       bedtools:
     uri: docker.io/clinicalgenomics/bedtools:2.2.29
   cadd:
+    bind_path:
+      CADD.sh: reference_dir!/CADD-scripts/data/annotations:/opt/conda/share/CADD-scripts/data/annotations
     executable:
       CADD.sh:
     uri: docker.io/clinicalgenomics/cadd:1.6
@@ -114,6 +116,10 @@ container:
     executable:
       multiqc:
     uri: docker.io/ewels/multiqc:1.9
+  perl:
+    executable:
+      perl:
+    uri: docker.io/clinicalgenomics/perl:5.26
   peddy:
     executable:
       peddy: "python -m peddy"

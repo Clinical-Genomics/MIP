@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -196,7 +195,6 @@ sub analysis_blobfish {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -311,9 +309,15 @@ sub _generate_tx2gene_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+     use MIP::Environment::Executable qw{ get_executable_base_command };
+
+    my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
+
+    # Execute perl
+    my $tx2gene_generator = join $SPACE, @commands;
     ## Print header and initiate hash
-    my $tx2gene_generator =
-      q?perl -nae 'BEGIN {print q{TXNAME,GENEID} . qq{\n}; %txgene;}?;
+    $tx2gene_generator .=
+      q? -nae 'BEGIN {print q{TXNAME,GENEID} . qq{\n}; %txgene;}?;
     ## When the file has been processed; print hash
     $tx2gene_generator .=
       q? END {foreach $tx (keys %txgene){print $tx . q{,} . $txgene{$tx} .qq{\n}; } }?;

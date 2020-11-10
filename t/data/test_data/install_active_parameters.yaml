@@ -138,6 +138,19 @@ shell:
   mip_scripts:
     version: Your current MIP version
 shell_install: []
+container:
+  arriba:
+    bind_path:
+      arriba: "reference_dir!/a_dir:opt/conda/share/a_dir"
+    executable:
+      arriba: /arriba_v1.1.0/arriba
+      draw_fusions.R: /arriba_v1.1.0/draw_fusions.R
+    uri: docker://uhrigs/arriba:1.1.0
+  bwakit:
+    executable:
+      bwakit: "no_executable_in_image"
+      run-bwamem:
+    uri: docker.io/jemten/bwakit:0.7.17
 singularity:
   arriba:
     executable:

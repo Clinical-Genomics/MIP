@@ -83,7 +83,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    singularity_container => {
+    image => {
         input           => q{TEST.simg},
         expected_output => q{TEST.simg},
     },

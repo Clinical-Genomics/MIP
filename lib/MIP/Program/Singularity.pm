@@ -37,7 +37,7 @@ sub singularity_exec {
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
 ##          : $filehandle                     => Filehandle to write to
-##          : $singularity_container          => Singularity container name
+##          : $image                          => Singularity container name
 ##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
 ##          : $stderrfile_path_append         => Append stderr info to file path
@@ -48,7 +48,7 @@ sub singularity_exec {
     ## Flatten argument(s)
     my $bind_paths_ref;
     my $filehandle;
-    my $singularity_container;
+    my $image;
     my $singularity_container_cmds_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -63,10 +63,10 @@ sub singularity_exec {
         filehandle => {
             store => \$filehandle,
         },
-        singularity_container => {
+        image => {
             defined     => 1,
             required    => 1,
-            store       => \$singularity_container,
+            store       => \$image,
             strict_type => 1,
         },
         singularity_container_cmds_ref => {
@@ -99,7 +99,7 @@ sub singularity_exec {
     }
 
     ## Add container
-    push @commands, $singularity_container;
+    push @commands, $image;
 
     ## Add optional commands to be run inside container
     if ( @{$singularity_container_cmds_ref} ) {
