@@ -321,6 +321,7 @@ sub parse_rd_dna {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 

@@ -26,7 +26,7 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_dragen_rd_dna pipeline_analyse_dragen_rd_dna };
@@ -241,6 +241,7 @@ sub parse_dragen_rd_dna {
             active_parameter_href   => $active_parameter_href,
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 

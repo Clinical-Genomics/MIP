@@ -452,7 +452,6 @@ sub mip_analyse {
             case_id          => $active_parameter_href->{case_id},
             execution_mode   => q{system},
             fam_file_path    => $active_parameter_href->{pedigree_fam_file},
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => \%sample_info,
         }

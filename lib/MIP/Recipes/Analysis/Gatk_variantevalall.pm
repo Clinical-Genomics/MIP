@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -157,7 +157,6 @@ sub analysis_gatk_variantevalall {
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
-    my $infile_suffix      = $io{in}{file_suffix};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -225,7 +224,7 @@ sub analysis_gatk_variantevalall {
     say {$filehandle} q{## GATK SelectVariants};
 
     my $select_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{select} . $infile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{select} . $DOT . q{vcf};
     gatk_selectvariants(
         {
             filehandle           => $filehandle,

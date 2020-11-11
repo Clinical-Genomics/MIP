@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_cnnscorevariants };
@@ -252,7 +252,6 @@ sub analysis_gatk_cnnscorevariants {
             execution_mode   => q{system},
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
