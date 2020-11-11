@@ -254,7 +254,6 @@ sub analysis_rankvariant {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -648,7 +647,6 @@ sub analysis_rankvariant_unaffected {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
@@ -966,7 +964,6 @@ sub analysis_rankvariant_sv {
             case_id          => $case_id,
             fam_file_path    => $fam_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }

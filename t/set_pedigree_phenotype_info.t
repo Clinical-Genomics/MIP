@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.12;
 
 $VERBOSE = test_standard_cli(
     {
@@ -113,19 +113,5 @@ is( scalar @got_affected_samples, 1, q{Got all samples with affected phenotype} 
 is( scalar @got_unaffected_samples, 1, q{Got all samples with unaffected phenotype} );
 
 is( scalar @got_unknown_samples, 2, q{Got all samples with unknown phenotype} );
-
-## As well as phenoype info in Plink format
-my $affected_plink_phenotype =
-  $parameter{cache}{sample_1}{plink_phenotype};
-my $unaffected_plink_phenotype =
-  $parameter{cache}{sample_2}{plink_phenotype};
-my $unknown_plink_phenotype =
-  $parameter{cache}{sample_3}{plink_phenotype};
-
-is( $affected_plink_phenotype, 2, q{Reformated to plink affected phenotype} );
-
-is( $unaffected_plink_phenotype, 1, q{Reformated to plink unaffected phenotype} );
-
-is( $unknown_plink_phenotype, 0, q{Reformated to plink unknown phenotype} );
 
 done_testing();
