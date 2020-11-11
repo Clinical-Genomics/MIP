@@ -1635,7 +1635,7 @@ sub _build_fam_file_line {
 sub _convert_to_fam_format {
 
 ## Function : Convert pedigree attribute to fam format
-## Returns  :
+## Returns  : fam format pedigree attribute or $pedigree_attribute
 ## Arguments: $header             => Pedigree header
 ##          : $pedigree_attribute => Sample pedigree attribute
 
