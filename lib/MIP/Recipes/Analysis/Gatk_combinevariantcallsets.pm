@@ -279,20 +279,21 @@ sub analysis_gatk_combinevariantcallsets {
         say {$filehandle} $NEWLINE;
     }
 
-    my @output_types = qw{ z };
+    my %output_type = ( z => q{tbi}, );
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
-        push @output_types, q{b};
+        $output_type{b} = q{csi};
     }
 
   OUTPUT_TYPES:
-    foreach my $output_type (@output_types) {
+    while ( my ( $output_type, $index_type ) = each %output_type ) {
 
         bcftools_view_and_index_vcf(
             {
                 filehandle          => $filehandle,
                 infile_path         => $bcftools_infile_path,
                 outfile_path_prefix => $outfile_path_prefix,
+                index_type          => $index_type,
                 output_type         => $output_type,
             }
         );
