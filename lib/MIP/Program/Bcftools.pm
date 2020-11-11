@@ -1134,6 +1134,8 @@ sub bcftools_norm {
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $reference_path         => Human genome reference path
 ##          : $regions_ref            => Regions to process {REF}
+##          : $remove_duplicates      => If a record is present in multiple files, output only the first instance.
+##          : $remove_duplicates_type => Controls how to treat records with duplicate positions (snps|indels|both|all|some|none|id).
 ##          : $samples_file_path      => File of samples to annotate
 ##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
@@ -1149,6 +1151,7 @@ sub bcftools_norm {
     my $outfile_path;
     my $reference_path;
     my $regions_ref;
+    my $remove_duplicates;
     my $samples_file_path;
     my $samples_ref;
     my $stderrfile_path;
@@ -1157,6 +1160,7 @@ sub bcftools_norm {
 
     ## Default(s)
     my $multiallelic_type;
+    my $remove_duplicates_type;
     my $output_type;
 
     my $tmpl = {
@@ -1184,12 +1188,22 @@ sub bcftools_norm {
             strict_type => 1,
         },
         reference_path => {
-            defined     => 1,
-            required    => 1,
             store       => \$reference_path,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        remove_duplicates => {
+            allow       => [qw{ 0 1 }],
+            default     => 0,
+            store       => \$remove_duplicates,
+            strict_type => 1,
+        },
+        remove_duplicates_type => {
+            allow       => [qw{ snps indels both all some none id }],
+            default     => q{none},
+            store       => \$remove_duplicates_type,
+            strict_type => 1,
+        },
         samples_file_path => { store => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
@@ -1227,6 +1241,11 @@ sub bcftools_norm {
     if ($reference_path) {
 
         push @commands, q{--fasta-ref} . $SPACE . $reference_path;
+    }
+
+    if ( $remove_duplicates ) {
+
+        push @commands, q{--rm-dup} . $SPACE . $remove_duplicates_type;
     }
 
     if ($infile_path) {
