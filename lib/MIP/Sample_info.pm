@@ -26,7 +26,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.37;
+    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,6 +39,7 @@ BEGIN {
       reload_previous_pedigree_info
       set_file_path_to_store
       set_gene_panel
+      set_in_sample_info
       set_infile_info
       set_no_dry_run_parameters
       set_no_read_direction_file_attributes
@@ -47,7 +48,7 @@ BEGIN {
       set_read_direction_file_attributes
       set_recipe_metafile_in_sample_info
       set_recipe_outfile_in_sample_info
-      set_in_sample_info
+      set_sample_gender
       write_sample_info_to_file
     };
 
@@ -1563,6 +1564,50 @@ sub set_parameter_in_sample_info {
             }
         );
     }
+    return;
+}
+
+sub set_sample_gender {
+
+## Function : Set gender in sample info
+## Returns  :
+## Arguments: $gender           => Gender
+##          : $sample_id        => Sample id
+##          : $sample_info_href => Records on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $gender;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        gender => {
+            allow       => [qw{ female male other unknown }],
+            required    => 1,
+            store       => \$gender,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $sample_info_href->{sample}{$sample_id}{sex} = $gender;
+
     return;
 }
 

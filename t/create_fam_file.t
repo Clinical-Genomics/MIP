@@ -25,7 +25,7 @@ use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -100,10 +100,7 @@ my $test_sbatch_path   = catfile( $test_dir, q{test_file.sbatch} );
 my $filehandle;
 
 ## Create temp logger for Pedigree.pm
-my $test_log_path = catfile( $test_dir, q{test.log} );
-$active_parameter{log_file} = $test_log_path;
-
-my $log = test_log( {} );
+my $log = test_log( { no_screen => 1, } );
 
 my @execution_modes = qw{ system sbatch };
 for my $execution_mode (@execution_modes) {

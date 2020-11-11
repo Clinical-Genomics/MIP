@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,6 +77,11 @@ my %file_info               = test_mip_hashes(
         mip_hash_name => q{file_info},
     }
 );
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+    }
+);
 my $sample_id    = $active_parameter{sample_ids}[2];
 my $y_read_count = $MALE_THRESHOLD + 1;
 $active_parameter{gender}{others} = [$sample_id];
@@ -87,6 +92,7 @@ my $is_ok = update_gender_info(
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
         sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
         y_read_count            => $y_read_count,
     }
 );
@@ -111,6 +117,7 @@ update_gender_info(
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
         sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
         y_read_count            => $y_read_count,
     }
 );

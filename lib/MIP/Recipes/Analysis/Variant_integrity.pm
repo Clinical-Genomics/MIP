@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
@@ -127,6 +127,7 @@ sub analysis_variant_integrity {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -230,8 +231,9 @@ sub analysis_variant_integrity {
         )
     );
 
-    my $outdir_path_prefix = $io{out}{dir_path_prefix};
-    my %outfile_path       = %{ $io{out}{file_path_href} };
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -262,11 +264,21 @@ sub analysis_variant_integrity {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
     );
+
+    my $variant_integrity_infile_path = $outfile_path_prefix . $DOT . q{vcf};
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $infile_path,
+            outfile_path => $variant_integrity_infile_path,
+            output_type  => q{v},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Variant_integrity
     ## If a trio
@@ -277,7 +289,7 @@ sub analysis_variant_integrity {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
                 filehandle   => $filehandle,
-                infile_path  => $infile_path,
+                infile_path  => $variant_integrity_infile_path,
                 outfile_path => $outfile_path{mendel},
             }
         );
@@ -292,7 +304,7 @@ sub analysis_variant_integrity {
                 case_file    => $case_file_path,
                 case_type    => $active_parameter_href->{genmod_models_case_type},
                 filehandle   => $filehandle,
-                infile_path  => $infile_path,
+                infile_path  => $variant_integrity_infile_path,
                 outfile_path => $outfile_path{father},
             }
         );

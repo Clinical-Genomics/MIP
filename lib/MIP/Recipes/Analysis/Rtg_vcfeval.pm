@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -130,14 +130,13 @@ sub analysis_rtg_vcfeval {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
+    use MIP::Get::File qw{ get_exome_target_bed_file get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
-    use MIP::Program::Bcftools
-      qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
+    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
@@ -183,10 +182,9 @@ sub analysis_rtg_vcfeval {
         }
     );
 
-    my $exome_target_bed_file = get_exom_target_bed_file(
+    my $exome_target_bed_file = get_exome_target_bed_file(
         {
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            log                   => $log,
             sample_id             => $sample_id,
         }
     );
@@ -311,19 +309,6 @@ sub analysis_rtg_vcfeval {
                 output_type         => q{z},
                 temp_directory      => $rtg_outdirectory_path,
                 sample_ids_ref      => [$sample_id],
-            }
-        );
-
-        say {$filehandle} q{## Compressing and indexing sample calls};
-        bcftools_view_and_index_vcf(
-            {
-                filehandle  => $filehandle,
-                index       => 1,
-                index_type  => q{tbi},
-                infile_path => $infile_path,
-                outfile_path_prefix =>
-                  catfile( $rtg_outdirectory_path, $outfile_name_prefix ),
-                output_type => q{z},
             }
         );
 
