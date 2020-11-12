@@ -868,7 +868,6 @@ sv_combinevariantcallsets:
   outfile_suffix: ".vcf"
   program_executables:
     - bcftools
-    - vt
   type: recipe
 sv_combinevariantcallsets_bcf_file:
   associated_recipe:
@@ -882,7 +881,7 @@ sv_svdb_merge_prioritize:
   data_type: SCALAR
   default: tiddit,cnvnator,manta
   type: recipe_argument
-sv_vt_decompose:
+sv_bcftools_norm_decompose:
   associated_recipe:
     - sv_combinevariantcallsets
   data_type: SCALAR
