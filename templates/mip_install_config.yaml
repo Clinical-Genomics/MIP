@@ -112,6 +112,10 @@ container:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
     uri: docker.io/clinicalgenomics/manta:1.6.0
+  mip:
+    executable:
+      mip:
+    uri: docker.io/clinicalgenomics/mip
   multiqc:
     executable:
       multiqc:

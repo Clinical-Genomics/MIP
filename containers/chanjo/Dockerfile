@@ -1,10 +1,10 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip:2.0
+FROM clinicalgenomics/mip_base:2.1
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip:2.0"
+LABEL base_image="clinicalgenomics/mip_base:2.1"
 LABEL version="1"
 LABEL software="chanjo"
 LABEL software.version="4.2.0"

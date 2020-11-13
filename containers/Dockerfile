@@ -4,10 +4,10 @@ FROM ubuntu:16.04
 ################## METADATA ######################
 
 LABEL base_image="ubuntu:16.04"
-LABEL version="2"
-LABEL software="mip.base"
-LABEL software.version="8.2.0"
-LABEL about.summary="Base image for MIP's dependency tools"
+LABEL version="2.1"
+LABEL software="conda"
+LABEL software.version="4.7.12.1"
+LABEL about.summary="Base image for MIP's dependency tools docker containers"
 LABEL about.home="https://github.com/Clinical-Genomics/MIP"
 LABEL about.documentation="https://clinical-genomics.gitbook.io/project-mip/"
 LABEL about.license_file="https://github.com/Clinical-Genomics/MIP/blob/master/LICENSE"
@@ -48,7 +48,7 @@ RUN apt-get update --fix-missing && \
 
 # Install conda and give write permissions to conda folder
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O ~/miniconda.sh && \
+    wget --no-check-certificate https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh
 
