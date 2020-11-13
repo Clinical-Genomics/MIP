@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -170,16 +170,15 @@ sub analysis_mip_qccollect {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            process_time                    => $recipe_resource{time},
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            process_time          => $recipe_resource{time},
         }
     );
 
