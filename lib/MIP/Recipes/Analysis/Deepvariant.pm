@@ -186,11 +186,10 @@ sub analysis_deepvariant {
 
     my $partition;
 
-    if ($recipe_resource{gpu_number}) {
+    if ( $recipe_resource{gpu_number} ) {
         $partition = q{gpu};
     }
-    use Data::Printer;
-    p %recipe_resource;
+
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};

@@ -687,10 +687,10 @@ sub setup_script {
             store       => \$error_trap,
             strict_type => 1,
         },
-        filehandle  => { store => \$filehandle, },
+        filehandle => { store => \$filehandle, },
         gpu_number => {
             allow       => [ undef, qr{ \A\d+\z }xsm ],
-            store => \$gpu_number,
+            store       => \$gpu_number,
             strict_type => 1,
         },
         job_id_href => {
@@ -716,8 +716,8 @@ sub setup_script {
             strict_type => 1,
         },
         partition => {
-            allow => [ undef, qw{ cpu gpu } ],
-            store => \$partition,
+            allow       => [ undef, qw{ cpu gpu } ],
+            store       => \$partition,
             strict_type => 1,
         },
         process_time => {
