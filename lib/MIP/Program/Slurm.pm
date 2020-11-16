@@ -60,6 +60,8 @@ sub slurm_build_sbatch_header {
 
     ## Default(s)
     my $core_number;
+    my $gpu_number;
+    my $partition;
     my $process_time;
     my $email_types_ref;
     my $separator;
@@ -91,6 +93,12 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
         },
         filehandle => { store => \$filehandle },
+        gpu_number => {
+            allow       => [ undef, qr{ \A\d+\z }xms ],
+            default     => 1,
+            store       => \$gpu_number,
+            strict_type => 1,
+        },
         job_name   => {
             store       => \$job_name,
             strict_type => 1,
@@ -98,6 +106,11 @@ sub slurm_build_sbatch_header {
         memory_allocation => {
             allow       => [ undef, qr{ \A\d+\z }sxm ],
             store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        partition => {
+            allow => [ undef, qw { cpu gpu } ],
+            store => \$partition,
             strict_type => 1,
         },
         process_time => {
@@ -170,6 +183,11 @@ sub slurm_build_sbatch_header {
             push @commands, q{--mail-type=} . join $COMMA, @{$email_types_ref};
         }
         push @commands, q{--mail-user=} . $email;
+    }
+
+    if ($gpu_number) {
+        push @commands, q{--partition=} . $partition;
+        push @commands, q{--gpus=} . $gpu_number;
     }
 
     ## Add sbatch shebang

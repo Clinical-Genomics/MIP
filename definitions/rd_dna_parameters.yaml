@@ -202,6 +202,20 @@ set_recipe_core_number:
   data_type: HASH
   mandatory: no
   type: mip
+## GPU number
+recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    deepvariant: 1
+  type: mip
+set_recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ## Memory per parallel process/core
 recipe_memory:
   associated_recipe:

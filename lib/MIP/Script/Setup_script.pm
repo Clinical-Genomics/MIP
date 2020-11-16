@@ -651,8 +651,10 @@ sub setup_script {
     ## Default(s)
     my $core_number;
     my $error_trap;
+    my $gpu_number;
     my $outdata_dir;
     my $outscript_dir;
+    my $partition;
     my $process_time;
     my $set_errexit;
     my $set_nounset;
@@ -686,6 +688,11 @@ sub setup_script {
             strict_type => 1,
         },
         filehandle  => { store => \$filehandle, },
+        gpu_number => {
+            allow       => [ undef, qr{ \A\d+\z }xsm ],
+            store => \$gpu_number,
+            strict_type => 1,
+        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -706,6 +713,11 @@ sub setup_script {
         outscript_dir => {
             default     => $arg_href->{active_parameter_href}{outscript_dir},
             store       => \$outscript_dir,
+            strict_type => 1,
+        },
+        partition => {
+            allow => [ undef, qw{ cpu gpu } ],
+            store => \$partition,
             strict_type => 1,
         },
         process_time => {
@@ -848,8 +860,10 @@ sub setup_script {
                 email             => $active_parameter_href->{email},
                 email_types_ref   => $active_parameter_href->{email_types},
                 filehandle        => $filehandle,
+                gpu_number        => $gpu_number,
                 job_name          => $job_name,
                 memory_allocation => $memory_allocation,
+                partition         => $partition,
                 process_time      => $process_time . q{:00:00},
                 project_id        => $active_parameter_href->{project_id},
                 slurm_quality_of_service =>
