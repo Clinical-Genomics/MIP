@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,12 +77,18 @@ my %file_info               = test_mip_hashes(
 push @{ $file_info{$sample_id}{mip_infiles} },                  q{ADM1059A3.fastq};
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
+my %sample_info = test_mip_hashes(
+    {
+        mip_hash_name => q{qc_sample_info},
+    }
+);
 
 my $estimated_unknown_gender = parse_fastq_for_gender(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
+        sample_info_href        => \%sample_info,
     }
 );
 
@@ -97,6 +103,7 @@ $estimated_unknown_gender = parse_fastq_for_gender(
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => $consensus_analysis_type,
         file_info_href          => \%file_info,
+        sample_info_href        => \%sample_info,
     }
 );
 

@@ -5,4 +5,5 @@
 !mip_install_perl.sh
 mip_log/
 **/.idea
+_Deparsed_XSubs.pm
 .gitignore

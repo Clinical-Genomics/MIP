@@ -114,7 +114,7 @@ sub get_gatk_intervals {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_exom_target_bed_file };
+    use MIP::Get::File qw{ get_exome_target_bed_file };
     use MIP::File::Interval qw{ generate_contig_interval_file };
 
     ## Store gatk interval
@@ -122,11 +122,10 @@ sub get_gatk_intervals {
 
     if ( $analysis_type eq q{wes} ) {
 
-        my $exome_target_bed_file = get_exom_target_bed_file(
+        my $exome_target_bed_file = get_exome_target_bed_file(
             {
                 exome_target_bed_href => $exome_target_bed_href,
                 file_ending           => $file_ending,
-                log                   => $log,
                 sample_id             => $sample_id,
             }
         );

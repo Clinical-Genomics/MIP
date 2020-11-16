@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [9.0.5]
+- Predicted gender from wgs samples are now used in the generated fam files.
+- Restrict plink analysis to intersected target capture kits for mixed wgs/wes cases
+- Update to chromograph in order to fix the renderering coverage images 
+
+**Tools**
+chromograph 0.3.1 -> 0.3.3
+
 ## [9.0.4]
 - Increased memory allocation for samtools_subsample_mt
 - Check that vep plugin paths exists prior to executing mip
