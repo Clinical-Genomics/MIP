@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ slurm_build_sbatch_header slurm_sacct };
@@ -186,7 +186,9 @@ sub slurm_build_sbatch_header {
     }
 
     if ($gpu_number) {
-        push @commands, q{--partition=} . $partition;
+        if ($partition) {
+            push @commands, q{--partition=} . $partition;
+        }
         push @commands, q{--gpus=} . $gpu_number;
     }
 

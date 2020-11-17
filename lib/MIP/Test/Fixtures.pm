@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -319,7 +319,7 @@ sub test_mip_hashes {
             strict_type => 1,
         },
         recipe_name => {
-            default     => q{bwa_mem},
+            default     => q{deepvariant},
             store       => \$recipe_name,
             strict_type => 1,
         },

@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{

@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.62;
+our $VERSION = 1.63;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 

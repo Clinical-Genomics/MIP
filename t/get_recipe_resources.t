@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,7 @@ test_log( {} );
 
 ## Given a recipe name and active parameter hash
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my $recipe_name      = q{bwa_mem};
+my $recipe_name      = q{deepvariant};
 
 my %recipe_resource = get_recipe_resources(
     {
@@ -73,9 +73,10 @@ my %recipe_resource = get_recipe_resources(
 
 ## Then return recipe resource hash
 my %expected = (
-    core_number  => 30,
-    memory       => 120,
-    time         => 30,
+    core_number  => 35,
+    gpu_number   => 1,
+    memory       => 175,
+    time         => 10,
     load_env_ref => [qw{conda activate test }],
 );
 is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );
@@ -96,7 +97,7 @@ foreach my $resource ( keys %expected ) {
 }
 
 ## Given a recipe that lacks memory specification
-$active_parameter{recipe_memory}{bwa_mem} = undef;
+$active_parameter{recipe_memory}{deepvariant} = undef;
 
 my $recipe_memory = get_recipe_resources(
     {
@@ -107,11 +108,11 @@ my $recipe_memory = get_recipe_resources(
 );
 
 ## Then return 5 gigs times the number of cores
-Readonly my $DEFAULT_MEMORY => 150;
+Readonly my $DEFAULT_MEMORY => 175;
 is( $recipe_memory, $DEFAULT_MEMORY, q{Got default memory} );
 
 ## Given a recipe that lacks memory and core specification
-$active_parameter{recipe_core_number}{bwa_mem} = undef;
+$active_parameter{recipe_core_number}{deepvariant} = undef;
 
 $recipe_memory = get_recipe_resources(
     {
@@ -126,7 +127,7 @@ Readonly my $CORE_MEMORY => 5;
 is( $recipe_memory, $CORE_MEMORY, q{Got core memory} );
 
 ## Given a recipe that lacks core specification but has a memory specification
-$active_parameter{recipe_memory}{bwa_mem} = 1;
+$active_parameter{recipe_memory}{deepvariant} = 1;
 
 $recipe_memory = get_recipe_resources(
     {
