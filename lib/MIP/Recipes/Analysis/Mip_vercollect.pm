@@ -190,7 +190,7 @@ sub analysis_mip_vercollect {
         }
     );
     say {$filehandle} $NEWLINE;
-    ## Write executable versions
+
     write_binaries_versions(
         {
             binary_info_href => \%CONTAINER_CMD,
@@ -198,30 +198,6 @@ sub analysis_mip_vercollect {
             outfile_path     => $outfile_path,
         }
     );
-
-#    my $binary_path_file_path = $outfile_path_prefix . $UNDERSCORE . q{binary_paths.yaml};
-
-    ## Writes a YAML hash to file
-    #    write_to_file(
-    #        {
-    #            data_href => \%CONTAINER_CMD,
-    #            format    => q{yaml},
-    #            path      => $binary_path_file_path,
-    #        }
-    #    );
-    #    $log->info( q{Wrote: } . $binary_path_file_path );
-
-    #    my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{vercollect.log};
-
-    #    mip_vercollect(
-    #       {
-    #           filehandle    => $filehandle,
-    #           infile_path   => $binary_path_file_path,
-    #           log_file_path => $log_file_path,
-    #           outfile_path  => $outfile_path,
-    #       }
-    #   );
-    #   say {$filehandle} $NEWLINE;
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 

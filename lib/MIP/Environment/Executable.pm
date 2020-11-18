@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $EMPTY_STR $LOG_NAME $PIPE $SPACE };
+use MIP::Constants qw{ $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -158,75 +158,6 @@ sub get_binaries_versions {
         );
     }
     return %binary;
-}
-
-sub write_binaries_versions {
-
-## Function : Write executables/binaries versions
-## Returns  :
-## Arguments: $binary_info_href => Binary info href object
-##          : $filehandle       => Filehandle to write to
-##          : $outfile_path     => Outfile path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $binary_info_href;
-    my $filehandle;
-    my $outfile_path;
-
-    my $tmpl = {
-        binary_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$binary_info_href,
-            strict_type => 1,
-        },
-        filehandle => {
-            required => 1,
-            store    => \$filehandle,
-        },
-        outfile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfile_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-
-    my %executable = get_executable( {} );
-
-  BINARY:
-    while ( my ( $binary, $binary_cmd ) = each %{$binary_info_href} ) {
-
-        ## No information on how to get version for this binary - skip
-        next BINARY if ( not exists $executable{$binary} );
-
-        my @version_cmds = get_binary_version_cmd(
-            {
-                binary        => $binary,
-                binary_cmd    => $binary_cmd,
-                use_container => 1,
-            }
-        );
-
-        my @add_binary_cmds = perl_nae_oneliners(
-            {
-                oneliner_name          => q{add_binary},
-                oneliner_parameter     => $binary,
-                stdoutfile_path_append => $outfile_path,
-                use_container          => 1,
-            }
-        );
-        push @version_cmds, ( $PIPE, @add_binary_cmds );
-        say {$filehandle} join $SPACE, @version_cmds;
-    }
-    return;
 }
 
 sub get_binary_version_cmd {
@@ -666,6 +597,75 @@ q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last
         return %{ $executable{$executable_name} };
     }
     return %executable;
+}
+
+sub write_binaries_versions {
+
+## Function : Write executables/binaries versions
+## Returns  :
+## Arguments: $binary_info_href => Binary info href object
+##          : $filehandle       => Filehandle to write to
+##          : $outfile_path     => Outfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $binary_info_href;
+    my $filehandle;
+    my $outfile_path;
+
+    my $tmpl = {
+        binary_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$binary_info_href,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    my %executable = get_executable( {} );
+
+  BINARY:
+    while ( my ( $binary, $binary_cmd ) = each %{$binary_info_href} ) {
+
+        ## No information on how to get version for this binary - skip
+        next BINARY if ( not exists $executable{$binary} );
+
+        my @version_cmds = get_binary_version_cmd(
+            {
+                binary        => $binary,
+                binary_cmd    => $binary_cmd,
+                use_container => 1,
+            }
+        );
+
+        my @add_binary_cmds = perl_nae_oneliners(
+            {
+                oneliner_name          => q{add_binary},
+                oneliner_parameter     => $binary,
+                stdoutfile_path_append => $outfile_path,
+                use_container          => 1,
+            }
+        );
+        push @version_cmds, ( $PIPE, @add_binary_cmds );
+        say {$filehandle} join( $SPACE, @version_cmds ), $NEWLINE;
+    }
+    return;
 }
 
 1;
