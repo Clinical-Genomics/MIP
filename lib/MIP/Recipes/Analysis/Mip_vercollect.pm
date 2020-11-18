@@ -169,9 +169,10 @@ sub analysis_mip_vercollect {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $recipe_resource{time},
+            set_pipefail          => 0,
         }
     );
 

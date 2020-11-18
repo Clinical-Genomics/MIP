@@ -164,7 +164,7 @@ sub write_binaries_versions {
 
 ## Function : Write executables/binaries versions
 ## Returns  :
-## Arguments: $binary_info_href => Binary_Info_Href object
+## Arguments: $binary_info_href => Binary info href object
 ##          : $filehandle       => Filehandle to write to
 ##          : $outfile_path     => Outfile path
 
@@ -197,6 +197,8 @@ sub write_binaries_versions {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
     my %executable = get_executable( {} );
 
   BINARY:
@@ -207,13 +209,21 @@ sub write_binaries_versions {
 
         my @version_cmds = get_binary_version_cmd(
             {
-                binary                 => $binary,
-                binary_cmd             => $binary_cmd,
+                binary        => $binary,
+                binary_cmd    => $binary_cmd,
+                use_container => 1,
+            }
+        );
+
+        my @add_binary_cmds = perl_nae_oneliners(
+            {
+                oneliner_name          => q{add_binary},
+                oneliner_parameter     => $binary,
                 stdoutfile_path_append => $outfile_path,
                 use_container          => 1,
             }
         );
-
+        push @version_cmds, ( $PIPE, @add_binary_cmds );
         say {$filehandle} join $SPACE, @version_cmds;
     }
     return;
@@ -418,7 +428,7 @@ q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $ver
 q?'my ($version) = /bedtools\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bgzip => {
-            version_cmd => q{-h 2>&1 >/dev/null},
+            version_cmd => q{-h 2>&1 },
             version_regexp =>
 q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
@@ -517,9 +527,10 @@ q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
 q?'my ($version) = /Version:\s+(\S+)/xms; if ($version) {print $version; last;}'?,
         },
         picard => {
-            version_cmd => q{BamIndexStats 2>&1 >/dev/null},
+            version_cmd =>
+              q{java -jar /usr/picard/picard.jar BamIndexStats 2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+q?'my ($version) = /Version:(\S+)/xms; if($version) {print $version;last;}'?,
         },
         pigz => {
             version_cmd => q{--version 2>&1 >/dev/null},
@@ -621,7 +632,7 @@ q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
 q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         vcf2cytosure => {
-            version_cmd => q{-V 2>&1 >/dev/null},
+            version_cmd => q{-V 2>&1},
             version_regexp =>
 q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },

@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $SPACE $SINGLE_QUOTE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $COLON $NEWLINE $SPACE $SINGLE_QUOTE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -327,6 +327,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
+        add_binary                           => \&_add_binary,
         build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
@@ -348,6 +349,9 @@ sub perl_nae_oneliners {
     );
 
     my %oneliner_option = (
+        add_binary => {
+            binary => $oneliner_parameter,
+        },
         build_md5sum_check => {
             file_path => $oneliner_parameter,
         },
@@ -412,6 +416,33 @@ sub perl_nae_oneliners {
         }
     );
     return @commands;
+}
+
+sub _add_binary {
+
+## Function : Add "binary: " to stdin
+## Returns  : $add_binary
+## Arguments: $binary => Binary to add
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $binary;
+
+    my $tmpl = {
+        binary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $add_binary = q?'say STDOUT qq{? . $binary . $COLON . $SPACE . q?$_}'?;
+
+    return $add_binary;
 }
 
 sub _build_md5sum_check {
