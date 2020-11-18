@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,6 +97,10 @@ my %specific_argument = (
           . catdir(qw{ path one })
           . $COMMA
           . catdir(qw{ path two }),
+    },
+    gpu_support => {
+        input   => q{1},
+        expected_output => q{--nv},
     },
     singularity_container_cmds_ref => {
         inputs_ref      => [q{Hello_world.py}],

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -306,6 +306,7 @@ sub run_container {
 ##          : $container_path         => Path to container
 ##          : $entrypoint             => Override container entrypoint
 ##          : $filehandle             => Filehandle to write to
+##          : $gpu_support            => Add experimental nvidia GPU support 
 ##          : $image                  => Image to run
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
@@ -321,6 +322,7 @@ sub run_container {
     my $container_manager;
     my $container_path;
     my $filehandle;
+    my $gpu_support;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -354,6 +356,12 @@ sub run_container {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        gpu_support => {
+            allow       => [ undef, qw{ 0 1 }],
+            required    => 1,
+            store       => \$gpu_support,
+            strict_type => 1,
         },
         remove => {
             allow       => [ undef, 0, 1 ],
@@ -411,6 +419,7 @@ sub run_container {
             arg_href => {
                 bind_paths_ref                 => $bind_paths_ref,
                 filehandle                     => $filehandle,
+                gpu_support                    => $gpu_support,
                 image                          => $container_path,
                 singularity_container_cmds_ref => $container_cmds_ref,
                 stderrfile_path                => $stdinfile_path,
@@ -525,6 +534,7 @@ sub set_executable_container_cmd {
                     bind_paths_ref    => \@bind_paths,
                     container_manager => $container_manager,
                     container_path    => $container_href->{$container_name}{uri},
+                    gpu_support       => $container_href->{$container_name}{gpu_support},
                 }
             );
 

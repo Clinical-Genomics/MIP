@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ singularity_exec singularity_pull };
@@ -37,6 +37,7 @@ sub singularity_exec {
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
 ##          : $filehandle                     => Filehandle to write to
+##          : $gpu_support                    => Add experimental nvidia GPU support
 ##          : $image                          => Singularity container name
 ##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
@@ -48,6 +49,7 @@ sub singularity_exec {
     ## Flatten argument(s)
     my $bind_paths_ref;
     my $filehandle;
+    my $gpu_support;
     my $image;
     my $singularity_container_cmds_ref;
     my $stderrfile_path;
@@ -62,6 +64,12 @@ sub singularity_exec {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        gpu_support => {
+            allow       => [ undef, qw { 0 1 } ],
+            default     => undef,
+            store       => \$gpu_support,
+            strict_type => 1,
         },
         image => {
             defined     => 1,
@@ -92,6 +100,10 @@ sub singularity_exec {
 
     ## Stores commands depending on input parameters
     my @commands = qw{ singularity exec };
+
+    if ( $gpu_support ) {
+        push @commands, q{--nv};
+    }
 
     ## Add bind paths
     if ( @{$bind_paths_ref} ) {
