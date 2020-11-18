@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -78,6 +78,10 @@ my %base_argument = (
     stdoutfile_path => {
         input           => q{stdoutfile.test},
         expected_output => q{1> stdoutfile.test},
+    },
+    stdoutfile_path_append => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1>> stdoutfile.test},
     },
 );
 

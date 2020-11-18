@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $SPACE $SINGLE_QUOTE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $COLON $NEWLINE $SPACE $SINGLE_QUOTE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     our @EXPORT_OK =
       qw{ check_modules_existance get_cpan_file_modules perl_base perl_nae_oneliners };
@@ -149,31 +149,31 @@ sub perl_base {
     my $use_container;
 
     my $tmpl = {
-        autosplit     => {
+        autosplit => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$autosplit,
             strict_type => 1,
         },
-        command_line  => {
+        command_line => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$command_line,
             strict_type => 1,
         },
-        inplace       => {
+        inplace => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$inplace,
             strict_type => 1,
         },
-        n             => {
+        n => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$n,
             strict_type => 1,
         },
-        print         => {
+        print => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$print,
@@ -189,9 +189,12 @@ sub perl_base {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-     use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
 
-    my @commands = $use_container ? (get_executable_base_command({ base_command => q{perl}, }),) : qw{ perl };
+    my @commands =
+      $use_container
+      ? ( get_executable_base_command( { base_command => q{perl}, } ), )
+      : qw{ perl };
 
     if ($n) {
 
@@ -233,6 +236,7 @@ sub perl_nae_oneliners {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $stdoutfile_path_append => Append stdout info to file path
 ##          : $use_container          => Use container perl instead of main (this) process perl
 
     my ($arg_href) = @_;
@@ -247,6 +251,7 @@ sub perl_nae_oneliners {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $stdoutfile_path_append;
 
     ## Default(s)
     my $autosplit;
@@ -306,6 +311,10 @@ sub perl_nae_oneliners {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        stdoutfile_path_append => {
+            store       => \$stdoutfile_path_append,
+            strict_type => 1,
+        },
         use_container => => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -318,6 +327,7 @@ sub perl_nae_oneliners {
 
     ## Oneliner dispatch table
     my %oneliner = (
+        add_binary                           => \&_add_binary,
         build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
@@ -339,6 +349,9 @@ sub perl_nae_oneliners {
     );
 
     my %oneliner_option = (
+        add_binary => {
+            binary => $oneliner_parameter,
+        },
         build_md5sum_check => {
             file_path => $oneliner_parameter,
         },
@@ -390,6 +403,7 @@ sub perl_nae_oneliners {
             stderrfile_path_append => $stderrfile_path_append,
             stdinfile_path         => $stdinfile_path,
             stdoutfile_path        => $stdoutfile_path,
+            stdoutfile_path_append => $stdoutfile_path_append,
         }
       );
 
@@ -402,6 +416,33 @@ sub perl_nae_oneliners {
         }
     );
     return @commands;
+}
+
+sub _add_binary {
+
+## Function : Add "binary: " to stdin
+## Returns  : $add_binary
+## Arguments: $binary => Binary to add
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $binary;
+
+    my $tmpl = {
+        binary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $add_binary = q?'say STDOUT qq{? . $binary . $COLON . $SPACE . q?$_}'?;
+
+    return $add_binary;
 }
 
 sub _build_md5sum_check {
