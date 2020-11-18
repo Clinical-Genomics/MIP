@@ -99,7 +99,7 @@ my %specific_argument = (
           . catdir(qw{ path two }),
     },
     gpu_support => {
-        input   => q{1},
+        input           => q{1},
         expected_output => q{--nv},
     },
     singularity_container_cmds_ref => {

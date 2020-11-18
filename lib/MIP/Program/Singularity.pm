@@ -101,7 +101,7 @@ sub singularity_exec {
     ## Stores commands depending on input parameters
     my @commands = qw{ singularity exec };
 
-    if ( $gpu_support ) {
+    if ($gpu_support) {
         push @commands, q{--nv};
     }
 

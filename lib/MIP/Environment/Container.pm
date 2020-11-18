@@ -306,7 +306,7 @@ sub run_container {
 ##          : $container_path         => Path to container
 ##          : $entrypoint             => Override container entrypoint
 ##          : $filehandle             => Filehandle to write to
-##          : $gpu_support            => Add experimental nvidia GPU support 
+##          : $gpu_support            => Add experimental nvidia GPU support
 ##          : $image                  => Image to run
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
@@ -358,7 +358,7 @@ sub run_container {
             store => \$filehandle,
         },
         gpu_support => {
-            allow       => [ undef, qw{ 0 1 }],
+            allow       => [ undef, qw{ 0 1 } ],
             required    => 1,
             store       => \$gpu_support,
             strict_type => 1,
