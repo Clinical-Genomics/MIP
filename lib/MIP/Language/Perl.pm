@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     our @EXPORT_OK =
       qw{ check_modules_existance get_cpan_file_modules perl_base perl_nae_oneliners };
@@ -149,31 +149,31 @@ sub perl_base {
     my $use_container;
 
     my $tmpl = {
-        autosplit     => {
+        autosplit => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$autosplit,
             strict_type => 1,
         },
-        command_line  => {
+        command_line => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$command_line,
             strict_type => 1,
         },
-        inplace       => {
+        inplace => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$inplace,
             strict_type => 1,
         },
-        n             => {
+        n => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$n,
             strict_type => 1,
         },
-        print         => {
+        print => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$print,
@@ -189,9 +189,12 @@ sub perl_base {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-     use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
 
-    my @commands = $use_container ? (get_executable_base_command({ base_command => q{perl}, }),) : qw{ perl };
+    my @commands =
+      $use_container
+      ? ( get_executable_base_command( { base_command => q{perl}, } ), )
+      : qw{ perl };
 
     if ($n) {
 
@@ -233,6 +236,7 @@ sub perl_nae_oneliners {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $stdoutfile_path_append => Append stdout info to file path
 ##          : $use_container          => Use container perl instead of main (this) process perl
 
     my ($arg_href) = @_;
@@ -247,6 +251,7 @@ sub perl_nae_oneliners {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $stdoutfile_path_append;
 
     ## Default(s)
     my $autosplit;
@@ -304,6 +309,10 @@ sub perl_nae_oneliners {
         stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        stdoutfile_path_append => {
+            store       => \$stdoutfile_path_append,
             strict_type => 1,
         },
         use_container => => {
@@ -390,6 +399,7 @@ sub perl_nae_oneliners {
             stderrfile_path_append => $stderrfile_path_append,
             stdinfile_path         => $stdinfile_path,
             stdoutfile_path        => $stdoutfile_path,
+            stdoutfile_path_append => $stdoutfile_path_append,
         }
       );
 

@@ -22,15 +22,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_binary_version_cmd
       get_binaries_versions
+      get_binary_version_cmd
       get_executable
       get_executable_base_command
       get_binary_version
+      write_binaries_versions
     };
 }
 
@@ -38,22 +40,38 @@ sub build_binary_version_cmd {
 
 ## Function : Build binary version commands
 ## Returns  : @version_cmds
-## Arguments: $binary_path    => Executables (binary) file path
-##          : $version_cmd    => Version command line option
-##          : $version_regexp => Version reg exp to get version from system call
+## Arguments: $binary_path            => Executables (binary) file path
+##          : $stdoutfile_path_append => Append stdout info to file path
+##          : $use_container          => Use container perl
+##          : $version_cmd            => Version command line option
+##          : $version_regexp         => Version reg exp to get version from system call
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $binary_path;
+    my $stdoutfile_path_append;
     my $version_cmd;
     my $version_regexp;
+
+    ## Default(s)
+    my $use_container;
 
     my $tmpl = {
         binary_path => {
             defined     => 1,
             required    => 1,
             store       => \$binary_path,
+            strict_type => 1,
+        },
+        stdoutfile_path_append => {
+            store       => \$stdoutfile_path_append,
+            strict_type => 1,
+        },
+        use_container => => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$use_container,
             strict_type => 1,
         },
         version_cmd => {
@@ -75,7 +93,9 @@ sub build_binary_version_cmd {
     ## Get perl wrapper around regexp
     my @perl_commands = perl_nae_oneliners(
         {
-            oneliner_cmd => $version_regexp,
+            oneliner_cmd           => $version_regexp,
+            stdoutfile_path_append => $stdoutfile_path_append,
+            use_container          => $use_container,
         }
     );
 
@@ -138,6 +158,125 @@ sub get_binaries_versions {
         );
     }
     return %binary;
+}
+
+sub write_binaries_versions {
+
+## Function : Write executables/binaries versions
+## Returns  :
+## Arguments: $binary_info_href => Binary_Info_Href object
+##          : $filehandle       => Filehandle to write to
+##          : $outfile_path     => Outfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $binary_info_href;
+    my $filehandle;
+    my $outfile_path;
+
+    my $tmpl = {
+        binary_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$binary_info_href,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %executable = get_executable( {} );
+
+  BINARY:
+    while ( my ( $binary, $binary_cmd ) = each %{$binary_info_href} ) {
+
+        ## No information on how to get version for this binary - skip
+        next BINARY if ( not exists $executable{$binary} );
+
+        my @version_cmds = get_binary_version_cmd(
+            {
+                binary                 => $binary,
+                binary_cmd             => $binary_cmd,
+                stdoutfile_path_append => $outfile_path,
+                use_container          => 1,
+            }
+        );
+
+        say {$filehandle} join $SPACE, @version_cmds;
+    }
+    return;
+}
+
+sub get_binary_version_cmd {
+
+## Function : Get binary version cmd
+## Returns  : @version_cmds
+## Arguments: $binary                 => Binary to get version of
+##          : $binary_cmd             => Path to binary
+##          : $stdoutfile_path_append => Append stdout info to file path
+##          : $use_container          => Use container perl
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $binary;
+    my $binary_cmd;
+    my $stdoutfile_path_append;
+
+    ## Default(s)
+    my $use_container;
+
+    my $tmpl = {
+        binary => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary,
+            strict_type => 1,
+        },
+        binary_cmd => {
+            defined     => 1,
+            required    => 1,
+            store       => \$binary_cmd,
+            strict_type => 1,
+        },
+        stdoutfile_path_append =>
+          { store => \$stdoutfile_path_append, strict_type => 1, },
+        use_container => => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$use_container,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %executable = get_executable( { executable_name => $binary, } );
+
+    ## Get version command
+    my @version_cmds = build_binary_version_cmd(
+        {
+            binary_path            => $binary_cmd,
+            stdoutfile_path_append => $stdoutfile_path_append,
+            use_container          => $use_container,
+            version_cmd            => $executable{version_cmd},
+            version_regexp         => $executable{version_regexp},
+        }
+    );
+
+    return @version_cmds;
 }
 
 sub get_binary_version {
