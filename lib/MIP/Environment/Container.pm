@@ -359,7 +359,6 @@ sub run_container {
         },
         gpu_support => {
             allow       => [ undef, qw{ 0 1 } ],
-            required    => 1,
             store       => \$gpu_support,
             strict_type => 1,
         },
