@@ -16,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,11 +25,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_download mip_qccollect mip_vcfparser mip_vercollect };
 }
+
+Readonly my $BASE_COMMAND => q{mip};
 
 sub mip_download {
 
@@ -103,8 +106,10 @@ sub mip_download {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = q{mip download};
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ download }
+    );
 
     push @commands, $pipeline;
 
@@ -220,8 +225,10 @@ sub mip_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ mip qccollect};
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ qccollect }
+    );
 
     if ($eval_metric_file) {
 
@@ -377,8 +384,10 @@ sub mip_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ mip vcfparser };
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ vcfparser }
+    );
 
     ## Infile
     push @commands, $infile_path;
@@ -523,8 +532,10 @@ sub mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ mip vercollect};
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ vercollect }
+    );
 
     ## Options
     if ($log_file_path) {

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -103,7 +103,7 @@ sub get_recipe_executable_bind_path {
                 }
             );
 
-            ## Special case for xdg_runtime_dir, which alwyas should be added
+            ## Special case for xdg_runtime_dir, which always should be added
             push @export_bind_paths, $xdg_runtime_dir;
 
             $recipe_executable_bind_path{$executable} = [@export_bind_paths];
