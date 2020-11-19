@@ -43,7 +43,6 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:
-      - bcftools_mpileup
       - CHAIN_DEEPVAR:
         - deepvariant
         - glnexus_merge

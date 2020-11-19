@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -236,7 +236,6 @@ sub analysis_gatk_combinevariantcallsets {
         my %variant_caller_tag_map = (
             gatk_variantrecalibration => q{haplotypecaller},
             glnexus_merge             => q{deepvariant},
-            bcftools_mpileup          => q{mpileup},
         );
 
         $variant_caller_prio_tag = $variant_caller_tag_map{$variant_caller};

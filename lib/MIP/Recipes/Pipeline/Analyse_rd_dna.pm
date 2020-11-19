@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.38;
+    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -439,7 +439,6 @@ sub pipeline_analyse_rd_dna {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
@@ -558,7 +557,6 @@ sub pipeline_analyse_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus => \&analysis_analysisrunstatus,
-        bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                           # Depends on genome build
         bwa_mem2          => undef,
         cadd_ar           => \&analysis_cadd,

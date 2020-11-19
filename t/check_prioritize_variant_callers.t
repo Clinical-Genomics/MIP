@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,19 +59,19 @@ diag(   q{Test check_prioritize_variant_callers from Analysis.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given active callers, when priority string is ok
 my %active_parameter = (
-    bcftools_mpileup                       => 1,
-    gatk_combinevariants_prioritize_caller => q{haplotypecaller,mpileup},
+    glnexus_merge                          => 1,
+    gatk_combinevariants_prioritize_caller => q{haplotypecaller,deepvariant},
     gatk_variantrecalibration              => 1,
 );
 
 my %parameter = (
-    bcftools_mpileup => { variant_caller => q{mpileup}, },
-    cache            => {
-        variant_callers => [qw{ bcftools_mpileup gatk_variantrecalibration}],
+    glnexus_merge => { variant_caller => q{deepvariant}, },
+    cache         => {
+        variant_callers => [qw{ glnexus_merge gatk_variantrecalibration}],
     },
     gatk_variantrecalibration => { variant_caller => q{haplotypecaller}, },
 );
@@ -112,8 +112,9 @@ like(
 );
 
 ## Given an not activated variant caller
-$active_parameter{bcftools_mpileup}                       = 0;
-$active_parameter{gatk_combinevariants_prioritize_caller} = q{haplotypecaller,mpileup};
+$active_parameter{glnexus_merge} = 0;
+$active_parameter{gatk_combinevariants_prioritize_caller} =
+  q{haplotypecaller,deepvariant};
 
 trap {
     check_prioritize_variant_callers(
@@ -136,9 +137,9 @@ like(
 );
 
 ## Given an other variant caller, when not part of priority string
-$active_parameter{bcftools_mpileup} = 1;
+$active_parameter{glnexus_merge} = 1;
 $active_parameter{gatk_combinevariants_prioritize_caller} =
-  q{haplotypecaller,mpileup, NOT_A_VARIANT_CALLER};
+  q{haplotypecaller,deepvariant, NOT_A_VARIANT_CALLER};
 
 trap {
     check_prioritize_variant_callers(
