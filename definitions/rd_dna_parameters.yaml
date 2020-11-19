@@ -145,7 +145,7 @@ recipe_core_number:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 13
-    deepvariant: 35
+    deepvariant: 36
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
