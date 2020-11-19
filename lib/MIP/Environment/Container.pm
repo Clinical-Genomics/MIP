@@ -103,7 +103,7 @@ sub get_recipe_executable_bind_path {
                 }
             );
 
-            ## Special case for xdg_runtime_dir, which alwyas should be added
+            ## Special case for xdg_runtime_dir, which always should be added
             push @export_bind_paths, $xdg_runtime_dir;
 
             $recipe_executable_bind_path{$executable} = [@export_bind_paths];
