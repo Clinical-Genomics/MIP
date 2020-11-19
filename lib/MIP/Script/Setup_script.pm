@@ -619,10 +619,12 @@ sub setup_script {
 ##          : $directory_id                    => $sample id | $case_id
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
+##          : $gpu_number                      => Number of GPUs to use
 ##          : $job_id_href                     => The job_id hash {REF}
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
+##          : $partition                       => Slurm partition to use
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
 ##          : $recipe_data_directory_path      => Set recipe data directory path
 ##          : $recipe_directory                => Builds from $directory_id

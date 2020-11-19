@@ -37,8 +37,10 @@ sub slurm_build_sbatch_header {
 ##          : $email                    => User to receive email notification
 ##          : $email_types_ref          => When to send email for event {REF}
 ##          : $filehandle               => Filehandle to write to
+##          : $gpu_number               => Number of GPUs to use
 ##          : $job_name                 => Specify a name for the job allocation
 ##          : $memory_allocation        => Memory allocation
+##          : $partition                => Slurm partition to use
 ##          : $process_time             => Time limit
 ##          : $project_id               => Project id
 ##          : $separator                => Separator to use when writing
