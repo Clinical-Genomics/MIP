@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -169,37 +169,35 @@ sub analysis_mip_vercollect {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $recipe_resource{time},
+            set_pipefail          => 0,
         }
     );
+
+    use MIP::Environment::Executable qw{ write_binaries_versions };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
 
     ### SHELL:
 
-    my $binary_path_file_path = $outfile_path_prefix . $UNDERSCORE . q{binary_paths.yaml};
-
-    ## Writes a YAML hash to file
-    write_to_file(
+    say {$filehandle} q{## Remove potential previous mip version collect file};
+    gnu_rm(
         {
-            data_href => \%CONTAINER_CMD,
-            format    => q{yaml},
-            path      => $binary_path_file_path,
-        }
-    );
-    $log->info( q{Wrote: } . $binary_path_file_path );
-
-    my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{vercollect.log};
-
-    mip_vercollect(
-        {
-            filehandle    => $filehandle,
-            infile_path   => $binary_path_file_path,
-            log_file_path => $log_file_path,
-            outfile_path  => $outfile_path,
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
+
+    write_binaries_versions(
+        {
+            binary_info_href => \%CONTAINER_CMD,
+            filehandle       => $filehandle,
+            outfile_path     => $outfile_path,
+        }
+    );
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
