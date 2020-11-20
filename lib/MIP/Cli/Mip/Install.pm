@@ -173,7 +173,7 @@ sub _build_usage {
 
     option(
         q{test_mode} => (
-            documentation => q{Run installation in test mode},
+            documentation => q{Run MIP int test mode, i.e. not launching any child processes},
             is            => q{rw},
             isa           => Bool,
             required      => 0,
