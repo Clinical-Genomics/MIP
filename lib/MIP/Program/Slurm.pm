@@ -110,11 +110,6 @@ sub slurm_build_sbatch_header {
             store       => \$memory_allocation,
             strict_type => 1,
         },
-        partition => {
-            allow       => [ undef, qw { cpu gpu } ],
-            store       => \$partition,
-            strict_type => 1,
-        },
         process_time => {
             allow       => [ qr{ \A\d+:\d+:\d+\z }xms, qr{ \A\d-\d+:\d+:\d+\z }xms ],
             default     => q{1:00:00},
@@ -188,9 +183,7 @@ sub slurm_build_sbatch_header {
     }
 
     if ($gpu_number) {
-        if ($partition) {
-            push @commands, q{--partition=} . $partition;
-        }
+        push @commands, q{--partition=} . q{gpu};
         push @commands, q{--gpus=} . $gpu_number;
     }
 

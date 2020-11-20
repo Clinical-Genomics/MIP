@@ -184,12 +184,6 @@ sub analysis_deepvariant {
         )
     );
 
-    my $partition;
-
-    if ( $recipe_resource{gpu_number} ) {
-        $partition = q{gpu};
-    }
-
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -208,7 +202,6 @@ sub analysis_deepvariant {
             gpu_number            => $recipe_resource{gpu_number},
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe_resource{memory},
-            partition             => $partition,
             process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,

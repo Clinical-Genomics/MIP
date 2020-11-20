@@ -66,8 +66,7 @@ sub singularity_exec {
             store => \$filehandle,
         },
         gpu_support => {
-            allow       => [ undef, qw { 0 1 } ],
-            default     => undef,
+            allow       => [ undef, qw{ 0 1 } ],
             store       => \$gpu_support,
             strict_type => 1,
         },

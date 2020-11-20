@@ -319,7 +319,7 @@ sub test_mip_hashes {
             strict_type => 1,
         },
         recipe_name => {
-            default     => q{deepvariant},
+            default     => q{bwa_mem},
             store       => \$recipe_name,
             strict_type => 1,
         },

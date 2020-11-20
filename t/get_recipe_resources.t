@@ -61,7 +61,7 @@ diag(   q{Test get_recipe_resources from Parameter.pm v}
 test_log( {} );
 
 ## Given a recipe name and active parameter hash
-my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, recipe_name => q{deepvariant}, } );
 my $recipe_name      = q{deepvariant};
 
 my %recipe_resource = get_recipe_resources(
