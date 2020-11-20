@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
-use FindBin qw{ $Bin };
 use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -61,6 +60,8 @@ sub install_mip_scripts {
 
     use MIP::Check::Installation qw{ check_mip_executable };
 
+    Readonly my $FIVE => 5;
+
     my $conda_prefix_path = $active_parameter_href->{conda_prefix_path};
     my @select_programs   = @{ $active_parameter_href->{select_programs} };
 
@@ -68,6 +69,9 @@ sub install_mip_scripts {
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Get mip directory relative to this file since $Bin might have been set already
+    my $mip_dir_path = path(__FILE__)->parent($FIVE);
 
     ## Define MIP scripts and yaml files
     my @mip_scripts = qw{ cpanfile mip };
@@ -122,7 +126,7 @@ sub install_mip_scripts {
         my @cp_cmds = gnu_cp(
             {
                 force        => 1,
-                infile_path  => catdir( $Bin, $directory ),
+                infile_path  => catdir( $mip_dir_path, $directory ),
                 outfile_path => catdir( $conda_prefix_path, q{bin} ),
                 recursive    => 1,
             }
@@ -138,7 +142,7 @@ sub install_mip_scripts {
         if ( not $process_return{success} ) {
 
             $log->fatal(q{Failed to copy mip_scripts});
-            $log->logdie( $process_return{error_messages_ref} );
+            $log->logdie( $process_return{error_messages_ref}[0] );
         }
     }
 
@@ -146,7 +150,7 @@ sub install_mip_scripts {
   SCRIPT:
     foreach my $script (@mip_scripts) {
 
-        my $src_path = catfile( $Bin,               $script );
+        my $src_path = catfile( $mip_dir_path,      $script );
         my $dst_path = catfile( $conda_prefix_path, q{bin}, $script );
         path($src_path)->copy($dst_path);
         path($dst_path)->chmod(q{a+x});
@@ -158,14 +162,14 @@ sub install_mip_scripts {
       SCRIPT:
         foreach my $script ( @{ $mip_sub_script{$directory} } ) {
 
-            my $src_path = catfile( $Bin, $directory, $script );
+            my $src_path = catfile( $mip_dir_path, $directory, $script );
             my $dst_path = catfile( $conda_prefix_path, q{bin}, $directory, $script );
 
             path($src_path)->copy($dst_path);
             path($dst_path)->chmod(q{a+x});
         }
     }
-    return;
+    return 1;
 }
 
 1;
