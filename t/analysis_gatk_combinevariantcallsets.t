@@ -25,7 +25,7 @@ use MIP::Test::Fixtures
   qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,7 @@ diag(   q{Test analysis_gatk_combinevariantcallsets from Gatk_combinevariantcall
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters and multiple callers
 my $recipe_name    = q{gatk_combinevariantcallsets};
@@ -76,14 +76,14 @@ my %active_parameter = test_mip_hashes(
 );
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{gatk_variantrecalibration}        = 1;
-$active_parameter{bcftools_mpileup}                 = 1;
+$active_parameter{glnexus_merge}                    = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ gatk_variantrecalibration bcftools_mpileup };
+my @variant_callers = qw{ gatk_variantrecalibration deepvariant };
 
 my %file_info = test_mip_hashes(
     {
@@ -114,8 +114,7 @@ foreach my $caller (@variant_callers) {
     push @{ $parameter{cache}{variant_callers} }, $caller;
 }
 
-my @order_recipes =
-  ( qw{ gatk_variantrecalibration bcftools_mpileup glnexus_merge }, $recipe_name );
+my @order_recipes = ( qw{ gatk_variantrecalibration glnexus_merge }, $recipe_name );
 
 test_add_io_for_recipe(
     {
