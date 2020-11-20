@@ -65,7 +65,6 @@ jobs:
           conda activate mip_ci
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_qccollect.test
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vcfparser.test
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_vercollect.test
 
       - name: Calculate coveralls
         run: |
