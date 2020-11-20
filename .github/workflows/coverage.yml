@@ -30,8 +30,7 @@ jobs:
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
-          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
-          bash mip.sh
+          PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts
 
       - name: Install bcftools in conda test env
         shell: bash -l {0}

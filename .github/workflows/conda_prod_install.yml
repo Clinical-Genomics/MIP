@@ -29,8 +29,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_ci
-          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
-          bash mip.sh
+          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts
 
       - name: Install bcftools in conda test env
         shell: bash -l {0}
