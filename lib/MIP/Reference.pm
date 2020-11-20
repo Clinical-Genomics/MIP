@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -461,7 +461,8 @@ sub check_toml_config_for_vcf_tags {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
+    my $bcftools_binary_path =
+      get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (
@@ -569,8 +570,6 @@ sub get_dict_contigs {
 
     # Save contigs
     my @contigs = split $COMMA, join $COMMA, @{ $return{stdouts_ref} };
-
-    #my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
 
     return @contigs if (@contigs);
 

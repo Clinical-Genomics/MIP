@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -82,6 +82,7 @@ ok( $is_ok, q{Names and fields match} );
 ## Given missing tag
 $annotation{fields} = [q{MISSING_TAG}];
 $annotation{names}  = [q{MISSING_TAG}];
+%missing_tag        = ();
 
 check_toml_annotation_for_tags(
     {

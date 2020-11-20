@@ -81,7 +81,7 @@ node_ram_memory:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 128
+  default: 180
   type: mip
 verbose:
   associated_recipe:

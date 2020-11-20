@@ -16,15 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Test::Trap;
+use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,6 +58,8 @@ diag(   q{Test set_default_conda_path from Active_parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+test_log( {} );
+
 ## Given a parameter named "conda_path"
 my $parameter_name   = q{conda_path};
 my %active_parameter = ( $parameter_name => undef, );
@@ -70,15 +72,15 @@ trap {
             bin_file              => q{not_a_conda_path},
             conda_path            => $parameter_name,
         }
-    )
+    );
 };
 
 ## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if the conda path cannot be found} );
+is( $trap->leaveby, q{exit}, q{Exit if the conda path cannot be found} );
 like(
-    $trap->die,
-    qr/Failed \s+ to \s+ find \s+ default \s+ conda \s+ path/xms,
-    q{Throw log message if no default conda path}
+    $trap->stderr,
+    qr/Failed \s+ to \s+ find \s+ path \s+ to /xms,
+    q{Throw log message if no conda path}
 );
 
 ## Given a proper call using "conda_path"

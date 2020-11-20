@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,7 +91,7 @@ my %container_cmd = set_executable_container_cmd(
 );
 
 my $expected_arriba_cmd =
-q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:1.2.0 /arriba_v1.2.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
@@ -110,7 +110,7 @@ $container_manager = q{docker};
 );
 
 my $expected_arriba_docker_cmd =
-q{docker run --volume reference_dir!/a_dir:opt/conda/share/a_dir --rm --entrypoint "" docker://uhrigs/arriba:1.1.0 /arriba_v1.1.0/arriba};
+q{docker run --volume reference_dir!/a_dir:opt/conda/share/a_dir --rm --entrypoint "" docker://docker.io/uhrigs/arriba:1.2.0 /arriba_v1.2.0/arriba};
 
 ## Then return command for how to execute arriba using docker
 is( $container_cmd{arriba}, $expected_arriba_docker_cmd,

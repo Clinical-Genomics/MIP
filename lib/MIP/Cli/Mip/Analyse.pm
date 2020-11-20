@@ -301,6 +301,15 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
+        q{test_mode} => (
+            documentation => q{Run installation in test mode},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
+    );
+
+    option(
         q{version_collect} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Collects executable versions across the analysis},

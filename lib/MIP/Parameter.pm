@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -970,13 +970,6 @@ sub set_custom_default_to_active_parameter {
             },
         },
         select_programs => {
-            method   => \&set_default_uninitialized_parameter,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => $parameter_name,
-            },
-        },
-        shell_install => {
             method   => \&set_default_uninitialized_parameter,
             arg_href => {
                 active_parameter_href => $active_parameter_href,

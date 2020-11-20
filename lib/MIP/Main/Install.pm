@@ -15,9 +15,9 @@ use warnings;
 use MIP::Active_parameter qw{ update_to_absolute_path };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants qw{ $COLON $MIP_VERSION $SPACE };
+use MIP::Environment::Container qw{ parse_containers };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
-use MIP::Mip_install qw{ check_active_installation_parameters };
 use MIP::Parameter qw{ set_default };
 use MIP::Pipeline qw{ run_install_pipeline };
 use MIP::Set::Parameter qw{ set_conda_path };
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.18;
+    our $VERSION = 2.19;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -127,14 +127,6 @@ sub mip_install {
             custom_default_parameters_ref =>
               $parameter_href->{custom_default_parameters}{default},
             parameter_href => $parameter_href,
-        }
-    );
-
-    ## Installation specific checks of active_parameter hash
-    check_active_installation_parameters(
-        {
-            project_id  => $active_parameter_href->{project_id},
-            sbatch_mode => $active_parameter_href->{sbatch_mode},
         }
     );
 

@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -72,20 +72,13 @@ my %expected_container = (
             arriba => q{reference_dir!/a_dir:opt/conda/share/a_dir}
         },
         executable => {
-            arriba            => q{/arriba_v1.1.0/arriba},
-            q{draw_fusions.R} => q{/arriba_v1.1.0/draw_fusions.R},
+            arriba            => q{/arriba_v1.2.0/arriba},
+            q{draw_fusions.R} => q{/arriba_v1.2.0/draw_fusions.R},
         },
-        uri => q{docker://uhrigs/arriba:1.1.0},
-    },
-    bwakit => {
-        executable => {
-            bwakit        => q{no_executable_in_image},
-            q{run-bwamem} => undef,
-        },
-        uri => q{docker.io/jemten/bwakit:0.7.17}
+        uri => q{docker.io/uhrigs/arriba:1.2.0},
     },
 );
 
-is_deeply( \%container, \%expected_container, q{Got install containers} );
+is_deeply( $container{arriba}, $expected_container{arriba}, q{Got install containers} );
 
 done_testing();

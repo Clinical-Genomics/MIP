@@ -7,7 +7,7 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname fileparse };
 use File::Path qw{ make_path };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile rootdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use Time::Piece;
@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,11 +38,8 @@ BEGIN {
       create_script_error_trap
       create_script_temp_dir
       set_script_env_variables
-      setup_install_script
       setup_script
       set_script_shell_attributes
-      write_return_to_environment
-      write_return_to_conda_environment
     };
 }
 
@@ -430,186 +427,6 @@ sub set_script_env_variables {
     return;
 }
 
-sub setup_install_script {
-
-## Function : Build bash file with header
-## Returns  :
-## Arguments: $active_parameter_href => Master hash, used when running in sbatch mode {REF}
-##          : $file_name             => File name
-##          : $filehandle            => Filehandle to write to
-##          : $remove_dir            => Directory to remove when caught by trap function
-##          : $log                   => Log object to write to
-##          : $invoke_login_shell    => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##          : $sbatch_mode           => Create headers for sbatch submission;
-##          : $set_errexit           => Halt script if command has non-zero exit code (-e)
-##          : $set_nounset           => Halt script if variable is uninitialised (-u)
-##          : $set_pipefail          => Detect errors within pipes (-o pipefail)
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_name;
-    my $filehandle;
-    my $log;
-    my $remove_dir;
-
-    ## Default(s)
-    my $invoke_login_shell;
-    my $sbatch_mode;
-    my $set_errexit;
-    my $set_nounset;
-    my $set_pipefail;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        filehandle => {
-            required => 1,
-            store    => \$filehandle,
-        },
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-        invoke_login_shell => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$invoke_login_shell,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        remove_dir => {
-            allow       => qr/ ^\S+$ /xsm,
-            store       => \$remove_dir,
-            strict_type => 1,
-        },
-        sbatch_mode => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$sbatch_mode,
-            strict_type => 1,
-        },
-        set_errexit => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$set_errexit,
-            strict_type => 1,
-        },
-        set_nounset => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$set_nounset,
-            strict_type => 1,
-        },
-        set_pipefail => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$set_pipefail,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Gnu::Bash qw{ gnu_set };
-    use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
-
-    ## Set $bash_bin_path default
-    my $bash_bin_path =
-      catfile( dirname( dirname( devnull() ) ), qw{ usr bin env bash } );
-
-    if ($sbatch_mode) {
-        $bash_bin_path =
-          catfile( dirname( dirname( devnull() ) ), qw{ bin bash } );
-    }
-
-    ## Build bash shebang line
-    build_shebang(
-        {
-            bash_bin_path      => $bash_bin_path,
-            filehandle         => $filehandle,
-            invoke_login_shell => $invoke_login_shell,
-        }
-    );
-    print {$filehandle} $NEWLINE;
-
-    ## Set shell attributes
-    gnu_set(
-        {
-            filehandle   => $filehandle,
-            set_errexit  => $set_errexit,
-            set_nounset  => $set_nounset,
-            set_pipefail => $set_pipefail,
-        }
-    );
-
-    if ($sbatch_mode) {
-
-        ## Get local time
-        my $date_time       = localtime;
-        my $date_time_stamp = $date_time->datetime;
-
-        ## Get bash_file_name minus suffix and add time stamp.
-        my $job_name =
-          fileparse( $file_name, qr/\.[^.]*/xms ) . $UNDERSCORE . $date_time_stamp;
-
-        ## Set STDERR/STDOUT paths
-        my $stderrfile_path = catfile( cwd(), $job_name . $DOT . q{stderr.txt} );
-        my $stdoutfile_path = catfile( cwd(), $job_name . $DOT . q{stdout.txt} );
-
-        slurm_build_sbatch_header(
-            {
-                core_number     => $active_parameter_href->{core_number},
-                email           => $active_parameter_href->{email},
-                email_types_ref => $active_parameter_href->{email_types},
-                filehandle      => $filehandle,
-                job_name        => $job_name,
-                process_time    => $active_parameter_href->{process_time},
-                project_id      => $active_parameter_href->{project_id},
-                slurm_quality_of_service =>
-                  $active_parameter_href->{slurm_quality_of_service},
-                stderrfile_path => $stderrfile_path,
-                stdoutfile_path => $stdoutfile_path,
-            }
-        );
-    }
-
-    ## Create housekeeping function which removes entire directory when finished
-    create_housekeeping_function(
-        {
-            filehandle         => $filehandle,
-            remove_dir         => $remove_dir,
-            trap_function_name => q{finish},
-        }
-    );
-
-    ## Create debug trap
-    enable_trap(
-        {
-            filehandle         => $filehandle,
-            trap_function_call => q{previous_command="$BASH_COMMAND"},
-            trap_signals_ref   => [qw{ DEBUG }],
-        }
-    );
-
-    ## Create error handling function and trap
-    create_error_trap_function( { filehandle => $filehandle, } );
-
-    $log->info( q{Created bash file: '} . catfile($file_name), $SINGLE_QUOTE );
-
-    return;
-}
-
 sub setup_script {
 
 ## Function : Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header.
@@ -827,8 +644,8 @@ sub setup_script {
     # Build bash shebang line
     build_shebang(
         {
-            bash_bin_path => catfile( dirname( dirname( devnull() ) ), qw{ bin bash } ),
-            filehandle    => $filehandle,
+            bash_bin_path      => catfile( rootdir(), qw{ bin bash } ),
+            filehandle         => $filehandle,
             invoke_login_shell => 1,
         }
     );
@@ -984,120 +801,6 @@ sub set_script_shell_attributes {
     log_host_name( { filehandle => $filehandle, } );
     say {$filehandle} $NEWLINE;
 
-    return;
-}
-
-sub write_return_to_environment {
-
-## Function : Return to MIP MAIN conda environment or default environment
-## Returns  :
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $filehandle            => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $filehandle;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        filehandle => { required => 1, store => \$filehandle, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ get_package_env_attributes };
-    use MIP::Environment::Manager
-      qw{ get_env_method_cmds write_source_environment_command };
-
-    my @env_method_cmds;
-
-    ## Get MIPs MAIN env
-    my ( $env_name, $env_method ) = get_package_env_attributes(
-        {
-            load_env_href => $active_parameter_href->{load_env},
-            package_name  => q{mip},
-        }
-    );
-
-    ## Get env load command
-    @env_method_cmds = get_env_method_cmds(
-        {
-            action     => q{load},
-            env_name   => $env_name,
-            env_method => $env_method,
-        }
-    );
-
-    write_source_environment_command(
-        {
-            filehandle                      => $filehandle,
-            source_environment_commands_ref => \@env_method_cmds,
-        }
-    );
-    return;
-}
-
-sub write_return_to_conda_environment {
-
-## Function : Return to main or default environment using conda
-## Returns  :
-## Arguments: $filehandle                           => Filehandle to write to
-##          : $source_main_environment_commands_ref => Source main environment command {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $source_main_environment_commands_ref;
-
-    my $tmpl = {
-        filehandle                           => { required => 1, store => \$filehandle, },
-        source_main_environment_commands_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$source_main_environment_commands_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Conda qw{ conda_deactivate };
-    use MIP::Environment::Manager qw{ write_source_environment_command };
-
-    ## Return to main environment
-    if ( @{$source_main_environment_commands_ref}
-        && $source_main_environment_commands_ref->[0] )
-    {
-
-        write_source_environment_command(
-            {
-                filehandle => $filehandle,
-                source_environment_commands_ref =>
-                  \@{$source_main_environment_commands_ref},
-            }
-        );
-    }
-    else {
-        ## Return to login shell environment
-
-        say {$filehandle} q{## Deactivate environment};
-        conda_deactivate(
-            {
-                filehandle => $filehandle,
-            }
-        );
-        print {$filehandle} $NEWLINE;
-    }
     return;
 }
 

@@ -16,7 +16,7 @@ use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA @CONTAINER_BIND_PATHS $CONTAINER_MANAGER $DOUBLE_QUOTE $EMPTY_STR $EQUALS $SEMICOLON $SPACE };
+  qw{ $COLON $COMMA @CONTAINER_BIND_PATHS $CONTAINER_MANAGER $DOUBLE_QUOTE $EMPTY_STR $EQUALS $LOG_NAME $SEMICOLON $SPACE };
 
 BEGIN {
     require Exporter;
@@ -26,8 +26,14 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ get_recipe_executable_bind_path install_containers parse_containers parse_container_uri run_container set_executable_container_cmd };
+    our @EXPORT_OK = qw{
+      build_container_cmd
+      get_recipe_executable_bind_path
+      parse_container_uri
+      parse_containers
+      run_container
+      set_executable_container_cmd
+    };
 }
 
 sub get_recipe_executable_bind_path {
@@ -110,89 +116,6 @@ sub get_recipe_executable_bind_path {
         }
     }
     return %recipe_executable_bind_path;
-}
-
-sub install_containers {
-
-## Function : Setup containers to use with docker or singularity
-## Returns  :
-## Arguments: $active_parameter_href => Active parameter hash {REF}
-##          : $conda_env_path        => Path to conda environment
-##          : $container_href        => Hash with container {REF}
-##          : $container_manager     => Container manager
-##          : $filehandle            => Filehandle
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $conda_env_path;
-    my $container_href;
-    my $container_manager;
-    my $filehandle;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        conda_env_path => {
-            required    => 1,
-            store       => \$conda_env_path,
-            strict_type => 1,
-        },
-        container_href => {
-            default     => {},
-            required    => 1,
-            store       => \$container_href,
-            strict_type => 1,
-        },
-        container_manager => {
-            allow       => [qw{ docker singularity }],
-            required    => 1,
-            store       => \$container_manager,
-            strict_type => 1,
-        },
-        filehandle => {
-            required => 1,
-            store    => \$filehandle,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Install::Singularity qw{ install_singularity_containers };
-    use MIP::Recipes::Install::Docker qw{ install_docker_containers };
-
-    ## Return if no containers
-    return if not keys %{$container_href};
-
-    my %container_api = (
-        docker => {
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                conda_env_path        => $conda_env_path,
-                container_href        => $container_href,
-                filehandle            => $filehandle,
-            },
-            method => \&install_docker_containers,
-        },
-        singularity => {
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                conda_env_path        => $conda_env_path,
-                container_href        => $container_href,
-                filehandle            => $filehandle,
-            },
-            method => \&install_singularity_containers,
-        },
-    );
-
-    $container_api{$container_manager}{method}
-      ->( { %{ $container_api{$container_manager}{arg_href} } } );
-
-    return 1;
 }
 
 sub parse_containers {
@@ -409,13 +332,13 @@ sub run_container {
         },
         singularity => {
             arg_href => {
-                bind_paths_ref                 => $bind_paths_ref,
-                filehandle                     => $filehandle,
-                image                          => $container_path,
-                singularity_container_cmds_ref => $container_cmds_ref,
-                stderrfile_path                => $stdinfile_path,
-                stderrfile_path_append         => $stderrfile_path_append,
-                stdoutfile_path                => $stdoutfile_path,
+                bind_paths_ref         => $bind_paths_ref,
+                filehandle             => $filehandle,
+                image                  => $container_path,
+                container_cmds_ref     => $container_cmds_ref,
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path_append,
+                stdoutfile_path        => $stdoutfile_path,
             },
             method => \&singularity_exec,
         },
@@ -429,12 +352,12 @@ sub run_container {
 
 sub set_executable_container_cmd {
 
-## Function : Set executable command depending on container manager
-## Returns  :
-## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $container_href        => Containers hash {REF}
-##          : $container_manager     => Container manager
-##          : $parameter_href        => Parameter hash {REF}
+    ## Function : Set executable command depending on container manager
+    ## Returns  :
+    ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+    ##          : $container_href        => Containers hash {REF}
+    ##          : $container_manager     => Container manager
+    ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -460,7 +383,7 @@ sub set_executable_container_cmd {
             strict_type => 1,
         },
         container_manager => {
-            allow       => [qw{ docker singularity }],
+            allow       => [qw{docker singularity}],
             required    => 1,
             store       => \$container_manager,
             strict_type => 1,
@@ -476,19 +399,67 @@ sub set_executable_container_cmd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Data::Diver qw{ Dive };
-    use MIP::Program::Singularity qw{ singularity_exec };
-    use MIP::Program::Docker qw{ docker_run };
-
-    my %container_cmd;
-    my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
-
     my %recipe_executable_bind_path = get_recipe_executable_bind_path(
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
         }
     );
+
+    my %container_cmd = build_container_cmd(
+        {
+            container_href                   => $container_href,
+            container_manager                => $container_manager,
+            recipe_executable_bind_path_href => \%recipe_executable_bind_path,
+        }
+    );
+
+    return %container_cmd;
+}
+
+sub build_container_cmd {
+
+## Function : Build executable command depending on container manager
+## Returns  :
+## Arguments: $container_href                   => Containers hash {REF}
+##          : $container_manager                => Container manager
+##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_href;
+    my $container_manager;
+    my $recipe_executable_bind_path_href;
+
+    my $tmpl = {
+        container_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
+        container_manager => {
+            allow       => [qw{docker singularity}],
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        recipe_executable_bind_path_href => {
+            default     => {},
+            defined     => 1,
+            store       => \$recipe_executable_bind_path_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Data::Diver qw{ Dive };
+
+    my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
+    my %container_cmd;
 
   CONTAINER_NAME:
     foreach my $container_name ( keys %{$container_href} ) {
@@ -512,12 +483,12 @@ sub set_executable_container_cmd {
                 )
               )
             {
-                push @{ $recipe_executable_bind_path{$executable_name} },
+                push @{ $recipe_executable_bind_path_href->{$executable_name} },
                   $container_href->{$container_name}{bind_path}{$executable_name};
             }
             my @bind_paths =
-              exists $recipe_executable_bind_path{$executable_name}
-              ? @{ $recipe_executable_bind_path{$executable_name} }
+              exists $recipe_executable_bind_path_href->{$executable_name}
+              ? @{ $recipe_executable_bind_path_href->{$executable_name} }
               : @container_constant_bind_path;
 
             my @cmds = run_container(
