@@ -23,6 +23,11 @@ jobs:
           cpanm --quiet --notest --installdeps .
           cpanm --quiet --notest Devel::Cover::Report::Coveralls
 
+      - name: Install bcftools in conda test env
+        shell: bash -l {0}
+        run: |
+          conda create -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+
       - name: Run MIP install test
         shell: bash -l {0}
         run: PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
@@ -31,11 +36,6 @@ jobs:
         shell: bash -l {0}
         run: |
           PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts
-
-      - name: Install bcftools in conda test env
-        shell: bash -l {0}
-        run: |
-          conda install -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
 
       - name: Run MIP unit tests
         shell: bash -l {0}
