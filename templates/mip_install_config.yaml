@@ -52,7 +52,7 @@ container:
   chanjo:
     executable:
       chanjo:
-    uri: docker.io/clinicalgenomics/chanjo:4.5.1
+    uri: docker.io/clinicalgenomics/chanjo:4.6
   chromograph:
     executable:
       chromograph:
