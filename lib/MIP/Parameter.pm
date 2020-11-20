@@ -857,7 +857,6 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
-      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_install_config_file
@@ -881,13 +880,6 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_analysis_type,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-            },
-        },
-        conda_path => {
-            method   => \&set_default_conda_path,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                conda_path            => $parameter_name,
             },
         },
         bwa_build_reference => {
