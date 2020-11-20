@@ -162,17 +162,17 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                 }
             );
 
-            push @container_cmds, [
+            push @container_cmds,
+              [
                 run_container(
                     {
                         bind_paths_ref     => [$cache_dir_path],
                         container_path     => $container_path,
                         container_manager  => $active_parameter_href->{container_manager},
                         container_cmds_ref => \@vep_install_cmds,
-
                     }
                 )
-            ];
+              ];
         }
     }
 
@@ -199,7 +199,6 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                     }
                 )
               ];
-
         }
     }
 
@@ -215,7 +214,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         if ( not $process_return{success} ) {
 
             $log->fatal(q{VEP installation failed});
-            $log->logdie( $process_return{error_messages_ref} );
+            $log->logdie( $process_return{error_messages_ref}[0] );
         }
     }
     return 1;

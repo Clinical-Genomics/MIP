@@ -115,4 +115,28 @@ $is_ok = install_vep(
 ## Then return undef
 is( $is_ok, undef, q{Return on auto flag a} );
 
+## Given a failure during installation
+my %process_return = (
+    buffers_ref        => [],
+    error_messages_ref => [q{Error message}],
+    stderrs_ref        => [],
+    stdouts_ref        => [],
+    success            => 0,
+);
+test_constants( { test_process_return_href => \%process_return } );
+$active_parameter{reference_dir} = catdir(qw{ reference dir });
+$active_parameter{vep_auto_flag} = q{ac};
+
+trap {
+    install_vep(
+        {
+            active_parameter_href => \%active_parameter,
+            container_href        => $active_parameter{container}{vep},
+        }
+    );
+};
+
+## Then die
+is( $trap->leaveby, q{die}, q{Die on failure} );
+
 done_testing();
