@@ -61,8 +61,6 @@ diag(   q{Test install_containers from Container.pm v}
       . $EXECUTABLE_NAME );
 
 test_log( { no_screen => 1, } );
-
-## Set test constants
 test_constants( {} );
 
 ## Given install parameters
@@ -79,6 +77,27 @@ my $is_ok = install_containers(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed install docker container recipe } );
+ok( $is_ok, q{ Executed install container recipe } );
 
+## Given error in caching
+my %process_return = (
+    buffers_ref        => [],
+    error_messages_ref => [q{Error message}],
+    stderrs_ref        => [],
+    stdouts_ref        => [],
+    success            => 0,
+);
+test_constants( { test_process_return_href => \%process_return }, );
+trap {
+    install_containers(
+        {
+            active_parameter_href => \%active_parameter,
+            container_href        => $active_parameter{container},
+        }
+    )
+};
+
+## Then exit and print error message
+is( $trap->leaveby, q{die}, q{Error in case of caching failure} );
+like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
 done_testing();
