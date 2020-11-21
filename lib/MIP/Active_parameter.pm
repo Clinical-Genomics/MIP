@@ -50,7 +50,6 @@ BEGIN {
       parse_vep_plugin
       remove_sample_id_from_gender
       set_default_analysis_type
-      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_install_config_file
@@ -1271,53 +1270,6 @@ sub set_default_analysis_type {
 
     map { $active_parameter_href->{analysis_type}{$_} = q{wgs} }
       @{ $active_parameter_href->{sample_ids} };
-    return;
-}
-
-sub set_default_conda_path {
-
-## Function : Set default conda path to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $conda_path            => Conda bin file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $conda_path;
-    my $bin_file;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        bin_file => {
-            default     => q{conda},
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-        conda_path => { defined => 1, required => 1, store => \$conda_path, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Path qw{ get_conda_path };
-
-    ## Set conda path
-    $active_parameter_href->{$conda_path} =
-      get_conda_path( { bin_file => $bin_file, } );
-
-    if (   not $active_parameter_href->{$conda_path}
-        or not -d $active_parameter_href->{$conda_path} )
-    {
-
-        croak(q{Failed to find default conda path});
-    }
     return;
 }
 
