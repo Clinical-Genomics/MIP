@@ -29,6 +29,24 @@
   data_type: SCALAR
   default: 1
   type: recipe
+bash_set_errexit:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+bash_set_nounset:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+bash_set_pipefail:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
 cadd_bravo_topmed:
   analysis_mode: case
   associated_recipe:
@@ -85,6 +103,12 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+core_ram_memory:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 5
+  type: mip
 ctat_resource_lib:
   analysis_mode: case
   associated_recipe:
@@ -130,6 +154,20 @@ dry_run_all:
   associated_recipe:
     - mip
   data_type: SCALAR
+  mandatory: no
+  type: mip
+email:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+email_types:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - FAIL
   mandatory: no
   type: mip
 environment_name:
@@ -201,6 +239,12 @@ human_reference:
   data_type: SCALAR
   default: 1
   type: recipe
+job_reservation_name:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 load_env:
   associated_recipe:
     - mip
@@ -214,6 +258,12 @@ manta_call_regions:
   data_type: SCALAR
   default: 1
   type: recipe
+max_cores_per_node:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 36
+  type: mip
 mills_and_1000g_indels:
   analysis_mode: case
   associated_recipe:
@@ -221,6 +271,12 @@ mills_and_1000g_indels:
   data_type: SCALAR
   default: 1
   type: recipe
+node_ram_memory:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 192
+  type: mip
 gatk_mitochondrial_ref:
   analysis_mode: case
   associated_recipe:
@@ -411,6 +467,12 @@ scout_exons:
   data_type: SCALAR
   default: 1
   type: recipe
+slurm_quality_of_service:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: normal
+  type: mip
 submission_profile:
   associated_recipe:
     - mip

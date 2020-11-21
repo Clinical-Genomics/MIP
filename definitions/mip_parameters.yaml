@@ -1,24 +1,5 @@
 ---
 ## Version: 1.0.0
-## Bash
-bash_set_errexit:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: mip
-bash_set_nounset:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
-bash_set_pipefail:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  type: mip
 container_manager:
   associated_recipe:
     - mip
@@ -32,56 +13,18 @@ conda_path:
   mandatory: no
   type: path
   update_path: absolute_path
-email:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_types:
-  associated_recipe:
-    - mip
-  data_type: ARRAY
-  default:
-    - FAIL
-  mandatory: no
-  type: mip
-job_reservation_name:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 log_file:
   associated_recipe:
     - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
-max_cores_per_node:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 36
-  type: mip
 ## Enable MIP
 mip:
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  type: mip
-core_ram_memory:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 5
-  type: mip
-node_ram_memory:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 180
   type: mip
 verbose:
   associated_recipe:

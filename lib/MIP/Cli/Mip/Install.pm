@@ -29,8 +29,7 @@ extends(qw{ MIP::Cli::Mip });
 command_short_description(q{MIP install command});
 
 command_long_description(
-q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases.}
-);
+    q{Caches the images used by the Mutation Identification Pipeline (MIP).});
 
 command_usage(q{mip <install> [options]});
 
