@@ -246,7 +246,7 @@ sub _install_maxentscan_plugin {
         {
             outfile_path => catfile( dirname( devnull() ), q{stdout} ),
             quiet        => 1,
-            url =>
+            url          =>
               q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             verbose => 0,
         }
@@ -290,7 +290,7 @@ sub _install_loftool_plugin {
     my @cmds = wget(
         {
             outfile_path => catfile( $plugin_dir_path, q{LoFtool_scores.txt} ),
-            url =>
+            url          =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
         }
     );
@@ -323,7 +323,7 @@ sub _install_exacpli_plugin {
     my @cmds = wget(
         {
             outfile_path => catfile( $plugin_dir_path, q{ExACpLI_values.txt} ),
-            url =>
+            url          =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
         }
     );

@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Install::Post_installation} => [qw{ check_mip_installation }],
-        q{MIP::Test::Fixtures} =>
+        q{MIP::Test::Fixtures}                      =>
           [qw{ test_constants test_log test_mip_hashes test_standard_cli }],
     );
 
@@ -77,11 +77,11 @@ is( $trap->leaveby, q{return}, q{Executed post installation check} );
 
 ## Given an error in version command
 my %process_return = (
-    buffers_ref        => [],
-    error_message => q{Error message},
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 0,
+    buffers_ref   => [],
+    error_message => undef,
+    stderrs_ref   => [q{Error message}],
+    stdouts_ref   => [],
+    success       => 0,
 );
 test_constants( { test_process_return_href => \%process_return }, );
 trap {

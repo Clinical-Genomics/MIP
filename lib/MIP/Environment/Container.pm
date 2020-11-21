@@ -211,7 +211,7 @@ sub parse_container_uri {
 
     return if $container_manager eq q{docker};
 
-    return if (${$uri_ref} =~ m{ \A docker:[/]{2} }xms);
+    return if ( ${$uri_ref} =~ m{ \A docker:[/]{2} }xms );
 
     if ( ${$uri_ref} =~ /\A quay|docker[.]io /xms ) {
 

@@ -96,7 +96,7 @@ sub check_mip_installation {
                 }
             );
 
-            if ( @{$process_return{stdouts_ref}} ) {
+            if ( @{ $process_return{stdouts_ref} } ) {
 
                 $log->info( $TAB
                       . q{Successfully launched}
@@ -107,13 +107,12 @@ sub check_mip_installation {
                       . $process_return{stdouts_ref}[0] );
             }
             else {
-         
+
                 $log->warn( $TAB . q{Failed to launch} . $COLON . $SPACE . $program );
-                $log->warn( $TAB
-                      . q{Launch command returned}
-                      . $COLON
-                      . $NEWLINE 
-                      . join $NEWLINE, @{$process_return{stderrs_ref}} );
+                $log->warn(
+                    $TAB . q{Launch command returned} . $COLON . $NEWLINE . join $NEWLINE,
+                    @{ $process_return{stderrs_ref} }
+                );
             }
         }
     }
