@@ -61,7 +61,7 @@ diag(   q{Test get_sample_ids_from_vcf from Vcf.pm v}
 test_log( {} );
 my %test_process_return = (
     buffers_ref        => [],
-    error_messages_ref => [],
+    error_message => undef,
     stderrs_ref        => [],
     stdouts_ref        => [q{ADM1059A1 ADM1059A2 ADM1059A3}],
     success            => 1,

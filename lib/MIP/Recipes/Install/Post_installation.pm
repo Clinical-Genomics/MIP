@@ -112,7 +112,7 @@ sub check_mip_installation {
                       . q{Launch command returned}
                       . $COLON
                       . $SPACE
-                      . $process_return{error_messages_ref}[0] );
+                      . $process_return{error_message} );
             }
         }
     }

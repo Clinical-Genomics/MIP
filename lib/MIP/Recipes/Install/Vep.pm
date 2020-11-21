@@ -214,7 +214,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         if ( not $process_return{success} ) {
 
             $log->fatal(q{VEP installation failed});
-            $log->logdie( $process_return{error_messages_ref}[0] );
+            $log->logdie( $process_return{error_message} );
         }
     }
     return 1;
@@ -248,6 +248,7 @@ sub _install_maxentscan_plugin {
             quiet        => 1,
             url =>
               q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
+            verbose => 0,
         }
     );
     push @cmds, $PIPE;

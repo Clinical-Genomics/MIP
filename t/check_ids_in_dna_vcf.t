@@ -67,7 +67,7 @@ my $vcf_file_path    = catfile( dirname($Bin),
     qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
 my %test_process_return = (
     buffers_ref        => [],
-    error_messages_ref => [],
+    error_message => undef,
     stderrs_ref        => [],
     stdouts_ref        => [q{ADM1059A1 ADM1059A2 ADM1059A3}],
     success            => 1,

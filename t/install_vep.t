@@ -118,7 +118,7 @@ is( $is_ok, undef, q{Return on auto flag a} );
 ## Given a failure during installation
 my %process_return = (
     buffers_ref        => [],
-    error_messages_ref => [q{Error message}],
+    error_message => q{Error message},
     stderrs_ref        => [],
     stdouts_ref        => [],
     success            => 0,

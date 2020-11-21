@@ -84,7 +84,7 @@ my %active_parameter_test = (
 );
 my %test_process_return = (
     buffers_ref        => [],
-    error_messages_ref => [],
+    error_message => undef,
     stderrs_ref        => [],
     stdouts_ref        => [q{AF AF_POPMAX}],
     success            => 1,

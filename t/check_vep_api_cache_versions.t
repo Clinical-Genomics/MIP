@@ -70,7 +70,7 @@ my $vep_directory_cache =
 
 my %process_return = (
     buffers_ref        => [],
-    error_messages_ref => [],
+    error_message => undef,
     stderrs_ref        => [],
     stdouts_ref        => [qw{ 100 }],
     success            => 1,
@@ -131,13 +131,7 @@ ok( $trap->return, q{Return on unknown cache version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 
 ## Given unknown vep api version
-%process_return = (
-    buffers_ref        => [],
-    error_messages_ref => [],
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 1,
-);
+$process_return{stdouts_ref} = [];
 test_constants(
     {
         test_process_return_href => \%process_return,

@@ -142,7 +142,7 @@ sub install_mip_scripts {
         if ( not $process_return{success} ) {
 
             $log->fatal(q{Failed to copy mip_scripts});
-            $log->logdie( $process_return{error_messages_ref}[0] );
+            $log->logdie( $process_return{error_message} );
         }
     }
 

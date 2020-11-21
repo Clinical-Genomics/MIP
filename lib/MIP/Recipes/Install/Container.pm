@@ -103,7 +103,7 @@ sub install_containers {
         if ( not $process_return{success} ) {
 
             $log->fatal(qq{$CONTAINER_MANAGER failed to cache $container});
-            $log->logdie( $process_return{error_messages_ref}[0] );
+            $log->logdie( $process_return{error_message} );
         }
 
         ## Finishing touches for certain containers

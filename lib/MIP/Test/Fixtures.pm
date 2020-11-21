@@ -495,7 +495,7 @@ sub test_constants {
 
         %{$test_process_return_href} = (
             buffers_ref        => [],
-            error_messages_ref => [],
+            error_message => undef,
             stderrs_ref        => [],
             stdouts_ref        => [qw{ 1 }],
             success            => 1,
