@@ -395,7 +395,7 @@ sub _setup_cache_dir {
         my $vep_version = get_binary_version(
             {
                 binary                   => q{vep},
-                binary_path              => join( $SPACE, @vep_launch_cmds ),
+                binary_path              => join( $SPACE, @vep_launch_cmds ) . q{vep},
                 capture_version_cmd_href => \%capture_version_cmd,
             }
         );

@@ -17,7 +17,7 @@ use warnings;
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $CONTAINER_MANAGER $LOG_NAME $SPACE $TAB };
+use MIP::Constants qw{ $COLON $CONTAINER_MANAGER $LOG_NAME $NEWLINE $SPACE $TAB };
 use MIP::Environment::Child_process qw{ child_process };
 use MIP::Environment::Container qw{ build_container_cmd };
 use MIP::Environment::Executable
@@ -96,7 +96,7 @@ sub check_mip_installation {
                 }
             );
 
-            if ( $process_return{success} ) {
+            if ( @{$process_return{stdouts_ref}} ) {
 
                 $log->info( $TAB
                       . q{Successfully launched}
@@ -107,12 +107,13 @@ sub check_mip_installation {
                       . $process_return{stdouts_ref}[0] );
             }
             else {
+         
                 $log->warn( $TAB . q{Failed to launch} . $COLON . $SPACE . $program );
                 $log->warn( $TAB
                       . q{Launch command returned}
                       . $COLON
-                      . $SPACE
-                      . $process_return{error_message} );
+                      . $NEWLINE 
+                      . join $NEWLINE, @{$process_return{stderrs_ref}} );
             }
         }
     }
