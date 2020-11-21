@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.0]
+- Use Chanjo repos Docker file instead of MIPs
 - Removed support to run bcftools_mpileup as a variant caller
 - Added perl and MIP docker file and use it in recipes
 - Removed PATH check for proxy bins
@@ -11,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf 
 
 **Tools**
+chanjo: 4.2.0 -> 4.6
 deepvariant: 1.0.0
 glnexus: v1.2.7
 
