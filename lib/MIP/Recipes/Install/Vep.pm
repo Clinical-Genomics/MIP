@@ -387,15 +387,16 @@ sub _setup_cache_dir {
 
         my @vep_launch_cmds = run_container(
             {
-                container_path    => $container_path,
-                container_manager => $CONTAINER_MANAGER,
+                container_cmds_ref => [q{vep}],
+                container_path     => $container_path,
+                container_manager  => $CONTAINER_MANAGER,
             }
         );
 
         my $vep_version = get_binary_version(
             {
                 binary                   => q{vep},
-                binary_path              => join( $SPACE, @vep_launch_cmds ) . q{vep},
+                binary_path              => join( $SPACE, @vep_launch_cmds ),
                 capture_version_cmd_href => \%capture_version_cmd,
             }
         );
