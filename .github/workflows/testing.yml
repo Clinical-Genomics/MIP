@@ -34,7 +34,7 @@ jobs:
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
-          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts
+          perl mip install --envn mip_ci --select_program mip_scripts
 
       - name: Run MIP unit tests
         shell: bash -l {0}
