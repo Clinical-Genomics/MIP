@@ -35,7 +35,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install };
@@ -57,7 +57,8 @@ sub pipeline_install {
     ## Default(s)
     my $quiet;
     my $verbose;
-
+    use Data::Printer;
+    p $active_parameter_href;
     my $tmpl = {
         active_parameter_href => {
             default     => {},

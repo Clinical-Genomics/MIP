@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -63,6 +63,7 @@ sub check_mip_installation {
 
     my %container_cmd = build_container_cmd(
         {
+            active_parameter_href => $active_parameter_href,
             container_href    => $active_parameter_href->{container},
             container_manager => $CONTAINER_MANAGER,
         }

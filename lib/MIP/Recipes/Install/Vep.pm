@@ -34,7 +34,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.25;
+    our $VERSION = 1.26;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -105,6 +105,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     ## Setup cache_dir_path
     $cache_dir_path = _setup_cache_dir(
         {
+            active_parameter_href => $active_parameter_href,
             cache_dir_path     => $cache_dir_path,
             container_path     => $container_path,
             reference_dir_path => $reference_dir_path,
@@ -131,6 +132,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     my @container_cmds = [
         run_container(
             {
+                active_parameter_href => $active_parameter_href,
                 bind_paths_ref     => [$cache_dir_path],
                 container_path     => $container_path,
                 container_manager  => $CONTAINER_MANAGER,
@@ -166,6 +168,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
               [
                 run_container(
                     {
+                        active_parameter_href => $active_parameter_href,
                         bind_paths_ref     => [$cache_dir_path],
                         container_path     => $container_path,
                         container_manager  => $active_parameter_href->{container_manager},
@@ -335,7 +338,8 @@ sub _setup_cache_dir {
 
     ## Function : Setup vep cache directory
     ## Returns  : $cache_dir_path
-    ## Arguments: $cache_dir_path     => Path to vep cache
+    ## Arguments: $active_parameter_href => Active parameter hash {REF}
+    ##          : $cache_dir_path     => Path to vep cache
     ##          : $container_path     => Path/uri to container
     ##          : $reference_dir_path => Path to reference directory
     ##          : $verbose            => Verbose
@@ -343,12 +347,19 @@ sub _setup_cache_dir {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $cache_dir_path;
     my $container_path;
     my $reference_dir_path;
     my $verbose;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         cache_dir_path => {
             required    => 1,
             store       => \$cache_dir_path,
@@ -387,6 +398,7 @@ sub _setup_cache_dir {
 
         my @vep_launch_cmds = run_container(
             {
+                active_parameter_href => $active_parameter_href,
                 container_cmds_ref => [q{vep}],
                 container_path     => $container_path,
                 container_manager  => $CONTAINER_MANAGER,
