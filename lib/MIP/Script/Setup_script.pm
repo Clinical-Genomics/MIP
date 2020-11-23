@@ -624,7 +624,6 @@ sub setup_script {
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
-##          : $partition                       => Slurm partition to use
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
 ##          : $recipe_data_directory_path      => Set recipe data directory path
 ##          : $recipe_directory                => Builds from $directory_id
@@ -656,7 +655,6 @@ sub setup_script {
     my $gpu_number;
     my $outdata_dir;
     my $outscript_dir;
-    my $partition;
     my $process_time;
     my $set_errexit;
     my $set_nounset;
@@ -715,11 +713,6 @@ sub setup_script {
         outscript_dir => {
             default     => $arg_href->{active_parameter_href}{outscript_dir},
             store       => \$outscript_dir,
-            strict_type => 1,
-        },
-        partition => {
-            allow       => [ undef, qw{ cpu gpu } ],
-            store       => \$partition,
             strict_type => 1,
         },
         process_time => {
@@ -865,7 +858,6 @@ sub setup_script {
                 gpu_number        => $gpu_number,
                 job_name          => $job_name,
                 memory_allocation => $memory_allocation,
-                partition         => $partition,
                 process_time      => $process_time . q{:00:00},
                 project_id        => $active_parameter_href->{project_id},
                 slurm_quality_of_service =>

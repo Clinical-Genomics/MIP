@@ -300,13 +300,14 @@ sub run_container {
 
 ## Function : Run a docker container or exec a singularity image
 ## Returns  : @commands
-## Arguments: $bind_paths_ref         => Bind host directory to container {REF}
+## Arguments: $active_parameter_href  => The active parameters for this analysis hash {REF}
+##            $bind_paths_ref         => Bind host directory to container {REF}
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
 ##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
 ##          : $entrypoint             => Override container entrypoint
+##          : $executable_name        => Name of the executable
 ##          : $filehandle             => Filehandle to write to
-##          : $gpu_support            => Add experimental nvidia GPU support
 ##          : $image                  => Image to run
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
@@ -317,12 +318,13 @@ sub run_container {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $bind_paths_ref;
     my $container_cmds_ref;
     my $container_manager;
     my $container_path;
+    my $executable_name;
     my $filehandle;
-    my $gpu_support;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -332,6 +334,13 @@ sub run_container {
     my $remove;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
@@ -354,13 +363,12 @@ sub run_container {
             store       => \$container_path,
             strict_type => 1,
         },
+        executable_name => {
+            store       => \$executable_name,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
-        },
-        gpu_support => {
-            allow       => [ undef, qw{ 0 1 } ],
-            store       => \$gpu_support,
-            strict_type => 1,
         },
         remove => {
             allow       => [ undef, 0, 1 ],
@@ -416,9 +424,10 @@ sub run_container {
         },
         singularity => {
             arg_href => {
+                active_parameter_href          => $active_parameter_href,
                 bind_paths_ref                 => $bind_paths_ref,
+                executable_name                => $executable_name,
                 filehandle                     => $filehandle,
-                gpu_support                    => $gpu_support,
                 image                          => $container_path,
                 singularity_container_cmds_ref => $container_cmds_ref,
                 stderrfile_path                => $stdinfile_path,
@@ -487,6 +496,7 @@ sub set_executable_container_cmd {
     use Data::Diver qw{ Dive };
     use MIP::Program::Singularity qw{ singularity_exec };
     use MIP::Program::Docker qw{ docker_run };
+    use Data::Printer;
 
     my %container_cmd;
     my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
@@ -530,10 +540,11 @@ sub set_executable_container_cmd {
 
             my @cmds = run_container(
                 {
-                    bind_paths_ref    => \@bind_paths,
-                    container_manager => $container_manager,
-                    container_path    => $container_href->{$container_name}{uri},
-                    gpu_support       => $container_href->{$container_name}{gpu_support},
+                    active_parameter_href => $active_parameter_href,
+                    bind_paths_ref        => \@bind_paths,
+                    executable_name       => $executable_name,
+                    container_manager     => $container_manager,
+                    container_path        => $container_href->{$container_name}{uri},
                 }
             );
 

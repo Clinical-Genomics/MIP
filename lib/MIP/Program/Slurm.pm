@@ -40,7 +40,6 @@ sub slurm_build_sbatch_header {
 ##          : $gpu_number               => Number of GPUs to use
 ##          : $job_name                 => Specify a name for the job allocation
 ##          : $memory_allocation        => Memory allocation
-##          : $partition                => Slurm partition to use
 ##          : $process_time             => Time limit
 ##          : $project_id               => Project id
 ##          : $separator                => Separator to use when writing
@@ -63,7 +62,6 @@ sub slurm_build_sbatch_header {
     ## Default(s)
     my $core_number;
     my $gpu_number;
-    my $partition;
     my $process_time;
     my $email_types_ref;
     my $separator;

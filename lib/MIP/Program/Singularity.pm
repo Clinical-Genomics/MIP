@@ -35,9 +35,10 @@ sub singularity_exec {
 
 ## Function : Perl wrapper for writing singularity execute command. Based on singularity v3.1.
 ## Returns  : @commands
-## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $bind_paths_ref                 => Array with paths to bind {REF}
+##          : $executable_name                => Name of the executable
 ##          : $filehandle                     => Filehandle to write to
-##          : $gpu_support                    => Add experimental nvidia GPU support
 ##          : $image                          => Singularity container name
 ##          : $singularity_container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
@@ -47,9 +48,10 @@ sub singularity_exec {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $bind_paths_ref;
+    my $executable_name;
     my $filehandle;
-    my $gpu_support;
     my $image;
     my $singularity_container_cmds_ref;
     my $stderrfile_path;
@@ -57,18 +59,24 @@ sub singularity_exec {
     my $stdoutfile_path;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
             strict_type => 1,
         },
+        executable_name => {
+            store       => \$executable_name,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
-        },
-        gpu_support => {
-            allow       => [ undef, qw{ 0 1 } ],
-            store       => \$gpu_support,
-            strict_type => 1,
         },
         image => {
             defined     => 1,
@@ -98,9 +106,10 @@ sub singularity_exec {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ singularity exec };
+    my @commands        = qw{ singularity exec };
+    my $gpu_executables = $active_parameter_href->{gpu_capable_executables};
 
-    if ($gpu_support) {
+    if ( grep { $_ eq $executable_name } split( /,/xms, $gpu_executables ) ) {
         push @commands, q{--nv};
     }
 
