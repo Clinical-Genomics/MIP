@@ -106,10 +106,18 @@ sub singularity_exec {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands        = qw{ singularity exec };
-    my $gpu_executables = $active_parameter_href->{gpu_capable_executables};
+    my @commands = qw{ singularity exec };
+    my @gpu_executables;
 
-    if ( grep { $_ eq $executable_name } split( /,/xms, $gpu_executables ) ) {
+    if ( ref( $active_parameter_href->{gpu_capable_executables} ) eq 'ARRAY' ) {
+        @gpu_executables = @{ $active_parameter_href->{gpu_capable_executables} };
+    }
+    else {
+        @gpu_executables =
+          split( /,/xms, $active_parameter_href->{gpu_capable_executables} );
+    }
+
+    if ( grep { $_ eq $executable_name } @gpu_executables ) {
         push @commands, q{--nv};
     }
 
