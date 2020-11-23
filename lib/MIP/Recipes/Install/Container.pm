@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_containers };
@@ -86,11 +86,11 @@ sub install_containers {
         my @container_commands = run_container(
             {
                 active_parameter_href => $active_parameter_href,
-                container_cmds_ref => [qw{ ls }],
-                container_path     => $container_href->{$container}{uri},
-                container_manager  => $CONTAINER_MANAGER,
-                stderrfile_path    => $stderr_file_path,
-                stdoutfile_path    => devnull(),
+                container_cmds_ref    => [qw{ ls }],
+                container_path        => $container_href->{$container}{uri},
+                container_manager     => $CONTAINER_MANAGER,
+                stderrfile_path       => $stderr_file_path,
+                stdoutfile_path       => devnull(),
             }
         );
 
