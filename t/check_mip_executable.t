@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -36,7 +36,7 @@ $VERBOSE = test_standard_cli(
 
 BEGIN {
 
-    use MIP::Test::Fixtures qw{ test_import };
+    use MIP::Test::Fixtures qw{ test_import test_log };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
@@ -67,7 +67,6 @@ my $conda_prefix_path = q{does_not_exists};
 my $is_ok = check_mip_executable(
     {
         conda_prefix_path => $conda_prefix_path,
-        log               => $log,
     }
 );
 

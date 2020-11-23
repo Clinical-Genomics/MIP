@@ -323,6 +323,7 @@ temp:
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step/id
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step/id
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step/id
+  file_path: /develop/643594-miptest/analysis/643594-miptest/vcf_step/id.vcf
   file_paths:
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step/id.1.vcf
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step/id.2.vcf
@@ -511,6 +512,7 @@ out:
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step_out/id_out
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step_out/id_out
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step_out/id_out
+  file_path: /develop/643594-miptest/analysis/643594-miptest/vcf_step/id.vcf
   file_paths:
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step_out/id_out.1.vcf
     - /develop/643594-miptest/analysis/643594-miptest/vcf_step_out/id_out.2.vcf

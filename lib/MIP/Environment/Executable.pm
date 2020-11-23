@@ -22,12 +22,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_binary_version_cmd
-      get_binaries_versions
       get_binary_version_cmd
       get_executable
       get_executable_base_command
@@ -110,56 +109,6 @@ sub build_binary_version_cmd {
     return @version_cmds;
 }
 
-sub get_binaries_versions {
-
-## Function : Get executables/binaries versions
-## Returns  : %binary_version
-## Arguments: $binary_info_href => Binary_Info_Href object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $binary_info_href;
-
-    my $tmpl = {
-        binary_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$binary_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %binary;
-    my %executable = get_executable( {} );
-
-  BINARY:
-    while ( my ( $binary, $binary_path ) = each %{$binary_info_href} ) {
-
-        ## No information on how to get version for this binary - skip
-        next BINARY if ( not exists $executable{$binary} );
-
-        my $binary_version = get_binary_version(
-            {
-                binary      => $binary,
-                binary_path => $binary_path,
-            }
-        );
-
-        ## Set binary version and path
-        $binary{$binary} = (
-            {
-                path    => $binary_path,
-                version => $binary_version,
-            }
-        );
-    }
-    return %binary;
-}
-
 sub get_binary_version_cmd {
 
 ## Function : Get binary version cmd
@@ -206,6 +155,8 @@ sub get_binary_version_cmd {
 
     my %executable = get_executable( { executable_name => $binary, } );
 
+    return if ( not %executable );
+
     ## Get version command
     my @version_cmds = build_binary_version_cmd(
         {
@@ -223,15 +174,21 @@ sub get_binary_version_cmd {
 sub get_binary_version {
 
 ## Function : Get version for executable/binary
-## Returns  : $binary_version
-## Arguments: $binary      => Binary to get version of
-##          : $binary_path => Path to binary
+## Returns  : $binary_version or %process_return
+## Arguments: $binary                   => Binary to get version of
+##          : $binary_path              => Path to binary
+##          : $capture_version_cmd_href => Capture version cmd hash {REF}
+##          : $return_process_hash      => Return full output hash
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $binary;
     my $binary_path;
+    my $capture_version_cmd_href;
+
+    ## Default(s)
+    my $return_process_hash;
 
     my $tmpl = {
         binary => {
@@ -246,41 +203,45 @@ sub get_binary_version {
             store       => \$binary_path,
             strict_type => 1,
         },
+        capture_version_cmd_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$capture_version_cmd_href,
+            strict_type => 1,
+        },
+        return_process_hash => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$return_process_hash,
+            strict_type => => 1,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
 
-## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    my %executable = get_executable( { executable_name => $binary, } );
-
     ## Get version command
     my @version_cmds = build_binary_version_cmd(
         {
             binary_path    => $binary_path,
-            version_cmd    => $executable{version_cmd},
-            version_regexp => $executable{version_regexp},
+            version_cmd    => $capture_version_cmd_href->{version_cmd},
+            version_regexp => $capture_version_cmd_href->{version_regexp},
         }
     );
 
     ## Call binary and parse output to generate version
     my %process_return = child_process(
         {
-            commands_ref => \@version_cmds,
-            process_type => q{open3},
+            commands_ref => [ join $SPACE, @version_cmds ],
+            process_type => q{ipc_cmd_run},
         }
     );
 
-    my $binary_version = $process_return{stdouts_ref}[0];
+    return %process_return if ($return_process_hash);
 
-    if ( not $binary_version ) {
-
-        $log->warn(qq{Could not find version for binary: $binary});
-    }
-    return $binary_version;
+    return $process_return{stdouts_ref}[0];
 }
 
 sub get_executable_base_command {
@@ -596,6 +557,10 @@ q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last
 
         return %{ $executable{$executable_name} };
     }
+
+    ## Missing information on executable
+    return if ( defined $executable_name );
+
     return %executable;
 }
 
@@ -638,13 +603,8 @@ sub write_binaries_versions {
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
 
-    my %executable = get_executable( {} );
-
   BINARY:
     while ( my ( $binary, $binary_cmd ) = each %{$binary_info_href} ) {
-
-        ## No information on how to get version for this binary - skip
-        next BINARY if ( not exists $executable{$binary} );
 
         my @version_cmds = get_binary_version_cmd(
             {
@@ -653,6 +613,9 @@ sub write_binaries_versions {
                 use_container => 1,
             }
         );
+
+        ## No information on how to get version for this binary - skip
+        next BINARY if ( not @version_cmds );
 
         my @add_binary_cmds = perl_nae_oneliners(
             {

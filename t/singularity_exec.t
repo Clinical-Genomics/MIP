@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -98,7 +98,7 @@ my %specific_argument = (
           . $COMMA
           . catdir(qw{ path two }),
     },
-    singularity_container_cmds_ref => {
+    container_cmds_ref => {
         inputs_ref      => [q{Hello_world.py}],
         expected_output => qw{ Hello_world.py },
     },

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -167,7 +167,6 @@ sub analysis_bootstrapann {
     ## Get vcf file
     my $vcf_generator_recipe = q{gatk_variantfiltration};
     if ( $active_parameter_href->{dna_vcf_file} ) {
-
         $vcf_generator_recipe = q{dna_vcf_reformat};
     }
 
@@ -190,8 +189,7 @@ sub analysis_bootstrapann {
             recipe_name    => $recipe_name,
         }
     );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Get module parameters
     my %recipe_resource = get_recipe_resources(
@@ -228,16 +226,16 @@ sub analysis_bootstrapann {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 

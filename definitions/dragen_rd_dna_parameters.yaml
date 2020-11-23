@@ -1,5 +1,4 @@
 ---
-## Version: 1.0
 custom_default_parameters:
   associated_recipe:
     - mip

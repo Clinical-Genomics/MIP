@@ -71,6 +71,30 @@ sub _build_usage {
     );
 
     option(
+        q{bash_set_errexit} => (
+            documentation => q{Set errexit in bash scripts},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bash_set_nounset} => (
+            documentation => q{Set nounset in bash scripts},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bash_set_pipefail} => (
+            documentation => q{Set pipefail in bash scripts},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{config_file} => (
             cmd_aliases   => [qw{ config c }],
             documentation => q{File with configuration parameters in YAML format},
@@ -81,12 +105,38 @@ sub _build_usage {
     );
 
     option(
+        q{core_ram_memory} => (
+            cmd_tags      => [q{Default: 5}],
+            documentation => q{RAM memory size of the core(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{dry_run_all} => (
-            cmd_aliases => [qw{ dra }],
+            cmd_aliases   => [qw{ dra }],
             documentation =>
               q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},
             isa => Bool,
+        )
+    );
+
+    option(
+        q{email} => (
+            documentation => q{E-mail},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{email_types} => (
+            cmd_tags      => [q{Default: FAIL}],
+            documentation => q{E-mail type},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
         )
     );
 
@@ -99,6 +149,32 @@ sub _build_usage {
             is            => q{rw},
             isa           => Str,
         ),
+    );
+
+    option(
+        q{job_reservation_name} => (
+            documentation => q{Allocate node resources from named reservation},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{max_cores_per_node} => (
+            cmd_tags      => [q{Default: 16}],
+            documentation => q{Maximum number of processor cores per node},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{node_ram_memory} => (
+            cmd_tags      => [q{Default: 128}],
+            documentation => q{RAM memory size of the node(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
+        )
     );
 
     option(
@@ -157,6 +233,15 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Format and fields of sacct output},
             is            => q{rw},
             isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
         )
     );
 

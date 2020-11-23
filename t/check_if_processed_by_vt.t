@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,8 +61,9 @@ diag(   q{Test check_if_processed_by_vt from Reference.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Given no reference path
-my $bcftools_binary_path = q{bcftools};
-my $return               = check_if_processed_by_vt(
+my $bcftools_binary_path =
+  catfile( $Bin, qw{ data modules miniconda envs mip_ci bin bcftools } );
+my $return = check_if_processed_by_vt(
     {
         bcftools_binary_path => $bcftools_binary_path,
         reference_file_path  => q{file_does_not_exists},
