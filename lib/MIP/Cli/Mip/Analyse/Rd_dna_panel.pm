@@ -272,14 +272,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{replace_iupac} => (
-            documentation => q{Replace IUPAC code in alternative alleles with N},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},

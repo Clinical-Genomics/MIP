@@ -10,6 +10,7 @@ use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
+use Test::Trap;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
@@ -24,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,7 +36,7 @@ $VERBOSE = test_standard_cli(
 
 BEGIN {
 
-    use MIP::Test::Fixtures qw{ test_import };
+    use MIP::Test::Fixtures qw{ test_import test_log };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
@@ -58,6 +59,8 @@ diag(   q{Test get_conda_path from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $log = test_log( {} );
+
 ## Given a sub call when conda should be installed
 my $is_ok = get_conda_path( {} );
 
@@ -65,10 +68,11 @@ my $is_ok = get_conda_path( {} );
 ok( $is_ok, q{Found conda path} );
 
 # Given a sub call when conda should not be installed
-my $is_not_ok = 1;
-$is_not_ok = get_conda_path( { bin_file => q{not_a_conda_bin} } );
-
-## Then return false
-is( $is_not_ok, undef, q{Did not find conda path} );
+trap {
+    get_conda_path( { bin_file => q{not_a_conda_bin} } )
+};
+## Then print fatal log message and exit
+ok( $trap->exit, q{Exit when no conda is found } );
+like( $trap->stderr, qr/Failed \s+ to \s+ find \s+ path/xms, q{Throw fatal log message} );
 
 done_testing();

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,15 +58,15 @@ diag(   q{Test check_recipe_exists_in_hash from Check.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given recipe names
-my %parameter = ( bcftools_mpileup => 1, );
+my %parameter = ( glnexus_merge => 1, );
 
 my %active_parameter = (
     recipe_time => {
-        bwa_mem          => 1,
-        bcftools_mpileup => 1,
+        bwa_mem       => 1,
+        glnexus_merge => 1,
     },
     associated_recipe => [ qw{ fastqc_ar }, ],
 );
@@ -87,8 +87,8 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given recipe names
 %parameter = (
-    bcftools_mpileup => 1,
-    bwa_mem          => 1,
+    glnexus_merge => 1,
+    bwa_mem       => 1,
 );
 
 ## When all exists in truth hash
@@ -118,9 +118,9 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given recipe names
 %parameter = (
-    bcftools_mpileup => 1,
-    bwa_mem          => 1,
-    fastqc_ar        => 1,
+    glnexus_merge => 1,
+    bwa_mem       => 1,
+    fastqc_ar     => 1,
 );
 
 ## When all exists in truth hash

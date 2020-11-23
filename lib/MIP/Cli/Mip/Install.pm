@@ -22,15 +22,14 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.25;
+our $VERSION = 1.26;
 
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP install command});
 
 command_long_description(
-q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases.}
-);
+    q{Caches the images used by the Mutation Identification Pipeline (MIP)});
 
 command_usage(q{mip <install> [options]});
 
@@ -76,33 +75,12 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{conda_no_update_dep} => (
-            cmd_flag      => q{conda_no_update_dep},
-            documentation => q{Do not update dependencies},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{config_file} => (
             cmd_aliases   => [qw{ config c }],
             documentation => q{File with configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,
         )
-    );
-
-    option(
-        q{core_number} => (
-            cmd_tags      => [q{Default: 1}],
-            documentation => q{Number of tasks in sbatch allocation},
-            is            => q{rw},
-            isa           => Int,
-            required      => 0,
-
-        ),
     );
 
     option(
@@ -125,32 +103,6 @@ sub _build_usage {
             isa           => ArrayRef [ enum( [qw{ rd_dna rd_rna}] ), ],
             required      => 0,
         ),
-    );
-    option(
-        q{prefer_shell} => (
-            cmd_flag => q{prefer_shell},
-            documentation =>
-              q{Shell will be used for overlapping shell and biconda installations},
-            is       => q{rw},
-            isa      => Bool,
-            required => 0,
-        ),
-    );
-
-    option(
-        q{program_test_file} => (
-            documentation => q{File with test commands in YAML format},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{project_id} => (
-            documentation => q{Project id},
-            is            => q{rw},
-            isa           => Str,
-        )
     );
 
     option(
@@ -175,24 +127,6 @@ sub _build_usage {
     );
 
     option(
-        q{sbatch_mode} => (
-            documentation => q{Write install script for sbatch submisson},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-
-        ),
-    );
-
-    option(
-        q{sbatch_process_time} => (
-            documentation => q{Time limit for sbatch job},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{select_programs} => (
             cmd_aliases   => [qw{ sp }],
             cmd_flag      => q{select_programs},
@@ -203,7 +137,7 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4
-                          genmod gffcompare glnexus htslib manta mip_scripts multiqc peddy picard plink
+                          genmod gffcompare glnexus htslib manta mip mip_scripts multiqc peddy picard plink
                           preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
                           star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd
                           utilities varg vcf2cytosure vcfanno vep vts }
@@ -225,13 +159,23 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deepvariant delly expansionhunter fastqc gatk gatk4
-                          genmod gffcompare glnexus htslib manta mip_scripts multiqc peddy picard plink
+                          genmod gffcompare glnexus htslib manta mip mip_scripts multiqc peddy picard plink
                           preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
                           star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd
                           utilities varg vcf2cytosure vcfanno vep vts }
                     ]
                 ),
             ],
+            required => 0,
+        ),
+    );
+
+    option(
+        q{test_mode} => (
+            documentation =>
+              q{Run MIP in test mode, i.e. not launching any child processes},
+            is       => q{rw},
+            isa      => Bool,
             required => 0,
         ),
     );

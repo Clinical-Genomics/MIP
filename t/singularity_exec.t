@@ -98,11 +98,7 @@ my %specific_argument = (
           . $COMMA
           . catdir(qw{ path two }),
     },
-    gpu_support => {
-        input           => q{1},
-        expected_output => q{--nv},
-    },
-    singularity_container_cmds_ref => {
+    container_cmds_ref => {
         inputs_ref      => [q{Hello_world.py}],
         expected_output => qw{ Hello_world.py },
     },

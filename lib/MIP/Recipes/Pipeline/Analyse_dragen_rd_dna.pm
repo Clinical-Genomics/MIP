@@ -26,7 +26,7 @@ BEGIN {
 
     # Set the version for version checking
 
-    our $VERSION = 1.16;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_dragen_rd_dna pipeline_analyse_dragen_rd_dna };
@@ -109,6 +109,7 @@ sub parse_dragen_rd_dna {
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parameter qw{ get_cache };
@@ -123,6 +124,13 @@ sub parse_dragen_rd_dna {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {
@@ -351,7 +359,6 @@ sub pipeline_analyse_dragen_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_container_constants };
-    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
@@ -399,13 +406,6 @@ sub pipeline_analyse_dragen_rd_dna {
 
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
-
-    parse_containers(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});

@@ -208,7 +208,7 @@ sub run_install_pipeline {
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $active_parameter_href;
 
     my $tmpl = {

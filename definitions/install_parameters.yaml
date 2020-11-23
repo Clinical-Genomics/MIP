@@ -1,10 +1,4 @@
 ---
-conda:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 config_file:
   associated_recipe:
     - mip
@@ -18,13 +12,6 @@ container_manager:
   data_type: SCALAR
   default: singularity
   type: mip
-core_number:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  mandatory: no
-  type: mip
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -32,7 +19,6 @@ custom_default_parameters:
   default:
     - program_test_file
     - select_programs
-    - shell_install
     - skip_programs
   type: mip
 environment_name:
@@ -40,12 +26,6 @@ environment_name:
     - mip
   data_type: SCALAR
   default: mip
-  mandatory: no
-  type: mip
-pip:
-  associated_recipe:
-    - mip
-  data_type: HASH
   mandatory: no
   type: mip
 pipelines:
@@ -57,32 +37,12 @@ pipelines:
     - rd_rna
   mandatory: no
   type: mip
-prefer_shell:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
-  type: mip
 program_test_file:
   associated_recipe:
     - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
-process_time:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 2-00:00:00
-  mandatory: no
-  type: mip
-project_id:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 quiet:
   associated_recipe:
     - mip
@@ -122,6 +82,7 @@ rd_dna:
     - glnexus
     - htslib
     - manta
+    - mip
     - mip_scripts
     - multiqc
     - peddy
@@ -157,6 +118,7 @@ rd_rna:
     - gatk4
     - gffcompare
     - htslib
+    - mip
     - mip_scripts
     - multiqc
     - picard
@@ -174,39 +136,13 @@ rd_rna:
     - vep
   mandatory: no
   type: mip
-sbatch_mode:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
-  type: mip
-shell:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 container:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
   type: mip
-slurm_quality_of_service:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: low
-  mandatory: no
-  type: mip
 select_programs:
-  associated_recipe:
-    - mip
-  data_type: ARRAY
-  mandatory: no
-  type: mip
-shell_install:
   associated_recipe:
     - mip
   data_type: ARRAY
@@ -218,12 +154,12 @@ skip_programs:
   data_type: ARRAY
   mandatory: no
   type: mip
-temp_directory:
+test_mode:
   associated_recipe:
     - mip
   data_type: SCALAR
   mandatory: no
-  type: path
+  type: mip
 vep_assemblies:
   associated_recipe:
     - mip
@@ -236,7 +172,7 @@ vep_auto_flag:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: cf
+  default: cfp
   type: mip
 vep_cache_dir:
   associated_recipe:
@@ -250,7 +186,11 @@ vep_plugins:
     - mip
   data_type: ARRAY
   default:
-    -
+    - dbNSFP
+    - ExACpLI
+    - LoFtool
+    - MaxEntScan
+    - SpliceAI
   mandatory: no
   type: mip
 vep_species:

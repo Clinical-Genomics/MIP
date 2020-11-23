@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,16 +69,12 @@ my %parameter = test_mip_hashes( { mip_hash_name => q{install_active_parameter},
 my %singularity_container = get_install_parameter_attribute(
     {
         parameter_href => \%parameter,
-        parameter_name => q{singularity},
+        parameter_name => q{container},
     }
 );
 
 ## Then all singularity containers should have been loaded
-is_deeply(
-    \%singularity_container,
-    \%{ $parameter{singularity} },
-    q{Got hash attribute }
-);
+is_deeply( \%singularity_container, \%{ $parameter{container} }, q{Got hash attribute } );
 
 ## Array attribute
 my @vep_plugins = get_install_parameter_attribute(

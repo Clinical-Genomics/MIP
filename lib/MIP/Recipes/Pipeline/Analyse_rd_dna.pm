@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.38;
+    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -113,6 +113,7 @@ sub parse_rd_dna {
     };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
@@ -135,6 +136,13 @@ sub parse_rd_dna {
       qw{ cnvnator_ar delly_call delly_reformat expansionhunter
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {
@@ -431,7 +439,6 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_container_constants };
-    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
@@ -439,7 +446,6 @@ sub pipeline_analyse_rd_dna {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
@@ -523,13 +529,6 @@ sub pipeline_analyse_rd_dna {
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
-    parse_containers(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
-
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
@@ -558,7 +557,6 @@ sub pipeline_analyse_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus => \&analysis_analysisrunstatus,
-        bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                           # Depends on genome build
         bwa_mem2          => undef,
         cadd_ar           => \&analysis_cadd,
