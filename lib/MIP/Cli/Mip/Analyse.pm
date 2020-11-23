@@ -52,7 +52,7 @@ sub _build_usage {
 
     option(
         q{analysisrunstatus} => (
-            cmd_tags      => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
 q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
             is  => q{rw},
@@ -107,7 +107,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{dry_run_all} => (
-            cmd_aliases   => [qw{ dra }],
+            cmd_aliases => [qw{ dra }],
             documentation =>
               q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},
@@ -280,7 +280,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{sacct} => (
-            cmd_tags      => [q{Analysis recipe switch}],
+            cmd_tags => [q{Analysis recipe switch}],
             documentation =>
               q{Generating sbatch script for SLURM info on each submitted job},
             is  => q{rw},
@@ -363,10 +363,11 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{test_mode} => (
-            documentation => q{Run MIP int test mode, i.e. not launching any child processes},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
+            documentation =>
+              q{Run MIP in test mode, i.e. not launching any child processes},
+            is       => q{rw},
+            isa      => Bool,
+            required => 0,
         ),
     );
 

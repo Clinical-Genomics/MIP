@@ -35,13 +35,13 @@ sub singularity_exec {
 
 ## Function : Perl wrapper for writing singularity execute command. Based on singularity v3.1.
 ## Returns  : @commands
-## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
-##          : $filehandle                     => Filehandle to write to
-##          : $image                          => Singularity container name
-##          : $container_cmds_ref => Array with commands to be executed inside container {REF}
-##          : $stderrfile_path                => Stderrfile path
-##          : $stderrfile_path_append         => Append stderr info to file path
-##          : $stdoutfile_path                => Stdoutfile path
+## Arguments: $bind_paths_ref         => Array with paths to bind {REF}
+##          : $filehandle             => Filehandle to write to
+##          : $image                  => Singularity container name
+##          : $container_cmds_ref     => Array with commands to be executed inside container {REF}
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 

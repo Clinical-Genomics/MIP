@@ -454,11 +454,11 @@ sub test_standard_cli {
 
 sub test_constants {
 
-    ## Function : Generate standard command line interface for test scripts
-    ## Returns  : $verbose
-    ## Arguments: $container_manager        => Set container manager
-    ##          : $test_mode                => Version of test
-    ##          : $test_process_return_href => Process return hash {REF}
+## Function : Generate standard command line interface for test scripts
+## Returns  : $verbose
+## Arguments: $container_manager        => Set container manager
+##          : $test_mode                => Version of test
+##          : $test_process_return_href => Process return hash {REF}
 
     my ($arg_href) = @_;
 
@@ -494,11 +494,11 @@ sub test_constants {
     if ( not keys %{$test_process_return_href} ) {
 
         %{$test_process_return_href} = (
-            buffers_ref        => [],
+            buffers_ref   => [],
             error_message => undef,
-            stderrs_ref        => [],
-            stdouts_ref        => [qw{ 1 }],
-            success            => 1,
+            stderrs_ref   => [],
+            stdouts_ref   => [qw{ one }],
+            success       => 1,
         );
     }
 

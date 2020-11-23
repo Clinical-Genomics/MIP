@@ -60,7 +60,7 @@ sub install_mip_scripts {
 
     use MIP::Check::Installation qw{ check_mip_executable };
 
-    Readonly my $FIVE => 5;
+    Readonly my $MOVE_DIRS_UP => 5;
 
     my $conda_prefix_path = $active_parameter_href->{conda_prefix_path};
     my @select_programs   = @{ $active_parameter_href->{select_programs} };
@@ -71,7 +71,7 @@ sub install_mip_scripts {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Get mip directory relative to this file since $Bin might have been set already
-    my $mip_dir_path = path(__FILE__)->parent($FIVE);
+    my $mip_dir_path = path(__FILE__)->parent($MOVE_DIRS_UP);
 
     ## Define MIP scripts and yaml files
     my @mip_scripts = qw{ cpanfile mip };

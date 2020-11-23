@@ -73,6 +73,6 @@ trap {
 };
 ## Then print fatal log message and exit
 ok( $trap->exit, q{Exit when no conda is found } );
-like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
+like( $trap->stderr, qr/Failed \s+ to \s+ find \s+ path/xms, q{Throw fatal log message} );
 
 done_testing();

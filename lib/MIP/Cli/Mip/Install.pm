@@ -29,7 +29,7 @@ extends(qw{ MIP::Cli::Mip });
 command_short_description(q{MIP install command});
 
 command_long_description(
-    q{Caches the images used by the Mutation Identification Pipeline (MIP).});
+    q{Caches the images used by the Mutation Identification Pipeline (MIP)});
 
 command_usage(q{mip <install> [options]});
 
@@ -172,10 +172,11 @@ sub _build_usage {
 
     option(
         q{test_mode} => (
-            documentation => q{Run MIP int test mode, i.e. not launching any child processes},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
+            documentation =>
+              q{Run MIP in test mode, i.e. not launching any child processes},
+            is       => q{rw},
+            isa      => Bool,
+            required => 0,
         ),
     );
 

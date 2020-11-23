@@ -36,6 +36,105 @@ BEGIN {
     };
 }
 
+sub build_container_cmd {
+
+    ## Function : Build executable command depending on container manager
+    ## Returns  :
+    ## Arguments: $container_href                   => Containers hash {REF}
+    ##          : $container_manager                => Container manager
+    ##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_href;
+    my $container_manager;
+    my $recipe_executable_bind_path_href;
+
+    my $tmpl = {
+        container_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
+        container_manager => {
+            allow       => [qw{docker singularity}],
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        recipe_executable_bind_path_href => {
+            default     => {},
+            defined     => 1,
+            store       => \$recipe_executable_bind_path_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Data::Diver qw{ Dive };
+
+    my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
+    my %container_cmd;
+
+  CONTAINER_NAME:
+    foreach my $container_name ( keys %{$container_href} ) {
+
+        parse_container_uri(
+            {
+                container_manager => $container_manager,
+                uri_ref           => \$container_href->{$container_name}{uri},
+            }
+        );
+
+      EXECUTABLE:
+        while ( my ( $executable_name, $executable_path ) =
+            each %{ $container_href->{$container_name}{executable} } )
+        {
+
+            ## Installation specific bind paths
+            if (
+                Dive(
+                    $container_href, ( $container_name, q{bind_path}, $executable_name, )
+                )
+              )
+            {
+                push @{ $recipe_executable_bind_path_href->{$executable_name} },
+                  $container_href->{$container_name}{bind_path}{$executable_name};
+            }
+            my @bind_paths =
+              exists $recipe_executable_bind_path_href->{$executable_name}
+              ? @{ $recipe_executable_bind_path_href->{$executable_name} }
+              : @container_constant_bind_path;
+
+            my @cmds = run_container(
+                {
+                    bind_paths_ref    => \@bind_paths,
+                    container_manager => $container_manager,
+                    container_path    => $container_href->{$container_name}{uri},
+                }
+            );
+
+            ## Do not add anything to @cmds
+            if ( $executable_path and $executable_path eq q{no_executable_in_image} ) {
+            }
+            elsif ($executable_path) {
+
+                push @cmds, $executable_path;
+            }
+            else {
+
+                push @cmds, $executable_name;
+            }
+            $container_cmd{$executable_name} = join $SPACE, @cmds;
+        }
+    }
+    return %container_cmd;
+}
+
 sub get_recipe_executable_bind_path {
 
 ## Function : Get link between recipe and executables and set recipe_binds_path to executable
@@ -354,12 +453,12 @@ sub run_container {
 
 sub set_executable_container_cmd {
 
-    ## Function : Set executable command depending on container manager
-    ## Returns  :
-    ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-    ##          : $container_href        => Containers hash {REF}
-    ##          : $container_manager     => Container manager
-    ##          : $parameter_href        => Parameter hash {REF}
+## Function : Set executable command depending on container manager
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $container_href        => Containers hash {REF}
+##          : $container_manager     => Container manager
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -416,105 +515,6 @@ sub set_executable_container_cmd {
         }
     );
 
-    return %container_cmd;
-}
-
-sub build_container_cmd {
-
-## Function : Build executable command depending on container manager
-## Returns  :
-## Arguments: $container_href                   => Containers hash {REF}
-##          : $container_manager                => Container manager
-##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $container_href;
-    my $container_manager;
-    my $recipe_executable_bind_path_href;
-
-    my $tmpl = {
-        container_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$container_href,
-            strict_type => 1,
-        },
-        container_manager => {
-            allow       => [qw{docker singularity}],
-            required    => 1,
-            store       => \$container_manager,
-            strict_type => 1,
-        },
-        recipe_executable_bind_path_href => {
-            default     => {},
-            defined     => 1,
-            store       => \$recipe_executable_bind_path_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Data::Diver qw{ Dive };
-
-    my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
-    my %container_cmd;
-
-  CONTAINER_NAME:
-    foreach my $container_name ( keys %{$container_href} ) {
-
-        parse_container_uri(
-            {
-                container_manager => $container_manager,
-                uri_ref           => \$container_href->{$container_name}{uri},
-            }
-        );
-
-      EXECUTABLE:
-        while ( my ( $executable_name, $executable_path ) =
-            each %{ $container_href->{$container_name}{executable} } )
-        {
-
-            ## Installation specific bind paths
-            if (
-                Dive(
-                    $container_href, ( $container_name, q{bind_path}, $executable_name, )
-                )
-              )
-            {
-                push @{ $recipe_executable_bind_path_href->{$executable_name} },
-                  $container_href->{$container_name}{bind_path}{$executable_name};
-            }
-            my @bind_paths =
-              exists $recipe_executable_bind_path_href->{$executable_name}
-              ? @{ $recipe_executable_bind_path_href->{$executable_name} }
-              : @container_constant_bind_path;
-
-            my @cmds = run_container(
-                {
-                    bind_paths_ref    => \@bind_paths,
-                    container_manager => $container_manager,
-                    container_path    => $container_href->{$container_name}{uri},
-                }
-            );
-
-            ## Do not add anything to @cmds
-            if ( $executable_path and $executable_path eq q{no_executable_in_image} ) {
-            }
-            elsif ($executable_path) {
-
-                push @cmds, $executable_path;
-            }
-            else {
-
-                push @cmds, $executable_name;
-            }
-            $container_cmd{$executable_name} = join $SPACE, @cmds;
-        }
-    }
     return %container_cmd;
 }
 

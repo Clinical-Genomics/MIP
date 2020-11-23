@@ -1,5 +1,4 @@
 ---
-## Version: 1.0.0
 container_manager:
   associated_recipe:
     - mip
