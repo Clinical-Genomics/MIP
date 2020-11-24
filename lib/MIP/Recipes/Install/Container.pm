@@ -89,6 +89,7 @@ sub install_containers {
                 container_cmds_ref    => [qw{ ls }],
                 container_path        => $container_href->{$container}{uri},
                 container_manager     => $CONTAINER_MANAGER,
+                install_switch        => q{1},
                 stderrfile_path       => $stderr_file_path,
                 stdoutfile_path       => devnull(),
             }

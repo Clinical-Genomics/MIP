@@ -93,10 +93,6 @@ my %argument = (
         input           => q{test_job_name},
         expected_output => q{--job-name=test_job_name},
     },
-    partition => {
-        input           => q{gpu},
-        expected_output => q{--partition=gpu},
-    },
     process_time => {
         input           => q{1:00:00},
         expected_output => q{--time=1:00:00},
@@ -126,7 +122,6 @@ my @commands = slurm_build_sbatch_header(
         email_types_ref          => $argument{email_types_ref}{inputs_ref},
         gpu_number               => $argument{gpu_number}{input},
         job_name                 => $argument{job_name}{input},
-        partition                => $argument{partition}{input},
         process_time             => $argument{process_time}{input},
         project_id               => $argument{project_id}{input},
         slurm_quality_of_service => $argument{slurm_quality_of_service}{input},

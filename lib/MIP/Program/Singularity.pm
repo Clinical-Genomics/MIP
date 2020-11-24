@@ -40,6 +40,7 @@ sub singularity_exec {
 ##          : $executable_name                => Name of the executable
 ##          : $filehandle                     => Filehandle to write to
 ##          : $image                          => Singularity container name
+##          : $install_switch                 => Install or cache containers
 ##          : $container_cmds_ref => Array with commands to be executed inside container {REF}
 ##          : $stderrfile_path                => Stderrfile path
 ##          : $stderrfile_path_append         => Append stderr info to file path
@@ -53,6 +54,7 @@ sub singularity_exec {
     my $executable_name;
     my $filehandle;
     my $image;
+    my $install_switch;
     my $container_cmds_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -62,13 +64,17 @@ sub singularity_exec {
         active_parameter_href => {
             default     => {},
             defined     => 1,
-            required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
         },
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
+            strict_type => 1,
+        },
+        container_cmds_ref => {
+            default     => [],
+            store       => \$container_cmds_ref,
             strict_type => 1,
         },
         executable_name => {
@@ -84,9 +90,9 @@ sub singularity_exec {
             store       => \$image,
             strict_type => 1,
         },
-        container_cmds_ref => {
-            default     => [],
-            store       => \$container_cmds_ref,
+        install_switch => {
+            allow       => [undef, qw{0 1}],
+            store       => \$install_switch,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -109,18 +115,18 @@ sub singularity_exec {
     my @commands = qw{ singularity exec };
     my @gpu_executables;
 
-    if ( ref( $active_parameter_href->{gpu_capable_executables} ) eq 'ARRAY' ) {
-        @gpu_executables = @{ $active_parameter_href->{gpu_capable_executables} };
+    if (!$install_switch) {
+        if ( ref( $active_parameter_href->{gpu_capable_executables} ) eq 'ARRAY' ) {
+           @gpu_executables = @{ $active_parameter_href->{gpu_capable_executables} };
+        }
+        else {
+            @gpu_executables =
+            split( /,/xms, $active_parameter_href->{gpu_capable_executables} );
+        }
+        if ( grep { $_ eq $executable_name } @gpu_executables ) {
+            push @commands, q{--nv};
+        }
     }
-    else {
-        @gpu_executables =
-          split( /,/xms, $active_parameter_href->{gpu_capable_executables} );
-    }
-
-    if ( grep { $_ eq $executable_name } @gpu_executables ) {
-        push @commands, q{--nv};
-    }
-
     ## Add bind paths
     if ( @{$bind_paths_ref} ) {
         push @commands, q{--bind} . $SPACE . join $COMMA, @{$bind_paths_ref};

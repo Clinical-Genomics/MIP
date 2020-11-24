@@ -43,6 +43,7 @@ sub build_container_cmd {
     ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
     ##          : $container_href                   => Containers hash {REF}
     ##          : $container_manager                => Container manager
+    ##          : $install_switch                   => Install or cache containers
     ##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
 
     my ($arg_href) = @_;
@@ -51,6 +52,7 @@ sub build_container_cmd {
     my $active_parameter_href;
     my $container_href;
     my $container_manager;
+    my $install_switch;
     my $recipe_executable_bind_path_href;
 
     my $tmpl = {
@@ -72,6 +74,11 @@ sub build_container_cmd {
             allow       => [qw{docker singularity}],
             required    => 1,
             store       => \$container_manager,
+            strict_type => 1,
+        },
+        install_switch => {
+            allow       => [undef, qw{0 1}],
+            store       => \$install_switch,
             strict_type => 1,
         },
         recipe_executable_bind_path_href => {
@@ -126,6 +133,7 @@ sub build_container_cmd {
                     executable_name       => $executable_name,
                     container_manager     => $container_manager,
                     container_path        => $container_href->{$container_name}{uri},
+                    install_switch        => $install_switch,
                 }
             );
 
@@ -344,6 +352,7 @@ sub run_container {
 ##          : $executable_name        => Name of the executable
 ##          : $filehandle             => Filehandle to write to
 ##          : $image                  => Image to run
+##          : $install_switch         => Install or cache containers
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -360,6 +369,7 @@ sub run_container {
     my $container_path;
     my $executable_name;
     my $filehandle;
+    my $install_switch;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -404,6 +414,11 @@ sub run_container {
         },
         filehandle => {
             store => \$filehandle,
+        },
+        install_switch => {
+            allow       => [undef, qw{0 1}],
+            store       => \$install_switch,
+            strict_type => 1,
         },
         remove => {
             allow       => [ undef, 0, 1 ],
@@ -464,6 +479,7 @@ sub run_container {
                 executable_name        => $executable_name,
                 filehandle             => $filehandle,
                 image                  => $container_path,
+                install_switch         => $install_switch,
                 container_cmds_ref     => $container_cmds_ref,
                 stderrfile_path        => $stdinfile_path,
                 stderrfile_path_append => $stderrfile_path_append,

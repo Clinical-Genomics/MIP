@@ -137,6 +137,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                 container_path     => $container_path,
                 container_manager  => $CONTAINER_MANAGER,
                 container_cmds_ref => \@vep_install_cmds,
+                install_switch     => q{1},
             }
         )
     ];
@@ -173,6 +174,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                         container_path     => $container_path,
                         container_manager  => $active_parameter_href->{container_manager},
                         container_cmds_ref => \@vep_install_cmds,
+                        install_switch     => q{1},
                     }
                 )
               ];
@@ -402,6 +404,7 @@ sub _setup_cache_dir {
                 container_cmds_ref => [q{vep}],
                 container_path     => $container_path,
                 container_manager  => $CONTAINER_MANAGER,
+                install_switch     => q{1},
             }
         );
 
