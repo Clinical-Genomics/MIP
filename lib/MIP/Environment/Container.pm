@@ -43,7 +43,6 @@ sub build_container_cmd {
     ## Arguments: $active_parameter_href            => The active parameters for this analysis hash {REF}
     ##          : $container_href                   => Containers hash {REF}
     ##          : $container_manager                => Container manager
-    ##          : $install_switch                   => Install or cache containers
     ##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
 
     my ($arg_href) = @_;
@@ -52,7 +51,6 @@ sub build_container_cmd {
     my $active_parameter_href;
     my $container_href;
     my $container_manager;
-    my $install_switch;
     my $recipe_executable_bind_path_href;
 
     my $tmpl = {
@@ -121,10 +119,10 @@ sub build_container_cmd {
               ? @{ $recipe_executable_bind_path_href->{$executable_name} }
               : @container_constant_bind_path;
 
-            my @gpu_executables = 
-            exists $active_parameter_href->{gpu_capable_executables}
+            my @gpu_executables =
+              exists $active_parameter_href->{gpu_capable_executables}
               ? @{ $active_parameter_href->{gpu_capable_executables} }
-            : [];
+              : [];
 
             my $gpu_switch;
             if ( grep { $_ eq $executable_name } @gpu_executables ) {
@@ -356,8 +354,8 @@ sub run_container {
 ##          : $entrypoint             => Override container entrypoint
 ##          : $executable_name        => Name of the executable
 ##          : $filehandle             => Filehandle to write to
+##          : $gpu_switch             => Use nvidia experimental support
 ##          : $image                  => Image to run
-##          : $install_switch         => Install or cache containers
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path

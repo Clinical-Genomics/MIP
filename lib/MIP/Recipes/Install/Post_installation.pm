@@ -64,8 +64,8 @@ sub check_mip_installation {
     my %container_cmd = build_container_cmd(
         {
             active_parameter_href => $active_parameter_href,
-            container_href    => $active_parameter_href->{container},
-            container_manager => $CONTAINER_MANAGER,
+            container_href        => $active_parameter_href->{container},
+            container_manager     => $CONTAINER_MANAGER,
         }
     );
 

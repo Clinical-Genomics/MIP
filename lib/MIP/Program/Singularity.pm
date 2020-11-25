@@ -77,7 +77,7 @@ sub singularity_exec {
             strict_type => 1,
         },
         gpu_switch => {
-            allow       => [undef, qw{0 1}],
+            allow       => [ undef, qw{0 1} ],
             store       => \$gpu_switch,
             strict_type => 1,
         },

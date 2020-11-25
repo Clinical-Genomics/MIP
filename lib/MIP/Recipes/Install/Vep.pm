@@ -106,10 +106,10 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     $cache_dir_path = _setup_cache_dir(
         {
             active_parameter_href => $active_parameter_href,
-            cache_dir_path     => $cache_dir_path,
-            container_path     => $container_path,
-            reference_dir_path => $reference_dir_path,
-            verbose            => $verbose,
+            cache_dir_path        => $cache_dir_path,
+            container_path        => $container_path,
+            reference_dir_path    => $reference_dir_path,
+            verbose               => $verbose,
         }
     );
 
@@ -133,10 +133,10 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         run_container(
             {
                 active_parameter_href => $active_parameter_href,
-                bind_paths_ref     => [$cache_dir_path],
-                container_path     => $container_path,
-                container_manager  => $CONTAINER_MANAGER,
-                container_cmds_ref => \@vep_install_cmds,
+                bind_paths_ref        => [$cache_dir_path],
+                container_path        => $container_path,
+                container_manager     => $CONTAINER_MANAGER,
+                container_cmds_ref    => \@vep_install_cmds,
             }
         )
     ];
@@ -169,8 +169,8 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
                 run_container(
                     {
                         active_parameter_href => $active_parameter_href,
-                        bind_paths_ref     => [$cache_dir_path],
-                        container_path     => $container_path,
+                        bind_paths_ref        => [$cache_dir_path],
+                        container_path        => $container_path,
                         container_manager  => $active_parameter_href->{container_manager},
                         container_cmds_ref => \@vep_install_cmds,
                     }
@@ -399,9 +399,9 @@ sub _setup_cache_dir {
         my @vep_launch_cmds = run_container(
             {
                 active_parameter_href => $active_parameter_href,
-                container_cmds_ref => [q{vep}],
-                container_path     => $container_path,
-                container_manager  => $CONTAINER_MANAGER,
+                container_cmds_ref    => [q{vep}],
+                container_path        => $container_path,
+                container_manager     => $CONTAINER_MANAGER,
             }
         );
 
