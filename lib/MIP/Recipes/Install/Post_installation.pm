@@ -66,7 +66,6 @@ sub check_mip_installation {
             active_parameter_href => $active_parameter_href,
             container_href    => $active_parameter_href->{container},
             container_manager => $CONTAINER_MANAGER,
-            install_switch    => q{1},
         }
     );
 

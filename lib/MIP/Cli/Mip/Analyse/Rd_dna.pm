@@ -239,7 +239,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             cmd_flag      => q{gpu_capable_executables},
             documentation => q{List of executables with GPU capabilities},
             is            => q{rw},
-            isa           => enum( [qw{ run_deepvariant call_variants }] ),
+            isa           => ArrayRef[ enum( [qw{ run_deepvariant call_variants }] ) ],
         )
     );
 

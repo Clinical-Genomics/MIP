@@ -80,7 +80,7 @@ gatk_path:
 gpu_capable_executables:
   associated_recipe:
     - mip
-  data_type: SCALAR
+  data_type: ARRAY
   default:
     - run_deepvariant
     - call_variants

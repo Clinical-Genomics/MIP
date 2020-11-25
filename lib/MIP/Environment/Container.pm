@@ -40,7 +40,7 @@ sub build_container_cmd {
 
     ## Function : Build executable command depending on container manager
     ## Returns  :
-    ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+    ## Arguments: $active_parameter_href            => The active parameters for this analysis hash {REF}
     ##          : $container_href                   => Containers hash {REF}
     ##          : $container_manager                => Container manager
     ##          : $install_switch                   => Install or cache containers
@@ -74,11 +74,6 @@ sub build_container_cmd {
             allow       => [qw{docker singularity}],
             required    => 1,
             store       => \$container_manager,
-            strict_type => 1,
-        },
-        install_switch => {
-            allow       => [undef, qw{0 1}],
-            store       => \$install_switch,
             strict_type => 1,
         },
         recipe_executable_bind_path_href => {
@@ -126,6 +121,16 @@ sub build_container_cmd {
               ? @{ $recipe_executable_bind_path_href->{$executable_name} }
               : @container_constant_bind_path;
 
+            my @gpu_executables = 
+            exists $active_parameter_href->{gpu_capable_executables}
+              ? @{ $active_parameter_href->{gpu_capable_executables} }
+            : [];
+
+            my $gpu_switch;
+            if ( grep { $_ eq $executable_name } @gpu_executables ) {
+                $gpu_switch = 1;
+            }
+
             my @cmds = run_container(
                 {
                     active_parameter_href => $active_parameter_href,
@@ -133,7 +138,7 @@ sub build_container_cmd {
                     executable_name       => $executable_name,
                     container_manager     => $container_manager,
                     container_path        => $container_href->{$container_name}{uri},
-                    install_switch        => $install_switch,
+                    gpu_switch            => $gpu_switch,
                 }
             );
 
@@ -344,7 +349,7 @@ sub run_container {
 ## Function : Run a docker container or exec a singularity image
 ## Returns  : @commands
 ## Arguments: $active_parameter_href  => The active parameters for this analysis hash {REF}
-##            $bind_paths_ref         => Bind host directory to container {REF}
+##          : $bind_paths_ref         => Bind host directory to container {REF}
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
 ##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
@@ -369,7 +374,7 @@ sub run_container {
     my $container_path;
     my $executable_name;
     my $filehandle;
-    my $install_switch;
+    my $gpu_switch;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -415,9 +420,9 @@ sub run_container {
         filehandle => {
             store => \$filehandle,
         },
-        install_switch => {
-            allow       => [undef, qw{0 1}],
-            store       => \$install_switch,
+        gpu_switch => {
+            allow       => [ undef, qw{0 1} ],
+            store       => \$gpu_switch,
             strict_type => 1,
         },
         remove => {
@@ -474,12 +479,10 @@ sub run_container {
         },
         singularity => {
             arg_href => {
-                active_parameter_href  => $active_parameter_href,
                 bind_paths_ref         => $bind_paths_ref,
-                executable_name        => $executable_name,
                 filehandle             => $filehandle,
                 image                  => $container_path,
-                install_switch         => $install_switch,
+                gpu_switch             => $gpu_switch,
                 container_cmds_ref     => $container_cmds_ref,
                 stderrfile_path        => $stdinfile_path,
                 stderrfile_path_append => $stderrfile_path_append,
