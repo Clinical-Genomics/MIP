@@ -1,15 +1,18 @@
-package MIP::Check::Installation;
+package MIP::Install;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use utf8;
-use warnings qw{ FATAL utf8 };
 use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME };
@@ -19,12 +22,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{
-      check_mip_executable
-    };
+    our @EXPORT_OK = qw{ check_mip_executable };
 }
 
 sub check_mip_executable {
