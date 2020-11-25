@@ -131,7 +131,6 @@ sub build_container_cmd {
 
             my @cmds = run_container(
                 {
-                    active_parameter_href => $active_parameter_href,
                     bind_paths_ref        => \@bind_paths,
                     executable_name       => $executable_name,
                     container_manager     => $container_manager,
@@ -365,7 +364,6 @@ sub run_container {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
     my $bind_paths_ref;
     my $container_cmds_ref;
     my $container_manager;
@@ -382,13 +380,6 @@ sub run_container {
     my $remove;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
@@ -478,10 +469,10 @@ sub run_container {
         singularity => {
             arg_href => {
                 bind_paths_ref         => $bind_paths_ref,
+                container_cmds_ref     => $container_cmds_ref,
                 filehandle             => $filehandle,
                 image                  => $container_path,
                 gpu_switch             => $gpu_switch,
-                container_cmds_ref     => $container_cmds_ref,
                 stderrfile_path        => $stdinfile_path,
                 stderrfile_path_append => $stderrfile_path_append,
                 stdoutfile_path        => $stdoutfile_path,
