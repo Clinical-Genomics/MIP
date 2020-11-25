@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -58,7 +58,7 @@ sub install_mip_scripts {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Installation qw{ check_mip_executable };
+    use MIP::Install qw{ check_mip_executable };
 
     Readonly my $MOVE_DIRS_UP => 5;
 
