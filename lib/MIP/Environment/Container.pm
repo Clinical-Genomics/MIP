@@ -85,6 +85,7 @@ sub build_container_cmd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Data::Diver qw{ Dive };
+    use List::MoreUtils qw { any };
 
     my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
     my %container_cmd;
