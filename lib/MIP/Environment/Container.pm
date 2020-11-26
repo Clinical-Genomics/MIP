@@ -99,6 +99,11 @@ sub build_container_cmd {
             }
         );
 
+        my @gpu_executables =
+          exists $active_parameter_href->{gpu_capable_executables}
+          ? @{ $active_parameter_href->{gpu_capable_executables} }
+          : [];
+
       EXECUTABLE:
         while ( my ( $executable_name, $executable_path ) =
             each %{ $container_href->{$container_name}{executable} } )
@@ -119,23 +124,18 @@ sub build_container_cmd {
               ? @{ $recipe_executable_bind_path_href->{$executable_name} }
               : @container_constant_bind_path;
 
-            my @gpu_executables =
-              exists $active_parameter_href->{gpu_capable_executables}
-              ? @{ $active_parameter_href->{gpu_capable_executables} }
-              : [];
-
             my $gpu_switch;
-            if ( grep { $_ eq $executable_name } @gpu_executables ) {
+            if ( any { $_ eq $executable_name } @gpu_executables ) {
                 $gpu_switch = 1;
             }
 
             my @cmds = run_container(
                 {
-                    bind_paths_ref        => \@bind_paths,
-                    executable_name       => $executable_name,
-                    container_manager     => $container_manager,
-                    container_path        => $container_href->{$container_name}{uri},
-                    gpu_switch            => $gpu_switch,
+                    bind_paths_ref    => \@bind_paths,
+                    executable_name   => $executable_name,
+                    container_manager => $container_manager,
+                    container_path    => $container_href->{$container_name}{uri},
+                    gpu_switch        => $gpu_switch,
                 }
             );
 
@@ -345,8 +345,7 @@ sub run_container {
 
 ## Function : Run a docker container or exec a singularity image
 ## Returns  : @commands
-## Arguments: $active_parameter_href  => The active parameters for this analysis hash {REF}
-##          : $bind_paths_ref         => Bind host directory to container {REF}
+## Arguments: $bind_paths_ref         => Bind host directory to container {REF}
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
 ##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
@@ -410,7 +409,7 @@ sub run_container {
             store => \$filehandle,
         },
         gpu_switch => {
-            allow       => [ undef, qw{0 1} ],
+            allow       => [ undef, 0, 1 ],
             store       => \$gpu_switch,
             strict_type => 1,
         },
@@ -473,7 +472,7 @@ sub run_container {
                 filehandle             => $filehandle,
                 image                  => $container_path,
                 gpu_switch             => $gpu_switch,
-                stderrfile_path        => $stdinfile_path,
+                stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path_append,
                 stdoutfile_path        => $stdoutfile_path,
             },

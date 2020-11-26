@@ -85,12 +85,11 @@ sub install_containers {
         ## Get command for caching image
         my @container_commands = run_container(
             {
-                active_parameter_href => $active_parameter_href,
-                container_cmds_ref    => [qw{ ls }],
-                container_path        => $container_href->{$container}{uri},
-                container_manager     => $CONTAINER_MANAGER,
-                stderrfile_path       => $stderr_file_path,
-                stdoutfile_path       => devnull(),
+                container_cmds_ref => [qw{ ls }],
+                container_path     => $container_href->{$container}{uri},
+                container_manager  => $CONTAINER_MANAGER,
+                stderrfile_path    => $stderr_file_path,
+                stdoutfile_path    => devnull(),
             }
         );
 
