@@ -67,7 +67,7 @@ test_constants( {} );
 ## Given install parameters
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
-$active_parameter{reference_dir}     = catdir(qw{ a dir });
+$active_parameter{reference_dir}     = catdir( $Bin, qw{ a dir } );
 $active_parameter{container_manager} = q{docker};
 
 my $is_ok = install_containers(
@@ -103,6 +103,6 @@ is( $trap->leaveby, q{die}, q{Error in case of caching failure} );
 like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
 
 ## Clean-up
-rmtree( catdir(qw{ a }) );
+rmtree( catdir( $Bin, qw{ a } ) );
 
 done_testing();
