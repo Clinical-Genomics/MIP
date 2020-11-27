@@ -86,7 +86,7 @@ sub get_vcf_header_line_by_id {
     ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
     my @check_header_cmds = gnu_export(
         {
-                bash_variable => q{MIP_BIND}
+                bash_variable => q{SINGULARITY_BINDPATH}
               . $EQUALS
               . $vcf_file_path
               . $COLON
@@ -111,7 +111,7 @@ sub get_vcf_header_line_by_id {
     push @check_header_cmds, $SEMICOLON;
 
     ## Unset MIP_BIND after system parsing
-    push @check_header_cmds, gnu_unset( { bash_variable => q{MIP_BIND}, } );
+    push @check_header_cmds, gnu_unset( { bash_variable => q{SINGULARITY_BINDPATH}, } );
 
     my %process_return = child_process(
         {
