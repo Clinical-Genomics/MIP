@@ -60,15 +60,15 @@ sub ipc_cmd_run {
     use IPC::Cmd qw{ run };
 
     # System call
-    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
-      = run( command => $commands_ref, verbose => $verbose );
+    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
+      run( command => $commands_ref, verbose => $verbose );
 
     my %process_return = (
         error_message => $error_message,
-        buffers_ref        => $full_buf_ref,
-        stdouts_ref        => $stdout_buf_ref,
-        stderrs_ref        => $stderr_buf_ref,
-        success            => $success,
+        buffers_ref   => $full_buf_ref,
+        stdouts_ref   => $stdout_buf_ref,
+        stderrs_ref   => $stderr_buf_ref,
+        success       => $success,
     );
     return %process_return;
 }

@@ -117,11 +117,11 @@ is( $is_ok, undef, q{Return on auto flag a} );
 
 ## Given a failure during installation
 my %process_return = (
-    buffers_ref        => [],
+    buffers_ref   => [],
     error_message => q{Error message},
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 0,
+    stderrs_ref   => [],
+    stdouts_ref   => [],
+    success       => 0,
 );
 test_constants( { test_process_return_href => \%process_return } );
 $active_parameter{reference_dir} = catdir(qw{ reference dir });

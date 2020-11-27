@@ -67,7 +67,8 @@ container:
       make_examples: /opt/deepvariant/bin/make_examples
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
-    uri: docker.io/google/deepvariant:1.0.0
+    gpu_support: 1
+    uri: docker.io/google/deepvariant:1.0.0-gpu
   delly:
     executable:
       delly:

@@ -76,6 +76,15 @@ gatk_path:
   data_type: SCALAR
   default: /usr/
   type: path
+## GPU supported executables
+gpu_capable_executables:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - run_deepvariant
+    - call_variants
+  type: mip
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
@@ -192,6 +201,20 @@ recipe_core_number:
     vt_core: 1
   type: mip
 set_recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+## GPU number
+recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    deepvariant: 1
+  type: mip
+set_recipe_gpu_number:
   associated_recipe:
     - mip
   data_type: HASH

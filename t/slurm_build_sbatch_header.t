@@ -26,7 +26,7 @@ use MIP::Test::Fixtures qw{ test_standard_cli };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -37,6 +37,7 @@ $VERBOSE = test_standard_cli(
 
 ## Constants
 Readonly my $CORE_NR => 8;
+Readonly my $GPU_NR => 1;
 
 BEGIN {
 
@@ -84,6 +85,10 @@ my %argument = (
         inputs_ref      => [qw{ BEGIN FAIL END }],
         expected_output => q{--mail-type=BEGIN,FAIL,END},
     },
+    gpu_number => {
+        input           => $GPU_NR,
+        expected_output => q{--gpus=} . $GPU_NR,
+    },
     job_name => {
         input           => q{test_job_name},
         expected_output => q{--job-name=test_job_name},
@@ -115,6 +120,7 @@ my @commands = slurm_build_sbatch_header(
         core_number              => $argument{core_number}{input},
         email                    => $argument{email}{input},
         email_types_ref          => $argument{email_types_ref}{inputs_ref},
+        gpu_number               => $argument{gpu_number}{input},
         job_name                 => $argument{job_name}{input},
         process_time             => $argument{process_time}{input},
         project_id               => $argument{project_id}{input},

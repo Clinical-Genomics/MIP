@@ -69,11 +69,11 @@ my $vep_directory_cache =
   catdir( $Bin, qw{ data references ensembl-tools-data-100 cache } );
 
 my %process_return = (
-    buffers_ref        => [],
+    buffers_ref   => [],
     error_message => undef,
-    stderrs_ref        => [],
-    stdouts_ref        => [qw{ 100 }],
-    success            => 1,
+    stderrs_ref   => [],
+    stdouts_ref   => [qw{ 100 }],
+    success       => 1,
 );
 test_constants(
     {

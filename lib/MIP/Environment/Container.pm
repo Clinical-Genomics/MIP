@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,18 +40,27 @@ sub build_container_cmd {
 
     ## Function : Build executable command depending on container manager
     ## Returns  :
-    ## Arguments: $container_href                   => Containers hash {REF}
+    ## Arguments: $active_parameter_href            => The active parameters for this analysis hash {REF}
+    ##          : $container_href                   => Containers hash {REF}
     ##          : $container_manager                => Container manager
     ##          : $recipe_executable_bind_path_href => Recipe bind path hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $container_href;
     my $container_manager;
     my $recipe_executable_bind_path_href;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         container_href => {
             default     => {},
             defined     => 1,
@@ -76,6 +85,7 @@ sub build_container_cmd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Data::Diver qw{ Dive };
+    use List::MoreUtils qw { any };
 
     my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
     my %container_cmd;
@@ -89,6 +99,11 @@ sub build_container_cmd {
                 uri_ref           => \$container_href->{$container_name}{uri},
             }
         );
+
+        my @gpu_executables =
+          exists $active_parameter_href->{gpu_capable_executables}
+          ? @{ $active_parameter_href->{gpu_capable_executables} }
+          : [];
 
       EXECUTABLE:
         while ( my ( $executable_name, $executable_path ) =
@@ -110,11 +125,18 @@ sub build_container_cmd {
               ? @{ $recipe_executable_bind_path_href->{$executable_name} }
               : @container_constant_bind_path;
 
+            my $gpu_switch;
+            if ( any { $_ eq $executable_name } @gpu_executables ) {
+                $gpu_switch = 1;
+            }
+
             my @cmds = run_container(
                 {
                     bind_paths_ref    => \@bind_paths,
+                    executable_name   => $executable_name,
                     container_manager => $container_manager,
                     container_path    => $container_href->{$container_name}{uri},
+                    gpu_switch        => $gpu_switch,
                 }
             );
 
@@ -329,7 +351,9 @@ sub run_container {
 ##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
 ##          : $entrypoint             => Override container entrypoint
+##          : $executable_name        => Name of the executable
 ##          : $filehandle             => Filehandle to write to
+##          : $gpu_switch             => Use nvidia experimental support
 ##          : $image                  => Image to run
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
@@ -344,7 +368,9 @@ sub run_container {
     my $container_cmds_ref;
     my $container_manager;
     my $container_path;
+    my $executable_name;
     my $filehandle;
+    my $gpu_switch;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -376,8 +402,17 @@ sub run_container {
             store       => \$container_path,
             strict_type => 1,
         },
+        executable_name => {
+            store       => \$executable_name,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
+        },
+        gpu_switch => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$gpu_switch,
+            strict_type => 1,
         },
         remove => {
             allow       => [ undef, 0, 1 ],
@@ -434,9 +469,10 @@ sub run_container {
         singularity => {
             arg_href => {
                 bind_paths_ref         => $bind_paths_ref,
+                container_cmds_ref     => $container_cmds_ref,
                 filehandle             => $filehandle,
                 image                  => $container_path,
-                container_cmds_ref     => $container_cmds_ref,
+                gpu_switch             => $gpu_switch,
                 stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path_append,
                 stdoutfile_path        => $stdoutfile_path,
@@ -509,6 +545,7 @@ sub set_executable_container_cmd {
 
     my %container_cmd = build_container_cmd(
         {
+            active_parameter_href            => $active_parameter_href,
             container_href                   => $container_href,
             container_manager                => $container_manager,
             recipe_executable_bind_path_href => \%recipe_executable_bind_path,

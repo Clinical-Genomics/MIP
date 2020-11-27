@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.28;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -342,7 +342,7 @@ sub get_recipe_resources {
             strict_type => 1,
         },
         resource => {
-            allow       => [qw{ core_number load_env_ref memory time }],
+            allow       => [qw{ core_number gpu_number load_env_ref memory time }],
             store       => \$resource,
             strict_type => 1,
         },
@@ -388,6 +388,7 @@ sub get_recipe_resources {
 
     my %recipe_resource = (
         core_number  => $core_number,
+        gpu_number   => $active_parameter_href->{recipe_gpu_number}{$recipe_name},
         load_env_ref => \@source_environment_cmds,
         memory       => $memory,
         time         => $active_parameter_href->{recipe_time}{$recipe_name},

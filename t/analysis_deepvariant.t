@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,6 +73,7 @@ my %active_parameter = test_mip_hashes(
 
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
+$active_parameter{recipe_gpu_number}{$recipe_name}  = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
 

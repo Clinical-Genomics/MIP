@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Install::Post_installation} => [qw{ check_mip_installation }],
-        q{MIP::Test::Fixtures}                      =>
+        q{MIP::Test::Fixtures} =>
           [qw{ test_constants test_log test_mip_hashes test_standard_cli }],
     );
 
@@ -59,7 +59,7 @@ diag(   q{Test check_mip_installation from Post_installation.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-test_log( {} );
+test_log(       {} );
 test_constants( {} );
 
 ## Given install parameters

@@ -115,7 +115,7 @@ sub _build_usage {
 
     option(
         q{dry_run_all} => (
-            cmd_aliases   => [qw{ dra }],
+            cmd_aliases => [qw{ dra }],
             documentation =>
               q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},

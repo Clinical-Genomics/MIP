@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,13 +73,13 @@ my $filehandle = IO::Handle->new();
 ## Given input to create script
 my $directory_id     = q{case_1};
 my $temp_dir         = catfile($test_dir);
-my $test_recipe_name = q{bwa_mem};
+my $test_recipe_name = q{deepvariant};
 
 my %active_parameter = (
     bash_set_errexit                => 1,
     bash_set_nounset                => 1,
     bash_set_pipefail               => 1,
-    bwa_mem                         => $TWO,
+    deepvariant                     => $TWO,
     email_types                     => [qw{ BEGIN FAIL }],
     outdata_dir                     => catfile( $test_dir, q{test_data_dir} ),
     outscript_dir                   => catfile( $test_dir, q{test_script_dir} ),

@@ -217,6 +217,33 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     has(
+        q{recipe_gpu_number} => (
+            cmd_tags      => [q{recipe_name=X(gpus)}],
+            documentation => q{Set the number of gpus for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{set_recipe_gpu_number} => (
+            cmd_tags      => [q{recipe_name=X(gpus)}],
+            documentation => q{Set the number of gpus for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{gpu_capable_executables} => (
+            cmd_flag      => q{gpu_capable_executables},
+            documentation => q{List of executables with GPU capabilities},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ run_deepvariant call_variants }] ) ],
+        )
+    );
+
+    has(
         q{recipe_memory} => (
             cmd_tags      => [q{recipe_name=X(G)}],
             documentation => q{Set the memory for each recipe},

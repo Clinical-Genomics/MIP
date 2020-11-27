@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -436,6 +436,7 @@ sub setup_script {
 ##          : $directory_id                    => $sample id | $case_id
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
+##          : $gpu_number                      => Number of GPUs to use
 ##          : $job_id_href                     => The job_id hash {REF}
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
@@ -468,6 +469,7 @@ sub setup_script {
     ## Default(s)
     my $core_number;
     my $error_trap;
+    my $gpu_number;
     my $outdata_dir;
     my $outscript_dir;
     my $process_time;
@@ -502,7 +504,12 @@ sub setup_script {
             store       => \$error_trap,
             strict_type => 1,
         },
-        filehandle  => { store => \$filehandle, },
+        filehandle => { store => \$filehandle, },
+        gpu_number => {
+            allow       => [ undef, qr{ \A\d+\z }xsm ],
+            store       => \$gpu_number,
+            strict_type => 1,
+        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -665,6 +672,7 @@ sub setup_script {
                 email             => $active_parameter_href->{email},
                 email_types_ref   => $active_parameter_href->{email_types},
                 filehandle        => $filehandle,
+                gpu_number        => $gpu_number,
                 job_name          => $job_name,
                 memory_allocation => $memory_allocation,
                 process_time      => $process_time . q{:00:00},

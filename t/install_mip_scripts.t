@@ -82,11 +82,11 @@ ok( $is_ok, q{Executed install mip_scripts recipe} );
 
 ## Given error in caching
 my %process_return = (
-    buffers_ref        => [],
+    buffers_ref   => [],
     error_message => q{Error message},
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 0,
+    stderrs_ref   => [],
+    stdouts_ref   => [],
+    success       => 0,
 );
 test_constants( { test_process_return_href => \%process_return }, );
 trap {

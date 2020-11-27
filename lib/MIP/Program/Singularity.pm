@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ singularity_exec singularity_pull };
@@ -35,21 +35,23 @@ sub singularity_exec {
 
 ## Function : Perl wrapper for writing singularity execute command. Based on singularity v3.1.
 ## Returns  : @commands
-## Arguments: $bind_paths_ref         => Array with paths to bind {REF}
-##          : $filehandle             => Filehandle to write to
-##          : $image                  => Singularity container name
-##          : $container_cmds_ref     => Array with commands to be executed inside container {REF}
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdoutfile_path        => Stdoutfile path
+## Arguments: $bind_paths_ref                 => Array with paths to bind {REF}
+##          : $filehandle                     => Filehandle to write to
+##          : $image                          => Singularity container name
+##          : $gpu_switch                     => Add nvidia experimental support
+##          : $container_cmds_ref             => Array with commands to be executed inside container {REF}
+##          : $stderrfile_path                => Stderrfile path
+##          : $stderrfile_path_append         => Append stderr info to file path
+##          : $stdoutfile_path                => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $bind_paths_ref;
-    my $filehandle;
-    my $image;
     my $container_cmds_ref;
+    my $filehandle;
+    my $gpu_switch;
+    my $image;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -58,6 +60,11 @@ sub singularity_exec {
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
+            strict_type => 1,
+        },
+        container_cmds_ref => {
+            default     => [],
+            store       => \$container_cmds_ref,
             strict_type => 1,
         },
         filehandle => {
@@ -69,9 +76,9 @@ sub singularity_exec {
             store       => \$image,
             strict_type => 1,
         },
-        container_cmds_ref => {
-            default     => [],
-            store       => \$container_cmds_ref,
+        gpu_switch => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$gpu_switch,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -93,6 +100,9 @@ sub singularity_exec {
     ## Stores commands depending on input parameters
     my @commands = qw{ singularity exec };
 
+    if ($gpu_switch) {
+        push @commands, q{--nv};
+    }
     ## Add bind paths
     if ( @{$bind_paths_ref} ) {
         push @commands, q{--bind} . $SPACE . join $COMMA, @{$bind_paths_ref};
