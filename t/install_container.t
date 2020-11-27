@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
+use File::Path qw{ rmtree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -25,7 +26,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_constants test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,15 +78,15 @@ my $is_ok = install_containers(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed install container recipe } );
+ok( $is_ok, q{Executed install container recipe} );
 
 ## Given error in caching
 my %process_return = (
-    buffers_ref        => [],
+    buffers_ref   => [],
     error_message => q{Error message},
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 0,
+    stderrs_ref   => [],
+    stdouts_ref   => [],
+    success       => 0,
 );
 test_constants( { test_process_return_href => \%process_return }, );
 trap {
@@ -100,4 +101,8 @@ trap {
 ## Then exit and print error message
 is( $trap->leaveby, q{die}, q{Error in case of caching failure} );
 like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
+
+## Clean-up
+rmtree( catdir(qw{ a }) );
+
 done_testing();
