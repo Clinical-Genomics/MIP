@@ -5,7 +5,6 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Path qw{ rmtree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -61,13 +60,15 @@ diag(   q{Test install_containers from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $test_dir = File::Temp->newdir();
+
 test_log( { no_screen => 1, } );
 test_constants( {} );
 
 ## Given install parameters
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
-$active_parameter{reference_dir}     = catdir( $Bin, qw{ a dir } );
+$active_parameter{reference_dir}     = catdir( $test_dir, qw{ a dir } );
 $active_parameter{container_manager} = q{docker};
 
 my $is_ok = install_containers(
@@ -101,8 +102,5 @@ trap {
 ## Then exit and print error message
 is( $trap->leaveby, q{die}, q{Error in case of caching failure} );
 like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
-
-## Clean-up
-rmtree( catdir( $Bin, qw{ a } ) );
 
 done_testing();
