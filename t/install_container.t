@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_constants test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,13 +60,15 @@ diag(   q{Test install_containers from Container.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $test_dir = File::Temp->newdir();
+
 test_log( { no_screen => 1, } );
 test_constants( {} );
 
 ## Given install parameters
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
-$active_parameter{reference_dir}     = catdir(qw{ a dir });
+$active_parameter{reference_dir}     = catdir( $test_dir, qw{ a dir } );
 $active_parameter{container_manager} = q{docker};
 
 my $is_ok = install_containers(
@@ -77,15 +79,15 @@ my $is_ok = install_containers(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed install container recipe } );
+ok( $is_ok, q{Executed install container recipe} );
 
 ## Given error in caching
 my %process_return = (
-    buffers_ref        => [],
+    buffers_ref   => [],
     error_message => q{Error message},
-    stderrs_ref        => [],
-    stdouts_ref        => [],
-    success            => 0,
+    stderrs_ref   => [],
+    stdouts_ref   => [],
+    success       => 0,
 );
 test_constants( { test_process_return_href => \%process_return }, );
 trap {
@@ -100,4 +102,5 @@ trap {
 ## Then exit and print error message
 is( $trap->leaveby, q{die}, q{Error in case of caching failure} );
 like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
+
 done_testing();
