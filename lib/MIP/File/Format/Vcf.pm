@@ -85,7 +85,7 @@ sub get_vcf_header_line_by_id {
     my @check_header_cmds;
 
     ## Stream vcf using bcftools
-    push my @check_header_cmds,
+    push @check_header_cmds,
       $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
     push @check_header_cmds, $PIPE;
 
