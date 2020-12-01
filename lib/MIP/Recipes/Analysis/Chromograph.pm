@@ -375,6 +375,7 @@ sub analysis_chromograph_rhoviz {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Chromograph qw{ chromograph };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -396,7 +397,7 @@ sub analysis_chromograph_rhoviz {
     );
     my $infile_path_prefix = $io{in}{file_paths}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
     my $infile_name_prefix = $io{in}{file_names}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
-    my %infile_path = (
+    my %infile_path        = (
         autozyg => $infile_path_prefix . $DOT . q{bed},
         fracsnp => $infile_path_prefix . $DOT . q{wig},
     );
@@ -472,13 +473,33 @@ sub analysis_chromograph_rhoviz {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    my %chromograph_infile_path = (
+        autozyg => catfile( $outdir_path, $infile_name_prefix . $DOT . q{autozyg.bed} ),
+        fracsnp => catfile( $outdir_path, $infile_name_prefix . $DOT . q{fracsnp.wig} ),
+    );
+
+    ## Move and rename files so that the correct out files are generated
+  FILE_TYPE:
+    foreach my $file_type ( keys %infile_path ) {
+
+        gnu_mv(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $infile_path{$file_type},
+                outfile_path => $chromograph_infile_path{$file_type},
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+    print {$filehandle} $NEWLINE;
+
     ## Process regions of autozygosity
     chromograph(
         {
             euploid           => 1,
             filehandle        => $filehandle,
             outdir_path       => $outdir_path,
-            autozyg_file_path => $infile_path{autozyg},
+            autozyg_file_path => $chromograph_infile_path{autozyg},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -489,7 +510,7 @@ sub analysis_chromograph_rhoviz {
             euploid           => 1,
             filehandle        => $filehandle,
             outdir_path       => $outdir_path,
-            fracsnp_file_path => $infile_path{fracsnp},
+            fracsnp_file_path => $chromograph_infile_path{fracsnp},
         }
     );
     say {$filehandle} $NEWLINE;
