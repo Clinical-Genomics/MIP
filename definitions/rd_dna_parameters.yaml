@@ -142,6 +142,7 @@ recipe_core_number:
     cadd_ar: 13
     chanjo_sexcheck: 1
     chromograph_cov: 1
+    chromograph_rhoviz: 1
     chromograph_upd: 1
     cnvnator_ar: 13
     delly_call: 36
@@ -209,6 +210,7 @@ recipe_memory:
     cadd_ar: 6
     chanjo_sexcheck: 2
     chromograph_cov: 5
+    chromograph_rhoviz: 5
     chromograph_upd: 5
     delly_reformat: 3
     endvariantannotationblock: 8
@@ -253,6 +255,7 @@ recipe_time:
     cadd_ar: 10
     chanjo_sexcheck: 2
     chromograph_cov: 1
+    chromograph_rhoviz: 1
     chromograph_upd: 1
     cnvnator_ar: 1
     delly_call: 20
@@ -1583,6 +1586,17 @@ upd_ar:
     - upd
   type: recipe
 chromograph_cov:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".png"
+  program_executables:
+    - chromograph
+  type: recipe
+chromograph_rhoviz:
   analysis_mode: sample
   associated_recipe:
     - mip
