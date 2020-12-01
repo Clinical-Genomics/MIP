@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -82,10 +82,13 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in} } = (
+    file_path_href => {
+        regions => catfile(qw{path to upd.regions.bed}),
+        sites   => catfile(qw{path to upd.sites.bed}),
+    },
+    file_suffix => q{.bed},
+    file_names  => [qw{ upd.regions.bed path to upd.sites.bed }],
 );
 
 my %job_id;

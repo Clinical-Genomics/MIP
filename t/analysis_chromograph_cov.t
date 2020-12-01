@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -85,12 +85,10 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in} } = (
+    file_path        => catfile(qw{path to tiddit_cov.wig}),
+    file_name_prefix => q{tiddit_cov},
 );
-
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -98,7 +96,7 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$parameter{$recipe_name}{chain} = q{MAIN};
+$parameter{$recipe_name}{chain} = q{TEST};
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 

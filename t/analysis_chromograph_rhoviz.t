@@ -82,10 +82,10 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in} } = (
+    file_suffix => q{.bw},
+    file_paths  => [ catfile(qw{path to rhocall_viz.bw}) ],
+    file_names  => [q{rhocall_viz.bw}],
 );
 
 my %job_id;
