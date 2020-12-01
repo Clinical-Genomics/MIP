@@ -302,7 +302,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Alternative file tag
     my $alt_file_tag = $EMPTY_STR;
 
-    if ( $active_parameter_href->{sv_bcftools_norm_decompose} ) {
+    if ( $active_parameter_href->{sv_decompose} ) {
 
         ## Update file tag
         $alt_file_tag = $UNDERSCORE . q{decompose};
@@ -585,7 +585,7 @@ sub _preprocess_joint_callers_file {
         ## Store merged outfile per caller
         push @{ $file_path_href->{$structural_variant_caller} }, $decompose_outfile_path;
 
-        if ( $active_parameter_href->{sv_bcftools_norm_decompose} ) {
+        if ( $active_parameter_href->{sv_decompose} ) {
 
             ## Split multiallelic variants
             say {$filehandle} q{## Split multiallelic variants};

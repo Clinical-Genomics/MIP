@@ -881,7 +881,7 @@ sv_svdb_merge_prioritize:
   data_type: SCALAR
   default: tiddit,cnvnator,manta
   type: recipe_argument
-sv_bcftools_norm_decompose:
+sv_decompose:
   associated_recipe:
     - sv_combinevariantcallsets
   data_type: SCALAR
