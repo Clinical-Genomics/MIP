@@ -1914,7 +1914,7 @@ sub write_job_ids_to_file {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        job_ids_file_path => => {
+        job_ids_file_path => {
             defined     => 1,
             required    => 1,
             store       => \$job_ids_file_path,
