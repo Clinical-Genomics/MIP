@@ -396,7 +396,6 @@ sub analysis_chromograph_rhoviz {
     );
     my $infile_path_prefix = $io{in}{file_paths}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
     my $infile_name_prefix = $io{in}{file_names}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
-    use Data::Printer;
     my %infile_path = (
         autozyg => $infile_path_prefix . $DOT . q{bed},
         fracsnp => $infile_path_prefix . $DOT . q{wig},
