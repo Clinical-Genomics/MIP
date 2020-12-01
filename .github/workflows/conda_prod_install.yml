@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: goanpeca/setup-miniconda@v1
+      - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: bioconda, conda-forge
 
@@ -29,8 +29,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_ci
-          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
-          bash mip.sh
+          perl mip install --envn mip_ci --select_program mip_scripts
 
       - name: Install bcftools in conda test env
         shell: bash -l {0}
@@ -65,4 +64,3 @@ jobs:
           conda activate mip_ci
           perl t/mip_qccollect.test
           perl t/mip_vcfparser.test
-          perl t/mip_vercollect.test

@@ -1,6 +1,4 @@
 ---
-## Version: 2.1.2
-## HumanGenomeReference
 custom_default_parameters:
   associated_recipe:
     - mip

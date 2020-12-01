@@ -1,5 +1,4 @@
 ---
-## Version: 2.1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -244,12 +243,6 @@ picardtools_path:
     - picardtools_collectmultiplemetrics
   data_type: SCALAR
   type: path
-replace_iupac:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 ### Programs
 ## Gzip
 gzip_fastq:

@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -41,18 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Mip}   => [qw{ mip_vercollect }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Bcftools} => [qw{ bcftools_sort }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Mip qw{ mip_vercollect };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Bcftools qw{ bcftools_sort };
 
-diag(   q{Test mip_vercollect from Mip.pm v}
-      . $MIP::Program::Mip::VERSION
+diag(   q{Test bcftools_sort from Bcftools v}
+      . $MIP::Program::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,12 +59,12 @@ diag(   q{Test mip_vercollect from Mip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ mip vercollect };
+my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -76,59 +74,53 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{stdoutfile_path},
+        expected_output => q{1> stdoutfile_path},
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-        expected_output => q{--infile}
-          . $SPACE
-          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
-        expected_output => q{--outfile}
-          . $SPACE
-          . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
+    temp_directory => {
+        input           => catdir(qw{ a temp dir }),
+        expected_output => q{--temp-dir} . $SPACE . catdir(qw{ a temp dir }),
     },
 );
 
 my %specific_argument = (
-    log_file_path => {
-        input           => catfile(qw{ outcase_directory case_id _vercollect.log }),
-        expected_output => q{--log_file}
-          . $SPACE
-          . catfile(qw{ outcase_directory case_id _vercollect.log }),
-    },
     infile_path => {
-        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
-        expected_output => q{--infile}
-          . $SPACE
-          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
+        input           => q{infile.test},
+        expected_output => q{infile.test},
+    },
+    max_mem => {
+        input           => q{3G},
+        expected_output => q{--max-mem} . $SPACE . q{3G},
     },
     outfile_path => {
-        input           => catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
-        expected_output => q{--outfile}
-          . $SPACE
-          . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
+        input           => q{outfile.bcf},
+        expected_output => q{--output} . $SPACE . q{outfile.bcf},
+    },
+    output_type => {
+        input           => q{b},
+        expected_output => q{--output-type} . $SPACE . q{b},
+    },
+    temp_directory => {
+        input           => catdir(qw{ a temp dir }),
+        expected_output => q{--temp-dir} . $SPACE . catdir(qw{ a temp dir }),
     },
 );
 
-# Coderef - enables generalized use of generate call
-my $module_function_cref = \&mip_vercollect;
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&bcftools_sort;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
             required_argument_href     => \%required_argument,

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -123,8 +123,6 @@ sub analysis_gatk_combinevariantcallsets {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
@@ -185,8 +183,7 @@ sub analysis_gatk_combinevariantcallsets {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -239,7 +236,6 @@ sub analysis_gatk_combinevariantcallsets {
         my %variant_caller_tag_map = (
             gatk_variantrecalibration => q{haplotypecaller},
             glnexus_merge             => q{deepvariant},
-            bcftools_mpileup          => q{mpileup},
         );
 
         $variant_caller_prio_tag = $variant_caller_tag_map{$variant_caller};
@@ -254,8 +250,14 @@ sub analysis_gatk_combinevariantcallsets {
 
     my @combine_infile_paths = map { $file_path{$_} } @variant_callers;
 
+    ## Default when only one variant caller
+    my $bcftools_infile_path = $file_path{infile_path};
+
     ## Check that we have something to combine
     if ( scalar @variant_callers > 1 ) {
+
+        ## Setting new combined infile path for bcftools
+        $bcftools_infile_path = $outfile_path_prefix . $DOT . q{vcf};
 
         ## GATK CombineVariants
         say {$filehandle} q{## GATK CombineVariants};
@@ -271,7 +273,7 @@ sub analysis_gatk_combinevariantcallsets {
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 logging_level        => $active_parameter_href->{gatk_logging_level},
                 memory_allocation    => q{Xmx20g},
-                outfile_path         => $outfile_path,
+                outfile_path         => $bcftools_infile_path,
                 prioritize_caller =>
                   $active_parameter_href->{gatk_combinevariants_prioritize_caller},
                 referencefile_path => $referencefile_path,
@@ -280,33 +282,26 @@ sub analysis_gatk_combinevariantcallsets {
         );
         say {$filehandle} $NEWLINE;
     }
-    else {
 
-        say {$filehandle} q{## Renaming case to facilitate downstream processing};
-
-        gnu_cp(
-            {
-                filehandle   => $filehandle,
-                infile_path  => $file_path{infile_path},
-                outfile_path => $outfile_path,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-    }
-
+    my %output_type = ( z => q{tbi}, );
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
-        ## Reformat variant calling file and index
+        $output_type{b} = q{csi};
+    }
+
+  OUTPUT_TYPES:
+    while ( my ( $output_type, $index_type ) = each %output_type ) {
+
         bcftools_view_and_index_vcf(
             {
                 filehandle          => $filehandle,
-                infile_path         => $outfile_path,
+                infile_path         => $bcftools_infile_path,
                 outfile_path_prefix => $outfile_path_prefix,
-                output_type         => q{b},
+                index_type          => $index_type,
+                output_type         => $output_type,
             }
         );
     }
-
     close $filehandle;
 
     if ( $recipe_mode == 1 ) {
@@ -324,16 +319,6 @@ sub analysis_gatk_combinevariantcallsets {
 
             my $bcf_suffix    = $DOT . q{bcf};
             my $bcf_file_path = $outfile_path_prefix . $bcf_suffix;
-            set_file_path_to_store(
-                {
-                    format           => q{bcf},
-                    id               => $case_id,
-                    path             => $bcf_file_path,
-                    path_index       => $bcf_file_path . $DOT . q{csi},
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
-                }
-            );
             set_file_path_to_store(
                 {
                     format           => q{bcf},

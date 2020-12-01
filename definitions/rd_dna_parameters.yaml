@@ -1,5 +1,4 @@
 ---
-## Version: 2.1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -56,7 +55,6 @@ expected_coverage:
 ## genomeAnalysisToolKitPath
 gatk_logging_level:
   associated_recipe:
-    - bcftools_mpileup
     - gatk_baserecalibration
     - gatk_combinevariantcallsets
     - gatk_gathervcfs
@@ -78,10 +76,18 @@ gatk_path:
   data_type: SCALAR
   default: /usr/
   type: path
+## GPU supported executables
+gpu_capable_executables:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - run_deepvariant
+    - call_variants
+  type: mip
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - bwa_mem2
     - cnvnator_ar
@@ -107,7 +113,6 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - bwa_mem2
     - cnvnator_ar
@@ -137,7 +142,6 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_mpileup: 16
     bwa_mem: 36
     bwa_mem2: 36
     cadd_ar: 13
@@ -202,6 +206,20 @@ set_recipe_core_number:
   data_type: HASH
   mandatory: no
   type: mip
+## GPU number
+recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    deepvariant: 1
+  type: mip
+set_recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ## Memory per parallel process/core
 recipe_memory:
   associated_recipe:
@@ -253,7 +271,6 @@ recipe_time:
     analysisrunstatus: 1
     bwa_mem: 30
     bwa_mem2: 10
-    bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
     chromograph_cov: 1
@@ -339,12 +356,6 @@ picardtools_path:
     - sv_reformat
   data_type: SCALAR
   type: path
-replace_iupac:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 ### Programs
 split_fastq_file:
   analysis_mode: sample
@@ -1178,38 +1189,6 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
-## Bcftools
-bcftools_mpileup:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _mpileup
-  program_executables:
-    - bcftools
-  recipe_type: variant_callers
-  outfile_suffix: ".vcf"
-  type: recipe
-  variant_caller: mpileup
-bcftools_mpileup_constrain:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  mandatory: no
-  type: recipe_argument
-bcftools_mpileup_filter_variant:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-bcftools_mpileup_keep_unnormalised:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -1464,7 +1443,7 @@ gatk_combinevariantcallsets:
   data_type: SCALAR
   default: 1
   file_tag: _gatkcomb
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   type: recipe
 gatk_combinevariantcallsets_bcf_file:
   associated_recipe:

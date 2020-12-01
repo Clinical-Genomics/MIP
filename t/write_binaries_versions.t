@@ -20,7 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
+use MIP::Constants qw{ $COLON $COMMA $EMPTY_STR $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Script::Setup_script} => [qw{ write_return_to_environment }],
-        q{MIP::Test::Fixtures}       => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Environment::Executable} => [qw{ write_binaries_versions }],
+        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Script::Setup_script qw{ write_return_to_environment };
+use MIP::Environment::Executable qw{ write_binaries_versions };
 
-diag(   q{Test write_return_to_environment from Setup_script.pm v}
-      . $MIP::Script::Setup_script::VERSION
+diag(   q{Test write_binaries_versions from Executable.pm v}
+      . $MIP::Environment::Executable::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,32 +58,39 @@ diag(   q{Test write_return_to_environment from Setup_script.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given package attributes and a package name
-my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
 # For storing info to write
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-open $filehandle, q{>}, \$file_content
+open my $filehandle, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-write_return_to_environment(
+## Given an existing perl command in CONTAINER_CMD
+my $container_perl_command =
+  q{singularity exec docker.io/clinicalgenomics/perl:5.26 perl};
+my $container_vep_command =
+  q{singularity exec docker.io/ensemblorg/ensembl-vep:release_100.2 vep};
+
+my %container_cmd = (
+    perl => $container_perl_command,
+    vep  => $container_vep_command,
+);
+
+## Given an executable name
+my $outfile_path = q{an_outfile};
+
+write_binaries_versions(
     {
-        active_parameter_href => \%active_parameter,
-        filehandle            => $filehandle,
+        binary_info_href => \%container_cmd,
+        filehandle       => $filehandle,
+        outfile_path     => $outfile_path,
     }
 );
 
-# Close the filehandle
 close $filehandle;
 
-## Then env load command shoudl be written to file
-my ($load_command) = $file_content =~ /^(conda activate test)/ms;
-
-ok( $load_command, q{Wrote env load command} );
+## Then return version command
+my ($returned_base_command) = $file_content =~ /($outfile_path)/mxs;
+is( $returned_base_command, $outfile_path, q{Wrote binary version command} );
 
 done_testing();

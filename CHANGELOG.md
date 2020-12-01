@@ -2,6 +2,31 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.0.0]
+- Use Chanjo repos Docker file instead of MIPs
+- Removed support to run bcftools_mpileup as a variant caller
+- Added perl and MIP docker file and use it in recipes
+- Removed PATH check for proxy bins
+- Switched to using container manager instead of proxy bins in recipes
+- Removed support to run variant_integrity
+- Added deepvariant as variant caller and glnexus to merge samples to case vcf 
+
+**Tools**
+chanjo: 4.2.0 -> 4.6
+deepvariant: 1.0.0
+glnexus: v1.2.7
+
+## [9.0.6]
+- Use "PAN" key for slurm_jobs_ids file instead of "ALL" as "ALL" has a size constraint
+
+## [9.0.5]
+- Predicted gender from wgs samples are now used in the generated fam files.
+- Restrict plink analysis to intersected target capture kits for mixed wgs/wes cases
+- Update to chromograph in order to fix the renderering coverage images 
+
+**Tools**
+chromograph: 0.3.1 -> 0.3.3
+
 ## [9.0.4]
 - Increased memory allocation for samtools_subsample_mt
 - Check that vep plugin paths exists prior to executing mip

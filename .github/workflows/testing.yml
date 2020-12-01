@@ -13,7 +13,7 @@ jobs:
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: '5.26'
-      - uses: goanpeca/setup-miniconda@v1
+      - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: bioconda, conda-forge
 
@@ -22,6 +22,11 @@ jobs:
           perl -V
           cpanm --quiet --notest --installdeps .
 
+      - name: Install bcftools in conda test env
+        shell: bash -l {0}
+        run: |
+          conda create -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+
       - name: Run MIP install test
         shell: bash -l {0}
         run: perl t/mip_install.test
@@ -29,13 +34,7 @@ jobs:
       - name: Install MIP rare disease
         shell: bash -l {0}
         run: |
-          perl mip install --bash_set_errexit --envn mip_ci --select_program mip_scripts python
-          bash mip.sh
-
-      - name: Install bcftools in conda test env
-        shell: bash -l {0}
-        run: |
-          conda install -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+          perl mip install --envn mip_ci --select_program mip_scripts
 
       - name: Run MIP unit tests
         shell: bash -l {0}
@@ -65,4 +64,3 @@ jobs:
           conda activate mip_ci
           perl t/mip_qccollect.test
           perl t/mip_vcfparser.test
-          perl t/mip_vercollect.test

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -857,7 +857,6 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
-      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
       set_default_install_config_file
@@ -881,13 +880,6 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_analysis_type,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-            },
-        },
-        conda_path => {
-            method   => \&set_default_conda_path,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                conda_path            => $parameter_name,
             },
         },
         bwa_build_reference => {
@@ -970,13 +962,6 @@ sub set_custom_default_to_active_parameter {
             },
         },
         select_programs => {
-            method   => \&set_default_uninitialized_parameter,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => $parameter_name,
-            },
-        },
-        shell_install => {
             method   => \&set_default_uninitialized_parameter,
             arg_href => {
                 active_parameter_href => $active_parameter_href,

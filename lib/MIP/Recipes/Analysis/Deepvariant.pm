@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_deepvariant };
@@ -199,6 +199,7 @@ sub analysis_deepvariant {
             core_number           => $recipe_resource{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
+            gpu_number            => $recipe_resource{gpu_number},
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe_resource{memory},
             process_time          => $recipe_resource{time},

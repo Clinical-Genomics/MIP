@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,11 +61,13 @@ diag(   q{Test set_default_to_active_parameter from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $DEFAULT_OPTICAL_DUPLICATION_DISTANCE => 2500;
+
 ## Create log object
-my $log = test_log( {} );
+test_log( {} );
 
 my @order_parameters =
-  qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats decompose_normalize_references
+  qw{ markduplicates_picardtools_opt_dup_dist bwa_mem bwa_mem_bamstats decompose_normalize_references
   gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates
   sv_vcfparser_range_feature_file };
 
@@ -108,10 +110,13 @@ is( $active_parameter{gatk_genotypegvcfs_ref_gvcf},
     q{test_file}, q{Returned for not required exome mode parameter} );
 
 is( $active_parameter{bwa_mem_bamstats},
-    q{1}, q{Set default for non active associated_recipe parameter} );
+    1, q{Set default for non active associated_recipe parameter} );
 
-is( $active_parameter{bcftools_mpileup_filter_variant},
-    0, q{Set default for scalar parameter} );
+is(
+    $active_parameter{markduplicates_picardtools_opt_dup_dist},
+    $DEFAULT_OPTICAL_DUPLICATION_DISTANCE,
+    q{Set default for scalar parameter}
+);
 
 my @expected_decompose_normalize_references = qw{
   gatk_baserecalibration_known_sites

@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.62;
+our $VERSION = 1.63;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -217,6 +217,33 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     has(
+        q{recipe_gpu_number} => (
+            cmd_tags      => [q{recipe_name=X(gpus)}],
+            documentation => q{Set the number of gpus for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{set_recipe_gpu_number} => (
+            cmd_tags      => [q{recipe_name=X(gpus)}],
+            documentation => q{Set the number of gpus for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{gpu_capable_executables} => (
+            cmd_flag      => q{gpu_capable_executables},
+            documentation => q{List of executables with GPU capabilities},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ run_deepvariant call_variants }] ) ],
+        )
+    );
+
+    has(
         q{recipe_memory} => (
             cmd_tags      => [q{recipe_name=X(G)}],
             documentation => q{Set the memory for each recipe},
@@ -267,14 +294,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{replace_iupac} => (
-            documentation => q{Replace IUPAC code in alternative alleles with N},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
@@ -1090,42 +1109,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Remove variants with hgnc_ids from file},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{bcftools_mpileup} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant calling using bcftools mpileup},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_constrain} => (
-            cmd_flag      => q{bcftools_mpileup_constrain},
-            documentation => q{Use contrain in trio calling},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_filter_variant} => (
-            cmd_flag      => q{bcftools_mpileup_fil_var},
-            documentation => q{Use standard bcftools filters},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{bcftools_mpileup_keep_unnormalised} => (
-            cmd_flag      => q{bcftools_mpileup_keep_unn},
-            documentation => q{Do not normalise variants},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 

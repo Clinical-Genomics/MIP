@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile splitpath};
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use utf8;
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.21;
+    our $VERSION = 1.22;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -135,10 +135,9 @@ sub analysis_plink {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw(bcftools_view bcftools_annotate);
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_norm bcftools_view };
     use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use MIP::Program::Vt qw(vt_uniq);
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -161,8 +160,6 @@ sub analysis_plink {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
@@ -267,12 +264,6 @@ sub analysis_plink {
         }
     );
 
-    # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
-
-    # To enable submission to %sample_info_qc later
-    my $stdout_file_path = catfile( $directory, $recipe_info_file . q{.stdout.txt} );
-
     ### SHELL:
 
     my $plink_outfile_prefix = catfile($outfile_path_prefix);
@@ -285,48 +276,66 @@ sub analysis_plink {
             case_id          => $case_id,
             fam_file_path    => $case_file_path,
             filehandle       => $filehandle,
-            parameter_href   => $parameter_href,
             sample_ids_ref   => $active_parameter_href->{sample_ids},
             sample_info_href => $sample_info_href,
         }
     );
 
     ## Prepare input
-    say {$filehandle} q{## Remove indels using bcftools};
-    my $view_outfile_path =
-      $infile_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix;
-    bcftools_view(
+
+    ## Define regions to analyse
+    my $regions_file_path = _setup_plink_for_analysis_type(
         {
-            exclude_types_ref => [qw{ indels }],
-            filehandle        => $filehandle,
-            infile_path       => $infile_path,
-            outfile_path      => $view_outfile_path,
-            output_type       => q{v},
+            consensus_analysis_type => $consensus_analysis_type,
+            exome_target_bed_href   => $active_parameter_href->{exome_target_bed},
+            filehandle              => $filehandle,
+            outdir_path_prefix      => $outdir_path_prefix,
+            sample_ids_ref          => \@sample_ids,
         }
     );
-    say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Remove indels, annotate and sort using bcftools};
     say {$filehandle} q{## Create uniq IDs and remove duplicate variants};
+    bcftools_view(
+        {
+            exclude_types_ref => [qw{indels}],
+            filehandle        => $filehandle,
+            infile_path       => $infile_path,
+            output_type       => q{u},
+            regions_file_path => $regions_file_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
     bcftools_annotate(
         {
             filehandle     => $filehandle,
-            infile_path    => $view_outfile_path,
-            output_type    => q{v},
+            output_type    => q{u},
             remove_ids_ref => [q{ID}],
             set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
         }
     );
-
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Drops duplicate variants that appear later in the the VCF file
+    my $sort_memory = $recipe_resource{memory} - 2;
+    bcftools_sort(
+        {
+            filehandle     => $filehandle,
+            max_mem        => $sort_memory . q{G},
+            output_type    => q{v},
+            temp_directory => $temp_directory,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
     my $uniq_outfile_path =
-      $infile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
-    vt_uniq(
+      $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
+    bcftools_norm(
         {
             filehandle   => $filehandle,
             infile_path  => $DASH,
             outfile_path => $uniq_outfile_path,
+            remove_duplicates => 1,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -516,6 +525,117 @@ sub analysis_plink {
         );
     }
     return 1;
+}
+
+sub _setup_plink_for_analysis_type {
+
+## Function : Restrict analysis to capture kit depending on analysis type.
+## Returns  :
+## Arguments: $consensus_analysis_type => Consensus analysis type
+##          : $exome_target_bed_href   => Bed files {REF}
+##          : $filehandle              => Filehandle
+##          : $outdir_path_prefix      => Outdir path prefix
+##          : $sample_ids_ref          => Sample ID:s {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consensus_analysis_type;
+    my $exome_target_bed_href;
+    my $filehandle;
+    my $outdir_path_prefix;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        exome_target_bed_href => {
+            default     => {},
+            required    => 1,
+            store       => \$exome_target_bed_href,
+            strict_type => 1,
+        },
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        outdir_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdir_path_prefix,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::MoreUtils qw{ uniq };
+    use MIP::Program::Bedtools qw{ bedtools_intersect };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Get::File qw{ get_exome_target_bed_file };
+
+    ## Single sample case or all samples are wgs
+    return if ( @{$sample_ids_ref} == 1 or $consensus_analysis_type eq q{wgs} );
+
+    my @bed_file_paths;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        push @bed_file_paths,
+          get_exome_target_bed_file(
+            {
+                exome_target_bed_href => $exome_target_bed_href,
+                sample_id             => $sample_id,
+            }
+          );
+    }
+    @bed_file_paths = uniq(@bed_file_paths);
+
+    ## All capture kits are the same
+    return $bed_file_paths[0] if ( @bed_file_paths == 1 );
+
+    my $intersect_bed_file_path = catfile( $outdir_path_prefix, q{intersect.bed} );
+    my $infile_path             = pop @bed_file_paths;
+  BED_FILE_PATH:
+    foreach my $bed_file_path (@bed_file_paths) {
+
+        my $temp_intersect_path = catfile( $outdir_path_prefix, q{temp_intersect.bed} );
+        bedtools_intersect(
+            {
+                filehandle         => $filehandle,
+                infile_path        => $infile_path,
+                intersectfile_path => $bed_file_path,
+                stdoutfile_path    => $temp_intersect_path,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+        gnu_mv(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $temp_intersect_path,
+                outfile_path => $intersect_bed_file_path,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+
+        ## Setup for next iteration
+        $infile_path = $intersect_bed_file_path;
+    }
+    print {$filehandle} $NEWLINE;
+
+    return $intersect_bed_file_path;
 }
 
 1;

@@ -21,7 +21,7 @@ use Test::Trap qw{ :stderr:output(systemsafe) };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_constants test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.01;
@@ -58,13 +58,25 @@ diag(   q{Test check_ids_in_dna_vcf from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given matching dna and rna sample ids
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter} } );
 my %sample_info      = test_mip_hashes( { mip_hash_name => q{qc_sample_info} } );
 my $vcf_file_path    = catfile( dirname($Bin),
     qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
+my %test_process_return = (
+    buffers_ref   => [],
+    error_message => undef,
+    stderrs_ref   => [],
+    stdouts_ref   => [q{ADM1059A1 ADM1059A2 ADM1059A3}],
+    success       => 1,
+);
+test_constants(
+    {
+        test_process_return_href => \%test_process_return,
+    }
+);
 
 my $is_ok = check_ids_in_dna_vcf(
     {
