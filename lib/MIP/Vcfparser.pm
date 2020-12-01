@@ -499,29 +499,27 @@ sub check_vcfparser_cli {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-
-    my $log = retrieve_log( { log_name => $LOG_NAME, } );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %cli = (
         range_feature_annotation_column => {
             dependens_on_value => $range_feature_file,
             msg =>
-q{Need to specify which feature column(s) to use with range feature file when annotating variants by using flag -rf_ac}
+q{Need to specify which feature column(s) to use with range feature file when annotating variants by using flag --range_feature_annotation_columns}
               . $NEWLINE,
             value => $range_feature_annotation_column,
         },
         select_feature_matching_column => {
             dependens_on_value => $select_feature_file,
             msg =>
-q{Need to specify which feature column to use with select feature file when selecting variants by using flag -sf_mc}
+q{Need to specify which feature column to use with select feature file when selecting variants by using flag --select_feature_matching_column}
               . $NEWLINE,
             value => $select_feature_matching_column,
         },
         select_outfile => {
             dependens_on_value => $select_feature_file,
             msg =>
-q{Need to specify a select outfile to use when selecting variants by using flag -sof}
+q{Need to specify a select outfile to use when selecting variants by using flag --select_outfile}
               . $NEWLINE,
             value => $select_outfile,
         },
