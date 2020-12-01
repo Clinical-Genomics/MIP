@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [9.0.6]
+- Use "PAN" key for slurm_jobs_ids file instead of "ALL" as "ALL" has a size constraint
+
 ## [9.0.5]
 - Predicted gender from wgs samples are now used in the generated fam files.
 - Restrict plink analysis to intersected target capture kits for mixed wgs/wes cases
