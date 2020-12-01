@@ -41,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -52,8 +52,8 @@ BEGIN {
       create_error_trap_function
       create_housekeeping_function
       enable_trap
+      log_host_name
       quote_bash_variable
-      track_progress
     };
 }
 
@@ -188,6 +188,7 @@ sub create_housekeeping_function {
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
 ##          : $remove_dir              => Directory to remove when caught by trap function
 ##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
 ##          : $trap_function_call      => Trap function call
 ##          : $trap_function_name      => The trap function argument
 ##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
@@ -202,6 +203,7 @@ sub create_housekeeping_function {
     my $sacct_format_fields_ref;
 
     ## Default(s)
+    my $submission_profile;
     my $trap_function_call;
     my $trap_function_name;
     my $trap_signals_ref;
@@ -214,6 +216,11 @@ sub create_housekeeping_function {
         sacct_format_fields_ref => {
             default     => [],
             store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
             strict_type => 1,
         },
         trap_function_call => {
@@ -238,7 +245,9 @@ sub create_housekeeping_function {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Processmanagement::Processes qw{ track_job_id_status };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
+    use MIP::Workloadmanager::Slurm qw{ slurm_track_progress };
 
     ## Create housekeeping function and trap
     say {$filehandle} $trap_function_name . q?() {?, $NEWLINE;
@@ -259,23 +268,16 @@ sub create_housekeeping_function {
         );
         say {$filehandle} $NEWLINE;
     }
-    if (   defined $job_ids_ref
-        && @{$job_ids_ref}
-        && defined $log_file_path
-        && $log_file_path )
-    {
 
-        ## Output SLURM info on each job via sacct command
-        ## and write to log file(.status)
-        track_progress(
-            {
-                filehandle              => $filehandle,
-                job_ids_ref             => \@{$job_ids_ref},
-                log_file_path           => $log_file_path,
-                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
-            }
-        );
-    }
+    track_job_id_status(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => $job_ids_ref,
+            log_file_path           => $log_file_path,
+            sacct_format_fields_ref => $sacct_format_fields_ref,
+            submission_profile      => $submission_profile,
+        }
+    );
 
     ## End of trap function
     say {$filehandle} q?}?;
@@ -299,6 +301,7 @@ sub create_error_trap_function {
 ##          : $job_ids_ref             => Job ids
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
 ##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
 ##          : $trap_function_call      => Trap function call
 ##          : $trap_function_name      => The trap function argument
 ##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
@@ -313,6 +316,7 @@ sub create_error_trap_function {
     my $trap_function_call;
 
     ## Default(s)
+    my $submission_profile;
     my $trap_function_name;
     my $trap_signals_ref;
 
@@ -323,6 +327,11 @@ sub create_error_trap_function {
         sacct_format_fields_ref => {
             default     => [],
             store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
             strict_type => 1,
         },
         trap_function_call => {
@@ -344,28 +353,22 @@ sub create_error_trap_function {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Processmanagement::Processes qw{ track_job_id_status };
+
     ## Create error handling function and trap
     say {$filehandle} $trap_function_name . q?() {?,    $NEWLINE;
     say {$filehandle} $TAB . q{local program="$1"},     $NEWLINE;
     say {$filehandle} $TAB . q{local return_code="$2"}, $NEWLINE;
 
-    if (   defined $job_ids_ref
-        && @{$job_ids_ref}
-        && defined $log_file_path
-        && $log_file_path )
-    {
-
-        ## Output SLURM info on each job via sacct command
-        ## and write to log file(.status)
-        track_progress(
-            {
-                filehandle              => $filehandle,
-                job_ids_ref             => \@{$job_ids_ref},
-                log_file_path           => $log_file_path,
-                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
-            }
-        );
-    }
+    track_job_id_status(
+        {
+            filehandle              => $filehandle,
+            job_ids_ref             => $job_ids_ref,
+            log_file_path           => $log_file_path,
+            sacct_format_fields_ref => $sacct_format_fields_ref,
+            submission_profile      => $submission_profile,
+        }
+    );
 
     say {$filehandle} $TAB . q{## Display error message and exit};
     say {$filehandle} $TAB
@@ -430,10 +433,10 @@ sub clear_trap {
 
 sub enable_trap {
 
-## Function : Enable trap function with trap signal(s).
+## Function : Enable trap function with trap signal(s)
 ## Returns  :
 ## Arguments: $filehandle         => The filehandle to write to
-##          : $trap_function_call => The trap function argument
+##          : $trap_function_call => Trap function argument
 ##          : $trap_signals_ref   => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
@@ -468,77 +471,38 @@ sub enable_trap {
 
     gnu_trap(
         {
-            trap_signals_ref   => $trap_signals_ref,
-            trap_function_call => $trap_function_call,
             filehandle         => $filehandle,
+            trap_function_call => $trap_function_call,
+            trap_signals_ref   => $trap_signals_ref,
         }
     );
     say {$filehandle} $NEWLINE;
     return;
 }
 
-sub track_progress {
+sub log_host_name {
 
-## Function : Output Slurm info on each job via sacct command and write to log file(.status)
+## Function : Log host name
 ## Returns  :
-## Arguments: $filehandle              => Sbatch filehandle to write to
-##          : $job_ids_ref             => Job ids
-##          : $log_file_path           => The log file {REF}
-##          : $sacct_format_fields_ref => Format and fields of sacct output
+## Arguments: $filehandle => filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $filehandle;
-    my $job_ids_ref;
-    my $log_file_path;
 
-    ## Default(s)
-    my $sacct_format_fields_ref;
-
-    my $tmpl = {
-        filehandle    => { store   => \$filehandle, },
-        job_ids_ref   => { default => [], store => \$job_ids_ref, strict_type => 1, },
-        log_file_path => { store   => \$log_file_path, strict_type => 1, },
-        sacct_format_fields_ref => {
-            default => [
-                qw{
-                  jobid jobname%50 account partition alloccpus TotalCPU elapsed start end state exitcode }
-            ],
-            store       => \$sacct_format_fields_ref,
-            strict_type => 1,
-        },
-    };
+    my $tmpl = { filehandle => { required => 1, store => \$filehandle, }, };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Slurm qw{ slurm_sacct };
-    use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
-    return if ( not @{$job_ids_ref} );
+    say {$filehandle} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
 
-    my @reformat_sacct_headers = @{$sacct_format_fields_ref};
-
-  HEADER_ELEMENT:
-    foreach my $element (@reformat_sacct_headers) {
-
-        ## Remove "%digits" from headers
-        $element =~ s/%\d+//gsxm;
-    }
-
-    my @commands = slurm_sacct(
+    gnu_echo(
         {
-            fields_format_ref => \@{$sacct_format_fields_ref},
-            job_ids_ref       => \@{$job_ids_ref},
-        }
-    );
-
-    slurm_reformat_sacct_output(
-        {
-            commands_ref               => \@commands,
-            filehandle                 => $filehandle,
-            log_file_path              => $log_file_path,
-            reformat_sacct_headers_ref => \@reformat_sacct_headers,
+            filehandle  => $filehandle,
+            strings_ref => [q{Running on: $(hostname)}],
         }
     );
     return;

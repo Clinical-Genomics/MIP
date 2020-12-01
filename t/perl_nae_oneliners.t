@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,6 +79,10 @@ my %base_argument = (
         input           => q{stdoutfile.test},
         expected_output => q{1> stdoutfile.test},
     },
+    stdoutfile_path_append => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1>> stdoutfile.test},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -106,7 +110,7 @@ my @arguments = ( \%base_argument, \%specific_argument );
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
             do_test_base_command       => 1,

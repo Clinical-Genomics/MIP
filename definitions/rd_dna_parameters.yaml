@@ -1,5 +1,4 @@
 ---
-## Version: 2.1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -11,6 +10,7 @@ custom_default_parameters:
     - bwa_mem2_build_reference
     - exome_target_bed
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir
@@ -55,7 +55,6 @@ expected_coverage:
 ## genomeAnalysisToolKitPath
 gatk_logging_level:
   associated_recipe:
-    - bcftools_mpileup
     - gatk_baserecalibration
     - gatk_combinevariantcallsets
     - gatk_gathervcfs
@@ -77,10 +76,18 @@ gatk_path:
   data_type: SCALAR
   default: /usr/
   type: path
+## GPU supported executables
+gpu_capable_executables:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - run_deepvariant
+    - call_variants
+  type: mip
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - bwa_mem2
     - cnvnator_ar
@@ -106,7 +113,6 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - bcftools_mpileup
     - bwa_mem
     - bwa_mem2
     - cnvnator_ar
@@ -136,7 +142,6 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_mpileup: 16
     bwa_mem: 36
     bwa_mem2: 36
     cadd_ar: 13
@@ -144,6 +149,7 @@ recipe_core_number:
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 13
+    deepvariant: 36
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
@@ -159,6 +165,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    glnexus_merge: 1
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -188,13 +195,26 @@ recipe_core_number:
     tiddit_coverage: 1
     upd_ar: 1
     varg_ar: 1
-    variant_integrity_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
     vt_core: 1
   type: mip
 set_recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+## GPU number
+recipe_gpu_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    deepvariant: 1
+  type: mip
+set_recipe_gpu_number:
   associated_recipe:
     - mip
   data_type: HASH
@@ -215,9 +235,11 @@ recipe_memory:
     expansionhunter: 2
     variant_annotation: 3
     gatk_baserecalibration: 10
+    gatk_combinevariantcallsets: 25
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
+    glnexus_merge: 150
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
@@ -249,12 +271,12 @@ recipe_time:
     analysisrunstatus: 1
     bwa_mem: 30
     bwa_mem2: 10
-    bcftools_mpileup: 40
     cadd_ar: 10
     chanjo_sexcheck: 2
     chromograph_cov: 1
     chromograph_upd: 1
     cnvnator_ar: 1
+    deepvariant: 10
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
@@ -270,6 +292,7 @@ recipe_time:
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
@@ -302,7 +325,6 @@ recipe_time:
     tiddit_coverage: 5
     upd_ar: 1
     varg_ar: 1
-    variant_integrity_ar: 1
     varianteffectpredictor: 10
     vcf2cytosure_ar: 20
     vcfparser_ar: 5
@@ -334,12 +356,6 @@ picardtools_path:
     - sv_reformat
   data_type: SCALAR
   type: path
-replace_iupac:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 ### Programs
 split_fastq_file:
   analysis_mode: sample
@@ -479,6 +495,33 @@ markduplicates_picardtools_opt_dup_dist:
   data_type: SCALAR
   default: 2500
   type: recipe_argument
+## Deepvariant
+deepvariant:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _deepvar
+  outfile_suffix: ".g.vcf.gz"
+  program_executables:
+    - run_deepvariant
+  type: recipe
+glnexus_merge:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _glnex
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - glnexus_cli
+    - bcftools
+    - bgzip
+  recipe_type: variant_callers
+  type: recipe
+  variant_caller: deepvariant
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample
@@ -1147,38 +1190,6 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
-## Bcftools
-bcftools_mpileup:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _mpileup
-  program_executables:
-    - bcftools
-  recipe_type: variant_callers
-  outfile_suffix: ".vcf"
-  type: recipe
-  variant_caller: mpileup
-bcftools_mpileup_constrain:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  mandatory: no
-  type: recipe_argument
-bcftools_mpileup_filter_variant:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-bcftools_mpileup_keep_unnormalised:
-  associated_recipe:
-    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -1870,16 +1881,6 @@ plink:
     - plink2
     - bcftools
   type: recipe
-variant_integrity_ar:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _integrity
-  program_executables:
-    - variant_integrity
-  type: recipe
 rtg_vcfeval:
   analysis_mode: sample
   associated_recipe:
@@ -1909,6 +1910,7 @@ nist_call_set_vcf:
       NA12878: grch37_nist_hg001_-na12878_v3.3.2-.vcf
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
+      NA24631: grch37_nist_hg005_-na24631_v3.3.2-.vcf
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -1922,6 +1924,7 @@ nist_call_set_bed:
       NA12878: grch37_nist_hg001_-na12878_v3.3.2-.bed
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
+      NA24631: grch37_nist_hg005_-na24631_v3.3.2-.bed
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -1959,7 +1962,6 @@ genmod_annotate_regions:
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
-    - variant_integrity_ar
   data_type: SCALAR
   default: ped
   type: recipe_argument
@@ -2018,7 +2020,7 @@ qccollect_eval_metric_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_eval_metric_-v1.2-.yaml
+  default: qc_eval_metric_-v1.3-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

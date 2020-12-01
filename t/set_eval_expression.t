@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,16 +58,16 @@ diag(   q{Test set_eval_expression from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_PF_READS_ALIGNED            => 0.95;
-Readonly my $PCT_ADAPTER                     => 0.0005;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_WGS => 0.06;
+Readonly my $AR_MENDEL_WGS        => 0.06;
+Readonly my $PCT_PF_READS_ALIGNED => 0.95;
+Readonly my $PCT_ADAPTER          => 0.0005;
 
 my $eval_expression_href = {
-    PCT_PF_READS_ALIGNED => {
-        lt => $PCT_PF_READS_ALIGNED,
-    },
     PCT_ADAPTER => {
         gt => $PCT_ADAPTER,
+    },
+    PCT_PF_READS_ALIGNED => {
+        lt => $PCT_PF_READS_ALIGNED,
     },
 };
 
@@ -86,11 +86,11 @@ set_eval_expression(
 my %expected = (
     ADM1059A1 => {
         collectmultiplemetrics => {
-            PCT_PF_READS_ALIGNED => {
-                lt => $PCT_PF_READS_ALIGNED,
-            },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
+            },
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
             },
         },
     },
@@ -101,18 +101,18 @@ is_deeply( \%analysis_eval_metric, \%expected, q{Set sample eval expression} );
 ## Then set on case level
 $eval_expression_href = {
     fraction_of_errors => {
-        gt => $VARIANT_INTEGRITY_AR_MENDEL_WGS,
+        gt => $AR_MENDEL_WGS,
     },
 };
 set_eval_expression(
     {
         analysis_eval_metric_href => \%analysis_eval_metric,
         eval_expression_href      => $eval_expression_href,
-        recipe                    => q{variant_integrity_ar_mendel},
+        recipe                    => q{a_recipe},
     }
 );
-$expected{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
-  $VARIANT_INTEGRITY_AR_MENDEL_WGS;
+$expected{a_recipe}{fraction_of_errors}{gt} =
+  $AR_MENDEL_WGS;
 is_deeply( \%analysis_eval_metric, \%expected, q{Set case eval expression} );
 
 done_testing();

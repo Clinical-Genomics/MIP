@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -37,7 +37,7 @@ $VERBOSE = test_standard_cli(
 
 BEGIN {
 
-    use MIP::Test::Fixtures qw{ test_import };
+    use MIP::Test::Fixtures qw{ test_import test_mip_hashes };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
@@ -60,58 +60,23 @@ diag(   q{Test set_programs_for_installation from Set::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
 my $log = test_log( {} );
 
-## Create starting hash
-my $active_parameter_href = {
-    select_programs => [],
-    shell_install   => [],
-    skip_programs   => [],
-    conda           => {
-        bio_prog_1   => 1,
-        dependency_1 => 1,
-        picard       => 1,
-        python       => 2.7,
-    },
-    pip => {
-        py_prog_1 => 1,
-        py_prog_2 => 1,
-    },
-    shell => {
-        bio_prog_1 => {
-            conda_dependency => {
-                dependency_1 => 1,
-            },
-            version => 1,
-        },
-        bio_prog_2 => {
-            conda_dependency => {
-                dependency_1 => 1,
-            },
-            version => 2,
-        },
-    },
-    container => {
-        multiqc => {
-            executable => undef,
-            uri        => q{docker://ewels/multiqc:v1.7},
-        },
-    },
-};
+my %active_parameter =
+  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
 
 ## Copy starting hash to working copy
-my $active_parameter_copy_href = clone($active_parameter_href);
+my %active_parameter_copy = %{ clone( \%active_parameter ) };
 
 ## Given a parameter hash with conflicting options
-$active_parameter_copy_href->{select_programs} = [qw{ bio_prog_1 }];
-$active_parameter_copy_href->{skip_programs}   = [qw{ bio_prog_1 bio_prog_2 }];
+$active_parameter_copy{select_programs} = [qw{ bwa }];
+$active_parameter_copy{skip_programs}   = [qw{ htslib }];
 
 ## When subroutine is executed
 trap {
     set_programs_for_installation(
         {
-            active_parameter_href => $active_parameter_copy_href,
+            active_parameter_href => \%active_parameter_copy,
         }
     )
 };
@@ -121,45 +86,41 @@ like( $trap->stderr, qr/mutually\sexclusive/xms, q{Fatal log message} );
 ok( $trap->exit, q{Exit signal} );
 
 ## Given a parameter hash with a request to skip programs
-$active_parameter_copy_href                    = clone($active_parameter_href);
-$active_parameter_copy_href->{select_programs} = [];
-$active_parameter_copy_href->{skip_programs}   = [qw{ py_prog_1 bio_prog_1 python }];
+%active_parameter_copy                  = %{ clone( \%active_parameter ) };
+$active_parameter_copy{select_programs} = [];
+$active_parameter_copy{skip_programs}   = [qw{ htslib }];
 
 ## When subroutine is executed
 set_programs_for_installation(
     {
-        active_parameter_href => $active_parameter_copy_href,
-    }
-);
-
-## Then warn for no python and solve the installation as such
-my $installation_href = clone($active_parameter_copy_href);
-delete $installation_href->{conda}{qw{ bio_prog_1 python }};
-delete $installation_href->{pip}{py_prog_1};
-delete $installation_href->{shell}{qw{ bio_prog_1 }};
-
-is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
-
-## Given a selective installation
-$active_parameter_copy_href                    = clone($active_parameter_href);
-$active_parameter_copy_href->{select_programs} = [qw{ python picard bio_prog_2 }];
-$active_parameter_copy_href->{shell_install}   = [qw{ picard }];
-
-## When subroutine is executed
-set_programs_for_installation(
-    {
-        active_parameter_href => $active_parameter_copy_href,
+        active_parameter_href => \%active_parameter_copy,
     }
 );
 
 ## Then solve the installation as such
-$installation_href = clone($active_parameter_copy_href);
-delete $installation_href->{conda}{qw{ bio_prog_1 picard }};
-delete $installation_href->{pip}{qw{ py_prog_1 py_prog_2 }};
-delete $installation_href->{shell}{bio_prog_1};
-delete $installation_href->{container}{multiqc};
+my %expected_container = %{ clone( $active_parameter{container} ) };
+delete $expected_container{htslib};
 
-is_deeply( $active_parameter_copy_href, $installation_href, q{Solve installation} );
+is_deeply( $active_parameter_copy{container},
+    \%expected_container, q{Solve installation} );
+
+## Given a selective installation
+%active_parameter_copy = %{ clone( \%active_parameter ) };
+$active_parameter_copy{select_programs} = [qw{ bwa }];
+
+## When subroutine is executed
+set_programs_for_installation(
+    {
+        active_parameter_href => \%active_parameter_copy,
+    }
+);
+
+## Then solve the installation as such
+%expected_container = ();
+$expected_container{bwa} = $active_parameter{container}{bwa};
+
+is_deeply( $active_parameter_copy{container},
+    \%expected_container, q{Solve installation} );
 
 done_testing();
 

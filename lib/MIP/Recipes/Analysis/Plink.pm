@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -136,10 +135,9 @@ sub analysis_plink {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_norm bcftools_view };
     use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use MIP::Program::Vt qw{ vt_uniq };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -254,17 +252,15 @@ sub analysis_plink {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -334,11 +330,12 @@ sub analysis_plink {
 
     my $uniq_outfile_path =
       $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
-    vt_uniq(
+    bcftools_norm(
         {
             filehandle   => $filehandle,
             infile_path  => $DASH,
             outfile_path => $uniq_outfile_path,
+            remove_duplicates => 1,
         }
     );
     say {$filehandle} $NEWLINE;

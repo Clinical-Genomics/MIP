@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ blobfish_allvsall };
@@ -103,8 +103,7 @@ sub blobfish_allvsall {
     croak q{Each indirectory must be matched with a condition}
       if ( scalar @{$indir_paths_ref} ne @{$conditions_ref} );
 
-    ## Stores commands depending on input parameters
-    my @commands = q{BlobFish.py --allvsall};
+    my @commands = ( get_executable_base_command( { base_command => q{BlobFish.py}, } ), qw{ --allvsall } );
 
     push @commands, q{--paths} . $SPACE . join $SPACE, @{$indir_paths_ref};
 

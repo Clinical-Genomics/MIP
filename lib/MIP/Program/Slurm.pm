@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ slurm_build_sbatch_header slurm_sacct };
@@ -37,6 +37,7 @@ sub slurm_build_sbatch_header {
 ##          : $email                    => User to receive email notification
 ##          : $email_types_ref          => When to send email for event {REF}
 ##          : $filehandle               => Filehandle to write to
+##          : $gpu_number               => Number of GPUs to use
 ##          : $job_name                 => Specify a name for the job allocation
 ##          : $memory_allocation        => Memory allocation
 ##          : $process_time             => Time limit
@@ -60,6 +61,7 @@ sub slurm_build_sbatch_header {
 
     ## Default(s)
     my $core_number;
+    my $gpu_number;
     my $process_time;
     my $email_types_ref;
     my $separator;
@@ -91,7 +93,13 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
         },
         filehandle => { store => \$filehandle },
-        job_name   => {
+        gpu_number => {
+            allow       => [ undef, qr{ \A\d+\z }xms ],
+            default     => 1,
+            store       => \$gpu_number,
+            strict_type => 1,
+        },
+        job_name => {
             store       => \$job_name,
             strict_type => 1,
         },
@@ -118,6 +126,7 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
         },
         slurm_quality_of_service => {
+            allow       => [ undef, qw{ high low normal } ],
             store       => \$slurm_quality_of_service,
             strict_type => 1,
         },
@@ -169,6 +178,11 @@ sub slurm_build_sbatch_header {
             push @commands, q{--mail-type=} . join $COMMA, @{$email_types_ref};
         }
         push @commands, q{--mail-user=} . $email;
+    }
+
+    if ($gpu_number) {
+        push @commands, q{--partition=} . q{gpu};
+        push @commands, q{--gpus=} . $gpu_number;
     }
 
     ## Add sbatch shebang
@@ -233,7 +247,7 @@ sub slurm_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{sacct};
+    my @commands = qw{ sacct };
 
     if ( @{$fields_format_ref} ) {
         push @commands, q{--format=} . join $COMMA, @{$fields_format_ref};

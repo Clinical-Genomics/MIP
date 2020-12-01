@@ -60,7 +60,7 @@ diag(   q{Test blobfish_allvsall from Blobfish.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = (q{BlobFish.py --allvsall});
+my @function_base_commands = qw{ BlobFish.py --allvsall };
 
 my %base_argument = (
     filehandle => {

@@ -120,7 +120,7 @@ sub download_human_reference {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Program::Samtools qw{ samtools_faidx };
@@ -157,7 +157,6 @@ sub download_human_reference {
             directory_id               => q{mip_download},
             filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
-            log                        => $log,
             memory_allocation          => $recipe_resource{memory},
             outdata_dir                => $active_parameter_href->{reference_dir},
             outscript_dir              => $active_parameter_href->{reference_dir},
@@ -188,7 +187,8 @@ sub download_human_reference {
     my $outfile_path =
       catfile( $active_parameter_href->{reference_dir}, $reference_href->{outfile} );
     my $outfile_no_gz =
-      parse_file_suffix( { file_name => $outfile_path, file_suffix => q{.gz}, } )
+      remove_file_path_suffix(
+        { file_path => $outfile_path, file_suffixes_ref => [qw{ .gz }], } )
       // $outfile_path;
     samtools_faidx(
         {

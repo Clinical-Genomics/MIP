@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -213,18 +212,16 @@ sub analysis_rhocall_annotate {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -413,9 +410,10 @@ sub analysis_rhocall_viz {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
-    use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
     use MIP::Program::Picardtools qw{ picardtools_updatevcfsequencedictionary };
     use MIP::Program::Rhocall qw{ rhocall_viz };
@@ -487,17 +485,15 @@ sub analysis_rhocall_viz {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -505,10 +501,10 @@ sub analysis_rhocall_viz {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $sample_outfile_path_prefix = parse_file_suffix(
+    my $sample_outfile_path_prefix = remove_file_path_suffix(
         {
-            file_name   => $outfile_path,
-            file_suffix => $outfile_suffix,
+            file_path         => $outfile_path,
+            file_suffixes_ref => [$outfile_suffix],
         }
     );
     my $sample_vcf = $sample_outfile_path_prefix . q{.vcf.gz};
@@ -539,7 +535,7 @@ sub analysis_rhocall_viz {
             filehandle   => $filehandle,
             infile_path  => $sample_vcf,
             outfile_path => $sample_outfile_path_prefix . q{.roh},
-            skip_indels  => 1,    # Skip indels as their genotypes are enriched for errors
+            skip_indels => 1,    # Skip indels as their genotypes are enriched for errors
         }
     );
     say {$filehandle} $NEWLINE;

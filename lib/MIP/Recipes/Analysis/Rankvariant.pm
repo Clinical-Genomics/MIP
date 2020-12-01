@@ -8,7 +8,6 @@ use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -232,18 +231,16 @@ sub analysis_rankvariant {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -307,6 +304,7 @@ sub analysis_rankvariant {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $infile_path,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -626,18 +624,16 @@ sub analysis_rankvariant_unaffected {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -700,6 +696,7 @@ sub analysis_rankvariant_unaffected {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $genmod_indata,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -944,18 +941,16 @@ sub analysis_rankvariant_sv {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1003,6 +998,7 @@ sub analysis_rankvariant_sv {
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 filehandle      => $filehandle,
+                genome_build    => $file_info_href->{human_genome_reference_version},
                 infile_path     => $genmod_indata,
                 outfile_path    => $genmod_outfile_path,
                 stderrfile_path => $recipe_info_path
@@ -1327,18 +1323,16 @@ sub analysis_rankvariant_sv_unaffected {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1356,6 +1350,7 @@ sub analysis_rankvariant_sv_unaffected {
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 filehandle      => $filehandle,
+                genome_build    => $file_info_href->{human_genome_reference_version},
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $recipe_info_path

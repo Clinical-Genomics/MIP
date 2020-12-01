@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -36,22 +35,22 @@ $VERBOSE = test_standard_cli(
 
 BEGIN {
 
-    use MIP::Test::Fixtures qw{ test_import };
+    use MIP::Test::Fixtures qw{ test_import test_log };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Installation} => [qw{ check_mip_executable }],
-        q{MIP::Test::Fixtures}      => [qw{ test_log test_standard_cli }],
+        q{MIP::Install}        => [qw{ check_mip_executable }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Installation qw{ check_mip_executable };
+use MIP::Install qw{ check_mip_executable };
 
-diag(   q{Test check_mip_executable from Installation.pm v}
-      . $MIP::Check::Installation::VERSION
+diag(   q{Test check_mip_executable from Install.pm v}
+      . $MIP::Install::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,29 +58,29 @@ diag(   q{Test check_mip_executable from Installation.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given no existing mip binary
 my $conda_prefix_path = q{does_not_exists};
 
-my $is_ok = check_mip_executable(
+## When checking for executable
+my $is_not_found = check_mip_executable(
     {
         conda_prefix_path => $conda_prefix_path,
-        log               => $log,
     }
 );
 
-## Then
-ok( $is_ok, q{Found no existing executable} );
+## Then return true
+ok( $is_not_found, q{Found no existing executable} );
 
 ## Given an existing mip binary
 $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda envs mip_ci } );
 
+## When checking for executable
 trap {
     check_mip_executable(
         {
             conda_prefix_path => $conda_prefix_path,
-            log               => $log,
         }
     )
 };

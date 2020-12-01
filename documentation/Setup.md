@@ -176,7 +176,6 @@ Corresponding MIP references:
 [Tabix]: http://samtools.sourceforge.net/tabix.shtml
 [Tiddit]: https://github.com/J35P312/TIDDIT
 [Upd]: https://github.com/bjhall/upd
-[Variant_integrity]: https://github.com/moonso/variant_integrity
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep

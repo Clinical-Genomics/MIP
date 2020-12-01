@@ -2,4 +2,3 @@
 mip:
   path: /path/MIP/t/data/modules/miniconda/envs/mip_ci/bin/mip
   version: v7.1.4
-

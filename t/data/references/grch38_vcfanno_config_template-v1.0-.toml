@@ -1,0 +1,12 @@
+# TOML
+
+title = "Vcfanno configuration file" 
+
+[functions]
+file = "TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+
+[[annotation]]
+file="TEST_REFERENCES!/grch38_gnomad_reformated_-r3.0-.vcf.gz"
+fields = ["AF", "AF_popmax"]
+ops=["self", "self"]
+names=["GNOMADAF", "GNOMADAF_POPMAX"]

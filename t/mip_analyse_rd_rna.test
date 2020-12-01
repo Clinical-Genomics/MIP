@@ -30,13 +30,15 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.07;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data } );
 my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
-my $mip_path    = catfile( dirname($Bin), q{mip} );
+my $mip_install_config =
+  catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
+my $mip_path     = catfile( dirname($Bin), q{mip} );
 my $dna_vcf_file = catfile( dirname($Bin),
     qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
 
@@ -80,6 +82,8 @@ my @base_cmds = (
     qw{ analyse rd_rna 118-rnatest },
     q{--config},
     $config_file,
+    q{--install_config},
+    $mip_install_config,
     q{--conda_path},
     $conda_path,
     q{--cluster_constant_path},
@@ -97,32 +101,21 @@ my @base_cmds = (
         $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
     ),
     qw{--dra --vb },
+    q{--test_mode},
 );
 
-my @test_cases = ( $EMPTY_STR, q{--dna_vcf_file} );
-
-TEST_CASE:
-foreach my $test_case (@test_cases) {
-
-    my @test_cmds = ( @base_cmds, $test_case );
-
-    if ( $test_case eq q{--dna_vcf_file} ) {
-        push @test_cmds, $dna_vcf_file;
+my %process_return = child_process(
+    {
+        commands_ref => \@base_cmds,
+        process_type => q{ipc_cmd_run},
+        verbose      => $VERBOSE,
     }
+);
+ok( $process_return{success}, q{Executed mip rd_rna} );
 
-    my %process_return = child_process(
-        {
-            commands_ref => \@test_cmds,
-            process_type => q{ipc_cmd_run},
-            verbose      => $VERBOSE,
-        }
-    );
-    ok( $process_return{success}, q{Executed mip rd_rna} );
-
-    my $qc_sample_info_file = catfile( $cluster_constant_path,
-        qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );
-    ok( -f $qc_sample_info_file, q{Checking for 118-rnatest_qc_sample_info.yaml} );
-}
+my $qc_sample_info_file = catfile( $cluster_constant_path,
+    qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );
+ok( -f $qc_sample_info_file, q{Checking for 118-rnatest_qc_sample_info.yaml} );
 
 ## Clean-up
 remove_tree( catfile( $cluster_constant_path, qw{ 118-rnatest analysis } ) );

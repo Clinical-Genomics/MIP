@@ -1,21 +1,21 @@
 package MIP::Program::Bwa;
 
 use 5.026;
-use strict;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,12 +24,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_index bwa_mem bwa_mem2_mem bwa_mem2_index run_bwamem };
 
 }
+
+Readonly my $BWA_BASE_COMMAND    => q{bwa};
+Readonly my $BWA2_BASE_COMMAND   => q{bwa-mem2};
+Readonly my $RUNBWA_BASE_COMMAND => q{run-bwamem};
 
 sub bwa_index {
 
@@ -88,7 +92,10 @@ sub bwa_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa index };
+    my @commands = (
+        get_executable_base_command( { base_command => $BWA_BASE_COMMAND, } ),
+        qw{ index }
+    );
 
     push @commands, q{-p} . $SPACE . $prefix;
 
@@ -201,7 +208,9 @@ sub bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa mem };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BWA_BASE_COMMAND, } ),
+        qw{ mem } );
 
     if ($thread_number) {
 
@@ -337,7 +346,10 @@ sub bwa_mem2_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa-mem2 mem };
+    my @commands = (
+        get_executable_base_command( { base_command => $BWA2_BASE_COMMAND, } ),
+        qw{ mem }
+    );
 
     if ($thread_number) {
 
@@ -441,7 +453,10 @@ sub bwa_mem2_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa-mem2 index };
+    my @commands = (
+        get_executable_base_command( { base_command => $BWA2_BASE_COMMAND, } ),
+        qw{ index }
+    );
 
     push @commands, q{-p} . $SPACE . $prefix;
 
@@ -537,7 +552,8 @@ sub run_bwamem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ run-bwamem };
+    my @commands =
+      ( get_executable_base_command( { base_command => $RUNBWA_BASE_COMMAND, } ), );
 
     if ($thread_number) {
 

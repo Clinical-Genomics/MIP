@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.24;
+    our $VERSION = 1.27;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -257,18 +256,16 @@ sub analysis_mip_vcfparser {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -399,8 +396,6 @@ sub analysis_mip_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id                   => $case_id,
-                    log                       => $log,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -626,20 +621,18 @@ sub analysis_mip_vcfparser_panel {
     my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -767,8 +760,6 @@ sub analysis_mip_vcfparser_panel {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id                   => $case_id,
-                    log                       => $log,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -995,20 +986,18 @@ sub analysis_mip_vcfparser_sv_wes {
     my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $CORE_NUMBER,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $MEMORY_ALLOCATION,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $CORE_NUMBER,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $MEMORY_ALLOCATION,
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1094,10 +1083,8 @@ sub analysis_mip_vcfparser_sv_wes {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id          => $arg_href->{active_parameter_href}{case_id},
-                    log              => $log,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
+                    recipe_name               => $recipe_name,
+                    sample_info_href          => $sample_info_href,
                 }
             );
         }
@@ -1222,7 +1209,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
+    use MIP::List qw{ check_element_exist_hash_of_array };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -1313,18 +1300,16 @@ sub analysis_mip_vcfparser_sv_wgs {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1501,10 +1486,8 @@ sub analysis_mip_vcfparser_sv_wgs {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    case_id          => $arg_href->{active_parameter_href}{case_id},
-                    log              => $log,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
+                    recipe_name               => $recipe_name,
+                    sample_info_href          => $sample_info_href,
                 }
             );
         }

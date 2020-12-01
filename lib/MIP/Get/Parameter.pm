@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -20,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.27;
+    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -28,7 +27,6 @@ BEGIN {
       get_install_parameter_attribute
       get_package_source_env_cmds
       get_program_version
-      get_programs_for_shell_installation
       get_recipe_resources
       get_recipe_attributes
     };
@@ -231,7 +229,6 @@ sub get_package_source_env_cmds {
 
     use MIP::Active_parameter qw{ get_package_env_attributes };
     use MIP::Environment::Manager qw{ get_env_method_cmds };
-    use MIP::Environment::Container qw{ parse_container_bind_paths };
 
     ## Initilize variable
     my @source_environment_cmds;
@@ -254,22 +251,6 @@ sub get_package_source_env_cmds {
             }
         );
     }
-    ## Prior to env command special case
-    ## for recipes needing addtional processing
-    my $prior_to_load_cmd = $active_parameter_href->{load_env}{$env_name}{$package_name};
-    if ($prior_to_load_cmd) {
-
-        push @source_environment_cmds, $prior_to_load_cmd;
-    }
-
-    ## Append container bind variable to source_environment_cmds_ref
-    parse_container_bind_paths(
-        {
-            active_parameter_href       => $active_parameter_href,
-            package_name                => $package_name,
-            source_environment_cmds_ref => \@source_environment_cmds,
-        }
-    );
 
     ## Get env load command
     my @env_method_cmds = get_env_method_cmds(
@@ -282,93 +263,6 @@ sub get_package_source_env_cmds {
     push @source_environment_cmds, @env_method_cmds;
 
     return @source_environment_cmds;
-}
-
-sub get_programs_for_shell_installation {
-
-## Function  : Get the programs that are to be installed via SHELL
-## Returns   : @shell_programs
-## Arguments : $conda_programs_href        => Hash with conda progrmas {REF}
-##           : $log                        => Log
-##           : $prefer_shell               => Path to conda environment
-##           : $shell_install_programs_ref => Array with programs selected for shell installation {REF}
-##           : $shell_programs_href        => Hash with shell programs {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $conda_programs_href;
-    my $log;
-    my $prefer_shell;
-    my $shell_install_programs_ref;
-    my $shell_programs_href;
-
-    my $tmpl = {
-        conda_programs_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$conda_programs_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        prefer_shell => {
-            allow       => [ undef, 0, 1 ],
-            required    => 1,
-            store       => \$prefer_shell,
-            strict_type => 1,
-        },
-        shell_install_programs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$shell_install_programs_ref,
-            strict_type => 1,
-        },
-        shell_programs_href => {
-            default  => {},
-            required => 1,
-            store    => \$shell_programs_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Array::Utils qw{ intersect array_minus unique };
-
-    return if not keys %{$shell_programs_href};
-
-    my @shell_programs = keys %{$shell_programs_href};
-    my @conda_programs = keys %{$conda_programs_href};
-
-    if ($prefer_shell) {
-
-        # Only get the selected programs otherwise leave the array unaltered
-        if ( @{$shell_install_programs_ref} ) {
-
-            # Get the intersect between the two arrays
-            @shell_programs =
-              intersect( @shell_programs, @{$shell_install_programs_ref} );
-        }
-    }
-    elsif ( @{$shell_install_programs_ref} ) {
-
-        # Get elements in @shell_programs that are not part of the conda hash
-        my @shell_only_programs = array_minus( @shell_programs, @conda_programs );
-
-        # Add the selected program(s) and remove possible duplicates
-        @shell_programs = unique( @shell_only_programs, @{$shell_install_programs_ref} );
-    }
-    else {
-        # If no shell preferences only add programs lacking conda counterpart
-        @shell_programs = array_minus( @shell_programs, @conda_programs );
-    }
-
-    return @shell_programs;
 }
 
 sub get_recipe_attributes {
@@ -448,7 +342,7 @@ sub get_recipe_resources {
             strict_type => 1,
         },
         resource => {
-            allow       => [qw{ core_number load_env_ref memory time }],
+            allow       => [qw{ core_number gpu_number load_env_ref memory time }],
             store       => \$resource,
             strict_type => 1,
         },
@@ -494,6 +388,7 @@ sub get_recipe_resources {
 
     my %recipe_resource = (
         core_number  => $core_number,
+        gpu_number   => $active_parameter_href->{recipe_gpu_number}{$recipe_name},
         load_env_ref => \@source_environment_cmds,
         memory       => $memory,
         time         => $active_parameter_href->{recipe_time}{$recipe_name},

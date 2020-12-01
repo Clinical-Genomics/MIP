@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -160,7 +159,7 @@ sub check_references_for_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ get_binary_path };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
 
     ## Checked references
     my @checked_references;
@@ -171,13 +170,7 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
-    ## Use MIPs own bcftools
-    my $bcftools_binary_path = get_binary_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            binary                => q{bcftools},
-        }
-    );
+     my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (

@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,7 +26,7 @@ use MIP::Test::Fixtures qw{ test_standard_cli };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,19 +60,6 @@ diag(   q{Test gnu_set from Bash.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $batch_shebang = q{#!};
-
-my %base_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => q{set},
-    },
-);
-
-my $bash_bin_path =
-  catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
-
 ## Specific arguments
 my %argument = (
     set_errexit => {
@@ -106,7 +92,7 @@ my @commands = gnu_set(
 ## Testing return of commands
 foreach my $key ( keys %argument ) {
 
-    # Alias expeceted output
+    # Alias expected output
     my $expected_output = $argument{$key}{expected_output};
 
     ok( ( any { $_ eq $expected_output } @commands ), 'Argument: ' . $key );
@@ -119,8 +105,8 @@ my @function_base_commands = qw{ set };
 
 # Fake arguments
 my @args = (
-    set_errexit => $argument{set_errexit}{input},
     filehandle  => undef,
+    set_errexit => $argument{set_errexit}{input},
 );
 
 ## Coderef - enables generalized use of generate call
@@ -129,8 +115,8 @@ my $module_function_cref = \&gnu_set;
 test_write_to_file(
     {
         args_ref             => \@args,
-        module_function_cref => $module_function_cref,
         base_commands_ref    => \@function_base_commands,
+        module_function_cref => $module_function_cref,
         separator            => $NEWLINE,
     }
 );

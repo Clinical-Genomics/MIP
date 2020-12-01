@@ -254,12 +254,9 @@ sub analysis_bwa_mem {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -692,12 +689,9 @@ sub analysis_bwa_mem2 {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -770,7 +764,7 @@ sub analysis_bwa_mem2 {
         );
         say {$filehandle} $NEWLINE;
 
-        ## Set samtools sort input; Pipe from samtools view
+        ## Set samtools sort input;
         my $samtools_sort_infile = $samtools_view_outfile_path;
 
         ## Increment paired end tracker
@@ -1132,12 +1126,9 @@ sub analysis_run_bwa_mem {
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
                 memory_allocation               => $recipe_resource{memory},
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -1191,7 +1182,7 @@ sub analysis_run_bwa_mem {
             }
         );
         print {$filehandle} $PIPE . $SPACE;
-        print {$filehandle} q{sh} . $SPACE;
+        print {$filehandle} q{bwakit sh} . $SPACE;
         say   {$filehandle} $NEWLINE;
 
         ## Set samtools sort input; Sort directly from run-bwakit
@@ -1360,9 +1351,15 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+
     ## Add percentage mapped reads to samtools stats output
+
+    my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
+
     # Execute perl
-    print {$filehandle} q?perl -ne '?;
+    print {$filehandle} join $SPACE, @commands;
+    print {$filehandle} q? -ne '?;
 
     # Initiate variables
     print {$filehandle} q?$raw; $map; ?;

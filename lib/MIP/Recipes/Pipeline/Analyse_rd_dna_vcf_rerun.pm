@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna_vcf_rerun pipeline_analyse_rd_dna_vcf_rerun };
@@ -107,6 +106,7 @@ sub parse_rd_dna_vcf_rerun {
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parameter qw{ get_cache };
     use MIP::Reference qw{ get_select_file_contigs };
@@ -119,6 +119,13 @@ sub parse_rd_dna_vcf_rerun {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {

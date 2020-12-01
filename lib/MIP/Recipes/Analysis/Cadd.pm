@@ -218,12 +218,10 @@ sub analysis_cadd {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -627,7 +625,6 @@ sub analysis_cadd_panel {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
             memory_allocation               => $recipe_resource{memory},
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
@@ -813,15 +810,15 @@ sub _parse_cadd_outfile {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Htslib qw{ htslib_bgzip };
 
     return $infile_path if $reference_version eq q{37};
 
-    my $synonyms_file_path = parse_file_suffix(
+    my $synonyms_file_path = remove_file_path_suffix(
         {
-            file_name   => $infile_path,
-            file_suffix => q{.tsv},
+            file_path         => $infile_path,
+            file_suffixes_ref => [qw{ .tsv .tsv.gz }],
         }
     );
     $synonyms_file_path .= $UNDERSCORE . q{synonyms.tsv.gz};
@@ -842,6 +839,7 @@ sub _parse_cadd_outfile {
             escape_oneliner => $escape_oneliner,
             filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch37_to_grch38},
+            use_container   => 1,
         }
     );
 
@@ -918,13 +916,12 @@ sub _parse_cadd_infile {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Perl
-    my @infile_commands = perl_nae_oneliners(
+    perl_nae_oneliners(
         {
             escape_oneliner => $escape_oneliner,
             filehandle      => $filehandle,
             oneliner_name   => q{synonyms_grch38_to_grch37},
-            stdinfile_path  => $infile_path,
+            use_container   => 1,
         }
     );
     print {$filehandle} $PIPE . $SPACE;

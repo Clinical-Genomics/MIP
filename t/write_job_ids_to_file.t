@@ -61,15 +61,15 @@ diag(   q{Test write_job_ids_to_file from Processes.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Given a case and a job ids file path
-my $case_id         = q{case_1};
+my $case_id = q{case_1};
 my %job_id;
-my $job_ids_file_path = catfile($Bin, q{slurm_job_ids} . $DOT . q{yaml});
+my $job_ids_file_path = catfile( $Bin, q{slurm_job_ids} . $DOT . q{yaml} );
 
 ## When no job_ids to write to file
 my $is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        job_id_href     => \%job_id,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
         job_ids_file_path => $job_ids_file_path,
     }
 );
@@ -81,10 +81,10 @@ is( $is_ok, undef, q{Skip when no job ids} );
 %job_id = ( ALL => { ALL => [ qw{ job_id_1 job_id_2 }, undef, ], }, );
 
 ## When job_ids to write to file
-$is_ok  = write_job_ids_to_file(
+$is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        job_id_href     => \%job_id,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
         job_ids_file_path => $job_ids_file_path,
     }
 );

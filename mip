@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,21 +17,22 @@ use autodie qw{ :all };
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Cli::Mip;
+use MIP::Constants qw{ $MIP_VERSION };
 
-our $VERSION = 0.02;
+our $VERSION = $MIP_VERSION;
 
 BEGIN {
 
-    require MIP::Check::Modules;
-    use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
+    require MIP::Language::Perl;
+    use MIP::Language::Perl qw{ check_modules_existance get_cpan_file_modules };
 
     my @modules =
-      parse_cpan_file {
+      get_cpan_file_modules {
         cpanfile_path => catfile( $Bin, q{cpanfile} ),
       };
 
     ## Evaluate that all modules required are installed
-    check_perl_modules(
+    check_modules_existance(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,

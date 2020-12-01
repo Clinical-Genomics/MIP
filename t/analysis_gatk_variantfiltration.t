@@ -16,16 +16,15 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,7 +42,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_variantfiltration} =>
           [qw{ analysis_gatk_variantfiltration }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -86,11 +85,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -99,7 +93,17 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+
+test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $sample_id,
+        parameter_href    => \%parameter,
+        recipe_name       => $recipe_name,
+        step              => q{vcf},
+    }
+);
+
 my %sample_info;
 
 my $is_ok = analysis_gatk_variantfiltration(
