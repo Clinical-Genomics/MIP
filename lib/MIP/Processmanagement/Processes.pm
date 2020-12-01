@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1629,9 +1629,9 @@ sub get_all_job_ids {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not exists $job_id_href->{ALL} );
+    return if ( not exists $job_id_href->{PAN} );
 
-    return @{ $job_id_href->{ALL}{ALL} };
+    return @{ $job_id_href->{PAN}{PAN} };
 }
 
 sub limit_job_id_string {
@@ -1901,20 +1901,20 @@ sub write_job_ids_to_file {
     my $job_ids_file_path;
 
     my $tmpl = {
-        case_id         => {
+        case_id => {
             defined     => 1,
             required    => 1,
             store       => \$case_id,
             strict_type => 1,
         },
-        job_id_href     => {
+        job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
             strict_type => 1,
         },
-        job_ids_file_path    => => {
+        job_ids_file_path => => {
             defined     => 1,
             required    => 1,
             store       => \$job_ids_file_path,
