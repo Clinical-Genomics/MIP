@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,11 +58,11 @@ diag(   q{Test get_all_job_ids from Processes.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
-my %job_id = ( ALL => { ALL => [ 0, 1, 2, ], }, );
+my %job_id = ( PAN => { PAN => [ 0, 1, 2, ], }, );
 
 my @all_job_ids = get_all_job_ids( { job_id_href => \%job_id, } );
 
 ## Then
-is_deeply( $job_id{ALL}{ALL}, \@all_job_ids, q{Got all job ids} );
+is_deeply( $job_id{PAN}{PAN}, \@all_job_ids, q{Got all PAN job ids} );
 
 done_testing();
