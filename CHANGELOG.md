@@ -16,6 +16,8 @@ chanjo: 4.2.0 -> 4.6
 deepvariant: 1.0.0
 glnexus: v1.2.7
 
+## [9.0.6]
+- Use "PAN" key for slurm_jobs_ids file instead of "ALL" as "ALL" has a size constraint
 
 ## [9.0.5]
 - Predicted gender from wgs samples are now used in the generated fam files.
