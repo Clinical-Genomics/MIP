@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Vcfparser} => [qw{ check_vcfparser_cli }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Vcfparser}      => [qw{ check_vcfparser_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Vcfparser qw{ check_vcfparser_cli };
+use MIP::Vcfparser qw{ check_vcfparser_cli };
 
 diag(   q{Test check_vcfparser_cli from Vcfparser.pm v}
-      . $MIP::Check::Vcfparser::VERSION
+      . $MIP::Vcfparser::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,7 +63,7 @@ diag(   q{Test check_vcfparser_cli from Vcfparser.pm v}
 Readonly my $SELECT_FEATURE_MATCHING_COLUMN => 3;
 
 ## Initiate global log name
-my $log = test_log( {} );
+test_log( {} );
 
 my $range_feature_file               = catfile(qw{ a range file });
 my @range_feature_annotation_columns = ( 1, 2 );
