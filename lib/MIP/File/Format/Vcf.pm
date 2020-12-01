@@ -81,19 +81,8 @@ sub get_vcf_header_line_by_id {
 
     use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
-    ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
-    my @check_header_cmds = gnu_export(
-        {
-                bash_variable => q{MIP_BIND}
-              . $EQUALS
-              . $vcf_file_path
-              . $COLON
-              . $vcf_file_path,
-        }
-    );
-    push @check_header_cmds, $SEMICOLON;
+    my @check_header_cmds;
 
     ## Stream vcf using bcftools
     push @check_header_cmds,
@@ -109,9 +98,6 @@ sub get_vcf_header_line_by_id {
         }
       );
     push @check_header_cmds, $SEMICOLON;
-
-    ## Unset MIP_BIND after system parsing
-    push @check_header_cmds, gnu_unset( { bash_variable => q{MIP_BIND}, } );
 
     my %process_return = child_process(
         {
