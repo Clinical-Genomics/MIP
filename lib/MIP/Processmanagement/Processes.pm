@@ -7,7 +7,6 @@ use FindBin qw{ $Bin };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1672,7 +1671,7 @@ sub limit_job_id_string {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Set maximum job_ids to track limit
-    Readonly my $MAX_JOB_IDS_TO_TRACK => 100;
+    Readonly my $MAX_JOB_IDS_TO_TRACK => 1000;
 
     # Alias job_id chain array
     my $job_ids_ref = $job_id_href->{$case_id_chain_key}{$chain_key};
@@ -1908,9 +1907,9 @@ sub track_job_id_status {
     my $submission_profile;
 
     my $tmpl = {
-        filehandle    => { required => 1, store => \$filehandle, },
-        job_ids_ref   => { default => [], store => \$job_ids_ref, strict_type => 1, },
-        log_file_path => { strict_type => 1, store => \$log_file_path, },
+        filehandle => { required => 1, store => \$filehandle, },
+        job_ids_ref   => { default     => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path => { strict_type => 1,  store => \$log_file_path, },
         sacct_format_fields_ref => {
             default     => [],
             store       => \$sacct_format_fields_ref,
