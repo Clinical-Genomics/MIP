@@ -281,17 +281,17 @@ sub analysis_chromograph_cov {
 
 sub analysis_chromograph_rhoviz {
 
-    ## Function : Visualize chromosomes using chromograph with rhocall_viz data
-    ## Returns  :
-    ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-    ##          : $case_id                 => Family id
-    ##          : $file_info_href          => File_info hash {REF}
-    ##          : $job_id_href             => Job id hash {REF}
-    ##          : $parameter_href          => Parameter hash {REF}
-    ##          : $profile_base_command    => Submission profile base command
-    ##          : $recipe_name             => Recipe name
-    ##          : $sample_id               => Sample id
-    ##          : $sample_info_href        => Info on samples and case hash {REF}
+## Function : Visualize chromosomes using chromograph with rhocall_viz data
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File_info hash {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Recipe name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -417,15 +417,13 @@ sub analysis_chromograph_rhoviz {
         }
     );
 
-    my @outfile_name_prefixes;
-    my @contigs = grep { !/M/xms } @{ $file_info_href->{contigs} };
-
-  INFILE_TYPE:
-    foreach my $infile_type ( keys %infile_path ) {
-
-        push @outfile_name_prefixes,
-          map { $infile_name_prefix . $DOT . $infile_type . $UNDERSCORE . $_ } @contigs;
-    }
+    my @outfile_name_prefixes = _build_outfile_name_prefixes(
+        {
+            contigs_ref        => $file_info_href->{contigs},
+            infile_name_prefix => $infile_name_prefix,
+            infile_path_href   => \%infile_path,
+        }
+    );
     %io = (
         %io,
         parse_io_outfiles(
@@ -530,24 +528,14 @@ sub analysis_chromograph_rhoviz {
             }
         );
 
-      OUTFILE_TYPE:
-        foreach my $outfile_type ( keys %outfile_path ) {
-
-          FILE_PATH:
-            foreach my $outfile_path ( @{ $outfile_path{$outfile_type} } ) {
-
-                set_file_path_to_store(
-                    {
-                        format           => q{png},
-                        id               => $sample_id,
-                        path             => $outfile_path,
-                        recipe_name      => $recipe_name,
-                        sample_info_href => $sample_info_href,
-                        tag              => $outfile_type,
-                    }
-                );
+        _set_chromograph_file_paths_to_store(
+            {
+                outfile_path_href => \%outfile_path,
+                recipe_name       => $recipe_name,
+                sample_id         => $sample_id,
+                sample_info_href  => $sample_info_href,
             }
-        }
+        );
 
         submit_recipe(
             {
@@ -659,6 +647,7 @@ sub analysis_chromograph_upd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -715,8 +704,14 @@ sub analysis_chromograph_upd {
     );
 
     my @outfile_name_prefixes;
-    my @contigs = grep { !/M/xms } @{ $file_info_href->{contigs} };
+    my @contigs = delete_contig_elements(
+        {
+            contigs_ref        => $file_info_href->{contigs},
+            remove_contigs_ref => [q{MT}],
+        }
+    );
   INFILE_NAME_PREFIX:
+
     foreach my $infile_name_prefix (@infile_name_prefixes) {
 
         push @outfile_name_prefixes,
@@ -838,6 +833,135 @@ sub analysis_chromograph_upd {
         );
     }
     return 1;
+}
+
+sub _build_outfile_name_prefixes {
+
+## Function : Build outfile name prefixes
+## Returns  : @outfile_name_prefixes
+## Arguments: $contigs_ref         => Active parameters for this analysis hash {REF}
+##          : $infile_path_href   => Family id
+##          : $infile_name_prefix => File_info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $infile_path_href;
+    my $infile_name_prefix;
+
+    my $tmpl = {
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        infile_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path_href,
+            strict_type => 1,
+        },
+        infile_name_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_name_prefix,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Contigs qw{ delete_contig_elements };
+
+    my @outfile_name_prefixes;
+    my @outfile_contigs = delete_contig_elements(
+        {
+            contigs_ref        => $contigs_ref,
+            remove_contigs_ref => [q{MT}],
+        }
+    );
+
+  INFILE_TYPE:
+    foreach my $infile_type ( keys %{$infile_path_href} ) {
+
+        push @outfile_name_prefixes,
+          map { $infile_name_prefix . $DOT . $infile_type . $UNDERSCORE . $_ }
+          @outfile_contigs;
+    }
+    return @outfile_name_prefixes;
+}
+
+sub _set_chromograph_file_paths_to_store {
+
+## Function : Set chromograph_rhoviz outfiles to store in sample_info
+## Returns  :
+## Arguments: $outfile_path_href => Path of file
+##          : $recipe_name       => Recipe name that produced the file
+##          : $sample_id         => Id associated with file (sample_id|case_id)
+##          : $sample_info_href  => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $outfile_path_href;
+    my $recipe_name;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        outfile_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  OUTFILE_TYPE:
+    foreach my $outfile_type ( keys %{$outfile_path_href} ) {
+
+      FILE_PATH:
+        foreach my $outfile_path ( @{ $outfile_path_href->{$outfile_type} } ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{png},
+                    id               => $sample_id,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $outfile_type,
+                }
+            );
+        }
+    }
+    return;
 }
 
 1;

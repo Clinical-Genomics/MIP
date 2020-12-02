@@ -40,7 +40,7 @@ sub chromograph {
 ##          : $euploid                => Generate png files for all chromosomes
 ##          : $filehandle             => Filehandle to write to
 ##          : $fracsnp_file_path      => Fraction of homozygous SNP, wig file
-##          : $ideo_file_path         => Bed file with ideogram data
+##          : $ideogram_file_path     => Bed file with ideogram data
 ##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
