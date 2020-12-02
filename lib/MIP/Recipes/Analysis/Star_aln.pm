@@ -311,6 +311,8 @@ sub analysis_star_aln {
     );
     say {$filehandle} $NEWLINE;
 
+    say STDERR q{Hello};
+
     ## Rename bam file
     gnu_mv(
         {
