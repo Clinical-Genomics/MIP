@@ -8,7 +8,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,12 +21,12 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Check::Vcfparser qw{ check_vcfparser_cli };
+use MIP::Vcfparser qw{ check_vcfparser_cli };
 use MIP::Constants qw{ %ANALYSIS $COLON $DASH $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Main::Vcfparser qw{ mip_vcfparser };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 command_short_description(q{MIP vcfparser command});
 
