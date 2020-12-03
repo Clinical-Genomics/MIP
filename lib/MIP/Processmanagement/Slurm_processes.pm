@@ -227,14 +227,6 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -317,14 +309,6 @@ sub slurm_submit_job_no_dependency_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -442,14 +426,6 @@ sub slurm_submit_job_no_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -575,14 +551,6 @@ sub slurm_submit_job_no_dependency_add_to_samples {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -776,14 +744,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -988,14 +948,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1181,14 +1133,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1366,14 +1310,6 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1548,14 +1484,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1756,14 +1684,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1882,14 +1802,6 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 

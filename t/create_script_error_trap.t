@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,14 +73,14 @@ my %active_parameter = (
     sacct_format_fields => [qw{ jobid }],
     submission_profile  => q{slurm},
 );
-my %job_id = ( PAN => { PAN => [ qw{ jobid_1 }, ], }, );
+my %job_id = ( ALL => { ALL => [ qw{ jobid_1 }, ], }, );
 
 ## When error trap is zero
 my $return = create_script_error_trap(
     {
         error_trap              => 0,
         filehandle              => $filehandle,
-        job_ids_ref             => $job_id{PAN}{PAN},
+        job_ids_ref             => $job_id{ALL}{ALL},
         log_file_path           => $active_parameter{log_file},
         sacct_format_fields_ref => $active_parameter{sacct_format_fields},
     }
@@ -94,7 +94,7 @@ create_script_error_trap(
     {
         error_trap              => 1,
         filehandle              => $filehandle,
-        job_ids_ref             => $job_id{PAN}{PAN},
+        job_ids_ref             => $job_id{ALL}{ALL},
         log_file_path           => $active_parameter{log_file},
         sacct_format_fields_ref => $active_parameter{sacct_format_fields},
     }

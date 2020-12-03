@@ -74,16 +74,12 @@ slurm_submit_job_no_dependency_dead_end(
     }
 );
 
-## Then add job_id returned to PAN
-my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my $expected_return = q{1234};
 is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then job_id hash should stay the same except for pan
-# Clear PAN and ALL for this test
-delete $job_id{PAN};
+# Clear ALL for this test
 delete $job_id{ALL};
 
 my %original_job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );

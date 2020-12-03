@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,10 +60,10 @@ q{Test slurm_submit_job_sample_id_dependency_step_in_parallel_to_case from Slurm
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given a mock slurm and script
-my $case_id = q{case1};
+my $case_id                      = q{case1};
 my %job_id                       = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my @parallel_chains              = qw{ OTHER };
 my $path                         = q{MAIN};
@@ -92,11 +91,8 @@ slurm_submit_job_sample_id_dependency_step_in_parallel_to_case(
     }
 );
 
-## Then add job_id returned to PAN
-my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my $expected_return = q{1234};
 is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then previous case ids should be cleared and submitted job id added

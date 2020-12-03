@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_runstatus };
@@ -160,7 +160,7 @@ sub download_runstatus {
                 base_command        => $profile_base_command,
                 dependency_method   => q{add_to_all},
                 job_dependency_type => q{afterany},
-                job_id_chain        => q{PAN},
+                job_id_chain        => q{ALL},
                 job_id_href         => $job_id_href,
                 log                 => $log,
                 recipe_file_path    => $recipe_file_path,

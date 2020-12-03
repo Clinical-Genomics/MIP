@@ -164,7 +164,7 @@ sub analysis_sacct {
         {
             fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
             filehandle        => $filehandle,
-            job_ids_ref       => \@{ $job_id_href->{PAN}{PAN} },
+            job_ids_ref       => \@{ $job_id_href->{ALL}{ALL} },
         }
     );
     say {$filehandle} $NEWLINE;

@@ -1629,9 +1629,9 @@ sub get_all_job_ids {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not exists $job_id_href->{PAN} );
+    return if ( not exists $job_id_href->{ALL} );
 
-    return @{ $job_id_href->{PAN}{PAN} };
+    return @{ $job_id_href->{ALL}{ALL} };
 }
 
 sub limit_job_id_string {
