@@ -1,97 +1,68 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{ 2018 };
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{help};
-
-our $USAGE = build_usage( {} );
-
-##Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $EMPTY_STR  => q{};
-Readonly my $UNDERSCORE => q{_};
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
+our $VERSION = 1.01;
 
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::Processmanagement::Processes} => [qw{ limit_job_id_string }],
+        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
+    );
 
-    ## Modules with import
-    my %perl_module;
-
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-
-  PERL_MODULES:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
-    }
-
-    ## Modules
-    my @modules = ('MIP::Processmanagement::Processes');
-
-  MODULES:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Processmanagement::Processes qw{limit_job_id_string};
+use MIP::Processmanagement::Processes qw{ limit_job_id_string };
 
-diag(
-"Test limit_job_id_string $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test limit_job_id_string from Processes.pm v}
+      . $MIP::Processmanagement::Processes::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+use MIP::Processmanagement::Processes qw{ limit_job_id_string };
 
 ## Constants
-Readonly my $MAX_JOB_IDS_TO_TRACK      => q{101};
-Readonly my $OVER_MAX_JOB_IDS_TO_TRACK => q{120};
+Readonly my $MAX_JOB_IDS_TO_TRACK      => q{1001};
+Readonly my $OVER_MAX_JOB_IDS_TO_TRACK => q{1200};
 
 # Create job_ids array
 my @job_ids = ( 0 .. $OVER_MAX_JOB_IDS_TO_TRACK );
@@ -116,9 +87,7 @@ my %job_id = (
     q{ALL} => { q{ALL} => [@job_ids], }
 );
 
-### Limit number of job ids for job chain
-
-## Add job_ids from MAIN chain to job_id_string using default chain keys
+## When reducing the size of the job_ids array
 limit_job_id_string(
     {
         job_id_href => \%job_id,
@@ -128,9 +97,10 @@ limit_job_id_string(
 my $result_ref      = scalar @{ $job_id{q{ALL}}{q{ALL}} };
 my $expected_result = $MAX_JOB_IDS_TO_TRACK;
 
+## Then the number of job ids is reduced
 is( $result_ref, $expected_result, q{Limited nr of job_ids in job_id chain} );
 
-## Add job_ids from MAIN chain to job_id_string
+## When adding job_ids from case MAIN chain to job_id_string
 limit_job_id_string(
     {
         job_id_href       => \%job_id,
@@ -142,42 +112,7 @@ limit_job_id_string(
 $result_ref      = scalar @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 $expected_result = q{2};
 
+## Then two jobs should be returned
 is( $result_ref, $expected_result, q{Keept job_ids in job_id chain} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

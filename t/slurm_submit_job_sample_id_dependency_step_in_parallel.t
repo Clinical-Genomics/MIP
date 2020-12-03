@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,7 +60,7 @@ q{Test slurm_submit_job_sample_id_dependency_step_in_parallel from Slurm_process
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
 ## Given a mock slurm and script
 my $case_id        = q{case1};
@@ -87,11 +87,8 @@ slurm_submit_job_sample_id_dependency_step_in_parallel(
     }
 );
 
-## Then add job_id returned to PAN
-my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my $expected_return = q{1234};
 is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then previous sample ids should remain as is
@@ -99,6 +96,7 @@ my @sample_job_ids = qw{ job_id_1 job_id_2 };
 is_deeply( \@{ $job_id{case1_MAIN}{sample1_MAIN} },
     \@sample_job_ids, q{Added dependencies to sample} );
 
+## Then job ids should be added to the sample parallel step dependency
 my @sample_parallel_job_ids = qw{ 1234 };
 is_deeply( \@{ $job_id{case1_MAIN}{sample1_parallel_MAIN0} },
     \@sample_parallel_job_ids, q{Added dependencies to sample parallel step} );

@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -25,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -50,7 +49,7 @@ BEGIN {
 
 use MIP::Workloadmanager::Slurm qw{ slurm_sbatch };
 
-diag(   q{Test slurm_sbatch from SLURM.pm v}
+diag(   q{Test slurm_sbatch from Slurm.pm v}
       . $MIP::Workloadmanager::Slurm::VERSION
       . $COMMA
       . $SPACE . q{Perl}
