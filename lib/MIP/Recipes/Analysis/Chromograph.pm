@@ -372,7 +372,7 @@ sub analysis_chromograph_rhoviz {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
@@ -395,11 +395,17 @@ sub analysis_chromograph_rhoviz {
             stream         => q{in},
         }
     );
-    my $infile_path_prefix = $io{in}{file_paths}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
-    my $infile_name_prefix = $io{in}{file_names}[0] =~ s/$io{in}{file_suffix} \z//xmsr;
-    my %infile_path        = (
-        autozyg => $infile_path_prefix . $DOT . q{bed},
-        fracsnp => $infile_path_prefix . $DOT . q{wig},
+    my $infile_name_prefix = parse_file_suffix(
+        {
+            file_name   => $io{in}{file_names}[0],
+            file_suffix => $io{in}{file_suffix},
+        }
+    );
+    my %infile_path = _build_infile_path_hash(
+        {
+            file_path   => $io{in}{file_paths}[0],
+            file_suffix => $io{in}{file_suffix},
+        }
     );
 
     my $job_id_chain = get_recipe_attributes(
@@ -835,11 +841,57 @@ sub analysis_chromograph_upd {
     return 1;
 }
 
+sub _build_infile_path_hash {
+
+## Function : Build infile path hash
+## Returns  : %infile_path
+## Arguments: $file_path   => Infile path
+##          : $file_suffix => File suffix
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $file_suffix;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        file_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_suffix,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parse::File qw{ parse_file_suffix };
+
+    my $infile_path_prefix = parse_file_suffix(
+        {
+            file_name   => $file_path,
+            file_suffix => $file_suffix,
+        }
+    );
+    my %infile_path = (
+        autozyg => $infile_path_prefix . $DOT . q{bed},
+        fracsnp => $infile_path_prefix . $DOT . q{wig},
+    );
+
+    return %infile_path;
+}
+
 sub _build_outfile_name_prefixes {
 
 ## Function : Build outfile name prefixes
 ## Returns  : @outfile_name_prefixes
-## Arguments: $contigs_ref         => Active parameters for this analysis hash {REF}
+## Arguments: $contigs_ref        => Active parameters for this analysis hash {REF}
 ##          : $infile_path_href   => Family id
 ##          : $infile_name_prefix => File_info hash {REF}
 
