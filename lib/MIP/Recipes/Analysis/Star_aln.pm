@@ -292,7 +292,6 @@ sub analysis_star_aln {
 
     my $out_sam_strand_field =
       $active_parameter_href->{library_type} eq q{unstranded} ? q{intronMotif} : undef;
-
     star_aln(
         {
             align_intron_max        => $active_parameter_href->{align_intron_max},
@@ -645,6 +644,11 @@ sub analysis_star_aln_mixed {
                 separator        => $SPACE,
             }
         );
+
+        my $out_sam_strand_field =
+          $active_parameter_href->{library_type} eq q{unstranded}
+          ? q{intronMotif}
+          : undef;
         star_aln(
             {
                 filehandle          => $filehandle,
@@ -659,6 +663,7 @@ sub analysis_star_aln_mixed {
                 genome_dir_path       => $referencefile_dir_path,
                 infile_paths_ref      => \@fastq_files,
                 out_sam_attr_rgline   => $out_sam_attr_rgline,
+                out_sam_strand_field  => $out_sam_strand_field,
                 outfile_name_prefix   => $outfile_path_prefix . $DOT,
                 pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
                 thread_number         => $recipe_resource{core_number},
