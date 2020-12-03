@@ -138,16 +138,6 @@ sub parse_rd_dna {
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
-    ## Set analysis constants
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
-
-    parse_containers(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
-
     my $consensus_analysis_type = get_cache(
         {
             parameter_href => $parameter_href,
@@ -184,27 +174,6 @@ sub parse_rd_dna {
             consensus_analysis_type => $consensus_analysis_type,
             file_info_href          => $file_info_href,
             select_file_path        => $active_parameter_href->{vcfparser_select_file},
-        }
-    );
-
-    ## Check that VEP directory and VEP cache match
-    check_vep_api_cache_versions(
-        {
-            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
-        }
-    );
-
-    ## Check VEP custom annotations options
-    check_vep_custom_annotation(
-        {
-            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
-        }
-    );
-
-    parse_vep_plugin(
-        {
-            active_parameter_href => $active_parameter_href,
-            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
         }
     );
 
@@ -343,6 +312,37 @@ sub parse_rd_dna {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
             sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Set analysis constants
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
+
+    ## Check that VEP directory and VEP cache match
+    check_vep_api_cache_versions(
+        {
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+        }
+    );
+
+    ## Check VEP custom annotations options
+    check_vep_custom_annotation(
+        {
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
+
+    parse_vep_plugin(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_vep_plugins_ref   => \@MIP_VEP_PLUGINS,
         }
     );
 
