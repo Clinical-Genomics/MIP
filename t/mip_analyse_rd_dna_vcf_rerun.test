@@ -119,7 +119,6 @@ my $cmds_ref = [
     qw{ --dra --vb },
     q{--vcfanno_config},
     $toml_config_path,
-    q{--test},
 ];
 
 my %process_return = child_process(

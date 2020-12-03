@@ -101,7 +101,6 @@ my @base_cmds = (
         $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
     ),
     qw{--dra --vb },
-    q{--test_mode},
 );
 
 my %process_return = child_process(
