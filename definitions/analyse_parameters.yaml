@@ -279,12 +279,6 @@ temp_directory:
     - mip
   data_type: SCALAR
   type: path
-test_mode:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 ## Version collecting
 version_collect_ar:
   analysis_mode: case

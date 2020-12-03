@@ -145,7 +145,6 @@ my @cmds = (
         $cluster_constant_path,
         qw{ test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf }
     ),
-    q{--test_mode},
 );
 
 PEDIGREE:
