@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,13 +73,13 @@ my %active_parameter = (
     sacct_format_fields => [qw{ jobid }],
     submission_profile  => q{slurm},
 );
-my %job_id = ( PAN => { PAN => [ qw{ jobid_1 }, ], }, );
+my %job_id = ( ALL => { ALL => [ qw{ jobid_1 }, ], }, );
 
 ## When no temp directory supplied
 my $return = create_script_temp_dir(
     {
         filehandle              => $filehandle,
-        job_ids_ref             => $job_id{PAN}{PAN},
+        job_ids_ref             => $job_id{ALL}{ALL},
         log_file_path           => $active_parameter{log_file},
         sacct_format_fields_ref => $active_parameter{sacct_format_fields},
     }
@@ -92,7 +92,7 @@ is( $return, 0, q{Skip sub - no temp directory supplied} );
 create_script_temp_dir(
     {
         filehandle              => $filehandle,
-        job_ids_ref             => $job_id{PAN}{PAN},
+        job_ids_ref             => $job_id{ALL}{ALL},
         log_file_path           => $active_parameter{log_file},
         sacct_format_fields_ref => $active_parameter{sacct_format_fields},
         temp_directory          => $temp_dir,

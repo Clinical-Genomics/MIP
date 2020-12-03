@@ -29,7 +29,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -706,7 +706,7 @@ sub setup_script {
     my $temp_directory_bash = create_script_temp_dir(
         {
             filehandle              => $filehandle,
-            job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+            job_ids_ref             => \@{ $job_id_href->{ALL}{ALL} },
             log_file_path           => $active_parameter_href->{log_file},
             sacct_format_fields_ref => \@sacct_format_fields,
             temp_directory          => $temp_directory,
@@ -724,7 +724,7 @@ sub setup_script {
     create_script_error_trap(
         {
             filehandle              => $filehandle,
-            job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+            job_ids_ref             => \@{ $job_id_href->{ALL}{ALL} },
             log_file_path           => $active_parameter_href->{log_file},
             sacct_format_fields_ref => \@sacct_format_fields,
         }
