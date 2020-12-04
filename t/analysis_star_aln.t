@@ -21,10 +21,11 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures
+  qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,7 +42,8 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Star_aln} => [qw{ analysis_star_aln }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} =>
+          [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -77,6 +79,7 @@ my $sample_id = $active_parameter{sample_ids}[0];
 $active_parameter{platform}                  = q{ILLUMINA};
 $active_parameter{star_aln_reference_genome} = q{a_dir};
 $active_parameter{two_pass_mode}             = q{Basic};
+$active_parameter{library_type}              = q{unstranded};
 
 my %file_info = test_mip_hashes(
     {
@@ -98,11 +101,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $sample_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{fastq},
+        file_info_href => \%file_info,
+        id             => $sample_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{fastq},
     }
 );
 

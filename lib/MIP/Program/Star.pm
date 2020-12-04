@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -222,8 +222,8 @@ sub star_aln {
             strict_type => 1,
         },
         out_sam_strand_field => {
-            allow       => [qw{ None intronMotif }],
-            default     => q{intronMotif},
+            allow       => [ undef, qw{ None intronMotif } ],
+            default     => q{None},
             store       => \$out_sam_strand_field,
             strict_type => 1,
         },
