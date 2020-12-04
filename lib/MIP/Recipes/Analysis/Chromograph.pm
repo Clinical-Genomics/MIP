@@ -375,7 +375,7 @@ sub analysis_chromograph_rhoviz {
     use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Chromograph qw{ chromograph };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -486,7 +486,7 @@ sub analysis_chromograph_rhoviz {
   FILE_TYPE:
     foreach my $file_type ( keys %infile_path ) {
 
-        gnu_mv(
+        gnu_cp(
             {
                 filehandle   => $filehandle,
                 infile_path  => $infile_path{$file_type},
