@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1689,7 +1689,7 @@ sub limit_job_id_string {
 
 sub print_wait {
 
-## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate.
+## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate
 ## Returns  : $process_batches_count
 ## Arguments: $filehandle            => filehandle to print "wait" statment to
 ##          : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
@@ -1728,19 +1728,17 @@ sub print_wait {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gnu::Bash qw{gnu_wait};
+    use MIP::Program::Gnu::Bash qw{ gnu_wait };
 
-    # Using only nr of processs eq the maximum number of process scaled by the batch count
-    if ( $process_counter == $process_batches_count * $max_process_number ) {
+    ## Return if nr of processes has not reached the max for this batch
+    return $process_batches_count
+      if ( $process_counter != $process_batches_count * $max_process_number );
 
-        # Print wait statement to filehandle
-        gnu_wait( { filehandle => $filehandle, } );
-        say {$filehandle} $NEWLINE;
+    gnu_wait( { filehandle => $filehandle, } );
+    say {$filehandle} $NEWLINE;
 
-# Increase the maximum number of processs allowed to be used since "wait" was just printed
-        $process_batches_count = $process_batches_count + 1;
-    }
-    return $process_batches_count;
+    ## Increment and then return maximum number of processes allowed to be used since "wait" was just printed
+    return ++$process_batches_count;
 }
 
 sub submit_recipe {
