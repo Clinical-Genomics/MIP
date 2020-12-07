@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.38;
+    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -443,7 +443,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
-      qw{ analysis_chromograph_cov analysis_chromograph_upd };
+      qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -549,16 +549,17 @@ sub pipeline_analyse_rd_dna {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus => \&analysis_analysisrunstatus,
-        bcftools_mpileup  => \&analysis_bcftools_mpileup,
-        bwa_mem           => undef,                           # Depends on genome build
-        bwa_mem2          => undef,
-        cadd_ar           => \&analysis_cadd,
-        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-        chromograph_cov   => \&analysis_chromograph_cov,
-        chromograph_upd   => \$sample_info_href->{has_trio}
+        analysisrunstatus  => \&analysis_analysisrunstatus,
+        bcftools_mpileup   => \&analysis_bcftools_mpileup,
+        bwa_mem            => undef,                           # Depends on genome build
+        bwa_mem2           => undef,
+        cadd_ar            => \&analysis_cadd,
+        chanjo_sexcheck    => \&analysis_chanjo_sex_check,
+        chromograph_cov    => \&analysis_chromograph_cov,
+        chromograph_rhoviz => \&analysis_chromograph_rhoviz,
+        chromograph_upd    => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,                                              # Depends on pedigree
+        : undef,                                               # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_upd }],
+        q{MIP::Recipes::Analysis::Chromograph} => [qw{ analysis_chromograph_rhoviz }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_upd };
+use MIP::Recipes::Analysis::Chromograph qw{ analysis_chromograph_rhoviz };
 
-diag(   q{Test analysis_chromograph_upd from Chromograph.pm v}
+diag(   q{Test analysis_chromograph_rhoviz from Chromograph.pm v}
       . $MIP::Recipes::Analysis::Chromograph::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -62,7 +62,7 @@ diag(   q{Test analysis_chromograph_upd from Chromograph.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{chromograph_upd};
+my $recipe_name    = q{chromograph_rhoviz};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -83,12 +83,9 @@ my %file_info = test_mip_hashes(
     }
 );
 %{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in} } = (
-    file_path_href => {
-        regions => catfile(qw{path to upd.regions.bed}),
-        sites   => catfile(qw{path to upd.sites.bed}),
-    },
-    file_suffix => q{.bed},
-    file_names  => [qw{ upd.regions.bed path to upd.sites.bed }],
+    file_suffix => q{.bw},
+    file_paths  => [ catfile(qw{path to rhocall_viz.bw}) ],
+    file_names  => [q{rhocall_viz.bw}],
 );
 
 my %job_id;
@@ -100,9 +97,8 @@ my %parameter = test_mip_hashes(
 );
 $parameter{$recipe_name}{outfile_suffix} = q{.png};
 my %sample_info = test_mip_hashes( { mip_hash_name => q{qc_sample_info}, } );
-$sample_info{has_trio} = 1;
 
-my $is_ok = analysis_chromograph_upd(
+my $is_ok = analysis_chromograph_rhoviz(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
@@ -116,23 +112,6 @@ my $is_ok = analysis_chromograph_upd(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok, q{Executed analysis recipe} . $recipe_name );
 
-## Given a wes sample
-$active_parameter{analysis_type}{$sample_id} = q{wes};
-$is_ok = analysis_chromograph_upd(
-    {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        job_id_href           => \%job_id,
-        parameter_href        => \%parameter,
-        profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        sample_id             => $sample_id,
-        sample_info_href      => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe for wes} . $recipe_name );
 done_testing();

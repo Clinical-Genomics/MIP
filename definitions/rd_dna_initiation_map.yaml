@@ -76,8 +76,9 @@ CHAIN_ALL:
     - rhocall_ar
     - vt_ar
     - variant_annotation
-    - CHAIN_RHOCALL_VIZ:
+    - CHAIN_RHOVIZ:
       - rhocall_viz
+      - chromograph_rhoviz
     - CHAIN_UPD:
       - upd_ar
       - chromograph_upd
