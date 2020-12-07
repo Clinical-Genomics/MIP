@@ -34,6 +34,4 @@ RUN rm -rf local
 
 RUN carton install
 
-RUN carton install --deployment
-
 ENTRYPOINT ["carton", "exec"]
