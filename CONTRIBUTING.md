@@ -25,7 +25,7 @@ This will look at the cpanfile.snapshot and install the exact same versions of t
 
 The --deployment flag makes sure that carton will only install modules and versions available in your snapshot, and won't fallback to query for CPAN Meta DB for missing modules.
 
-Another flavoe of this is [Carmel]. Unlike traditional CPAN module installer, Carmel keeps the build of your dependencies in a central repository, then select the library paths to include upon runtime.
+Another flavor of this is [Carmel]. Unlike traditional CPAN module installer, Carmel keeps the build of your dependencies in a central repository, then select the library paths to include upon runtime.
 
 ## Code style
 MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. These tools can be installed by running mip_install_perl.sh with the `-d` option when installing MIP's perl distribution and cpan modules.  
