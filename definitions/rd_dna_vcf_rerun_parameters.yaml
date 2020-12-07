@@ -1,5 +1,4 @@
 ---
-## Version: 2.1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -9,6 +8,7 @@ custom_default_parameters:
     - conda_path
     - exome_target_bed
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir
@@ -382,12 +382,6 @@ sv_reformat:
   program_executables:
     - picard
   type: recipe
-sv_rankvariant_binary_file:
-  associated_recipe:
-    - sv_reformat
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 sv_reformat_remove_genes_file:
   associated_recipe:
     - sv_reformat

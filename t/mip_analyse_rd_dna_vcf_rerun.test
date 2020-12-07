@@ -31,19 +31,21 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.10;
+our $VERSION = 1.13;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
 my $config_file =
   catfile( dirname($Bin), qw{ templates mip_rd_dna_vcf_rerun_config.yaml } );
+my $mip_install_config =
+  catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
 my $mip_path            = catfile( dirname($Bin), q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
-my $toml_template_path  = catfile( $test_reference_path,
-    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_template_path =
+  catfile( $test_reference_path, q{grch37_vcfanno_config_template-v1.0-.toml} );
 my $toml_config_path =
-  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
+  catfile( $test_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(
@@ -94,6 +96,8 @@ my $cmds_ref = [
     qw{ analyse rd_dna_vcf_rerun 643594-miptest },
     q{--config},
     $config_file,
+    q{--install_config},
+    $mip_install_config,
     q{--conda_path},
     $conda_path,
     q{--cluster_constant_path},

@@ -182,7 +182,6 @@ sub build_rtg_prerequisites {
             filehandle            => $filehandle,
             directory_id          => $case_id,
             job_id_href           => $job_id_href,
-            log                   => $log,
             process_time          => $PROCESSING_TIME,
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,

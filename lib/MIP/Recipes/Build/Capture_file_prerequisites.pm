@@ -178,7 +178,6 @@ sub build_capture_file_prerequisites {
                 filehandle                      => $filehandle,
                 directory_id                    => $case_id,
                 job_id_href                     => $job_id_href,
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 source_environment_commands_ref => $recipe_resource{load_env_ref},

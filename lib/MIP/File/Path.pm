@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
+use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -17,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $FORWARD_SLASH $LOG_NAME $SINGLE_QUOTE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $FORWARD_SLASH $LOG_NAME $SINGLE_QUOTE };
 
 BEGIN {
     require Exporter;
@@ -35,6 +36,7 @@ BEGIN {
       get_absolute_path
       get_file_names
       get_file_line_by_line
+      remove_file_path_suffix
     };
 }
 
@@ -422,6 +424,47 @@ sub get_file_line_by_line {
 
     my @lines = path($path)->lines_utf8( { chomp => $chomp, } );
     return \@lines;
+}
+
+sub remove_file_path_suffix {
+
+## Function : Parse file suffixes in file path. Removes suffix if matching else return undef
+## Returns  : undef | $file_path_no_suffix
+## Arguments: $file_path         => File path
+##          : $file_suffixes_ref => File suffix to be removed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $file_suffixes_ref;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        file_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_suffixes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my ( $file_name_nosuffix, $dir, $suffix ) =
+      fileparse( $file_path, @{$file_suffixes_ref} );
+
+    $dir = $dir eq q{./} ? $EMPTY_STR : $dir;
+
+    return $dir . $file_name_nosuffix if ( $file_name_nosuffix and $suffix );
+
+    return;
 }
 
 1;

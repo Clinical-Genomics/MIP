@@ -1,6 +1,4 @@
 ---
-## Version: 2.1.2
-## HumanGenomeReference
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -9,6 +7,7 @@ custom_default_parameters:
     - analysis_type
     - conda_path
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir
@@ -84,6 +83,7 @@ library_type:
   associated_recipe:
     - genebody_coverage
     - picardtools_collectrnaseqmetrics
+    - star_aln
     - stringtie_ar
   data_type: SCALAR
   default: reverse_stranded
@@ -877,7 +877,7 @@ qccollect_eval_metric_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_eval_metric_-v1.2-.yaml
+  default: qc_eval_metric_-v1.3-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

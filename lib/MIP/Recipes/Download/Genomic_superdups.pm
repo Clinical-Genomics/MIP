@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -27,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
@@ -128,7 +127,7 @@ sub download_genomic_superdups {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -165,7 +164,6 @@ sub download_genomic_superdups {
             directory_id               => q{mip_download},
             filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
-            log                        => $log,
             memory_allocation          => $recipe_resource{memory},
             outdata_dir                => $reference_dir,
             outscript_dir              => $reference_dir,
@@ -194,10 +192,10 @@ sub download_genomic_superdups {
 
     ## Parse file suffix in filename.suffix(.gz).
     ## Removes suffix if matching else return undef
-    my $outfile_path_no_suffix = parse_file_suffix(
+    my $outfile_path_no_suffix = remove_file_path_suffix(
         {
-            file_name   => catfile( $reference_dir, $reference_href->{outfile} ),
-            file_suffix => $DOT . q{gz},
+            file_path         => catfile( $reference_dir, $reference_href->{outfile} ),
+            file_suffixes_ref => [ $DOT . q{gz} ],
         }
     );
 

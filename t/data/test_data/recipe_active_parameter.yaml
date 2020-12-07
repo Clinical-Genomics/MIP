@@ -49,7 +49,12 @@ load_env:
     sambamba:
 recipe_core_number:
   bwa_mem: 30
+  deepvariant: 35
+recipe_gpu_number:
+  deepvariant: 1
 recipe_memory:
   bwa_mem: 4
+  deepvariant: 5
 recipe_time:
   bwa_mem: 30
+  deepvariant: 10

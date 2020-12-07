@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -228,14 +227,6 @@ sub slurm_submit_job_case_id_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -293,11 +284,8 @@ sub slurm_submit_job_no_dependency_dead_end {
 
     use MIP::Processmanagement::Processes qw{ add_job_id_dependency_tree };
 
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command     => $base_command,
             log              => $log,
@@ -313,14 +301,14 @@ sub slurm_submit_job_no_dependency_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
     add_job_id_dependency_tree(
         {
-            chain_key       => q{PAN},
+            chain_key       => q{ALL},
             job_id_href     => $job_id_href,
             job_id_returned => $job_id_returned,
         }
     );
+
     return;
 }
 
@@ -396,11 +384,8 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes
-      qw{add_sample_job_id_to_sample_id_dependency_tree
-      add_job_id_dependency_tree};
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
+      qw{ add_sample_job_id_to_sample_id_dependency_tree
+      add_job_id_dependency_tree };
 
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
@@ -408,8 +393,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
 
     ## Initiate chain - No dependencies, initiate Trunk (Main or other)
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command     => $base_command,
             log              => $log,
@@ -434,14 +418,14 @@ sub slurm_submit_job_no_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
     add_job_id_dependency_tree(
         {
-            chain_key       => q{PAN},
+            chain_key       => q{ALL},
             job_id_href     => $job_id_href,
             job_id_returned => $job_id_returned,
         }
     );
+
     return;
 }
 
@@ -518,16 +502,13 @@ sub slurm_submit_job_no_dependency_add_to_samples {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes
-      qw{add_sample_job_id_to_sample_id_dependency_tree add_job_id_dependency_tree};
+      qw{ add_sample_job_id_to_sample_id_dependency_tree add_job_id_dependency_tree };
 
     ## Set keys
     my $case_id_chain_key = $case_id . $UNDERSCORE . $path;
 
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command     => $base_command,
             log              => $log,
@@ -562,14 +543,14 @@ sub slurm_submit_job_no_dependency_add_to_samples {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
     add_job_id_dependency_tree(
         {
-            chain_key       => q{PAN},
+            chain_key       => q{ALL},
             job_id_href     => $job_id_href,
             job_id_returned => $job_id_returned,
         }
     );
+
     return;
 }
 
@@ -652,7 +633,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Processmanagement::Processes qw{add_job_id_dependency_tree
+    use MIP::Processmanagement::Processes qw{ add_job_id_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
       add_parallel_job_id_to_sample_id_dependency_tree
       add_to_job_id_dependency_string
@@ -664,12 +645,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
 
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
@@ -696,9 +671,9 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_sample_id(
+    my $job_ids_string = create_job_id_string_for_sample_id(
         {
             case_id             => $case_id,
             case_id_chain_key   => $case_id_chain_key,
@@ -709,8 +684,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -755,7 +729,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Add job_id to jobs dependent on all jobs
     add_job_id_dependency_tree(
         {
             chain_key       => q{ALL},
@@ -771,14 +744,6 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -874,12 +839,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
@@ -905,9 +864,9 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
         }
     );
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_sample_id(
+    my $job_ids_string = create_job_id_string_for_sample_id(
         {
             case_id             => $case_id,
             case_id_chain_key   => $case_id_chain_key,
@@ -918,8 +877,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
         }
     );
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -990,14 +948,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1101,18 +1051,12 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Set keys
     my $case_id_chain_key = $case_id . $UNDERSCORE . $path;
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_case_id(
+    my $job_ids_string = create_job_id_string_for_case_id(
         {
             case_id                           => $case_id,
             case_id_chain_key                 => $case_id_chain_key,
@@ -1132,14 +1076,13 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
         }
     );
 
-    ## If parellel job_ids existed add to current job_id_string
+    ## If parallel job_ids existed add to current job_id_string
     if ($parallel_job_ids_string) {
 
         $job_ids_string .= $parallel_job_ids_string;
     }
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -1190,14 +1133,6 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1301,18 +1236,12 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Set keys
     my $case_id_chain_key = $case_id . $UNDERSCORE . $path;
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_case_id(
+    my $job_ids_string = create_job_id_string_for_case_id(
         {
             case_id                           => $case_id,
             case_id_chain_key                 => $case_id_chain_key,
@@ -1339,7 +1268,7 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
     }
 
     ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -1381,14 +1310,6 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1500,18 +1421,12 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Set keys
     my $case_id_chain_key = $case_id . $UNDERSCORE . $path;
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_case_id(
+    my $job_ids_string = create_job_id_string_for_case_id(
         {
             case_id                           => $case_id,
             case_id_chain_key                 => $case_id_chain_key,
@@ -1523,8 +1438,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
         }
     );
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -1570,14 +1484,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1665,7 +1571,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
       add_pan_job_id_to_sample_id_dependency_tree
       add_sample_job_id_to_sample_id_dependency_tree
       add_to_job_id_dependency_string
-      clear_pan_job_id_dependency_tree
       clear_sample_id_job_id_dependency_tree
       clear_sample_id_parallel_job_id_dependency_tree
       create_job_id_string_for_sample_id
@@ -1673,12 +1578,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
     };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
 
     ## Set keys
     my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
@@ -1716,9 +1615,9 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
         }
     );
 
-    ## Create job id string from the job id chain and path associated with sample for
+    ## Create job id string with all previous job_ids from the job id chain and path associated with sample for
     ## SLURM submission using dependencies
-    $job_ids_string = create_job_id_string_for_sample_id(
+    my $job_ids_string = create_job_id_string_for_sample_id(
         {
             case_id               => $case_id,
             case_id_chain_key     => $case_id_chain_key,
@@ -1741,8 +1640,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
         }
     }
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -1786,14 +1684,6 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 
@@ -1866,17 +1756,11 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
       limit_job_id_string
     };
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
     ## Set keys
     my $case_id_chain_key = $path;
     my $chain_key         = $path;
 
-    $job_ids_string = add_to_job_id_dependency_string(
+    my $job_ids_string = add_to_job_id_dependency_string(
         {
             chain_key         => $chain_key,
             case_id_chain_key => $case_id_chain_key,
@@ -1884,8 +1768,7 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
         }
     );
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
+    my $job_id_returned = submit_jobs_to_sbatch(
         {
             base_command        => $base_command,
             job_dependency_type => $job_dependency_type,
@@ -1919,14 +1802,6 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
         }
     );
 
-    ## Add PAN job_id_returned to hash for sacct processing downstream
-    add_job_id_dependency_tree(
-        {
-            chain_key       => q{PAN},
-            job_id_href     => $job_id_href,
-            job_id_returned => $job_id_returned,
-        }
-    );
     return;
 }
 

@@ -21,7 +21,7 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -97,12 +97,38 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
+        q{core_ram_memory} => (
+            cmd_tags      => [q{Default: 5}],
+            documentation => q{RAM memory size of the core(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{dry_run_all} => (
             cmd_aliases => [qw{ dra }],
             documentation =>
               q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},
             isa => Bool,
+        )
+    );
+
+    option(
+        q{email} => (
+            documentation => q{E-mail},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{email_types} => (
+            cmd_tags      => [q{Default: FAIL}],
+            documentation => q{E-mail type},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
         )
     );
 
@@ -133,10 +159,44 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
+        q{install_config_file} => (
+            documentation => q{File with install configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{java_use_large_pages} => (
             documentation => q{Use large page memory},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{job_reservation_name} => (
+            documentation => q{Allocate node resources from named reservation},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{max_cores_per_node} => (
+            cmd_tags      => [q{Default: 16}],
+            documentation => q{Maximum number of processor cores per node},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{node_ram_memory} => (
+            cmd_tags      => [q{Default: 128}],
+            documentation => q{RAM memory size of the node(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
@@ -253,6 +313,15 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
         )
     );
 

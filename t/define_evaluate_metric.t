@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -58,9 +58,8 @@ diag(   q{Test define_evaluate_metric from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
-Readonly my $PCT_ADAPTER                 => 0.0005;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL => 0.06;
+Readonly my $PCT_ADAPTER          => 0.0005;
+Readonly my $PCT_PF_READS_ALIGNED => 0.95;
 
 my $log = test_log( { no_screen => 1, } );
 
@@ -72,9 +71,9 @@ my %sample_info = test_mip_hashes(
 
 ## Given a file with evaluation metrics
 my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.1-.yaml} );
+  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
 
-## Then set the relevant evaluation metrics for the analysis
+## When defining the evaluation metrics based on the analysis
 my %evaluate_metric = define_evaluate_metric(
     {
         eval_metric_file => $eval_metric_file,
@@ -90,11 +89,11 @@ my %expected = (
             },
         },
         collectmultiplemetrics => {
-            PCT_PF_READS_ALIGNED => {
-                lt => $PCT_PF_READS_ALIGNED,
-            },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
+            },
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
             },
         },
     },
@@ -105,17 +104,12 @@ my %expected = (
             },
         },
         collectmultiplemetrics => {
-            PCT_PF_READS_ALIGNED => {
-                lt => $PCT_PF_READS_ALIGNED,
-            },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
             },
-        },
-    },
-    variant_integrity_ar_mendel => {
-        fraction_of_errors => {
-            gt => $VARIANT_INTEGRITY_AR_MENDEL,
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
+            },
         },
     },
     ADM1059A3 => {
@@ -126,6 +120,8 @@ my %expected = (
         },
     },
 );
+
+## Then the evaluate metrics is defined with the relevant evaluation metrics for the analysis
 is_deeply( \%evaluate_metric, \%expected, q{Define analysis eval metrics} );
 
 done_testing();

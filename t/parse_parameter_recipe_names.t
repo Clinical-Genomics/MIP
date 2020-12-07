@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -57,11 +57,11 @@ diag(   q{Test parse_parameter_recipe_names from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given recipe names
 my %parameter = (
-    bcftools_mpileup => {
+    markduplicates_picardtools_opt_dup_dist => {
         associated_recipe => [ qw{ mip }, ],
         data_type         => q{SCALAR},
         default           => 1,

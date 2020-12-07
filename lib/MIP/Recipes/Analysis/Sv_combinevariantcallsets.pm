@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -137,9 +136,8 @@ sub analysis_sv_combinevariantcallsets {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools
-      qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
+      qw{ bcftools_merge bcftools_norm bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Svdb qw{ svdb_merge };
-    use MIP::Program::Vt qw{ vt_decompose };
     use MIP::Sample_info qw{ set_file_path_to_store
       set_recipe_outfile_in_sample_info
       set_recipe_metafile_in_sample_info };
@@ -207,18 +205,16 @@ sub analysis_sv_combinevariantcallsets {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
     ## Split to enable submission to &sample_info_qc later
@@ -306,19 +302,19 @@ sub analysis_sv_combinevariantcallsets {
     ## Alternative file tag
     my $alt_file_tag = $EMPTY_STR;
 
-    if ( $active_parameter_href->{sv_vt_decompose} ) {
+    if ( $active_parameter_href->{sv_decompose} ) {
 
         ## Update file tag
-        $alt_file_tag = $UNDERSCORE . q{vt};
+        $alt_file_tag = $UNDERSCORE . q{decompose};
 
         ## Split multiallelic variants
         say {$filehandle} q{## Split multiallelic variants};
-        vt_decompose(
+        bcftools_norm(
             {
                 filehandle   => $filehandle,
                 infile_path  => $outfile_path,
+                multiallelic => q{-},
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                smart_decomposition => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -589,16 +585,16 @@ sub _preprocess_joint_callers_file {
         ## Store merged outfile per caller
         push @{ $file_path_href->{$structural_variant_caller} }, $decompose_outfile_path;
 
-        if ( $active_parameter_href->{sv_vt_decompose} ) {
+        if ( $active_parameter_href->{sv_decompose} ) {
 
             ## Split multiallelic variants
             say {$filehandle} q{## Split multiallelic variants};
-            vt_decompose(
+            bcftools_norm(
                 {
                     filehandle          => $filehandle,
                     infile_path         => $infile_path,
+                    multiallelic        => q{-},
                     outfile_path        => $decompose_outfile_path,
-                    smart_decomposition => 1,
                 }
             );
             say {$filehandle} $NEWLINE;

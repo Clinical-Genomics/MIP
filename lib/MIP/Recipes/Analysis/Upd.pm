@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -124,9 +123,10 @@ sub analysis_upd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_file_suffix parse_io_outfiles };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gnu::Coreutils qw{ gnu_sort };
@@ -217,17 +217,15 @@ sub analysis_upd {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -275,10 +273,10 @@ sub analysis_upd {
         say {$filehandle} $NEWLINE;
 
         say {$filehandle} q{## Create big bed files};
-        my $big_bed_file_path_prefix = parse_file_suffix(
+        my $big_bed_file_path_prefix = remove_file_path_suffix(
             {
-                file_name   => $outfile_path{$call_type},
-                file_suffix => q{.bed},
+                file_path         => $outfile_path{$call_type},
+                file_suffixes_ref => [q{.bed}],
             }
         );
         ucsc_bed_to_big_bed(
@@ -309,10 +307,10 @@ sub analysis_upd {
 
       CALL_TYPE:
         foreach my $call_type (@call_types) {
-            my $file_path_prefix = parse_file_suffix(
+            my $file_path_prefix = remove_file_path_suffix(
                 {
-                    file_name   => $outfile_path{$call_type},
-                    file_suffix => q{.bed},
+                    file_path         => $outfile_path{$call_type},
+                    file_suffixes_ref => [q{.bed}],
                 }
             );
 

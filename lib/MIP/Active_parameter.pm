@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.32;
+    our $VERSION = 1.34;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,15 +46,13 @@ BEGIN {
       get_package_env_attributes
       get_user_supplied_pedigree_parameter
       parse_infiles
-      parse_program_executables
       parse_recipe_resources
       parse_vep_plugin
       remove_sample_id_from_gender
-      set_binary_path
       set_default_analysis_type
-      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
+      set_default_install_config_file
       set_default_parameter
       set_default_pedigree_fam_file
       set_default_program_test_file
@@ -1097,83 +1095,6 @@ sub parse_infiles {
     return 1;
 }
 
-sub parse_program_executables {
-
-## Function : Checking commands in your path and executable
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Active_parameter qw{ set_binary_path };
-    use MIP::Environment::Path qw{ check_binary_in_path };
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
-
-        ## Only check path(s) for parameters with "type" key
-        next PARAMETER
-          if ( not exists $parameter_href->{$parameter_name}{type} );
-
-        ## Only check path(s) for parameters with type value eq "recipe"
-        next PARAMETER
-          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
-
-        ## Only check path(s) for active recipes
-        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
-
-        ## Alias
-        my $program_executables_ref =
-          \@{ $parameter_href->{$parameter_name}{program_executables} };
-
-      PROGRAM:
-        foreach my $program ( @{$program_executables_ref} ) {
-
-            my $binary_path = check_binary_in_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    program_name          => $parameter_name,
-                }
-            );
-
-            ## Set to use downstream
-            set_binary_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    binary_path           => $binary_path,
-                }
-            );
-        }
-    }
-    return;
-}
-
 sub parse_recipe_resources {
 
 ## Function : Check core number and memory requested against environment provisioned
@@ -1324,41 +1245,6 @@ sub remove_sample_id_from_gender {
     return;
 }
 
-sub set_binary_path {
-
-## Function : Set binary path to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $binary                => Binary to set
-##          : $binary_path           => Path to binary
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $binary;
-    my $binary_path;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        binary => { defined => 1, required => 1, store => \$binary, strict_type => 1, },
-        binary_path => { required => 1, store => \$binary_path, strict_type => 1, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not defined $binary_path );
-
-    $active_parameter_href->{binary_path}{$binary} = $binary_path;
-    return;
-}
-
 sub set_default_analysis_type {
 
 ## Function : Set default analysis type to active parameters
@@ -1384,53 +1270,6 @@ sub set_default_analysis_type {
 
     map { $active_parameter_href->{analysis_type}{$_} = q{wgs} }
       @{ $active_parameter_href->{sample_ids} };
-    return;
-}
-
-sub set_default_conda_path {
-
-## Function : Set default conda path to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $conda_path            => Conda bin file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $conda_path;
-    my $bin_file;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        bin_file => {
-            default     => q{conda},
-            store       => \$bin_file,
-            strict_type => 1,
-        },
-        conda_path => { defined => 1, required => 1, store => \$conda_path, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Path qw{ get_conda_path };
-
-    ## Set conda path
-    $active_parameter_href->{$conda_path} =
-      get_conda_path( { bin_file => $bin_file, } );
-
-    if (   not $active_parameter_href->{$conda_path}
-        or not -d $active_parameter_href->{$conda_path} )
-    {
-
-        croak(q{Failed to find default conda path});
-    }
     return;
 }
 
@@ -1688,7 +1527,7 @@ sub set_default_temp_directory {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Mip download
-    if ( exists $active_parameter_href->{download_pipeline_type} ) {
+    if ( exists $active_parameter_href->{download_pipeline} ) {
 
         $active_parameter_href->{temp_directory} =
           catfile( cwd(), qw{ mip_download $SLURM_JOB_ID } );
@@ -2105,6 +1944,39 @@ sub set_include_y {
 
         last if $active_parameter_href->{include_y} == 1;
     }
+    return;
+}
+
+sub set_default_install_config_file {
+
+## Function : Set default install config file to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for mip install config
+    my $path = catfile( $Bin, qw{ templates mip_install_config.yaml } );
+
+    $active_parameter_href->{$parameter_name} = $path;
     return;
 }
 

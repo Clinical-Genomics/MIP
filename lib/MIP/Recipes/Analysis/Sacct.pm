@@ -151,7 +151,6 @@ sub analysis_sacct {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            log                   => $log,
             memory_allocation     => $recipe_resource{memory_allocation},
             process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name,
@@ -165,7 +164,7 @@ sub analysis_sacct {
         {
             fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
             filehandle        => $filehandle,
-            job_ids_ref       => \@{ $job_id_href->{PAN}{PAN} },
+            job_ids_ref       => \@{ $job_id_href->{ALL}{ALL} },
         }
     );
     say {$filehandle} $NEWLINE;

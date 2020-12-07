@@ -1,5 +1,4 @@
 ---
-## Version: 1.0.0
 analysis_constant_path:
   associated_recipe:
     - mip
@@ -10,6 +9,24 @@ analysis_type:
   associated_recipe:
     - mip
   data_type: HASH
+  type: mip
+bash_set_errexit:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+bash_set_nounset:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+bash_set_pipefail:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
   type: mip
 cluster_constant_path:
   associated_recipe:
@@ -30,10 +47,30 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
+core_ram_memory:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 5
+  type: mip
 dry_run_all:
   associated_recipe:
     - mip
   data_type: SCALAR
+  mandatory: no
+  type: mip
+email:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+email_types:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - FAIL
   mandatory: no
   type: mip
 exclude_contigs:
@@ -47,17 +84,36 @@ case_id:
     - mip
   data_type: SCALAR
   type: mip
+install_config_file:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 java_use_large_pages:
   associated_recipe:
     - varianteffectpredictor
   data_type: SCALAR
   default: 1
   type: recipe_argument
+job_reservation_name:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 load_env:
   associated_recipe:
     - mip
   data_type: HASH
   mandatory: no
+  type: mip
+max_cores_per_node:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 36
   type: mip
 node_ram_memory:
   associated_recipe:

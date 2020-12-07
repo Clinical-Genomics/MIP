@@ -14,8 +14,8 @@ recipe:
     path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.plink_sexcheck.sexcheck
   relation_check:
     path: t/data/643594-miptest/analysis/643594-miptest/plink/643594-miptest_gatkcomb.relation_check.mibs
-  variant_integrity_ar_mendel:
-    path: /home/proj/stage/rare-disease/cases/justhusky/analysis/justhusky/variant_integrity_ar/justhusky_gatkcomb_integrity.mendel.txt
+  collectmultiplemetrics:
+    path: t/data/643594-miptest/analysis/643594-miptest/collectmultiplemetrics/file.test_metric
 sample:
   ADM1059A1:
     analysis_type: wgs

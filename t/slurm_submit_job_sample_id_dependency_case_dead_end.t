@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,7 +60,7 @@ diag(
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given a mock slurm and script
 my $case_id        = q{case1};
@@ -91,11 +91,8 @@ slurm_submit_job_sample_id_dependency_case_dead_end(
     }
 );
 
-## Then add job_id returned to PAN
-my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my $expected_return = q{1234};
 is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then previous case ids should be cleared and submitted job id added

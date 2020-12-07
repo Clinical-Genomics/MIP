@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Rd_rna;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.39;
+our $VERSION = 1.40;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -710,7 +709,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{qccollect_eval_metric_file} => (
-            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.3-.yaml}],
             documentation => q{File containing Qccollect evaluation metrics},
             is            => q{rw},
             isa           => Str,

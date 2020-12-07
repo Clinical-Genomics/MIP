@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,10 +64,10 @@ diag(   q{Test write_toml_config from Writefile.pm v}
 ## Given test and toml paths
 my $cluster_constant_path = catdir( dirname($Bin),          qw{ t data} );
 my $test_reference_path   = catdir( $cluster_constant_path, q{references} );
-my $toml_template_path    = catfile( $test_reference_path,
-    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_template_path =
+  catfile( $test_reference_path, q{grch37_vcfanno_config_template-v1.0-.toml} );
 my $toml_config_path =
-  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
+  catfile( $test_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
 
 write_toml_config(
     {

@@ -37,6 +37,7 @@ BEGIN {
       $COLON
       $COMMA
       @CONTAINER_BIND_PATHS
+      %CONTAINER_CMD
       $CONTAINER_MANAGER
       $DASH
       $DOLLAR_SIGN
@@ -63,10 +64,14 @@ BEGIN {
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
       $TAB
+      $TEST_MODE
+      %TEST_PROCESS_RETURN
       $UNDERSCORE
+      set_container_cmd
       set_container_constants
       set_genome_build_constants
       set_log_name_constant
+      set_test_constants
     };
 }
 
@@ -349,6 +354,34 @@ Readonly our $SPACE             => q{ };
 Readonly our $TAB               => qq{\t};
 Readonly our $UNDERSCORE        => q{_};
 
+sub set_container_cmd {
+
+## Function : Set container commands for each executable
+## Returns  :
+## Arguments: $container_cmd_href => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_cmd_href;
+
+    my $tmpl = {
+        container_cmd_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_cmd_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    Readonly our %CONTAINER_CMD => %{$container_cmd_href};
+
+    return;
+}
+
 sub set_container_constants {
 
 ## Function : Set container constants
@@ -373,6 +406,12 @@ sub set_container_constants {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Path qw{ reduce_dir_paths };
+    use MIP::Test::Fixtures qw{ test_constants };
+
+    if ( $active_parameter_href->{test_mode} ) {
+
+        test_constants( {} );
+    }
 
     my @container_bind_paths = (
         $active_parameter_href->{reference_dir},
@@ -457,4 +496,49 @@ sub set_log_name_constant {
     return;
 }
 
+sub set_test_constants {
+
+    ## Function : Set constants for testing
+    ## Returns  :
+    ## Arguments: $container_manager        => Name of container manager
+    ##          : $test_mode                => Set test mode
+    ##          : $test_process_return_href => Process return hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $test_process_return_href;
+
+    ## Default(s)
+    my $container_manager;
+    my $test_mode;
+
+    my $tmpl = {
+        container_manager => {
+            allow       => [qw{docker singularity}],
+            default     => q{docker},
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        test_mode => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$test_mode,
+            strict_type => 1,
+        },
+        test_process_return_href => {
+            default     => {},
+            store       => \$test_process_return_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    our $CONTAINER_MANAGER   = $container_manager;
+    our $TEST_MODE           = $test_mode;
+    our %TEST_PROCESS_RETURN = %{$test_process_return_href};
+
+    return;
+}
 1;

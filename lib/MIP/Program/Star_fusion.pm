@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -139,8 +139,8 @@ sub star_fusion {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{STAR-Fusion};
+    my @commands =
+      ( get_executable_base_command( { base_command => q{STAR-Fusion}, } ), );
 
     push @commands, q{--genome_lib_dir} . $SPACE . $genome_lib_dir_path;
 
@@ -264,16 +264,16 @@ sub star_fusion_gtf_file_to_feature_seqs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ gtf_file_to_feature_seqs.pl };
+    my @commands = (
+        get_executable_base_command(
+            { base_command => q{gtf_file_to_feature_seqs.pl}, }
+        ),
+    );
 
-    # Transcripts file
     push @commands, q{--gtf_file} . $SPACE . $gtf_path;
 
-    # Reference sequence file
     push @commands, q{--genome_fa} . $SPACE . $referencefile_path;
 
-    # Sequence type
     push @commands, q{--seqType} . $SPACE . $seq_type;
 
     push @commands,
@@ -408,8 +408,8 @@ sub star_fusion_prep_genome_lib {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ prep_genome_lib.pl };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{prep_genome_lib.pl}, } ), );
 
     push @commands, q{--dfam_db} . $SPACE . $dfam_db_path;
 

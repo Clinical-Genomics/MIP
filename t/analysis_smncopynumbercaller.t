@@ -22,10 +22,10 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA set_genome_build_constants $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,7 +43,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Smncopynumbercaller} =>
           [qw{ analysis_smncopynumbercaller }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -101,7 +101,17 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+
+test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $sample_id,
+        parameter_href    => \%parameter,
+        recipe_name       => $recipe_name,
+        step              => q{bam},
+    }
+);
+
 my %sample_info;
 
 my $is_ok = analysis_smncopynumbercaller(

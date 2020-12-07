@@ -102,6 +102,10 @@ my %specific_argument = (
         expected_output =>
           catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
     },
+    threads => {
+        input           => 4,
+        expected_output => q{--threads 4},
+    },
     write_to_stdout => {
         input           => 1,
         expected_output => q{--stdout},

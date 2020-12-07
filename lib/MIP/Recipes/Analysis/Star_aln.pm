@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln analysis_star_aln_mixed };
@@ -211,19 +210,17 @@ sub analysis_star_aln {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
-            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe_resource{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe_resource{memory},
+            process_time          => $recipe_resource{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
+            ulimit_n              => $active_parameter_href->{star_ulimit_n},
         }
     );
 
@@ -293,6 +290,8 @@ sub analysis_star_aln {
         $active_parameter_href->{star_aln_reference_genome}
       . $file_info_href->{star_aln_reference_genome}[0];
 
+    my $out_sam_strand_field =
+      $active_parameter_href->{library_type} eq q{unstranded} ? q{intronMotif} : undef;
     star_aln(
         {
             align_intron_max        => $active_parameter_href->{align_intron_max},
@@ -306,6 +305,7 @@ sub analysis_star_aln {
             genome_dir_path       => $referencefile_dir_path,
             infile_paths_ref      => \@fastq_files,
             out_sam_attr_rgline   => $out_sam_attr_rgline,
+            out_sam_strand_field  => $out_sam_strand_field,
             outfile_name_prefix   => $outfile_path_prefix . $DOT,
             pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
             thread_number         => $recipe_resource{core_number},
@@ -600,20 +600,17 @@ sub analysis_star_aln_mixed {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
-                directory_id                    => $sample_id,
-                filehandle                      => $filehandle,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                memory_allocation               => $recipe_resource{memory},
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
-                temp_directory                  => $temp_directory,
-                ulimit_n => $active_parameter_href->{star_ulimit_n},
+                active_parameter_href => $active_parameter_href,
+                core_number           => $recipe_resource{core_number},
+                directory_id          => $sample_id,
+                filehandle            => $filehandle,
+                job_id_href           => $job_id_href,
+                memory_allocation     => $recipe_resource{memory},
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
+                process_time          => $recipe_resource{time},
+                temp_directory        => $temp_directory,
+                ulimit_n              => $active_parameter_href->{star_ulimit_n},
             }
         );
 
@@ -647,6 +644,11 @@ sub analysis_star_aln_mixed {
                 separator        => $SPACE,
             }
         );
+
+        my $out_sam_strand_field =
+          $active_parameter_href->{library_type} eq q{unstranded}
+          ? q{intronMotif}
+          : undef;
         star_aln(
             {
                 filehandle          => $filehandle,
@@ -661,6 +663,7 @@ sub analysis_star_aln_mixed {
                 genome_dir_path       => $referencefile_dir_path,
                 infile_paths_ref      => \@fastq_files,
                 out_sam_attr_rgline   => $out_sam_attr_rgline,
+                out_sam_strand_field  => $out_sam_strand_field,
                 outfile_name_prefix   => $outfile_path_prefix . $DOT,
                 pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
                 thread_number         => $recipe_resource{core_number},

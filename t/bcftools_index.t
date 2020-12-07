@@ -91,6 +91,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    force => {
+        input           => 1,
+        expected_output => q{--force},
+    },
     output_type => {
         input           => q{csi},
         expected_output => q{--csi},

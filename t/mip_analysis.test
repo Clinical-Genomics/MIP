@@ -26,8 +26,8 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SEMICOLON $SPACE $TAB };
-use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Io::Read qw{ read_from_file };
+use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -35,14 +35,14 @@ our $USAGE = build_usage( {} );
 
 BEGIN {
 
-    require MIP::Check::Modules;
-    use MIP::Check::Modules qw{ parse_cpan_file };
+    require MIP::Language::Perl;
+    use MIP::Language::Perl qw{ check_modules_existance get_cpan_file_modules };
 
     my @modules =
-      parse_cpan_file { cpanfile_path => catfile( dirname($Bin), q{cpanfile} ), };
+      get_cpan_file_modules { cpanfile_path => catfile( dirname($Bin), q{cpanfile} ), };
 
     ## Evaluate that all modules required throughout entire analysis are installed
-    check_perl_modules(
+    check_modules_existance(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
@@ -53,7 +53,7 @@ BEGIN {
 my ( $config_file, $infile );
 my ( %active_parameter, %parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.10;
+our $VERSION = 2.12;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -296,7 +296,7 @@ sub test_modules {
     push @ARGV, qw{ -verbose 2 };
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     return;
 }
