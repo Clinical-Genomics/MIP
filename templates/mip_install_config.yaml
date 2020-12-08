@@ -107,8 +107,8 @@ container:
     uri: docker.io/clinicalgenomics/manta:1.6.0
   mip:
     executable:
-      mip: "carton exec mip"
-    uri: docker.io/clinicalgenomics/mip:9.0.7
+      mip:
+    uri: docker.io/clinicalgenomics/mip:9.0.5
   multiqc:
     executable:
       multiqc:

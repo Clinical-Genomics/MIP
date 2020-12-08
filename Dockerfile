@@ -34,3 +34,5 @@ ENV PATH "$PATH:$MIP_INSTALL_DIR"
 RUN rm -rf local
 
 RUN carton install
+
+ENV PERL5LIB="$MIP_INSTALL_DIR"/local/lib/perl5
