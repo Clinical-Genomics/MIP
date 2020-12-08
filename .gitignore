@@ -7,3 +7,9 @@ mip_log/
 **/.idea
 _Deparsed_XSubs.pm
 .gitignore
+
+## Carton
+local/
+
+## Carmel
+.carmel/
