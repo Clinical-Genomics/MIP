@@ -25,6 +25,7 @@ RUN cpanm install Carton
 ENV MIP_INSTALL_DIR=/workspace/bin
 COPY . "$MIP_INSTALL_DIR"
 WORKDIR "$MIP_INSTALL_DIR"
+
 # Make executable and add to binary to PATH
 RUN chmod a+x "$MIP_INSTALL_DIR/mip"
 ENV PATH "$PATH:$MIP_INSTALL_DIR"
@@ -33,5 +34,3 @@ ENV PATH "$PATH:$MIP_INSTALL_DIR"
 RUN rm -rf local
 
 RUN carton install
-
-ENTRYPOINT ["carton", "exec"]
