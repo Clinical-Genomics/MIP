@@ -85,7 +85,10 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
+%{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in} } = (
+    file_path        => catfile(qw{path to tiddit_cov.wig}),
+    file_name_prefix => q{tiddit_cov},
+);
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -93,16 +96,8 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-test_add_io_for_recipe(
-    {
-        file_info_href => \%file_info,
-        id             => $sample_id,
-        parameter_href => \%parameter,
-        recipe_name    => $recipe_name,
-        step           => q{bam},
-    }
-);
-
+$parameter{$recipe_name}{chain} = q{TEST};
+@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
 my $is_ok = analysis_chromograph_cov(
