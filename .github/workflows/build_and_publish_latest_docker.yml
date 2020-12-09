@@ -1,5 +1,5 @@
 
-name: Publish to bleding edge to Docker Hub
+name: Publish bleeding edge to Docker Hub
 
 on:
   push:
